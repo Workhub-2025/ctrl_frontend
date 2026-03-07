@@ -1,0 +1,25 @@
+# Cloudflare Pages configuration for Next.js frontend
+name = "emergency-services-frontend"
+compatibility_date = "2025-10-14"
+
+# Build configuration
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Environment variables (set these in Cloudflare dashboard)
+[env.production.vars]
+  # NEXT_PUBLIC_API_URL = "https://your-backend.digitalocean.app"
+  # NEXT_PUBLIC_STRAPI_URL = "https://your-backend.digitalocean.app"
+  # NEXTAUTH_URL = "https://your-frontend.pages.dev"
+  # NEXTAUTH_SECRET = "your-secret-key"
+
+[env.preview.vars]
+  # NEXT_PUBLIC_API_URL = "https://your-staging-backend.digitalocean.app"
+  # NEXT_PUBLIC_STRAPI_URL = "https://your-staging-backend.digitalocean.app"
+  # NEXTAUTH_URL = "https://preview.your-frontend.pages.dev"
+
+# Custom domains (optional)
+# [[env.production.routes]]
+# pattern = "yourdomain.com"
+# custom_domain = true

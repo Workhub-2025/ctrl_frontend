@@ -1,0 +1,753 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 193 63% 92%;
+    --foreground: 224 76% 28%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 76% 28%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 76% 28%;
+    --primary: 221 66% 32%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 221 66% 32%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 192 90% 34%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 39 96% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 192 90% 34%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 221 66% 25%;
+    --sidebar-primary: 221 66% 32%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 193 63% 92%;
+    --sidebar-accent-foreground: 221 66% 32%;
+    --sidebar-border: 0 0% 89.8%;
+    --sidebar-ring: 192 90% 34%;
+
+    /* Variables para header transparente */
+    --header-bg: rgba(247, 250, 253, 0.95);
+    --header-border: rgba(226, 232, 240, 0.3);
+    --header-text: hsl(224, 76%, 28%);
+    --header-text-hover: hsl(192, 90%, 34%);
+
+    /* Transiciones */
+    --transition-fast: 150ms ease-in-out;
+    --transition-normal: 250ms ease-in-out;
+    --transition-slow: 350ms ease-in-out;
+
+    /* Sombras */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+    /* Tipografía responsiva */
+    --text-xs: clamp(0.75rem, 0.9vw, 0.875rem);
+    --text-sm: clamp(0.875rem, 1.1vw, 1rem);
+    --text-base: clamp(1rem, 1.3vw, 1.125rem);
+    --text-lg: clamp(1.125rem, 1.5vw, 1.25rem);
+    --text-xl: clamp(1.25rem, 1.8vw, 1.5rem);
+    --text-2xl: clamp(1.5rem, 2.2vw, 2rem);
+    --text-3xl: clamp(1.875rem, 2.8vw, 2.5rem);
+    --text-4xl: clamp(2.25rem, 3.5vw, 3.5rem);
+    --text-5xl: clamp(3rem, 4.5vw, 4.5rem);
+    --text-6xl: clamp(3.75rem, 5.5vw, 6rem);
+    --text-7xl: clamp(4.5rem, 7vw, 8rem);
+
+    /* Colores adaptativos para textos */
+    --text-primary: hsl(224, 76%, 28%);
+    --text-secondary: hsl(215, 16%, 47%);
+    --text-muted: hsl(215, 16%, 57%);
+    --text-accent: hsl(192, 90%, 34%);
+
+    /* Gradientes para avatares - modo claro */
+    --avatar-gradient: linear-gradient(135deg,
+        hsl(217, 91%, 60%),
+        hsl(262, 83%, 58%));
+    --avatar-text: white;
+
+    /* Gradientes migrados desde theme-system.css */
+    --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ffffff 100%);
+    --gradient-secondary: linear-gradient(135deg, #10b981 0%, #34d399 50%, #f0fdf4 100%);
+    --gradient-hero: linear-gradient(135deg, #1e40af 0%, #3730a3 30%, #6366f1 60%, #e0e7ff 100%);
+
+    /* Transiciones mejoradas */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast-smooth: all 0.15s ease-in-out;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 0 0% 98%;
+    --card: 224 33% 15%;
+    --card-foreground: 0 0% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 221 66% 32%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 192 90% 40%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 39 96% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 192 90% 40%;
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 221 66% 32%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 192 90% 40%;
+
+    /* Variables para header transparente - modo oscuro */
+    --header-bg: rgba(15, 23, 42, 0.95);
+    --header-border: rgba(71, 85, 105, 0.3);
+    --header-text: hsl(0, 0%, 98%);
+    --header-text-hover: hsl(192, 90%, 40%);
+
+    /* Sombras más intensas para modo oscuro */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+    /* Colores adaptativos para textos - modo oscuro */
+    --text-primary: hsl(0, 0%, 98%);
+    --text-secondary: hsl(215, 20%, 65%);
+    --text-muted: hsl(217, 13%, 35%);
+    --text-accent: hsl(192, 90%, 40%);
+
+    /* Gradientes para avatares - modo oscuro */
+    --avatar-gradient: linear-gradient(135deg,
+        hsl(217, 91%, 70%),
+        hsl(262, 83%, 68%));
+    --avatar-text: hsl(222, 47%, 11%);
+
+    /* Gradientes migrados desde theme-system.css - modo oscuro */
+    --gradient-primary: linear-gradient(135deg, #60a5fa 0%, #a855f7 50%, #f8fafc 100%);
+    --gradient-secondary: linear-gradient(135deg, #34d399 0%, #10b981 50%, #064e3b 100%);
+    --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #334155 60%, #60a5fa 100%);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Estilos para el carrusel del hero */
+.carousel-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1.1);
+}
+
+.carousel-slide.active {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+/* Animaciones para el contenido del carrusel */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* Efectos hover para los controles del carrusel */
+.carousel-slide:hover {
+  transform: scale(1.02);
+}
+
+/* Estilos mejorados para los indicadores del carrusel */
+.carousel-indicators {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.carousel-indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.carousel-indicator:hover {
+  background: rgba(255, 255, 255, 0.7);
+  transform: scale(1.1);
+}
+
+.carousel-indicator.active {
+  background: white;
+  transform: scale(1.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Asegurar que los botones del carrusel tengan suficiente espacio */
+.carousel-buttons-container {
+  margin-bottom: 2rem;
+  position: relative;
+  z-index: 25;
+}
+
+/* Transiciones suaves para el cambio de contenido */
+.carousel-slide.active h1,
+.carousel-slide.active p {
+  animation: fadeIn 1s ease-out 0.3s both;
+}
+
+/* Efectos de parallax sutil */
+.carousel-slide::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: inherit;
+  transform: translateZ(-1px) scale(2);
+  z-index: -1;
+}
+
+/* ===== TIPOGRAFÍA RESPONSIVA ===== */
+.text-responsive-xs {
+  font-size: var(--text-xs);
+}
+
+.text-responsive-sm {
+  font-size: var(--text-sm);
+}
+
+.text-responsive-base {
+  font-size: var(--text-base);
+}
+
+.text-responsive-lg {
+  font-size: var(--text-lg);
+}
+
+.text-responsive-xl {
+  font-size: var(--text-xl);
+}
+
+.text-responsive-2xl {
+  font-size: var(--text-2xl);
+}
+
+.text-responsive-3xl {
+  font-size: var(--text-3xl);
+}
+
+.text-responsive-4xl {
+  font-size: var(--text-4xl);
+}
+
+.text-responsive-5xl {
+  font-size: var(--text-5xl);
+}
+
+.text-responsive-6xl {
+  font-size: var(--text-6xl);
+}
+
+.text-responsive-7xl {
+  font-size: var(--text-7xl);
+}
+
+/* Aplicar tipografía responsiva automáticamente */
+h1 {
+  font-size: var(--text-5xl) !important;
+}
+
+h2 {
+  font-size: var(--text-4xl) !important;
+}
+
+h3 {
+  font-size: var(--text-3xl) !important;
+}
+
+h4 {
+  font-size: var(--text-2xl) !important;
+}
+
+h5 {
+  font-size: var(--text-xl) !important;
+}
+
+h6 {
+  font-size: var(--text-lg) !important;
+}
+
+p {
+  font-size: var(--text-base) !important;
+}
+
+/* ===== TÍTULOS CON GRADIENTE (CONSERVADAS) ===== */
+.title-gradient {
+  background: linear-gradient(to right, #2563eb, #7c3aed, #1e40af) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  font-weight: bold !important;
+  line-height: 1.2 !important;
+  transition: all var(--transition-normal) !important;
+}
+
+/* Interlineado mejorado para secciones */
+.section-spacing {
+  line-height: 1.6 !important;
+  margin-bottom: 1rem !important;
+}
+
+.section-spacing h1,
+.section-spacing h2 {
+  margin-bottom: 0.75rem !important;
+}
+
+.section-spacing p {
+  margin-bottom: 0 !important;
+}
+
+/* ===== AVATAR ADAPTATIVO ===== */
+.avatar-adaptive {
+  background: var(--avatar-gradient) !important;
+  color: var(--avatar-text) !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.avatar-adaptive:hover {
+  transform: scale(1.1) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* ===== CLASES UTILITARIAS MIGRADAS ===== */
+/* Botón toggle del tema */
+.theme-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  transition: var(--transition-normal);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  transform: scale(1.1);
+}
+
+/* Animaciones para los iconos del tema */
+.theme-toggle .sun-icon {
+  transition: var(--transition-normal);
+}
+
+.theme-toggle .moon-icon {
+  position: absolute;
+  transition: var(--transition-normal);
+  opacity: 0;
+  transform: rotate(90deg);
+}
+
+.dark .theme-toggle .sun-icon {
+  opacity: 0;
+  transform: rotate(-90deg);
+}
+
+.dark .theme-toggle .moon-icon {
+  opacity: 1;
+  transform: rotate(0deg);
+}
+
+/* ===== UTILIDADES TAILWIND PERSONALIZADAS ===== */
+@layer utilities {
+  .text-content-primary {
+    @apply text-foreground;
+  }
+
+  .text-content-secondary {
+    @apply text-muted-foreground;
+  }
+
+  .text-content-muted {
+    @apply text-muted-foreground;
+  }
+
+  .text-responsive-fluid-xl {
+    @apply text-xl;
+  }
+
+  .text-responsive-fluid-lg {
+    @apply text-lg;
+  }
+
+  .text-responsive-fluid-base {
+    @apply text-base;
+  }
+
+  .text-responsive-fluid-sm {
+    @apply text-sm;
+  }
+
+  .text-responsive-fluid-xs {
+    @apply text-xs;
+  }
+}
+
+/* ===== GRADIENTES UTILITARIOS ===== */
+.bg-gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.bg-gradient-secondary {
+  background: var(--gradient-secondary);
+}
+
+.bg-gradient-hero {
+  background: var(--gradient-hero);
+}
+
+/* Gradientes de texto */
+.gradient-text-primary {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-secondary {
+  background: var(--gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== TARJETAS ADAPTATIVAS ===== */
+.card-adaptive {
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.card-adaptive:hover {
+  box-shadow: var(--shadow-lg) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Tarjetas con fondo semi-transparente adaptativo */
+.card-adaptive-blur {
+  background: hsl(var(--card) / 0.9) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid hsl(var(--border) / 0.5) !important;
+  color: hsl(var(--card-foreground)) !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.card-adaptive-blur:hover {
+  background: hsl(var(--card) / 0.95) !important;
+  box-shadow: var(--shadow-xl) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Elementos de contacto adaptativos */
+.contact-item-adaptive {
+  background: hsl(var(--background) / 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid hsl(var(--border) / 0.5) !important;
+  color: hsl(var(--foreground)) !important;
+  transition: all var(--transition-normal) !important;
+}
+
+/* ===== FOOTER ADAPTATIVO ===== */
+.bg-adaptive-footer {
+  background: linear-gradient(135deg,
+      hsl(var(--muted) / 0.8),
+      hsl(var(--card) / 0.9),
+      hsl(var(--muted) / 0.7)) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.text-adaptive-footer-text {
+  color: hsl(var(--foreground)) !important;
+}
+
+.text-adaptive-footer-secondary {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.text-adaptive-footer-accent {
+  color: hsl(var(--accent)) !important;
+}
+
+.border-adaptive-border {
+  border-color: hsl(var(--border) / 0.3) !important;
+}
+
+/* ===== LOGO ADAPTATIVO ===== */
+.logo-adaptive {
+  transition: filter 0.3s ease !important;
+}
+
+/* Modo claro - logo normal */
+html:not(.dark) .logo-adaptive {
+  filter: none;
+}
+
+/* Modo oscuro - aumentar brillo y contraste del logo */
+html.dark .logo-adaptive {
+  filter: brightness(1.7) contrast(1.5) saturate(1.2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3)) !important;
+}
+
+/* ===== THEME TOGGLE BUTTON ===== */
+/* Asegurar que el theme toggle tenga el z-index correcto y no interfiera con otros elementos */
+button[aria-label="Toggle theme"] {
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* ===== TÍTULOS ADAPTATIVOS ===== */
+.title-adaptive {
+  color: hsl(var(--foreground)) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
+}
+
+.contact-item-adaptive:hover {
+  background: hsl(var(--background) / 0.95) !important;
+  border-color: hsl(var(--border)) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* ===== HEADER TRANSPARENTE ===== */
+.header-transparent {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  border-bottom: none !important;
+  transition: all var(--transition-normal) !important;
+}
+
+.header-scrolled {
+  background: var(--header-bg) !important;
+  backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid var(--header-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Estilos para los enlaces del header */
+.header-link {
+  color: var(--header-text) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.header-link:hover {
+  color: var(--header-text-hover) !important;
+}
+
+/* Header transparente sobre carrusel - texto blanco */
+.header-transparent .header-link {
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.header-transparent .header-link:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Estilos para el botón del tema */
+.theme-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sun-icon,
+.moon-icon {
+  position: absolute;
+  transition: all 0.3s ease;
+}
+
+/* Modo claro - mostrar sol oscuro */
+:not(.dark) .sun-icon {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  color: hsl(var(--foreground)) !important;
+  /* Color oscuro en modo claro */
+}
+
+:not(.dark) .moon-icon {
+  opacity: 0;
+  transform: rotate(90deg) scale(0.5);
+}
+
+/* Modo oscuro - mostrar luna blanca */
+.dark .sun-icon {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0.5);
+}
+
+.dark .moon-icon {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+  color: hsl(var(--foreground)) !important;
+  /* Color blanco en modo oscuro */
+}
+
+/* Header transparente - mantener colores del tema pero con mejor contraste */
+.header-transparent .theme-toggle:not(.dark) .sun-icon {
+  color: #374151 !important;
+  /* Sol oscuro en modo claro sobre carrusel */
+  filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.8));
+  /* Sombra blanca fuerte para contraste */
+}
+
+.header-transparent .theme-toggle.dark .moon-icon {
+  color: white !important;
+  /* Luna blanca en modo oscuro sobre carrusel */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 4px rgba(0, 0, 0, 0.5));
+  /* Sombra negra para contraste */
+}
+
+/* Asegurar que cuando no es transparente, no aplique filtros */
+.header-scrolled .theme-toggle .sun-icon,
+.header-scrolled .theme-toggle .moon-icon {
+  filter: none !important;
+}
+
+/* Separador vertical en header transparente */
+.header-transparent [data-orientation="vertical"] {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Optimizaciones para páginas de autenticación */
+/* Prevenir flash durante carga de imágenes */
+.auth-logo {
+  content-visibility: auto;
+  contain-intrinsic-size: 3rem 3rem;
+}
+
+/* Estabilizar layout durante hidratación */
+.auth-page {
+  contain: layout;
+}
+
+/* Prevenir layout shift en cards de auth */
+.auth-card {
+  min-height: 500px;
+  contain: layout;
+}
+
+/* Optimizar rendering de imágenes del logo */
+img[src="/icon1.png"] {
+  content-visibility: auto;
+  contain-intrinsic-size: 3rem 3rem;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimize-contrast;
+}
+
+/* Filtros adaptativos para logo en modo oscuro - páginas auth */
+.logo-adaptive-filter {
+  filter: none;
+  transition: filter 0.3s ease;
+}
+
+[data-theme="dark"] .logo-adaptive-filter,
+.dark .logo-adaptive-filter,
+html[data-theme="dark"] .logo-adaptive-filter {
+  filter: brightness(1.7) contrast(1.5) saturate(1.2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3)) !important;
+}

@@ -1,0 +1,213 @@
+# -------------------------------
+# Dependency directories
+# -------------------------------
+node_modules/
+.pnp/
+.pnp.js
+
+# -------------------------------
+# Build / Dist outputs
+# -------------------------------
+.next/
+out/
+build/
+dist/
+.output/
+.nuxt/
+.expo/
+.expo-shared/
+
+# -------------------------------
+# TypeScript
+# -------------------------------
+*.tsbuildinfo
+next-env.d.ts
+*.d.ts.map
+
+# -------------------------------
+# Testing
+# -------------------------------
+coverage/
+.nyc_output/
+*.lcov
+.coverage/
+**/__tests__/coverage/
+junit.xml
+test-results/
+playwright-report/
+.playwright/
+
+# -------------------------------
+# Logs & debug
+# -------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+genkit-debug.log*
+*.log
+
+# -------------------------------
+# OS / Editor files
+# -------------------------------
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+.Spotlight-V100
+.Trashes
+Desktop.ini
+$RECYCLE.BIN/
+
+# -------------------------------
+# IDE settings
+# -------------------------------
+.vscode/
+!.vscode/settings.json.example
+!.vscode/*.example
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+.loadpath
+.idx/
+
+# -------------------------------
+# Package manager / PnP
+# -------------------------------
+.pnp/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# -------------------------------
+# Lock files (optional - uncomment to ignore)
+# -------------------------------
+# yarn.lock
+# package-lock.json
+# pnpm-lock.yaml
+# bun.lockb
+
+# -------------------------------
+# Environment files (keep examples)
+# -------------------------------
+.env
+.env.local
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+!.env.*.example
+!.env.railway.example
+!.env.render.example
+
+# -------------------------------
+# Misc temp
+# -------------------------------
+*.tmp
+*.temp
+*.bak
+*.backup
+.modified
+.wrangler/
+.mf/
+
+# -------------------------------
+# Cache / framework
+# -------------------------------
+**/.cache/
+.turbo/
+**/.turbo/
+.eslintcache
+**/.eslintcache
+.vercel/
+**/.vercel/
+.next/cache/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+
+# -------------------------------
+# Docker / containers
+# -------------------------------
+docker-data/
+*.pid
+.dockerignore-local
+
+# -------------------------------
+# Encryption / keys
+# -------------------------------
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+id_rsa*
+id_ed25519*
+*.gpg
+
+# -------------------------------
+# Firebase & Genkit
+# -------------------------------
+.genkit/
+.firebase/
+*-debug.log
+firebase-debug.*.log
+.runtimeconfig.json
+.firebase-cache/
+
+# -------------------------------
+# Cloudflare Workers
+# -------------------------------
+.wrangler/
+.mf/
+wrangler.toml.local
+workers-site/
+
+# -------------------------------
+# Next.js specific
+# -------------------------------
+.next/
+out/
+/public/sw.js
+/public/sw.js.map
+/public/workbox-*.js
+/public/workbox-*.js.map
+
+# -------------------------------
+# Optional: Ignore local Strapi exports/imports
+# -------------------------------
+**/export/**
+**/import/**
+
+# -------------------------------
+# Storybook
+# -------------------------------
+storybook-static/
+.storybook-out/
+
+# -------------------------------
+# Local development
+# -------------------------------
+*.local
+.local/
+.history/
