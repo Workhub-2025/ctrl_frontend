@@ -10,24 +10,59 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { typingTestData } from '@/lib/data';
 import { useRouter } from 'next/navigation';
-import { Clock, Target, CheckCircle, RefreshCw, Save } from 'lucide-react';
-import { AssessmentProgressService } from '@/services';
+import { Clock, Target, CheckCircle, RefreshCw, Save, Loader2 } from 'lucide-react';
 import {
   saveAssessmentProgressAction,
   resumeAssessmentProgressAction,
   clearAssessmentProgressAction,
 } from '@/app/actions/assessment-progress.action';
+import { 
+  saveTypingTestResult, 
+  getTypingText,
+} from '@/app/actions/typing-test.actions';
+import { useToast } from '@/hooks/use-toast';
+import { ITypingText } from '@/types';
 
 type TestStatus = 'waiting' | 'running' | 'finished';
 type TestResult = { wpm: number; accuracy: number };
 
-const TEST_DURATION = 60; // 1 minute
+const TEST_DURATION = 10; // 1 minute
+const TOTAL_TESTS = 3; // 3 real tests (excluding practice)
 
 interface TypingTestProps {
-  enableAutoSave?: boolean;
+  readonly enableAutoSave?: boolean;
 }
+
+// TypedCharacters component moved outside for better performance
+interface TypedCharactersProps {
+  textToType: string;
+  inputValue: string;
+  status: TestStatus;
+}
+
+const TypedCharacters = ({ textToType, inputValue, status }: TypedCharactersProps) => {
+  if (!textToType) return null;
+  
+  return (
+    <p className="text-2xl font-mono tracking-wider leading-relaxed">
+      {textToType.split('').map((char, index) => {
+        let className = 'text-muted-foreground/70';
+        if (index < inputValue.length) {
+          className = char === inputValue[index] ? 'text-foreground' : 'bg-destructive/20 text-destructive-foreground rounded-sm';
+        }
+        if (status === 'running' && index === inputValue.length) {
+          className = 'animate-pulse border-b-2 border-primary';
+        }
+        return (
+          <span key={`char-${index}-${char}`} className={cn(className)}>
+            {char}
+          </span>
+        );
+      })}
+    </p>
+  );
+};
 
 export default function TypingTest({ enableAutoSave = false }: TypingTestProps) {
   const [testIndex, setTestIndex] = useState(0); // 0 = practice, 1-3 = real tests
@@ -37,17 +72,53 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
   const [results, setResults] = useState<TestResult | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentText, setCurrentText] = useState<ITypingText | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
-  const currentTest = typingTestData[testIndex];
-  const textToType = currentTest.text;
+  const textToType = currentText?.text || '';
+  const isPractice = testIndex === 0;
+  const currentTestNumber = isPractice ? 'Practice' : `${testIndex}/3`;
+
+  // Load text for current test
+  useEffect(() => {
+    const loadText = async () => {
+      setIsLoading(true);
+      try {
+        const result = isPractice 
+          ? await getTypingText('practice')
+          : await getTypingText('test', testIndex as 1 | 2 | 3);
+
+        if (result.success) {
+          setCurrentText(result.data);
+        } else {
+          toast({
+            title: 'Error loading text',
+            description: result.error,
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        console.error('Error loading text:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load typing test text',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadText();
+  }, [testIndex, isPractice, toast]);
 
   // Load saved progress on mount (only if enableAutoSave)
   useEffect(() => {
     const loadProgress = async () => {
       if (!enableAutoSave) {
-        setIsLoading(false);
         return;
       }
 
@@ -55,14 +126,12 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
       if (savedRes?.success && savedRes.data) {
         const saved = savedRes.data;
         if (saved.status === 'in-progress' && saved.testType === 'typing') {
-          setTestIndex((saved as any).currentIndex);
+          setTestIndex((saved as any).currentIndex || 0);
           if ((saved as any).results) setResults((saved as any).results);
           if ((saved as any).inputValue) setInputValue((saved as any).inputValue);
           if ((saved as any).timeLeft !== undefined) setTimeLeft((saved as any).timeLeft);
-          // Don't auto-resume running state, let user start
         }
       }
-      setIsLoading(false);
     };
 
     loadProgress();
@@ -74,10 +143,10 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     }
   }, [status]);
 
-  // Auto-save progress every 10 seconds (with debounce)
+  // Auto-save progress every 10 seconds
   useEffect(() => {
     if (!enableAutoSave) return;
-    if (status === 'waiting' && !results) return; // Nothing to save yet
+    if (status === 'waiting' && !results) return;
 
     const saveTimer = setTimeout(async () => {
       const res = await saveAssessmentProgressAction({
@@ -94,13 +163,14 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     return () => clearTimeout(saveTimer);
   }, [enableAutoSave, testIndex, results, inputValue, timeLeft, status]);
 
+  // Timer countdown
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (status === 'running' && timeLeft > 0) {
       timer = setInterval(() => {
         setTimeLeft((prevTime) => prevTime - 1);
       }, 1000);
-    } else if (timeLeft === 0) {
+    } else if (timeLeft === 0 && status === 'running') {
       setStatus('finished');
       calculateResults();
     }
@@ -119,20 +189,67 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     setInputValue('');
     setTimeLeft(TEST_DURATION);
     setResults(null);
-  }
+  };
 
   const handleNextTest = async () => {
-    if(testIndex < typingTestData.length - 1) {
+    // If practice, just move to test 1
+    if (isPractice) {
+      setTestIndex(1);
+      handleReset();
+      return;
+    }
+
+    // Save result for real tests
+    if (results) {
+      setIsSaving(true);
+      try {
+        const saveResult = await saveTypingTestResult({
+          testNumber: testIndex as 1 | 2 | 3,
+          wpm: results.wpm,
+          accuracy: results.accuracy,
+          textUsed: textToType,
+        });
+
+        if (!saveResult.success) {
+          toast({
+            title: 'Error saving result',
+            description: saveResult.error,
+            variant: 'destructive',
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        toast({
+          title: 'Test saved',
+          description: `Test ${testIndex} completed successfully`,
+        });
+      } catch (error) {
+        console.error('Error saving test result:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to save test result',
+          variant: 'destructive',
+        });
+        setIsSaving(false);
+        return;
+      } finally {
+        setIsSaving(false);
+      }
+    }
+
+    // Move to next test or finish
+    if (testIndex < TOTAL_TESTS) {
       setTestIndex(prev => prev + 1);
       handleReset();
     } else {
-      // Clear progress when all tests are completed
+      // All tests completed
       if (enableAutoSave) {
         await clearAssessmentProgressAction('typing');
       }
       router.push('/results?test=typing');
     }
-  }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (status !== 'running') return;
@@ -150,36 +267,43 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
         correctChars++;
       }
     }
-    const accuracy = Math.round((correctChars / inputValue.length) * 100) || 0;
+    const accuracy = inputValue.length > 0 
+      ? Math.round((correctChars / inputValue.length) * 100) 
+      : 0;
+    
     setResults({ wpm, accuracy });
   };
-  
-  const TypedCharacters = () => {
-    return (
-      <p className="text-2xl font-mono tracking-wider leading-relaxed">
-        {textToType.split('').map((char, index) => {
-          let className = 'text-muted-foreground/70';
-          if (index < inputValue.length) {
-            className = char === inputValue[index] ? 'text-foreground' : 'bg-destructive/20 text-destructive-foreground rounded-sm';
-          }
-          if (status === 'running' && index === inputValue.length) {
-            className = 'animate-pulse border-b-2 border-primary';
-          }
-          return (
-            <span key={index} className={cn(className)}>
-              {char}
-            </span>
-          );
-        })}
-      </p>
-    );
+
+  const getButtonText = () => {
+    if (isSaving) return 'Saving...';
+    if (isPractice) return 'Start Real Tests';
+    if (testIndex < TOTAL_TESTS) return 'Next Test';
+    return 'Finish Assessment';
   };
 
   if (isLoading) {
     return (
       <Card className="w-full">
         <CardContent className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Loading...</p>
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading typing test...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!currentText || !textToType) {
+    return (
+      <Card className="w-full">
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-muted-foreground">No text available for this test</p>
+            <Button onClick={() => router.push('/dashboard')}>
+              Return to Dashboard
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -191,10 +315,13 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-2xl font-headline">
-              Typing Speed & Accuracy Test {testIndex > 0 ? `(${testIndex}/3)` : '(Practice)'}
+              Typing Speed & Accuracy Test {isPractice ? '(Practice)' : `(${currentTestNumber})`}
             </CardTitle>
             <CardDescription>
-              Type the text below as quickly and accurately as you can.
+              {isPractice 
+                ? 'Practice test - Type the text below to get familiar with the test format.'
+                : 'Type the text below as quickly and accurately as you can.'
+              }
             </CardDescription>
           </div>
           {enableAutoSave && lastSaved && (
@@ -230,17 +357,23 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
           </div>
         </div>
 
-        <div className="relative rounded-lg border p-6 bg-card" onClick={() => inputRef.current?.focus()}>
-            <TypedCharacters />
+        <label 
+          className="block relative rounded-lg border p-6 bg-card min-h-[200px] cursor-text" 
+        >
+            <TypedCharacters 
+              textToType={textToType} 
+              inputValue={inputValue} 
+              status={status} 
+            />
             <textarea
                 ref={inputRef}
                 value={inputValue}
                 onChange={handleInputChange}
                 className="absolute inset-0 opacity-0 cursor-text"
                 disabled={status !== 'running'}
-                aria-label="Typing input"
+                aria-label="Typing input area"
             />
-        </div>
+        </label>
         
         <div className="mt-6 flex justify-center gap-4">
           {status === 'waiting' && (
@@ -255,13 +388,20 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
           )}
           {status === 'finished' && (
             <div className="flex flex-col items-center gap-4">
-                <p className="text-lg font-semibold text-green-600">Test Complete!</p>
+                <p className="text-lg font-semibold text-green-600">
+                  {isPractice ? 'Practice Complete!' : 'Test Complete!'}
+                </p>
                 <div className="flex gap-4">
                     <Button size="lg" onClick={handleReset} variant="outline">
                         Retry
                     </Button>
-                    <Button size="lg" onClick={handleNextTest}>
-                        {testIndex < typingTestData.length - 1 ? 'Next Test' : 'Finish Assessment'}
+                    <Button 
+                      size="lg" 
+                      onClick={handleNextTest}
+                      disabled={isSaving}
+                    >
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {getButtonText()}
                     </Button>
                 </div>
             </div>
