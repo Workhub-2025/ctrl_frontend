@@ -1,25 +1,25 @@
 # PhoneInput Component Documentation
 
-## Descripción
+## Description
 
-El componente `PhoneInput` es un campo de entrada de teléfono que integra la librería [intl-tel-input](https://github.com/jackocnr/intl-tel-input) en el sistema de diseño de tu aplicación React/Next.js. Proporciona:
+The `PhoneInput` component is a phone number input that integrates the [intl-tel-input](https://github.com/jackocnr/intl-tel-input) library into your React/Next.js design system. It provides:
 
-- ✅ Validación automática de números de teléfono internacionales
-- 🌍 Selector de país con banderas
-- 🎨 Integración completa con el sistema de diseño de shadcn/ui
-- 🔧 Formateo automático de números
-- ♿ Accesibilidad completa
-- 🌓 Soporte para modo oscuro
+- ✅ Automatic international phone number validation
+- 🌍 Country selector with flags
+- 🎨 Full integration with the shadcn/ui design system
+- 🔧 Automatic number formatting
+- ♿ Full accessibility support
+- 🌓 Dark mode support
 
-## Instalación
+## Installation
 
-El componente ya está instalado con las dependencias necesarias:
+The component is already installed with the required dependencies:
 
 ```bash
 npm install intl-tel-input
 ```
 
-## Uso Básico
+## Basic Usage
 
 ```tsx
 import { PhoneInput } from "@/components/ui/phone-input"
@@ -30,7 +30,7 @@ function MyForm() {
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="phone">Teléfono</Label>
+      <Label htmlFor="phone">Phone</Label>
       <PhoneInput
         id="phone"
         value={phone}
@@ -39,7 +39,7 @@ function MyForm() {
       />
       {!isValid && phone && (
         <p className="text-sm text-red-500">
-          Por favor ingresa un número válido
+          Please enter a valid number
         </p>
       )}
     </div>
@@ -49,39 +49,39 @@ function MyForm() {
 
 ## Props
 
-| Prop | Tipo | Default | Descripción |
+| Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `value` | `string` | `""` | Valor actual del teléfono |
-| `onChange` | `(value: string) => void` | - | Callback cuando cambia el valor |
-| `onValidation` | `(isValid: boolean) => void` | - | Callback para el estado de validación |
-| `className` | `string` | - | Clases CSS adicionales |
-| `disabled` | `boolean` | `false` | Si el campo está deshabilitado |
-| ...props | `InputHTMLAttributes` | - | Otras props de input HTML |
+| `value` | `string` | `""` | Current phone number value |
+| `onChange` | `(value: string) => void` | - | Callback fired when the value changes |
+| `onValidation` | `(isValid: boolean) => void` | - | Callback for validation state |
+| `className` | `string` | - | Additional CSS classes |
+| `disabled` | `boolean` | `false` | Whether the field is disabled |
+| ...props | `InputHTMLAttributes` | - | Other HTML input props |
 
-## Características
+## Features
 
-### 🌍 Detección automática de país
-El componente inicia con el código de país "US" por defecto, pero los usuarios pueden seleccionar cualquier país del mundo.
+### 🌍 Automatic country selection
+The component starts with the "US" country code by default, but users can select any country in the world.
 
-### 📱 Validación en tiempo real
-La validación se ejecuta automáticamente cuando el usuario escribe o cambia el país seleccionado.
+### 📱 Real-time validation
+Validation runs automatically when the user types or changes the selected country.
 
-### 🎨 Estilos personalizados
-Se incluye un archivo CSS personalizado que integra perfectamente intl-tel-input con el sistema de diseño:
-- Variables CSS personalizadas para colores
-- Soporte para modo oscuro
-- Estados de error y éxito
-- Diseño responsive
+### 🎨 Custom styling
+A custom CSS file is included to blend intl-tel-input into the design system:
+- Custom CSS variables for colors
+- Dark mode support
+- Error and success states
+- Responsive layout
 
 ### ♿ Accesibilidad
-- Soporte completo para lectores de pantalla
-- Navegación por teclado
-- Labels y descripciones apropiadas
-- Estados de error accesibles
+- Full screen reader support
+- Keyboard navigation
+- Appropriate labels and descriptions
+- Accessible error states
 
-## Ejemplos Avanzados
+## Advanced Examples
 
-### Con React Hook Form
+### With React Hook Form
 
 ```tsx
 import { useForm } from 'react-hook-form'
@@ -98,7 +98,7 @@ function FormWithValidation() {
         name="phone"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Teléfono</FormLabel>
+            <FormLabel>Phone</FormLabel>
             <FormControl>
               <PhoneInput
                 value={field.value}
@@ -108,7 +108,7 @@ function FormWithValidation() {
               />
             </FormControl>
             {!isPhoneValid && (
-              <FormMessage>Número de teléfono inválido</FormMessage>
+              <FormMessage>Invalid phone number</FormMessage>
             )}
           </FormItem>
         )}
@@ -118,7 +118,7 @@ function FormWithValidation() {
 }
 ```
 
-### Con estado de error personalizado
+### With a custom error state
 
 ```tsx
 function PhoneWithCustomError() {
@@ -130,7 +130,7 @@ function PhoneWithCustomError() {
 
   return (
     <div className="space-y-2">
-      <Label htmlFor="phone">Teléfono *</Label>
+      <Label htmlFor="phone">Phone *</Label>
       <PhoneInput
         id="phone"
         value={phone}
@@ -146,7 +146,7 @@ function PhoneWithCustomError() {
         <div className="flex items-center space-x-1 text-red-500">
           <AlertCircle className="h-4 w-4" />
           <span className="text-sm">
-            Por favor ingresa un número de teléfono válido
+            Please enter a valid phone number
           </span>
         </div>
       )}
@@ -155,56 +155,56 @@ function PhoneWithCustomError() {
 }
 ```
 
-## Integración en el proyecto
+## Project Integration
 
-El componente se ha integrado automáticamente en:
+The component has already been integrated into:
 
-### ✅ Formulario de registro (`/auth/register`)
-- Campo opcional de teléfono
-- Validación en tiempo real
-- Integración con el estado del formulario
+### ✅ Registration form (`/auth/register`)
+- Optional phone field
+- Real-time validation
+- Integrated with the form state
 
-### ✅ Simulación de llamadas (`/assessment/call-simulation`)
-- Campo para número del caller
-- Validación requerida
-- Integración con datos de simulación
+### ✅ Call simulation (`/assessment/call-simulation`)
+- Caller phone number field
+- Required validation
+- Integrated with simulation data
 
-## Personalización
+## Customization
 
-### Estilos CSS
-Los estilos se pueden personalizar editando:
+### CSS styles
+You can customize the styles by editing:
 ```
 src/styles/intl-tel-input-custom.css
 ```
 
-### País inicial
-Para cambiar el país inicial, modifica la configuración en:
+### Default country
+To change the default country, update the configuration in:
 ```tsx
-// En src/components/ui/phone-input.tsx
-initialCountry: "us" // Cambia por el código de país deseado
+// In src/components/ui/phone-input.tsx
+initialCountry: "us" // Replace with the desired country code
 ```
 
-### Países preferidos
-Para agregar países preferidos en el dropdown, modifica:
+### Preferred countries
+To add preferred countries in the dropdown, update:
 ```tsx
-// En el componente PhoneInput
-preferredCountries: ["us", "ca", "mx", "es"] // Lista de códigos de país
+// In the PhoneInput component
+preferredCountries: ["us", "ca", "mx", "es"] // List of country codes
 ```
 
 ## Troubleshooting
 
-### El componente no se muestra
-- Verifica que intl-tel-input esté instalado: `npm list intl-tel-input`
-- Asegúrate de que los estilos CSS se importen correctamente
+### The component does not appear
+- Verify that intl-tel-input is installed: `npm list intl-tel-input`
+- Make sure the CSS styles are imported correctly
 
-### Errores de TypeScript
-- El componente usa `as any` para evitar conflictos de tipos con intl-tel-input
-- Esto es normal y esperado para esta integración
+### TypeScript errors
+- The component uses `as any` to avoid type conflicts with intl-tel-input
+- This is normal and expected for this integration
 
-### El país no se detecta automáticamente
-- La detección de país automática está deshabilitada por defecto
-- Para habilitarla, agrega un servicio de geolocalización IP
+### The country is not detected automatically
+- Automatic country detection is disabled by default
+- To enable it, add an IP geolocation service
 
-## Licencia
+## License
 
-Este componente integra intl-tel-input que tiene licencia MIT. Ver: https://github.com/jackocnr/intl-tel-input
+This component integrates intl-tel-input, which is licensed under MIT. See: https://github.com/jackocnr/intl-tel-input

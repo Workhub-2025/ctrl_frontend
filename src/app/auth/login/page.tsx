@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { BrandLogo } from "@/components/brand-logo";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
@@ -54,22 +55,15 @@ function SignInContent() {
 
   return (
     <div className="auth-page">
-      <Card className="shadow-2xl auth-card">
+      <Card className="auth-card border-border/70 bg-card/88 shadow-[0_26px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:shadow-[0_28px_90px_rgba(2,6,23,0.44)]">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center justify-center auth-logo">
             <Link href="/" className="block">
-              <div className="flex flex-col items-center gap-1 p-2">
-                <img
-                  src="/icon1.png"
-                  className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105 logo-adaptive-filter"
-                  alt="CTRL Logo"
-                  loading="eager"
-                />
-              </div>
+              <BrandLogo className="w-[176px] text-foreground transition-transform hover:scale-[1.02]" />
             </Link>
           </div>
-          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-foreground">Welcome Back</CardTitle>
+          <CardDescription className="text-base leading-7 text-muted-foreground">
             Sign in to your CTRL account to continue your assessment journey
           </CardDescription>
         </CardHeader>
@@ -100,7 +94,7 @@ function SignInContent() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
-                className="h-11"
+                className="h-11 border-border/70 bg-background/70 focus-visible:ring-primary/35"
               />
             </div>
 
@@ -115,7 +109,7 @@ function SignInContent() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="h-11 pr-10"
+                  className="h-11 border-border/70 bg-background/70 pr-10 focus-visible:ring-primary/35"
                 />
                 <Button
                   type="button"
@@ -139,7 +133,7 @@ function SignInContent() {
                 <input
                   type="checkbox"
                   id="remember"
-                  className="rounded border-gray-300"
+                  className="rounded border-border bg-background text-primary"
                 />
                 <Label htmlFor="remember" className="text-sm">
                   Remember me
@@ -147,7 +141,7 @@ function SignInContent() {
               </div>
               <Link
                 href="/auth/forgot-password"
-                className="text-sm text-primary hover:underline"
+                className="text-sm font-medium text-primary hover:text-primary/80 hover:underline"
               >
                 Forgot password?
               </Link>
@@ -157,7 +151,7 @@ function SignInContent() {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full h-11 bg-slate-800 hover:bg-slate-200 dark:bg-blue-400 dark:hover:bg-slate-800 text-white hover:text-slate-800 dark:hover:text-white transition-all duration-200 border-0 shadow-md hover:shadow-lg"
+              className="h-11 w-full rounded-xl border border-primary/10 bg-primary text-primary-foreground shadow-[0_18px_38px_hsl(var(--primary)/0.28)] transition-all duration-200 hover:bg-primary/90 hover:shadow-[0_22px_46px_hsl(var(--primary)/0.32)]"
               disabled={isLoading}
             >
               {isLoading ? "Signing in..." : "Sign In"}
@@ -168,13 +162,17 @@ function SignInContent() {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="bg-card px-2 text-muted-foreground">
                   Don't have an account?
                 </span>
               </div>
             </div>
 
-            <Button variant="outline" className="w-full h-11" asChild>
+            <Button
+              variant="outline"
+              className="h-11 w-full rounded-xl border-border/70 bg-background/40 hover:bg-muted/70"
+              asChild
+            >
               <Link href="/auth/register">Create Account</Link>
             </Button>
 
@@ -209,18 +207,11 @@ function SignInContent() {
 function SignInLoading() {
   return (
     <div className="auth-page">
-      <Card className="shadow-2xl auth-card">
+      <Card className="auth-card border-border/70 bg-card/88 shadow-[0_26px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:shadow-[0_28px_90px_rgba(2,6,23,0.44)]">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center justify-center auth-logo">
             <Link href="/" className="block">
-              <div className="flex flex-col items-center gap-1 p-2">
-                <img
-                  src="/icon1.png"
-                  className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105 logo-adaptive-filter"
-                  alt="CTRL Logo"
-                  loading="eager"
-                />
-              </div>
+              <BrandLogo className="w-[176px] text-foreground transition-transform hover:scale-[1.02]" />
             </Link>
           </div>
           <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
@@ -229,14 +220,14 @@ function SignInLoading() {
         <CardContent>
           <div className="animate-pulse space-y-4">
             <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-24"></div>
-              <div className="h-11 bg-gray-200 rounded"></div>
+              <div className="h-4 w-24 rounded bg-muted"></div>
+              <div className="h-11 rounded bg-muted"></div>
             </div>
             <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-20"></div>
-              <div className="h-11 bg-gray-200 rounded"></div>
+              <div className="h-4 w-20 rounded bg-muted"></div>
+              <div className="h-11 rounded bg-muted"></div>
             </div>
-            <div className="h-11 bg-gray-200 rounded"></div>
+            <div className="h-11 rounded bg-muted"></div>
           </div>
         </CardContent>
       </Card>

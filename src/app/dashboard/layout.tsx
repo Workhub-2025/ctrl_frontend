@@ -29,6 +29,7 @@ import {
   Settings,
   UserCircle,
 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { AuthProvider } from "@/components/auth/auth-provider";
@@ -129,12 +130,8 @@ export default function DashboardLayout({
                 asChild
               >
                 <Link href="/">
-                  <div className="flex flex-col items-center gap-1 p-2">
-                    <img
-                      src="/icon1.png"
-                      className="h-15 w-15 cursor-pointer transition-transform hover:scale-105 logo-adaptive-filter"
-                      alt="CTRL Logo"
-                    />
+                  <div className="flex flex-col items-center gap-2 p-2">
+                    <BrandLogo className="w-[132px] text-slate-950 transition-transform hover:scale-[1.02] dark:text-white" />
                     <span className="font-semibold text-sm sm:text-base lg:text-lg text-foreground">
                       Assessments
                     </span>

@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { BrandLogo } from "@/components/brand-logo";
 import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { AuthAPI } from "@/services/auth-api";
@@ -154,7 +155,7 @@ export default function SignUpPage() {
   if (success) {
     return (
       <div className="auth-page">
-        <Card className="shadow-2xl auth-card">
+        <Card className="auth-card border-border/70 bg-card/88 shadow-[0_26px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:shadow-[0_28px_90px_rgba(2,6,23,0.44)]">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
               <CheckCircle className="h-8 w-8" />
@@ -180,22 +181,15 @@ export default function SignUpPage() {
 
   return (
     <div className="auth-page">
-      <Card className="shadow-2xl auth-card">
+      <Card className="auth-card border-border/70 bg-card/88 shadow-[0_26px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:shadow-[0_28px_90px_rgba(2,6,23,0.44)]">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center justify-center auth-logo">
             <Link href="/" className="block">
-              <div className="flex flex-col items-center gap-1 p-2">
-                <img
-                  src="/icon1.png"
-                  className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105 logo-adaptive-filter"
-                  alt="CTRL Logo"
-                  loading="eager"
-                />
-              </div>
+              <BrandLogo className="w-[176px] text-foreground transition-transform hover:scale-[1.02]" />
             </Link>
           </div>
-          <CardTitle className="text-2xl font-bold">Join CTRL</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-foreground">Join CTRL</CardTitle>
+          <CardDescription className="text-base leading-7 text-muted-foreground">
             Create your candidate account to begin your control room assessment
             journey
           </CardDescription>
@@ -224,6 +218,7 @@ export default function SignUpPage() {
                   }
                   required
                   disabled={isLoading}
+                  className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
                 />
               </div>
               <div className="space-y-2">
@@ -238,6 +233,7 @@ export default function SignUpPage() {
                   }
                   required
                   disabled={isLoading}
+                  className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
                 />
               </div>
             </div>
@@ -253,6 +249,7 @@ export default function SignUpPage() {
                 onChange={(e) => handleInputChange("email", e.target.value)}
                 required
                 disabled={isLoading}
+                className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
               />
             </div>
 
@@ -271,7 +268,7 @@ export default function SignUpPage() {
                     }
                     required
                     disabled={isLoading}
-                    className="pr-10"
+                    className="border-border/70 bg-background/70 pr-10 focus-visible:ring-primary/35"
                   />
                   <Button
                     type="button"
@@ -302,7 +299,7 @@ export default function SignUpPage() {
                     }
                     required
                     disabled={isLoading}
-                    className="pr-10"
+                    className="border-border/70 bg-background/70 pr-10 focus-visible:ring-primary/35"
                   />
                   <Button
                     type="button"
@@ -335,6 +332,7 @@ export default function SignUpPage() {
                 }
                 required
                 disabled={isLoading}
+                className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
               />
             </div>
 
@@ -348,6 +346,7 @@ export default function SignUpPage() {
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
                 disabled={isLoading}
+                className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
               />
             </div>
 
@@ -416,7 +415,7 @@ export default function SignUpPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
-            <div className="bg-muted/50 p-3 rounded-lg">
+            <div className="rounded-xl border border-border/60 bg-muted/45 p-3">
               <p
                 className="text-xs text-muted-foreground text-center leading-relaxed"
               >
@@ -426,7 +425,7 @@ export default function SignUpPage() {
             </div>{" "}
             <Button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-4 py-2 w-full h-11 bg-slate-800 hover:bg-slate-200 dark:bg-blue-400 dark:hover:bg-slate-800 text-white hover:text-slate-800 dark:hover:text-white transition-all duration-200 border-0 shadow-md hover:shadow-lg"
+              className="h-11 w-full rounded-xl border border-primary/10 bg-primary text-primary-foreground shadow-[0_18px_38px_hsl(var(--primary)/0.28)] transition-all duration-200 hover:bg-primary/90 hover:shadow-[0_22px_46px_hsl(var(--primary)/0.32)]"
               disabled={isLoading}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
@@ -436,12 +435,16 @@ export default function SignUpPage() {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
+                <span className="bg-card px-2 text-muted-foreground">
                   Already have an account?
                 </span>
               </div>
             </div>
-            <Button variant="outline" className="w-full h-11" asChild>
+            <Button
+              variant="outline"
+              className="h-11 w-full rounded-xl border-border/70 bg-background/40 hover:bg-muted/70"
+              asChild
+            >
               <Link href="/auth/login">Sign In</Link>
             </Button>
           </CardFooter>

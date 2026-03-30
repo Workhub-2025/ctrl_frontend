@@ -1,6 +1,5 @@
-import { Siren } from "lucide-react";
-import Link from "next/link";
 import { PublicAuthProvider } from "@/components/auth/public-auth-provider";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function AuthLayout({
   children,
@@ -9,21 +8,19 @@ export default function AuthLayout({
 }>) {
   return (
     <PublicAuthProvider>
-      <div className="min-h-screen bg-background">
-        {/* Simple Header without logo - logo is shown in each page */}
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container mx-auto px-4 py-2">
-            {/* Minimal header - each auth page shows its own logo */}
+      <div className="relative min-h-screen overflow-hidden bg-background">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.16),transparent_34%),radial-gradient(circle_at_bottom,rgba(14,165,233,0.12),transparent_32%)] dark:bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.12),transparent_28%),radial-gradient(circle_at_bottom,rgba(12,74,110,0.18),transparent_34%)]" />
+        <header className="relative z-10 border-b border-border/60 bg-background/72 backdrop-blur-xl supports-[backdrop-filter]:bg-background/52">
+          <div className="container mx-auto flex items-center justify-end px-4 py-3">
+            <ThemeToggle />
           </div>
         </header>
 
-        {/* Main Content */}
-        <main className="flex min-h-[calc(100vh-5rem)] items-center justify-center p-4">
+        <main className="relative z-10 flex min-h-[calc(100vh-8.5rem)] items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
           <div className="w-full max-w-md">{children}</div>
         </main>
 
-        {/* Simple Footer */}
-        <footer className="border-t bg-background py-6 px-4">
+        <footer className="relative z-10 border-t border-border/60 bg-background/68 px-4 py-6 backdrop-blur supports-[backdrop-filter]:bg-background/52">
           <div className="container mx-auto text-center text-sm text-muted-foreground">
             <p>
               &copy; {new Date().getFullYear()} CTRL Assessment Platform. All

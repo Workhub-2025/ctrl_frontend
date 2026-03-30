@@ -31,20 +31,9 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem('theme') || 
-                              (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                  document.documentElement.classList.remove('light', 'dark');
-                  document.documentElement.classList.add(theme);
-                  // Removido data-theme ya que solo usamos clases CSS ahora
-                } catch (e) {}
-              })();
-            `,
-          }}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap"
+          rel="stylesheet"
         />
       </head>
       <body

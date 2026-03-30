@@ -549,9 +549,9 @@ export default function EqualityMonitoringForm({
         <CardContent className="space-y-6">
           {renderStepIndicator()}
 
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
             <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-gray-600 dark:text-gray-400 mt-0.5" />
+              <Users className="mt-0.5 h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium font-semibold tracking-tight text-2xl font-headline mb-2">
                   Why do we collect this information?

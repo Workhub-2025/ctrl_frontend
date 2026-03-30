@@ -9,10 +9,12 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className={`p-2 rounded-full backdrop-blur-sm border transition-all duration-200 hover:scale-110 theme-toggle bg-background/80 border-border hover:bg-background w-9 h-9 flex items-center justify-center relative ${
+      className={`theme-toggle relative flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-background/75 text-foreground shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition duration-200 hover:-translate-y-0.5 hover:scale-[1.03] hover:bg-background ${
         theme === "dark" ? "dark" : ""
       }`}
       aria-label="Toggle theme"
+      aria-pressed={theme === "dark"}
+      type="button"
     >
       <Sun className="h-4 w-4 sun-icon" />
       <Moon className="h-4 w-4 moon-icon" />

@@ -381,7 +381,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
                     <h3 className="font-semibold tracking-tight text-2xl font-headline mb-3">
                       About This Information
                     </h3>
@@ -416,7 +416,7 @@ export default function ProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
                   <h3 className="font-semibold tracking-tight text-2xl font-headline mb-2">
                     Current Privacy Preferences
                   </h3>
@@ -462,7 +462,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
                   <h4 className="font-semibold tracking-tight text-2xl font-headline mb-2">
                     Important Information
                   </h4>

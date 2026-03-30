@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui";
+import { BrandLogo } from "@/components/brand-logo";
 import {
   Users,
   BarChart3,
@@ -119,14 +120,9 @@ export default function AdminLayout({
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center gap-2">
-                {/* <Link href="/admin"> */}
-              <img
-                      alt="CTRL"
-                      className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105"
-                      src="../icon1.png"
-                    />
-                {/* </Link> */}
-
+              <Link href="/admin" className="block">
+                <BrandLogo className="w-[132px] text-slate-950 transition-transform hover:scale-[1.02] dark:text-white" />
+              </Link>
             </div>
           </SidebarHeader>
           <SidebarContent>
