@@ -113,7 +113,7 @@ export class AuthAPI {
      */
     static async forgotPassword(email: string): Promise<{ ok: boolean }> {
         try {
-            await fetchApi.post('/api/auth/forgot-password', { email });
+            await fetchApi.post('/auth/forgot-password', { email });
             return { ok: true };
         } catch (error: any) {
             const errorMessage = error.message || 'Password reset request failed';
@@ -131,7 +131,7 @@ export class AuthAPI {
     ): Promise<StrapiAuthResponse> {
         try {
             const response = await fetchApi.post<StrapiAuthResponse>(
-                '/api/auth/reset-password',
+                '/auth/reset-password',
                 {
                     code,
                     password,

@@ -1,11 +1,25 @@
+const normalizeApiBaseUrl = (value: string | undefined, fallback: string) => {
+    const trimmed = value?.trim() || fallback;
+    const withoutTrailingSlash = trimmed.replace(/\/+$/, '');
+
+    return withoutTrailingSlash.endsWith('/api')
+        ? withoutTrailingSlash
+        : `${withoutTrailingSlash}/api`;
+};
+
 // Use different URLs for client-side and server-side requests
 const getBaseUrl = () => {
-    // If we're on the server (SSR/API routes), use the internal Docker network URL
     if (typeof window === 'undefined') {
-        return process.env.STRAPI_API_URL || 'http://strapi:1337/api';
+        return normalizeApiBaseUrl(
+            process.env.STRAPI_API_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL,
+            'http://strapi:1337/api'
+        );
     }
-    // If we're in the browser (client-side), use localhost
-    return process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api';
+
+    return normalizeApiBaseUrl(
+        process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.STRAPI_API_URL,
+        'http://localhost:1337/api'
+    );
 };
 
 const TIMEOUT = 10000; // 10 seconds
