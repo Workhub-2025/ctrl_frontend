@@ -2,7 +2,7 @@
 
 import { LandingHero } from "@/components/landing/landing-hero";
 import { PingPongVideoLayer } from "@/components/landing/ping-pong-video-layer";
-import { BrandMark } from "@/components/brand-logo";
+import { BrandLogo, BrandMark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -441,19 +441,9 @@ export default function Home() {
               event.preventDefault();
               scrollToHero();
             }}
-            className="flex min-w-0 items-center gap-3"
+            className="flex min-w-0 items-center"
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
-              <BrandMark className="w-7 text-white/85" />
-            </span>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold uppercase tracking-[0.28em] text-white">
-                CTRL
-              </div>
-              <div className="hidden text-sm text-white/74 sm:block">
-                Recruitment intelligence
-              </div>
-            </div>
+            <BrandLogo className="w-[134px] sm:w-[150px]" />
           </Link>
 
           <div className="hidden items-center gap-6 lg:flex">
