@@ -284,16 +284,16 @@ body {
 
 .hero-media-vignette {
   background:
-    radial-gradient(circle at 14% 54%, rgba(4, 7, 13, 0.78) 0%, rgba(4, 7, 13, 0.68) 20%, rgba(4, 7, 13, 0.44) 36%, rgba(4, 7, 13, 0.18) 58%, transparent 76%),
-    linear-gradient(104deg, rgba(4, 7, 13, 0.86) 0%, rgba(4, 7, 13, 0.74) 16%, rgba(4, 7, 13, 0.58) 30%, rgba(4, 7, 13, 0.34) 52%, rgba(4, 7, 13, 0.16) 70%, rgba(4, 7, 13, 0.34) 100%);
+    radial-gradient(circle at 14% 54%, rgba(4, 7, 13, 0.8) 0%, rgba(4, 7, 13, 0.7) 20%, rgba(4, 7, 13, 0.46) 36%, rgba(4, 7, 13, 0.18) 58%, transparent 76%),
+    linear-gradient(104deg, rgba(4, 7, 13, 0.88) 0%, rgba(4, 7, 13, 0.76) 16%, rgba(4, 7, 13, 0.56) 32%, rgba(4, 7, 13, 0.32) 54%, rgba(4, 7, 13, 0.12) 74%, rgba(4, 7, 13, 0.2) 100%);
 }
 
 .hero-media-bloom {
   inset: -8%;
   background:
-    radial-gradient(circle at 18% 38%, rgba(13, 20, 31, 0.58) 0%, rgba(13, 20, 31, 0.22) 28%, transparent 56%),
+    radial-gradient(circle at 18% 38%, rgba(13, 20, 31, 0.56) 0%, rgba(13, 20, 31, 0.2) 28%, transparent 56%),
     radial-gradient(circle at 76% 18%, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 14%, transparent 28%),
-    radial-gradient(circle at 52% 100%, rgba(4, 7, 13, 0.4) 0%, transparent 44%);
+    radial-gradient(circle at 52% 100%, rgba(4, 7, 13, 0.34) 0%, transparent 44%);
   filter: blur(44px);
   opacity: 0.92;
   transform: translate3d(0, 0, 0);
@@ -332,8 +332,17 @@ body {
 
 .hero-media-left-shadow {
   background:
-    radial-gradient(circle at 0% 52%, rgba(4, 7, 13, 0.82) 0%, rgba(4, 7, 13, 0.72) 24%, rgba(4, 7, 13, 0.44) 52%, transparent 86%),
-    linear-gradient(90deg, rgba(4, 7, 13, 0.72) 0%, rgba(4, 7, 13, 0.58) 24%, rgba(4, 7, 13, 0.28) 64%, transparent 100%);
+    radial-gradient(84% 132% at 2% 54%, rgba(4, 7, 13, 0.88) 0%, rgba(4, 7, 13, 0.82) 22%, rgba(4, 7, 13, 0.66) 38%, rgba(4, 7, 13, 0.4) 56%, rgba(4, 7, 13, 0.18) 72%, transparent 92%),
+    linear-gradient(90deg, rgba(4, 7, 13, 0.84) 0%, rgba(4, 7, 13, 0.76) 16%, rgba(4, 7, 13, 0.62) 30%, rgba(4, 7, 13, 0.42) 48%, rgba(4, 7, 13, 0.22) 66%, rgba(4, 7, 13, 0.08) 80%, transparent 96%);
+  mask-image: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0.98) 32%,
+    rgba(0, 0, 0, 0.9) 52%,
+    rgba(0, 0, 0, 0.56) 72%,
+    rgba(0, 0, 0, 0.18) 88%,
+    transparent 100%
+  );
 }
 
 .contact-media-vignette {
@@ -944,8 +953,22 @@ body.landing-scroll-snap {
   scroll-padding-top: 9rem;
 }
 
+html.landing-scroll-snap {
+  scroll-snap-type: y proximity;
+}
+
 .landing-anchor-target {
   scroll-margin-top: 9.5rem;
+}
+
+.landing-snap-start {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.landing-snap-end {
+  scroll-snap-align: end;
+  scroll-snap-stop: always;
 }
 
 @media (max-width: 1023px) {

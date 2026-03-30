@@ -3,7 +3,6 @@
 import { LandingHero } from "@/components/landing/landing-hero";
 import { PingPongVideoLayer } from "@/components/landing/ping-pong-video-layer";
 import { BrandMark } from "@/components/brand-logo";
-import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -11,9 +10,7 @@ import {
   BriefcaseBusiness,
   Gauge,
   Menu,
-  Moon,
   ShieldCheck,
-  Sun,
   Users,
   Workflow,
   X,
@@ -309,7 +306,6 @@ function scrollToHero() {
 }
 
 export default function Home() {
-  const { theme, toggle } = useTheme();
   const navRef = useRef<HTMLElement | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(trackedSections[0].id);
@@ -493,33 +489,9 @@ export default function Home() {
             >
               <Link href="/auth/register">Request access</Link>
             </Button>
-            <button
-              onClick={toggle}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-white transition hover:bg-white/[0.12]"
-              aria-label="Toggle theme"
-              type="button"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-[1.05rem] w-[1.05rem]" />
-              ) : (
-                <Moon className="h-[1.05rem] w-[1.05rem]" />
-              )}
-            </button>
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
-            <button
-              onClick={toggle}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-white"
-              aria-label="Toggle theme"
-              type="button"
-            >
-              {theme === "dark" ? (
-                <Sun className="h-[1.05rem] w-[1.05rem]" />
-              ) : (
-                <Moon className="h-[1.05rem] w-[1.05rem]" />
-              )}
-            </button>
             <button
               onClick={() => setIsMobileMenuOpen((open) => !open)}
               className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/70"
@@ -869,7 +841,7 @@ export default function Home() {
         <section
           id="contact"
           data-scene="contact"
-          className="landing-anchor-target relative isolate min-h-[100svh] overflow-hidden border-y border-white/10 bg-[#04070d] supports-[height:100dvh]:min-h-[100dvh]"
+          className="landing-anchor-target landing-snap-start relative isolate min-h-[100svh] overflow-hidden border-y border-white/10 bg-[#04070d] supports-[height:100dvh]:min-h-[100dvh]"
           style={{ scrollMarginTop: 0 }}
         >
           <div className="pointer-events-none absolute inset-0">

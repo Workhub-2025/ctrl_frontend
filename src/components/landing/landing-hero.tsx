@@ -14,9 +14,9 @@ const heroScenes = [
     id: "decision-flow",
     index: "01",
     kicker: "Decision consistency",
-    title: "Understand reasoning, not just results.",
+    title: "Hiring the right people starts with the right intelligence.",
     body:
-      "Candidates are assessed on how they make decisions, not just the outcome.",
+      "Built on deep operational insights and behavioural science",
     overlayClass:
       "bg-[radial-gradient(circle_at_82%_20%,rgba(150,170,198,0.18),transparent_18%),radial-gradient(circle_at_18%_18%,rgba(74,214,255,0.14),transparent_22%),radial-gradient(circle_at_50%_92%,rgba(4,7,13,0.22),transparent_40%)]",
     crop: {
@@ -53,8 +53,8 @@ const heroScenes = [
     id: "human-clarity",
     index: "03",
     kicker: "Signal over noise",
-    title: "Give teams clear, defensible insights.",
-    body: "Focus on meaningful indicators, not surface-level scores.",
+    title: "Giving hiring teams clear, defensible insights.",
+    body: "Measure what matters, not what's easy",
     overlayClass:
       "bg-[radial-gradient(circle_at_78%_18%,rgba(255,184,118,0.14),transparent_20%),radial-gradient(circle_at_16%_20%,rgba(69,123,217,0.18),transparent_24%),radial-gradient(circle_at_50%_92%,rgba(4,7,13,0.2),transparent_42%)]",
     crop: {
@@ -316,7 +316,7 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
   return (
     <section
       id="landing-hero"
-      className="relative min-h-[100svh] overflow-hidden supports-[height:100dvh]:min-h-[100dvh]"
+      className="landing-snap-end relative min-h-[100svh] overflow-hidden supports-[height:100dvh]:min-h-[100dvh]"
       style={heroLayout.style}
     >
       <div className="absolute inset-0">
@@ -349,7 +349,7 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
         <div className="hero-media-top-fade absolute inset-x-0 top-0 h-44 sm:h-48" />
         <div className="hero-media-bottom-fade absolute inset-x-0 bottom-0 h-64 sm:h-72" />
         <div className="hero-media-bottom-tail absolute inset-x-0 bottom-0 h-24 sm:h-28" />
-        <div className="hero-media-left-shadow absolute inset-y-0 left-0 hidden w-[54%] xl:block" />
+        <div className="hero-media-left-shadow absolute inset-0 hidden xl:block" />
         <div className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(rgba(255,255,255,0.18)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:112px_112px]" />
       </div>
 
