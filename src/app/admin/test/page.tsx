@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { User, Shield, CheckCircle } from "lucide-react";
+import { isAdminRole } from "@/lib/auth/role-model";
 
 export default function AdminTestPage() {
   const { data: session, status } = useSession();
@@ -59,7 +60,7 @@ export default function AdminTestPage() {
                   <span className="text-sm text-muted-foreground">Role:</span>
                   <Badge
                     variant={
-                      session?.user?.role === "admin" ? "default" : "secondary"
+                      isAdminRole(session?.user?.role) ? "default" : "secondary"
                     }
                   >
                     {session?.user?.role || "N/A"}

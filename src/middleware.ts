@@ -1,5 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { isAdminRole } from '@/lib/auth/role-model';
 
 export default withAuth(
     function middleware(req) {
@@ -8,8 +9,14 @@ export default withAuth(
 
         // Protect admin routes - only allow admin users
         if (pathname.startsWith('/admin')) {
-            if (token?.role !== 'admin' && token?.role !== 'Admin') {
-                // Redirect non-admin users to their dashboard
+            if (!token) {
+                const loginUrl = new URL('/auth/login', req.url);
+                loginUrl.searchParams.set('callbackUrl', pathname);
+                return NextResponse.redirect(loginUrl);
+            }
+
+            if (!isAdminRole(token?.role)) {
+                // Redirect authenticated non-admin users to their dashboard.
                 return NextResponse.redirect(new URL('/dashboard', req.url));
             }
         }
@@ -21,9 +28,9 @@ export default withAuth(
             authorized: ({ token, req }) => {
                 const { pathname } = req.nextUrl;
 
-                // Protect admin routes - require admin role
+                // Protect admin routes - require authentication first, role check is in middleware().
                 if (pathname.startsWith('/admin')) {
-                    return !!token && (token.role === 'admin' || token.role === 'Admin');
+                    return !!token;
                 }
 
                 // Protect assessment routes - require any authenticated user
@@ -36,6 +43,9 @@ export default withAuth(
                 // Allow access to other routes
                 return true;
             },
+        },
+        pages: {
+            signIn: '/auth/login',
         },
     }
 );

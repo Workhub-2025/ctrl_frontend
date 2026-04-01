@@ -32,8 +32,22 @@ function SignInContent() {
   // Check for success message from URL parameters
   useEffect(() => {
     const message = searchParams.get("message");
+    const authError = searchParams.get("error");
+
     if (message) {
       setSuccessMessage(message);
+    }
+
+    if (authError) {
+      if (authError === "LOCKED_OUT") {
+        setError("Too many failed attempts. Please wait before trying again.");
+      } else if (authError === "AUTH_SERVICE_UNAVAILABLE" || authError === "Configuration") {
+        setError("Authentication service is currently unavailable. Please try again shortly.");
+      } else if (authError === "AccessDenied") {
+        setError("Access denied for this account.");
+      } else if (authError !== "CredentialsSignin") {
+        setError("Unable to sign in right now. Please try again.");
+      }
     }
   }, [searchParams]);
 

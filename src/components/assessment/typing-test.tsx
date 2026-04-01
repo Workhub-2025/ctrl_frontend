@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -19,6 +19,7 @@ import {
   resumeAssessmentProgressAction,
   clearAssessmentProgressAction,
 } from '@/app/actions/assessment-progress.action';
+import { useAssessmentIntegrity } from '@/hooks/use-assessment-integrity';
 
 type TestStatus = 'waiting' | 'running' | 'finished';
 type TestResult = { wpm: number; accuracy: number };
@@ -42,6 +43,17 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
   const currentTest = typingTestData[testIndex];
   const textToType = currentTest.text;
+
+  useAssessmentIntegrity({
+    assessmentType: 'typing',
+    enabled: status !== 'waiting' || Boolean(results),
+    metadataProvider: () => ({
+      testIndex,
+      status,
+      timeLeft,
+      hasResults: Boolean(results),
+    }),
+  });
 
   // Load saved progress on mount (only if enableAutoSave)
   useEffect(() => {
@@ -94,6 +106,21 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     return () => clearTimeout(saveTimer);
   }, [enableAutoSave, testIndex, results, inputValue, timeLeft, status]);
 
+  const calculateResults = useCallback(() => {
+    const wordsTyped = inputValue.trim().split(/\s+/).length;
+    const timeElapsedMinutes = (TEST_DURATION - timeLeft) / 60;
+    const wpm = timeElapsedMinutes > 0 ? Math.round(wordsTyped / timeElapsedMinutes) : 0;
+
+    let correctChars = 0;
+    for (let i = 0; i < inputValue.length; i++) {
+      if (inputValue[i] === textToType[i]) {
+        correctChars++;
+      }
+    }
+    const accuracy = Math.round((correctChars / inputValue.length) * 100) || 0;
+    setResults({ wpm, accuracy });
+  }, [inputValue, textToType, timeLeft]);
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (status === 'running' && timeLeft > 0) {
@@ -105,7 +132,7 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
       calculateResults();
     }
     return () => clearInterval(timer);
-  }, [status, timeLeft]);
+  }, [status, timeLeft, calculateResults]);
 
   const handleStart = () => {
     setStatus('running');
@@ -137,21 +164,6 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (status !== 'running') return;
     setInputValue(e.target.value);
-  };
-
-  const calculateResults = () => {
-    const wordsTyped = inputValue.trim().split(/\s+/).length;
-    const timeElapsedMinutes = (TEST_DURATION - timeLeft) / 60;
-    const wpm = timeElapsedMinutes > 0 ? Math.round(wordsTyped / timeElapsedMinutes) : 0;
-
-    let correctChars = 0;
-    for (let i = 0; i < inputValue.length; i++) {
-      if (inputValue[i] === textToType[i]) {
-        correctChars++;
-      }
-    }
-    const accuracy = Math.round((correctChars / inputValue.length) * 100) || 0;
-    setResults({ wpm, accuracy });
   };
   
   const TypedCharacters = () => {

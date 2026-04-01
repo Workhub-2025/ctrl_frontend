@@ -11,7 +11,9 @@ import { AlertCircle, Save, X } from 'lucide-react';
 import { IQuestion, isMCPQuestion, isTextQuestion } from '@/types';
 import { createQuestionAction, updateQuestionAction } from '@/app/actions/question.actions';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CreateQuestionData, QuestionUpdateData } from '@/services/question.service';
+
+type CreateQuestionData = IQuestion;
+type QuestionUpdateData = IQuestion;
 
 interface QuestionFormProps {
   /** Existing question data for editing, undefined for creating new */
@@ -96,22 +98,21 @@ export function QuestionForm({
   // Reset form when question type changes
   useEffect(() => {
     if (!isEditing && formData.type) {
-      const baseData = { question: formData.question };
       if (formData.type === 'mcp') {
-        setFormData({
+        setFormData(prev => ({
           type: 'mcp',
-          question: baseData.question,
+          question: prev.question,
           rightAnswer: '',
           wrongAnswer1: '',
           wrongAnswer2: '',
           wrongAnswer3: '',
-        });
+        }));
       } else {
-        setFormData({
+        setFormData(prev => ({
           type: 'text',
-          question: baseData.question,
+          question: prev.question,
           rubric: '',
-        });
+        }));
       }
       setErrors({});
     }

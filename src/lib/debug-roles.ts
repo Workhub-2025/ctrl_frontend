@@ -2,7 +2,7 @@
  * Debug utility for role-related issues
  */
 
-import { UsersService } from '@/services/users-simple.service';
+import UsersService from '@/services/users-simple.service';
 import { AuthAPI } from '@/services/auth-api';
 
 export const debugRoles = async (): Promise<void> => {
@@ -19,7 +19,7 @@ export const debugRoles = async (): Promise<void> => {
 
         // 3. Get all users to see their roles
         const users = await UsersService.getUsers({ populate: ['role', 'assessments'] });
-        console.log('👥 [DEBUG] All users with roles:', users?.data?.map(user => ({
+        console.log('👥 [DEBUG] All users with roles:', users?.data?.map((user: any) => ({
             id: user.id,
             email: user.email,
             role: user.role,
@@ -28,7 +28,7 @@ export const debugRoles = async (): Promise<void> => {
 
         // 4. Get candidates specifically
         const candidates = await UsersService.getCandidates();
-        console.log('🎯 [DEBUG] Users with Candidate role:', candidates?.data?.map(user => ({
+        console.log('🎯 [DEBUG] Users with Candidate role:', candidates?.data?.map((user: any) => ({
             id: user.id,
             email: user.email,
             role: user.role,
@@ -84,7 +84,7 @@ export const debugUserCreation = async (userEmail: string): Promise<void> => {
 
         // Also check all users to see if user exists with different role
         const allUsers = await UsersService.getUsers();
-        const matchingUser = allUsers?.data?.find(u => u.email === userEmail);
+        const matchingUser = allUsers?.data?.find((u: any) => u.email === userEmail);
 
         if (matchingUser && !user) {
             console.log('🔍 [DEBUG] User found in all users list but not in getUserByEmail:', {

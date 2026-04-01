@@ -189,12 +189,9 @@ export default function CandidatesPage() {
       fetchUserData({
         page: currentPage,
         size: pageSize,
-        search: searchTerm,
-        status: statusFilter,
-        organization: organizationFilter,
       });
     }
-  }, [currentPage, pageSize]); // Removed filters from dependency array to avoid multiple calls
+  }, [currentPage, pageSize, fetchUserData, isLoading]);
 
   // Debounced search handler
   const handleSearchChange = useCallback(

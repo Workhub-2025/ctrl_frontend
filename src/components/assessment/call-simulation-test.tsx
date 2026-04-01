@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Play, Pause, FastForward, PhoneIncoming } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAssessmentIntegrity } from '@/hooks/use-assessment-integrity';
 
 const totalCalls = 3;
 
@@ -24,6 +25,16 @@ export default function CallSimulationTest() {
   const [progress, setProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
+
+  useAssessmentIntegrity({
+    assessmentType: 'call-simulation',
+    enabled: true,
+    metadataProvider: () => ({
+      currentCall,
+      isPlaying,
+      progress: Math.round(progress),
+    }),
+  });
 
   useEffect(() => {
     const audio = audioRef.current;

@@ -34,6 +34,7 @@ import Link from "next/link";
 import { TelInput } from "@/components/ui/telInput";
 import { updateCurrentUserAction } from "@/app/actions/users.actions";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { isAdminRole } from "@/lib/auth/role-model";
 
 interface ProfileData {
   firstName: string;
@@ -59,6 +60,7 @@ export default function ProfilePage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const userIsAdmin = isAdminRole(user?.role);
 
   // Initialize profile data from user session
   useEffect(() => {
@@ -190,12 +192,12 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-4">
               <Link
-                href={user?.role === "Admin" ? "/admin" : "/dashboard"}
+                href={userIsAdmin ? "/admin" : "/dashboard"}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors border rounded-lg hover:bg-accent"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Return to{" "}
-                {user?.role === "Admin" ? "Control Panel" : "Dashboard"}
+                {userIsAdmin ? "Control Panel" : "Dashboard"}
               </Link>
               <ThemeToggle />
             </div>

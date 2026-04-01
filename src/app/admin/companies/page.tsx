@@ -80,7 +80,7 @@ const fetchQuestions = async (
   page: number,
   pageSize: number,
   params: any
-): Promise<PaginatedResponse<ICompany> | null> => {
+): Promise<any | null> => {
   const result = await getCompaniesAction({
     page,
     pageSize,
@@ -88,7 +88,7 @@ const fetchQuestions = async (
   });
 
   if (result.success && result.data) {
-    return result;
+    return result.data;
   }
 
   console.error('Failed to fetch questions:', result.error);
@@ -99,10 +99,10 @@ const fetchQuestions = async (
  * Create question wrapper function
  */
 const createQuestion = async (data: IQuestion): Promise<{ success: boolean; data?: IQuestion; error?: string }> => {
-  const result = await createCompanyAction(data);
+  const result = await createCompanyAction(data as any);
   return {
     success: result.success,
-    data: result.data,
+    data: result.data as IQuestion | undefined,
     error: result.error,
   };
 };
@@ -114,10 +114,10 @@ const updateQuestion = async (
   id: number | string,
   data: IQuestion
 ): Promise<{ success: boolean; data?: IQuestion; error?: string }> => {
-  const result = await updateCompanyAction(id, data);
+  const result = await updateCompanyAction(id, data as any);
   return {
     success: result.success,
-    data: result.data,
+    data: result.data as IQuestion | undefined,
     error: result.error,
   };
 };

@@ -121,7 +121,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           itiRef.current = null
         }
       }
-    }, [mounted])
+    }, [mounted, onChange, onValidation, value])
 
     // Update value when prop changes
     React.useEffect(() => {

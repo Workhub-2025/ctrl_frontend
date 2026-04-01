@@ -148,31 +148,24 @@ export class AuthAPI {
     }
 
     /**
-     * Logout user (clear local storage)
+     * Logout user (session termination is managed by NextAuth signOut)
      */
     static logout(): void {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('strapi-jwt');
-        }
+        // Intentionally no-op: we no longer store Strapi JWT in localStorage.
     }
 
     /**
-     * Check if user is authenticated
+     * Legacy helper: checks whether a NextAuth session cookie exists.
      */
     static isAuthenticated(): boolean {
-        if (typeof window !== 'undefined') {
-            return !!localStorage.getItem('strapi-jwt');
-        }
-        return false;
+        if (typeof document === 'undefined') return false;
+        return /(?:^|;\s*)(?:__Secure-)?next-auth\.session-token=/.test(document.cookie);
     }
 
     /**
-     * Get stored JWT token
+     * JWT is httpOnly in session strategy; no direct client token access is exposed.
      */
     static getToken(): string | null {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('strapi-jwt');
-        }
         return null;
     }
 

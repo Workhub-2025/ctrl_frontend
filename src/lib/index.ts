@@ -1,2 +1,2 @@
-export * from './service/service-api'
-export * from '../services/auth-api'
+export * from './fetch-client';
+export * from './utils';

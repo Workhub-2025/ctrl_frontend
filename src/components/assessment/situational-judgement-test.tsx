@@ -19,6 +19,7 @@ import { analyzeResponseAction } from '@/app/assessment/situational-judgement/ac
 import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Lightbulb, Loader } from 'lucide-react';
+import { useAssessmentIntegrity } from '@/hooks/use-assessment-integrity';
 
 const initialState = {
   newDifficulty: '',
@@ -43,6 +44,17 @@ export default function SituationalJudgementTest() {
   const currentQuestion = situationalJudgementQuestions[currentQuestionIndex];
   const progressPercentage =
     ((currentQuestionIndex + 1) / situationalJudgementQuestions.length) * 100;
+
+  useAssessmentIntegrity({
+    assessmentType: "situational-judgement",
+    enabled: true,
+    metadataProvider: () => ({
+      currentQuestionIndex,
+      totalQuestions: situationalJudgementQuestions.length,
+      hasAnswerForCurrentQuestion: Boolean(answers[currentQuestion.id]),
+      showingAiFeedback: showAiFeedback,
+    }),
+  });
 
   const handleNext = () => {
     if (showAiFeedback) {
