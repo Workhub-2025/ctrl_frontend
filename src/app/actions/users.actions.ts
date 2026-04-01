@@ -23,6 +23,7 @@ import {
     enforceTenantWrite,
     requireAdminActionContext
 } from '@/lib/auth/server-action-auth';
+import { startServerActionTrace } from '@/lib/observability/server-observability';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -202,8 +203,10 @@ export const getUserByIdAction = async (id: string | number): Promise<ActionResu
  * Create new user
  */
 export const createUserAction = async (userData: CreateUserData): Promise<ActionResult<IPublicUser>> => {
+    const trace = startServerActionTrace('createUserAction');
+    let isSuccess = false;
     try {
-        const authContext = await requireAdminActionContext('createUserAction');
+        const authContext = await requireAdminActionContext('createUserAction', trace.correlationId);
         const scopedUserData = enforceTenantWrite(userData, authContext);
         const newUser = await UsersService.createUser(scopedUserData);
 
@@ -218,16 +221,22 @@ export const createUserAction = async (userData: CreateUserData): Promise<Action
         revalidateTag('users');
         revalidatePath('/admin/users');
 
+        isSuccess = true;
         return {
             success: true,
             data: newUser
         };
     } catch (error: any) {
+        trace.failure(error);
         console.error('[createUserAction] Error:', error);
         return {
             success: false,
             error: error.message || 'Failed to create user'
         };
+    } finally {
+        if (isSuccess) {
+            trace.success();
+        }
     }
 }
 
@@ -238,8 +247,10 @@ export const updateUserAction = async (
     id: string | number,
     data: UserUpdateData
 ): Promise<ActionResult<IPublicUser>> => {
+    const trace = startServerActionTrace('updateUserAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        const authContext = await requireAdminActionContext('updateUserAction');
+        const authContext = await requireAdminActionContext('updateUserAction', trace.correlationId);
         const scopedData = enforceTenantWrite(data, authContext);
         const updatedUser = await UsersService.updateUser(id, scopedData);
 
@@ -255,16 +266,22 @@ export const updateUserAction = async (
         revalidatePath('/admin/users');
         revalidatePath(`/admin/users/${id}`);
 
+        isSuccess = true;
         return {
             success: true,
             data: updatedUser
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[updateUserAction] Error:', error);
         return {
             success: false,
             error: error.message || 'Failed to update user'
         };
+    } finally {
+        if (isSuccess) {
+            trace.success({ targetId: String(id) });
+        }
     }
 }
 
@@ -306,8 +323,10 @@ export const updateCurrentUserAction = async (id: string | number, data: UserUpd
  * Delete user
  */
 export const deleteUserAction = async (id: string | number): Promise<ActionResult<boolean>> => {
+    const trace = startServerActionTrace('deleteUserAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('deleteUserAction');
+        await requireAdminActionContext('deleteUserAction', trace.correlationId);
         const success = await UsersService.deleteUser(id);
 
         if (!success) {
@@ -321,16 +340,22 @@ export const deleteUserAction = async (id: string | number): Promise<ActionResul
         revalidateTag('users');
         revalidatePath('/admin/users');
 
+        isSuccess = true;
         return {
             success: true,
             data: true
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[deleteUserAction] Error:', error);
         return {
             success: false,
             error: error.message || 'Failed to delete user'
         };
+    } finally {
+        if (isSuccess) {
+            trace.success({ targetId: String(id) });
+        }
     }
 }
 

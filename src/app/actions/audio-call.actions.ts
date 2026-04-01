@@ -8,6 +8,7 @@
 import AudioCallService from '@/services/audio-call.service';
 import { IAudioCall, AudioCallFileUpload, PaginatedResponse, UpdateAudioCallData, QueryParamsType } from '@/types';
 import { requireAdminActionContext } from '@/lib/auth/server-action-auth';
+import { startServerActionTrace } from '@/lib/observability/server-observability';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -97,8 +98,10 @@ export const getAudioCallByIdAction = async (id: string | number): Promise<Actio
  * Create new audio call with file upload
  */
 export const createAudioCallAction = async (audioCallData: AudioCallFileUpload): Promise<ActionResult<IAudioCall>> => {
+    const trace = startServerActionTrace('createAudioCallAction');
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('createAudioCallAction');
+        await requireAdminActionContext('createAudioCallAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[createAudioCallAction] Creating audio call with data:', {
                 ...audioCallData,
@@ -119,16 +122,20 @@ export const createAudioCallAction = async (audioCallData: AudioCallFileUpload):
             console.log('[createAudioCallAction] Successfully created audio call with ID:', audioCall.id);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: audioCall
         };
     } catch (error: any) {
+        trace.failure(error);
         console.error('[createAudioCallAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to create audio call'
         };
+    } finally {
+        if (isSuccess) trace.success();
     }
 }
 
@@ -139,8 +146,10 @@ export const updateAudioCallAction = async (
     id: string | number,
     data: UpdateAudioCallData
 ): Promise<ActionResult<IAudioCall>> => {
+    const trace = startServerActionTrace('updateAudioCallAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('updateAudioCallAction');
+        await requireAdminActionContext('updateAudioCallAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateAudioCallAction] Updating audio call ID:', id, 'with data:', data);
         }
@@ -158,16 +167,20 @@ export const updateAudioCallAction = async (
             console.log('[updateAudioCallAction] Successfully updated audio call ID:', id);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: audioCall
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[updateAudioCallAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to update audio call'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 
@@ -219,8 +232,10 @@ export const updateAudioCallWithFileAction = async (
 export const deleteAudioCallAction = async (
     id: string | number
 ): Promise<ActionResult<boolean>> => {
+    const trace = startServerActionTrace('deleteAudioCallAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('deleteAudioCallAction');
+        await requireAdminActionContext('deleteAudioCallAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[deleteAudioCallAction] Deleting audio call ID:', id);
         }
@@ -238,16 +253,20 @@ export const deleteAudioCallAction = async (
             console.log('[deleteAudioCallAction] Successfully deleted audio call ID:', id);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: true
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[deleteAudioCallAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to delete audio call'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 

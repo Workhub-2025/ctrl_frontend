@@ -10,6 +10,7 @@ import { ITypingText, PaginatedResponse } from "@/types";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminActionContext } from "@/lib/auth/server-action-auth";
+import { startServerActionTrace } from "@/lib/observability/server-observability";
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -123,8 +124,10 @@ export const getTextByIdAction = async (id: string | number): Promise<ActionResu
  * Create new typing text
  */
 export const createTextAction = async (textData: CreateTextData): Promise<ActionResult<ITypingText>> => {
+    const trace = startServerActionTrace('createTextAction');
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('createTextAction');
+        await requireAdminActionContext('createTextAction', trace.correlationId);
         console.log('✨ [createTextAction] Creating new typing text:', textData);
 
         const newText = await TextsService.createText(textData);
@@ -142,16 +145,20 @@ export const createTextAction = async (textData: CreateTextData): Promise<Action
         revalidateTag('texts');
         revalidatePath('/admin/texts');
 
+        isSuccess = true;
         return {
             success: true,
             data: newText
         };
     } catch (error: any) {
+        trace.failure(error);
         console.error('💥 [createTextAction] Error creating typing text:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred'
         };
+    } finally {
+        if (isSuccess) trace.success();
     }
 }
 
@@ -173,8 +180,10 @@ export const updateTextAction = async (
     id: string | number,
     data: TextUpdateData
 ): Promise<ActionResult<ITypingText>> => {
+    const trace = startServerActionTrace('updateTextAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('updateTextAction');
+        await requireAdminActionContext('updateTextAction', trace.correlationId);
         console.log('📝 [updateTextAction] Updating typing text:', { id, data });
 
         const updatedText = await TextsService.updateText(id, data);
@@ -193,16 +202,20 @@ export const updateTextAction = async (
         revalidatePath('/admin/texts');
         revalidatePath(`/admin/texts/${id}`);
 
+        isSuccess = true;
         return {
             success: true,
             data: updatedText
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('💥 [updateTextAction] Error updating typing text:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 
@@ -226,8 +239,10 @@ export const updateTypingText = async (
 export const deleteTextAction = async (
     id: string | number
 ): Promise<ActionResult<boolean>> => {
+    const trace = startServerActionTrace('deleteTextAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('deleteTextAction');
+        await requireAdminActionContext('deleteTextAction', trace.correlationId);
         console.log('🗑️ [deleteTextAction] Deleting typing text:', id);
 
         const success = await TextsService.deleteText(id);
@@ -245,16 +260,20 @@ export const deleteTextAction = async (
         revalidateTag('texts');
         revalidatePath('/admin/texts');
 
+        isSuccess = true;
         return {
             success: true,
             data: true
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('💥 [deleteTextAction] Error deleting typing text:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 

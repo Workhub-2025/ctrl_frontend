@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { resolveCorrelationId, startServerActionTrace } from '@/lib/observability/server-observability';
 
 export async function GET() {
+    const correlationId = resolveCorrelationId();
+    const trace = startServerActionTrace('profile.get', { correlationId });
     try {
         const session = await getServerSession(authOptions);
 
         if (!session?.user?.jwt) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            trace.failure(new Error('Unauthorized'));
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
 
         // Fetch complete user profile from Strapi
@@ -20,6 +24,7 @@ export async function GET() {
 
         const userData = await response.json();
 
+        trace.success({ userId: session.user.id });
         return NextResponse.json({
             id: userData.id,
             firstName: userData.firstName,
@@ -31,22 +36,26 @@ export async function GET() {
             agreeToMarketing: userData.agreeToMarketing,
             privacyConsent: userData.privacyConsent,
             equalityMonitoring: userData.equalityMonitoring,
-        });
+        }, { headers: { 'x-correlation-id': correlationId } });
     } catch (error: any) {
+        trace.failure(error);
         console.error('Error fetching user profile:', error);
         return NextResponse.json(
             { error: 'Failed to fetch profile' },
-            { status: 500 }
+            { status: 500, headers: { 'x-correlation-id': correlationId } }
         );
     }
 }
 
 export async function PUT(request: NextRequest) {
+    const correlationId = resolveCorrelationId(request.headers.get('x-correlation-id'));
+    const trace = startServerActionTrace('profile.put', { correlationId });
     try {
         const session = await getServerSession(authOptions);
 
         if (!session?.user?.jwt) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            trace.failure(new Error('Unauthorized'));
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
 
         const body = await request.json();
@@ -95,10 +104,11 @@ export async function PUT(request: NextRequest) {
             console.error('Strapi update failed:', updatedUser);
             return NextResponse.json(
                 { error: updatedUser.error?.message || 'Failed to update profile in Strapi' },
-                { status: response.status }
+                { status: response.status, headers: { 'x-correlation-id': correlationId } }
             );
         }
 
+        trace.success({ userId: session.user.id });
         return NextResponse.json({
             id: updatedUser.id,
             firstName: updatedUser.firstName,
@@ -110,12 +120,13 @@ export async function PUT(request: NextRequest) {
             agreeToMarketing: updatedUser.agreeToMarketing,
             privacyConsent: updatedUser.privacyConsent,
             equalityMonitoring: updatedUser.equalityMonitoring,
-        });
+        }, { headers: { 'x-correlation-id': correlationId } });
     } catch (error: any) {
+        trace.failure(error);
         console.error('Error updating user profile:', error);
         return NextResponse.json(
             { error: 'Failed to update profile' },
-            { status: 500 }
+            { status: 500, headers: { 'x-correlation-id': correlationId } }
         );
     }
 }

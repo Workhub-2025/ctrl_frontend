@@ -10,6 +10,7 @@ import QuestionService, {
 } from '@/services/question.service';
 import { IQuestion, PaginatedResponse, } from '@/types';
 import { requireAdminActionContext } from '@/lib/auth/server-action-auth';
+import { startServerActionTrace } from '@/lib/observability/server-observability';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -99,8 +100,10 @@ export const getQuestionByIdAction = async (id: string | number): Promise<Action
  * Create new question (MCP or Text)
  */
 export const createQuestionAction = async (questionData: IQuestion): Promise<ActionResult<IQuestion>> => {
+    const trace = startServerActionTrace('createQuestionAction');
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('createQuestionAction');
+        await requireAdminActionContext('createQuestionAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[createQuestionAction] Creating question with data:', questionData);
         }
@@ -118,16 +121,20 @@ export const createQuestionAction = async (questionData: IQuestion): Promise<Act
             console.log('[createQuestionAction] Successfully created question with ID:', question.documentId);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: question
         };
     } catch (error: any) {
+        trace.failure(error);
         console.error('[createQuestionAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to create question'
         };
+    } finally {
+        if (isSuccess) trace.success();
     }
 }
 
@@ -138,8 +145,10 @@ export const updateQuestionAction = async (
     id: string | number,
     data: IQuestion
 ): Promise<ActionResult<IQuestion>> => {
+    const trace = startServerActionTrace('updateQuestionAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('updateQuestionAction');
+        await requireAdminActionContext('updateQuestionAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateQuestionAction] Updating question ID:', id, 'with data:', data);
         }
@@ -157,16 +166,20 @@ export const updateQuestionAction = async (
             console.log('[updateQuestionAction] Successfully updated question ID:', id);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: question
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[updateQuestionAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to update question'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 
@@ -176,8 +189,10 @@ export const updateQuestionAction = async (
 export const deleteQuestionAction = async (
     id: string | number
 ): Promise<ActionResult<boolean>> => {
+    const trace = startServerActionTrace('deleteQuestionAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        await requireAdminActionContext('deleteQuestionAction');
+        await requireAdminActionContext('deleteQuestionAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[deleteQuestionAction] Deleting question ID:', id);
         }
@@ -195,16 +210,20 @@ export const deleteQuestionAction = async (
             console.log('[deleteQuestionAction] Successfully deleted question ID:', id);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: true
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[deleteQuestionAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to delete question'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 

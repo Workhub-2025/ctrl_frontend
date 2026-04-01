@@ -2,11 +2,13 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { AppRole, isAdminRole, normalizeRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
+import { resolveCorrelationId } from "@/lib/observability/server-observability";
 
 export interface ActionAuthContext {
   userId: number;
   role: AppRole;
   organization: string | null;
+  correlationId: string;
 }
 
 const parseUserId = (value: unknown): number | null => {
@@ -21,8 +23,10 @@ const parseUserId = (value: unknown): number | null => {
 };
 
 export const getActionAuthContext = async (
-  actionName: string
+  actionName: string,
+  correlationId?: string
 ): Promise<ActionAuthContext> => {
+  const resolvedCorrelationId = resolveCorrelationId(correlationId);
   const session = await getServerSession(authOptions);
   const userId = parseUserId(session?.user?.id);
 
@@ -30,6 +34,7 @@ export const getActionAuthContext = async (
     logAuthAuditEvent("authorization_denied", {
       action: actionName,
       reason: "missing_session",
+      correlationId: resolvedCorrelationId,
     });
     throw new Error("Authentication required");
   }
@@ -42,11 +47,15 @@ export const getActionAuthContext = async (
       session.user.organization.trim().length > 0
         ? session.user.organization.trim()
         : null,
+    correlationId: resolvedCorrelationId,
   };
 };
 
-export const requireAdminActionContext = async (actionName: string) => {
-  const context = await getActionAuthContext(actionName);
+export const requireAdminActionContext = async (
+  actionName: string,
+  correlationId?: string
+) => {
+  const context = await getActionAuthContext(actionName, correlationId);
 
   if (!isAdminRole(context.role)) {
     logAuthAuditEvent("authorization_denied", {
@@ -54,6 +63,7 @@ export const requireAdminActionContext = async (actionName: string) => {
       reason: "insufficient_role",
       role: context.role,
       userId: context.userId,
+      correlationId: context.correlationId,
     });
     throw new Error("Access denied. Admin permissions required.");
   }

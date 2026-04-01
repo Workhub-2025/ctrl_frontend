@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { resolveCorrelationId, startServerActionTrace } from "@/lib/observability/server-observability";
 
 export type IntegrityEventType =
   | "assessment_started"
@@ -31,17 +32,26 @@ const getClientAddress = (request: Request) => {
 };
 
 export async function POST(request: Request) {
+  const correlationId = resolveCorrelationId(
+    request.headers.get("x-correlation-id")
+  );
+  const trace = startServerActionTrace("integrityEvents.post", { correlationId });
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      trace.failure(new Error("Unauthorized"));
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: { "x-correlation-id": correlationId } }
+      );
     }
 
     const body = (await request.json()) as IntegrityEventPayload;
     if (!body?.assessmentType || !body?.eventType) {
+      trace.failure(new Error("Missing required integrity event fields"));
       return NextResponse.json(
         { error: "assessmentType and eventType are required" },
-        { status: 400 }
+        { status: 400, headers: { "x-correlation-id": correlationId } }
       );
     }
 
@@ -56,6 +66,7 @@ export async function POST(request: Request) {
       recordedAt: new Date().toISOString(),
       ipAddress: getClientAddress(request),
       userAgent: request.headers.get("user-agent") ?? "unknown",
+      correlationId,
     };
 
     const webhook = process.env.INTEGRITY_EVENTS_WEBHOOK_URL;
@@ -70,13 +81,17 @@ export async function POST(request: Request) {
     // Always record locally for immediate audit visibility.
     console.info("[INTEGRITY_EVENT]", JSON.stringify(envelope));
 
-    return NextResponse.json({ success: true, recorded: true }, { status: 200 });
+    trace.success({ eventType: body.eventType, assessmentType: body.assessmentType });
+    return NextResponse.json(
+      { success: true, recorded: true },
+      { status: 200, headers: { "x-correlation-id": correlationId } }
+    );
   } catch (error) {
+    trace.failure(error);
     console.error("[INTEGRITY_EVENT] Failed to record integrity event:", error);
     return NextResponse.json(
       { error: "Failed to record integrity event" },
-      { status: 500 }
+      { status: 500, headers: { "x-correlation-id": correlationId } }
     );
   }
 }
-
