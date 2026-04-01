@@ -9,6 +9,7 @@ import TextsService, { FindTextsParams, CreateTextData, TextUpdateData } from "@
 import { ITypingText, PaginatedResponse } from "@/types";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { requireAdminActionContext } from "@/lib/auth/server-action-auth";
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -22,6 +23,7 @@ type ActionResult<T> = {
  */
 export const getTextsAction = async (params: FindTextsParams = {}): Promise<ActionResult<PaginatedResponse<ITypingText>>> => {
     try {
+        await requireAdminActionContext('getTextsAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getTextsAction] Called with params:', JSON.stringify(params, null, 2));
         }
@@ -94,6 +96,7 @@ export const fetchTypingTexts = async (
  */
 export const getTextByIdAction = async (id: string | number): Promise<ActionResult<ITypingText>> => {
     try {
+        await requireAdminActionContext('getTextByIdAction');
         const text = await TextsService.getTextById(id);
 
         if (!text) {
@@ -121,6 +124,7 @@ export const getTextByIdAction = async (id: string | number): Promise<ActionResu
  */
 export const createTextAction = async (textData: CreateTextData): Promise<ActionResult<ITypingText>> => {
     try {
+        await requireAdminActionContext('createTextAction');
         console.log('✨ [createTextAction] Creating new typing text:', textData);
 
         const newText = await TextsService.createText(textData);
@@ -170,6 +174,7 @@ export const updateTextAction = async (
     data: TextUpdateData
 ): Promise<ActionResult<ITypingText>> => {
     try {
+        await requireAdminActionContext('updateTextAction');
         console.log('📝 [updateTextAction] Updating typing text:', { id, data });
 
         const updatedText = await TextsService.updateText(id, data);
@@ -222,6 +227,7 @@ export const deleteTextAction = async (
     id: string | number
 ): Promise<ActionResult<boolean>> => {
     try {
+        await requireAdminActionContext('deleteTextAction');
         console.log('🗑️ [deleteTextAction] Deleting typing text:', id);
 
         const success = await TextsService.deleteText(id);

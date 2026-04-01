@@ -9,6 +9,7 @@ import QuestionService, {
     FindQuestionsParams
 } from '@/services/question.service';
 import { IQuestion, PaginatedResponse, } from '@/types';
+import { requireAdminActionContext } from '@/lib/auth/server-action-auth';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -22,6 +23,7 @@ type ActionResult<T> = {
  */
 export const getQuestionsAction = async (params: FindQuestionsParams = {}): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getQuestionsAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getQuestionsAction] Called with params:', params);
         }
@@ -70,6 +72,7 @@ export const getQuestionsAction = async (params: FindQuestionsParams = {}): Prom
  */
 export const getQuestionByIdAction = async (id: string | number): Promise<ActionResult<IQuestion>> => {
     try {
+        await requireAdminActionContext('getQuestionByIdAction');
         const question = await QuestionService.getQuestionById(id);
 
         if (!question) {
@@ -97,6 +100,7 @@ export const getQuestionByIdAction = async (id: string | number): Promise<Action
  */
 export const createQuestionAction = async (questionData: IQuestion): Promise<ActionResult<IQuestion>> => {
     try {
+        await requireAdminActionContext('createQuestionAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[createQuestionAction] Creating question with data:', questionData);
         }
@@ -135,6 +139,7 @@ export const updateQuestionAction = async (
     data: IQuestion
 ): Promise<ActionResult<IQuestion>> => {
     try {
+        await requireAdminActionContext('updateQuestionAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateQuestionAction] Updating question ID:', id, 'with data:', data);
         }
@@ -172,6 +177,7 @@ export const deleteQuestionAction = async (
     id: string | number
 ): Promise<ActionResult<boolean>> => {
     try {
+        await requireAdminActionContext('deleteQuestionAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[deleteQuestionAction] Deleting question ID:', id);
         }
@@ -210,6 +216,7 @@ export const getQuestionsByTypeAction = async (
     params: Omit<FindQuestionsParams, 'type'> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getQuestionsByTypeAction');
         const questions = await QuestionService.getQuestionsByType(type, params);
 
         if (!questions) {
@@ -239,6 +246,7 @@ export const getMCPQuestionsAction = async (
     params: Omit<FindQuestionsParams, 'type'> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getMCPQuestionsAction');
         const questions = await QuestionService.getMCPQuestions(params);
 
         if (!questions) {
@@ -268,6 +276,7 @@ export const getTextQuestionsAction = async (
     params: Omit<FindQuestionsParams, 'type'> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getTextQuestionsAction');
         const questions = await QuestionService.getTextQuestions(params);
 
         if (!questions) {
@@ -298,6 +307,7 @@ export const searchQuestionsAction = async (
     filters: Partial<FindQuestionsParams> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('searchQuestionsAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[searchQuestionsAction] Searching questions with term:', searchTerm, 'and filters:', filters);
         }

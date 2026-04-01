@@ -2,7 +2,8 @@ type AuthAuditEvent =
   | "login_attempt"
   | "login_success"
   | "login_failure"
-  | "login_locked";
+  | "login_locked"
+  | "authorization_denied";
 
 type AuditMetadata = Record<string, string | number | boolean | undefined | null>;
 
@@ -29,4 +30,3 @@ export const logAuthAuditEvent = (
     console.info(AUDIT_PREFIX, payload);
   }
 };
-

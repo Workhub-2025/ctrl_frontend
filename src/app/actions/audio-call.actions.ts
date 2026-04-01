@@ -7,6 +7,7 @@
 
 import AudioCallService from '@/services/audio-call.service';
 import { IAudioCall, AudioCallFileUpload, PaginatedResponse, UpdateAudioCallData, QueryParamsType } from '@/types';
+import { requireAdminActionContext } from '@/lib/auth/server-action-auth';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -20,6 +21,7 @@ type ActionResult<T> = {
  */
 export const getAudioCallsAction = async (params: QueryParamsType = {}): Promise<ActionResult<PaginatedResponse<IAudioCall>>> => {
     try {
+        await requireAdminActionContext('getAudioCallsAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getAudioCallsAction] Called with params:', params);
         }
@@ -68,6 +70,7 @@ export const getAudioCallsAction = async (params: QueryParamsType = {}): Promise
  */
 export const getAudioCallByIdAction = async (id: string | number): Promise<ActionResult<IAudioCall>> => {
     try {
+        await requireAdminActionContext('getAudioCallByIdAction');
         const audioCall = await AudioCallService.getAudioCallById(id);
 
         if (!audioCall) {
@@ -95,6 +98,7 @@ export const getAudioCallByIdAction = async (id: string | number): Promise<Actio
  */
 export const createAudioCallAction = async (audioCallData: AudioCallFileUpload): Promise<ActionResult<IAudioCall>> => {
     try {
+        await requireAdminActionContext('createAudioCallAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[createAudioCallAction] Creating audio call with data:', {
                 ...audioCallData,
@@ -136,6 +140,7 @@ export const updateAudioCallAction = async (
     data: UpdateAudioCallData
 ): Promise<ActionResult<IAudioCall>> => {
     try {
+        await requireAdminActionContext('updateAudioCallAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateAudioCallAction] Updating audio call ID:', id, 'with data:', data);
         }
@@ -174,6 +179,7 @@ export const updateAudioCallWithFileAction = async (
     audioCallData: AudioCallFileUpload
 ): Promise<ActionResult<IAudioCall>> => {
     try {
+        await requireAdminActionContext('updateAudioCallWithFileAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateAudioCallWithFileAction] Updating audio call ID:', id, 'with file and data:', {
                 ...audioCallData,
@@ -214,6 +220,7 @@ export const deleteAudioCallAction = async (
     id: string | number
 ): Promise<ActionResult<boolean>> => {
     try {
+        await requireAdminActionContext('deleteAudioCallAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[deleteAudioCallAction] Deleting audio call ID:', id);
         }
@@ -252,6 +259,7 @@ export const searchAudioCallsAction = async (
     filters: Partial<QueryParamsType> = {}
 ): Promise<ActionResult<PaginatedResponse<IAudioCall>>> => {
     try {
+        await requireAdminActionContext('searchAudioCallsAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[searchAudioCallsAction] Searching audio calls with term:', searchTerm, 'and filters:', filters);
         }
@@ -285,6 +293,7 @@ export const getAudioCallsWithTranscriptionsAction = async (
     params: Omit<QueryParamsType, 'filters'> = {}
 ): Promise<ActionResult<PaginatedResponse<IAudioCall>>> => {
     try {
+        await requireAdminActionContext('getAudioCallsWithTranscriptionsAction');
         const audioCalls = await AudioCallService.getAudioCallsWithTranscriptions(params);
 
         if (!audioCalls) {
@@ -314,6 +323,7 @@ export const getAudioCallsWithoutTranscriptionsAction = async (
     params: Omit<QueryParamsType, 'filters'> = {}
 ): Promise<ActionResult<PaginatedResponse<IAudioCall>>> => {
     try {
+        await requireAdminActionContext('getAudioCallsWithoutTranscriptionsAction');
         const audioCalls = await AudioCallService.getAudioCallsWithoutTranscriptions(params);
 
         if (!audioCalls) {
@@ -343,6 +353,7 @@ export const getAudioCallsWithRubricsAction = async (
     params: Omit<QueryParamsType, 'filters'> = {}
 ): Promise<ActionResult<PaginatedResponse<IAudioCall>>> => {
     try {
+        await requireAdminActionContext('getAudioCallsWithRubricsAction');
         const audioCalls = await AudioCallService.getAudioCallsWithRubrics(params);
 
         if (!audioCalls) {
@@ -373,6 +384,7 @@ export const updateTranscriptionAction = async (
     transcription: string
 ): Promise<ActionResult<IAudioCall>> => {
     try {
+        await requireAdminActionContext('updateTranscriptionAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateTranscriptionAction] Updating transcription for audio call ID:', id);
         }
@@ -411,6 +423,7 @@ export const updateRubricAction = async (
     rubric: string
 ): Promise<ActionResult<IAudioCall>> => {
     try {
+        await requireAdminActionContext('updateRubricAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateRubricAction] Updating rubric for audio call ID:', id);
         }

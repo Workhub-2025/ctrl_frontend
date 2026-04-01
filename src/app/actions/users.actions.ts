@@ -18,6 +18,11 @@ import {
     IProgresStatus
 } from '@/types';
 import { debugAuthToken, debugEnvironment } from '@/lib/debug-auth';
+import {
+    applyTenantScope,
+    enforceTenantWrite,
+    requireAdminActionContext
+} from '@/lib/auth/server-action-auth';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -58,6 +63,7 @@ export const getCurrentUserAction = async (): Promise<ActionResult<IPublicUser>>
  */
 export const getUsersAction = async (params: FindUsersParams = {}): Promise<ActionResult<PaginatedResponse<IPublicUser>>> => {
     try {
+        const authContext = await requireAdminActionContext('getUsersAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getUsersAction] Called with params:', JSON.stringify(params, null, 2));
         }
@@ -68,7 +74,8 @@ export const getUsersAction = async (params: FindUsersParams = {}): Promise<Acti
             debugEnvironment();
         }
 
-        const users = await UsersService.getUsers(params);
+        const scopedParams = applyTenantScope(params, authContext);
+        const users = await UsersService.getUsers(scopedParams);
 
         if (!users) {
             console.error('[getUsersAction] Service returned null');
@@ -120,11 +127,13 @@ export const getCandidatesAction = async (params: {
     sort?: string;
 } = {}): Promise<ActionResult<PaginatedResponse<IPublicUser>>> => {
     try {
+        const authContext = await requireAdminActionContext('getCandidatesAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getCandidatesAction] Called with params:', JSON.stringify(params, null, 2));
         }
 
-        const candidates = await UsersService.getCandidates(params);
+        const scopedParams = applyTenantScope(params, authContext);
+        const candidates = await UsersService.getCandidates(scopedParams);
 
         if (!candidates) {
             console.error('[getCandidatesAction] Service returned null');
@@ -166,6 +175,7 @@ export const getCandidatesAction = async (params: {
  */
 export const getUserByIdAction = async (id: string | number): Promise<ActionResult<IPublicUser>> => {
     try {
+        await requireAdminActionContext('getUserByIdAction');
         const user = await UsersService.getUserById(id);
 
         if (!user) {
@@ -193,7 +203,9 @@ export const getUserByIdAction = async (id: string | number): Promise<ActionResu
  */
 export const createUserAction = async (userData: CreateUserData): Promise<ActionResult<IPublicUser>> => {
     try {
-        const newUser = await UsersService.createUser(userData);
+        const authContext = await requireAdminActionContext('createUserAction');
+        const scopedUserData = enforceTenantWrite(userData, authContext);
+        const newUser = await UsersService.createUser(scopedUserData);
 
         if (!newUser) {
             return {
@@ -227,7 +239,9 @@ export const updateUserAction = async (
     data: UserUpdateData
 ): Promise<ActionResult<IPublicUser>> => {
     try {
-        const updatedUser = await UsersService.updateUser(id, data);
+        const authContext = await requireAdminActionContext('updateUserAction');
+        const scopedData = enforceTenantWrite(data, authContext);
+        const updatedUser = await UsersService.updateUser(id, scopedData);
 
         if (!updatedUser) {
             return {
@@ -259,7 +273,9 @@ export const updateUserAction = async (
  */
 export const updateCurrentUserAction = async (id: string | number, data: UserUpdateData): Promise<ActionResult<IPublicUser>> => {
     try {
-        const updatedUser = await UsersService.updateUser(id, data);
+        const authContext = await requireAdminActionContext('updateCurrentUserAction');
+        const scopedData = enforceTenantWrite(data, authContext);
+        const updatedUser = await UsersService.updateUser(id, scopedData);
 
         if (!updatedUser) {
             return {
@@ -291,6 +307,7 @@ export const updateCurrentUserAction = async (id: string | number, data: UserUpd
  */
 export const deleteUserAction = async (id: string | number): Promise<ActionResult<boolean>> => {
     try {
+        await requireAdminActionContext('deleteUserAction');
         const success = await UsersService.deleteUser(id);
 
         if (!success) {
@@ -322,6 +339,7 @@ export const deleteUserAction = async (id: string | number): Promise<ActionResul
  */
 export const getUserStatsAction = async (): Promise<ActionResult<UserStats>> => {
     try {
+        await requireAdminActionContext('getUserStatsAction');
         const stats = await UsersService.getUserStats();
 
         if (!stats) {
@@ -352,7 +370,9 @@ export const searchUsersAction = async (
     filters: Partial<FindUsersParams> = {}
 ): Promise<ActionResult<PaginatedResponse<IPublicUser>>> => {
     try {
-        const results = await UsersService.searchUsers(searchTerm, filters);
+        const authContext = await requireAdminActionContext('searchUsersAction');
+        const scopedFilters = applyTenantScope(filters, authContext);
+        const results = await UsersService.searchUsers(searchTerm, scopedFilters);
 
         if (!results) {
             return {
@@ -401,6 +421,7 @@ export const getUserCompletionStatusAction = async (): Promise<ActionResult<{
  */
 export const getUserRolesAction = async (): Promise<ActionResult<any[]>> => {
     try {
+        await requireAdminActionContext('getUserRolesAction');
         const roles = await UsersService.getRoles();
 
         if (!roles) {
@@ -425,7 +446,8 @@ export const getUserRolesAction = async (): Promise<ActionResult<any[]>> => {
 
 export const getUserOrgAction = async (): Promise<ActionResult<string[]>> => {
     try {
-        const users = await UsersService.getUsers();
+        const authContext = await requireAdminActionContext('getUserOrgAction');
+        const users = await UsersService.getUsers(applyTenantScope({}, authContext));
 
         let unique: string[] = []
 

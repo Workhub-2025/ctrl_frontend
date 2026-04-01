@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import CompanyService, { FindCompaniesParams } from '@/services/company.service';
 import { ICompany, CreateCompanyData, UpdateCompanyData } from '@/types/company.types';
 import { PaginatedResponse } from '@/types';
+import { requireAdminActionContext } from '@/lib/auth/server-action-auth';
 
 /**
  * Server Action: Get companies with pagination and filters
@@ -14,6 +15,7 @@ export async function getCompaniesAction(params: FindCompaniesParams): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('getCompaniesAction');
         const companies = await CompanyService.getCompanies(params);
 
         if (!companies) {
@@ -45,6 +47,7 @@ export async function getCompanyByIdAction(id: string | number): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('getCompanyByIdAction');
         const company = await CompanyService.getCompanyById(id);
 
         if (!company) {
@@ -76,6 +79,7 @@ export async function createCompanyAction(data: CreateCompanyData): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('createCompanyAction');
         // Validate required fields
         if (!data.name?.trim()) {
             return {
@@ -121,6 +125,7 @@ export async function updateCompanyAction(
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('updateCompanyAction');
         const company = await CompanyService.updateCompany(id, data);
 
         if (!company) {
@@ -154,6 +159,7 @@ export async function deleteCompanyAction(id: string | number): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('deleteCompanyAction');
         const result = await CompanyService.deleteCompany(id);
 
         if (!result) {
@@ -187,6 +193,7 @@ export async function completeOnboardingAction(id: string | number): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('completeOnboardingAction');
         const company = await CompanyService.completeOnboarding(id);
 
         if (!company) {
@@ -225,6 +232,7 @@ export async function updateSubscriptionPlanAction(
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('updateSubscriptionPlanAction');
         const company = await CompanyService.updateSubscriptionPlan(id, plan, seatsLimit);
 
         if (!company) {
@@ -265,6 +273,7 @@ export async function getCompanyStatsAction(): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('getCompanyStatsAction');
         const stats = await CompanyService.getCompanyStats();
 
         if (!stats) {
