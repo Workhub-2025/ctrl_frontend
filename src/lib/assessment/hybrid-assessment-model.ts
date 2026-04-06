@@ -14,6 +14,12 @@ type SituationalEvaluation = {
   totalTextPrompts: number;
 };
 
+interface ScoreBand {
+  min: number;
+  max: number;
+  score: number;
+}
+
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
@@ -37,6 +43,52 @@ const makeEvidence = (
   metrics,
 });
 
+const scoreFromBands = (value: number, bands: ScoreBand[]) => {
+  const matched = bands.find((band) => value >= band.min && value <= band.max);
+  return matched?.score ?? 0;
+};
+
+const RUBRICS = {
+  typing: {
+    wpmBands: [
+      { min: 0, max: 24, score: 30 },
+      { min: 25, max: 34, score: 45 },
+      { min: 35, max: 44, score: 60 },
+      { min: 45, max: 54, score: 75 },
+      { min: 55, max: 1000, score: 90 },
+    ] satisfies ScoreBand[],
+    accuracyBands: [
+      { min: 0, max: 84, score: 35 },
+      { min: 85, max: 89, score: 55 },
+      { min: 90, max: 94, score: 70 },
+      { min: 95, max: 97, score: 84 },
+      { min: 98, max: 100, score: 95 },
+    ] satisfies ScoreBand[],
+  },
+  call: {
+    completenessBands: [
+      { min: 0, max: 0.49, score: 35 },
+      { min: 0.5, max: 0.69, score: 58 },
+      { min: 0.7, max: 0.84, score: 74 },
+      { min: 0.85, max: 1, score: 90 },
+    ] satisfies ScoreBand[],
+  },
+  situational: {
+    mcqCoverageBands: [
+      { min: 0, max: 0.49, score: 35 },
+      { min: 0.5, max: 0.74, score: 62 },
+      { min: 0.75, max: 0.9, score: 80 },
+      { min: 0.91, max: 1, score: 92 },
+    ] satisfies ScoreBand[],
+    textCoverageBands: [
+      { min: 0, max: 0.49, score: 40 },
+      { min: 0.5, max: 0.74, score: 66 },
+      { min: 0.75, max: 0.9, score: 82 },
+      { min: 0.91, max: 1, score: 94 },
+    ] satisfies ScoreBand[],
+  },
+};
+
 export const buildTypingOutcome = (
   attempts: TypingAttempt[]
 ): AssessmentOutcome | null => {
@@ -45,8 +97,9 @@ export const buildTypingOutcome = (
   const meanWpm = avg(attempts.map((a) => a.wpm));
   const meanAccuracy = avg(attempts.map((a) => a.accuracy));
 
-  const speedScore = clamp((meanWpm / 70) * 100, 0, 100);
-  const accuracyScore = clamp(meanAccuracy, 0, 100);
+  const speedScore = scoreFromBands(meanWpm, RUBRICS.typing.wpmBands);
+  const accuracyScore = scoreFromBands(meanAccuracy, RUBRICS.typing.accuracyBands);
+  const signalScore = clamp(Math.round(accuracyScore * 0.68 + speedScore * 0.32), 0, 100);
 
   return {
     source: "typing",
@@ -71,7 +124,7 @@ export const buildTypingOutcome = (
       makeEvidence(
         "typing",
         "signal_over_noise",
-        (accuracyScore * 0.7 + speedScore * 0.3),
+        signalScore,
         0.7,
         "Consistent signal extraction from text-entry performance.",
         { meanWpm, meanAccuracy }
@@ -90,7 +143,11 @@ export const buildCallSimulationOutcome = (
   if (evaluations.length === 0) return null;
 
   const completeness = avg(evaluations.map((item) => item.completeness));
-  const completenessScore = clamp(completeness * 100, 0, 100);
+  const completenessScore = scoreFromBands(
+    Number(completeness.toFixed(3)),
+    RUBRICS.call.completenessBands
+  );
+  const decisionConsistencyScore = clamp(Math.round(completenessScore * 0.88), 0, 100);
 
   return {
     source: "call-simulation",
@@ -107,7 +164,7 @@ export const buildCallSimulationOutcome = (
       makeEvidence(
         "call-simulation",
         "decision_consistency",
-        completenessScore * 0.9,
+        decisionConsistencyScore,
         0.72,
         "Call handling consistency inferred from structured reporting completion.",
         { calls: evaluations.length }
@@ -130,8 +187,10 @@ export const buildSituationalOutcome = (
       ? evaluation.textAnalysesCompleted / evaluation.totalTextPrompts
       : 0;
 
-  const decisionScore = clamp((mcqCoverage * 0.75 + textCoverage * 0.25) * 100, 0, 100);
-  const pressureScore = clamp((textCoverage * 0.7 + mcqCoverage * 0.3) * 100, 0, 100);
+  const mcqBandScore = scoreFromBands(mcqCoverage, RUBRICS.situational.mcqCoverageBands);
+  const textBandScore = scoreFromBands(textCoverage, RUBRICS.situational.textCoverageBands);
+  const decisionScore = clamp(Math.round(mcqBandScore * 0.72 + textBandScore * 0.28), 0, 100);
+  const pressureScore = clamp(Math.round(textBandScore * 0.65 + mcqBandScore * 0.35), 0, 100);
 
   return {
     source: "situational-judgement",

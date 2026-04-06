@@ -15,17 +15,51 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ProtectedLayout } from '@/components/auth/protected-layout';
 import { HybridAssessmentSummary } from '@/types';
-import { getHybridAssessmentSummaryFromSession } from '@/lib/assessment/hybrid-assessment-session';
+import {
+  getHybridAssessmentSummaryFromSession,
+  isHybridSummaryPersisted,
+  markHybridSummaryPersisted
+} from '@/lib/assessment/hybrid-assessment-session';
+import { HybridAssessmentService } from '@/services';
 
 // Component that uses useSearchParams
 function ResultsContent() {
     const searchParams = useSearchParams();
     const test = searchParams.get('test');
     const [hybridSummary, setHybridSummary] = useState<HybridAssessmentSummary | null>(null);
+    const [persistState, setPersistState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
 
     useEffect(() => {
-      setHybridSummary(getHybridAssessmentSummaryFromSession());
+      const summary = getHybridAssessmentSummaryFromSession();
+      setHybridSummary(summary);
     }, []);
+
+    useEffect(() => {
+      if (!hybridSummary) return;
+      if (hybridSummary.outcomes.length < 3) return;
+      if (isHybridSummaryPersisted()) {
+        setPersistState('saved');
+        return;
+      }
+
+      let cancelled = false;
+      setPersistState('saving');
+
+      HybridAssessmentService.persistSummary(hybridSummary)
+        .then(() => {
+          if (cancelled) return;
+          markHybridSummaryPersisted();
+          setPersistState('saved');
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPersistState('failed');
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }, [hybridSummary]);
 
     const getTestName = () => {
         switch(test) {
@@ -69,6 +103,12 @@ function ResultsContent() {
                   <p className="text-2xl font-semibold capitalize">{hybridSummary.readinessBand.replace('_', ' ')}</p>
                 </div>
               </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                {persistState === 'saving' && 'Saving structured assessment evidence...'}
+                {persistState === 'saved' && 'Structured assessment evidence saved.'}
+                {persistState === 'failed' && 'Summary generated locally. Persistence will retry on next completion.'}
+                {persistState === 'idle' && 'Preparing structured assessment evidence...'}
+              </p>
             </div>
           )}
           <p className="mt-4 text-sm">

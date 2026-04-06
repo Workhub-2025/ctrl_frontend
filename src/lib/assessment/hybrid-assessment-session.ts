@@ -8,6 +8,7 @@ import {
 import { aggregateHybridAssessment } from "@/lib/assessment/hybrid-assessment-model";
 
 const STORAGE_KEY = "ctrl_hybrid_assessment_v1";
+const PERSISTED_KEY = "ctrl_hybrid_assessment_persisted_v1";
 
 const canUseStorage = () => typeof window !== "undefined";
 
@@ -31,6 +32,7 @@ const writeRaw = (outcomes: AssessmentOutcome[]) => {
 export const resetHybridAssessmentSession = () => {
   if (!canUseStorage()) return;
   window.sessionStorage.removeItem(STORAGE_KEY);
+  window.sessionStorage.removeItem(PERSISTED_KEY);
 };
 
 export const saveAssessmentOutcomeToSession = (outcome: AssessmentOutcome) => {
@@ -49,3 +51,13 @@ export const getHybridAssessmentSummaryFromSession =
     if (!parsed.success) return null;
     return parsed.data;
   };
+
+export const isHybridSummaryPersisted = () => {
+  if (!canUseStorage()) return false;
+  return window.sessionStorage.getItem(PERSISTED_KEY) === "1";
+};
+
+export const markHybridSummaryPersisted = () => {
+  if (!canUseStorage()) return;
+  window.sessionStorage.setItem(PERSISTED_KEY, "1");
+};
