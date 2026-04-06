@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { resolveCorrelationId, startServerActionTrace } from "@/lib/observability/server-observability";
+import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 
 export type IntegrityEventType =
   | "assessment_started"
@@ -22,15 +23,6 @@ interface IntegrityEventPayload {
   occurredAt?: string;
 }
 
-const getClientAddress = (request: Request) => {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    return forwarded.split(",")[0]?.trim() || "unknown";
-  }
-
-  return request.headers.get("x-real-ip") || "unknown";
-};
-
 export async function POST(request: Request) {
   const correlationId = resolveCorrelationId(
     request.headers.get("x-correlation-id")
@@ -43,6 +35,26 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401, headers: { "x-correlation-id": correlationId } }
+      );
+    }
+
+    const clientIp = extractClientIp(request);
+    const limiter = applyRateLimit({
+      key: `integrity:${session.user.id}:${clientIp}`,
+      limit: 120,
+      windowMs: 60_000,
+    });
+    if (!limiter.allowed) {
+      trace.failure(new Error("Rate limit exceeded"), { limiter });
+      return NextResponse.json(
+        { error: "Too many integrity events. Please retry shortly." },
+        {
+          status: 429,
+          headers: {
+            "x-correlation-id": correlationId,
+            "retry-after": String(limiter.retryAfterSeconds),
+          },
+        }
       );
     }
 
@@ -64,7 +76,7 @@ export async function POST(request: Request) {
       metadata: body.metadata ?? {},
       occurredAt: body.occurredAt ?? new Date().toISOString(),
       recordedAt: new Date().toISOString(),
-      ipAddress: getClientAddress(request),
+      ipAddress: clientIp,
       userAgent: request.headers.get("user-agent") ?? "unknown",
       correlationId,
     };

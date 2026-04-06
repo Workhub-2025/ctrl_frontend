@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { resolveCorrelationId, startServerActionTrace } from '@/lib/observability/server-observability';
+import { applyRateLimit, extractClientIp } from '@/lib/security/api-rate-limit';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     const correlationId = resolveCorrelationId();
     const trace = startServerActionTrace('profile.get', { correlationId });
     try {
@@ -12,6 +13,25 @@ export async function GET() {
         if (!session?.user?.jwt) {
             trace.failure(new Error('Unauthorized'));
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
+        }
+
+        const limiter = applyRateLimit({
+            key: `profile:get:${session.user.id}:${extractClientIp(request)}`,
+            limit: 120,
+            windowMs: 60_000,
+        });
+        if (!limiter.allowed) {
+            trace.failure(new Error('Rate limit exceeded'), { limiter });
+            return NextResponse.json(
+                { error: 'Too many requests. Please retry shortly.' },
+                {
+                    status: 429,
+                    headers: {
+                        'x-correlation-id': correlationId,
+                        'retry-after': String(limiter.retryAfterSeconds),
+                    },
+                }
+            );
         }
 
         // Fetch complete user profile from Strapi
@@ -56,6 +76,25 @@ export async function PUT(request: NextRequest) {
         if (!session?.user?.jwt) {
             trace.failure(new Error('Unauthorized'));
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
+        }
+
+        const limiter = applyRateLimit({
+            key: `profile:put:${session.user.id}:${extractClientIp(request)}`,
+            limit: 30,
+            windowMs: 60_000,
+        });
+        if (!limiter.allowed) {
+            trace.failure(new Error('Rate limit exceeded'), { limiter });
+            return NextResponse.json(
+                { error: 'Too many profile updates. Please retry shortly.' },
+                {
+                    status: 429,
+                    headers: {
+                        'x-correlation-id': correlationId,
+                        'retry-after': String(limiter.retryAfterSeconds),
+                    },
+                }
+            );
         }
 
         const body = await request.json();
