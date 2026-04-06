@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -20,6 +20,8 @@ import { Textarea } from '../ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Lightbulb, Loader } from 'lucide-react';
 import { useAssessmentIntegrity } from '@/hooks/use-assessment-integrity';
+import { buildSituationalOutcome } from '@/lib/assessment/hybrid-assessment-model';
+import { saveAssessmentOutcomeToSession } from '@/lib/assessment/hybrid-assessment-session';
 
 const initialState = {
   newDifficulty: '',
@@ -38,8 +40,17 @@ export default function SituationalJudgementTest() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [showAiFeedback, setShowAiFeedback] = useState(false);
+  const [analyzedQuestionIds, setAnalyzedQuestionIds] = useState<Set<number>>(new Set());
   const router = useRouter();
   const [state, formAction] = useActionState(analyzeResponseAction, initialState);
+  const totalMcq = useMemo(
+    () => situationalJudgementQuestions.filter((q) => q.type === 'mcq').length,
+    []
+  );
+  const totalTextPrompts = useMemo(
+    () => situationalJudgementQuestions.filter((q) => q.type === 'text').length,
+    []
+  );
 
   const currentQuestion = situationalJudgementQuestions[currentQuestionIndex];
   const progressPercentage =
@@ -63,6 +74,13 @@ export default function SituationalJudgementTest() {
     if (currentQuestionIndex < situationalJudgementQuestions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
+      const outcome = buildSituationalOutcome({
+        mcqAnswered: Object.keys(answers).length,
+        totalMcq,
+        textAnalysesCompleted: analyzedQuestionIds.size,
+        totalTextPrompts,
+      });
+      saveAssessmentOutcomeToSession(outcome);
       router.push('/results?test=situational-judgement');
     }
   };
@@ -70,6 +88,20 @@ export default function SituationalJudgementTest() {
   const handleAnswerChange = (value: string) => {
     setAnswers(prev => ({...prev, [currentQuestion.id]: value}));
   }
+
+  useEffect(() => {
+    if (
+      currentQuestion.type === 'text' &&
+      'explanation' in state &&
+      Boolean(state.explanation)
+    ) {
+      setAnalyzedQuestionIds((prev) => {
+        const next = new Set(prev);
+        next.add(currentQuestion.id);
+        return next;
+      });
+    }
+  }, [currentQuestion, state]);
 
   return (
     <Card className="w-full">

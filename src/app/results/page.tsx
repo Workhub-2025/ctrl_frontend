@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,11 +14,18 @@ import { CheckCircle, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ProtectedLayout } from '@/components/auth/protected-layout';
+import { HybridAssessmentSummary } from '@/types';
+import { getHybridAssessmentSummaryFromSession } from '@/lib/assessment/hybrid-assessment-session';
 
 // Component that uses useSearchParams
 function ResultsContent() {
     const searchParams = useSearchParams();
     const test = searchParams.get('test');
+    const [hybridSummary, setHybridSummary] = useState<HybridAssessmentSummary | null>(null);
+
+    useEffect(() => {
+      setHybridSummary(getHybridAssessmentSummaryFromSession());
+    }, []);
 
     const getTestName = () => {
         switch(test) {
@@ -49,6 +56,21 @@ function ResultsContent() {
             <CheckCircle className="h-5 w-5 text-green-500" />
             <p>Thank you for completing the assessment.</p>
           </div>
+          {hybridSummary && (
+            <div className="mt-4 rounded-lg border bg-muted/40 p-4 text-left">
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hybrid Readiness Summary</p>
+              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm text-muted-foreground">Overall readiness score</p>
+                  <p className="text-2xl font-semibold">{hybridSummary.overallScore}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Readiness band</p>
+                  <p className="text-2xl font-semibold capitalize">{hybridSummary.readinessBand.replace('_', ' ')}</p>
+                </div>
+              </div>
+            </div>
+          )}
           <p className="mt-4 text-sm">
             You may now return to the dashboard to view your completed assessments or start a new one.
           </p>
