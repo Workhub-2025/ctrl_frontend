@@ -27,7 +27,7 @@ async function handleEqualityMonitoring(request: NextRequest) {
             );
         }
 
-        const limiter = applyRateLimit({
+        const limiter = await applyRateLimit({
             key: `equality-monitoring:${request.method}:${session.user.id}:${extractClientIp(request)}`,
             limit: 20,
             windowMs: 60_000,

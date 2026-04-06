@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest) {
             );
         }
 
-        const limiter = applyRateLimit({
+        const limiter = await applyRateLimit({
             key: `privacy-consent:put:${session.user.id}:${extractClientIp(request)}`,
             limit: 20,
             windowMs: 60_000,

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     const clientIp = extractClientIp(request);
-    const limiter = applyRateLimit({
+    const limiter = await applyRateLimit({
       key: `integrity:${session.user.id}:${clientIp}`,
       limit: 120,
       windowMs: 60_000,

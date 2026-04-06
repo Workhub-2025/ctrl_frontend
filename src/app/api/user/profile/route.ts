@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
 
-        const limiter = applyRateLimit({
+        const limiter = await applyRateLimit({
             key: `profile:get:${session.user.id}:${extractClientIp(request)}`,
             limit: 120,
             windowMs: 60_000,
@@ -78,7 +78,7 @@ export async function PUT(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
 
-        const limiter = applyRateLimit({
+        const limiter = await applyRateLimit({
             key: `profile:put:${session.user.id}:${extractClientIp(request)}`,
             limit: 30,
             windowMs: 60_000,
