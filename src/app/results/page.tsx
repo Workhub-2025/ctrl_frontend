@@ -70,6 +70,22 @@ function ResultsContent() {
         }
     }
 
+    const getStatusCopy = () => {
+      if (persistState === 'saving') {
+        return 'Your assessment has been submitted and is being prepared for review.';
+      }
+
+      if (persistState === 'failed') {
+        return 'Your assessment has been submitted. The hiring team will review your responses shortly.';
+      }
+
+      if (persistState === 'saved') {
+        return 'Your assessment has been submitted to the hiring team for review.';
+      }
+
+      return 'Your assessment has been submitted successfully.';
+    };
+
   return (
     <ProtectedLayout>
       <main className="flex min-h-screen flex-col items-center justify-center p-8">
@@ -82,7 +98,7 @@ function ResultsContent() {
             {getTestName()} Complete!
           </CardTitle>
           <CardDescription>
-            Your results have been successfully recorded.
+            Your responses have been received successfully.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -90,29 +106,17 @@ function ResultsContent() {
             <CheckCircle className="h-5 w-5 text-green-500" />
             <p>Thank you for completing the assessment.</p>
           </div>
-          {hybridSummary && (
-            <div className="mt-4 rounded-lg border bg-muted/40 p-4 text-left">
-              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hybrid Readiness Summary</p>
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <p className="text-sm text-muted-foreground">Overall readiness score</p>
-                  <p className="text-2xl font-semibold">{hybridSummary.overallScore}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Readiness band</p>
-                  <p className="text-2xl font-semibold capitalize">{hybridSummary.readinessBand.replace('_', ' ')}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                {persistState === 'saving' && 'Saving structured assessment evidence...'}
-                {persistState === 'saved' && 'Structured assessment evidence saved.'}
-                {persistState === 'failed' && 'Summary generated locally. Persistence will retry on next completion.'}
-                {persistState === 'idle' && 'Preparing structured assessment evidence...'}
-              </p>
-            </div>
-          )}
+          <div className="mt-4 rounded-lg border bg-muted/40 p-4 text-left">
+            <p className="text-sm font-medium text-foreground">Submission received</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {getStatusCopy()}
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              You will be contacted if the team would like to progress your application.
+            </p>
+          </div>
           <p className="mt-4 text-sm">
-            You may now return to the dashboard to view your completed assessments or start a new one.
+            You can now return to your dashboard.
           </p>
         </CardContent>
         <CardFooter>
