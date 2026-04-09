@@ -16,8 +16,6 @@ import { Progress } from '@/components/ui/progress';
 import { Play, Pause, FastForward, PhoneIncoming } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAssessmentIntegrity } from '@/hooks/use-assessment-integrity';
-import { buildCallSimulationOutcome } from '@/lib/assessment/hybrid-assessment-model';
-import { saveAssessmentOutcomeToSession } from '@/lib/assessment/hybrid-assessment-session';
 
 const totalCalls = 3;
 
@@ -25,7 +23,6 @@ export default function CallSimulationTest() {
   const [currentCall, setCurrentCall] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [callEvaluations, setCallEvaluations] = useState<Array<{ completeness: number }>>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
 
@@ -84,39 +81,17 @@ export default function CallSimulationTest() {
   const handleNextCall = (e: React.FormEvent) => {
     e.preventDefault();
     const formElement = e.target as HTMLFormElement;
-    const formData = new FormData(formElement);
-
-    const requiredFields = [
-      'caller-name',
-      'caller-phone',
-      'location-address',
-      'location-details',
-      'incident-type',
-      'incident-summary',
-    ];
-    const filledCount = requiredFields.reduce((count, fieldId) => {
-      const value = formData.get(fieldId);
-      if (typeof value === 'string' && value.trim().length > 0) return count + 1;
-      return count;
-    }, 0);
-    const completeness = requiredFields.length > 0 ? filledCount / requiredFields.length : 0;
-    const nextEvaluations = [...callEvaluations, { completeness }];
 
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
     if (currentCall < totalCalls) {
-      setCallEvaluations(nextEvaluations);
       setCurrentCall(prev => prev + 1);
       setIsPlaying(false);
       setProgress(0);
       formElement.reset();
     } else {
-      const hybridOutcome = buildCallSimulationOutcome(nextEvaluations);
-      if (hybridOutcome) {
-        saveAssessmentOutcomeToSession(hybridOutcome);
-      }
       router.push('/results?test=call-simulation');
     }
   };
@@ -189,11 +164,11 @@ export default function CallSimulationTest() {
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="caller-name">Caller Name</Label>
-                      <Input id="caller-name" name="caller-name" placeholder="John Doe" />
+                      <Input id="caller-name" placeholder="John Doe" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="caller-phone">Phone Number</Label>
-                      <Input id="caller-phone" name="caller-phone" placeholder="(555) 123-4567" />
+                      <Input id="caller-phone" placeholder="(555) 123-4567" />
                     </div>
                   </div>
                 </div>
@@ -202,11 +177,11 @@ export default function CallSimulationTest() {
                   <h3 className="font-semibold text-lg border-b pb-2">Location Information</h3>
                    <div className="space-y-2">
                       <Label htmlFor="location-address">Address</Label>
-                      <Input id="location-address" name="location-address" placeholder="123 Main St, Anytown" />
+                      <Input id="location-address" placeholder="123 Main St, Anytown" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="location-details">Landmarks / Details</Label>
-                      <Input id="location-details" name="location-details" placeholder="e.g., across from the park" />
+                      <Input id="location-details" placeholder="e.g., across from the park" />
                     </div>
                 </div>
 
@@ -214,11 +189,11 @@ export default function CallSimulationTest() {
                    <h3 className="font-semibold text-lg border-b pb-2">Incident Information</h3>
                    <div className="space-y-2">
                       <Label htmlFor="incident-type">Type of Incident</Label>
-                      <Input id="incident-type" name="incident-type" placeholder="e.g., Medical, Fire, Crime" />
+                      <Input id="incident-type" placeholder="e.g., Medical, Fire, Crime" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="incident-summary">Summary of Incident</Label>
-                      <Textarea id="incident-summary" name="incident-summary" placeholder="Provide a brief summary of the situation..." />
+                      <Textarea id="incident-summary" placeholder="Provide a brief summary of the situation..." />
                     </div>
                 </div>
                  <Button type="submit" className="w-full">

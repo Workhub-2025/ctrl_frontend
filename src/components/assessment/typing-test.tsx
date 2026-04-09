@@ -20,8 +20,6 @@ import {
   clearAssessmentProgressAction,
 } from '@/app/actions/assessment-progress.action';
 import { useAssessmentIntegrity } from '@/hooks/use-assessment-integrity';
-import { buildTypingOutcome } from '@/lib/assessment/hybrid-assessment-model';
-import { saveAssessmentOutcomeToSession } from '@/lib/assessment/hybrid-assessment-session';
 
 type TestStatus = 'waiting' | 'running' | 'finished';
 type TestResult = { wpm: number; accuracy: number };
@@ -40,7 +38,6 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
   const [results, setResults] = useState<TestResult | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [attemptHistory, setAttemptHistory] = useState<TestResult[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const router = useRouter();
 
@@ -152,18 +149,10 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
   }
 
   const handleNextTest = async () => {
-    const shouldCountAttempt = Boolean(results) && testIndex > 0;
-    const nextAttempts = shouldCountAttempt && results ? [...attemptHistory, results] : attemptHistory;
-
     if(testIndex < typingTestData.length - 1) {
-      setAttemptHistory(nextAttempts);
       setTestIndex(prev => prev + 1);
       handleReset();
     } else {
-      const hybridOutcome = buildTypingOutcome(nextAttempts);
-      if (hybridOutcome) {
-        saveAssessmentOutcomeToSession(hybridOutcome);
-      }
       // Clear progress when all tests are completed
       if (enableAutoSave) {
         await clearAssessmentProgressAction('typing');
