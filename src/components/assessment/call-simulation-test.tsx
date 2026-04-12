@@ -92,7 +92,7 @@ export default function CallSimulationTest() {
       setProgress(0);
       formElement.reset();
     } else {
-      router.push('/results?test=call-simulation');
+      router.push('/candidate-dashboard?completed=call-simulation');
     }
   };
 

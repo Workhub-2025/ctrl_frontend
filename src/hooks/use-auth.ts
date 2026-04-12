@@ -23,7 +23,7 @@ export function useAuth() {
         if (!userData) return false;
 
         // For non-candidates, profile is always considered complete
-        if (userData.role !== 'Candidate' && userData.role?.name !== 'Candidate') {
+        if (normalizeRole(userData.role?.name || userData.role) !== 'candidate') {
             return true;
         }
 
@@ -41,7 +41,7 @@ export function useAuth() {
         console.log('🎯 Determined user role:', userRole);
 
         // Admin users go directly to admin panel
-        if (userRole === 'admin' || userRole === 'super_admin') {
+        if (userRole === 'admin') {
             console.log('👤 Admin user, redirecting by role');
             routeByRole(userRole);
             return;
@@ -60,8 +60,8 @@ export function useAuth() {
         const hasCompletedEqualityMonitoring = userData?.equalityMonitoring?.completed === true;
 
         if (hasCompletedEqualityMonitoring) {
-            console.log('✅ Candidate with completed profile, redirecting to /dashboard');
-            router.push('/dashboard');
+            console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard');
+            router.push('/candidate-dashboard');
         } else {
             console.log('📋 Candidate without equality monitoring, offering optional form');
             // Show optional equality monitoring form with skip option
@@ -115,8 +115,14 @@ export function useAuth() {
                     console.log('📋 Fresh user data for routing:', userData);
 
                     if (userData) {
+                        const resolvedUserData = userData.role
+                            ? userData
+                            : {
+                                ...userData,
+                                role: freshSession?.user?.role || session?.user?.role || 'candidate',
+                            };
                         // Route based on fresh user data
-                        routeAfterLogin(userData);
+                        routeAfterLogin(resolvedUserData);
                     } else if (freshSession?.user) {
                         console.warn('⚠️ Profile lookup returned null, routing from session');
                         routeAfterLogin(freshSession.user);

@@ -157,7 +157,7 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
       if (enableAutoSave) {
         await clearAssessmentProgressAction('typing');
       }
-      router.push('/results?test=typing');
+      router.push('/candidate-dashboard?completed=typing');
     }
   }
 

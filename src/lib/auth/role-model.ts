@@ -1,9 +1,8 @@
 export const APP_ROLES = [
   "candidate",
-  "recruiter",
+  "hiring_manager",
   "client",
   "admin",
-  "super_admin",
 ] as const;
 
 export type AppRole = (typeof APP_ROLES)[number];
@@ -11,20 +10,27 @@ export type AppRole = (typeof APP_ROLES)[number];
 const ROLE_ALIASES: Record<string, AppRole> = {
   candidate: "candidate",
   candidates: "candidate",
-  recruiter: "recruiter",
-  recruiting: "recruiter",
+  recruiter: "hiring_manager",
+  recruiting: "hiring_manager",
+  hiring_manager: "hiring_manager",
+  "hiring-manager": "hiring_manager",
+  hiringmanager: "hiring_manager",
   client: "client",
   customer: "client",
   buyer: "client",
   admin: "admin",
   administrator: "admin",
-  super_admin: "super_admin",
-  superadmin: "super_admin",
-  "super-admin": "super_admin",
 };
 
 const normalizeRoleLabel = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, "_");
+
+const DEV_SEEDED_ROLE_BY_EMAIL: Record<string, AppRole> = {
+  "candidate.demo@ctrl.local": "candidate",
+  "recruiter.demo@ctrl.local": "hiring_manager",
+  "client.demo@ctrl.local": "client",
+  "admin.demo@ctrl.local": "admin",
+};
 
 export const normalizeRole = (role: unknown): AppRole => {
   if (typeof role === "string" && role.trim().length > 0) {
@@ -46,7 +52,12 @@ export const normalizeRole = (role: unknown): AppRole => {
 
 export const isAdminRole = (role: unknown) => {
   const normalized = normalizeRole(role);
-  return normalized === "admin" || normalized === "super_admin";
+  return normalized === "admin";
+};
+
+export const inferDevSeededRole = (email?: string | null): AppRole | null => {
+  if (!email) return null;
+  return DEV_SEEDED_ROLE_BY_EMAIL[email.trim().toLowerCase()] ?? null;
 };
 
 export const routeForRole = (role: unknown): string => {
@@ -54,15 +65,13 @@ export const routeForRole = (role: unknown): string => {
 
   switch (normalized) {
     case "admin":
-    case "super_admin":
       return "/admin";
-    case "recruiter":
-      return "/recruiter-dashboard";
+    case "hiring_manager":
+      return "/hiring-manager-dashboard";
     case "client":
-      return "/dashboard";
+      return "/client-dashboard";
     case "candidate":
     default:
-      return "/dashboard";
+      return "/candidate-dashboard";
   }
 };
-

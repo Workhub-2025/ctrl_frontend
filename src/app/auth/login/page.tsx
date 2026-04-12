@@ -19,6 +19,26 @@ import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
+const DEV_SEEDED_PASSWORD = "CtrlDemo123!";
+const DEV_SEEDED_ACCOUNTS = [
+  {
+    label: "Candidate",
+    email: "candidate.demo@ctrl.local",
+  },
+  {
+    label: "Hiring Manager",
+    email: "recruiter.demo@ctrl.local",
+  },
+  {
+    label: "Client",
+    email: "client.demo@ctrl.local",
+  },
+  {
+    label: "Admin",
+    email: "admin.demo@ctrl.local",
+  },
+];
+
 // Component that uses useSearchParams
 function SignInContent() {
   const [email, setEmail] = useState("");
@@ -28,6 +48,9 @@ function SignInContent() {
   const [successMessage, setSuccessMessage] = useState("");
   const { login, isLoading } = useAuth();
   const searchParams = useSearchParams();
+  const showDevAccounts =
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_SHOW_DEV_ACCOUNTS === "true";
 
   // Check for success message from URL parameters
   useEffect(() => {
@@ -102,6 +125,46 @@ function SignInContent() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
+            )}
+
+            {showDevAccounts && (
+              <div className="rounded-2xl border border-border/70 bg-muted/20 p-3">
+                <div className="mb-2">
+                  <p className="text-sm font-semibold">Dev seeded accounts</p>
+                  <p className="text-xs text-muted-foreground">
+                    Local-only test logins. Password for all accounts:{" "}
+                    <span className="font-medium text-foreground">
+                      {DEV_SEEDED_PASSWORD}
+                    </span>
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {DEV_SEEDED_ACCOUNTS.map((account) => (
+                    <button
+                      key={account.email}
+                      type="button"
+                      onClick={() => {
+                        setEmail(account.email);
+                        setPassword(DEV_SEEDED_PASSWORD);
+                        setError("");
+                      }}
+                      className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-left transition-colors hover:bg-background"
+                    >
+                      <span>
+                        <span className="block text-sm font-medium">
+                          {account.label}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {account.email}
+                        </span>
+                      </span>
+                      <span className="text-xs font-medium text-primary">
+                        Use
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="space-y-2">

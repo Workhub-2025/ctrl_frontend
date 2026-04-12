@@ -1,6 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
-import { isAdminRole } from '@/lib/auth/role-model';
+import { isAdminRole, normalizeRole, routeForRole } from '@/lib/auth/role-model';
 
 export default withAuth(
     function middleware(req) {
@@ -17,8 +17,22 @@ export default withAuth(
 
             if (!isAdminRole(token?.role)) {
                 // Redirect authenticated non-admin users to their dashboard.
-                return NextResponse.redirect(new URL('/dashboard', req.url));
+                return NextResponse.redirect(new URL(routeForRole(token?.role), req.url));
             }
+        }
+
+        const normalizedRole = normalizeRole(token?.role);
+
+        if (pathname.startsWith('/candidate-dashboard') && normalizedRole !== 'candidate') {
+            return NextResponse.redirect(new URL(routeForRole(normalizedRole), req.url));
+        }
+
+        if (pathname.startsWith('/client-dashboard') && normalizedRole !== 'client') {
+            return NextResponse.redirect(new URL(routeForRole(normalizedRole), req.url));
+        }
+
+        if (pathname.startsWith('/hiring-manager-dashboard') && normalizedRole !== 'hiring_manager') {
+            return NextResponse.redirect(new URL(routeForRole(normalizedRole), req.url));
         }
 
         return NextResponse.next();
@@ -35,6 +49,9 @@ export default withAuth(
 
                 // Protect assessment routes - require any authenticated user
                 if (pathname.startsWith('/dashboard') ||
+                    pathname.startsWith('/candidate-dashboard') ||
+                    pathname.startsWith('/client-dashboard') ||
+                    pathname.startsWith('/hiring-manager-dashboard') ||
                     pathname.startsWith('/assessment') ||
                     pathname.startsWith('/results')) {
                     return !!token;
@@ -54,6 +71,9 @@ export const config = {
     matcher: [
         '/admin/:path*',
         '/dashboard/:path*',
+        '/candidate-dashboard/:path*',
+        '/client-dashboard/:path*',
+        '/hiring-manager-dashboard/:path*',
         '/assessment/:path*',
         '/results/:path*'
     ]

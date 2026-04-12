@@ -7,6 +7,7 @@ import EqualityMonitoringForm from '@/components/auth/equality-monitoring-form';
 import { EqualityMonitoringData } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { updateCurrentUserAction } from '@/app/actions/users.actions';
+import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 
 // Component that uses useSearchParams
 function EqualityMonitoringContent() {
@@ -29,17 +30,17 @@ function EqualityMonitoringContent() {
       }
       
       // Check if user is a candidate
-      const isCandidate = user.role === 'Candidate' || (typeof user.role === 'object' && user.role !== null && 'name' in user.role && (user.role as any).name === 'Candidate');
+      const isCandidate = normalizeRole(user.role) === 'candidate';
       
       if (!isCandidate) {
         // Non-candidates shouldn't see this form
-        router.push('/dashboard');
+        router.push(routeForRole(user.role));
         return;
       }
       
       // Check if already completed
       if (user?.equalityMonitoring) {
-        router.push('/dashboard');
+        router.push('/candidate-dashboard');
         return;
       }
     }
@@ -67,7 +68,7 @@ function EqualityMonitoringContent() {
         description: 'Your equality monitoring information has been saved.',
       });
       
-      router.push('/dashboard');
+      router.push('/candidate-dashboard');
     } catch (error) {
       console.error('❌ Error saving equality monitoring:', error);
       toast({
@@ -81,7 +82,7 @@ function EqualityMonitoringContent() {
   };
 
   const handleSkip = () => {
-    router.push('/dashboard');
+    router.push('/candidate-dashboard');
   };
 
   // Show loading while checking authentication

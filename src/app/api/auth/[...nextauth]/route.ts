@@ -3,7 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from 'next-auth';
 import { AuthAPI } from '@/services/auth-api';
 import { logAuthAuditEvent } from '@/lib/security/audit-log';
-import { normalizeRole } from '@/lib/auth/role-model';
+import { inferDevSeededRole, normalizeRole } from '@/lib/auth/role-model';
 import {
     buildLoginAttemptKey,
     checkLoginAttemptAllowed,
@@ -114,7 +114,10 @@ export const authOptions = {
                     if (authResponse.jwt && authResponse.user) {
                         // Extract role name from Strapi Users & Permissions role object
                         const userRole = authResponse.user.role;
-                        const roleValue = normalizeRole((typeof userRole === 'object' && userRole !== null && 'name' in userRole) ? (userRole as any).name : userRole);
+                        const fallbackDevRole = inferDevSeededRole(authResponse.user.email || normalizedEmail);
+                        const roleValue = userRole
+                            ? normalizeRole((typeof userRole === 'object' && userRole !== null && 'name' in userRole) ? (userRole as any).name : userRole)
+                            : fallbackDevRole ?? 'candidate';
 
                         console.log('🎯 Role extracted from Strapi:', roleValue);
 

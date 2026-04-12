@@ -63,7 +63,7 @@ export default function SituationalJudgementTest() {
     if (currentQuestionIndex < situationalJudgementQuestions.length - 1) {
       setCurrentQuestionIndex((prev) => prev + 1);
     } else {
-      router.push('/results?test=situational-judgement');
+      router.push('/candidate-dashboard?completed=situational-judgement');
     }
   };
   

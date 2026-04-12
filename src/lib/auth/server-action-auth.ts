@@ -75,7 +75,7 @@ export const applyTenantScope = <T extends { organization?: string }>(
   params: T,
   context: ActionAuthContext
 ): T => {
-  if (context.role !== "super_admin" && context.organization) {
+  if (context.organization) {
     return {
       ...params,
       organization: context.organization,
@@ -88,7 +88,7 @@ export const enforceTenantWrite = <T extends { organization?: string }>(
   payload: T,
   context: ActionAuthContext
 ): T => {
-  if (context.role === "super_admin" || !context.organization) {
+  if (!context.organization) {
     return payload;
   }
 

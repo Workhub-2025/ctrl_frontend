@@ -97,6 +97,7 @@ export const fetchClient = async (
         const headers: HeadersInit = {
             ...options.headers,
         };
+        const headerRecord = headers as Record<string, string>;
 
         // Only add Content-Type for non-FormData requests
         const isFormData = options.body instanceof FormData;
@@ -112,12 +113,16 @@ export const fetchClient = async (
         const { jwt: authToken, tenant } = await getSessionContext();
         console.log(`🔑 [${environment}] Token available:`, !!authToken);
 
-        if (authToken && !isAuthEndpoint) {
-            (headers as Record<string, string>)['Authorization'] = `Bearer ${authToken}`;
+        const hasAuthorizationHeader =
+            typeof headerRecord.Authorization === 'string' ||
+            typeof headerRecord.authorization === 'string';
+
+        if (authToken && !isAuthEndpoint && !hasAuthorizationHeader) {
+            headerRecord['Authorization'] = `Bearer ${authToken}`;
         }
 
         if (tenant && !isAuthEndpoint) {
-            (headers as Record<string, string>)['x-ctrl-tenant'] = tenant;
+            headerRecord['x-ctrl-tenant'] = tenant;
         }
 
         // Prepare fetch options
