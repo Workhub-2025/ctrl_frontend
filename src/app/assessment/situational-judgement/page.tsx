@@ -1,9 +1,28 @@
-import SituationalJudgementTest from '@/components/assessment/situational-judgement-test';
+"use client";
 
+import SituationalJudgementTest from '@/components/assessment/situational-judgement-test';
+import { SecureAssessmentShell } from '@/components/assessment/secure-assessment-shell';
+import { useSecureExit } from '@/hooks/use-secure-exit';
+
+/**
+ * SituationalJudgementPage
+ * 
+ * The dedicated secure route for the Situational Judgement Test.
+ */
 export default function SituationalJudgementPage() {
+  const { handleExit } = useSecureExit();
+
   return (
-    <div className="w-full max-w-3xl">
-      <SituationalJudgementTest />
-    </div>
+    <SecureAssessmentShell
+      assessmentName="Situational Judgement Test"
+      timerLabel="In Progress"
+      secureModeActive={true}
+      warningsCount={0}
+      onExit={handleExit}
+    >
+      <div className="mx-auto w-full max-w-4xl">
+        <SituationalJudgementTest />
+      </div>
+    </SecureAssessmentShell>
   );
 }

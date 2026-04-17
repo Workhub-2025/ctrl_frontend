@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, ClipboardList, Home, ShieldCheck } from "lucide-react";
+import { Home, UserCheck, MessageSquare } from "lucide-react";
 import { RoleDashboardShell } from "@/components/dashboard/role-dashboard-shell";
 
 export default function ClientDashboardLayout({
@@ -11,23 +11,18 @@ export default function ClientDashboardLayout({
   return (
     <RoleDashboardShell
       title="Client dashboard"
-      subtitle="Programme visibility for client stakeholders"
+      subtitle="Review progressed candidates and communicate with your Hiring Manager"
       navItems={[
-        { href: "/client-dashboard", label: "Overview", icon: Home },
+        { href: "/client-dashboard/", label: "Overview", icon: Home },
         {
-          href: "/client-dashboard#pipeline",
-          label: "Pipeline",
-          icon: ClipboardList,
+          href: "/client-dashboard/progressed/",
+          label: "Progressed Candidates",
+          icon: UserCheck,
         },
         {
-          href: "/client-dashboard#governance",
-          label: "Governance",
-          icon: ShieldCheck,
-        },
-        {
-          href: "/client-dashboard#delivery",
-          label: "Delivery",
-          icon: Building2,
+          href: "/client-dashboard/messages/",
+          label: "HM Communications",
+          icon: MessageSquare,
         },
       ]}
     >

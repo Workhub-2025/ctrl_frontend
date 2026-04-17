@@ -3,9 +3,12 @@ import {
   Headphones,
   Keyboard,
   LifeBuoy,
+  ListOrdered,
   Mail,
   Phone,
   ShieldCheck,
+  Ticket,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 
@@ -13,6 +16,7 @@ export const completionLabels: Record<string, string> = {
   typing: "Typing Test",
   "call-simulation": "Call Simulation",
   "situational-judgement": "Situational Judgement",
+  prioritization: "Prioritization Assessment",
 };
 
 export const candidateAssessmentItems = [
@@ -43,6 +47,15 @@ export const candidateAssessmentItems = [
     duration: "15-20 min",
     status: "Available now",
   },
+  {
+    icon: ListOrdered,
+    title: "Prioritization Assessment",
+    description:
+      "Rank incoming incidents based on urgency, available resources, and standard operating procedures.",
+    href: "/assessment/prioritization",
+    duration: "10-15 min",
+    status: "Available now",
+  },
 ] as const;
 
 export const candidateSupportLinks: Array<{
@@ -53,17 +66,17 @@ export const candidateSupportLinks: Array<{
   actionLabel: string;
 }> = [
   {
-    title: "Raise an IT ticket",
+    title: "Raise a Support Ticket",
     description:
-      "Use this if audio does not play, the page freezes, or your session is interrupted.",
-    href: "mailto:support@ctrl.local?subject=CTRL%20IT%20Support%20Ticket",
-    icon: LifeBuoy,
-    actionLabel: "Contact IT",
+      "Use our smart ticketing system to report technical issues or ask questions using presets.",
+    href: "/candidate-dashboard/help-support?action=new-ticket",
+    icon: Ticket,
+    actionLabel: "Raise Ticket",
   },
   {
     title: "Contact hiring manager",
     description:
-      "Use this for questions about scheduling, the process, or what happens after completion.",
+      "Use this for questions about your allocated session time or the recruitment process.",
     href: "mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query",
     icon: Mail,
     actionLabel: "Email hiring manager",
@@ -76,9 +89,9 @@ export const candidateGuidanceItems: Array<{
   icon: LucideIcon;
 }> = [
   {
-    title: "Quiet environment",
-    body: "Choose a calm space where you can focus without interruptions, especially for the call simulation.",
-    icon: Headphones,
+    title: "Session Access",
+    body: "Your assessments are unlocked using your unique session code and must be completed within the allocated time window.",
+    icon: KeyRound,
   },
   {
     title: "Secure review",

@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
   User,
   UserCircle,
   LogOut,
@@ -44,19 +43,29 @@ type RoleDashboardShellProps = Readonly<{
   title: string;
   subtitle: string;
   navItems: NavItem[];
+  hideSidebar?: boolean;
   children: React.ReactNode;
 }>;
 
+// --- Header Component ---
 function RoleDashboardHeader({
   title,
   subtitle,
-}: Pick<RoleDashboardShellProps, "title" | "subtitle">) {
+  hideSidebar,
+}: Pick<RoleDashboardShellProps, "title" | "subtitle" | "hideSidebar">) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/10 bg-background/80 px-3 backdrop-blur-xl sm:px-5 lg:px-6">
-      <div className="text-foreground">
-        <SidebarTrigger />
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border dark:border-white/5 bg-background/95 dark:bg-[#04070d]/95 px-3 backdrop-blur-xl sm:px-5 lg:px-6 transition-colors duration-300">
+      {/* Sidebar Trigger & Title */}
+      <div className="flex items-center gap-3 text-foreground">
+        {!hideSidebar && <SidebarTrigger />}
+        {hideSidebar && (
+          <Link href="#" className="flex items-center gap-2">
+            <img src="/icon1.png" className="h-8 w-8 logo-adaptive-filter" alt="CTRL Logo" />
+            <span className="font-semibold tracking-[0.12em] hidden sm:inline-block">CTRL</span>
+          </Link>
+        )}
       </div>
       <div className="flex-1 px-3 text-center">
         <p className="text-sm font-semibold tracking-[0.04em] text-foreground">
@@ -66,7 +75,10 @@ function RoleDashboardHeader({
           {subtitle}
         </p>
       </div>
+
+      {/* User Actions & Settings */}
       <div className="flex items-center gap-2">
+        {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -96,36 +108,53 @@ function RoleDashboardHeader({
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
               onClick={logout}
             >
               <LogOut className="mr-2 h-4 w-4" />
-              Log out
+              Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Theme Toggle */}
         <ThemeToggle />
       </div>
     </header>
   );
 }
 
+// --- Main Shell Frame ---
 function RoleDashboardFrame({
   title,
   subtitle,
   navItems,
+  hideSidebar,
   children,
 }: RoleDashboardShellProps) {
   const pathname = usePathname();
 
+  if (hideSidebar) {
+    return (
+      <div className="flex min-h-screen w-full flex-col bg-muted/30 dark:bg-[#04070d] selection:bg-primary/30 transition-colors duration-300">
+        <RoleDashboardHeader title={title} subtitle={subtitle} hideSidebar={true} />
+        <main className="flex-1 p-4 sm:p-6 md:p-8">
+          <div className="mx-auto max-w-7xl">{children}</div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.08),transparent_32%),radial-gradient(circle_at_top_right,rgba(148,163,184,0.08),transparent_22%),linear-gradient(180deg,#08101c_0%,#0b1220_45%,#0d1422_100%)]">
-      <Sidebar className="border-r border-white/10 bg-[#0b1320]/88 backdrop-blur-xl">
+      <div className="flex min-h-screen w-full flex-1 relative bg-muted/30 dark:bg-[#04070d] selection:bg-primary/30 transition-colors duration-300">
+      {/* Sidebar Section */}
+      <Sidebar className="border-r border-border dark:border-white/5 bg-background dark:bg-[#080c16] transition-colors duration-300">
         <SidebarHeader>
+          {/* Sidebar Branding */}
           <Link
-            href="/"
-            className="mx-1 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-3"
+            href={navItems[0]?.href || "#"}
+            className="mx-1 flex items-center gap-3 rounded-2xl border border-border dark:border-white/5 bg-muted/50 dark:bg-white/[0.02] px-3 py-3 transition-colors hover:bg-muted dark:hover:bg-white/[0.04]"
           >
             <img
               src="/icon1.png"
@@ -142,13 +171,14 @@ function RoleDashboardFrame({
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
+            {/* Sidebar Navigation Links */}
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href}
+                  isActive={pathname === item.href || pathname === `${item.href}/`}
                   tooltip={item.label}
-                  className="rounded-xl data-[active=true]:bg-white/10 data-[active=true]:text-white hover:bg-white/6"
+                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-colors duration-300"
                 >
                   <Link
                     href={item.href}
@@ -164,7 +194,7 @@ function RoleDashboardFrame({
               <SidebarMenuButton
                 asChild
                 tooltip="Profile"
-                className="rounded-xl hover:bg-white/6"
+                className="rounded-xl hover:bg-muted dark:hover:bg-white/5 transition-colors duration-300"
               >
                 <Link href="/profile">
                   <UserCircle />
@@ -172,21 +202,11 @@ function RoleDashboardFrame({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                tooltip="Home"
-                className="rounded-xl hover:bg-white/6"
-              >
-                <Link href="/">
-                  <LayoutDashboard />
-                  <span>Landing page</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
+
+      {/* Main Content Area */}
       <SidebarInset>
         <RoleDashboardHeader title={title} subtitle={subtitle} />
         <main className="flex-1 p-4 sm:p-6 md:p-8">

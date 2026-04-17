@@ -1,57 +1,34 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ShieldCheck, CheckCircle2 } from "lucide-react";
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 
-export const metadata = {
-  title: "Next Steps",
-};
-
-export default function CandidateNextStepsPage() {
+/**
+ * NextStepsPage
+ * 
+ * Informs the candidate about the post-assessment review process.
+ */
+export default function NextStepsPage() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold font-headline text-foreground">
-          Next Steps
-        </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          A simple guide to help you prepare and understand what happens after
-          your assessments are complete.
-        </p>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="rounded-3xl border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(2,6,23,0.2)]">
-          <CardHeader>
-            <CardTitle className="text-xl">Before you start</CardTitle>
-            <CardDescription>
-              Practical reminders for a smoother assessment session.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground/90">
-            <p>Choose a quiet environment where you can focus properly.</p>
-            <p>Use a reliable device and stable internet connection.</p>
-            <p>Work through the assessments in the order that feels most comfortable to you.</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(2,6,23,0.2)]">
-          <CardHeader>
-            <CardTitle className="text-xl">After you submit</CardTitle>
-            <CardDescription>
-              What to expect once your responses have been completed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground/90">
-            <p>Your assessments move into internal review by the hiring team.</p>
-            <p>You will not see scoring or decision detail in the candidate portal.</p>
-            <p>The team will contact you directly if they need anything further.</p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-6 max-w-4xl">
+      <DashboardPageHeader 
+        title="Next Steps" 
+        description="What to expect after completion." 
+      />
+      
+      <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
+        <CardHeader>
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <CardTitle className="text-lg">Secure Review Process</CardTitle>
+          <CardDescription>Your assessments are safe.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" /><p className="text-muted-foreground">Responses are encrypted and securely submitted.</p></div>
+          <div className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" /><p className="text-muted-foreground">Our AI hybrid scoring processes your results for the hiring manager.</p></div>
+          <div className="flex items-start gap-3"><CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" /><p className="text-muted-foreground">The recruitment team will contact you directly with next steps.</p></div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

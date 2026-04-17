@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,13 +11,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowRight, ClipboardList, LifeBuoy, ShieldCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Clock, KeyRound, Lock, Mail, MapPin, CheckCircle2, Unlock, Settings2, ChevronRight, ArrowLeft, Briefcase, Plus, XCircle } from "lucide-react";
+import { AssessmentCard } from "@/components/dashboard/assessment-card";
 import {
   candidateAssessmentItems,
-  candidateGuidanceItems,
-  candidateSupportLinks,
   completionLabels,
 } from "@/components/dashboard/candidate-dashboard-data";
+
+type CandidateSession = {
+  code: string;
+  role: string;
+  date: string;
+  status: "Awaiting Assessment" | "Progressed" | "Unsuccessful" | "Completed";
+  location: string;
+  isUnlocked: boolean;
+};
 
 export function CandidateDashboardContent({
   completedKey,
@@ -26,71 +38,161 @@ export function CandidateDashboardContent({
     ? completionLabels[completedKey]
     : null;
 
-  return (
-    <div className="flex flex-col gap-8">
-      <section className="grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
-        <Card className="rounded-3xl border-white/10 bg-white/[0.04] shadow-[0_32px_80px_rgba(2,6,23,0.2)]">
-          <CardHeader className="space-y-4">
-            <Badge variant="outline" className="w-fit border-primary/30 bg-primary/8">
-              Candidate overview
-            </Badge>
-            <div className="space-y-3">
-              <CardTitle className="text-3xl font-bold font-headline leading-tight text-foreground">
-                Welcome to your assessment dashboard
-              </CardTitle>
-              <CardDescription className="max-w-2xl text-base leading-relaxed text-muted-foreground">
-                This is your main workspace. Start assessments, find support,
-                and review the key information you need before continuing.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-              <p className="text-sm font-medium text-foreground">
-                My Assessments
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground/90">
-                Three sections ready to complete.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-              <p className="text-sm font-medium text-foreground">Help & Support</p>
-              <p className="mt-1 text-sm text-muted-foreground/90">
-                Contact IT or the hiring manager if needed.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
-              <p className="text-sm font-medium text-foreground">Next Steps</p>
-              <p className="mt-1 text-sm text-muted-foreground/90">
-                Guidance for how to prepare and what happens after submission.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+  const [selectedSessionCode, setSelectedSessionCode] = useState<string | null>(null);
+  const [isPairingNew, setIsPairingNew] = useState(false);
+  const [newSessionCode, setNewSessionCode] = useState("");
+  const [sessions, setSessions] = useState<CandidateSession[]>([
+    { code: "CTRL-TEST", role: "Emergency Call Handler", date: "Oct 24, 2023", status: "Awaiting Assessment", location: "Metro Control Room (In-person)", isUnlocked: false },
+    { code: "CTRL-PAST1", role: "Dispatch Operator", date: "Sep 12, 2023", status: "Progressed", location: "Remote", isUnlocked: true },
+    { code: "CTRL-PAST2", role: "Trainee Supervisor", date: "Aug 05, 2023", status: "Unsuccessful", location: "Metro Control Room (In-person)", isUnlocked: true },
+  ]);
+  const [error, setError] = useState("");
 
-        <Card className="rounded-3xl border-white/10 bg-white/[0.035]">
-          <CardHeader>
-            <CardTitle className="text-xl">At a glance</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {candidateGuidanceItems.map((item) => (
-              <div
-                key={item.title}
-                className="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/10 p-4"
-              >
-                <item.icon className="mt-0.5 h-4 w-4 text-primary" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {item.title}
-                  </p>
-                  <p className="mt-1 text-sm text-muted-foreground/90">
-                    {item.body}
-                  </p>
+  const handlePair = (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = newSessionCode.toUpperCase();
+    // Validate that the code starts with CTRL- (matches HM dashboard generator)
+    if (code.startsWith("CTRL-")) {
+      if (!sessions.find(s => s.code === code)) {
+        setSessions([{
+          code,
+          role: "New Application",
+          date: "TBD",
+          status: "Awaiting Assessment",
+          location: "TBD",
+          isUnlocked: false
+        }, ...sessions]);
+      }
+      setSelectedSessionCode(code);
+      setIsPairingNew(false);
+      setNewSessionCode("");
+      setError("");
+    } else {
+      setError("Invalid session code. Please check your invitation email.");
+    }
+  };
+
+  const toggleSessionLock = () => {
+    setSessions(sessions.map(s => 
+      s.code === selectedSessionCode ? { ...s, isUnlocked: !s.isUnlocked } : s
+    ));
+  };
+
+  const currentSession = sessions.find(s => s.code === selectedSessionCode);
+
+  if (!selectedSessionCode || !currentSession) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold font-headline text-foreground">My Applications</h1>
+              <p className="text-muted-foreground">Track your progress and access upcoming assessment sessions.</p>
+            </div>
+            <Button onClick={() => setIsPairingNew(!isPairingNew)} className="gap-2">
+              <Plus className="h-4 w-4" /> Pair New Session
+            </Button>
+          </div>
+        </section>
+
+        {isPairingNew && (
+          <Card className="w-full bg-card dark:bg-[#080c16]/80 border-border dark:border-white/5 shadow-sm animate-in slide-in-from-top-4 duration-300">
+            <CardContent className="pt-6">
+              <form onSubmit={handlePair} className="flex flex-col sm:flex-row items-end gap-4">
+                <div className="space-y-2 w-full flex-1">
+                  <Label htmlFor="code">Enter Session Code</Label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="code"
+                      value={newSessionCode}
+                      onChange={(e) => setNewSessionCode(e.target.value.toUpperCase())}
+                      placeholder="e.g. CTRL-9A2X"
+                      className="h-11 uppercase font-mono tracking-wider pl-10"
+                    />
+                  </div>
+                  {error && <p className="text-sm text-red-500">{error}</p>}
                 </div>
+                <Button type="submit" className="w-full sm:w-auto h-11" disabled={!newSessionCode}>
+                  Join Session
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {sessions.map((session) => (
+            <Card 
+              key={session.code} 
+              className="cursor-pointer border-border dark:border-white/5 bg-card hover:bg-muted/50 transition-all hover:-translate-y-1 shadow-sm flex flex-col"
+              onClick={() => setSelectedSessionCode(session.code)}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                    <Briefcase className="h-5 w-5" />
+                  </div>
+                  <Badge 
+                    variant="secondary" 
+                    className={`
+                      ${session.status === 'Progressed' ? 'bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400' : ''}
+                      ${session.status === 'Unsuccessful' ? 'bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400' : ''}
+                      ${session.status === 'Awaiting Assessment' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400' : ''}
+                    `}
+                  >
+                    {session.status}
+                  </Badge>
+                </div>
+                <CardTitle className="text-lg">{session.role}</CardTitle>
+                <CardDescription className="font-mono text-xs mt-1">{session.code}</CardDescription>
+              </CardHeader>
+              <CardContent className="text-sm text-muted-foreground flex-grow space-y-2">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> {session.date}
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> {session.location}
+                </div>
+              </CardContent>
+              <div className="px-6 py-4 border-t border-border dark:border-white/5 flex items-center justify-between text-sm font-medium text-primary mt-auto">
+                {session.status === 'Awaiting Assessment' ? 'Access Assessment Day' : 'View Details'}
+                <ChevronRight className="h-4 w-4" />
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+      {/* Top Section */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
+            Session Paired: {currentSession.code}
+          </Badge>
+          <Badge 
+            variant="outline" 
+            className="border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 cursor-pointer hover:bg-amber-500/20 transition-colors"
+            onClick={toggleSessionLock}
+          >
+            <Settings2 className="w-3 h-3 mr-1" />
+            Dev Toggle: {currentSession.isUnlocked ? "Lock" : "Unlock"} Session
+          </Badge>
+        </div>
+        <div className="space-y-3">
+          <h1 className="text-3xl font-bold font-headline leading-tight text-foreground">
+            {currentSession.role}
+          </h1>
+          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
+            {currentSession.status === 'Awaiting Assessment' 
+              ? "Your account is securely linked to your upcoming session. Review the preparation steps below before you arrive."
+              : "This session has concluded. You can review your completion status below."}
+          </p>
+        </div>
       </section>
 
       {completedAssessment && (
@@ -103,106 +205,101 @@ export function CandidateDashboardContent({
         </Alert>
       )}
 
-      <section className="grid gap-6 md:grid-cols-3">
-        <Card className="rounded-3xl border-white/10 bg-white/[0.035]">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-primary" />
-              <CardTitle className="text-lg">My Assessments</CardTitle>
-            </div>
-            <CardDescription>
-              View all available assessments in one place.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-3">
-              {candidateAssessmentItems.map((assessment) => (
-                <div
-                  key={assessment.title}
-                  className="rounded-2xl border border-white/10 bg-black/10 p-4"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-foreground">
-                      {assessment.title}
-                    </p>
-                    <Badge variant="outline">{assessment.duration}</Badge>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground/90">
-                    {assessment.status}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <Button asChild className="h-11 w-full rounded-xl">
-              <Link href="/candidate-dashboard/my-assessments">
-                Open My Assessments
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-3xl border-white/10 bg-white/[0.035]">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <LifeBuoy className="h-4 w-4 text-primary" />
-              <CardTitle className="text-lg">Help & Support</CardTitle>
-            </div>
-            <CardDescription>
-              Quick access to the right support channel.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {candidateSupportLinks.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-white/10 bg-black/10 p-4"
-              >
-                <p className="text-sm font-medium text-foreground">
-                  {item.title}
-                </p>
-                <p className="mt-2 text-sm text-muted-foreground/90">
-                  {item.description}
-                </p>
+      <div className={`grid gap-6 ${!currentSession.isUnlocked ? "lg:grid-cols-[1.5fr_1fr]" : ""}`}>
+        <div className="space-y-6">
+          {/* Countdown Card */}
+          {!currentSession.isUnlocked && (
+            <Card className="border-primary/20 bg-primary/5 dark:bg-primary/10 overflow-hidden relative shadow-none">
+              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+                <Clock className="h-32 w-32" />
               </div>
-            ))}
-            <Button asChild variant="outline" className="h-11 w-full rounded-xl border-white/12 bg-white/[0.02] hover:bg-white/[0.06]">
-              <Link href="/candidate-dashboard/help-support">
-                Open Help & Support
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+              <CardHeader>
+                <CardTitle className="text-xl text-primary">Scheduled for {currentSession.date}</CardTitle>
+                <CardDescription className="text-base text-foreground/80 flex items-center gap-2 mt-1">
+                  <MapPin className="h-4 w-4 text-primary/70" /> {currentSession.location}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4 my-4">
+                  <div className="flex flex-col p-4 bg-background dark:bg-[#04070d] rounded-xl border border-border dark:border-white/5 min-w-[80px] items-center justify-center shadow-sm">
+                    <span className="text-3xl font-bold font-mono">02</span>
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Days</span>
+                  </div>
+                  <div className="flex flex-col p-4 bg-background dark:bg-[#04070d] rounded-xl border border-border dark:border-white/5 min-w-[80px] items-center justify-center shadow-sm">
+                    <span className="text-3xl font-bold font-mono">14</span>
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider mt-1">Hours</span>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground max-w-md relative z-10">
+                  Your assessments are currently locked. The hiring manager will authorize and unlock your session upon arrival at the testing facility.
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-        <Card className="rounded-3xl border-white/10 bg-white/[0.035]">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              <CardTitle className="text-lg">Next Steps</CardTitle>
+          {/* Unlocked Assessments */}
+          {currentSession.isUnlocked && (
+            <div className="space-y-6 animate-in fade-in duration-500">
+              <Alert className="border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400">
+                <Unlock className="h-5 w-5 !text-green-700 dark:!text-green-400" />
+                <AlertTitle className="text-green-800 dark:text-green-300">Session Authorized</AlertTitle>
+                <AlertDescription className="text-green-700/80 dark:text-green-400/80">
+                  Your hiring manager has unlocked your session. You may now begin your assessments.
+                </AlertDescription>
+              </Alert>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {candidateAssessmentItems.map((item) => (
+                  <AssessmentCard
+                    key={item.title}
+                    title={item.title}
+                    description={item.description}
+                    icon={<item.icon className="h-6 w-6" />}
+                    href={item.href}
+                  />
+                ))}
+              </div>
             </div>
-            <CardDescription>
-              Simple guidance before and after assessment completion.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm text-muted-foreground/90">
-              Choose a quiet place, take your time, and complete the sections in
-              whichever order suits you.
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/10 p-4 text-sm text-muted-foreground/90">
-              Once submitted, your responses move into internal review and the
-              hiring team will contact you if they need anything further.
-            </div>
-            <Button asChild variant="outline" className="h-11 w-full rounded-xl border-white/12 bg-white/[0.02] hover:bg-white/[0.06]">
-              <Link href="/candidate-dashboard/next-steps">
-                View Next Steps
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
+          )}
+        </div>
+
+        {!currentSession.isUnlocked && (
+          <div className="space-y-6">
+            {/* Prep Card */}
+            <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
+              <CardHeader>
+                <CardTitle className="text-lg">Before your day</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Bring a valid government-issued photo ID.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Arrive 15 minutes before your scheduled start time.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <p className="text-sm text-muted-foreground">Get a good night's sleep. Assessments measure reflexes and decision making.</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reschedule Card */}
+            <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
+              <CardHeader>
+                <CardTitle className="text-lg">Need to reschedule?</CardTitle>
+                <CardDescription>If you cannot make your assigned session, let us know immediately.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" className="w-full gap-2 border-border dark:border-white/5 bg-background dark:bg-[#04070d] hover:bg-muted dark:hover:bg-white/5">
+                  <Mail className="h-4 w-4" /> Contact Hiring Manager
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -3,17 +3,15 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
+  Card, CardContent,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Shield, FileText, Eye, Database, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
+import { FormPageHeader } from './form-page-header';
 
 interface DataPrivacyTermsProps {
   onAccept: (consents: {
@@ -51,32 +49,31 @@ export default function DataPrivacyTerms({ onAccept, onDecline, onSkip, isLoadin
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-            <Shield className="h-8 w-8" />
-          </div>
-          <CardTitle className="text-2xl font-headline">
-            {isOptional ? 'Complete Your Privacy Preferences' : 'Data Privacy and Terms & Conditions'}
-          </CardTitle>
-          <CardDescription>
-            {isOptional ? (
-              <>
-                We noticed you haven't completed your privacy preferences yet. Please review and update your settings, or skip to continue to your dashboard.
-                <br />
-                <Link href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline text-sm">
-                  View complete Privacy Policy →
-                </Link>
-              </>
-            ) : (
-              <>
-                Please read and acknowledge the following terms before proceeding with your assessment registration.
-                <br />
-                <Link href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline text-sm">
-                  View complete Privacy Policy →
-                </Link>
-              </>
-            )}
-          </CardDescription>
+        <CardHeader>
+          <FormPageHeader
+            icon={Shield}
+            color="blue"
+            title={isOptional ? 'Complete Your Privacy Preferences' : 'Data Privacy and Terms & Conditions'}
+            description={
+              isOptional ? (
+                <>
+                  We noticed you haven't completed your privacy preferences yet. Please review and update your settings, or skip to continue to your dashboard.
+                  <br />
+                  <Link href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline text-sm">
+                    View complete Privacy Policy →
+                  </Link>
+                </>
+              ) : (
+                <>
+                  Please read and acknowledge the following terms before proceeding with your assessment registration.
+                  <br />
+                  <Link href="/privacy-policy" target="_blank" className="text-blue-600 hover:underline text-sm">
+                    View complete Privacy Policy →
+                  </Link>
+                </>
+              )
+            }
+          />
         </CardHeader>
         
         <CardContent className="space-y-6">

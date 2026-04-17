@@ -3,11 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
+  Card, CardContent,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Select,
@@ -23,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Users, Heart, ArrowRight, ArrowLeft } from "lucide-react";
 import { EqualityMonitoringData } from "@/types";
+import { FormPageHeader } from "./form-page-header";
 
 interface EqualityMonitoringFormProps {
   onComplete: (data: EqualityMonitoringData) => void;
@@ -39,6 +37,7 @@ export default function EqualityMonitoringForm({
   isLoading = false,
   isOptional = false,
 }: EqualityMonitoringFormProps) {
+  // --- Form State Management ---
   const [formData, setFormData] = useState<EqualityMonitoringData>({});
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
@@ -50,6 +49,7 @@ export default function EqualityMonitoringForm({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // --- Step Navigation Logic ---
   const handleNext = () => {
     if (currentStep < totalSteps) {
       setCurrentStep((prev) => prev + 1);
@@ -66,6 +66,7 @@ export default function EqualityMonitoringForm({
     onComplete(formData);
   };
 
+  // --- Progress Indicator ---
   const renderStepIndicator = () => (
     <div className="flex items-center justify-between mb-6">
       {Array.from({ length: totalSteps }, (_, i) => (
@@ -91,6 +92,7 @@ export default function EqualityMonitoringForm({
     </div>
   );
 
+  // --- Step 1: Personal Information ---
   const renderStep1 = () => (
     <div className="space-y-6">
       <div>
@@ -218,6 +220,7 @@ export default function EqualityMonitoringForm({
     </div>
   );
 
+  // --- Step 2: Background Information ---
   const renderStep2 = () => (
     <div className="space-y-6">
       <div>
@@ -348,6 +351,7 @@ export default function EqualityMonitoringForm({
     </div>
   );
 
+  // --- Step 3: Disability and Accessibility ---
   const renderStep3 = () => (
     <div className="space-y-6">
       <div>
@@ -406,6 +410,7 @@ export default function EqualityMonitoringForm({
     </div>
   );
 
+  // --- Step 4: Education and Employment ---
   const renderStep4 = () => (
     <div className="space-y-6">
       <div>
@@ -530,25 +535,24 @@ export default function EqualityMonitoringForm({
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-            <Heart className="h-8 w-8" />
-          </div>
-          <CardTitle className="text-2xl font-headline">
-            {isOptional
+        {/* Form Header & Description */}
+        <CardHeader>
+          <FormPageHeader
+            icon={Heart}
+            color="green"
+            title={isOptional
               ? "Complete Your Equality Monitoring (Optional)"
               : "Equality and Diversity Monitoring"}
-          </CardTitle>
-          <CardDescription>
-            {isOptional
+            description={isOptional
               ? "Help us ensure our services are fair and accessible. This information is anonymous and completely optional - you can skip and complete it later in your profile settings."
               : "This information helps us ensure our services are accessible and fair to everyone. All questions are optional and your responses are anonymous."}
-          </CardDescription>
+          />
         </CardHeader>
 
         <CardContent className="space-y-6">
           {renderStepIndicator()}
 
+          {/* Why Collect Data Banner */}
           <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="flex items-start gap-3">
               <Users className="h-5 w-5 text-gray-600 dark:text-gray-400 mt-0.5" />
@@ -572,6 +576,7 @@ export default function EqualityMonitoringForm({
 
           <Separator />
 
+          {/* Form Navigation Controls */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             {currentStep > 1 && (
               <Button

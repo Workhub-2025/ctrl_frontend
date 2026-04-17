@@ -1,71 +1,43 @@
-import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Ticket, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { candidateSupportLinks } from "@/components/dashboard/candidate-dashboard-data";
+import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
 
-export const metadata = {
-  title: "Help and Support",
-};
-
-export default function CandidateHelpSupportPage() {
+/**
+ * HelpSupportPage
+ * 
+ * Provides candidates with options to raise IT tickets or contact the hiring manager.
+ */
+export default function HelpSupportPage() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold font-headline text-foreground">
-          Help & Support
-        </h1>
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          Use the support options below if you need technical help or want to
-          contact the hiring team.
-        </p>
+    <div className="space-y-6 max-w-4xl">
+      <DashboardPageHeader 
+        title="Help & Support" 
+        description="Get assistance with your assessment process." 
+      />
+      
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
+          <CardHeader>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Ticket className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg">Raise an IT Ticket</CardTitle>
+            <CardDescription>Report technical issues with the platform.</CardDescription>
+          </CardHeader>
+          <CardContent><Button className="w-full">Create Ticket</Button></CardContent>
+        </Card>
+        <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
+          <CardHeader>
+            <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Mail className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg">Contact Hiring Manager</CardTitle>
+            <CardDescription>Questions about the recruitment process.</CardDescription>
+          </CardHeader>
+          <CardContent><Button className="w-full" variant="outline">Send Email</Button></CardContent>
+        </Card>
       </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {candidateSupportLinks.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <Card
-              key={item.title}
-              className="rounded-3xl border-white/10 bg-white/[0.04] shadow-[0_24px_80px_rgba(2,6,23,0.2)]"
-            >
-              <CardHeader className="space-y-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/12 text-primary">
-                  <Icon className="h-6 w-6" />
-                </div>
-                <div className="space-y-2">
-                  <CardTitle className="text-xl">{item.title}</CardTitle>
-                  <CardDescription className="text-sm leading-relaxed">
-                    {item.description}
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="h-11 w-full rounded-xl">
-                  <Link href={item.href}>{item.actionLabel}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <Card className="rounded-3xl border-white/10 bg-white/[0.035]">
-        <CardHeader>
-          <CardTitle className="text-xl">When to reach out</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground/90">
-          <p>If a page freezes, audio fails, or your session is interrupted, raise an IT ticket first.</p>
-          <p>If you need clarification on the process, timings, or next steps, contact the hiring manager.</p>
-          <p>If something interrupts your assessment, stop and ask for guidance before retrying.</p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
