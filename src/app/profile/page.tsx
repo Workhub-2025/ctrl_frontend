@@ -35,6 +35,7 @@ import { TelInput } from "@/components/ui/telInput";
 import { updateCurrentUserAction } from "@/app/actions/users.actions";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { isAdminRole, routeForRole } from "@/lib/auth/role-model";
+import { useAuthStore } from "@/store/auth.store";
 
 interface ProfileData {
   firstName: string;
@@ -51,6 +52,7 @@ export default function ProfilePage() {
     isLoading: authLoading,
     isAuthenticated,
   } = useAuth();
+  const { userProfile } = useAuthStore();
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: "",
     lastName: "",
@@ -63,18 +65,19 @@ export default function ProfilePage() {
   const userIsAdmin = isAdminRole(user?.role);
   const returnPath = routeForRole(user?.role);
 
-  // Initialize profile data from user session
+  // Initialize profile data — prefer Zustand store (fresh from Strapi) over session
   useEffect(() => {
-    if (user) {
+    const source = userProfile || user;
+    if (source) {
       setProfileData({
-        firstName: user.firstName || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
-        organization: user.organization || "",
-        phone: user.phone || "",
+        firstName: source.firstName || "",
+        lastName: source.lastName || "",
+        email: source.email || "",
+        organization: source.organization || "",
+        phone: (source as any).phone || "",
       });
     }
-  }, [user]);
+  }, [userProfile, user]);
 
   // Redirect if not authenticated
   useEffect(() => {

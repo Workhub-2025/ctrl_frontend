@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { useAuth } from "@/hooks/use-auth";
+import { useAuthStore } from "@/store/auth.store";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +55,12 @@ function RoleDashboardHeader({
   hideSidebar,
 }: Pick<RoleDashboardShellProps, "title" | "subtitle" | "hideSidebar">) {
   const { user, logout } = useAuth();
+  const { userProfile } = useAuthStore();
+  const displayName =
+    userProfile
+      ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() || userProfile.email || "CTRL User"
+      : user?.name || `${(user as any)?.firstName || ""} ${(user as any)?.lastName || ""}`.trim() || "CTRL User";
+  const displayEmail = userProfile?.email || user?.email;
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border dark:border-white/5 bg-background/95 dark:bg-[#04070d]/95 px-3 backdrop-blur-xl sm:px-5 lg:px-6 transition-colors duration-300">
@@ -90,12 +97,10 @@ function RoleDashboardHeader({
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {user?.name ||
-                    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-                    "CTRL User"}
+                  {displayName}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email}
+                  {displayEmail}
                 </p>
               </div>
             </DropdownMenuLabel>

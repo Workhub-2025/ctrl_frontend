@@ -1,7 +1,7 @@
 # Integración Strapi Auth + Estado Global — `ctrl-frontend-hybrid`
 
 > Análisis y plan de tareas para la rama `ctrl-frontend-hybrid`  
-> Fecha: abril 2026
+> Última actualización: abril 2026
 
 ---
 
@@ -12,9 +12,9 @@
 ```
 Browser → NextAuth CredentialsProvider
   → POST /auth/local (Strapi Users & Permissions)
-  → GET /users/me?populate=role (con el JWT de usuario)
-  → JWT almacenado en la sesión NextAuth (estrategia jwt)
-  → fetch-client.ts inyecta Authorization: Bearer <userJWT> en cada request
+  → JWT de usuario almacenado en sesión NextAuth (estrategia jwt)
+  → Server Actions / Route Handlers usan getServerStrapiClient() con el JWT
+  → strapiServerClient (singleton con API Token) para operaciones privilegiadas
 ```
 
 ### Archivos clave
@@ -22,230 +22,150 @@ Browser → NextAuth CredentialsProvider
 | Archivo | Responsabilidad |
 |---|---|
 | `src/app/api/auth/[...nextauth]/route.ts` | Configuración NextAuth, authorize, callbacks jwt/session |
-| `src/services/auth-api.ts` | `AuthAPI.login`, `AuthAPI.register` → llaman a Strapi |
-| `src/lib/fetch-client.ts` | Cliente HTTP; inyecta JWT de sesión NextAuth en cada request |
+| `src/services/auth-api.ts` | `AuthAPI.login`, `AuthAPI.register` → llaman a Strapi vía `fetch-client.ts` |
+| `src/lib/strapi.ts` | **Fuente de verdad del cliente Strapi** — ver sección 1.1 |
+| `src/lib/fetch-client.ts` | Cliente HTTP legacy — solo usado en `auth-api.ts` para auth endpoints |
 | `src/hooks/use-auth.ts` | Hook cliente: `login`, `logout`, `register`, `routeAfterLogin` |
 | `src/lib/auth/server-action-auth.ts` | Helpers Server Actions: `getActionAuthContext`, `requireAdminActionContext` |
 | `src/middleware.ts` | Protección de rutas con `withAuth` |
 | `src/lib/auth/role-model.ts` | Normalización de roles: `candidate`, `hiring_manager`, `client`, `admin` |
+
+### 1.1 Cliente Strapi (`src/lib/strapi.ts`) — implementación actual
+
+El proyecto usa `@strapi/client` (cliente oficial Strapi v5). `fetch-client.ts` **ya no se usa** para llamadas a colecciones o usuarios — solo permanece en `auth-api.ts` para los endpoints `/auth/local` y `/auth/local/register`.
+
+```
+src/lib/strapi.ts expone tres constructores:
+
+1. strapiServerClient   — singleton lazy con API Token (Proxy, nunca crashea en module init)
+                          Para uso server-side sin contexto de usuario
+2. getStrapiClient(jwt?) — factory por request; usa JWT de usuario si se pasa,
+                            fallback al API Token del servidor
+3. getServerStrapiClient() — async; resuelve getServerSession() y devuelve client
+                              con JWT del usuario. Solo en Server Components/Actions.
+```
+
+**Regla de uso:**
+- Operaciones del usuario (read/write datos propios) → `getServerStrapiClient()` o `getStrapiClient(session.user.jwt)`
+- Operaciones privilegiadas sin contexto de usuario → `getStrapiClient()` o `strapiServerClient` (usan API Token)
+- `use-auth.ts` (cliente) → solo vía Server Actions (`getCurrentUserAction`, etc.)
 
 ### Variables de entorno actuales
 
 ```bash
 NEXTAUTH_SECRET=...
 NEXTAUTH_URL=http://localhost:3000
-NEXT_PUBLIC_STRAPI_API_URL=http://localhost:1337   # cliente
-STRAPI_API_URL=http://localhost:1337/api            # servidor (SSR / Server Actions)
+NEXT_PUBLIC_STRAPI_API_URL=http://localhost:1337/api   # cliente (browser)
+STRAPI_API_URL=http://localhost:1337/api               # servidor (SSR / Server Actions)
+
+# Strapi API Token — SOLO SERVER SIDE, NUNCA NEXT_PUBLIC_
+STRAPI_API_FULL_ACCCESS_TOKEN=<token-full-access>   # nombre de variable actual (typo incluido)
+# Aliases adicionales soportados:
+# STRAPI_API_TOKEN=<token>
+# NEXT_PUBLIC_STRAPI_API_TOKEN=<token>  ← solo como último fallback, no recomendado
 ```
 
-> **Problema**: No existe `STRAPI_API_TOKEN`. Todas las peticiones servidor-servidor
-> utilizan el JWT del usuario, que tiene los mismos permisos limitados que el usuario final.
+> **Estado**: El API Token ya está integrado en `strapi.ts`. La prioridad de búsqueda es:
+> `STRAPI_API_FULL_ACCCESS_TOKEN` → `STRAPI_API_TOKEN` → `NEXT_PUBLIC_STRAPI_API_TOKEN` → `undefined`.
+> Si ninguna está definida, `strapiServerClient` y `getStrapiClient()` hacen requests sin token (riesgo de 401).
 
 ---
 
 ## 2. Problemas identificados
 
-### 2.1 Ausencia del Strapi API Token (prioridad alta)
+### 2.1 Registro sin asignación de rol (prioridad alta)
 
-El Strapi API Token es una credencial de **servicio a servicio** generada en el panel de Strapi
-(`Settings → API Tokens`). Es independiente de la sesión del usuario y permite que el backend
-de Next.js realice operaciones privilegiadas sin exponer credenciales de usuario.
+`AuthAPI.register` llama a `/auth/local/register` (endpoint público). Strapi no permite asignar
+un `role` personalizado desde este endpoint sin permisos de administrador.
 
-**Impacto de no tenerlo:**
+**Impacto:**
+- Los usuarios nuevos quedan con el rol `Authenticated` (default de Strapi) en lugar de `Candidate`.
+- Los campos adicionales (`firstName`, `lastName`, `phone`, `organization`) pueden no persistirse.
 
-- El registro de usuarios pasa por el endpoint público `/auth/local/register`, que no puede
-  asignar roles personalizados ni completar campos customizados en el mismo request.
-- Las Server Actions y Route Handlers admin (`/admin/*`) delegan toda la autorización
-  únicamente en el JWT del usuario: si el token expira o es inválido, la operación falla
-  silenciosamente o devuelve 401 sin posibilidad de reintento server-side.
-- No hay forma de hacer llamadas administrativas (consultas a colecciones privadas, gestión de
-  usuarios, estadísticas) desde SSR sin impersonar al usuario.
+**Solución:** Ver sección 3 — Fase 2.
 
 ### 2.2 Ausencia de gestor de estado global
 
-Actualmente no hay ningún store (Redux/Zustand/Jotai). El estado de la aplicación está
-fragmentado en:
+No hay ningún store (Redux/Zustand/Jotai). El estado de la aplicación está fragmentado en:
 
 - `useSession` de NextAuth (datos básicos del usuario)
 - Estado local `useState` en cada página/componente
 - Server Actions para mutaciones (sin cache compartido client-side)
 
 **Impacto:**
-
 - El perfil del usuario se re-fetcha en cada página que lo necesita.
 - El progreso de assessment no se comparte entre componentes sin prop-drilling.
 - Las notificaciones y alertas de UI no tienen un canal centralizado.
-- Refrescar el perfil en una página no actualiza la UI en otra.
 
-### 2.3 `fetch-client.ts` no distingue contextos de llamada
+> **Nota de diseño:** Zustand **no reemplaza** al servidor como fuente de verdad.
+> En Next.js App Router, los datos de DB/API viven en Server Components y Server Actions.
+> Zustand se usa exclusivamente para **estado de UI y cache de sesión en memoria**
+> (datos ya cargados desde el servidor que se comparten entre Client Components sin re-fetch).
 
-El cliente usa siempre el JWT del usuario. No tiene un modo para inyectar el API Token de Strapi
-en llamadas server-to-server privilegiadas.
+### 2.3 `fetch-client.ts` — uso residual
+
+`fetch-client.ts` aún es usado por `auth-api.ts` para los endpoints de autenticación. Para el
+resto de operaciones (colecciones, usuarios) ya fue reemplazado por `@strapi/client` vía
+`src/lib/strapi.ts`. No se debe extender ni crear `fetchApiAdmin` — ese patrón está **obsoleto**;
+usar `getStrapiClient()` sin JWT en su lugar.
 
 ---
 
-## 3. Plan de integración: Strapi API Token
+## 3. Plan de implementación
 
-### 3.1 Configuración del token en Strapi
+### Fase 1 — API Token y cliente Strapi ✅ COMPLETADO
 
-1. En Strapi Admin: `Settings → API Tokens → Create new API Token`
-2. Crear **dos tokens**:
+| Tarea | Estado | Notas |
+|---|---|---|
+| T1.1 Generar API Token en Strapi Admin | ⚙️ Config | Variable `STRAPI_API_FULL_ACCCESS_TOKEN` |
+| T1.2 Integrar token en cliente Strapi | ✅ Hecho | `src/lib/strapi.ts` — lazy proxy + fallback chain |
+| T1.3 Proteger token de exposición cliente | ✅ Hecho | No usa `NEXT_PUBLIC_` como primera opción |
+| T1.4 Reemplazar `fetchApi` en servicios | ✅ Hecho | `users-simple.service.ts`, `texts.service.ts`, `question.service.ts` ya usan `getServerStrapiClient()` |
+| T1.5 Migrar `profile/route.ts` a `@strapi/client` | ✅ Hecho | GET y PUT migrados; bug de doble `/api` corregido |
+| T1.6 Fix `use-auth.ts` — 401 post-login | ✅ Hecho | Reemplazado `UsersService.getCurrentUser()` por `getCurrentUserAction()` (Server Action) |
 
-   | Token | Tipo | Uso |
-   |---|---|---|
-   | `CTRL_SERVER_FULL` | Full Access | Server Actions admin, creación de usuarios, asignación de roles |
-   | `CTRL_SERVER_READ` | Read-only | SSR de contenido público (si aplica) |
+### Fase 2 — Registro con rol asignado
 
-3. Agregar al `.env.local` (y variables de entorno en Railway/Render/DO):
-
-```bash
-# Strapi API Token — SOLO SERVER SIDE, NUNCA NEXT_PUBLIC_
-STRAPI_API_TOKEN=<token-full-access>
-STRAPI_API_TOKEN_READONLY=<token-read-only>
-```
-
-### 3.2 Modificar `fetch-client.ts`
-
-Agregar una función `fetchApiAdmin` (o `fetchApiWithToken`) que use el API Token en lugar del
-JWT de usuario. Esta función **solo debe invocarse en contextos server-side** (Server Actions,
-Route Handlers, `getServerSession`).
-
-```typescript
-// src/lib/fetch-client.ts — ADICIÓN
-
-const STRAPI_API_TOKEN = process.env.STRAPI_API_TOKEN;
-
-/**
- * Fetch client para llamadas server-side con Strapi API Token.
- * NUNCA llamar desde Client Components.
- */
-export const fetchApiAdmin = {
-  get: async <T>(url: string, options: RequestInit = {}): Promise<T> => {
-    if (typeof window !== 'undefined') {
-      throw new Error('fetchApiAdmin must only be called server-side');
-    }
-    return fetchWithToken<T>(url, { ...options, method: 'GET' });
-  },
-  post: async <T>(url: string, body: unknown, options: RequestInit = {}): Promise<T> => {
-    return fetchWithToken<T>(url, {
-      ...options,
-      method: 'POST',
-      body: JSON.stringify(body),
-    });
-  },
-  put: async <T>(url: string, body: unknown, options: RequestInit = {}): Promise<T> => {
-    return fetchWithToken<T>(url, {
-      ...options,
-      method: 'PUT',
-      body: JSON.stringify(body),
-    });
-  },
-};
-
-async function fetchWithToken<T>(url: string, options: RequestInit): Promise<T> {
-  const baseUrl = process.env.STRAPI_API_URL || 'http://strapi:1337/api';
-  const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-
-  const response = await fetch(fullUrl, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${STRAPI_API_TOKEN}`,
-      ...(options.headers ?? {}),
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(
-      error?.error?.message || `Strapi Admin API error ${response.status}`
-    );
-  }
-
-  return response.json() as Promise<T>;
-}
-```
-
-### 3.3 Tareas por módulo
-
-#### A. Registro de usuarios
-
-**Problema actual**: `AuthAPI.register` llama a `/auth/local/register` (endpoint público).
-Strapi no permite asignar un `role` personalizado ni completar campos JSON (`equalityMonitoring`)
-desde este endpoint sin permisos de administrador.
+**Problema**: `AuthAPI.register` usa `/auth/local/register` → crea usuario sin rol `Candidate`.
 
 **Solución**:
-
 ```
-1. Mantener POST /auth/local/register para crear la cuenta base (sin rol personalizado).
-2. En Server Action (post-registro), usar fetchApiAdmin para:
-   - PUT /users/:id  → asignar role correcto (Candidate = roleId 4)
-   - PUT /users/:id  → completar campos: firstName, lastName, phone, organization
+1. Mantener POST /auth/local/register para crear la cuenta base.
+2. En Server Action post-registro, usar getStrapiClient() (API Token) para:
+   - PUT /users/:id → asignar role Candidate (roleId según entorno)
+   - PUT /users/:id → completar campos: firstName, lastName, phone, organization
 ```
 
 **Archivos a modificar:**
 
-- `src/services/auth-api.ts` → agregar `AuthAPI.assignRole(userId, roleId)` que use `fetchApiAdmin`
+- `src/services/auth-api.ts` → agregar `AuthAPI.assignRole(userId, roleId)` usando `getStrapiClient()` sin JWT
 - `src/app/actions/users.actions.ts` → invocar `assignRole` en el Server Action post-registro
-- `src/hooks/use-auth.ts` → adaptar `register()` para pasar por la nueva acción
-
-#### B. Operaciones admin (Server Actions)
-
-**Problema actual**: `getActionAuthContext` en `server-action-auth.ts` obtiene el JWT del usuario
-de la sesión. Si el usuario tiene un rol admin en Strapi, sus requests son privilegiados. Pero si
-el JWT expira, los Server Actions fallan.
-
-**Solución**: Para operaciones de escritura admin (crear/eliminar usuarios, cambiar roles), las
-Server Actions deben usar `fetchApiAdmin` en lugar del JWT de usuario.
-
-**Archivos a modificar:**
-
-- `src/lib/auth/server-action-auth.ts` → agregar helper `requireAdminApiCall()` que retorne
-  `fetchApiAdmin` tras verificar el rol admin de la sesión
-- `src/app/actions/users.actions.ts` → reemplazar `UsersService.updateUser` con llamadas admin
-  para operaciones de escritura privilegiadas
-
-#### C. Route Handlers (`/api/user/profile`, `/api/user/privacy-consent`)
-
-**Problema actual**: Los Route Handlers obtienen el JWT de sesión y lo pasan directamente a
-Strapi. Si se necesita leer campos privados o actualizar datos de otro usuario, el JWT del usuario
-no tiene permisos.
-
-**Solución**: En el Route Handler, verificar sesión con NextAuth, luego usar `fetchApiAdmin` para
-el call a Strapi si la operación lo requiere.
+- `src/hooks/use-auth.ts` → adaptar `register()` para pasar por la nueva Server Action
 
 ```typescript
-// src/app/api/user/profile/route.ts — MODIFICACIÓN PARCIAL
-// GET: mantener con JWT de usuario (solo lee sus propios datos)
-// PUT: usar fetchApiAdmin para actualizar campos que requieran permisos elevados
-import { fetchApiAdmin } from '@/lib/fetch-client';
+// src/services/auth-api.ts — ADICIÓN
+import { getStrapiClient } from '@/lib/strapi';
 
-export async function PUT(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const body = await request.json();
-  // Usar API Token para la actualización (evita problemas de permisos en Strapi)
-  const updated = await fetchApiAdmin.put(`/users/${session.user.id}`, body);
-  return NextResponse.json(updated);
+static async assignRole(userId: string, roleId: number): Promise<void> {
+  // Usa el API Token del servidor (sin JWT de usuario)
+  const client = getStrapiClient();
+  await client.collection('users').update(userId, {
+    role: roleId,
+  } as Record<string, unknown>);
 }
 ```
 
-#### D. Variables de entorno y seguridad
+**Checklist Fase 2:**
 
-**Checklist**:
+- [ ] **T2.1** `AuthAPI.assignRole(userId, roleId)` en `auth-api.ts` usando `getStrapiClient()`
+- [ ] **T2.2** Server Action en `users.actions.ts` que llame `assignRole` post-registro
+- [ ] **T2.3** Verificar que `firstName`, `lastName`, `phone`, `organization` se guardan via `update()`
+- [ ] **T2.4** Manejar errores de asignación de rol sin bloquear el flujo (log + fallback)
+- [ ] **T2.5** Obtener `roleId` de Candidate dinámicamente (`UsersService.getRoles()`) en lugar de hardcodearlo
 
-- [ ] `STRAPI_API_TOKEN` nunca debe tener prefijo `NEXT_PUBLIC_`
-- [ ] Agregar `STRAPI_API_TOKEN` a `.env.local.example` con un valor placeholder
-- [ ] En Vercel/Railway/DO App Platform: agregar como variable de entorno de servidor
-- [ ] En CI/CD: no imprimir el token en logs (`console.log` con token → riesgo)
-- [ ] Rotar el token si se expone accidentalmente (Strapi Admin → revocar y regenerar)
+### Fase 3 — Gestor de Estado Global (Zustand)
 
----
-
-## 4. Plan de integración: Gestor de Estado Global
-
-### 4.1 Recomendación: Zustand
+### 3.1 Recomendación: Zustand
 
 **Por qué Zustand sobre Redux:**
 
@@ -260,13 +180,13 @@ export async function PUT(request: NextRequest) {
 
 > Para este proyecto (Next.js 15 + App Router + RSC) Zustand es la opción más simple y compatible.
 
-### 4.2 Instalación
+### 3.2 Instalación
 
 ```bash
 npm install zustand
 ```
 
-### 4.3 Estructura propuesta
+### 3.3 Estructura propuesta
 
 ```
 src/
@@ -278,19 +198,21 @@ src/
     ui.store.ts           ← sidebar, modales, loaders globales
 ```
 
-### 4.4 `auth.store.ts` — Store de autenticación/perfil
+### 3.4 `auth.store.ts` — Store de autenticación/perfil
+
+> **Sin `persist`** — el perfil es un dato de servidor. Persistirlo en `localStorage`
+> introduciría datos stale entre sesiones. El store actúa como **cache en memoria**:
+> se llena tras login, se vacía en logout.
 
 ```typescript
 // src/store/auth.store.ts
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools } from 'zustand/middleware';
 import type { IPublicUser } from '@/types';
 
 interface AuthState {
-  // Perfil extendido del usuario (más completo que la sesión NextAuth)
   userProfile: IPublicUser | null;
   profileLoaded: boolean;
-  // Acciones
   setUserProfile: (profile: IPublicUser) => void;
   clearUserProfile: () => void;
   updateProfileField: <K extends keyof IPublicUser>(key: K, value: IPublicUser[K]) => void;
@@ -298,48 +220,29 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   devtools(
-    persist(
-      (set) => ({
-        userProfile: null,
-        profileLoaded: false,
-        setUserProfile: (profile) =>
-          set({ userProfile: profile, profileLoaded: true }, false, 'auth/setUserProfile'),
-        clearUserProfile: () =>
-          set({ userProfile: null, profileLoaded: false }, false, 'auth/clearUserProfile'),
-        updateProfileField: (key, value) =>
-          set(
-            (state) => ({
-              userProfile: state.userProfile
-                ? { ...state.userProfile, [key]: value }
-                : null,
-            }),
-            false,
-            'auth/updateProfileField'
-          ),
-      }),
-      {
-        name: 'ctrl-auth-profile',
-        // Solo persistir campos no sensibles
-        partialize: (state) => ({
-          userProfile: state.userProfile
-            ? {
-                id: state.userProfile.id,
-                firstName: state.userProfile.firstName,
-                lastName: state.userProfile.lastName,
-                email: state.userProfile.email,
-                role: state.userProfile.role,
-                organization: state.userProfile.organization,
-              }
-            : null,
-          profileLoaded: state.profileLoaded,
-        }),
-      }
-    )
+    (set) => ({
+      userProfile: null,
+      profileLoaded: false,
+      setUserProfile: (profile) =>
+        set({ userProfile: profile, profileLoaded: true }, false, 'auth/setUserProfile'),
+      clearUserProfile: () =>
+        set({ userProfile: null, profileLoaded: false }, false, 'auth/clearUserProfile'),
+      updateProfileField: (key, value) =>
+        set(
+          (state) => ({
+            userProfile: state.userProfile
+              ? { ...state.userProfile, [key]: value }
+              : null,
+          }),
+          false,
+          'auth/updateProfileField'
+        ),
+    }),
   )
 );
 ```
 
-### 4.5 `notifications.store.ts` — Notificaciones globales
+### 3.5 `notifications.store.ts` — Notificaciones globales
 
 ```typescript
 // src/store/notifications.store.ts
@@ -391,7 +294,7 @@ export const useNotificationsStore = create<NotificationsState>()(
 );
 ```
 
-### 4.6 `assessment.store.ts` — Progreso de assessment
+### 3.6 `assessment.store.ts` — Progreso de assessment
 
 ```typescript
 // src/store/assessment.store.ts
@@ -447,10 +350,12 @@ export const useAssessmentStore = create<AssessmentState>()(
 );
 ```
 
-### 4.7 Provider y configuración (App Router)
+### 3.7 Provider y configuración (App Router)
 
-Zustand **no necesita un Provider** para su uso básico. Pero si se usa `persist` con
-`localStorage` (SSR), se requiere un wrapper para evitar hydration mismatch:
+Zustand **no necesita un Provider** para su uso básico. El wrapper `StoreHydration` solo es
+necesario si se usa el middleware `persist` con `localStorage` para evitar hydration mismatch.
+Como `useAuthStore` no usa `persist`, `StoreHydration` en el layout actúa como punto de
+extensión para futuros stores que sí lo necesiten (ej. preferencias de UI).
 
 ```typescript
 // src/components/providers/store-hydration.tsx
@@ -484,7 +389,7 @@ import { StoreHydration } from '@/components/providers/store-hydration';
 </StoreHydration>
 ```
 
-### 4.8 Integración con `use-auth.ts`
+### 3.8 Integración con `use-auth.ts`
 
 Modificar `use-auth.ts` para sincronizar el perfil con el store tras el login:
 
@@ -521,23 +426,22 @@ export function useAuth() {
 
 ## 5. Lista de tareas consolidada
 
-### Fase 1 — Strapi API Token (servidor)
+### Fase 1 — API Token y cliente Strapi ✅ COMPLETADO
 
-- [ ] **T1.1** Generar API Token Full Access en Strapi Admin y agregar `STRAPI_API_TOKEN` a `.env.local`
-- [ ] **T1.2** Agregar `STRAPI_API_TOKEN` a `.env.local.example` con placeholder
-- [ ] **T1.3** Agregar función `fetchApiAdmin` (y `fetchWithToken`) en `src/lib/fetch-client.ts`
-- [ ] **T1.4** Agregar guard en `fetchApiAdmin` que lance error si se llama client-side
-- [ ] **T1.5** Crear `AuthAPI.assignRole(userId: number, roleId: number)` usando `fetchApiAdmin`
-- [ ] **T1.6** Modificar `users.actions.ts` para usar `fetchApiAdmin` en operaciones de escritura admin
-- [ ] **T1.7** Modificar `PUT /api/user/profile` para usar `fetchApiAdmin` en la actualización
-- [ ] **T1.8** Revisar Server Actions en `companies.actions.ts`, `question.actions.ts` y `texts.actions.ts` — reemplazar `fetchApi` por `fetchApiAdmin` donde se requieran permisos elevados
-- [ ] **T1.9** Actualizar `STRAPI_CLIENT_README.md` con la diferencia entre `fetchApi` (user JWT) y `fetchApiAdmin` (API Token)
+- [x] **T1.1** Generar API Token Full Access en Strapi Admin → variable `STRAPI_API_FULL_ACCCESS_TOKEN`
+- [x] **T1.2** Integrar token en `src/lib/strapi.ts` con lazy proxy + fallback chain
+- [x] **T1.3** Proteger token de exposición cliente (no `NEXT_PUBLIC_` como primera opción)
+- [x] **T1.4** Reemplazar `fetchApi` en servicios por `getServerStrapiClient()` / `getStrapiClient()`
+- [x] **T1.5** Migrar `PUT /api/user/profile` a `@strapi/client` (bug doble `/api` corregido)
+- [x] **T1.6** Fix `use-auth.ts` — 401 post-login: reemplazar `UsersService.getCurrentUser()` por `getCurrentUserAction()`
 
 ### Fase 2 — Registro con rol asignado
 
-- [ ] **T2.1** Después de `POST /auth/local/register`, llamar `AuthAPI.assignRole` con el roleId de Candidate (Server Action)
-- [ ] **T2.2** Verificar que los campos `firstName`, `lastName`, `phone`, `organization` se guarden correctamente vía `fetchApiAdmin.put(/users/:id, data)` post-registro
-- [ ] **T2.3** Manejar errores de asignación de rol sin bloquear el flujo de registro (log + fallback)
+- [ ] **T2.1** `AuthAPI.assignRole(userId, roleId)` en `auth-api.ts` usando `getStrapiClient()` (API Token)
+- [ ] **T2.2** Server Action en `users.actions.ts` que llame `assignRole` post-registro
+- [ ] **T2.3** Verificar que `firstName`, `lastName`, `phone`, `organization` se guarden via `update()`
+- [ ] **T2.4** Manejar errores de asignación de rol sin bloquear el flujo (log + fallback)
+- [ ] **T2.5** Obtener `roleId` de Candidate dinámicamente (`UsersService.getRoles()`) sin hardcodear
 
 ### Fase 3 — Zustand (estado global)
 
@@ -555,10 +459,9 @@ export function useAuth() {
 
 ### Fase 4 — Seguridad y validación
 
-- [ ] **T4.1** Auditar que ningún `console.log` imprima el valor de `STRAPI_API_TOKEN`
-- [ ] **T4.2** Verificar que `STRAPI_API_TOKEN` no esté en el bundle cliente (no `NEXT_PUBLIC_`)
-- [ ] **T4.3** Agregar test de tipo TypeScript que falle si `fetchApiAdmin` se importa en un Client Component
-- [ ] **T4.4** Documentar la rotación del API Token en el README
+- [ ] **T4.1** Auditar que ningún `console.log` imprima el valor del API Token
+- [ ] **T4.2** Verificar que `STRAPI_API_FULL_ACCCESS_TOKEN` no esté en el bundle cliente
+- [ ] **T4.3** Documentar la rotación del API Token en el README
 
 ---
 
@@ -569,28 +472,30 @@ export function useAuth() {
 │                     CLIENTE (Browser)                        │
 │                                                               │
 │  useAuth() → signIn('credentials') → NextAuth               │
-│  useAuthStore() → perfil cacheado en Zustand                │
-│  useNotificationsStore() → alerts globales                  │
+│  getCurrentUserAction() → Server Action (post-login)        │
+│  useAuthStore() [Fase 3] → perfil cacheado en Zustand       │
 └─────────────────────────────────────────────────────────────┘
-         │ HTTPS (JWT de usuario en sesión NextAuth)
+         │ HTTPS (cookie de sesión NextAuth)
          ▼
 ┌─────────────────────────────────────────────────────────────┐
 │              NEXT.JS SERVER (App Router)                     │
 │                                                               │
 │  Route Handlers / Server Actions                             │
-│  ├── fetchApi (user JWT)    → operaciones propias del usuario│
-│  └── fetchApiAdmin (API Token) → operaciones privilegiadas  │
+│  ├── getServerStrapiClient()   → user JWT (operaciones own) │
+│  ├── getStrapiClient(jwt)      → user JWT explícito         │
+│  └── getStrapiClient()         → API Token (privilegiado)   │
+│      strapiServerClient        → API Token singleton lazy   │
 └─────────────────────────────────────────────────────────────┘
-         │ Bearer <userJWT>          │ Bearer <STRAPI_API_TOKEN>
+         │ Bearer <userJWT>          │ Bearer <API_TOKEN>
          ▼                           ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                  STRAPI BACKEND                              │
 │                                                               │
-│  /auth/local            → autenticación usuario             │
+│  /auth/local            → autenticación (fetch-client)      │
 │  /users/me              → perfil propio (user JWT)          │
-│  /users/:id  (PUT)      → actualizar perfil (API Token)     │
+│  /users/:documentId     → update perfil (@strapi/client)    │
 │  /users-permissions/*   → roles (API Token)                 │
-│  /[colecciones]         → CRUD admin (API Token)            │
+│  /[colecciones]         → CRUD (@strapi/client)             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -610,17 +515,44 @@ El JWT de NextAuth **contiene** el JWT de Strapi del usuario (campo `token.jwt`)
 
 ### Sobre Zustand y Server Components
 
+Zustand **no compite** con Server Components, Server Actions ni el cache de Next.js.
+El cambio de paradigma con App Router es:
+
+| Tipo de estado | Dónde vive |
+|---|---|
+| Datos de DB/API | Server Components / Server Actions |
+| Cache en memoria de sesión | Zustand (sin persist) |
+| Estado de UI/interacción | Zustand |
+| Datos que deben persistir entre sesiones | DB (Server Actions) |
+| Preferencias de UI locales | Zustand con persist + localStorage |
+
+**Anti-pattern a evitar:**
+```ts
+// ❌ MAL — datos del servidor en Zustand con persist
+const useStore = create(persist(() => ({ posts: [] }), { name: 'posts' }))
+```
+
+**Patrón correcto en este proyecto:**
+```ts
+// ✅ BIEN — servidor es la fuente de verdad, Zustand es cache de sesión
+// 1. Server Action obtiene el dato
+const user = await UsersService.getCurrentUser();
+// 2. Cliente lo cachea en memoria para compartir entre componentes
+setUserProfile(user);
+```
+
 Zustand **no funciona en React Server Components**. Los stores solo deben accederse desde:
 - Client Components (`'use client'`)
 - Hooks cliente (`use-auth.ts`, etc.)
 
 Para pasar datos de servidor a Zustand, el patrón recomendado es:
 1. Server Component fetcha los datos
-2. Pasa datos como props a un Client Component "hidratador"
+2. Pasa datos como props a un Client Component
 3. El Client Component llama `store.setState()` una sola vez
 
 ### Sobre `documentId` (Strapi v5)
 
 El tipo `IUser` ya incluye `documentId?: string` para compatibilidad con Strapi v5.
-Al usar `fetchApiAdmin.put`, verificar si Strapi está en v4 (`/users/:id`) o v5
-(`/users/:documentId`) y ajustar la URL según corresponda.
+`@strapi/client` usa `documentId` (string UUID) internamente en `collection().update(id, data)`.
+Para llamadas directas vía `client.fetch('/users/:id', ...)`, usar el `id` numérico o `documentId`
+según lo que devuelva el endpoint de Strapi v5.
