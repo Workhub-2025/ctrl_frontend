@@ -35,14 +35,11 @@ export async function GET(request: NextRequest) {
         }
 
         // Fetch complete user profile from Strapi
-        const { fetchClient } = await import('@/lib/fetch-client');
-        const response = await fetchClient('/users/me?populate=*', {
-            headers: {
-                Authorization: `Bearer ${session.user.jwt}`,
-            },
-        });
-
-        const userData = await response.json();
+        const { getStrapiClient } = await import('@/lib/strapi');
+        const strapiClient = getStrapiClient(session.user.jwt);
+        const meResponse = await strapiClient.fetch('/users/me?populate=*');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userData: any = await meResponse.json();
 
         trace.success({ userId: session.user.id });
         return NextResponse.json({
@@ -123,29 +120,12 @@ export async function PUT(request: NextRequest) {
         console.log('Prepared update data:', updateData);
 
         // Update user profile in Strapi using proper user ID
-        const { fetchClient } = await import('@/lib/fetch-client');
-        const response = await fetchClient(
-            `/api/users/${session.user.id}`,
-            {
-                method: 'PUT',
-                body: JSON.stringify(updateData),
-                headers: {
-                    Authorization: `Bearer ${session.user.jwt}`,
-                    'Content-Type': 'application/json',
-                },
-            }
-        );
-
-        const updatedUser = await response.json();
-        console.log('Strapi response:', response.status, updatedUser);
-
-        if (!response.ok) {
-            console.error('Strapi update failed:', updatedUser);
-            return NextResponse.json(
-                { error: updatedUser.error?.message || 'Failed to update profile in Strapi' },
-                { status: response.status, headers: { 'x-correlation-id': correlationId } }
-            );
-        }
+        const { getStrapiClient } = await import('@/lib/strapi');
+        const strapiClient = getStrapiClient(session.user.jwt);
+        const updatedUser = await strapiClient.collection('users').update(
+            String(session.user.id),
+            updateData as Record<string, unknown>
+        ) as unknown as any;
 
         trace.success({ userId: session.user.id });
         return NextResponse.json({

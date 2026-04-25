@@ -1,13 +1,13 @@
 /**
  * Audio Calls Service for Server Actions
- * Direct integration with fetch-client for managing audio calls
+ * Uses @strapi/client for all Strapi CMS interactions.
  */
-import fetchApi from "@/lib/fetch-client";
+import { getServerStrapiClient } from '@/lib/strapi';
 import { IAudioCall, AudioCallFileUpload, isAudioCall, PaginatedResponse, UpdateAudioCallData, QueryParamsType } from '@/types';
 import BaseServiceHelper, { ServiceConfig } from './base-service.helper';
 
 export default class AudioCallService {
-    private static readonly BASE_URL = '/audio-calls';
+    private static readonly COLLECTION = 'audio-calls';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'AudioCallService',
         searchFields: ['description', 'transcription', 'rubric'],
@@ -18,23 +18,16 @@ export default class AudioCallService {
      * Get audio calls with pagination and filters
      */
     static async getAudioCalls(params: QueryParamsType = {}): Promise<PaginatedResponse<IAudioCall> | null> {
-        // Add populate=* by default if not specified
-        const paramsWithPopulate = {
-            populate: '*',
-            ...params
-        };
+        const paramsWithPopulate = { populate: '*', ...params };
 
-        const queryString = BaseServiceHelper.buildQueryString(paramsWithPopulate, this.SERVICE_CONFIG);
-        const url = `${this.BASE_URL}?${queryString}`;
-
-        BaseServiceHelper.logRequest(this.SERVICE_CONFIG.serviceName, url, paramsWithPopulate);
-        console.log('[Audio call service] Fetching audio calls with params:', paramsWithPopulate);
-
-        return BaseServiceHelper.handleApiRequest(
+        return BaseServiceHelper.executeSafely(
             this.SERVICE_CONFIG.serviceName,
             'fetching audio calls',
-            () => fetchApi.get<PaginatedResponse<IAudioCall>>(url),
-            paramsWithPopulate
+            async () => {
+                const client = await getServerStrapiClient();
+                const queryParams = BaseServiceHelper.toStrapiQueryParams(paramsWithPopulate, this.SERVICE_CONFIG);
+                return client.collection(this.COLLECTION).find(queryParams) as unknown as Promise<PaginatedResponse<IAudioCall>>;
+            }
         );
     }
 
@@ -46,8 +39,8 @@ export default class AudioCallService {
             this.SERVICE_CONFIG.serviceName,
             'fetching audio call by ID',
             async () => {
-                const response = await fetchApi.get<{ data: IAudioCall }>(`${this.BASE_URL}/${id}?populate=*`);
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).findOne(String(id), { populate: '*' }) as unknown as Promise<IAudioCall>;
             }
         );
     }
@@ -60,54 +53,33 @@ export default class AudioCallService {
             this.SERVICE_CONFIG.serviceName,
             'creating audio call',
             async () => {
-                // PASO 1: Subir el archivo primero
-                const uploadFormData = new FormData();
-                uploadFormData.append('files', audioCallData.file);
+                const client = await getServerStrapiClient();
 
-                // Opcionalmente, agregar metadatos del archivo
-                uploadFormData.append('fileInfo', JSON.stringify({
-                    name: audioCallData.file.name,
-                    alternativeText: audioCallData.description || '',
-                }));
+                // PASO 1: Subir el archivo via files API
+                const uploadedFiles = await client.files.upload(audioCallData.file, {
+                    fileInfo: {
+                        name: audioCallData.file.name,
+                        alternativeText: audioCallData.description ?? '',
+                    },
+                });
 
-                console.log('[createAudioCall] Uploading file...');
-                const uploadResponse = await fetchApi.post(
-                    '/upload',
-                    uploadFormData
-                );
-
-                console.log('[createAudioCall] uploadResponse:', uploadResponse);
-
-                // Verificar que el archivo se subió correctamente
-                if (!uploadResponse || uploadResponse.length === 0) {
+                if (!uploadedFiles?.length) {
                     throw new Error('File upload failed');
                 }
 
-                const uploadedFileId = uploadResponse[0].id; // o .id según tu API
+                const uploadedFileId = uploadedFiles[0].id;
 
-                // PASO 2: Crear la entrada CON el archivo asociado
-                const entryData = {
-                    description: audioCallData.description || '',
-                    transcription: audioCallData.transcription || undefined,
-                    rubric: audioCallData.rubric || undefined,
-                    file: uploadedFileId, // Asociar el archivo aquí
-                };
-
-                // Limpiar undefined
-                const cleanData = Object.fromEntries(
-                    Object.entries(entryData).filter(([_, value]) => value !== undefined)
+                // PASO 2: Crear la entrada con el archivo asociado
+                const entryData = Object.fromEntries(
+                    Object.entries({
+                        description: audioCallData.description ?? '',
+                        transcription: audioCallData.transcription,
+                        rubric: audioCallData.rubric,
+                        file: uploadedFileId,
+                    }).filter(([, v]) => v !== undefined)
                 );
 
-                console.log('[createAudioCall] Creating entry with file:', cleanData);
-
-                const registeredAudioCall = await fetchApi.post(
-                    this.BASE_URL,
-                    { data: cleanData }
-                );
-
-                console.log('[createAudioCall] Entry created:', registeredAudioCall);
-
-                return registeredAudioCall.data;
+                return client.collection(this.COLLECTION).create(entryData) as unknown as Promise<IAudioCall>;
             }
         );
     }
@@ -121,11 +93,8 @@ export default class AudioCallService {
             this.SERVICE_CONFIG.serviceName,
             'updating audio call',
             async () => {
-                const response = await fetchApi.put<{ data: IAudioCall }>(
-                    `${this.BASE_URL}/${id}`,
-                    { data }
-                );
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).update(String(id), data as Record<string, unknown>) as unknown as Promise<IAudioCall>;
             }
         );
     }
@@ -138,30 +107,30 @@ export default class AudioCallService {
             this.SERVICE_CONFIG.serviceName,
             'updating audio call with file',
             async () => {
-                const formData = new FormData();
+                const client = await getServerStrapiClient();
 
-                // Add the new audio file
-                formData.append('files.file', audioCallData.file);
+                // Upload new file
+                const uploadedFiles = await client.files.upload(audioCallData.file, {
+                    fileInfo: {
+                        name: audioCallData.file.name,
+                        alternativeText: audioCallData.description ?? '',
+                    },
+                });
 
-                // Add the data fields - only include fields that exist in backend schema
-                const data = {
-                    description: audioCallData.description || '',
-                    transcription: audioCallData.transcription || undefined,
-                    rubric: audioCallData.rubric || undefined,
-                };
+                if (!uploadedFiles?.length) {
+                    throw new Error('File upload failed');
+                }
 
-                // Remove undefined fields to avoid sending them
-                const cleanData = Object.fromEntries(
-                    Object.entries(data).filter(([_, value]) => value !== undefined)
+                const updateData = Object.fromEntries(
+                    Object.entries({
+                        description: audioCallData.description ?? '',
+                        transcription: audioCallData.transcription,
+                        rubric: audioCallData.rubric,
+                        file: uploadedFiles[0].id,
+                    }).filter(([, v]) => v !== undefined)
                 );
 
-                formData.append('data', JSON.stringify(cleanData));
-
-                const response = await fetchApi.put<{ data: IAudioCall }>(
-                    `${this.BASE_URL}/${id}`,
-                    formData
-                );
-                return response.data;
+                return client.collection(this.COLLECTION).update(String(id), updateData) as unknown as Promise<IAudioCall>;
             }
         );
     }
@@ -174,12 +143,16 @@ export default class AudioCallService {
             this.SERVICE_CONFIG.serviceName,
             'deleting audio call',
             async () => {
+                const client = await getServerStrapiClient();
                 const audioCallToDelete = await this.getAudioCallById(id);
                 if (!audioCallToDelete) {
                     throw new Error(`Audio call with ID ${id} not found`);
                 }
-                await fetchApi.delete('/upload/files/' + audioCallToDelete.file?.id);
-                await fetchApi.delete(`${this.BASE_URL}/${id}`);
+                // Delete associated file from media library
+                if (audioCallToDelete.file?.id) {
+                    await client.files.delete(audioCallToDelete.file.id);
+                }
+                await client.collection(this.COLLECTION).delete(String(id));
                 return true;
             }
         );

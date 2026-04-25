@@ -93,6 +93,24 @@ export async function POST(request: Request) {
     // Always record locally for immediate audit visibility.
     console.info("[INTEGRITY_EVENT]", JSON.stringify(envelope));
 
+    // Persist to Strapi (non-blocking — failure must not affect the response).
+    try {
+      const { getStrapiClient } = await import("@/lib/strapi");
+      const strapiClient = getStrapiClient(); // API token — no user JWT needed
+      await strapiClient.collection("integrity-events").create({
+        users_permissions_user: String(session.user.id),
+        assessmentType: body.assessmentType,
+        eventType: body.eventType,
+        metadata: body.metadata ?? {},
+        occurredAt: body.occurredAt ?? new Date().toISOString(),
+        ipAddress: clientIp,
+        userAgent: request.headers.get("user-agent") ?? "unknown",
+        correlationId,
+      } as Record<string, unknown>);
+    } catch (persistError) {
+      console.warn("[INTEGRITY_EVENT] Strapi persistence failed (non-fatal):", persistError);
+    }
+
     trace.success({ eventType: body.eventType, assessmentType: body.assessmentType });
     return NextResponse.json(
       { success: true, recorded: true },

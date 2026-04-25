@@ -4,6 +4,7 @@ export const ProgresStatusSchema = z.enum(['Completed', 'In progress', 'Not star
 
 export const AssessmentSchema = z.object({
     id: z.number(),
+    documentId: z.string(),
     name: z.string(),
     progresStatus: ProgresStatusSchema,
     score: z.number(),
@@ -14,11 +15,5 @@ export const AssessmentSchema = z.object({
     scenarios: z.array(z.string())
 })
 
-export const AssessmentResponseSchema = z.object({
-    id: z.number(),
-    attributes: AssessmentSchema
-})
-
 export type IProgresStatus = z.infer<typeof ProgresStatusSchema>
 export type IAssessment = z.infer<typeof AssessmentSchema>
-export type IAssessmentResponse = z.infer<typeof AssessmentResponseSchema>

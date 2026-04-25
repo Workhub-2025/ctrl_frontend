@@ -2,7 +2,7 @@ import { useSession, signIn, signOut, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
-import UsersService from '@/services/users-simple.service';
+import { getCurrentUserAction } from '@/app/actions/users.actions';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 
 export function useAuth() {
@@ -111,7 +111,8 @@ export function useAuth() {
 
                 // Get fresh user data directly from Strapi for routing decisions
                 try {
-                    const userData = await UsersService.getCurrentUser();
+                    const result = await getCurrentUserAction();
+                    const userData = result.success ? result.data : null;
                     console.log('📋 Fresh user data for routing:', userData);
 
                     if (userData) {

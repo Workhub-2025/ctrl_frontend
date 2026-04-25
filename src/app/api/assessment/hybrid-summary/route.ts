@@ -56,22 +56,24 @@ export async function POST(request: NextRequest) {
     const summary = parsed.data;
 
     // Persist core score fields to user profile.
-    const { fetchClient } = await import("@/lib/fetch-client");
-    const updateResponse = await fetchClient(`/users/${session.user.id}`, {
-      method: "PUT",
-      body: JSON.stringify({
+    const { getStrapiClient } = await import("@/lib/strapi");
+    const strapiClient = getStrapiClient(session.user.jwt);
+    let userUpdated = false;
+    try {
+      await strapiClient.collection("users").update(String(session.user.id), {
         overallScore: summary.overallScore,
         progresStatus: "Completed",
-      }),
-      headers: {
-        Authorization: `Bearer ${session.user.jwt}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    let userUpdated = updateResponse.ok;
-    if (!updateResponse.ok) {
-      userUpdated = false;
+      });
+      userUpdated = true;
+      await strapiClient.collection('candidate-reports').create({
+        users_permissions_user: String(session.user.id),
+        reportData: summary,
+        overallScore: summary.overallScore,
+        passed: summary.readinessBand !== 'developing',
+        generatedAt: new Date().toISOString(),
+      });
+    } catch (updateError) {
+      trace.failure(updateError instanceof Error ? updateError : new Error("User update failed"));
     }
 
     // Optional external persistence for full evidence object.

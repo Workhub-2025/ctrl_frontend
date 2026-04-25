@@ -12,11 +12,6 @@ export const RoleSchema = z.object({
     permissions: z.any().optional(), // Keep as any for flexibility, but make optional
 });
 
-export const RoleResponseSchema = z.object({
-    id: z.number(),
-    attributes: RoleSchema,
-});
-
 export const RoutesInfoSchema = z.object({
     name: z.string(),
     base: z.string(),
@@ -29,17 +24,12 @@ export const PermisoSchema = z.object({
 
 // Type inference from Zod schemas
 export type IRole = z.infer<typeof RoleSchema>;
-export type IRoleResponse = z.infer<typeof RoleResponseSchema>;
 export type IRoutesInfo = z.infer<typeof RoutesInfoSchema>;
 export type IPermiso = z.infer<typeof PermisoSchema>;
 
 // Validation helper functions
 export const validateRole = (data: unknown): IRole => {
     return RoleSchema.parse(data);
-};
-
-export const validateRoleResponse = (data: unknown): IRoleResponse => {
-    return RoleResponseSchema.parse(data);
 };
 
 export const validateRoutesInfo = (data: unknown): IRoutesInfo => {
@@ -53,10 +43,6 @@ export const validatePermiso = (data: unknown): IPermiso => {
 // Safe parsing functions (return success/error instead of throwing)
 export const safeParseRole = (data: unknown) => {
     return RoleSchema.safeParse(data);
-};
-
-export const safeParseRoleResponse = (data: unknown) => {
-    return RoleResponseSchema.safeParse(data);
 };
 
 export const safeParseRoutesInfo = (data: unknown) => {
