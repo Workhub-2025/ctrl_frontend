@@ -1,4 +1,4 @@
-import PrioritizationTest from '@/components/assessment/prioritization-test';
+import { PrioritizationTest } from '@/components/assessment';
 
 export default function PrioritizationDemoPage() {
   return (

@@ -73,7 +73,7 @@ export default class TextsService {
             'creating text',
             async () => {
                 const client = await getServerStrapiClient();
-                return client.collection(this.COLLECTION).create(textData as Record<string, unknown>) as unknown as Promise<ITypingText>;
+                return client.collection(this.COLLECTION).create(textData as unknown as Record<string, unknown>) as unknown as Promise<ITypingText>;
             }
         );
     }

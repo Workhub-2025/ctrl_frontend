@@ -1,7 +1,6 @@
 "use client";
 
-import SituationalJudgementTest from '@/components/assessment/situational-judgement-test';
-import { SecureAssessmentShell } from '@/components/assessment/secure-assessment-shell';
+import { SecureAssessmentShell, SituationalJudgementTest } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
 
 /**

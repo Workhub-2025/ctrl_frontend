@@ -1,7 +1,6 @@
 "use client";
 
-import PrioritizationTest from '@/components/assessment/prioritization-test';
-import { SecureAssessmentShell } from '@/components/assessment/secure-assessment-shell';
+import { PrioritizationTest, SecureAssessmentShell } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
 
 export default function PrioritizationPage() {

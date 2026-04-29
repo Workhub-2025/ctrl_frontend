@@ -8,7 +8,7 @@ import {
   Play,
   RotateCcw,
 } from 'lucide-react';
-import { AssessmentGameShell } from '@/components/assessment/assessment-game-shell';
+import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';

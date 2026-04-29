@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { CheckCircle2 } from "lucide-react";
-import { SecurePreflightModal } from "@/components/assessment/secure-preflight-modal";
+import { SecurePreflightModal } from "@/components/assessment";
 
 type AssessmentCardProps = Readonly<{
   icon: React.ReactNode;

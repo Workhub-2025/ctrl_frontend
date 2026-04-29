@@ -10,7 +10,7 @@ import {
   RotateCcw,
   Volume2,
 } from 'lucide-react';
-import { AssessmentGameShell } from '@/components/assessment/assessment-game-shell';
+import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

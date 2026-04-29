@@ -1,7 +1,6 @@
 "use client";
 
-import CallSimulationTest from '@/components/assessment/call-simulation-test';
-import { SecureAssessmentShell } from '@/components/assessment/secure-assessment-shell';
+import { CallSimulationTest, SecureAssessmentShell } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
 
 /**

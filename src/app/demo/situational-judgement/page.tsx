@@ -1,4 +1,4 @@
-import SituationalJudgementTest from '@/components/assessment/situational-judgement-test';
+import { SituationalJudgementTest } from '@/components/assessment';
 
 export default function SituationalJudgementPage() {
   return (

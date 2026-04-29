@@ -1,4 +1,4 @@
-import TypingTest from '@/components/assessment/typing-test';
+import { TypingTest } from '@/components/assessment';
 
 export default function TypingTestPage() {
   return (

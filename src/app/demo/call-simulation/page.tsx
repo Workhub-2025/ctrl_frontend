@@ -1,4 +1,4 @@
-import CallSimulationTest from '@/components/assessment/call-simulation-test';
+import { CallSimulationTest } from '@/components/assessment';
 
 export default function CallSimulationPage() {
   return (

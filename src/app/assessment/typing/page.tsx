@@ -1,7 +1,6 @@
 "use client";
 
-import TypingTest from '@/components/assessment/typing-test';
-import { SecureAssessmentShell } from '@/components/assessment/secure-assessment-shell';
+import { SecureAssessmentShell, TypingTest } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
 
 /**

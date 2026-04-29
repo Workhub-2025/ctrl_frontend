@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { CheckCircle2, Coffee, Keyboard, Loader2, Play, RotateCcw, Timer } from 'lucide-react';
-import { AssessmentGameShell } from '@/components/assessment/assessment-game-shell';
+import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
