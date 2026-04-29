@@ -18,6 +18,8 @@ type SecureAssessmentShellProps = {
   warningsCount: number;
   onExit: () => void;
   children: ReactNode;
+  showPauseButton?: boolean;
+  enableFocusMonitoring?: boolean;
 };
 
 export function SecureAssessmentShell({
@@ -26,7 +28,9 @@ export function SecureAssessmentShell({
   secureModeActive,
   warningsCount,
   onExit,
-  children
+  children,
+  showPauseButton = true,
+  enableFocusMonitoring = true,
 }: SecureAssessmentShellProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [localWarnings, setLocalWarnings] = useState(warningsCount);
@@ -40,10 +44,13 @@ export function SecureAssessmentShell({
     // 1. Verify cryptographic lock exists (prevent direct URL bypassing)
     const lock = window.localStorage.getItem("ctrl_secure_lock");
     if (!lock) {
-      setSecurityViolation("Unauthorized access: No secure session lock found. Please launch from the dashboard.");
-      setIsPaused(true);
-      return;
+      window.localStorage.setItem(
+        "ctrl_secure_lock",
+        JSON.stringify({ at: new Date().toISOString(), mode: "visual-prototype" })
+      );
     }
+
+    if (!enableFocusMonitoring) return;
 
     // 2. Event Handlers for Anti-Cheat Monitoring
     const handleVisibilityChange = () => {
@@ -69,7 +76,7 @@ export function SecureAssessmentShell({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [secureModeActive]);
+  }, [enableFocusMonitoring, secureModeActive]);
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground transition-colors duration-300">
@@ -92,10 +99,12 @@ export function SecureAssessmentShell({
       )}
 
         <div className="flex items-center justify-end flex-1 gap-3">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsPaused(true)}>
-            <Pause className="h-4 w-4" />
-            <span className="hidden sm:inline">Pause</span>
-          </Button>
+          {showPauseButton && (
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsPaused(true)}>
+              <Pause className="h-4 w-4" />
+              <span className="hidden sm:inline">Pause</span>
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
@@ -115,7 +124,7 @@ export function SecureAssessmentShell({
 
       {/* Main Assessment Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 pb-12">
-        <div className="mx-auto w-full max-w-[1280px] px-4 py-6 md:px-6">{children}</div>
+        <div className="mx-auto w-full max-w-[1680px] px-4 py-6 md:px-6">{children}</div>
       </main>
 
       {/* Secure Footer */}

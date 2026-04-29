@@ -1,20 +1,15 @@
 "use client";
 
-import SituationalJudgementTest from '@/components/assessment/situational-judgement-test';
+import PrioritizationTest from '@/components/assessment/prioritization-test';
 import { SecureAssessmentShell } from '@/components/assessment/secure-assessment-shell';
 import { useSecureExit } from '@/hooks/use-secure-exit';
 
-/**
- * SituationalJudgementPage
- * 
- * The dedicated secure route for the Situational Judgement Test.
- */
-export default function SituationalJudgementPage() {
+export default function PrioritizationPage() {
   const { handleExit } = useSecureExit();
 
   return (
     <SecureAssessmentShell
-      assessmentName="Situational Judgement Test"
+      assessmentName="Prioritization Assessment"
       timerLabel="In Progress"
       secureModeActive={true}
       warningsCount={0}
@@ -22,7 +17,7 @@ export default function SituationalJudgementPage() {
       showPauseButton={false}
       enableFocusMonitoring={false}
     >
-      <SituationalJudgementTest />
+      <PrioritizationTest />
     </SecureAssessmentShell>
   );
 }

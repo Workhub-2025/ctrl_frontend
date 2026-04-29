@@ -20,10 +20,10 @@ export default function TypingTestPage() {
       secureModeActive={true}
       warningsCount={0}
       onExit={handleExit}
+      showPauseButton={false}
+      enableFocusMonitoring={false}
     >
-      <div className="mx-auto w-full max-w-4xl">
-        <TypingTest enableAutoSave={false} />
-      </div>
+      <TypingTest enableAutoSave={false} />
     </SecureAssessmentShell>
   );
 }

@@ -1,5 +1,5 @@
 import { AssessmentCard } from "@/components/dashboard/assessment-card";
-import { Keyboard, Phone, ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Keyboard, ListOrdered, Phone } from "lucide-react";
 
 export const metadata = {
   title: "Dashboard",
@@ -34,6 +34,12 @@ export default function DashboardPage() {
           title="Situational Judgement"
           description="Assess your decision-making skills with a series of multiple-choice and text-based questions based on real-world emergency scenarios."
           href="/demo/situational-judgement"
+        />
+        <AssessmentCard
+          icon={<ListOrdered className="h-8 w-8" />}
+          title="Prioritization Assessment"
+          description="Rank incoming incidents in priority order across practice and final dispatch queue rounds."
+          href="/demo/prioritization"
         />
       </div>
     </div>

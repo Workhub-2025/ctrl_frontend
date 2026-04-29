@@ -1,0 +1,149 @@
+{
+  "practiceScenarios": [
+    {
+      "id": "practice-1",
+      "scenario": "A caller is distressed and speaking very quickly. You can hear another person shouting in the background, but you have not yet confirmed the exact location.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Ask the caller to calm down and explain everything from the beginning.",
+        "Politely interrupt to confirm the exact location and whether anyone is in immediate danger.",
+        "Transfer the call to a supervisor because the caller is difficult to understand.",
+        "Stay silent and wait for the caller to finish before asking any questions."
+      ]
+    },
+    {
+      "id": "practice-2",
+      "scenario": "A caller reports a minor road collision. During the call, they mention one driver is becoming aggressive and trying to leave the scene.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Tell the caller to physically stop the driver leaving.",
+        "Focus only on exchanging insurance details because the collision is minor.",
+        "Record the developing risk, keep the caller safe, and gather vehicle and direction details.",
+        "End the call and wait for an online report because there are no injuries."
+      ]
+    },
+    {
+      "id": "practice-3",
+      "scenario": "A caller says their elderly neighbour has not been seen for two days. They can hear a faint noise from inside the property but cannot get a response.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Advise the caller to wait another day and call back if nothing changes.",
+        "Ask the caller to force entry immediately.",
+        "Treat it as a welfare concern, confirm location/access details, and arrange an appropriate response.",
+        "Log it as information only because the caller has not seen an injury."
+      ]
+    }
+  ],
+  "finalScenarios": [
+    {
+      "id": "final-1",
+      "scenario": "A caller reports hearing screaming from a neighbouring flat. They do not know the flat number but believe the sound is coming from the floor above.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Ask the caller to investigate the corridor and identify the exact flat.",
+        "Gather the caller's location, what they can hear, any known risks, and arrange a response while keeping them safe.",
+        "Tell the caller no action can be taken without a flat number.",
+        "Advise the caller to record the noise and submit it later."
+      ]
+    },
+    {
+      "id": "final-2",
+      "scenario": "A caller says a person is lying on the pavement after a fight outside a pub. The caller is across the road and does not know if the person is conscious.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Ask the caller to approach the injured person immediately.",
+        "Confirm the exact location, assess immediate danger from a safe position, and request relevant emergency support.",
+        "Tell the caller to wait until the fight has fully ended before providing details.",
+        "Record the incident as public disorder only because injury is unconfirmed."
+      ]
+    },
+    {
+      "id": "final-3",
+      "scenario": "A caller reports a vehicle driving erratically on a busy road. They are following the vehicle closely to keep it in sight.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Encourage the caller to continue following so the vehicle is not lost.",
+        "Tell the caller to overtake and read the registration plate.",
+        "Advise the caller to keep themselves safe, gather location/direction details, and avoid following dangerously.",
+        "Ask the caller to call back only if a collision happens."
+      ]
+    },
+    {
+      "id": "final-4",
+      "scenario": "A caller is reporting threatening messages from an ex-partner. They say the ex-partner has just sent a message saying they are outside.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Treat it as a current risk, confirm safety/location, gather details, and arrange an appropriate response.",
+        "Tell the caller to block the number and call back tomorrow.",
+        "Ask the caller to go outside and confirm whether the ex-partner is there.",
+        "Log the messages as a non-urgent report because no assault has happened."
+      ]
+    },
+    {
+      "id": "final-5",
+      "scenario": "A caller reports smoke coming from a small industrial unit. They are unsure if anyone is inside, and staff from nearby units are gathering outside.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Ask staff nearby to enter and check whether anyone is inside.",
+        "Confirm location, visible hazards, possible occupants, and advise people to stay clear while response is arranged.",
+        "Tell the caller to wait until flames are visible before escalating.",
+        "Record it as an alarm activation only because the caller is outside."
+      ]
+    },
+    {
+      "id": "final-6",
+      "scenario": "A caller whispers that someone has broken into their home. They are upstairs with the door locked and can hear movement below.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Ask the caller to go downstairs and check who is there.",
+        "Keep the caller on the line, confirm location and safety, gather what can be heard, and arrange urgent support.",
+        "Tell the caller to shout loudly so the intruder leaves.",
+        "Advise the caller to hang up and hide until morning."
+      ]
+    },
+    {
+      "id": "final-7",
+      "scenario": "A caller reports a child separated from their parent in a crowded shopping centre. Security staff are searching but the child has not been found.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Advise the caller to wait because shopping centres often reunite children quickly.",
+        "Gather description, last known location, time missing, vulnerabilities, and coordinate an appropriate response.",
+        "Tell the parent to search outside alone.",
+        "Record it as lost property because the child is inside a managed venue."
+      ]
+    },
+    {
+      "id": "final-8",
+      "scenario": "A caller reports a person sitting on the wrong side of a bridge barrier. Traffic is still moving below.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Ask the caller to pull the person back over the barrier.",
+        "Keep the caller safe, confirm exact location, assess immediate risk, and arrange urgent support.",
+        "Tell the caller to leave because it is not their responsibility.",
+        "Ask the caller to take a photo so responders can identify the person."
+      ]
+    },
+    {
+      "id": "final-9",
+      "scenario": "A caller reports a shop theft. The suspect has left, but staff have CCTV and the suspect's direction of travel.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Gather key details, preserve evidence, record direction of travel, and assess whether immediate attendance is needed.",
+        "Tell staff to chase the suspect while staying on the phone.",
+        "Ignore the direction of travel because the suspect has already left.",
+        "Advise staff to delete CCTV after writing a description."
+      ]
+    },
+    {
+      "id": "final-10",
+      "scenario": "A caller says their friend has taken tablets and is becoming drowsy. The caller is panicking and does not know the address because they are visiting.",
+      "prompt": "Which response is most appropriate?",
+      "options": [
+        "Ask the caller to search their phone for the address before doing anything else.",
+        "Establish the location using all available clues, assess breathing/consciousness, and arrange urgent medical help.",
+        "Tell the caller to drive the friend to hospital immediately.",
+        "End the call and wait for the caller to find the exact postcode."
+      ]
+    }
+  ]
+}

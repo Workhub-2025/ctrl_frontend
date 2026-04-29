@@ -115,7 +115,6 @@ export default function CandidateReviewPage() {
         </CardHeader>
         <CardContent>
           {reviewQueue.length === 0 ? (
-            {/* Empty State */}
             <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-border dark:border-white/5 bg-muted/50 dark:bg-[#04070d]/50 text-center p-4">
               <Inbox className="h-8 w-8 text-muted-foreground/50 mb-2" />
               <p className="text-sm font-medium text-foreground">Queue empty</p>
