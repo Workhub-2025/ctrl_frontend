@@ -19,10 +19,10 @@ export default function CallSimulationPage() {
       secureModeActive={true}
       warningsCount={0}
       onExit={handleExit}
+      showPauseButton={false}
+      enableFocusMonitoring={false}
     >
-      <div className="mx-auto w-full max-w-4xl">
-        <CallSimulationTest />
-      </div>
+      <CallSimulationTest />
     </SecureAssessmentShell>
   );
 }

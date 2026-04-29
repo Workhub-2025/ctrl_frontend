@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, ShieldAlert, XCircle, X } from "lucide-react";
+import { CheckCircle2, XCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -45,7 +45,6 @@ export function SecurePreflightModal({
   // Mock environment checks
   const [desktopEligible, setDesktopEligible] = useState(true);
   const [fullscreenCapable, setFullscreenCapable] = useState(true);
-  const [multiTabReady, setMultiTabReady] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
@@ -53,21 +52,20 @@ export function SecurePreflightModal({
       setDesktopEligible(window.innerWidth > 768);
       setFullscreenCapable(document.fullscreenEnabled ?? true);
       
-      // Check for existing assessment lock to prevent multi-tab execution
-      const existingLock = window.localStorage.getItem('ctrl_secure_lock');
-      setMultiTabReady(!existingLock);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const canProceed = desktopEligible && fullscreenCapable && multiTabReady;
+  const canProceed = desktopEligible && fullscreenCapable;
 
   const handleEnterSecureMode = () => {
     if (!canProceed || !acknowledged) return;
     setSubmitting(true);
     
-    // Set the secure lock so other tabs are blocked
+    window.localStorage.removeItem('ctrl_secure_lock');
+
+    // Set the secure lock required by the assessment shell.
     const lockToken = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2);
     window.localStorage.setItem('ctrl_secure_lock', JSON.stringify({ 
       at: new Date().toISOString(),
@@ -121,9 +119,9 @@ export function SecurePreflightModal({
               detail="Secure mode requires fullscreen API support before runtime launch."
             />
             <CheckRow
-              label="Multi-Tab Session Lock"
-              pass={multiTabReady}
-              detail={multiTabReady ? "No conflicting active assessment lock detected." : "An active secure assessment is already locked in another tab."}
+              label="Assessment Window"
+              pass={true}
+              detail="This prototype allows repeated launches while the assessment visuals are being tested."
             />
           </div>
 

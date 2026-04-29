@@ -1,0 +1,22 @@
+{
+  "runs": [
+    {
+      "id": "practice-1",
+      "title": "Practice call 1",
+      "kind": "practice",
+      "audioSrc": "/assets/audio.mp3"
+    },
+    {
+      "id": "practice-2",
+      "title": "Practice call 2",
+      "kind": "practice",
+      "audioSrc": "/assets/audio.mp3"
+    },
+    {
+      "id": "final",
+      "title": "Final call",
+      "kind": "final",
+      "audioSrc": "/assets/audio.mp3"
+    }
+  ]
+}
