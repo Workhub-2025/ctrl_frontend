@@ -2,12 +2,14 @@ import { useSession, signIn, signOut, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
-import UsersService from '@/services/users-simple.service';
+import { getCurrentUserAction } from '@/app/actions/users.actions';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
+import { useAuthStore } from '@/store/auth.store';
 
 export function useAuth() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const { setUserProfile, clearUserProfile } = useAuthStore();
 
     const isLoading = status === 'loading';
     const isAuthenticated = status === 'authenticated';
@@ -111,7 +113,8 @@ export function useAuth() {
 
                 // Get fresh user data directly from Strapi for routing decisions
                 try {
-                    const userData = await UsersService.getCurrentUser();
+                    const result = await getCurrentUserAction();
+                    const userData = result.success ? result.data : null;
                     console.log('📋 Fresh user data for routing:', userData);
 
                     if (userData) {
@@ -121,6 +124,8 @@ export function useAuth() {
                                 ...userData,
                                 role: freshSession?.user?.role || session?.user?.role || 'candidate',
                             };
+                        // Persist profile in Zustand store
+                        setUserProfile(resolvedUserData as IUser);
                         // Route based on fresh user data
                         routeAfterLogin(resolvedUserData);
                     } else if (freshSession?.user) {
@@ -177,7 +182,7 @@ export function useAuth() {
 
     const logout = async () => {
         try {
-            // Sign out from NextAuth
+            clearUserProfile();
             await signOut({
                 redirect: false,
             });
@@ -204,8 +209,8 @@ export function useAuth() {
             }
 
             const updatedUser = await response.json();
-            // Note: NextAuth session won't automatically update
-            // You might need to call update() from useSession if needed
+            // Sync updated profile into Zustand store
+            setUserProfile(updatedUser as IUser);
             return updatedUser;
         } catch (error) {
             console.error('Profile update error:', error);

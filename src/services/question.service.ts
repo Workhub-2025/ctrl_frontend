@@ -1,8 +1,8 @@
 /**
  * Questions Service for Server Actions
- * Direct integration with fetch-client for managing questions
+ * Uses @strapi/client for all Strapi CMS interactions.
  */
-import fetchApi from "@/lib/fetch-client";
+import { getServerStrapiClient } from '@/lib/strapi';
 import { IQuestion, isMCPQuestion, isTextQuestion, PaginatedResponse, QueryParamsType } from '@/types';
 import BaseServiceHelper, { ServiceConfig } from './base-service.helper';
 
@@ -10,7 +10,7 @@ export interface FindQuestionsParams extends QueryParamsType {
     type?: 'mcp' | 'text';
 }
 export default class QuestionService {
-    private static readonly BASE_URL = '/questions';
+    private static readonly COLLECTION = 'questions';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'QuestionService',
         searchFields: ['question', 'rightAnswer', 'rubric'],
@@ -21,16 +21,14 @@ export default class QuestionService {
      * Get questions with pagination and filters
      */
     static async getQuestions(params: FindQuestionsParams = {}): Promise<PaginatedResponse<IQuestion> | null> {
-        const queryString = BaseServiceHelper.buildQueryString(params, this.SERVICE_CONFIG);
-        const url = `${this.BASE_URL}?${queryString}`;
-
-        BaseServiceHelper.logRequest(this.SERVICE_CONFIG.serviceName, url, params);
-
-        return BaseServiceHelper.handleApiRequest(
+        return BaseServiceHelper.executeSafely(
             this.SERVICE_CONFIG.serviceName,
             'fetching questions',
-            () => fetchApi.get<PaginatedResponse<IQuestion>>(url),
-            params
+            async () => {
+                const client = await getServerStrapiClient();
+                const queryParams = BaseServiceHelper.toStrapiQueryParams(params, this.SERVICE_CONFIG);
+                return client.collection(this.COLLECTION).find(queryParams) as unknown as Promise<PaginatedResponse<IQuestion>>;
+            }
         );
     }
 
@@ -42,8 +40,8 @@ export default class QuestionService {
             this.SERVICE_CONFIG.serviceName,
             'fetching question by ID',
             async () => {
-                const response = await fetchApi.get<{ data: IQuestion }>(`${this.BASE_URL}/${id}`);
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).findOne(String(id)) as unknown as Promise<IQuestion>;
             }
         );
     }
@@ -56,11 +54,8 @@ export default class QuestionService {
             this.SERVICE_CONFIG.serviceName,
             'creating question',
             async () => {
-                const response = await fetchApi.post<{ data: IQuestion }>(
-                    this.BASE_URL,
-                    { data: questionData }
-                );
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).create(questionData as Record<string, unknown>) as unknown as Promise<IQuestion>;
             }
         );
     }
@@ -73,11 +68,8 @@ export default class QuestionService {
             this.SERVICE_CONFIG.serviceName,
             'updating question',
             async () => {
-                const response = await fetchApi.put<{ data: IQuestion }>(
-                    `${this.BASE_URL}/${id}`,
-                    { data }
-                );
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).update(String(id), data as Record<string, unknown>) as unknown as Promise<IQuestion>;
             }
         );
     }
@@ -90,7 +82,8 @@ export default class QuestionService {
             this.SERVICE_CONFIG.serviceName,
             'deleting question',
             async () => {
-                await fetchApi.delete(`${this.BASE_URL}/${id}`);
+                const client = await getServerStrapiClient();
+                await client.collection(this.COLLECTION).delete(String(id));
                 return true;
             }
         );

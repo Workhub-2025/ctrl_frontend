@@ -18,7 +18,7 @@ export class AssessmentProgressService {
             await fetchClient(`${this.BASE_PATH}/save`, {
                 method: 'POST',
                 body: JSON.stringify({
-                    testType: (progress as any).testType,
+                    assessmentSlug: (progress as any).testType,
                     progressData: progress,
                     status: (progress as any).status,
                 }),
@@ -38,7 +38,7 @@ export class AssessmentProgressService {
     ): Promise<T | null> {
         try {
             const response = await fetchClient(
-                `${this.BASE_PATH}/resume?testType=${testType}`,
+                `${this.BASE_PATH}/resume?assessmentSlug=${testType}`,
                 {
                     method: 'GET',
                 }
@@ -61,7 +61,7 @@ export class AssessmentProgressService {
      */
     static async clearProgress(testType: AssessmentProgress['testType']): Promise<void> {
         try {
-            await fetchClient(`${this.BASE_PATH}/clear?testType=${testType}`, {
+            await fetchClient(`${this.BASE_PATH}/clear?assessmentSlug=${testType}`, {
                 method: 'DELETE',
             });
         } catch (error) {

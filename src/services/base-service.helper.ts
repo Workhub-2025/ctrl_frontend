@@ -276,6 +276,49 @@ export class BaseServiceHelper {
     }
 
     /**
+     * Convert BaseServiceParams to @strapi/client query params object.
+     * Builds the `filters`, `pagination`, `sort`, and `populate` keys
+     * in the format expected by `client.collection().find()`.
+     */
+    static toStrapiQueryParams(
+        params: BaseServiceParams,
+        config: ServiceConfig
+    ): Record<string, any> {
+        const query: Record<string, any> = {};
+
+        // Pagination
+        if (params.page || params.pageSize) {
+            query.pagination = {};
+            if (params.page) query.pagination.page = params.page;
+            if (params.pageSize) query.pagination.pageSize = params.pageSize;
+        }
+
+        // Filters
+        if (params.filters && typeof params.filters === 'object') {
+            query.filters = params.filters;
+        } else if (params.search && config.searchFields?.length) {
+            const fields = config.searchFields;
+            query.filters = {
+                $or: fields.map(f => ({ [f]: { $containsi: params.search } })),
+            };
+        }
+
+        // Sort
+        if (params.sort) {
+            query.sort = Array.isArray(params.sort) ? params.sort : [params.sort];
+        } else if (config.defaultSort) {
+            query.sort = [config.defaultSort];
+        }
+
+        // Populate
+        if (params.populate !== undefined) {
+            query.populate = params.populate;
+        }
+
+        return query;
+    }
+
+    /**
      * Create basic try-catch wrapper for service methods
      */
     static async executeSafely<T>(

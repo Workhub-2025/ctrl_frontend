@@ -3,6 +3,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { StoreHydration } from "@/components/providers/store-hydration";
 
 export const metadata: Metadata = {
   title: { default: "CTRL Assessment", template: "%s | CTRL Assessment" },
@@ -53,7 +54,9 @@ export default function RootLayout({
         )}
       >
         <ThemeProvider>
-          {children}
+          <StoreHydration>
+            {children}
+          </StoreHydration>
           <Toaster />
         </ThemeProvider>
       </body>
