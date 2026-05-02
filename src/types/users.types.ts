@@ -87,13 +87,6 @@ export const PublicUserSchema = UserSchema.omit({
     provider: true,
 });
 
-// User response from Strapi API
-export const UserResponseSchema = z.object({
-    id: z.union([z.number(), z.string()]),
-    documentId: z.string().optional(),
-    attributes: PublicUserSchema.optional(), // For Strapi v4 format
-}).passthrough(); // Allow additional fields for direct user object
-
 // Strapi auth user schema (what comes back from auth endpoints)
 export const StrapiAuthUserSchema = z.object({
     id: z.union([z.number(), z.string()]),
@@ -207,7 +200,6 @@ export const UserProfileSchema = z.object({
 // Type inference from Zod schemas
 export type IUser = z.infer<typeof UserSchema>;
 export type IPublicUser = z.infer<typeof PublicUserSchema>;
-export type IUserResponse = z.infer<typeof UserResponseSchema>;
 export type StrapiAuthUser = z.infer<typeof StrapiAuthUserSchema>;
 export type StrapiAuthResponse = z.infer<typeof StrapiAuthResponseSchema>;
 export type LoginUserData = z.infer<typeof LoginUserDataSchema>;
@@ -303,10 +295,6 @@ export const validatePublicUser = (data: unknown): IPublicUser => {
     return result.data;
 };
 
-export const validateUserResponse = (data: unknown): IUserResponse => {
-    return UserResponseSchema.parse(data);
-};
-
 /**
  * Safe validation that returns a result object instead of throwing
  */
@@ -382,10 +370,6 @@ export const safeParseUser = (data: unknown) => {
 
 export const safeParsePublicUser = (data: unknown) => {
     return PublicUserSchema.safeParse(data);
-};
-
-export const safeParseUserResponse = (data: unknown) => {
-    return UserResponseSchema.safeParse(data);
 };
 
 export const safeParseStrapiAuthUser = (data: unknown) => {

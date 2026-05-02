@@ -411,7 +411,6 @@ export default function Home() {
       sectionObserver.disconnect();
     };
   }, []);
-
   return (
     <div
       className="landing-shell relative overflow-x-hidden text-slate-900 dark:text-white"

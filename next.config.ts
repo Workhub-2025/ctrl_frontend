@@ -6,12 +6,6 @@ const nextConfig: NextConfig = {
   output: process.env.CLOUDFLARE_PAGES ? 'export' : 'standalone',
   trailingSlash: true,
 
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',

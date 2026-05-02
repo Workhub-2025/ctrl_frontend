@@ -9,6 +9,8 @@ import QuestionService, {
     FindQuestionsParams
 } from '@/services/question.service';
 import { IQuestion, PaginatedResponse, } from '@/types';
+import { requireAdminActionContext } from '@/lib/auth/server-action-auth';
+import { startServerActionTrace } from '@/lib/observability/server-observability';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -22,6 +24,7 @@ type ActionResult<T> = {
  */
 export const getQuestionsAction = async (params: FindQuestionsParams = {}): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getQuestionsAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getQuestionsAction] Called with params:', params);
         }
@@ -70,6 +73,7 @@ export const getQuestionsAction = async (params: FindQuestionsParams = {}): Prom
  */
 export const getQuestionByIdAction = async (id: string | number): Promise<ActionResult<IQuestion>> => {
     try {
+        await requireAdminActionContext('getQuestionByIdAction');
         const question = await QuestionService.getQuestionById(id);
 
         if (!question) {
@@ -96,7 +100,10 @@ export const getQuestionByIdAction = async (id: string | number): Promise<Action
  * Create new question (MCP or Text)
  */
 export const createQuestionAction = async (questionData: IQuestion): Promise<ActionResult<IQuestion>> => {
+    const trace = startServerActionTrace('createQuestionAction');
+    let isSuccess = false;
     try {
+        await requireAdminActionContext('createQuestionAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[createQuestionAction] Creating question with data:', questionData);
         }
@@ -114,16 +121,20 @@ export const createQuestionAction = async (questionData: IQuestion): Promise<Act
             console.log('[createQuestionAction] Successfully created question with ID:', question.documentId);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: question
         };
     } catch (error: any) {
+        trace.failure(error);
         console.error('[createQuestionAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to create question'
         };
+    } finally {
+        if (isSuccess) trace.success();
     }
 }
 
@@ -134,7 +145,10 @@ export const updateQuestionAction = async (
     id: string | number,
     data: IQuestion
 ): Promise<ActionResult<IQuestion>> => {
+    const trace = startServerActionTrace('updateQuestionAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
+        await requireAdminActionContext('updateQuestionAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[updateQuestionAction] Updating question ID:', id, 'with data:', data);
         }
@@ -152,16 +166,20 @@ export const updateQuestionAction = async (
             console.log('[updateQuestionAction] Successfully updated question ID:', id);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: question
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[updateQuestionAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to update question'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 
@@ -171,7 +189,10 @@ export const updateQuestionAction = async (
 export const deleteQuestionAction = async (
     id: string | number
 ): Promise<ActionResult<boolean>> => {
+    const trace = startServerActionTrace('deleteQuestionAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
+        await requireAdminActionContext('deleteQuestionAction', trace.correlationId);
         if (process.env.NODE_ENV === 'development') {
             console.log('[deleteQuestionAction] Deleting question ID:', id);
         }
@@ -189,16 +210,20 @@ export const deleteQuestionAction = async (
             console.log('[deleteQuestionAction] Successfully deleted question ID:', id);
         }
 
+        isSuccess = true;
         return {
             success: true,
             data: true
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[deleteQuestionAction] Unexpected error:', error);
         return {
             success: false,
             error: error.message || 'Failed to delete question'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 
@@ -210,6 +235,7 @@ export const getQuestionsByTypeAction = async (
     params: Omit<FindQuestionsParams, 'type'> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getQuestionsByTypeAction');
         const questions = await QuestionService.getQuestionsByType(type, params);
 
         if (!questions) {
@@ -239,6 +265,7 @@ export const getMCPQuestionsAction = async (
     params: Omit<FindQuestionsParams, 'type'> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getMCPQuestionsAction');
         const questions = await QuestionService.getMCPQuestions(params);
 
         if (!questions) {
@@ -268,6 +295,7 @@ export const getTextQuestionsAction = async (
     params: Omit<FindQuestionsParams, 'type'> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('getTextQuestionsAction');
         const questions = await QuestionService.getTextQuestions(params);
 
         if (!questions) {
@@ -298,6 +326,7 @@ export const searchQuestionsAction = async (
     filters: Partial<FindQuestionsParams> = {}
 ): Promise<ActionResult<PaginatedResponse<IQuestion>>> => {
     try {
+        await requireAdminActionContext('searchQuestionsAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[searchQuestionsAction] Searching questions with term:', searchTerm, 'and filters:', filters);
         }

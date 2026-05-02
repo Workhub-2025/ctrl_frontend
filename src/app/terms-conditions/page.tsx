@@ -2,15 +2,14 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { ArrowLeft, FileText, Scale } from "lucide-react";
 import Link from "next/link";
+import { FormPageHeader } from "@/components/auth/form-page-header";
 
 export default function TermsConditionsPage() {
   return (
@@ -32,16 +31,13 @@ export default function TermsConditionsPage() {
           </div>
 
           <Card>
-            <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                <Scale className="h-8 w-8" />
-              </div>
-              <CardTitle className="text-3xl font-headline">
-                Terms & Conditions
-              </CardTitle>
-              <CardDescription>
-                Emergency Services Assessment Platform
-              </CardDescription>
+            <CardHeader>
+              <FormPageHeader
+                icon={Scale}
+                color="blue"
+                title="Terms & Conditions"
+                description="Emergency Services Assessment Platform"
+              />
               <p className="text-sm text-muted-foreground mt-2">
                 Last updated:{" "}
                 {new Date().toLocaleDateString("en-GB", {

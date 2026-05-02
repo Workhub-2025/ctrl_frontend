@@ -18,6 +18,12 @@ import {
     IProgresStatus
 } from '@/types';
 import { debugAuthToken, debugEnvironment } from '@/lib/debug-auth';
+import {
+    applyTenantScope,
+    enforceTenantWrite,
+    requireAdminActionContext
+} from '@/lib/auth/server-action-auth';
+import { startServerActionTrace } from '@/lib/observability/server-observability';
 
 // Result type for consistent server action returns
 type ActionResult<T> = {
@@ -58,6 +64,7 @@ export const getCurrentUserAction = async (): Promise<ActionResult<IPublicUser>>
  */
 export const getUsersAction = async (params: FindUsersParams = {}): Promise<ActionResult<PaginatedResponse<IPublicUser>>> => {
     try {
+        const authContext = await requireAdminActionContext('getUsersAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getUsersAction] Called with params:', JSON.stringify(params, null, 2));
         }
@@ -68,7 +75,8 @@ export const getUsersAction = async (params: FindUsersParams = {}): Promise<Acti
             debugEnvironment();
         }
 
-        const users = await UsersService.getUsers(params);
+        const scopedParams = applyTenantScope(params, authContext);
+        const users = await UsersService.getUsers(scopedParams);
 
         if (!users) {
             console.error('[getUsersAction] Service returned null');
@@ -120,11 +128,13 @@ export const getCandidatesAction = async (params: {
     sort?: string;
 } = {}): Promise<ActionResult<PaginatedResponse<IPublicUser>>> => {
     try {
+        const authContext = await requireAdminActionContext('getCandidatesAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getCandidatesAction] Called with params:', JSON.stringify(params, null, 2));
         }
 
-        const candidates = await UsersService.getCandidates(params);
+        const scopedParams = applyTenantScope(params, authContext);
+        const candidates = await UsersService.getCandidates(scopedParams);
 
         if (!candidates) {
             console.error('[getCandidatesAction] Service returned null');
@@ -166,6 +176,7 @@ export const getCandidatesAction = async (params: {
  */
 export const getUserByIdAction = async (id: string | number): Promise<ActionResult<IPublicUser>> => {
     try {
+        await requireAdminActionContext('getUserByIdAction');
         const user = await UsersService.getUserById(id);
 
         if (!user) {
@@ -192,8 +203,12 @@ export const getUserByIdAction = async (id: string | number): Promise<ActionResu
  * Create new user
  */
 export const createUserAction = async (userData: CreateUserData): Promise<ActionResult<IPublicUser>> => {
+    const trace = startServerActionTrace('createUserAction');
+    let isSuccess = false;
     try {
-        const newUser = await UsersService.createUser(userData);
+        const authContext = await requireAdminActionContext('createUserAction', trace.correlationId);
+        const scopedUserData = enforceTenantWrite(userData, authContext);
+        const newUser = await UsersService.createUser(scopedUserData);
 
         if (!newUser) {
             return {
@@ -206,16 +221,22 @@ export const createUserAction = async (userData: CreateUserData): Promise<Action
         revalidateTag('users');
         revalidatePath('/admin/users');
 
+        isSuccess = true;
         return {
             success: true,
             data: newUser
         };
     } catch (error: any) {
+        trace.failure(error);
         console.error('[createUserAction] Error:', error);
         return {
             success: false,
             error: error.message || 'Failed to create user'
         };
+    } finally {
+        if (isSuccess) {
+            trace.success();
+        }
     }
 }
 
@@ -226,8 +247,12 @@ export const updateUserAction = async (
     id: string | number,
     data: UserUpdateData
 ): Promise<ActionResult<IPublicUser>> => {
+    const trace = startServerActionTrace('updateUserAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
-        const updatedUser = await UsersService.updateUser(id, data);
+        const authContext = await requireAdminActionContext('updateUserAction', trace.correlationId);
+        const scopedData = enforceTenantWrite(data, authContext);
+        const updatedUser = await UsersService.updateUser(id, scopedData);
 
         if (!updatedUser) {
             return {
@@ -241,16 +266,22 @@ export const updateUserAction = async (
         revalidatePath('/admin/users');
         revalidatePath(`/admin/users/${id}`);
 
+        isSuccess = true;
         return {
             success: true,
             data: updatedUser
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[updateUserAction] Error:', error);
         return {
             success: false,
             error: error.message || 'Failed to update user'
         };
+    } finally {
+        if (isSuccess) {
+            trace.success({ targetId: String(id) });
+        }
     }
 }
 
@@ -259,7 +290,9 @@ export const updateUserAction = async (
  */
 export const updateCurrentUserAction = async (id: string | number, data: UserUpdateData): Promise<ActionResult<IPublicUser>> => {
     try {
-        const updatedUser = await UsersService.updateUser(id, data);
+        const authContext = await requireAdminActionContext('updateCurrentUserAction');
+        const scopedData = enforceTenantWrite(data, authContext);
+        const updatedUser = await UsersService.updateUser(id, scopedData);
 
         if (!updatedUser) {
             return {
@@ -290,7 +323,10 @@ export const updateCurrentUserAction = async (id: string | number, data: UserUpd
  * Delete user
  */
 export const deleteUserAction = async (id: string | number): Promise<ActionResult<boolean>> => {
+    const trace = startServerActionTrace('deleteUserAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
+        await requireAdminActionContext('deleteUserAction', trace.correlationId);
         const success = await UsersService.deleteUser(id);
 
         if (!success) {
@@ -304,16 +340,22 @@ export const deleteUserAction = async (id: string | number): Promise<ActionResul
         revalidateTag('users');
         revalidatePath('/admin/users');
 
+        isSuccess = true;
         return {
             success: true,
             data: true
         };
     } catch (error: any) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[deleteUserAction] Error:', error);
         return {
             success: false,
             error: error.message || 'Failed to delete user'
         };
+    } finally {
+        if (isSuccess) {
+            trace.success({ targetId: String(id) });
+        }
     }
 }
 
@@ -322,6 +364,7 @@ export const deleteUserAction = async (id: string | number): Promise<ActionResul
  */
 export const getUserStatsAction = async (): Promise<ActionResult<UserStats>> => {
     try {
+        await requireAdminActionContext('getUserStatsAction');
         const stats = await UsersService.getUserStats();
 
         if (!stats) {
@@ -352,7 +395,9 @@ export const searchUsersAction = async (
     filters: Partial<FindUsersParams> = {}
 ): Promise<ActionResult<PaginatedResponse<IPublicUser>>> => {
     try {
-        const results = await UsersService.searchUsers(searchTerm, filters);
+        const authContext = await requireAdminActionContext('searchUsersAction');
+        const scopedFilters = applyTenantScope(filters, authContext);
+        const results = await UsersService.searchUsers(searchTerm, scopedFilters);
 
         if (!results) {
             return {
@@ -401,6 +446,7 @@ export const getUserCompletionStatusAction = async (): Promise<ActionResult<{
  */
 export const getUserRolesAction = async (): Promise<ActionResult<any[]>> => {
     try {
+        await requireAdminActionContext('getUserRolesAction');
         const roles = await UsersService.getRoles();
 
         if (!roles) {
@@ -425,7 +471,8 @@ export const getUserRolesAction = async (): Promise<ActionResult<any[]>> => {
 
 export const getUserOrgAction = async (): Promise<ActionResult<string[]>> => {
     try {
-        const users = await UsersService.getUsers();
+        const authContext = await requireAdminActionContext('getUserOrgAction');
+        const users = await UsersService.getUsers(applyTenantScope({}, authContext));
 
         let unique: string[] = []
 

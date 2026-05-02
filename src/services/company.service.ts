@@ -1,8 +1,8 @@
 /**
  * Company Service for Server Actions
- * Direct integration with fetch-client for managing companies
+ * Uses @strapi/client for all Strapi CMS interactions.
  */
-import fetchApi from "@/lib/fetch-client";
+import { getServerStrapiClient } from '@/lib/strapi';
 import {
     ICompany,
     CreateCompanyData,
@@ -24,7 +24,7 @@ export interface FindCompaniesParams extends QueryParamsType {
 }
 
 export default class CompanyService {
-    private static readonly BASE_URL = '/companies';
+    private static readonly COLLECTION = 'companies';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'CompanyService',
         searchFields: ['name', 'legalName', 'primaryContactName', 'primaryContactEmail', 'city', 'state'],
@@ -35,16 +35,14 @@ export default class CompanyService {
      * Get companies with pagination and filters
      */
     static async getCompanies(params: FindCompaniesParams = {}): Promise<PaginatedResponse<ICompany> | null> {
-        const queryString = BaseServiceHelper.buildQueryString(params, this.SERVICE_CONFIG);
-        const url = `${this.BASE_URL}?${queryString}`;
-
-        BaseServiceHelper.logRequest(this.SERVICE_CONFIG.serviceName, url, params);
-
-        return BaseServiceHelper.handleApiRequest(
+        return BaseServiceHelper.executeSafely(
             this.SERVICE_CONFIG.serviceName,
             'fetching companies',
-            () => fetchApi.get<PaginatedResponse<ICompany>>(url),
-            params
+            async () => {
+                const client = await getServerStrapiClient();
+                const queryParams = BaseServiceHelper.toStrapiQueryParams(params, this.SERVICE_CONFIG);
+                return client.collection(this.COLLECTION).find(queryParams) as unknown as Promise<PaginatedResponse<ICompany>>;
+            }
         );
     }
 
@@ -56,8 +54,8 @@ export default class CompanyService {
             this.SERVICE_CONFIG.serviceName,
             'fetching company by ID',
             async () => {
-                const response = await fetchApi.get<{ data: ICompany }>(`${this.BASE_URL}/${id}`);
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).findOne(String(id)) as unknown as Promise<ICompany>;
             }
         );
     }
@@ -70,10 +68,8 @@ export default class CompanyService {
             this.SERVICE_CONFIG.serviceName,
             'fetching company by document ID',
             async () => {
-                const response = await fetchApi.get<PaginatedResponse<ICompany>>(
-                    `${this.BASE_URL}?filters[documentId][$eq]=${documentId}`
-                );
-                return response.data?.[0] || null;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).findOne(documentId) as Promise<ICompany>;
             }
         );
     }
@@ -86,10 +82,12 @@ export default class CompanyService {
             this.SERVICE_CONFIG.serviceName,
             'fetching company by external ID',
             async () => {
-                const response = await fetchApi.get<PaginatedResponse<ICompany>>(
-                    `${this.BASE_URL}?filters[externalId][$eq]=${externalId}`
-                );
-                return response.data?.[0] || null;
+                const client = await getServerStrapiClient();
+                const result = await client.collection(this.COLLECTION).find({
+                    filters: { externalId: { $eq: externalId } },
+                    pagination: { pageSize: 1 },
+                }) as unknown as PaginatedResponse<ICompany>;
+                return result.data?.[0] ?? null;
             }
         );
     }
@@ -102,14 +100,9 @@ export default class CompanyService {
             this.SERVICE_CONFIG.serviceName,
             'creating company',
             async () => {
-                // Validate data before sending
                 const validatedData = validateCreateCompanyData(companyData);
-
-                const response = await fetchApi.post<{ data: ICompany }>(
-                    this.BASE_URL,
-                    { data: validatedData }
-                );
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).create(validatedData as Record<string, unknown>) as unknown as Promise<ICompany>;
             }
         );
     }
@@ -122,14 +115,9 @@ export default class CompanyService {
             this.SERVICE_CONFIG.serviceName,
             'updating company',
             async () => {
-                // Validate data before sending
                 const validatedData = validateUpdateCompanyData(data);
-
-                const response = await fetchApi.put<{ data: ICompany }>(
-                    `${this.BASE_URL}/${id}`,
-                    { data: validatedData }
-                );
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).update(String(id), validatedData as Record<string, unknown>) as unknown as Promise<ICompany>;
             }
         );
     }
@@ -142,7 +130,8 @@ export default class CompanyService {
             this.SERVICE_CONFIG.serviceName,
             'deleting company',
             async () => {
-                await fetchApi.delete(`${this.BASE_URL}/${id}`);
+                const client = await getServerStrapiClient();
+                await client.collection(this.COLLECTION).delete(String(id));
                 return true;
             }
         );

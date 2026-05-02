@@ -9,10 +9,4 @@ export const TypingTextSchema = z.object({
     text: z.string().optional()
 })
 
-export const TypingTextResponseSchema = z.object({
-    id: z.union([z.number(), z.string()]),
-    attributes: TypingTextSchema
-})
-
 export type ITypingText = z.infer<typeof TypingTextSchema>
-export type ITypingTextResponse = z.infer<typeof TypingTextResponseSchema>

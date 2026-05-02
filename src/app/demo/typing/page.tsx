@@ -1,8 +1,8 @@
-import TypingTest from '@/components/assessment/typing-test';
+import { TypingTest } from '@/components/assessment';
 
 export default function TypingTestPage() {
   return (
-    <div className="w-full max-w-4xl">
+    <div className="w-full">
       <TypingTest enableAutoSave={false} />
     </div>
   );

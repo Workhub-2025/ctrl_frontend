@@ -1,8 +1,8 @@
 /**
  * Simplified Texts Service for Server Actions
- * Direct integration with fetch-client without unnecessary abstraction layers
+ * Uses @strapi/client for all Strapi CMS interactions.
  */
-import fetchApi from "@/lib/fetch-client";
+import { getServerStrapiClient } from '@/lib/strapi';
 import { ITypingText, PaginatedResponse } from '@/types';
 import BaseServiceHelper, { ServiceConfig } from './base-service.helper';
 
@@ -28,7 +28,7 @@ export interface TextUpdateData {
 }
 
 export default class TextsService {
-    private static readonly BASE_URL = '/typing-texts';
+    private static readonly COLLECTION = 'typing-texts';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'TextsService',
         searchFields: ['text'],
@@ -39,16 +39,14 @@ export default class TextsService {
      * Get typing texts with pagination and filters
      */
     static async getTexts(params: FindTextsParams = {}): Promise<PaginatedResponse<ITypingText> | null> {
-        const queryString = BaseServiceHelper.buildQueryString(params, this.SERVICE_CONFIG);
-        const url = `${this.BASE_URL}?${queryString}`;
-
-        BaseServiceHelper.logRequest(this.SERVICE_CONFIG.serviceName, url, params);
-
-        return BaseServiceHelper.handleApiRequest(
+        return BaseServiceHelper.executeSafely(
             this.SERVICE_CONFIG.serviceName,
             'fetching texts',
-            () => fetchApi.get<PaginatedResponse<ITypingText>>(url),
-            params
+            async () => {
+                const client = await getServerStrapiClient();
+                const queryParams = BaseServiceHelper.toStrapiQueryParams(params, this.SERVICE_CONFIG);
+                return client.collection(this.COLLECTION).find(queryParams) as unknown as Promise<PaginatedResponse<ITypingText>>;
+            }
         );
     }
 
@@ -60,8 +58,8 @@ export default class TextsService {
             this.SERVICE_CONFIG.serviceName,
             'fetching text by ID',
             async () => {
-                const response = await fetchApi.get<{ data: ITypingText }>(`${this.BASE_URL}/${id}`);
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).findOne(String(id)) as unknown as Promise<ITypingText>;
             }
         );
     }
@@ -74,11 +72,8 @@ export default class TextsService {
             this.SERVICE_CONFIG.serviceName,
             'creating text',
             async () => {
-                const response = await fetchApi.post<{ data: ITypingText }>(
-                    this.BASE_URL,
-                    { data: textData }
-                );
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).create(textData as unknown as Record<string, unknown>) as unknown as Promise<ITypingText>;
             }
         );
     }
@@ -91,11 +86,8 @@ export default class TextsService {
             this.SERVICE_CONFIG.serviceName,
             'updating text',
             async () => {
-                const response = await fetchApi.put<{ data: ITypingText }>(
-                    `${this.BASE_URL}/${id}`,
-                    { data }
-                );
-                return response.data;
+                const client = await getServerStrapiClient();
+                return client.collection(this.COLLECTION).update(String(id), data as Record<string, unknown>) as unknown as Promise<ITypingText>;
             }
         );
     }
@@ -108,7 +100,8 @@ export default class TextsService {
             this.SERVICE_CONFIG.serviceName,
             'deleting text',
             async () => {
-                await fetchApi.delete(`${this.BASE_URL}/${id}`);
+                const client = await getServerStrapiClient();
+                await client.collection(this.COLLECTION).delete(String(id));
                 return true;
             }
         );

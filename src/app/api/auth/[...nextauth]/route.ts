@@ -2,6 +2,14 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from 'next-auth';
 import { AuthAPI } from '@/services/auth-api';
+import { logAuthAuditEvent } from '@/lib/security/audit-log';
+import { inferDevSeededRole, normalizeRole } from '@/lib/auth/role-model';
+import {
+    buildLoginAttemptKey,
+    checkLoginAttemptAllowed,
+    clearLoginAttempts,
+    recordFailedLoginAttempt,
+} from '@/lib/security/login-attempt-guard';
 
 // Extended User type for our application
 interface ExtendedUser extends User {
@@ -16,6 +24,38 @@ interface ExtendedUser extends User {
     agreeToTerms?: boolean;
     agreeToDataPrivacyPolicy?: boolean;
 }
+
+const getHeaderValue = (headers: unknown, name: string): string | undefined => {
+    if (!headers || typeof headers !== 'object') return undefined;
+
+    const normalizedName = name.toLowerCase();
+
+    // Headers API support
+    if ('get' in headers && typeof (headers as { get?: unknown }).get === 'function') {
+        const value = (headers as Headers).get(normalizedName) ?? (headers as Headers).get(name);
+        return value ?? undefined;
+    }
+
+    // Plain object support
+    const record = headers as Record<string, string | string[] | undefined>;
+    const candidate = record[name] ?? record[normalizedName];
+
+    if (Array.isArray(candidate)) {
+        return candidate[0];
+    }
+
+    return candidate;
+};
+
+const extractRequestContext = (requestLike: unknown) => {
+    const headers = (requestLike as { headers?: unknown } | undefined)?.headers;
+    const forwardedFor = getHeaderValue(headers, 'x-forwarded-for');
+    const realIp = getHeaderValue(headers, 'x-real-ip');
+    const userAgent = getHeaderValue(headers, 'user-agent') ?? 'unknown';
+    const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
+
+    return { ipAddress, userAgent };
+};
 
 export const authOptions = {
     providers: [
@@ -33,10 +73,32 @@ export const authOptions = {
                     return null;
                 }
 
+                const normalizedEmail = credentials.email.trim().toLowerCase();
+                const { ipAddress, userAgent } = extractRequestContext(req);
+                const attemptKey = buildLoginAttemptKey(normalizedEmail, ipAddress);
+
+                const attemptGuard = checkLoginAttemptAllowed(attemptKey);
+                if (!attemptGuard.allowed) {
+                    logAuthAuditEvent('login_locked', {
+                        email: normalizedEmail,
+                        ipAddress,
+                        userAgent,
+                        retryAfterSeconds: attemptGuard.retryAfterSeconds,
+                    });
+                    throw new Error('LOCKED_OUT');
+                }
+
+                logAuthAuditEvent('login_attempt', {
+                    email: normalizedEmail,
+                    ipAddress,
+                    userAgent,
+                    remainingAttempts: attemptGuard.remainingAttempts,
+                });
+
                 try {
                     console.log('🔄 Calling AuthAPI.login...');
                     const authResponse = await AuthAPI.login({
-                        identifier: credentials.email,
+                        identifier: normalizedEmail,
                         password: credentials.password,
                     });
 
@@ -52,7 +114,10 @@ export const authOptions = {
                     if (authResponse.jwt && authResponse.user) {
                         // Extract role name from Strapi Users & Permissions role object
                         const userRole = authResponse.user.role;
-                        const roleValue = (typeof userRole === 'object' && userRole !== null && 'name' in userRole) ? (userRole as any).name : 'Candidate';
+                        const fallbackDevRole = inferDevSeededRole(authResponse.user.email || normalizedEmail);
+                        const roleValue = userRole
+                            ? normalizeRole((typeof userRole === 'object' && userRole !== null && 'name' in userRole) ? (userRole as any).name : userRole)
+                            : fallbackDevRole ?? 'candidate';
 
                         console.log('🎯 Role extracted from Strapi:', roleValue);
 
@@ -78,15 +143,73 @@ export const authOptions = {
                             jwt: '[HIDDEN]',
                             equalityMonitoring: user.equalityMonitoring
                         });
+
+                        clearLoginAttempts(attemptKey);
+                        logAuthAuditEvent('login_success', {
+                            email: normalizedEmail,
+                            ipAddress,
+                            userAgent,
+                            role: roleValue,
+                            userId: authResponse.user.id,
+                        });
                         return user;
                     }
 
                     console.log('❌ Invalid Strapi response - missing JWT or user');
+                    const failedAttempt = recordFailedLoginAttempt(attemptKey);
+                    logAuthAuditEvent('login_failure', {
+                        email: normalizedEmail,
+                        ipAddress,
+                        userAgent,
+                        reason: 'Invalid response payload',
+                        failures: failedAttempt.failures,
+                        remainingAttempts: failedAttempt.remainingAttempts,
+                    });
+
+                    if (failedAttempt.lockedUntil) {
+                        logAuthAuditEvent('login_locked', {
+                            email: normalizedEmail,
+                            ipAddress,
+                            userAgent,
+                            retryAfterSeconds: Math.ceil((failedAttempt.lockedUntil - Date.now()) / 1000),
+                        });
+                        throw new Error('LOCKED_OUT');
+                    }
                     return null;
                 } catch (error: any) {
                     console.error('❌ NextAuth authorization error:', error.message);
                     console.error('❌ Full error:', error);
-                    return null;
+                    const message = String(error?.message || '');
+                    if (message === 'LOCKED_OUT') {
+                        throw error;
+                    }
+
+                    const failedAttempt = recordFailedLoginAttempt(attemptKey);
+                    logAuthAuditEvent('login_failure', {
+                        email: normalizedEmail,
+                        ipAddress,
+                        userAgent,
+                        reason: message || 'Unknown error',
+                        failures: failedAttempt.failures,
+                        remainingAttempts: failedAttempt.remainingAttempts,
+                    });
+
+                    if (failedAttempt.lockedUntil) {
+                        logAuthAuditEvent('login_locked', {
+                            email: normalizedEmail,
+                            ipAddress,
+                            userAgent,
+                            retryAfterSeconds: Math.ceil((failedAttempt.lockedUntil - Date.now()) / 1000),
+                        });
+                        throw new Error('LOCKED_OUT');
+                    }
+
+                    const likelyCredentialFailure = /invalid|identifier|password|credentials/i.test(message);
+                    if (likelyCredentialFailure) {
+                        return null;
+                    }
+
+                    throw new Error('AUTH_SERVICE_UNAVAILABLE');
                 }
             }
         })

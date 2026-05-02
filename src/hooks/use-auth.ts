@@ -1,12 +1,15 @@
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { useSession, signIn, signOut, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
-import UsersService from '@/services/users-simple.service';
+import { getCurrentUserAction } from '@/app/actions/users.actions';
+import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
+import { useAuthStore } from '@/store/auth.store';
 
 export function useAuth() {
     const { data: session, status } = useSession();
     const router = useRouter();
+    const { setUserProfile, clearUserProfile } = useAuthStore();
 
     const isLoading = status === 'loading';
     const isAuthenticated = status === 'authenticated';
@@ -14,20 +17,7 @@ export function useAuth() {
 
     // Public helper function to route users based on their role
     const routeByRole = (userRole?: string) => {
-        switch (userRole) {
-            case 'Candidate':
-            case 'candidate':
-                router.push('/dashboard');
-                return;
-            case 'Recruiter':
-            case 'recruiter':
-                router.push('/recruiter-dashboard');
-                return;
-            case 'admin':
-            case 'Admin':
-                router.push('/admin');
-                return;
-        }
+        router.push(routeForRole(userRole));
     };
 
     // Helper function to check if user profile is complete
@@ -35,7 +25,7 @@ export function useAuth() {
         if (!userData) return false;
 
         // For non-candidates, profile is always considered complete
-        if (userData.role !== 'Candidate' && userData.role?.name !== 'Candidate') {
+        if (normalizeRole(userData.role?.name || userData.role) !== 'candidate') {
             return true;
         }
 
@@ -48,21 +38,21 @@ export function useAuth() {
         console.log('🔄 Routing user after login:', userData);
 
         // Get role name - handle both Strapi direct response and NextAuth session formats
-        const userRole = userData?.role?.name || userData?.role || 'Candidate';
+        const userRole = normalizeRole(userData?.role?.name || userData?.role || 'candidate');
 
         console.log('🎯 Determined user role:', userRole);
 
         // Admin users go directly to admin panel
-        if (userRole === 'admin' || userRole === 'Admin') {
-            console.log('👤 Admin user, redirecting to /admin');
-            router.push('/admin');
+        if (userRole === 'admin') {
+            console.log('👤 Admin user, redirecting by role');
+            routeByRole(userRole);
             return;
         }
 
-        // Non-candidate users go to dashboard
-        if (userRole !== 'Candidate') {
-            console.log('👤 Non-candidate user, redirecting to /dashboard');
-            router.push('/dashboard');
+        // Non-candidate users go by their role routing
+        if (userRole !== 'candidate') {
+            console.log('👤 Non-candidate user, redirecting by role');
+            routeByRole(userRole);
             return;
         }
 
@@ -72,13 +62,26 @@ export function useAuth() {
         const hasCompletedEqualityMonitoring = userData?.equalityMonitoring?.completed === true;
 
         if (hasCompletedEqualityMonitoring) {
-            console.log('✅ Candidate with completed profile, redirecting to /dashboard');
-            router.push('/dashboard');
+            console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard');
+            router.push('/candidate-dashboard');
         } else {
             console.log('📋 Candidate without equality monitoring, offering optional form');
             // Show optional equality monitoring form with skip option
             router.push('/auth/equality-monitoring?optional=true');
         }
+    };
+
+    const waitForSession = async (attempts = 12, delayMs = 120) => {
+        for (let attempt = 0; attempt < attempts; attempt += 1) {
+            const freshSession = await getSession();
+            if (freshSession?.user) {
+                return freshSession;
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+
+        return null;
     };
 
     const login = async (email: string, password: string) => {
@@ -91,29 +94,56 @@ export function useAuth() {
 
             if (result?.error) {
                 console.log('❌ SignIn error:', result.error);
-                throw new Error(`Authentication failed: wrong user or password`);
+                if (result.error === 'LOCKED_OUT') {
+                    throw new Error('Too many failed attempts. Please wait 15 minutes before trying again.');
+                }
+                if (result.error === 'AUTH_SERVICE_UNAVAILABLE' || result.error === 'Configuration') {
+                    throw new Error('Authentication service is currently unavailable. Please try again shortly.');
+                }
+                if (result.error === 'AccessDenied') {
+                    throw new Error('Access denied for this account.');
+                }
+                throw new Error('Authentication failed: wrong user or password');
             }
 
             if (result?.ok) {
                 console.log('✅ SignIn successful, getting user data for routing...');
 
+                const freshSession = await waitForSession();
+
                 // Get fresh user data directly from Strapi for routing decisions
                 try {
-                    const userData = await UsersService.getCurrentUser();
+                    const result = await getCurrentUserAction();
+                    const userData = result.success ? result.data : null;
                     console.log('📋 Fresh user data for routing:', userData);
 
-                    // Route based on fresh user data
-                    routeAfterLogin(userData);
+                    if (userData) {
+                        const resolvedUserData = userData.role
+                            ? userData
+                            : {
+                                ...userData,
+                                role: freshSession?.user?.role || session?.user?.role || 'candidate',
+                            };
+                        // Persist profile in Zustand store
+                        setUserProfile(resolvedUserData as IUser);
+                        // Route based on fresh user data
+                        routeAfterLogin(resolvedUserData);
+                    } else if (freshSession?.user) {
+                        console.warn('⚠️ Profile lookup returned null, routing from session');
+                        routeAfterLogin(freshSession.user);
+                    } else {
+                        routeByRole(session?.user?.role);
+                    }
                 } catch (profileError) {
                     console.warn('⚠️ Could not get fresh profile, falling back to session', profileError);
-                    // Fallback: use session data with small delay
-                    setTimeout(() => {
-                        if (session?.user) {
-                            routeAfterLogin(session.user);
-                        } else {
-                            router.push('/dashboard');
-                        }
-                    }, 500);
+                    // Fallback: use freshly loaded session data if available
+                    if (freshSession?.user) {
+                        routeAfterLogin(freshSession.user);
+                    } else if (session?.user) {
+                        routeAfterLogin(session.user);
+                    } else {
+                        routeByRole();
+                    }
                 }
 
                 return { success: true };
@@ -152,10 +182,7 @@ export function useAuth() {
 
     const logout = async () => {
         try {
-            // Clear local storage
-            AuthAPI.logout();
-
-            // Sign out from NextAuth
+            clearUserProfile();
             await signOut({
                 redirect: false,
             });
@@ -182,8 +209,8 @@ export function useAuth() {
             }
 
             const updatedUser = await response.json();
-            // Note: NextAuth session won't automatically update
-            // You might need to call update() from useSession if needed
+            // Sync updated profile into Zustand store
+            setUserProfile(updatedUser as IUser);
             return updatedUser;
         } catch (error) {
             console.error('Profile update error:', error);

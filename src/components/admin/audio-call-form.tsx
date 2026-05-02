@@ -110,7 +110,7 @@ export function AudioCallForm({
     }
   };
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     const validTypes = ['audio/mpeg', 'audio/wav', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/webm', 'audio/flac'];
     if (!validTypes.includes(file.type) && !/\.(mp3|wav|m4a|aac|ogg|webm|flac)$/i.exec(file.name)) {
       return 'Please select a valid audio file (.mp3, .wav, .m4a, .aac, .ogg, .webm, .flac)';
@@ -121,7 +121,7 @@ export function AudioCallForm({
     }
     
     return null;
-  };
+  }, [maxFileSize]);
 
   const generateAutoDescription = (fileName: string): string => {
     const nameWithoutExtension = fileName.replace(/\.[^/.]+$/, "");
@@ -147,7 +147,7 @@ export function AudioCallForm({
       const autoDescription = generateAutoDescription(file.name);
       setFormData(prev => ({ ...prev, description: autoDescription }));
     }
-  }, [formData.description]);
+  }, [formData.description, validateFile]);
 
   const handlePlayPreview = () => {
     if (!audioRef.current) return;

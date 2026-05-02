@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import CompanyService, { FindCompaniesParams } from '@/services/company.service';
 import { ICompany, CreateCompanyData, UpdateCompanyData } from '@/types/company.types';
 import { PaginatedResponse } from '@/types';
+import { requireAdminActionContext } from '@/lib/auth/server-action-auth';
+import { startServerActionTrace } from '@/lib/observability/server-observability';
 
 /**
  * Server Action: Get companies with pagination and filters
@@ -14,6 +16,7 @@ export async function getCompaniesAction(params: FindCompaniesParams): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('getCompaniesAction');
         const companies = await CompanyService.getCompanies(params);
 
         if (!companies) {
@@ -45,6 +48,7 @@ export async function getCompanyByIdAction(id: string | number): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('getCompanyByIdAction');
         const company = await CompanyService.getCompanyById(id);
 
         if (!company) {
@@ -75,7 +79,10 @@ export async function createCompanyAction(data: CreateCompanyData): Promise<{
     data?: ICompany;
     error?: string;
 }> {
+    const trace = startServerActionTrace('createCompanyAction');
+    let isSuccess = false;
     try {
+        await requireAdminActionContext('createCompanyAction', trace.correlationId);
         // Validate required fields
         if (!data.name?.trim()) {
             return {
@@ -96,16 +103,20 @@ export async function createCompanyAction(data: CreateCompanyData): Promise<{
         // Revalidate the companies page
         revalidatePath('/admin/companies');
 
+        isSuccess = true;
         return {
             success: true,
             data: company
         };
     } catch (error) {
+        trace.failure(error);
         console.error('[createCompanyAction] Error:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to create company'
         };
+    } finally {
+        if (isSuccess) trace.success();
     }
 }
 
@@ -120,7 +131,10 @@ export async function updateCompanyAction(
     data?: ICompany;
     error?: string;
 }> {
+    const trace = startServerActionTrace('updateCompanyAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
+        await requireAdminActionContext('updateCompanyAction', trace.correlationId);
         const company = await CompanyService.updateCompany(id, data);
 
         if (!company) {
@@ -133,16 +147,20 @@ export async function updateCompanyAction(
         // Revalidate the companies page
         revalidatePath('/admin/companies');
 
+        isSuccess = true;
         return {
             success: true,
             data: company
         };
     } catch (error) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[updateCompanyAction] Error:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to update company'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 
@@ -153,7 +171,10 @@ export async function deleteCompanyAction(id: string | number): Promise<{
     success: boolean;
     error?: string;
 }> {
+    const trace = startServerActionTrace('deleteCompanyAction', { targetId: String(id) });
+    let isSuccess = false;
     try {
+        await requireAdminActionContext('deleteCompanyAction', trace.correlationId);
         const result = await CompanyService.deleteCompany(id);
 
         if (!result) {
@@ -166,15 +187,19 @@ export async function deleteCompanyAction(id: string | number): Promise<{
         // Revalidate the companies page
         revalidatePath('/admin/companies');
 
+        isSuccess = true;
         return {
             success: true
         };
     } catch (error) {
+        trace.failure(error, { targetId: String(id) });
         console.error('[deleteCompanyAction] Error:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Failed to delete company'
         };
+    } finally {
+        if (isSuccess) trace.success({ targetId: String(id) });
     }
 }
 
@@ -187,6 +212,7 @@ export async function completeOnboardingAction(id: string | number): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('completeOnboardingAction');
         const company = await CompanyService.completeOnboarding(id);
 
         if (!company) {
@@ -225,6 +251,7 @@ export async function updateSubscriptionPlanAction(
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('updateSubscriptionPlanAction');
         const company = await CompanyService.updateSubscriptionPlan(id, plan, seatsLimit);
 
         if (!company) {
@@ -265,6 +292,7 @@ export async function getCompanyStatsAction(): Promise<{
     error?: string;
 }> {
     try {
+        await requireAdminActionContext('getCompanyStatsAction');
         const stats = await CompanyService.getCompanyStats();
 
         if (!stats) {

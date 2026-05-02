@@ -24,6 +24,11 @@ const getBaseUrl = () => {
 
 const TIMEOUT = 10000; // 10 seconds
 
+interface SessionContext {
+    jwt: string | null;
+    tenant: string | null;
+}
+
 // Function to get CSRF token
 const getCsrfToken = async (): Promise<string | null> => {
     try {
@@ -45,8 +50,8 @@ const getCsrfToken = async (): Promise<string | null> => {
     }
 };
 
-// Function to get auth token from NextAuth session or localStorage
-const getAuthToken = async (): Promise<string | null> => {
+// Function to get auth + tenant context from NextAuth session
+const getSessionContext = async (): Promise<SessionContext> => {
     // Server-side: try to get token from NextAuth session
     if (typeof window === 'undefined') {
         try {
@@ -54,34 +59,27 @@ const getAuthToken = async (): Promise<string | null> => {
             const { authOptions } = await import('@/app/api/auth/[...nextauth]/route');
             const session = await getServerSession(authOptions);
 
-            if (session?.user?.jwt) {
-                return session.user.jwt;
-            }
-
-            console.warn('🔐 [SERVER] No JWT token found in server session');
-            return null;
+            return {
+                jwt: session?.user?.jwt ?? null,
+                tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
+            };
         } catch (error: any) {
             console.error('🔐 [SERVER] Failed to get server session:', error.message);
-            return null;
+            return { jwt: null, tenant: null };
         }
     } else {
-        // Client-side: try NextAuth session first, then localStorage
+        // Client-side: only rely on NextAuth session
         try {
             const { getSession } = await import('next-auth/react');
             const session = await getSession();
 
-            if (session?.user?.jwt) {
-                return session.user.jwt;
-            } else {
-                // Fallback to localStorage for direct AuthAPI usage
-                const token = localStorage.getItem('strapi-jwt');
-                return token;
-            }
+            return {
+                jwt: session?.user?.jwt ?? null,
+                tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
+            };
         } catch (sessionError: any) {
-            // If NextAuth is not available, fallback to localStorage
-            console.debug('NextAuth session unavailable, using localStorage token:', sessionError.message);
-            const token = localStorage.getItem('strapi-jwt');
-            return token;
+            console.debug('NextAuth session unavailable:', sessionError.message);
+            return { jwt: null, tenant: null };
         }
     }
 };
@@ -113,6 +111,7 @@ export const fetchClient = async (
         const headers: HeadersInit = {
             ...options.headers,
         };
+        const headerRecord = headers as Record<string, string>;
 
         // Only add Content-Type for non-FormData requests
         const isFormData = options.body instanceof FormData;
@@ -124,12 +123,20 @@ export const fetchClient = async (
         const method = (options.method || 'GET').toLowerCase();
         const isAuthEndpoint = url.includes('/auth/local') || url.includes('/users-permissions/');
 
-        // Add auth token
-        const authToken = await getAuthToken();
+        // Add auth token + tenant context
+        const { jwt: authToken, tenant } = await getSessionContext();
         console.log(`🔑 [${environment}] Token available:`, !!authToken);
 
-        if (authToken && !isAuthEndpoint) {
-            (headers as Record<string, string>)['Authorization'] = `Bearer ${authToken}`;
+        const hasAuthorizationHeader =
+            typeof headerRecord.Authorization === 'string' ||
+            typeof headerRecord.authorization === 'string';
+
+        if (authToken && !isAuthEndpoint && !hasAuthorizationHeader) {
+            headerRecord['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        if (tenant && !isAuthEndpoint) {
+            headerRecord['x-ctrl-tenant'] = tenant;
         }
 
         // Prepare fetch options
@@ -160,9 +167,8 @@ export const fetchClient = async (
             } catch { /* ignore parse errors */ }
             // Handle 401 Unauthorized
             if (response.status === 401) {
-                console.warn(`🔒 [${environment}] Unauthorized request - clearing tokens`);
+                console.warn(`🔒 [${environment}] Unauthorized request`);
                 if (typeof window !== 'undefined') {
-                    localStorage.removeItem('strapi-jwt');
                     window.location.href = '/auth/login';
                 }
                 throw new Error('Unauthorized - redirecting to login');

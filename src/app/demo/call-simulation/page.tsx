@@ -1,8 +1,8 @@
-import CallSimulationTest from '@/components/assessment/call-simulation-test';
+import { CallSimulationTest } from '@/components/assessment';
 
 export default function CallSimulationPage() {
   return (
-    <div className="w-full max-w-5xl">
+    <div className="w-full">
       <CallSimulationTest />
     </div>
   );
