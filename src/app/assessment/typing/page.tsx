@@ -1,28 +1,14 @@
-"use client";
-
-import { SecureAssessmentShell, TypingTest } from '@/components/assessment';
-import { useSecureExit } from '@/hooks/use-secure-exit';
+import { fetchAssessmentTypingRuns } from '@/app/actions/assessment-typing-texts.actions';
+import { TypingTestClient } from './typing-test-client';
 
 /**
  * TypingTestPage
- * 
- * The dedicated route for the Typing Speed & Accuracy Test. Wraps the test
- * inside the SecureAssessmentShell to enforce the secure environment.
+ *
+ * Server Component: fetches typing run texts from Strapi before rendering.
+ * The client-side shell and secure exit logic live in TypingTestClient.
  */
-export default function TypingTestPage() {
-  const { handleExit } = useSecureExit();
+export default async function TypingTestPage() {
+  const initialRuns = await fetchAssessmentTypingRuns().catch(() => []);
 
-  return (
-    <SecureAssessmentShell
-      assessmentName="Typing Speed & Accuracy Test"
-      timerLabel="In Progress"
-      secureModeActive={true}
-      warningsCount={0}
-      onExit={handleExit}
-      showPauseButton={false}
-      enableFocusMonitoring={false}
-    >
-      <TypingTest enableAutoSave={false} />
-    </SecureAssessmentShell>
-  );
+  return <TypingTestClient initialRuns={initialRuns} />;
 }

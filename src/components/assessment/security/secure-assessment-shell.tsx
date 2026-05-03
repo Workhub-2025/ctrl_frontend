@@ -2,6 +2,7 @@
 
 import { Pause, Settings, Save, AlertTriangle } from "lucide-react";
 import { ReactNode, useState, useEffect } from "react";
+import { AssessmentIntegrityService } from "@/services/assessment-integrity.service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,6 +21,8 @@ type SecureAssessmentShellProps = {
   children: ReactNode;
   showPauseButton?: boolean;
   enableFocusMonitoring?: boolean;
+  /** When provided, integrity violations are persisted via AssessmentIntegrityService. */
+  assessmentType?: string;
 };
 
 export function SecureAssessmentShell({
@@ -31,7 +34,8 @@ export function SecureAssessmentShell({
   children,
   showPauseButton = true,
   enableFocusMonitoring = true,
-}: SecureAssessmentShellProps) {
+  assessmentType,
+}: Readonly<SecureAssessmentShellProps>) {
   const [isPaused, setIsPaused] = useState(false);
   const [localWarnings, setLocalWarnings] = useState(warningsCount);
   const [securityViolation, setSecurityViolation] = useState<string | null>(null);
@@ -55,11 +59,25 @@ export function SecureAssessmentShell({
     // 2. Event Handlers for Anti-Cheat Monitoring
     const handleVisibilityChange = () => {
       if (document.hidden) {
+        if (assessmentType) {
+          void AssessmentIntegrityService.trackEvent({
+            assessmentType,
+            eventType: "tab_hidden",
+            metadata: { occurredAt: new Date().toISOString() },
+          });
+        }
         handleViolation("Window focus lost or tab switched during active assessment.");
       }
     };
 
     const handleBlur = () => {
+      if (assessmentType) {
+        void AssessmentIntegrityService.trackEvent({
+          assessmentType,
+          eventType: "window_blur",
+          metadata: { occurredAt: new Date().toISOString() },
+        });
+      }
       handleViolation("Assessment window lost focus. Ensure this is your active window.");
     };
 
@@ -76,7 +94,7 @@ export function SecureAssessmentShell({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [enableFocusMonitoring, secureModeActive]);
+  }, [assessmentType, enableFocusMonitoring, secureModeActive]);
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground transition-colors duration-300">
