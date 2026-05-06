@@ -61,7 +61,9 @@ function SignInContent() {
       setSuccessMessage(message);
     }
 
-    if (authError) {
+    // next-auth v4 + Next.js 15 can inject ?error=undefined in the callback URL on
+    // successful login; skip it to avoid showing a spurious error message.
+    if (authError && authError !== "undefined") {
       if (authError === "LOCKED_OUT") {
         setError("Too many failed attempts. Please wait before trying again.");
       } else if (authError === "AUTH_SERVICE_UNAVAILABLE" || authError === "Configuration") {

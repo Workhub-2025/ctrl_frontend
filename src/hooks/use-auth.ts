@@ -92,20 +92,8 @@ export function useAuth() {
                 redirect: false,
             });
 
-            if (result?.error) {
-                console.log('❌ SignIn error:', result.error);
-                if (result.error === 'LOCKED_OUT') {
-                    throw new Error('Too many failed attempts. Please wait 15 minutes before trying again.');
-                }
-                if (result.error === 'AUTH_SERVICE_UNAVAILABLE' || result.error === 'Configuration') {
-                    throw new Error('Authentication service is currently unavailable. Please try again shortly.');
-                }
-                if (result.error === 'AccessDenied') {
-                    throw new Error('Access denied for this account.');
-                }
-                throw new Error('Authentication failed: wrong user or password');
-            }
-
+            // Check ok first: next-auth v4 + Next.js 15 can return error="undefined" (string)
+            // even on successful login, so result?.ok is the reliable success signal.
             if (result?.ok) {
                 console.log('✅ SignIn successful, getting user data for routing...');
 
@@ -147,6 +135,23 @@ export function useAuth() {
                 }
 
                 return { success: true };
+            }
+
+            // Handle real errors (exclude the spurious "undefined" string next-auth v4 sends
+            // on success when running under Next.js 15).
+            const errorCode = result?.error;
+            if (errorCode && errorCode !== 'undefined') {
+                console.log('❌ SignIn error:', errorCode);
+                if (errorCode === 'LOCKED_OUT') {
+                    throw new Error('Too many failed attempts. Please wait 15 minutes before trying again.');
+                }
+                if (errorCode === 'AUTH_SERVICE_UNAVAILABLE' || errorCode === 'Configuration') {
+                    throw new Error('Authentication service is currently unavailable. Please try again shortly.');
+                }
+                if (errorCode === 'AccessDenied') {
+                    throw new Error('Access denied for this account.');
+                }
+                throw new Error('Authentication failed: wrong user or password');
             }
 
             throw new Error(`Login failed - Status: ${result?.status || 'unknown'}`);

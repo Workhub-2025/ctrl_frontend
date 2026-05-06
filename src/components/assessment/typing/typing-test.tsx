@@ -2,11 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { useTypingSessionStore } from '@/store/typing-session.store';
 import { CheckCircle2, Coffee, Keyboard, Loader2, Play, RotateCcw, Timer } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { AssessmentProgressService } from '@/services/assessment-progress.service';
+import type { TypingTestProgress } from '@/types/assessments-progress.types';
 
 /**
  * Props for the TypingTest component.
@@ -40,10 +43,6 @@ type RunResult = {
   wpm: number;
   accuracy: number;
 };
-
-const RUN_DURATIONS = [30, 30, 30, 60] as const;
-const FINAL_RUN_INDEX = RUN_DURATIONS.length - 1;
-const CONTENT_URL = '/assessment-content/typing.json';
 
 const fallbackRuns: TypingContentFile['runs'] = [
   {
@@ -88,33 +87,58 @@ const calculateResult = (
  * 
  * @param {TypingTestProps} props - Component properties including auto-save toggles.
  */
-export default function TypingTest({ enableAutoSave = false }: TypingTestProps) {
+export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTestProps>) {
+  const storeRuns = useTypingSessionStore((s) => s.runs);
+  const sessionId = useTypingSessionStore((s) => s.sessionId);
+  const assessmentId = useTypingSessionStore((s) => s.assessmentId);
+  const config = useTypingSessionStore((s) => s.config);
+  const setSubmissionStatus = useTypingSessionStore((s) => s.setSubmissionStatus);
+  const clearSession = useTypingSessionStore((s) => s.clearSession);
+
+  // Refs for stable closure access (config/sessionId are set once per session)
+  const configRef = useRef(config);
+  const sessionIdRef = useRef(sessionId);
+  const assessmentIdRef = useRef(assessmentId);
+
   const [phase, setPhase] = useState<TestPhase>('landing');
-  const [runs, setRuns] = useState<TypingContentFile['runs']>(fallbackRuns);
+  const [runs, setRuns] = useState<TypingContentFile['runs']>(
+    storeRuns.length > 0 ? storeRuns : fallbackRuns
+  );
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [countdown, setCountdown] = useState(3);
-  const [timeLeft, setTimeLeft] = useState<number>(RUN_DURATIONS[0]);
+  const [timeLeft, setTimeLeft] = useState<number>(config.timeLimitPerRound);
   const [typedCharacters, setTypedCharacters] = useState<string[]>([]);
   const [results, setResults] = useState<RunResult[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const captureRef = useRef<HTMLTextAreaElement | null>(null);
   const typedCharactersRef = useRef<string[]>([]);
   const runIndexRef = useRef(0);
   const currentTextRef = useRef(fallbackRuns[0].text);
   const finishRunRef = useRef<() => void>(() => {});
+  const startedAtRef = useRef<string | null>(null);
+  // Ref used by the periodic auto-save interval (avoids stale closure over results state)
+  const latestResultRef = useRef<RunResult | null>(null);
+
+  // Keep config and sessionId refs in sync so closures always have current values
+  useEffect(() => { configRef.current = config; }, [config]);
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+  useEffect(() => { assessmentIdRef.current = assessmentId; }, [assessmentId]);
 
   const currentText = useMemo(() => {
     return runs[currentRunIndex]?.text ?? fallbackRuns[0].text;
   }, [currentRunIndex, runs]);
 
-  const currentDuration = RUN_DURATIONS[currentRunIndex] ?? RUN_DURATIONS[0];
-  const isFinalRun = currentRunIndex === FINAL_RUN_INDEX;
+  // finalRunIndex: 1 practice run at index 0 + roundCount test runs → last index = roundCount
+  const finalRunIndex = config.roundCount;
+  const currentDuration = config.timeLimitPerRound;
+  const isFinalRun = currentRunIndex === finalRunIndex;
   const runLabel = isFinalRun
     ? 'Final run'
-    : `Practice run ${currentRunIndex + 1} of ${FINAL_RUN_INDEX}`;
+    : `Practice run ${currentRunIndex + 1} of ${finalRunIndex}`;
 
   const latestResult = results[results.length - 1];
   const nextRunIndex = latestResult ? latestResult.runIndex + 1 : 0;
-  const nextRunIsFinal = nextRunIndex === FINAL_RUN_INDEX;
+  const nextRunIsFinal = nextRunIndex === finalRunIndex;
 
   useEffect(() => {
     typedCharactersRef.current = typedCharacters;
@@ -128,13 +152,41 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     currentTextRef.current = currentText;
   }, [currentText]);
 
-  const resetTypedState = useCallback((runIndex: number) => {
+  // Keep latestResultRef in sync so the auto-save interval always has the current value
+  useEffect(() => {
+    latestResultRef.current = results.at(-1) ?? null;
+  }, [results]);
+
+  // Auto-save after each completed run (results array grows by one element)
+  useEffect(() => {
+    if (!enableAutoSave || results.length === 0) return;
+    const latest = results.at(-1)!;
+    const progress: TypingTestProgress = {
+      testType: 'typing',
+      currentIndex: latest.runIndex,
+      results: { wpm: latest.wpm, accuracy: latest.accuracy },
+      status: 'in-progress',
+    };
+    void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
+  }, [enableAutoSave, results]);
+
+  // Clear saved progress and store session once the assessment is fully submitted
+  useEffect(() => {
+    if (phase !== 'submitted') return;
+    void AssessmentProgressService.clearProgress('typing');
+    clearSession();
+  }, [phase, clearSession]);
+
+  const resetTypedState = useCallback((_runIndex: number) => {
     setTypedCharacters([]);
-    setTimeLeft(RUN_DURATIONS[runIndex] ?? RUN_DURATIONS[0]);
+    setTimeLeft(configRef.current.timeLimitPerRound);
   }, []);
 
   const beginCountdown = useCallback(
     (runIndex: number) => {
+      if (runIndex === 0) {
+        startedAtRef.current = new Date().toISOString();
+      }
       setCurrentRunIndex(runIndex);
       resetTypedState(runIndex);
       setCountdown(3);
@@ -145,7 +197,7 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
   const finishRun = useCallback(() => {
     const activeRunIndex = runIndexRef.current;
-    const activeDuration = RUN_DURATIONS[activeRunIndex] ?? RUN_DURATIONS[0];
+    const activeDuration = configRef.current.timeLimitPerRound;
     const result = calculateResult(
       activeRunIndex,
       activeDuration,
@@ -155,7 +207,7 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
     setResults((previousResults) => [...previousResults, result]);
 
-    if (activeRunIndex === FINAL_RUN_INDEX) {
+    if (activeRunIndex === configRef.current.roundCount) {
       setPhase('submitting');
       return;
     }
@@ -174,31 +226,12 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     setPhase('landing');
   }, [resetTypedState]);
 
+  // Sync local runs when the store is hydrated after initial render
   useEffect(() => {
-    let cancelled = false;
-
-    fetch(CONTENT_URL)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Unable to load typing content');
-        }
-        return response.json() as Promise<TypingContentFile>;
-      })
-      .then((content) => {
-        if (!cancelled && Array.isArray(content.runs) && content.runs.length > 0) {
-          setRuns(content.runs);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRuns(fallbackRuns);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (storeRuns.length > 0) {
+      setRuns(storeRuns);
+    }
+  }, [storeRuns]);
 
   useEffect(() => {
     if (phase !== 'countdown') return;
@@ -219,31 +252,89 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     if (phase !== 'running') return;
 
     captureRef.current?.focus();
-    const duration = RUN_DURATIONS[runIndexRef.current] ?? RUN_DURATIONS[0];
+    const duration = configRef.current.timeLimitPerRound;
     const endTime = Date.now() + duration * 1000;
 
-    const timerId = window.setInterval(() => {
+    const timerId = globalThis.setInterval(() => {
       const nextTimeLeft = Math.max(Math.ceil((endTime - Date.now()) / 1000), 0);
       setTimeLeft(nextTimeLeft);
 
       if (nextTimeLeft === 0) {
-        window.clearInterval(timerId);
+        globalThis.clearInterval(timerId);
         finishRunRef.current();
       }
     }, 250);
 
-    return () => window.clearInterval(timerId);
-  }, [phase]);
+    // Periodic auto-save every 15 s during a running phase
+    let autoSaveIntervalId: ReturnType<typeof globalThis.setInterval> | undefined;
+    if (enableAutoSave) {
+      autoSaveIntervalId = globalThis.setInterval(() => {
+        const latest = latestResultRef.current;
+        const progress: TypingTestProgress = {
+          testType: 'typing',
+          currentIndex: runIndexRef.current,
+          results: latest ? { wpm: latest.wpm, accuracy: latest.accuracy } : null,
+          timeLeft: Math.max(Math.ceil((endTime - Date.now()) / 1000), 0),
+          status: 'in-progress',
+        };
+        void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
+      }, 15_000);
+    }
+
+    return () => {
+      globalThis.clearInterval(timerId);
+      if (autoSaveIntervalId !== undefined) globalThis.clearInterval(autoSaveIntervalId);
+    };
+  }, [phase, enableAutoSave]);
 
   useEffect(() => {
     if (phase !== 'submitting') return;
 
-    const timerId = window.setTimeout(() => {
-      setPhase('submitted');
-    }, 2800);
+    setSubmissionStatus('submitting');
+    let cancelled = false;
 
-    return () => window.clearTimeout(timerId);
-  }, [phase]);
+    const submit = async () => {
+      try {
+        const response = await fetch('/api/assessment/typing/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            runs: results,
+            startedAt: startedAtRef.current ?? new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            assessmentId: assessmentIdRef.current,
+          }),
+        });
+
+        if (!cancelled) {
+          if (response.ok || response.status === 409) {
+            // 409 = already submitted (idempotency guard) — treat as success
+            setSubmissionStatus('submitted');
+          } else {
+            const body = await response.json().catch(() => ({}));
+            setSubmitError(
+              (body as { error?: string }).error ??
+                'Submission failed. Please contact support.'
+            );
+            setSubmissionStatus('error');
+          }
+          setPhase('submitted');
+        }
+      } catch {
+        if (!cancelled) {
+          setSubmitError('Network error. Please contact support.');
+          setSubmissionStatus('error');
+          setPhase('submitted');
+        }
+      }
+    };
+
+    void submit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, results, setSubmissionStatus]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (phase !== 'running') return;
@@ -553,16 +644,22 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
       {phase === 'submitted' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-green-500/10 text-green-600 dark:text-green-400">
+          <div className={`mb-6 flex h-16 w-16 items-center justify-center rounded-3xl ${submitError ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
           </p>
-          <p className="mt-4 max-w-md text-muted-foreground">
-            Your typing assessment has been completed. No final score is shown
-            on this screen.
-          </p>
+          {submitError ? (
+            <p className="mt-4 max-w-md text-sm text-destructive">
+              {submitError}
+            </p>
+          ) : (
+            <p className="mt-4 max-w-md text-muted-foreground">
+              Your typing assessment has been completed. No final score is shown
+              on this screen.
+            </p>
+          )}
           <Button
             variant="outline"
             className="mt-8 h-11 px-6"
