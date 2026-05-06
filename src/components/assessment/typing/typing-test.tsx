@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { useTypingSessionStore } from '@/store/typing-session.store';
 import { CheckCircle2, Coffee, Keyboard, Loader2, Play, RotateCcw, Timer } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +16,6 @@ import type { TypingTestProgress } from '@/types/assessments-progress.types';
  */
 interface TypingTestProps {
   enableAutoSave?: boolean;
-  /** Pre-fetched runs from Strapi. When provided, the static JSON fallback is skipped. */
-  initialRuns?: Array<{ id: string; text: string }>;
 }
 
 type TypingContentFile = {
@@ -45,8 +44,6 @@ type RunResult = {
   accuracy: number;
 };
 
-const RUN_DURATIONS = [30, 30, 30, 60] as const;
-const FINAL_RUN_INDEX = RUN_DURATIONS.length - 1;
 const fallbackRuns: TypingContentFile['runs'] = [
   {
     id: 'fallback-typing',
@@ -90,14 +87,26 @@ const calculateResult = (
  * 
  * @param {TypingTestProps} props - Component properties including auto-save toggles.
  */
-export default function TypingTest({ enableAutoSave = false, initialRuns }: Readonly<TypingTestProps>) {
+export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTestProps>) {
+  const storeRuns = useTypingSessionStore((s) => s.runs);
+  const sessionId = useTypingSessionStore((s) => s.sessionId);
+  const assessmentId = useTypingSessionStore((s) => s.assessmentId);
+  const config = useTypingSessionStore((s) => s.config);
+  const setSubmissionStatus = useTypingSessionStore((s) => s.setSubmissionStatus);
+  const clearSession = useTypingSessionStore((s) => s.clearSession);
+
+  // Refs for stable closure access (config/sessionId are set once per session)
+  const configRef = useRef(config);
+  const sessionIdRef = useRef(sessionId);
+  const assessmentIdRef = useRef(assessmentId);
+
   const [phase, setPhase] = useState<TestPhase>('landing');
   const [runs, setRuns] = useState<TypingContentFile['runs']>(
-    initialRuns && initialRuns.length > 0 ? initialRuns : fallbackRuns
+    storeRuns.length > 0 ? storeRuns : fallbackRuns
   );
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [countdown, setCountdown] = useState(3);
-  const [timeLeft, setTimeLeft] = useState<number>(RUN_DURATIONS[0]);
+  const [timeLeft, setTimeLeft] = useState<number>(config.timeLimitPerRound);
   const [typedCharacters, setTypedCharacters] = useState<string[]>([]);
   const [results, setResults] = useState<RunResult[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -110,19 +119,26 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
   // Ref used by the periodic auto-save interval (avoids stale closure over results state)
   const latestResultRef = useRef<RunResult | null>(null);
 
+  // Keep config and sessionId refs in sync so closures always have current values
+  useEffect(() => { configRef.current = config; }, [config]);
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+  useEffect(() => { assessmentIdRef.current = assessmentId; }, [assessmentId]);
+
   const currentText = useMemo(() => {
     return runs[currentRunIndex]?.text ?? fallbackRuns[0].text;
   }, [currentRunIndex, runs]);
 
-  const currentDuration = RUN_DURATIONS[currentRunIndex] ?? RUN_DURATIONS[0];
-  const isFinalRun = currentRunIndex === FINAL_RUN_INDEX;
+  // finalRunIndex: 1 practice run at index 0 + roundCount test runs → last index = roundCount
+  const finalRunIndex = config.roundCount;
+  const currentDuration = config.timeLimitPerRound;
+  const isFinalRun = currentRunIndex === finalRunIndex;
   const runLabel = isFinalRun
     ? 'Final run'
-    : `Practice run ${currentRunIndex + 1} of ${FINAL_RUN_INDEX}`;
+    : `Practice run ${currentRunIndex + 1} of ${finalRunIndex}`;
 
   const latestResult = results[results.length - 1];
   const nextRunIndex = latestResult ? latestResult.runIndex + 1 : 0;
-  const nextRunIsFinal = nextRunIndex === FINAL_RUN_INDEX;
+  const nextRunIsFinal = nextRunIndex === finalRunIndex;
 
   useEffect(() => {
     typedCharactersRef.current = typedCharacters;
@@ -151,18 +167,19 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
       results: { wpm: latest.wpm, accuracy: latest.accuracy },
       status: 'in-progress',
     };
-    void AssessmentProgressService.saveProgress(progress);
+    void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
   }, [enableAutoSave, results]);
 
-  // Clear saved progress once the assessment is fully submitted
+  // Clear saved progress and store session once the assessment is fully submitted
   useEffect(() => {
     if (phase !== 'submitted') return;
     void AssessmentProgressService.clearProgress('typing');
-  }, [phase]);
+    clearSession();
+  }, [phase, clearSession]);
 
-  const resetTypedState = useCallback((runIndex: number) => {
+  const resetTypedState = useCallback((_runIndex: number) => {
     setTypedCharacters([]);
-    setTimeLeft(RUN_DURATIONS[runIndex] ?? RUN_DURATIONS[0]);
+    setTimeLeft(configRef.current.timeLimitPerRound);
   }, []);
 
   const beginCountdown = useCallback(
@@ -180,7 +197,7 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
 
   const finishRun = useCallback(() => {
     const activeRunIndex = runIndexRef.current;
-    const activeDuration = RUN_DURATIONS[activeRunIndex] ?? RUN_DURATIONS[0];
+    const activeDuration = configRef.current.timeLimitPerRound;
     const result = calculateResult(
       activeRunIndex,
       activeDuration,
@@ -190,7 +207,7 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
 
     setResults((previousResults) => [...previousResults, result]);
 
-    if (activeRunIndex === FINAL_RUN_INDEX) {
+    if (activeRunIndex === configRef.current.roundCount) {
       setPhase('submitting');
       return;
     }
@@ -209,12 +226,12 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
     setPhase('landing');
   }, [resetTypedState]);
 
-  // Sync runs if the parent provides updated initialRuns after mount
+  // Sync local runs when the store is hydrated after initial render
   useEffect(() => {
-    if (initialRuns && initialRuns.length > 0) {
-      setRuns(initialRuns);
+    if (storeRuns.length > 0) {
+      setRuns(storeRuns);
     }
-  }, [initialRuns]);
+  }, [storeRuns]);
 
   useEffect(() => {
     if (phase !== 'countdown') return;
@@ -235,7 +252,7 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
     if (phase !== 'running') return;
 
     captureRef.current?.focus();
-    const duration = RUN_DURATIONS[runIndexRef.current] ?? RUN_DURATIONS[0];
+    const duration = configRef.current.timeLimitPerRound;
     const endTime = Date.now() + duration * 1000;
 
     const timerId = globalThis.setInterval(() => {
@@ -260,7 +277,7 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
           timeLeft: Math.max(Math.ceil((endTime - Date.now()) / 1000), 0),
           status: 'in-progress',
         };
-        void AssessmentProgressService.saveProgress(progress);
+        void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
       }, 15_000);
     }
 
@@ -273,6 +290,7 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
   useEffect(() => {
     if (phase !== 'submitting') return;
 
+    setSubmissionStatus('submitting');
     let cancelled = false;
 
     const submit = async () => {
@@ -284,26 +302,28 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
             runs: results,
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
+            assessmentId: assessmentIdRef.current,
           }),
         });
 
         if (!cancelled) {
-          if (!response.ok) {
+          if (response.ok || response.status === 409) {
             // 409 = already submitted (idempotency guard) — treat as success
-            // so the candidate sees the normal completion screen
-            if (response.status !== 409) {
-              const body = await response.json().catch(() => ({}));
-              setSubmitError(
-                (body as { error?: string }).error ??
-                  'Submission failed. Please contact support.'
-              );
-            }
+            setSubmissionStatus('submitted');
+          } else {
+            const body = await response.json().catch(() => ({}));
+            setSubmitError(
+              (body as { error?: string }).error ??
+                'Submission failed. Please contact support.'
+            );
+            setSubmissionStatus('error');
           }
           setPhase('submitted');
         }
       } catch {
         if (!cancelled) {
           setSubmitError('Network error. Please contact support.');
+          setSubmissionStatus('error');
           setPhase('submitted');
         }
       }
@@ -314,7 +334,7 @@ export default function TypingTest({ enableAutoSave = false, initialRuns }: Read
     return () => {
       cancelled = true;
     };
-  }, [phase, results]);
+  }, [phase, results, setSubmissionStatus]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (phase !== 'running') return;

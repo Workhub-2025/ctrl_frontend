@@ -1,21 +1,31 @@
 "use client";
 
+import { useEffect } from 'react';
 import { SecureAssessmentShell, TypingTest } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
-import type { TypingRun } from '@/app/actions/assessment-typing-texts.actions';
+import { useTypingSessionStore } from '@/store/typing-session.store';
+import type { TypingSessionData } from '@/store/typing-session.store';
 
 interface TypingTestClientProps {
-  initialRuns: TypingRun[];
+  initialSession: TypingSessionData | null;
 }
 
 /**
  * TypingTestClient
  *
- * Client-side wrapper for the Typing Test page. Handles the secure exit logic
- * and passes pre-fetched Strapi runs down to the TypingTest component.
+ * Client-side wrapper for the Typing Test page. Hydrates the typing session
+ * (texts + config) into useTypingSessionStore on mount. TypingTest and
+ * SecureAssessmentShell read from the store directly — no prop-drilling.
  */
-export function TypingTestClient({ initialRuns }: Readonly<TypingTestClientProps>) {
+export function TypingTestClient({ initialSession }: Readonly<TypingTestClientProps>) {
   const { handleExit } = useSecureExit();
+  const setSession = useTypingSessionStore((s) => s.setSession);
+
+  useEffect(() => {
+    if (initialSession) {
+      setSession(initialSession);
+    }
+  }, [initialSession, setSession]);
 
   return (
     <SecureAssessmentShell
@@ -28,7 +38,7 @@ export function TypingTestClient({ initialRuns }: Readonly<TypingTestClientProps
       showPauseButton={false}
       enableFocusMonitoring={true}
     >
-      <TypingTest enableAutoSave={true} initialRuns={initialRuns} />
+      <TypingTest enableAutoSave={true} />
     </SecureAssessmentShell>
   );
 }

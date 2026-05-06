@@ -3,6 +3,8 @@
 import { Pause, Settings, Save, AlertTriangle } from "lucide-react";
 import { ReactNode, useState, useEffect } from "react";
 import { AssessmentIntegrityService } from "@/services/assessment-integrity.service";
+import { useAssessmentStore } from "@/store/assessment.store";
+import { useTypingSessionStore } from "@/store/typing-session.store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -36,8 +38,12 @@ export function SecureAssessmentShell({
   enableFocusMonitoring = true,
   assessmentType,
 }: Readonly<SecureAssessmentShellProps>) {
+  const integrityEvents = useAssessmentStore((s) => s.integrityEvents);
+  const addIntegrityEvent = useAssessmentStore((s) => s.addIntegrityEvent);
+  const submissionStatus = useTypingSessionStore((s) => s.submissionStatus);
+  const isSubmitting = submissionStatus === 'submitting';
+
   const [isPaused, setIsPaused] = useState(false);
-  const [localWarnings, setLocalWarnings] = useState(warningsCount);
   const [securityViolation, setSecurityViolation] = useState<string | null>(null);
 
   // --- ZERO-TRUST RUNTIME ENVIRONMENT ---
@@ -65,6 +71,7 @@ export function SecureAssessmentShell({
             eventType: "tab_hidden",
             metadata: { occurredAt: new Date().toISOString() },
           });
+          addIntegrityEvent('tab_hidden');
         }
         handleViolation("Window focus lost or tab switched during active assessment.");
       }
@@ -77,12 +84,12 @@ export function SecureAssessmentShell({
           eventType: "window_blur",
           metadata: { occurredAt: new Date().toISOString() },
         });
+        addIntegrityEvent('window_blur');
       }
       handleViolation("Assessment window lost focus. Ensure this is your active window.");
     };
 
     const handleViolation = (reason: string) => {
-      setLocalWarnings((prev) => prev + 1);
       setSecurityViolation(reason);
       setIsPaused(true);
     };
@@ -94,7 +101,7 @@ export function SecureAssessmentShell({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [assessmentType, enableFocusMonitoring, secureModeActive]);
+  }, [addIntegrityEvent, assessmentType, enableFocusMonitoring, secureModeActive]);
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground transition-colors duration-300">
@@ -109,10 +116,10 @@ export function SecureAssessmentShell({
         </div>
 
       {/* Security Warnings Audit Indicator */}
-      {secureModeActive && localWarnings > 0 && (
+      {secureModeActive && integrityEvents.length > 0 && (
         <div className="absolute left-1/2 top-14 -translate-x-1/2 rounded-b-lg border-b border-l border-r border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1 shadow-sm">
           <AlertTriangle className="h-3 w-3" />
-          {localWarnings} Security Violation{localWarnings > 1 ? 's' : ''} Logged
+          {integrityEvents.length} Security Violation{integrityEvents.length > 1 ? 's' : ''} Logged
         </div>
       )}
 
@@ -131,9 +138,13 @@ export function SecureAssessmentShell({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onExit} className="text-red-600 focus:bg-red-50 dark:focus:bg-red-950 cursor-pointer">
+              <DropdownMenuItem
+                onClick={onExit}
+                disabled={isSubmitting}
+                className="text-red-600 focus:bg-red-50 dark:focus:bg-red-950 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Save and exit
+                {isSubmitting ? 'Submitting…' : 'Save and exit'}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

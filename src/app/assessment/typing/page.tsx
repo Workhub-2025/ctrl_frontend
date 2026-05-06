@@ -1,14 +1,15 @@
-import { fetchAssessmentTypingRuns } from '@/app/actions/assessment-typing-texts.actions';
+import { initTypingSession } from '@/app/actions/assessment-typing-texts.actions';
 import { TypingTestClient } from './typing-test-client';
 
 /**
  * TypingTestPage
  *
- * Server Component: fetches typing run texts from Strapi before rendering.
- * The client-side shell and secure exit logic live in TypingTestClient.
+ * Server Component: initialises a typing session on Strapi before rendering.
+ * The session includes randomly selected texts and assessment config.
+ * The client-side shell hydrates the session into useTypingSessionStore.
  */
 export default async function TypingTestPage() {
-  const initialRuns = await fetchAssessmentTypingRuns().catch(() => []);
+  const session = await initTypingSession().catch(() => null);
 
-  return <TypingTestClient initialRuns={initialRuns} />;
+  return <TypingTestClient initialSession={session} />;
 }

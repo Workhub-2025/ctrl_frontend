@@ -28,6 +28,7 @@ interface TypingSubmitPayload {
     runs: RunResult[];
     startedAt: string;
     completedAt: string;
+    assessmentId?: string | null;
 }
 
 // ─── Scoring helpers ──────────────────────────────────────────────────────────
@@ -170,7 +171,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const { runs, startedAt, completedAt } = validation.data;
+        const { runs, startedAt, completedAt, assessmentId } = validation.data;
 
         // 4. Compute score from the final run only (practice runs excluded)
         const { score, passed, wpm, accuracy } = computeScore(runs);
@@ -222,6 +223,7 @@ export async function POST(request: Request) {
                 durationSeconds,
                 metrics,
                 rawData: { assessmentType: "typing", runs },
+                ...(assessmentId ? { assessmentDocumentId: assessmentId } : {}),
             } as Record<string, unknown>);
 
         trace.success({ score, passed, wpm, accuracy });
