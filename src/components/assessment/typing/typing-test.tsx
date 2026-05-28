@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { CheckCircle2, Coffee, Keyboard, Loader2, Play, RotateCcw, Timer } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTypingSessionStore } from '@/store/typing-session.store';
+import { CheckCircle2, Coffee, Keyboard, Loader2, LogOut, Play, RotateCcw, Timer } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { AssessmentProgressService } from '@/services/assessment-progress.service';
+import type { TypingTestProgress } from '@/types/assessments-progress.types';
 
 /**
  * Props for the TypingTest component.
@@ -19,6 +23,8 @@ type TypingContentFile = {
   runs: Array<{
     id: string;
     text: string;
+    type?: 'practice' | 'test';
+    difficulty?: string;
   }>;
 };
 
@@ -28,6 +34,7 @@ type TestPhase =
   | 'countdown'
   | 'running'
   | 'results'
+  | 'assessment-break'
   | 'submitting'
   | 'submitted';
 
@@ -41,14 +48,30 @@ type RunResult = {
   accuracy: number;
 };
 
-const RUN_DURATIONS = [30, 30, 30, 60] as const;
-const FINAL_RUN_INDEX = RUN_DURATIONS.length - 1;
-const CONTENT_URL = '/assessment-content/typing.json';
-
 const fallbackRuns: TypingContentFile['runs'] = [
   {
-    id: 'fallback-typing',
+    id: 'fallback-practice-base',
+    type: 'practice',
+    difficulty: 'Base',
     text: 'The caller gives clear information about the location, the danger, and the people involved. Type each character carefully and keep your attention on the words in front of you.',
+  },
+  {
+    id: 'fallback-test-base-1',
+    type: 'test',
+    difficulty: 'Base',
+    text: 'A caller reports a disturbance outside a shop on Market Street. Two people are arguing loudly near the entrance. One person has knocked over a display stand and customers are moving away from the area.',
+  },
+  {
+    id: 'fallback-test-base-2',
+    type: 'test',
+    difficulty: 'Base',
+    text: 'A resident reports a vehicle blocking the entrance to a small car park. The driver is not nearby and delivery vehicles are unable to enter. The caller says traffic is starting to build on the road.',
+  },
+  {
+    id: 'fallback-test-base-3',
+    type: 'test',
+    difficulty: 'Base',
+    text: 'A caller reports a lost child near the main bus station. The child appears upset and cannot give a full address. A member of staff is staying with the child until support arrives.',
   },
 ];
 
@@ -88,33 +111,63 @@ const calculateResult = (
  * 
  * @param {TypingTestProps} props - Component properties including auto-save toggles.
  */
-export default function TypingTest({ enableAutoSave = false }: TypingTestProps) {
+export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTestProps>) {
+  const router = useRouter();
+  const storeRuns = useTypingSessionStore((s) => s.runs);
+  const sessionId = useTypingSessionStore((s) => s.sessionId);
+  const assessmentId = useTypingSessionStore((s) => s.assessmentId);
+  const config = useTypingSessionStore((s) => s.config);
+  const setSubmissionStatus = useTypingSessionStore((s) => s.setSubmissionStatus);
+  const clearSession = useTypingSessionStore((s) => s.clearSession);
+
+  // Refs for stable closure access (config/sessionId are set once per session)
+  const configRef = useRef(config);
+  const sessionIdRef = useRef(sessionId);
+  const assessmentIdRef = useRef(assessmentId);
+
   const [phase, setPhase] = useState<TestPhase>('landing');
-  const [runs, setRuns] = useState<TypingContentFile['runs']>(fallbackRuns);
+  const [runs, setRuns] = useState<TypingContentFile['runs']>(
+    storeRuns.length > 0 ? storeRuns : fallbackRuns
+  );
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [countdown, setCountdown] = useState(3);
-  const [timeLeft, setTimeLeft] = useState<number>(RUN_DURATIONS[0]);
+  const [timeLeft, setTimeLeft] = useState<number>(config.timeLimitPerRound);
+  const [runStarted, setRunStarted] = useState(false);
   const [typedCharacters, setTypedCharacters] = useState<string[]>([]);
   const [results, setResults] = useState<RunResult[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const captureRef = useRef<HTMLTextAreaElement | null>(null);
   const typedCharactersRef = useRef<string[]>([]);
   const runIndexRef = useRef(0);
   const currentTextRef = useRef(fallbackRuns[0].text);
   const finishRunRef = useRef<() => void>(() => {});
+  const startedAtRef = useRef<string | null>(null);
+  // Ref used by the periodic auto-save interval (avoids stale closure over results state)
+  const latestResultRef = useRef<RunResult | null>(null);
+
+  // Keep config and sessionId refs in sync so closures always have current values
+  useEffect(() => { configRef.current = config; }, [config]);
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+  useEffect(() => { assessmentIdRef.current = assessmentId; }, [assessmentId]);
 
   const currentText = useMemo(() => {
     return runs[currentRunIndex]?.text ?? fallbackRuns[0].text;
   }, [currentRunIndex, runs]);
 
-  const currentDuration = RUN_DURATIONS[currentRunIndex] ?? RUN_DURATIONS[0];
-  const isFinalRun = currentRunIndex === FINAL_RUN_INDEX;
-  const runLabel = isFinalRun
-    ? 'Final run'
-    : `Practice run ${currentRunIndex + 1} of ${FINAL_RUN_INDEX}`;
+  // Run index 0 is practice. Live assessment runs are 1..roundCount.
+  const finalRunIndex = config.roundCount;
+  const isPracticeRun = currentRunIndex === 0;
+  const currentDuration = config.timeLimitPerRound;
+  const isLastAssessmentRun = currentRunIndex === finalRunIndex;
+  const assessmentRunNumber = Math.max(currentRunIndex, 1);
+  const selectedDifficulty = config.difficulty ?? 'Base';
+  const runLabel = isPracticeRun
+    ? 'Practice run'
+    : `Assessment run ${assessmentRunNumber} of ${finalRunIndex}`;
 
   const latestResult = results[results.length - 1];
   const nextRunIndex = latestResult ? latestResult.runIndex + 1 : 0;
-  const nextRunIsFinal = nextRunIndex === FINAL_RUN_INDEX;
+  const nextRunIsFirstAssessment = nextRunIndex === 1;
 
   useEffect(() => {
     typedCharactersRef.current = typedCharacters;
@@ -128,13 +181,42 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     currentTextRef.current = currentText;
   }, [currentText]);
 
-  const resetTypedState = useCallback((runIndex: number) => {
+  // Keep latestResultRef in sync so the auto-save interval always has the current value
+  useEffect(() => {
+    latestResultRef.current = results.at(-1) ?? null;
+  }, [results]);
+
+  // Auto-save after each completed run (results array grows by one element)
+  useEffect(() => {
+    if (!enableAutoSave || results.length === 0) return;
+    const latest = results.at(-1)!;
+    const progress: TypingTestProgress = {
+      testType: 'typing',
+      currentIndex: latest.runIndex,
+      results: { wpm: latest.wpm, accuracy: latest.accuracy },
+      status: 'in-progress',
+    };
+    void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
+  }, [enableAutoSave, results]);
+
+  // Clear saved progress and store session once the assessment is fully submitted
+  useEffect(() => {
+    if (phase !== 'submitted') return;
+    void AssessmentProgressService.clearProgress('typing');
+    clearSession();
+  }, [phase, clearSession]);
+
+  const resetTypedState = useCallback((_runIndex: number) => {
     setTypedCharacters([]);
-    setTimeLeft(RUN_DURATIONS[runIndex] ?? RUN_DURATIONS[0]);
+    setTimeLeft(configRef.current.timeLimitPerRound);
+    setRunStarted(false);
   }, []);
 
   const beginCountdown = useCallback(
     (runIndex: number) => {
+      if (runIndex === 0) {
+        startedAtRef.current = new Date().toISOString();
+      }
       setCurrentRunIndex(runIndex);
       resetTypedState(runIndex);
       setCountdown(3);
@@ -145,7 +227,7 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
   const finishRun = useCallback(() => {
     const activeRunIndex = runIndexRef.current;
-    const activeDuration = RUN_DURATIONS[activeRunIndex] ?? RUN_DURATIONS[0];
+    const activeDuration = configRef.current.timeLimitPerRound;
     const result = calculateResult(
       activeRunIndex,
       activeDuration,
@@ -155,50 +237,35 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
     setResults((previousResults) => [...previousResults, result]);
 
-    if (activeRunIndex === FINAL_RUN_INDEX) {
+    if (activeRunIndex === configRef.current.roundCount) {
       setPhase('submitting');
       return;
     }
 
-    setPhase('results');
+    setPhase(activeRunIndex === 0 ? 'results' : 'assessment-break');
   }, []);
 
   useEffect(() => {
     finishRunRef.current = finishRun;
   }, [finishRun]);
 
-  const restartAssessment = useCallback(() => {
-    setCurrentRunIndex(0);
-    setResults([]);
-    resetTypedState(0);
-    setPhase('landing');
-  }, [resetTypedState]);
+  const closeAssessment = useCallback(() => {
+    router.push('/candidate-dashboard/my-assessments/');
+  }, [router]);
 
+  const restartPractice = useCallback(() => {
+    setResults((previousResults) =>
+      previousResults.filter((result) => result.runIndex !== 0)
+    );
+    beginCountdown(0);
+  }, [beginCountdown]);
+
+  // Sync local runs when the store is hydrated after initial render
   useEffect(() => {
-    let cancelled = false;
-
-    fetch(CONTENT_URL)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Unable to load typing content');
-        }
-        return response.json() as Promise<TypingContentFile>;
-      })
-      .then((content) => {
-        if (!cancelled && Array.isArray(content.runs) && content.runs.length > 0) {
-          setRuns(content.runs);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRuns(fallbackRuns);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (storeRuns.length > 0) {
+      setRuns(storeRuns);
+    }
+  }, [storeRuns]);
 
   useEffect(() => {
     if (phase !== 'countdown') return;
@@ -216,34 +283,93 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
   }, [countdown, phase]);
 
   useEffect(() => {
-    if (phase !== 'running') return;
+    if (phase !== 'running' || !runStarted) return;
 
     captureRef.current?.focus();
-    const duration = RUN_DURATIONS[runIndexRef.current] ?? RUN_DURATIONS[0];
+    const duration = configRef.current.timeLimitPerRound;
     const endTime = Date.now() + duration * 1000;
 
-    const timerId = window.setInterval(() => {
+    const timerId = globalThis.setInterval(() => {
       const nextTimeLeft = Math.max(Math.ceil((endTime - Date.now()) / 1000), 0);
       setTimeLeft(nextTimeLeft);
 
       if (nextTimeLeft === 0) {
-        window.clearInterval(timerId);
+        globalThis.clearInterval(timerId);
         finishRunRef.current();
       }
     }, 250);
 
-    return () => window.clearInterval(timerId);
-  }, [phase]);
+    // Periodic auto-save every 15 s during a running phase
+    let autoSaveIntervalId: ReturnType<typeof globalThis.setInterval> | undefined;
+    if (enableAutoSave) {
+      autoSaveIntervalId = globalThis.setInterval(() => {
+        const latest = latestResultRef.current;
+        const progress: TypingTestProgress = {
+          testType: 'typing',
+          currentIndex: runIndexRef.current,
+          results: latest ? { wpm: latest.wpm, accuracy: latest.accuracy } : null,
+          timeLeft: Math.max(Math.ceil((endTime - Date.now()) / 1000), 0),
+          status: 'in-progress',
+        };
+        void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
+      }, 15_000);
+    }
+
+    return () => {
+      globalThis.clearInterval(timerId);
+      if (autoSaveIntervalId !== undefined) globalThis.clearInterval(autoSaveIntervalId);
+    };
+  }, [phase, enableAutoSave, runStarted]);
 
   useEffect(() => {
     if (phase !== 'submitting') return;
 
-    const timerId = window.setTimeout(() => {
-      setPhase('submitted');
-    }, 2800);
+    setSubmissionStatus('submitting');
+    let cancelled = false;
 
-    return () => window.clearTimeout(timerId);
-  }, [phase]);
+    const submit = async () => {
+      try {
+        const response = await fetch('/api/assessment/typing/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            runs: results,
+            startedAt: startedAtRef.current ?? new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            assessmentId: assessmentIdRef.current,
+            difficulty: configRef.current.difficulty,
+          }),
+        });
+
+        if (!cancelled) {
+          if (response.ok || response.status === 409) {
+            // 409 = already submitted (idempotency guard) — treat as success
+            setSubmissionStatus('submitted');
+          } else {
+            const body = await response.json().catch(() => ({}));
+            setSubmitError(
+              (body as { error?: string }).error ??
+                'Submission failed. Please contact support.'
+            );
+            setSubmissionStatus('error');
+          }
+          setPhase('submitted');
+        }
+      } catch {
+        if (!cancelled) {
+          setSubmitError('Network error. Please contact support.');
+          setSubmissionStatus('error');
+          setPhase('submitted');
+        }
+      }
+    };
+
+    void submit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, results, setSubmissionStatus]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (phase !== 'running') return;
@@ -259,6 +385,12 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     }
 
     event.preventDefault();
+    if (!runStarted) {
+      if (currentRunIndex === 0) {
+        startedAtRef.current = new Date().toISOString();
+      }
+      setRunStarted(true);
+    }
     setTypedCharacters((previousCharacters) => {
       if (previousCharacters.length >= currentText.length) {
         return previousCharacters;
@@ -273,14 +405,19 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
     return total + (character === currentText[index] ? 1 : 0);
   }, 0);
   const liveMistakeCount = Math.max(typedCount - liveCorrectCount, 0);
-  const progressValue = ((currentDuration - timeLeft) / currentDuration) * 100;
+  const elapsedSeconds = runStarted ? currentDuration - timeLeft : 0;
+  const liveWpm =
+    elapsedSeconds > 0 ? Math.round(liveCorrectCount / 5 / (elapsedSeconds / 60)) : 0;
+  const progressValue = runStarted
+    ? ((currentDuration - timeLeft) / currentDuration) * 100
+    : 0;
 
   return (
     <AssessmentGameShell
       icon={Keyboard}
       title="Typing Speed & Accuracy"
       eyebrow="CTRL assessment"
-      status={phase === 'running' ? `${timeLeft}s remaining` : runLabel}
+      status={phase === 'running' ? (runStarted ? `${timeLeft}s remaining` : 'Start typing') : runLabel}
     >
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
@@ -291,8 +428,11 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
             Typing Test
           </p>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
-            Complete a timed typing assessment in a focused, secure display.
-            You will be shown the instructions before the first run begins.
+            Complete one practice run and three scored runs. Your typing level
+            has been set for this campaign by the Hiring Manager.
+          </p>
+          <p className="mt-5 text-sm text-muted-foreground">
+            Campaign level: {selectedDifficulty}
           </p>
           <Button
             className="mt-8 h-12 px-7"
@@ -308,32 +448,34 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
       {phase === 'rules' && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center">
           <Badge className="mb-5 w-fit" variant="secondary">
-            How this test works
+            {selectedDifficulty} level
           </Badge>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            You will complete four timed typing runs.
+            You will complete one practice run, then three assessment runs.
           </p>
           <div className="mt-6 grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
             <div className="rounded-2xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Practice runs</p>
-              <p className="mt-1">Three runs lasting 30 seconds each.</p>
+              <p className="font-medium text-foreground">Practice run</p>
+              <p className="mt-1">One 60-second run to get familiar with the format.</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Final run</p>
-              <p className="mt-1">One final run lasting 1 minute.</p>
+              <p className="font-medium text-foreground">Assessment runs</p>
+              <p className="mt-1">Three 60-second runs used for the live assessment.</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <p className="font-medium text-foreground">Typing display</p>
-              <p className="mt-1">Correct characters turn blue. Mistakes turn red.</p>
+              <p className="mt-1">Correct characters turn green. Mistakes turn red.</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <p className="font-medium text-foreground">Corrections</p>
-              <p className="mt-1">Backspace is allowed and corrections are tracked.</p>
+              <p className="mt-1">
+                Backspace is allowed. Correcting mistakes costs time and may reduce WPM.
+              </p>
             </div>
           </div>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button size="lg" className="h-12" onClick={() => beginCountdown(0)}>
-              Start Test Assessment
+              Go to practice
               <Play className="ml-2 h-4 w-4" />
             </Button>
             <Button
@@ -353,12 +495,12 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.16),transparent_58%)]" />
           <div className="relative max-w-xl px-6 text-center">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-              {isFinalRun ? 'Final typing test' : runLabel}
+              {isPracticeRun ? 'Practice typing run' : runLabel}
             </p>
-            {isFinalRun && (
+            {!isPracticeRun && (
               <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-muted-foreground">
-                This is the full 1 minute run. Your final result will be submitted
-                without showing a score on screen.
+                This is a live 60-second assessment run. The timer starts when
+                you type the first character.
               </p>
             )}
             <p className="mt-7 text-7xl font-semibold tabular-nums text-foreground sm:text-8xl">
@@ -386,25 +528,46 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
                 {runLabel}
               </p>
               <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                {timeLeft}s
+                {runStarted ? `${timeLeft}s` : 'Ready'}
               </p>
+              {!runStarted && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Start typing to begin the timer.
+                </p>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
-                <p className="text-muted-foreground">Typed</p>
-                <p className="mt-1 font-mono text-base text-foreground">{typedCount}</p>
-              </div>
-              <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
-                <p className="text-muted-foreground">Correct</p>
-                <p className="mt-1 font-mono text-base text-blue-600 dark:text-blue-400">
-                  {liveCorrectCount}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
-                <p className="text-muted-foreground">Mistakes</p>
-                <p className="mt-1 font-mono text-base text-red-600 dark:text-red-400">
-                  {liveMistakeCount}
-                </p>
+            <div className="flex flex-col gap-2 sm:items-end">
+              {isPracticeRun && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                  onClick={restartPractice}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Restart practice
+                </Button>
+              )}
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
+                  <p className="text-muted-foreground">WPM</p>
+                  <p className="mt-1 font-mono text-base text-green-600 dark:text-green-400">
+                    {liveWpm}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
+                  <p className="text-muted-foreground">Accuracy</p>
+                  <p className="mt-1 font-mono text-base text-blue-600 dark:text-blue-400">
+                    {typedCount === 0 ? 100 : Math.round((liveCorrectCount / typedCount) * 100)}%
+                  </p>
+                </div>
+                <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
+                  <p className="text-muted-foreground">Mistakes</p>
+                  <p className="mt-1 font-mono text-base text-red-600 dark:text-red-400">
+                    {liveMistakeCount}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -428,13 +591,16 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
                     key={`${character}-${index}`}
                     className={[
                       hasBeenTyped && isCorrect
-                        ? 'text-blue-600 dark:text-blue-400'
+                        ? 'text-green-600 dark:text-green-400'
                         : '',
                       hasBeenTyped && !isCorrect
                         ? 'bg-red-500/10 text-red-600 dark:text-red-400'
                         : '',
                       isCurrentCharacter
                         ? 'rounded-sm border-b-2 border-primary text-foreground'
+                        : '',
+                      !hasBeenTyped && !isCurrentCharacter
+                        ? 'border-b border-dotted border-muted-foreground/40'
                         : '',
                     ]
                       .filter(Boolean)
@@ -451,84 +617,100 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
       {phase === 'results' && latestResult && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
-          {nextRunIsFinal ? (
-            <>
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                <Timer className="h-7 w-7" />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Test typing complete
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <Timer className="h-7 w-7" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Practice run complete
+          </p>
+          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+            That is the end of the test typing
+          </p>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Take a break before pressing continue. When you are ready, the next
+            screen will wait for your first keypress before the timer starts.
+          </p>
+          <div className="mt-7 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+              <p className="text-sm text-muted-foreground">WPM</p>
+              <p className="mt-2 font-mono text-2xl font-semibold">{latestResult.wpm}</p>
+            </div>
+            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+              <p className="text-sm text-muted-foreground">Accuracy</p>
+              <p className="mt-2 font-mono text-2xl font-semibold">
+                {latestResult.accuracy}%
               </p>
-              <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-                That is the end of the test typing
+            </div>
+            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+              <p className="text-sm text-muted-foreground">Mistakes</p>
+              <p className="mt-2 font-mono text-2xl font-semibold">
+                {latestResult.mistakeCharacters}
               </p>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                Take a break before pressing continue. When you are ready, the
-                next countdown will start the real 1 minute typing assessment.
+            </div>
+          </div>
+          <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <p className="font-medium text-foreground">Stay steady</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Keep a controlled pace. Mistakes can be corrected, but the timer keeps moving.
               </p>
-              <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
-                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                  <p className="font-medium text-foreground">Stay steady</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Accuracy matters. Do not rush so much that errors build up.
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                  <p className="font-medium text-foreground">Corrections</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    You can backspace to fix mistakes during the run.
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                  <p className="font-medium text-foreground">Final run</p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Your final score will not be shown after submission.
-                  </p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                <Coffee className="h-7 w-7" />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Practice run {latestResult.runIndex + 1} complete
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <p className="font-medium text-foreground">Corrections</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                You can backspace to fix mistakes during the run.
               </p>
-              <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-                Take a moment if you need it
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <p className="font-medium text-foreground">Assessment block</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Three 60-second runs follow. Final scores are not shown.
               </p>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                The next practice run will begin as soon as you continue and the
-                short countdown completes. Rest your hands now if you need a
-                break.
-              </p>
-              <div className="mt-7 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-border p-4 dark:border-white/10">
-                  <p className="text-sm text-muted-foreground">WPM</p>
-                  <p className="mt-2 font-mono text-2xl font-semibold">{latestResult.wpm}</p>
-                </div>
-                <div className="rounded-xl border border-border p-4 dark:border-white/10">
-                  <p className="text-sm text-muted-foreground">Accuracy</p>
-                  <p className="mt-2 font-mono text-2xl font-semibold">
-                    {latestResult.accuracy}%
-                  </p>
-                </div>
-                <div className="rounded-xl border border-border p-4 dark:border-white/10">
-                  <p className="text-sm text-muted-foreground">Mistakes</p>
-                  <p className="mt-2 font-mono text-2xl font-semibold">
-                    {latestResult.mistakeCharacters}
-                  </p>
-                </div>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
+          <div className="mx-auto mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12 px-8"
+              onClick={restartPractice}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Restart practice
+            </Button>
+            <Button
+              size="lg"
+              className="h-12 px-8"
+              onClick={() => beginCountdown(currentRunIndex + 1)}
+            >
+              {nextRunIsFirstAssessment ? 'Start assessment block' : 'Continue'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {phase === 'assessment-break' && latestResult && (
+        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <Coffee className="h-7 w-7" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Assessment run {latestResult.runIndex} complete
+          </p>
+          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+            Take a moment if you need it
+          </p>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Your live assessment is still in progress. No score is shown between
+            assessment runs. Press continue when you are ready for the next
+            60-second run.
+          </p>
           <Button
             size="lg"
             className="mx-auto mt-8 h-12 px-8"
             onClick={() => beginCountdown(currentRunIndex + 1)}
           >
-            {nextRunIsFinal ? 'Start final countdown' : 'Continue to next run'}
+            Continue to run {latestResult.runIndex + 1}
           </Button>
         </div>
       )}
@@ -539,7 +721,7 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Final run complete
+            Typing assessment complete
           </p>
           <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Submitting assessment
@@ -553,23 +735,31 @@ export default function TypingTest({ enableAutoSave = false }: TypingTestProps) 
 
       {phase === 'submitted' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-green-500/10 text-green-600 dark:text-green-400">
+          <div className={`mb-6 flex h-16 w-16 items-center justify-center rounded-3xl ${submitError ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
           </p>
-          <p className="mt-4 max-w-md text-muted-foreground">
-            Your typing assessment has been completed. No final score is shown
-            on this screen.
-          </p>
+          {submitError ? (
+            <p className="mt-4 max-w-md text-sm text-destructive">
+              {submitError}
+            </p>
+          ) : (
+            <p className="mt-4 max-w-md text-muted-foreground">
+              Thank you. Your assessment has been submitted successfully. Please
+              complete any remaining assessments in My Assessments. If all
+              sections are complete, await further information from the Hiring
+              Manager.
+            </p>
+          )}
           <Button
             variant="outline"
             className="mt-8 h-11 px-6"
-            onClick={restartAssessment}
+            onClick={closeAssessment}
           >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset visual demo
+            <LogOut className="mr-2 h-4 w-4" />
+            Close assessment
           </Button>
         </div>
       )}

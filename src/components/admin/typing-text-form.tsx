@@ -33,11 +33,13 @@ interface TypingTextFormProps {
 interface FormData {
   text: string;
   type: "practice" | "test";
+  difficulty: "Base" | "Intermediate" | "Advanced";
 }
 
 interface FormErrors {
   text?: string;
   type?: string;
+  difficulty?: string;
   general?: string;
 }
 
@@ -59,6 +61,7 @@ export function TypingTextForm({
   const [formData, setFormData] = useState<FormData>({
     text: initialData?.text || "",
     type: initialData?.type || "practice",
+    difficulty: initialData?.difficulty || "Base",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -78,6 +81,10 @@ export function TypingTextForm({
 
     if (!formData.type) {
       newErrors.type = "Text type is required";
+    }
+
+    if (!formData.difficulty) {
+      newErrors.difficulty = "Difficulty is required";
     }
 
     setErrors(newErrors);
@@ -120,11 +127,13 @@ export function TypingTextForm({
           result = await updateTypingText(documentId, {
             text: formData.text.trim(),
             type: formData.type,
+            difficulty: formData.difficulty,
           });
         } else {
           result = await createTypingText({
             text: formData.text.trim(),
             type: formData.type,
+            difficulty: formData.difficulty,
           });
         }
 
@@ -132,7 +141,7 @@ export function TypingTextForm({
           onSuccess?.(result.data);
           // Reset form if creating new
           if (!isEditing) {
-            setFormData({ text: "", type: "practice" });
+            setFormData({ text: "", type: "practice", difficulty: "Base" });
           }
         } else {
           setErrors({ general: result.error || "An error occurred" });
@@ -153,6 +162,7 @@ export function TypingTextForm({
     setFormData({
       text: initialData?.text || "",
       type: initialData?.type || "practice",
+      difficulty: initialData?.difficulty || "Base",
     });
     setErrors({});
     onCancel?.();
@@ -225,6 +235,40 @@ export function TypingTextForm({
         {errors.type && <p className="text-sm text-red-600">{errors.type}</p>}
         <p className="text-sm text-muted-foreground">
           Practice texts are for training, test texts are for formal assessments
+        </p>
+      </div>
+
+      {/* Difficulty Field */}
+      <div className="space-y-2">
+        <Label
+          htmlFor="difficulty"
+          className="text-sm font-medium text-foreground"
+        >
+          Difficulty *
+        </Label>
+        <Select
+          value={formData.difficulty}
+          onValueChange={(value: "Base" | "Intermediate" | "Advanced") =>
+            handleInputChange("difficulty", value)
+          }
+          disabled={isPending}
+        >
+          <SelectTrigger
+            className={`text-foreground font-bold${
+              errors.difficulty ? "border-red-500" : ""
+            }`}
+          >
+            <SelectValue placeholder="Select difficulty" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Base">Base</SelectItem>
+            <SelectItem value="Intermediate">Intermediate</SelectItem>
+            <SelectItem value="Advanced">Advanced</SelectItem>
+          </SelectContent>
+        </Select>
+        {errors.difficulty && <p className="text-sm text-red-600">{errors.difficulty}</p>}
+        <p className="text-sm text-muted-foreground">
+          Each difficulty should have one practice text and three assessment texts.
         </p>
       </div>
 

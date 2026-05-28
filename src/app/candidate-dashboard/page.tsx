@@ -1,17 +1,9 @@
-import { CandidateDashboardContent } from "@/components/dashboard/candidate-dashboard-content";
+import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Candidate Dashboard",
+  title: "Candidate Portal",
 };
 
-export default async function CandidateDashboardPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ completed?: string }>;
-}) {
-  const resolvedSearchParams = await searchParams;
-
-  return (
-    <CandidateDashboardContent completedKey={resolvedSearchParams?.completed} />
-  );
+export default function CandidateDashboardPage() {
+  redirect("/candidate-dashboard/my-campaigns/");
 }

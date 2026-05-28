@@ -97,6 +97,7 @@ export default function TextsPage() {
   // Filters & Pagination
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
 
   const [currentPage, setCurrentPage] = useState<number>(DEFAULT_PAGE);
   const [pageSize, setPageSize] = useState<number>(DEFAULT_PAGE_SIZE);
@@ -108,8 +109,8 @@ export default function TextsPage() {
 
   // Build query params from explicit inputs (avoids stale state)
   const buildQueryParams = useCallback(
-    (opts?: { search?: string; type?: string; extra?: any }) => {
-      const { search, type, extra } = opts || {};
+    (opts?: { search?: string; type?: string; difficulty?: string; extra?: any }) => {
+      const { search, type, difficulty, extra } = opts || {};
       const qp: any = {};
 
       // filters
@@ -122,6 +123,10 @@ export default function TextsPage() {
 
       if (type && type !== "all") {
         filters.type = { $eq: type };
+      }
+
+      if (difficulty && difficulty !== "all") {
+        filters.difficulty = { $eq: difficulty };
       }
 
       if (Object.keys(filters).length) {
@@ -148,12 +153,14 @@ export default function TextsPage() {
       size?: number;
       search?: string;
       type?: string;
+      difficulty?: string;
       extraQueryParams?: any;
     }) => {
       const page = opts?.page ?? currentPage;
       const size = opts?.size ?? pageSize;
       const search = opts?.search ?? searchTerm;
       const type = opts?.type ?? typeFilter;
+      const difficulty = opts?.difficulty ?? difficultyFilter;
 
       setIsPaginationLoading(true);
 
@@ -164,6 +171,7 @@ export default function TextsPage() {
         const queryParams = buildQueryParams({
           search,
           type,
+          difficulty,
           extra: opts?.extraQueryParams,
         });
 
@@ -196,7 +204,7 @@ export default function TextsPage() {
         }
       }
     },
-    [buildQueryParams, currentPage, pageSize, searchTerm, typeFilter]
+    [buildQueryParams, currentPage, pageSize, searchTerm, typeFilter, difficultyFilter]
   );
 
   // Initial load
@@ -229,8 +237,9 @@ export default function TextsPage() {
       size: pageSize,
       search: searchTerm,
       type: typeFilter,
+      difficulty: difficultyFilter,
     });
-  }, [currentPage, pageSize, fetchTextData, searchTerm, typeFilter]);
+  }, [currentPage, pageSize, fetchTextData, searchTerm, typeFilter, difficultyFilter]);
 
   // Debounced search handler
   const handleSearchChange = useCallback(
@@ -250,10 +259,11 @@ export default function TextsPage() {
           size: pageSize,
           search: value,
           type: typeFilter,
+          difficulty: difficultyFilter,
         });
       }, 400);
     },
-    [fetchTextData, pageSize, typeFilter]
+    [fetchTextData, pageSize, typeFilter, difficultyFilter]
   );
 
   // Filter handlers
@@ -266,9 +276,25 @@ export default function TextsPage() {
         size: pageSize,
         search: searchTerm,
         type: value,
+        difficulty: difficultyFilter,
       });
     },
-    [fetchTextData, pageSize, searchTerm]
+    [fetchTextData, pageSize, searchTerm, difficultyFilter]
+  );
+
+  const handleDifficultyFilterChange = useCallback(
+    (value: string) => {
+      setDifficultyFilter(value);
+      setCurrentPage(1);
+      fetchTextData({
+        page: 1,
+        size: pageSize,
+        search: searchTerm,
+        type: typeFilter,
+        difficulty: value,
+      });
+    },
+    [fetchTextData, pageSize, searchTerm, typeFilter]
   );
 
   const clearAllFilters = useCallback(async () => {
@@ -279,6 +305,7 @@ export default function TextsPage() {
     }
     setSearchTerm("");
     setTypeFilter("all");
+    setDifficultyFilter("all");
     setCurrentPage(1);
     await fetchTextData({
       page: 1,
@@ -338,6 +365,7 @@ export default function TextsPage() {
         size: pageSize,
         search: searchTerm,
         type: typeFilter,
+        difficulty: difficultyFilter,
       });
     },
     [
@@ -347,6 +375,7 @@ export default function TextsPage() {
       pageSize,
       searchTerm,
       typeFilter,
+      difficultyFilter,
       toast,
     ]
   );
@@ -386,6 +415,7 @@ export default function TextsPage() {
             size: pageSize,
             search: searchTerm,
             type: typeFilter,
+            difficulty: difficultyFilter,
           });
         } else {
           toast({
@@ -405,7 +435,7 @@ export default function TextsPage() {
         setIsDeletingId(null);
       }
     },
-    [fetchTextData, currentPage, pageSize, searchTerm, typeFilter, toast]
+    [fetchTextData, currentPage, pageSize, searchTerm, typeFilter, difficultyFilter, toast]
   );
 
   // Utilities
@@ -418,6 +448,19 @@ export default function TextsPage() {
     return <Badge variant="outline">Unknown</Badge>;
   }, []);
 
+  const getDifficultyBadge = useCallback((difficulty: string | undefined) => {
+    if (difficulty === "Base") {
+      return <Badge variant="secondary">Base</Badge>;
+    }
+    if (difficulty === "Intermediate") {
+      return <Badge variant="outline">Intermediate</Badge>;
+    }
+    if (difficulty === "Advanced") {
+      return <Badge variant="default">Advanced</Badge>;
+    }
+    return <Badge variant="outline">Unset</Badge>;
+  }, []);
+
   const truncateText = useCallback(
     (str: string | undefined, maxLength: number = 100) => {
       if (!str) return "No text content";
@@ -427,8 +470,8 @@ export default function TextsPage() {
   );
 
   const hasActiveFilters = useMemo(
-    () => !!searchTerm.trim() || typeFilter !== "all",
-    [searchTerm, typeFilter]
+    () => !!searchTerm.trim() || typeFilter !== "all" || difficultyFilter !== "all",
+    [searchTerm, typeFilter, difficultyFilter]
   );
 
   // Cleanup debounce timer on unmount
@@ -541,6 +584,20 @@ export default function TextsPage() {
               <SelectItem value="test">Test</SelectItem>
             </SelectContent>
           </Select>
+          <Select
+            value={difficultyFilter}
+            onValueChange={(v) => handleDifficultyFilterChange(v)}
+          >
+            <SelectTrigger className="w-full sm:w-52">
+              <SelectValue placeholder="Filter by difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Difficulties</SelectItem>
+              <SelectItem value="Base">Base</SelectItem>
+              <SelectItem value="Intermediate">Intermediate</SelectItem>
+              <SelectItem value="Advanced">Advanced</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
@@ -563,6 +620,15 @@ export default function TextsPage() {
               <X
                 className="h-3 w-3 cursor-pointer"
                 onClick={() => handleTypeFilterChange("all")}
+              />
+            </Badge>
+          )}
+          {difficultyFilter !== "all" && (
+            <Badge variant="secondary" className="gap-1">
+              Difficulty: {difficultyFilter}
+              <X
+                className="h-3 w-3 cursor-pointer"
+                onClick={() => handleDifficultyFilterChange("all")}
               />
             </Badge>
           )}
@@ -645,6 +711,7 @@ export default function TextsPage() {
                   <TableRow>
                     <TableHead>Text Preview</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Difficulty</TableHead>
                     <TableHead>Created At</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -669,6 +736,7 @@ export default function TextsPage() {
                           </div>
                         </TableCell>
                         <TableCell>{getTypeBadge(text.type)}</TableCell>
+                        <TableCell>{getDifficultyBadge(text.difficulty)}</TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground">
                             {text.createdAt
@@ -718,6 +786,14 @@ export default function TextsPage() {
                                           </span>
                                           <div>
                                             {getTypeBadge(selectedText.type)}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <span className="text-sm font-medium text-muted-foreground">
+                                            Difficulty
+                                          </span>
+                                          <div>
+                                            {getDifficultyBadge(selectedText.difficulty)}
                                           </div>
                                         </div>
                                         <div>

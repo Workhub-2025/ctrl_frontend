@@ -12,15 +12,17 @@ export class AssessmentProgressService {
     /**
      * Save assessment progress
      */
-    static async saveProgress(progress: AssessmentProgress): Promise<void> {
+    static async saveProgress(progress: AssessmentProgress, sessionId?: string | null): Promise<void> {
         try {
             // Strapi controller expects payload shape: { testType, progressData, status }
+            // sessionId (documentId of existing assessment-progress) triggers upsert instead of create
             await fetchClient(`${this.BASE_PATH}/save`, {
                 method: 'POST',
                 body: JSON.stringify({
                     assessmentSlug: (progress as any).testType,
                     progressData: progress,
                     status: (progress as any).status,
+                    ...(sessionId ? { documentId: sessionId } : {}),
                 }),
             });
         } catch (error) {

@@ -1,6 +1,12 @@
 "use client";
 
-import { CalendarDays, Home, Send, Users } from "lucide-react";
+import {
+  BookOpenCheck,
+  FolderKanban,
+  Headset,
+  Layers3,
+  Users,
+} from "lucide-react";
 import { RoleDashboardShell } from "@/components/dashboard/role-dashboard-shell";
 
 export default function HiringManagerDashboardLayout({
@@ -10,24 +16,33 @@ export default function HiringManagerDashboardLayout({
 }) {
   return (
     <RoleDashboardShell
-      title="Hiring manager dashboard"
-      subtitle="Campaigns, sessions, and candidate progression"
+      title="Hiring Manager Portal"
+      subtitle="Campaign operations, candidate completion, and report-ready review"
       navItems={[
-        { href: "/hiring-manager-dashboard/", label: "Overview", icon: Home },
         {
           href: "/hiring-manager-dashboard/campaigns/",
-          label: "Campaigns & Sessions",
-          icon: CalendarDays,
+          label: "Campaigns",
+          icon: FolderKanban,
         },
         {
-          href: "/hiring-manager-dashboard/review/",
-          label: "Candidate Review",
+          href: "/hiring-manager-dashboard/sessions/",
+          label: "Sessions",
+          icon: Layers3,
+        },
+        {
+          href: "/hiring-manager-dashboard/candidates/",
+          label: "Candidates",
           icon: Users,
         },
         {
-          href: "/hiring-manager-dashboard/handoff/",
-          label: "Client Handoff",
-          icon: Send,
+          href: "/hiring-manager-dashboard/assessments/",
+          label: "Assessments",
+          icon: BookOpenCheck,
+        },
+        {
+          href: "/hiring-manager-dashboard/support/",
+          label: "Support",
+          icon: Headset,
         },
       ]}
     >

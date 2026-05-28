@@ -4,7 +4,10 @@ const nextConfig: NextConfig = {
   /* config options here */
   // Cloudflare Pages optimization
   output: process.env.CLOUDFLARE_PAGES ? 'export' : 'standalone',
-  trailingSlash: true,
+  // trailingSlash is only needed for Cloudflare Pages static export.
+  // In standalone mode it redirects Route Handlers (e.g. /api/auth/session → 308)
+  // which breaks next-auth client-side session fetches.
+  trailingSlash: process.env.CLOUDFLARE_PAGES === 'true',
 
   experimental: {
     serverActions: {

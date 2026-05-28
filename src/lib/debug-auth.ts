@@ -11,7 +11,7 @@ export const debugAuthToken = async (): Promise<void> => {
 
         try {
             const { getServerSession } = await import('next-auth/next');
-            const { authOptions } = await import('@/app/api/auth/[...nextauth]/route');
+            const { authOptions } = await import('@/lib/auth/next-auth-options');
             const session = await getServerSession(authOptions);
 
             console.log('🔍 [DEBUG] Server session:', {

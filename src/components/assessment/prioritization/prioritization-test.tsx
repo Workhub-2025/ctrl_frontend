@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DragEvent, MouseEvent, PointerEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   ClipboardList,
   GripVertical,
   Loader2,
+  LogOut,
   Play,
-  RotateCcw,
 } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
@@ -100,6 +101,7 @@ const fallbackContent: PrioritizationContent = {
 };
 
 export default function PrioritizationTest() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('landing');
   const [content, setContent] = useState<PrioritizationContent>(fallbackContent);
   const [practiceIndex, setPracticeIndex] = useState(0);
@@ -187,16 +189,9 @@ export default function PrioritizationTest() {
     setPhase('final-round');
   }, [content.finalRounds]);
 
-  const resetAssessment = useCallback(() => {
-    setPracticeIndex(0);
-    setFinalIndex(0);
-    setPrioritySlots([]);
-    setSnapshots([]);
-    setSelectedIncidentId(null);
-    setPressedIncidentId(null);
-    setDraggingIncidentId(null);
-    setPhase('landing');
-  }, []);
+  const closeAssessment = useCallback(() => {
+    router.push('/candidate-dashboard/my-assessments/');
+  }, [router]);
 
   const placeIncident = (incidentId: string, targetIndex: number) => {
     setPrioritySlots((currentSlots) => {
@@ -770,12 +765,14 @@ export default function PrioritizationTest() {
             Assessment submitted
           </p>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Your prioritization assessment has been completed. No final score is
-            shown on this screen.
+            Thank you. Your assessment has been submitted successfully. Please
+            complete any remaining assessments in My Assessments. If all
+            sections are complete, await further information from the Hiring
+            Manager.
           </p>
-          <Button variant="outline" className="mt-8 h-11 px-6" onClick={resetAssessment}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset visual demo
+          <Button variant="outline" className="mt-8 h-11 px-6" onClick={closeAssessment}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Close assessment
           </Button>
         </div>
       )}

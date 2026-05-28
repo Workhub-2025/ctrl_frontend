@@ -16,10 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BrandLogo } from "@/components/brand-logo";
-import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, CheckCircle, KeyRound } from "lucide-react";
 import Link from "next/link";
-import { AuthAPI } from "@/services/auth-api";
 
 interface SignUpData {
   firstName: string;
@@ -27,8 +25,7 @@ interface SignUpData {
   email: string;
   password: string;
   confirmPassword: string;
-  organization: string;
-  phone?: string;
+  accessCode: string;
   agreeToTerms: boolean;
   agreeToDataPrivacyPolicy: boolean;
   agreeToMarketing: boolean;
@@ -41,8 +38,7 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    organization: "",
-    phone: "",
+    accessCode: "",
     agreeToTerms: false,
     agreeToDataPrivacyPolicy: false,
     agreeToMarketing: false,
@@ -71,7 +67,7 @@ export default function SignUpPage() {
       return "Password must be at least 8 characters";
     if (formData.password !== formData.confirmPassword)
       return "Passwords do not match";
-    if (!formData.organization.trim()) return "Organization is required";
+    if (!formData.accessCode.trim()) return "Access code is required";
     if (!formData.agreeToTerms)
       return "You must agree to the Terms & Conditions";
     if (!formData.agreeToDataPrivacyPolicy)
@@ -96,48 +92,27 @@ export default function SignUpPage() {
     }
 
     try {
-      //Get the roles from strapi to see the ids
-      console.log("🔍 Fetching roles from Strapi...");
-      const roles = await AuthAPI.getRoles();
-      console.log("📋 All available roles:", roles);
-
-      if (!Array.isArray(roles)) {
-        console.error("getRoles() did not return an array:", roles);
-        throw new Error("Failed to fetch user roles from server");
-      }
-
-      const candidateRole = roles.find((role) => role.name === "Candidate");
-      console.log("🎯 Found candidate role:", candidateRole);
-
-      if (!candidateRole) {
-        console.error("Candidate role not found in roles:", roles);
-        throw new Error("Candidate role not configured on server");
-      }
-
-      // Prepare data for Strapi registration - ONLY send allowed fields
+      // The backend assigns the role from the access code.
       const registrationData = {
         username: formData.email, // Strapi uses username for login
         email: formData.email,
         password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        organization: formData.organization,
-        role: candidateRole.id, // Use only the ID, not the whole object
-        phone: formData.phone || undefined, // Remove empty strings
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         // Include the checkbox fields that are in allowedFields
         agreeToTerms: formData.agreeToTerms,
         agreeToMarketing: formData.agreeToMarketing,
         agreeToDataPrivacyPolicy: formData.agreeToDataPrivacyPolicy,
+        accessCode: formData.accessCode.trim(),
       };
 
       console.log("📝 Registration data being sent:", {
         ...registrationData,
         password: "[HIDDEN]",
-        roleId: registrationData.role,
-        roleObject: candidateRole,
+        accessCode: "[HIDDEN]",
       });
 
-      // Call registration via useAuth hook (handles registration + redirect to login)
+      // Call registration via useAuth hook. Backend validates and attaches the access code.
       const result = await registerUser(registrationData);
       console.log("✅ Registration result:", result);
 
@@ -145,8 +120,16 @@ export default function SignUpPage() {
       // No need to set success state here since we'll be redirected
     } catch (err: any) {
       console.error("Registration error:", err);
+      const message = String(err?.message || "");
+      if (/email|username|already|taken/i.test(message)) {
+        setError(
+          "An account with this email already exists. Please sign in, then enter this access code from your candidate portal."
+        );
+        return;
+      }
+
       setError(
-        err.message ||
+        message ||
           "An error occurred during registration. Please try again."
       );
     }
@@ -155,7 +138,7 @@ export default function SignUpPage() {
   if (success) {
     return (
       <div className="auth-page">
-        <Card className="auth-card border-border/70 bg-card/88 shadow-[0_26px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:shadow-[0_28px_90px_rgba(2,6,23,0.44)]">
+        <Card className="shadow-2xl auth-card">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
               <CheckCircle className="h-8 w-8" />
@@ -181,17 +164,23 @@ export default function SignUpPage() {
 
   return (
     <div className="auth-page">
-      <Card className="auth-card border-border/70 bg-card/88 shadow-[0_26px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:shadow-[0_28px_90px_rgba(2,6,23,0.44)]">
+      <Card className="shadow-2xl auth-card">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center justify-center auth-logo">
             <Link href="/" className="block">
-              <BrandLogo className="w-[176px] text-foreground transition-transform hover:scale-[1.02]" />
+              <div className="flex flex-col items-center gap-1 p-2">
+                <img
+                  src="/icon1.png"
+                  className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105 logo-adaptive-filter"
+                  alt="CTRL Logo"
+                  loading="eager"
+                />
+              </div>
             </Link>
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground">Join CTRL</CardTitle>
-          <CardDescription className="text-base leading-7 text-muted-foreground">
-            Create your candidate account to begin your control room assessment
-            journey
+          <CardTitle className="text-2xl font-bold">Join CTRL</CardTitle>
+          <CardDescription>
+            Create your account using the access code you were given.
           </CardDescription>
         </CardHeader>
 
@@ -204,8 +193,22 @@ export default function SignUpPage() {
               </Alert>
             )}
 
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="john.smith@organization.com"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
             {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
                 <Input
@@ -218,7 +221,6 @@ export default function SignUpPage() {
                   }
                   required
                   disabled={isLoading}
-                  className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
                 />
               </div>
               <div className="space-y-2">
@@ -233,24 +235,8 @@ export default function SignUpPage() {
                   }
                   required
                   disabled={isLoading}
-                  className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
                 />
               </div>
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john.smith@organization.com"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                required
-                disabled={isLoading}
-                className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
-              />
             </div>
 
             {/* Password Fields */}
@@ -268,7 +254,7 @@ export default function SignUpPage() {
                     }
                     required
                     disabled={isLoading}
-                    className="border-border/70 bg-background/70 pr-10 focus-visible:ring-primary/35"
+                    className="pr-10"
                   />
                   <Button
                     type="button"
@@ -299,7 +285,7 @@ export default function SignUpPage() {
                     }
                     required
                     disabled={isLoading}
-                    className="border-border/70 bg-background/70 pr-10 focus-visible:ring-primary/35"
+                    className="pr-10"
                   />
                   <Button
                     type="button"
@@ -319,35 +305,30 @@ export default function SignUpPage() {
               </div>
             </div>
 
-            {/* Organization */}
-            <div className="space-y-2">
-              <Label htmlFor="organization">Organization *</Label>
-              <Input
-                id="organization"
-                type="text"
-                placeholder="Metro Emergency Services"
-                value={formData.organization}
-                onChange={(e) =>
-                  handleInputChange("organization", e.target.value)
-                }
-                required
-                disabled={isLoading}
-                className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
-              />
-            </div>
-
-            {/* Phone (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number (Optional)</Label>
-              <Input
-                id="phone"
-                type="text"
-                placeholder="+44 555 12345678"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                disabled={isLoading}
-                className="border-border/70 bg-background/70 focus-visible:ring-primary/35"
-              />
+            {/* Access Code */}
+            <div className="rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-2">
+                <Label htmlFor="accessCode">Access Code *</Label>
+                <div className="relative">
+                  <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="accessCode"
+                    type="text"
+                    placeholder="e.g. CTRL-9A2X"
+                    value={formData.accessCode}
+                    onChange={(e) =>
+                      handleInputChange("accessCode", e.target.value)
+                    }
+                    required
+                    disabled={isLoading}
+                    className="pl-10 uppercase tracking-[0.18em]"
+                  />
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Your code confirms the type of account and workspace you can
+                  access.
+                </p>
+              </div>
             </div>
 
             {/* Checkboxes */}
@@ -415,17 +396,17 @@ export default function SignUpPage() {
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4">
-            <div className="rounded-xl border border-border/60 bg-muted/45 p-3">
+            <div className="bg-muted/50 p-3 rounded-lg">
               <p
                 className="text-xs text-muted-foreground text-center leading-relaxed"
               >
-                After creating your account, you'll complete optional equality
-                monitoring questions and review additional privacy terms.
+                Your access code will be checked before your account is created.
+                If the code is valid, you will be linked to the correct portal.
               </p>
             </div>{" "}
             <Button
               type="submit"
-              className="h-11 w-full rounded-xl border border-primary/10 bg-primary text-primary-foreground shadow-[0_18px_38px_hsl(var(--primary)/0.28)] transition-all duration-200 hover:bg-primary/90 hover:shadow-[0_22px_46px_hsl(var(--primary)/0.32)]"
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-4 py-2 w-full h-11 bg-slate-800 hover:bg-slate-200 dark:bg-blue-400 dark:hover:bg-slate-800 text-white hover:text-slate-800 dark:hover:text-white transition-all duration-200 border-0 shadow-md hover:shadow-lg"
               disabled={isLoading}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
@@ -435,16 +416,12 @@ export default function SignUpPage() {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
+                <span className="bg-background px-2 text-muted-foreground">
                   Already have an account?
                 </span>
               </div>
             </div>
-            <Button
-              variant="outline"
-              className="h-11 w-full rounded-xl border-border/70 bg-background/40 hover:bg-muted/70"
-              asChild
-            >
+            <Button variant="outline" className="w-full h-11" asChild>
               <Link href="/auth/login">Sign In</Link>
             </Button>
           </CardFooter>

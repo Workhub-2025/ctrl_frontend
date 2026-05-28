@@ -1,6 +1,5 @@
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
 import { ReactNode } from 'react';
 
 interface PublicAuthProviderProps {
@@ -8,9 +7,5 @@ interface PublicAuthProviderProps {
 }
 
 export function PublicAuthProvider({ children }: PublicAuthProviderProps) {
-  return (
-    <SessionProvider>
-      {children}
-    </SessionProvider>
-  );
+  return <>{children}</>;
 }

@@ -21,8 +21,10 @@ import { debugAuthToken, debugEnvironment } from '@/lib/debug-auth';
 import {
     applyTenantScope,
     enforceTenantWrite,
+    getActionAuthContext,
     requireAdminActionContext
 } from '@/lib/auth/server-action-auth';
+import { isAdminRole } from '@/lib/auth/role-model';
 import { startServerActionTrace } from '@/lib/observability/server-observability';
 
 // Result type for consistent server action returns
@@ -290,9 +292,21 @@ export const updateUserAction = async (
  */
 export const updateCurrentUserAction = async (id: string | number, data: UserUpdateData): Promise<ActionResult<IPublicUser>> => {
     try {
-        const authContext = await requireAdminActionContext('updateCurrentUserAction');
-        const scopedData = enforceTenantWrite(data, authContext);
-        const updatedUser = await UsersService.updateUser(id, scopedData);
+        const authContext = await getActionAuthContext('updateCurrentUserAction');
+        const targetId = Number(id);
+        const isSelfUpdate = Number.isFinite(targetId) && targetId === authContext.userId;
+
+        if (!isSelfUpdate && !isAdminRole(authContext.role)) {
+            return {
+                success: false,
+                error: 'Access denied. You can only update your own profile.'
+            };
+        }
+
+        const scopedData = isSelfUpdate ? data : enforceTenantWrite(data, authContext);
+        const updatedUser = isSelfUpdate
+            ? await UsersService.updateCurrentUser(scopedData)
+            : await UsersService.updateUser(id, scopedData);
 
         if (!updatedUser) {
             return {

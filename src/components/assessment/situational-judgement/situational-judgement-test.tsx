@@ -1,12 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   ClipboardCheck,
   Loader2,
+  LogOut,
   Play,
-  RotateCcw,
 } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +64,7 @@ const fallbackContent: SjtContent = {
 };
 
 export default function SituationalJudgementTest() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('landing');
   const [content, setContent] = useState<SjtContent>(fallbackContent);
   const [practiceIndex, setPracticeIndex] = useState(0);
@@ -131,13 +133,9 @@ export default function SituationalJudgementTest() {
     setPhase('final-scenario');
   }, []);
 
-  const resetAssessment = useCallback(() => {
-    setPracticeIndex(0);
-    setFinalIndex(0);
-    setSelectedOption(null);
-    setAnswers([]);
-    setPhase('landing');
-  }, []);
+  const closeAssessment = useCallback(() => {
+    router.push('/candidate-dashboard/my-assessments/');
+  }, [router]);
 
   const recordAnswer = (mode: 'practice' | 'final') => {
     if (selectedOption === null) return;
@@ -446,12 +444,14 @@ export default function SituationalJudgementTest() {
             Assessment submitted
           </p>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Your situational judgement assessment has been completed. No final
-            score is shown on this screen.
+            Thank you. Your assessment has been submitted successfully. Please
+            complete any remaining assessments in My Assessments. If all
+            sections are complete, await further information from the Hiring
+            Manager.
           </p>
-          <Button variant="outline" className="mt-8 h-11 px-6" onClick={resetAssessment}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset visual demo
+          <Button variant="outline" className="mt-8 h-11 px-6" onClick={closeAssessment}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Close assessment
           </Button>
         </div>
       )}

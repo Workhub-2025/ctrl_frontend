@@ -24,7 +24,7 @@ function getApiToken(): string | undefined {
     // Use || so empty strings also fall through to undefined — prevents
     // @strapi/client from throwing "A valid API token is required" at init.
     return (
-        process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
+        process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
         process.env.STRAPI_API_TOKEN ||
         process.env.NEXT_PUBLIC_STRAPI_API_TOKEN ||
         undefined
@@ -76,7 +76,7 @@ export function getStrapiClient(jwt?: string | null) {
 export async function getServerStrapiClient() {
     try {
         const { getServerSession } = await import('next-auth/next');
-        const { authOptions } = await import('@/app/api/auth/[...nextauth]/route');
+        const { authOptions } = await import('@/lib/auth/next-auth-options');
         const session = await getServerSession(authOptions);
         return getStrapiClient(session?.user?.jwt);
     } catch {

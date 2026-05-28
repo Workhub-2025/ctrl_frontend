@@ -16,7 +16,7 @@ export const completionLabels: Record<string, string> = {
   typing: "Typing Test",
   "call-simulation": "Call Simulation",
   "situational-judgement": "Situational Judgement",
-  prioritization: "Prioritization Assessment",
+  prioritization: "Prioritisation Assessment",
 };
 
 export const candidateAssessmentItems = [
@@ -49,11 +49,11 @@ export const candidateAssessmentItems = [
   },
   {
     icon: ListOrdered,
-    title: "Prioritization Assessment",
+    title: "Prioritisation Assessment",
     description:
-      "Rank incoming incidents based on urgency, available resources, and standard operating procedures.",
+      "Rank operational statements by priority to show how you reason through urgent work.",
     href: "/assessment/prioritization",
-    duration: "10-15 min",
+    duration: "Untimed",
     status: "Available now",
   },
 ] as const;
@@ -74,12 +74,12 @@ export const candidateSupportLinks: Array<{
     actionLabel: "Raise Ticket",
   },
   {
-    title: "Contact hiring manager",
+    title: "Contact Hiring Manager",
     description:
-      "Use this for questions about your allocated session time or the recruitment process.",
+      "Use this for questions about your allocated assessment or the recruitment process.",
     href: "mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query",
     icon: Mail,
-    actionLabel: "Email hiring manager",
+    actionLabel: "Email Hiring Manager",
   },
 ];
 
@@ -89,8 +89,8 @@ export const candidateGuidanceItems: Array<{
   icon: LucideIcon;
 }> = [
   {
-    title: "Session Access",
-    body: "Your assessments are unlocked using your unique session code and must be completed within the allocated time window.",
+    title: "Access Code",
+    body: "Your assessments are linked using your unique Access Code. The code is single-use and connects you to the correct Campaign.",
     icon: KeyRound,
   },
   {

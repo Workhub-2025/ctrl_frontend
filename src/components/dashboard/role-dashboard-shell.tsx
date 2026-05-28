@@ -63,7 +63,7 @@ function RoleDashboardHeader({
   const displayEmail = userProfile?.email || user?.email;
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border dark:border-white/5 bg-background/95 dark:bg-[#04070d]/95 px-3 backdrop-blur-xl sm:px-5 lg:px-6 transition-colors duration-300">
+    <header className="sticky top-0 z-20 flex h-16 min-w-0 items-center justify-between border-b border-border bg-background/95 px-3 backdrop-blur-xl transition-colors duration-300 dark:border-white/5 dark:bg-[#04070d]/95 sm:px-5 lg:px-6">
       {/* Sidebar Trigger & Title */}
       <div className="flex items-center gap-3 text-foreground">
         {!hideSidebar && <SidebarTrigger />}
@@ -74,11 +74,11 @@ function RoleDashboardHeader({
           </Link>
         )}
       </div>
-      <div className="flex-1 px-3 text-center">
-        <p className="text-sm font-semibold tracking-[0.04em] text-foreground">
+      <div className="min-w-0 flex-1 px-3 text-center">
+        <p className="truncate text-sm font-semibold text-foreground">
           {title}
         </p>
-        <p className="hidden text-xs text-muted-foreground/90 sm:block">
+        <p className="hidden truncate text-xs text-muted-foreground/90 md:block">
           {subtitle}
         </p>
       </div>
@@ -143,7 +143,7 @@ function RoleDashboardFrame({
     return (
       <div className="flex min-h-screen w-full flex-col bg-muted/30 dark:bg-[#04070d] selection:bg-primary/30 transition-colors duration-300">
         <RoleDashboardHeader title={title} subtitle={subtitle} hideSidebar={true} />
-        <main className="flex-1 p-4 sm:p-6 md:p-8">
+        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
@@ -195,18 +195,6 @@ function RoleDashboardFrame({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                tooltip="Profile"
-                className="rounded-xl hover:bg-muted dark:hover:bg-white/5 transition-colors duration-300"
-              >
-                <Link href="/profile">
-                  <UserCircle />
-                  <span>Profile</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
@@ -214,7 +202,7 @@ function RoleDashboardFrame({
       {/* Main Content Area */}
       <SidebarInset>
         <RoleDashboardHeader title={title} subtitle={subtitle} />
-        <main className="flex-1 p-4 sm:p-6 md:p-8">
+        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </SidebarInset>

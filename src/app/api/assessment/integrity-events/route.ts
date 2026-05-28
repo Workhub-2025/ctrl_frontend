@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth/next-auth-options";
 import { resolveCorrelationId, startServerActionTrace } from "@/lib/observability/server-observability";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
     // Persist to Strapi (non-blocking — failure must not affect the response).
     try {
       const { getStrapiClient } = await import("@/lib/strapi");
-      const strapiClient = getStrapiClient(); // API token — no user JWT needed
+      const strapiClient = getStrapiClient(session.user.jwt); // User JWT — integrity-events require authenticated role
       await strapiClient.collection("integrity-events").create({
         users_permissions_user: String(session.user.id),
         assessmentType: body.assessmentType,
