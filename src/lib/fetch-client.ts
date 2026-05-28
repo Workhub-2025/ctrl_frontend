@@ -1,11 +1,22 @@
 // Use different URLs for client-side and server-side requests
+const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, '');
+const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, '');
+
 const getBaseUrl = () => {
     // If we're on the server (SSR/API routes), use the internal Docker network URL
     if (typeof window === 'undefined') {
-        return process.env.STRAPI_API_URL || 'http://strapi:1337/api';
+        return stripTrailingSlashes(process.env.STRAPI_API_URL || 'http://strapi:1337/api');
     }
     // If we're in the browser (client-side), use localhost
-    return process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api';
+    return stripTrailingSlashes(process.env.NEXT_PUBLIC_STRAPI_API_URL || 'http://localhost:1337/api');
+};
+
+const joinUrl = (baseUrl: string, url: string) => {
+    if (url.startsWith('http')) {
+        return url;
+    }
+
+    return `${baseUrl}/${stripLeadingSlashes(url)}`;
 };
 
 const TIMEOUT = 10000; // 10 seconds
@@ -42,7 +53,7 @@ const getSessionContext = async (): Promise<SessionContext> => {
     if (typeof window === 'undefined') {
         try {
             const { getServerSession } = await import('next-auth/next');
-            const { authOptions } = await import('@/app/api/auth/[...nextauth]/route');
+            const { authOptions } = await import('@/lib/auth/next-auth-options');
             const session = await getServerSession(authOptions);
 
             return {
@@ -54,10 +65,18 @@ const getSessionContext = async (): Promise<SessionContext> => {
             return { jwt: null, tenant: null };
         }
     } else {
-        // Client-side: only rely on NextAuth session
+        // Client-side: read the local NextAuth session endpoint directly.
         try {
-            const { getSession } = await import('next-auth/react');
-            const session = await getSession();
+            const response = await fetch('/api/auth/session', {
+                credentials: 'same-origin',
+                cache: 'no-store',
+            });
+
+            if (!response.ok) {
+                return { jwt: null, tenant: null };
+            }
+
+            const session = await response.json();
 
             return {
                 jwt: session?.user?.jwt ?? null,
@@ -87,12 +106,9 @@ export const fetchClient = async (
         const baseUrl = getBaseUrl();
         const environment = typeof window === 'undefined' ? 'SERVER' : 'CLIENT';
 
-        console.log(`🌐 [${environment}] Using base URL:`, baseUrl, 'for URL:', url);
-
         // Prepare URL (add base URL if relative)
-        const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-        console.log(`🌐 [${environment}] Full URL:`, fullUrl);        // Prepare headers
-        console.log(`🌐 [${environment}] Options:`, options);
+        const fullUrl = joinUrl(baseUrl, url);
+        // Prepare headers
 
         const headers: HeadersInit = {
             ...options.headers,
@@ -107,11 +123,13 @@ export const fetchClient = async (
 
         // Add CSRF token for state-changing operations (but not for auth endpoints)
         const method = (options.method || 'GET').toLowerCase();
-        const isAuthEndpoint = url.includes('/auth/local') || url.includes('/users-permissions/');
+        const isAuthEndpoint =
+            url.includes('/auth/local') ||
+            url.includes('/access-code/register') ||
+            url.includes('/users-permissions/');
 
         // Add auth token + tenant context
         const { jwt: authToken, tenant } = await getSessionContext();
-        console.log(`🔑 [${environment}] Token available:`, !!authToken);
 
         const hasAuthorizationHeader =
             typeof headerRecord.Authorization === 'string' ||
@@ -133,15 +151,11 @@ export const fetchClient = async (
             credentials: 'include', // Enable credentials for CSRF cookies
         };
 
-        console.log(`📤 [${environment}] Making ${fetchOptions.method} request to:`, fullUrl);
-
         // Make request with timeout
         const fetchPromise = fetch(fullUrl, fetchOptions);
         const timeoutPromise = createTimeoutPromise(TIMEOUT);
 
         const response = await Promise.race([fetchPromise, timeoutPromise]);
-
-        console.log(`📥 [${environment}] Response status:`, response.status);
 
         // Handle response errors
         if (!response.ok) {
@@ -186,8 +200,6 @@ export const fetchApi = {
     },
 
     post: async <T = any>(url: string, data?: any, options?: RequestInit): Promise<T> => {
-        console.log('[fetchApi.post] URL:', url, 'Data:', data, 'Options:', options);
-
         // Handle FormData vs JSON data
         const isFormData = data instanceof FormData;
         let body: string | FormData | undefined;

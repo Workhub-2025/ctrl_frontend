@@ -16,7 +16,7 @@ export class AuthAPI {
             });
 
             const response = await fetchApi.post<StrapiAuthResponse>(
-                '/auth/local/register',
+                '/access-code/register',
                 userData
             );
 

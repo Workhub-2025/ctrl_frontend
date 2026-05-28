@@ -1,4 +1,4 @@
-import { useSession, signIn, signOut, getSession } from 'next-auth/react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
@@ -6,14 +6,50 @@ import { getCurrentUserAction } from '@/app/actions/users.actions';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 import { useAuthStore } from '@/store/auth.store';
 
+type ClientSession = {
+    user?: any;
+    expires?: string;
+} | null;
+
 export function useAuth() {
-    const { data: session, status } = useSession();
+    const [session, setSession] = useState<ClientSession>(null);
+    const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
     const router = useRouter();
     const { setUserProfile, clearUserProfile } = useAuthStore();
 
     const isLoading = status === 'loading';
     const isAuthenticated = status === 'authenticated';
     const user = session?.user;
+
+    const loadSession = useCallback(async () => {
+        try {
+            const response = await fetch('/api/auth/session', {
+                credentials: 'same-origin',
+                cache: 'no-store',
+            });
+
+            if (!response.ok) {
+                setSession(null);
+                setStatus('unauthenticated');
+                return null;
+            }
+
+            const nextSession = await response.json();
+            const hasUser = !!nextSession?.user;
+
+            setSession(hasUser ? nextSession : null);
+            setStatus(hasUser ? 'authenticated' : 'unauthenticated');
+            return hasUser ? nextSession : null;
+        } catch {
+            setSession(null);
+            setStatus('unauthenticated');
+            return null;
+        }
+    }, []);
+
+    useEffect(() => {
+        loadSession();
+    }, [loadSession]);
 
     // Public helper function to route users based on their role
     const routeByRole = (userRole?: string) => {
@@ -62,8 +98,8 @@ export function useAuth() {
         const hasCompletedEqualityMonitoring = userData?.equalityMonitoring?.completed === true;
 
         if (hasCompletedEqualityMonitoring) {
-            console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard');
-            router.push('/candidate-dashboard');
+            console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard/my-assessments');
+            router.push('/candidate-dashboard/my-assessments');
         } else {
             console.log('📋 Candidate without equality monitoring, offering optional form');
             // Show optional equality monitoring form with skip option
@@ -73,7 +109,7 @@ export function useAuth() {
 
     const waitForSession = async (attempts = 12, delayMs = 120) => {
         for (let attempt = 0; attempt < attempts; attempt += 1) {
-            const freshSession = await getSession();
+            const freshSession = await loadSession();
             if (freshSession?.user) {
                 return freshSession;
             }
@@ -86,15 +122,20 @@ export function useAuth() {
 
     const login = async (email: string, password: string) => {
         try {
-            const result = await signIn('credentials', {
-                email,
-                password,
-                redirect: false,
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    email,
+                    password,
+                    callbackUrl: routeForRole(undefined),
+                }),
+                credentials: 'same-origin',
             });
 
-            // Check ok first: next-auth v4 + Next.js 15 can return error="undefined" (string)
-            // even on successful login, so result?.ok is the reliable success signal.
-            if (result?.ok) {
+            if (response.redirected && !response.url.includes('/auth/login')) {
                 console.log('✅ SignIn successful, getting user data for routing...');
 
                 const freshSession = await waitForSession();
@@ -137,24 +178,7 @@ export function useAuth() {
                 return { success: true };
             }
 
-            // Handle real errors (exclude the spurious "undefined" string next-auth v4 sends
-            // on success when running under Next.js 15).
-            const errorCode = result?.error;
-            if (errorCode && errorCode !== 'undefined') {
-                console.log('❌ SignIn error:', errorCode);
-                if (errorCode === 'LOCKED_OUT') {
-                    throw new Error('Too many failed attempts. Please wait 15 minutes before trying again.');
-                }
-                if (errorCode === 'AUTH_SERVICE_UNAVAILABLE' || errorCode === 'Configuration') {
-                    throw new Error('Authentication service is currently unavailable. Please try again shortly.');
-                }
-                if (errorCode === 'AccessDenied') {
-                    throw new Error('Access denied for this account.');
-                }
-                throw new Error('Authentication failed: wrong user or password');
-            }
-
-            throw new Error(`Login failed - Status: ${result?.status || 'unknown'}`);
+            throw new Error('Authentication failed: wrong user or password');
         } catch (error) {
             console.error('Login error:', error);
             throw error;
@@ -165,20 +189,33 @@ export function useAuth() {
         try {
             console.log('🚀 Starting registration process...');
 
-            // Use the custom AuthAPI for registration
-            const response = await AuthAPI.register(userData);
-            console.log('✅ Registration API response received:', { hasJWT: !!response.jwt, hasUser: !!response.user });
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData),
+                credentials: 'same-origin',
+            });
 
-            if (response.user && response.jwt) {
-                console.log('✅ Registration successful, redirecting to login for email confirmation...');
+            const result = await response.json().catch(() => null);
 
-                // In QA/production environments, users need to confirm their email
-                // before they can log in, so redirect to login page with success message
-                router.push('/auth/login?message=Registration successful! Please check your email to confirm your account, then log in to continue.');
-                return { success: true, user: response.user };
+            if (!response.ok) {
+                throw new Error(result?.error || 'Registration failed');
             }
 
-            throw new Error('Registration failed - invalid response from server');
+            const registeredUser = result?.data?.user;
+            const redirectTo = result?.data?.redirectTo || routeForRole(registeredUser?.role);
+
+            if (!registeredUser) {
+                throw new Error('Registration failed - invalid response from server');
+            }
+
+            setUserProfile(registeredUser as IUser);
+            await loadSession();
+            router.push(redirectTo);
+
+            return { success: true, user: registeredUser };
         } catch (error: any) {
             console.error('❌ Registration error:', error);
             throw error;
@@ -188,8 +225,12 @@ export function useAuth() {
     const logout = async () => {
         try {
             clearUserProfile();
-            await signOut({
-                redirect: false,
+            setSession(null);
+            setStatus('unauthenticated');
+
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'same-origin',
             });
 
             router.push('/');

@@ -3,6 +3,9 @@ type AuthAuditEvent =
   | "login_success"
   | "login_failure"
   | "login_locked"
+  | "register_attempt"
+  | "register_success"
+  | "register_failure"
   | "authorization_denied";
 
 type AuditMetadata = Record<string, string | number | boolean | undefined | null>;

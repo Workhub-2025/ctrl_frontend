@@ -19,7 +19,7 @@ export function useSecureExit() {
         window.close(); // Close the pop-out window
       }
     }
-    router.push("/candidate-dashboard");
+    router.push("/candidate-dashboard/my-assessments");
   };
 
   return { handleExit };

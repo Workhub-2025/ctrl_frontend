@@ -1,13 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   FileText,
   Loader2,
+  LogOut,
   Phone,
   Play,
-  RotateCcw,
   Volume2,
 } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
@@ -100,6 +101,7 @@ const formatTime = (seconds: number) => {
 };
 
 export default function CallSimulationTest() {
+  const router = useRouter();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const formRef = useRef<IncidentForm>(emptyForm);
   const runIndexRef = useRef(0);
@@ -184,13 +186,9 @@ export default function CallSimulationTest() {
     setPhase('running');
   }, []);
 
-  const resetAssessment = useCallback(() => {
-    setSnapshots([]);
-    setCurrentRunIndex(0);
-    setForm(emptyForm);
-    setReviewTimeLeft(REVIEW_SECONDS);
-    setPhase('landing');
-  }, []);
+  const closeAssessment = useCallback(() => {
+    router.push('/candidate-dashboard/my-assessments/');
+  }, [router]);
 
   const updateForm = (field: keyof IncidentForm, value: string) => {
     setForm((currentForm) => ({
@@ -607,16 +605,18 @@ export default function CallSimulationTest() {
             Assessment submitted
           </p>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Your call simulation has been completed. No final score is shown on
-            this screen.
+            Thank you. Your assessment has been submitted successfully. Please
+            complete any remaining assessments in My Assessments. If all
+            sections are complete, await further information from the Hiring
+            Manager.
           </p>
           <Button
             variant="outline"
             className="mt-8 h-11 px-6"
-            onClick={resetAssessment}
+            onClick={closeAssessment}
           >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset visual demo
+            <LogOut className="mr-2 h-4 w-4" />
+            Close assessment
           </Button>
         </div>
       )}

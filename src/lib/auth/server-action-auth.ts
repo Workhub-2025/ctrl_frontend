@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth/next-auth-options";
 import { AppRole, isAdminRole, normalizeRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { resolveCorrelationId } from "@/lib/observability/server-observability";

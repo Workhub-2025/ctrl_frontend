@@ -12,6 +12,7 @@ export interface FindTextsParams {
     pageSize?: number;
     search?: string;
     type?: 'practice' | 'test';
+    difficulty?: 'Base' | 'Intermediate' | 'Advanced';
     filters?: any;
     sort?: string | string[];
     populate?: any;
@@ -20,11 +21,13 @@ export interface FindTextsParams {
 export interface CreateTextData {
     text: string;
     type: 'practice' | 'test';
+    difficulty: 'Base' | 'Intermediate' | 'Advanced';
 }
 
 export interface TextUpdateData {
     text?: string;
     type?: 'practice' | 'test';
+    difficulty?: 'Base' | 'Intermediate' | 'Advanced';
 }
 
 export default class TextsService {

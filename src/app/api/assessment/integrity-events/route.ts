@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth/next-auth-options";
 import { resolveCorrelationId, startServerActionTrace } from "@/lib/observability/server-observability";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 

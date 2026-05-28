@@ -76,7 +76,7 @@ export function getStrapiClient(jwt?: string | null) {
 export async function getServerStrapiClient() {
     try {
         const { getServerSession } = await import('next-auth/next');
-        const { authOptions } = await import('@/app/api/auth/[...nextauth]/route');
+        const { authOptions } = await import('@/lib/auth/next-auth-options');
         const session = await getServerSession(authOptions);
         return getStrapiClient(session?.user?.jwt);
     } catch {

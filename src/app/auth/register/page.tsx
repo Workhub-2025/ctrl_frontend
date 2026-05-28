@@ -16,9 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, CheckCircle, KeyRound } from "lucide-react";
 import Link from "next/link";
-import { AuthAPI } from "@/services/auth-api";
 
 interface SignUpData {
   firstName: string;
@@ -26,8 +25,7 @@ interface SignUpData {
   email: string;
   password: string;
   confirmPassword: string;
-  organization: string;
-  phone?: string;
+  accessCode: string;
   agreeToTerms: boolean;
   agreeToDataPrivacyPolicy: boolean;
   agreeToMarketing: boolean;
@@ -40,8 +38,7 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    organization: "",
-    phone: "",
+    accessCode: "",
     agreeToTerms: false,
     agreeToDataPrivacyPolicy: false,
     agreeToMarketing: false,
@@ -70,7 +67,7 @@ export default function SignUpPage() {
       return "Password must be at least 8 characters";
     if (formData.password !== formData.confirmPassword)
       return "Passwords do not match";
-    if (!formData.organization.trim()) return "Organization is required";
+    if (!formData.accessCode.trim()) return "Access code is required";
     if (!formData.agreeToTerms)
       return "You must agree to the Terms & Conditions";
     if (!formData.agreeToDataPrivacyPolicy)
@@ -95,48 +92,27 @@ export default function SignUpPage() {
     }
 
     try {
-      //Get the roles from strapi to see the ids
-      console.log("🔍 Fetching roles from Strapi...");
-      const roles = await AuthAPI.getRoles();
-      console.log("📋 All available roles:", roles);
-
-      if (!Array.isArray(roles)) {
-        console.error("getRoles() did not return an array:", roles);
-        throw new Error("Failed to fetch user roles from server");
-      }
-
-      const candidateRole = roles.find((role) => role.name === "Candidate");
-      console.log("🎯 Found candidate role:", candidateRole);
-
-      if (!candidateRole) {
-        console.error("Candidate role not found in roles:", roles);
-        throw new Error("Candidate role not configured on server");
-      }
-
-      // Prepare data for Strapi registration - ONLY send allowed fields
+      // The backend assigns the role from the access code.
       const registrationData = {
         username: formData.email, // Strapi uses username for login
         email: formData.email,
         password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        organization: formData.organization,
-        role: candidateRole.id, // Use only the ID, not the whole object
-        phone: formData.phone || undefined, // Remove empty strings
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
         // Include the checkbox fields that are in allowedFields
         agreeToTerms: formData.agreeToTerms,
         agreeToMarketing: formData.agreeToMarketing,
         agreeToDataPrivacyPolicy: formData.agreeToDataPrivacyPolicy,
+        accessCode: formData.accessCode.trim(),
       };
 
       console.log("📝 Registration data being sent:", {
         ...registrationData,
         password: "[HIDDEN]",
-        roleId: registrationData.role,
-        roleObject: candidateRole,
+        accessCode: "[HIDDEN]",
       });
 
-      // Call registration via useAuth hook (handles registration + redirect to login)
+      // Call registration via useAuth hook. Backend validates and attaches the access code.
       const result = await registerUser(registrationData);
       console.log("✅ Registration result:", result);
 
@@ -144,8 +120,16 @@ export default function SignUpPage() {
       // No need to set success state here since we'll be redirected
     } catch (err: any) {
       console.error("Registration error:", err);
+      const message = String(err?.message || "");
+      if (/email|username|already|taken/i.test(message)) {
+        setError(
+          "An account with this email already exists. Please sign in, then enter this access code from your candidate portal."
+        );
+        return;
+      }
+
       setError(
-        err.message ||
+        message ||
           "An error occurred during registration. Please try again."
       );
     }
@@ -196,8 +180,7 @@ export default function SignUpPage() {
           </div>
           <CardTitle className="text-2xl font-bold">Join CTRL</CardTitle>
           <CardDescription>
-            Create your candidate account to begin your control room assessment
-            journey
+            Create your account using the access code you were given.
           </CardDescription>
         </CardHeader>
 
@@ -210,8 +193,22 @@ export default function SignUpPage() {
               </Alert>
             )}
 
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="john.smith@organization.com"
+                value={formData.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+
             {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
                 <Input
@@ -240,20 +237,6 @@ export default function SignUpPage() {
                   disabled={isLoading}
                 />
               </div>
-            </div>
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john.smith@organization.com"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                required
-                disabled={isLoading}
-              />
             </div>
 
             {/* Password Fields */}
@@ -322,33 +305,30 @@ export default function SignUpPage() {
               </div>
             </div>
 
-            {/* Organization */}
-            <div className="space-y-2">
-              <Label htmlFor="organization">Organization *</Label>
-              <Input
-                id="organization"
-                type="text"
-                placeholder="Metro Emergency Services"
-                value={formData.organization}
-                onChange={(e) =>
-                  handleInputChange("organization", e.target.value)
-                }
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Phone (Optional) */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number (Optional)</Label>
-              <Input
-                id="phone"
-                type="text"
-                placeholder="+44 555 12345678"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                disabled={isLoading}
-              />
+            {/* Access Code */}
+            <div className="rounded-xl border border-border bg-muted/30 p-3">
+              <div className="space-y-2">
+                <Label htmlFor="accessCode">Access Code *</Label>
+                <div className="relative">
+                  <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="accessCode"
+                    type="text"
+                    placeholder="e.g. CTRL-9A2X"
+                    value={formData.accessCode}
+                    onChange={(e) =>
+                      handleInputChange("accessCode", e.target.value)
+                    }
+                    required
+                    disabled={isLoading}
+                    className="pl-10 uppercase tracking-[0.18em]"
+                  />
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Your code confirms the type of account and workspace you can
+                  access.
+                </p>
+              </div>
             </div>
 
             {/* Checkboxes */}
@@ -420,8 +400,8 @@ export default function SignUpPage() {
               <p
                 className="text-xs text-muted-foreground text-center leading-relaxed"
               >
-                After creating your account, you'll complete optional equality
-                monitoring questions and review additional privacy terms.
+                Your access code will be checked before your account is created.
+                If the code is valid, you will be linked to the correct portal.
               </p>
             </div>{" "}
             <Button

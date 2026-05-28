@@ -6,7 +6,7 @@ import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-heade
 /**
  * HelpSupportPage
  * 
- * Provides candidates with options to raise IT tickets or contact the hiring manager.
+ * Provides Candidates with options to raise support tickets or contact the Hiring Manager.
  */
 export default function HelpSupportPage() {
   return (
@@ -35,7 +35,11 @@ export default function HelpSupportPage() {
             <CardTitle className="text-lg">Contact Hiring Manager</CardTitle>
             <CardDescription>Questions about the recruitment process.</CardDescription>
           </CardHeader>
-          <CardContent><Button className="w-full" variant="outline">Send Email</Button></CardContent>
+          <CardContent>
+            <Button className="w-full" variant="outline" asChild>
+              <a href="mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query">Send Email</a>
+            </Button>
+          </CardContent>
         </Card>
       </div>
     </div>

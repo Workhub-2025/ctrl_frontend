@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useAuth } from "@/hooks/use-auth";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,10 +42,11 @@ const DEV_SEEDED_ACCOUNTS = [
 function SignInContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [callbackUrl, setCallbackUrl] = useState("/candidate-dashboard/my-assessments");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const { login, isLoading } = useAuth();
   const searchParams = useSearchParams();
   const showDevAccounts =
     process.env.NODE_ENV !== "production" &&
@@ -56,6 +56,11 @@ function SignInContent() {
   useEffect(() => {
     const message = searchParams.get("message");
     const authError = searchParams.get("error");
+    const nextCallbackUrl = searchParams.get("callbackUrl");
+
+    if (nextCallbackUrl) {
+      setCallbackUrl(nextCallbackUrl);
+    }
 
     if (message) {
       setSuccessMessage(message);
@@ -70,25 +75,17 @@ function SignInContent() {
         setError("Authentication service is currently unavailable. Please try again shortly.");
       } else if (authError === "AccessDenied") {
         setError("Access denied for this account.");
+      } else if (authError === "CredentialsSignin") {
+        setError("The email or password entered is incorrect.");
       } else if (authError !== "CredentialsSignin") {
         setError("Unable to sign in right now. Please try again.");
       }
     }
   }, [searchParams]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     setError("");
     setSuccessMessage(""); // Clear any success message when attempting login
-
-    try {
-      await login(email, password);
-      // The useAuth hook will handle navigation to dashboard
-    } catch (error: any) {
-      setError(
-        error.message || "An error occurred during sign in. Please try again."
-      );
-    }
   };
 
   return (
@@ -113,7 +110,12 @@ function SignInContent() {
           </CardDescription>
         </CardHeader>
 
-        <form onSubmit={handleSubmit}>
+        <form
+          action="/api/auth/login"
+          method="post"
+          onSubmit={handleSubmit}
+        >
+          <input type="hidden" name="callbackUrl" value={callbackUrl} />
           <CardContent className="space-y-4">
             {successMessage && (
               <Alert>
@@ -174,11 +176,12 @@ function SignInContent() {
               <Input
                 id="email"
                 type="email"
+                name="email"
                 placeholder="your.email@organization.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                disabled={isLoading}
+                autoComplete="email"
                 className="h-11"
               />
             </div>
@@ -188,12 +191,13 @@ function SignInContent() {
               <div className="relative">
                 <Input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isLoading}
+                  autoComplete="current-password"
                   className="h-11 pr-10"
                 />
                 <Button
@@ -202,7 +206,6 @@ function SignInContent() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -237,9 +240,9 @@ function SignInContent() {
             <Button
               type="submit"
               className="w-full h-11 bg-slate-800 hover:bg-slate-200 dark:bg-blue-400 dark:hover:bg-slate-800 text-white hover:text-slate-800 dark:hover:text-white transition-all duration-200 border-0 shadow-md hover:shadow-lg"
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
 
             <div className="relative">

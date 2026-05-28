@@ -32,6 +32,8 @@ export async function initTypingSession(): Promise<TypingSessionData> {
 
         const response = await client.fetch('/assessment/typing/session', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
         });
 
         if (!response.ok) {
@@ -57,7 +59,10 @@ export async function initTypingSession(): Promise<TypingSessionData> {
             sessionId: body.sessionId,
             assessmentId: body.assessmentId ?? null,
             runs: body.runs,
-            config: body.config,
+            config: {
+                ...body.config,
+                difficulty: body.config.difficulty ?? DEFAULT_TYPING_CONFIG.difficulty,
+            },
         };
     } catch (err) {
         console.error('[initTypingSession] Network error — using fallback', err);

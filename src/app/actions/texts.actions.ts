@@ -168,6 +168,7 @@ export const createTextAction = async (textData: CreateTextData): Promise<Action
 export const createTypingText = async (data: {
     text: string;
     type: 'practice' | 'test';
+    difficulty: 'Base' | 'Intermediate' | 'Advanced';
 }): Promise<{ success: boolean; data?: ITypingText; error?: string }> => {
     const result = await createTextAction(data);
     return result;
@@ -227,6 +228,7 @@ export const updateTypingText = async (
     data: {
         text?: string;
         type?: 'practice' | 'test';
+        difficulty?: 'Base' | 'Intermediate' | 'Advanced';
     }
 ): Promise<{ success: boolean; data?: ITypingText; error?: string }> => {
     const result = await updateTextAction(id, data);

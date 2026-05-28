@@ -7,13 +7,17 @@ export type TypingRun = {
     id: string;
     text: string;
     type: 'practice' | 'test';
+    difficulty?: TypingDifficulty;
 };
+
+export type TypingDifficulty = 'Base' | 'Intermediate' | 'Advanced';
 
 export type TypingConfig = {
     roundCount: number;
     timeLimitPerRound: number;
     minWpm: number;
     minAccuracy: number;
+    difficulty: TypingDifficulty;
 };
 
 export type TypingSessionData = {
@@ -32,6 +36,7 @@ export const DEFAULT_TYPING_CONFIG: TypingConfig = {
     timeLimitPerRound: 60,
     minWpm: 32,
     minAccuracy: 90,
+    difficulty: 'Base',
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────

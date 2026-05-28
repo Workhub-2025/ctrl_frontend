@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth/next-auth-options";
 import {
     resolveCorrelationId,
     startServerActionTrace,
@@ -29,19 +29,19 @@ interface TypingSubmitPayload {
     startedAt: string;
     completedAt: string;
     assessmentId?: string | null;
+    difficulty?: "Base" | "Intermediate" | "Advanced";
 }
 
 // ─── Scoring helpers ──────────────────────────────────────────────────────────
 
-const FINAL_RUN_INDEX = 3; // Index of the single scored run (last one)
 const DEFAULT_WPM_THRESHOLD = 32;
 const DEFAULT_ACCURACY_THRESHOLD = 90;
 
 /**
- * Computes the aggregate score from the final (scored) run only.
- * Practice runs (indices 0–2) are excluded from the official result.
+ * Computes the aggregate score from the three assessment runs.
+ * Practice run index 0 is excluded from the official result.
  *
- * Score = average of normalised WPM (0–100) and accuracy (0–100).
+ * Score = average of normalised WPM (0-100) and accuracy (0-100).
  * WPM is normalised relative to a 60 WPM ceiling (reasonable professional target).
  */
 function computeScore(runs: RunResult[]): {
@@ -49,23 +49,32 @@ function computeScore(runs: RunResult[]): {
     passed: boolean;
     wpm: number;
     accuracy: number;
+    mistakes: number;
 } {
-    const scoredRun = runs.find((r) => r.runIndex === FINAL_RUN_INDEX);
+    const scoredRuns = runs.filter((r) => r.runIndex > 0);
 
-    if (!scoredRun) {
-        return { score: 0, passed: false, wpm: 0, accuracy: 0 };
+    if (scoredRuns.length === 0) {
+        return { score: 0, passed: false, wpm: 0, accuracy: 0, mistakes: 0 };
     }
 
-    const { wpm, accuracy } = scoredRun;
+    const wpm = Math.round(
+        scoredRuns.reduce((sum, run) => sum + run.wpm, 0) / scoredRuns.length
+    );
+    const accuracy = Math.round(
+        scoredRuns.reduce((sum, run) => sum + run.accuracy, 0) / scoredRuns.length
+    );
+    const mistakes = Math.round(
+        scoredRuns.reduce((sum, run) => sum + run.mistakeCharacters, 0) / scoredRuns.length
+    );
 
-    // Normalise WPM to 0-100 with 60 WPM as the 100% ceiling
+    // Normalise WPM to 0-100 with 60 WPM as the 100% ceiling.
     const normalisedWpm = Math.min(Math.round((wpm / 60) * 100), 100);
     const score = Math.round((normalisedWpm + accuracy) / 2);
 
     const passed =
         wpm >= DEFAULT_WPM_THRESHOLD && accuracy >= DEFAULT_ACCURACY_THRESHOLD;
 
-    return { score, passed, wpm, accuracy };
+    return { score, passed, wpm, accuracy, mistakes };
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -171,10 +180,10 @@ export async function POST(request: Request) {
             );
         }
 
-        const { runs, startedAt, completedAt, assessmentId } = validation.data;
+        const { runs, startedAt, completedAt, assessmentId, difficulty } = validation.data;
 
-        // 4. Compute score from the final run only (practice runs excluded)
-        const { score, passed, wpm, accuracy } = computeScore(runs);
+        // 4. Compute score from assessment runs only (practice excluded)
+        const { score, passed, wpm, accuracy, mistakes } = computeScore(runs);
 
         const durationSeconds = Math.round(
             (new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000
@@ -185,19 +194,20 @@ export async function POST(request: Request) {
         //    enforce ownership, idempotency, and server-side score recomputation.
         const strapiClient = getStrapiClient(session.user.jwt);
 
-        const finalRun = runs.find((r) => r.runIndex === FINAL_RUN_INDEX);
-        const practiceRuns = runs.filter((r) => r.runIndex < FINAL_RUN_INDEX);
+        const assessmentRuns = runs.filter((r) => r.runIndex > 0);
+        const practiceRuns = runs.filter((r) => r.runIndex === 0);
         const metrics = {
             assessmentType: "typing",
-            finalRun: {
-                runIndex: FINAL_RUN_INDEX,
-                wpm,
-                accuracy,
-                correctCharacters: finalRun?.correctCharacters ?? 0,
-                mistakeCharacters: finalRun?.mistakeCharacters ?? 0,
-                typedCharacters: finalRun?.typedCharacters ?? 0,
-                duration: finalRun?.duration ?? 0,
-            },
+            difficulty,
+            assessmentRuns: assessmentRuns.map((r) => ({
+                runIndex: r.runIndex,
+                wpm: r.wpm,
+                accuracy: r.accuracy,
+                correctCharacters: r.correctCharacters,
+                mistakeCharacters: r.mistakeCharacters,
+                typedCharacters: r.typedCharacters,
+                duration: r.duration,
+            })),
             practiceRuns: practiceRuns.map((r) => ({
                 runIndex: r.runIndex,
                 wpm: r.wpm,
@@ -205,8 +215,9 @@ export async function POST(request: Request) {
                 correctCharacters: r.correctCharacters,
                 mistakeCharacters: r.mistakeCharacters,
             })),
-            averageWpm: Math.round(runs.reduce((sum, r) => sum + r.wpm, 0) / runs.length),
-            averageAccuracy: Math.round(runs.reduce((sum, r) => sum + r.accuracy, 0) / runs.length),
+            averageWpm: wpm,
+            averageAccuracy: accuracy,
+            averageMistakes: mistakes,
             thresholds: {
                 wpm: DEFAULT_WPM_THRESHOLD,
                 accuracy: DEFAULT_ACCURACY_THRESHOLD,
@@ -218,6 +229,7 @@ export async function POST(request: Request) {
             .create({
                 wpm,
                 accuracy,
+                mistakeCount: mistakes,
                 startedAt,
                 completedAt,
                 durationSeconds,
@@ -226,7 +238,7 @@ export async function POST(request: Request) {
                 ...(assessmentId ? { assessmentDocumentId: assessmentId } : {}),
             } as Record<string, unknown>);
 
-        trace.success({ score, passed, wpm, accuracy });
+        trace.success({ score, passed, wpm, accuracy, mistakes });
 
         // 6. Return confirmation — deliberately omit score so candidates cannot
         //    read their own result from the response (FR-10).

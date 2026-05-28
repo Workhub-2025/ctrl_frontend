@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList, HelpCircle, Home, ShieldCheck } from "lucide-react";
+import { BriefcaseBusiness, HelpCircle, Route } from "lucide-react";
 import { RoleDashboardShell } from "@/components/dashboard/role-dashboard-shell";
 
 export default function CandidateDashboardLayout({
@@ -10,11 +10,25 @@ export default function CandidateDashboardLayout({
 }) {
   return (
     <RoleDashboardShell
-      title="Candidate dashboard"
-      subtitle="Assessment access and submission status"
+      title="Candidate Portal"
+      subtitle="Campaign access, assessment progress, and support"
       navItems={[
+        {
+          href: "/candidate-dashboard/my-campaigns/",
+          label: "My Campaigns",
+          icon: BriefcaseBusiness,
+        },
+        {
+          href: "/candidate-dashboard/next-steps/",
+          label: "What To Do Next",
+          icon: Route,
+        },
+        {
+          href: "/candidate-dashboard/help-support/",
+          label: "Help & Support",
+          icon: HelpCircle,
+        },
       ]}
-      hideSidebar={true}
     >
       {children}
     </RoleDashboardShell>

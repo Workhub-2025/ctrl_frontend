@@ -1,981 +1,1015 @@
 "use client";
 
+import { LandingHero } from "@/components/landing/landing-hero";
+import { PingPongVideoLayer } from "@/components/landing/ping-pong-video-layer";
+import { BrandLogo, BrandMark } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  Siren,
-  Shield,
-  Award,
-  Clock,
-  Phone,
-  Mail,
-  MapPin,
-  Star,
-  Sun,
-  Moon,
-  CheckCircle,
+  ArrowRight,
+  BadgeCheck,
+  BriefcaseBusiness,
+  Gauge,
+  Menu,
+  ShieldCheck,
+  Users,
+  Workflow,
+  X,
 } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
-import { useTheme } from "@/components/theme-provider";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "Emergency Call Handler",
-    company: "Metro Control Room",
-    content:
-      "CTRL helped me demonstrate my readiness for this critical role. The assessments are fair, realistic, and exactly what control rooms need.",
-    rating: 5,
-  },
-  {
-    name: "Miguel Rodriguez",
-    role: "Control Room Supervisor",
-    company: "City Emergency Services",
-    content:
-      "Finally, an assessment tool that measures what really matters. CTRL helps us identify candidates who can handle the pressure and serve the public.",
-    rating: 5,
-  },
-  {
-    name: "Jennifer Chen",
-    role: "Training Coordinator",
-    company: "Regional Control Centre",
-    content:
-      "The evidence-based approach gives us confidence in our hiring decisions. Candidates appreciate the transparency and fairness of the process.",
-    rating: 5,
-  },
+const navItems = [
+  { label: "Capabilities", href: "#why-ctrl" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "For Teams", href: "#audience" },
+  { label: "Platform", href: "#assessments" },
+  { label: "Contact", href: "#contact" },
 ];
 
-const features = [
+const trackedSections = navItems.map((item) => ({
+  id: item.href.slice(1),
+  label: item.label,
+}));
+
+const capabilityPillars = [
   {
-    icon: Shield,
-    title: "Built using 30+ years of insights",
+    index: "01",
+    title: "Decision consistency",
     description:
-      "CTRL isn't theory — it's built from first-hand experience inside police control rooms. It reflects the realities of emergency control room operations: multitasking, quick thinking, emotional control and calm communication under pressure. That authenticity means assessments are relevant, realistic, and respected by operational teams.",
+      "Assess how candidates make decisions, not just whether they land on the correct answer.",
+    proof: "Understand reasoning, not just results.",
+    icon: Workflow,
   },
   {
-    icon: Award,
-    title: "Precision Selection for Critical Roles",
+    index: "02",
+    title: "Pressure-tested performance",
     description:
-      "Hiring the wrong person for an emergency control room role has high risks — operational, financial and emotional. CTRL helps organisations identify candidates who have the skills and behavioural traits to succeed. This means better hires, improved operational outcomes and lower attrition.",
+      "Observe performance as pace changes, information shifts, and operational pressure increases.",
+    proof: "Identify composure where it actually matters.",
+    icon: Gauge,
   },
   {
-    icon: Clock,
-    title: "Evidence-Based, Fair, and Transparent",
+    index: "03",
+    title: "Signal over noise",
     description:
-      "CTRL combines behavioural science, human factors, and data-driven testing. Every assessment is objective, standardised, and defensible, ensuring fairness across all candidates. The platform provides organisations with clear, data-backed reports to support high quality, confident and transparent recruitment decisions.",
+      "Surface the indicators that support fairer shortlisting instead of relying on generic score sheets.",
+    proof: "Give teams clearer, more defensible insights.",
+    icon: BadgeCheck,
+  },
+] as const;
+
+const processSteps = [
+  {
+    step: "01",
+    title: "Set the role standard",
+    text:
+      "Configure an assessment flow around the communication, judgement, and operational demands of the role.",
+    note: "Role-led setup rather than generic testing.",
+    icon: BriefcaseBusiness,
   },
   {
-    icon: Star,
-    title: "Designed for Candidate Confidence",
-    description:
-      "Our user-friendly interface has been designed to be calming and professional, allowing candidates to focus on the task — not the technology. Practice modules and clear instructions reduce anxiety and give every applicant a fair chance to show their potential.",
+    step: "02",
+    title: "Assess in context",
+    text:
+      "Candidates complete a guided journey that reveals performance under pressure and changing conditions.",
+    note: "A calmer, clearer experience for applicants.",
+    icon: Workflow,
   },
   {
-    icon: Siren,
-    title: "Operational Efficiency and Cost Savings",
-    description:
-      "CTRL streamlines the assessment centre process: automated scoring, digital reporting, and scalable sessions. It saves staff time, reduces the costs and helps organisations make better decisions faster.",
+    step: "03",
+    title: "Review with confidence",
+    text:
+      "Hiring teams receive clearer evidence for comparison, shortlist discussion, and final decision-making.",
+    note: "Designed for more defensible hiring decisions.",
+    icon: ShieldCheck,
+  },
+] as const;
+
+const audienceGroups = [
+  {
+    title: "Candidates",
+    summary:
+      "A more professional first impression with clearer expectations from invitation to completion.",
+    points: [
+      "Understand what the platform is assessing and why it matters.",
+      "Move through a guided journey rather than a faceless test portal.",
+      "Experience a process that feels calm, serious, and role-relevant.",
+    ],
+    icon: Users,
   },
   {
-    icon: Phone,
-    title: "Flexible and Scalable",
-    description:
-      "Catered to all emergency control room, CTRL adapts to each service's environment. It can grow from call handler recruitment to dispatcher and supervisory roles, supporting the full control room talent pipeline.",
+    title: "Recruiters",
+    summary:
+      "A structured assessment flow that helps teams compare candidates on relevant evidence, not guesswork.",
+    points: [
+      "Keep the process consistent across applicants.",
+      "Review performance through clearer operational signals.",
+      "Support shortlist discussions with evidence that is easier to explain.",
+    ],
+    icon: Workflow,
   },
   {
-    icon: CheckCircle,
-    title: "A Trusted Standard for Public Service Recruitment",
-    description:
-      "CTRL aims to become the national benchmark for assessing emergency control room candidates — built with integrity, designed for fairness, and driven by real operational insight.",
+    title: "Buyers",
+    summary:
+      "A platform story that stands up commercially, operationally, and under stakeholder scrutiny.",
+    points: [
+      "Show why generic recruitment tooling is not enough for these roles.",
+      "Present a mature, defensible assessment model.",
+      "Give stakeholders confidence that the platform supports serious hiring decisions.",
+    ],
+    icon: BriefcaseBusiness,
   },
-];
+] as const;
+
+const workflowStages = [
+  {
+    label: "Role profile",
+    description:
+      "Start with the hiring context, communication demands, and decision standards for the role.",
+  },
+  {
+    label: "Assessment flow",
+    description:
+      "Guide candidates through a structured journey that captures performance across the moments that matter.",
+  },
+  {
+    label: "Review layer",
+    description:
+      "Bring outputs into one evidence-led view for recruiters, hiring teams, and stakeholders.",
+  },
+  {
+    label: "Shortlist support",
+    description:
+      "Turn assessment activity into clearer comparison, stronger shortlist discussions, and more confident decisions.",
+  },
+] as const;
+
+const platformHighlights = [
+  {
+    title: "Structured workflow",
+    text:
+      "Create consistency from role setup to final review so the process feels operational rather than improvised.",
+    icon: Workflow,
+  },
+  {
+    title: "Assessment clarity",
+    text:
+      "Combine typing, communication, and judgement into one coherent model instead of three disconnected tests.",
+    icon: Gauge,
+  },
+  {
+    title: "Review and reporting",
+    text:
+      "Surface the evidence teams actually need to compare candidates and explain decisions with confidence.",
+    icon: BadgeCheck,
+  },
+  {
+    title: "Candidate journey",
+    text:
+      "Keep the experience legible and professional so applicants understand the process before the pressure begins.",
+    icon: Users,
+  },
+] as const;
+
+const platformSignals = [
+  "Role-specific setup",
+  "Guided assessment journey",
+  "Evidence-led review",
+  "Shortlist support",
+] as const;
+
+const closingSignals = [
+  "Role-relevant assessment model",
+  "Professional candidate experience",
+  "Decision-ready recruitment platform",
+] as const;
+
+const footerLinks = [
+  { label: "Capabilities", href: "#why-ctrl" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Platform", href: "#assessments" },
+  { label: "Contact", href: "#contact" },
+] as const;
+
+const footerUtilities = [
+  { label: "Sign in", href: "/auth/login" },
+  { label: "Request access", href: "/auth/register" },
+  { label: "Privacy policy", href: "/privacy-policy" },
+  { label: "Terms", href: "/terms-conditions" },
+] as const;
+
+function ScrollReveal({
+  children,
+  className,
+  delay = 0,
+  y = 28,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+  y?: number;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+
+  return (
+    <motion.div
+      className={className}
+      initial={shouldReduceMotion ? false : { opacity: 0, y }}
+      whileInView={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+      viewport={{ once: false, amount: 0.2 }}
+      transition={{
+        duration: 0.7,
+        delay,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  body,
+  invert = false,
+  centered = false,
+}: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  invert?: boolean;
+  centered?: boolean;
+}) {
+  return (
+    <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-2xl"}>
+      <div
+        className={`text-[0.72rem] font-semibold uppercase tracking-[0.32em] ${
+          invert ? "text-sky-200/80" : "text-sky-700 dark:text-sky-200"
+        }`}
+      >
+        {eyebrow}
+      </div>
+      <h2
+        className={`mt-4 text-[clamp(2.2rem,4.4vw,4rem)] font-semibold leading-[0.95] tracking-[-0.06em] ${
+          invert ? "text-white" : "text-slate-950 dark:text-white"
+        }`}
+      >
+        {title}
+      </h2>
+      <p
+        className={`mt-4 text-[1rem] leading-8 ${
+          centered ? "mx-auto max-w-2xl" : "max-w-xl"
+        } ${invert ? "text-white/74" : "text-slate-600 dark:text-slate-300"}`}
+      >
+        {body}
+      </p>
+    </div>
+  );
+}
+
+function scrollToLandingAnchor(id: string) {
+  const target = document.getElementById(id);
+  const nav = document.querySelector("nav");
+
+  if (!target) {
+    return;
+  }
+
+  const navHeight =
+    nav instanceof HTMLElement ? nav.getBoundingClientRect().height : 0;
+  const isContactSection = id === "contact";
+  const extraOffset = window.innerWidth >= 1024 ? 28 : 18;
+  const top = isContactSection
+    ? target.getBoundingClientRect().top + window.scrollY
+    : target.getBoundingClientRect().top +
+      window.scrollY -
+      navHeight -
+      extraOffset;
+
+  window.scrollTo({
+    top: Math.max(0, top),
+    behavior: "smooth",
+  });
+
+  window.history.replaceState(null, "", `#${id}`);
+}
+
+function scrollToHero() {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+
+  window.history.replaceState(null, "", "#landing-hero");
+}
 
 export default function Home() {
-  const { theme, toggle } = useTheme();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isScrolled, setIsScrolled] = useState(false);
+  const navRef = useRef<HTMLElement | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState(trackedSections[0].id);
+  const [isHeroMode, setIsHeroMode] = useState(true);
+  const [navHeight, setNavHeight] = useState(96);
 
-  // Slides del carrusel con diferentes fondos y contenido
-  const slides = [
-    {
-      id: 1,
-      title: "Hiring the right call handlers",
-      subtitle: "starts with the right intelligence",
-      description:
-        "CTRL empowers emergency services to recruit with confidence through evidence-based, candidate-friendly assessments.",
-      background: "from-blue-600 via-purple-600 to-blue-800",
-      image:
-        "https://images.pexels.com/photos/263356/pexels-photo-263356.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop",
-    },
-    {
-      id: 2,
-      title: "Professional Emergency Training",
-      subtitle: "Real scenarios for real results",
-      description:
-        "Advanced simulation training for medical personnel and emergency responders with realistic scenarios.",
-      background: "from-emerald-600 via-teal-600 to-cyan-800",
-      image:
-        "https://images.pexels.com/photos/668298/pexels-photo-668298.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop",
-    },
-    {
-      id: 3,
-      title: "Security Team Simulations",
-      subtitle: "Enhanced preparedness protocols",
-      description:
-        "Comprehensive security training programs designed for emergency response teams and safety protocols.",
-      background: "from-orange-600 via-red-600 to-pink-800",
-      image:
-        "https://images.pexels.com/photos/266403/pexels-photo-266403.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop",
-    },
-    {
-      id: 4,
-      title: "Comprehensive Emergency Preparation",
-      subtitle: "Complete training solutions",
-      description:
-        "Integrated emergency preparedness training that covers all aspects of crisis management and response.",
-      background: "from-violet-600 via-indigo-600 to-blue-800",
-      image:
-        "https://images.pexels.com/photos/47863/firefighter-extinguish-fire-extinction-47863.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop",
-    },
-  ];
-
-  // Auto-advance carousel
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 7000);
+    document.documentElement.classList.add("landing-scroll-snap");
+    document.body.classList.add("landing-scroll-snap");
 
-    return () => clearInterval(timer);
-  }, [slides.length]);
+    return () => {
+      document.documentElement.classList.remove("landing-scroll-snap");
+      document.body.classList.remove("landing-scroll-snap");
+    };
+  }, []);
 
-  // Handle header scroll effect and mobile menu
+  useEffect(() => {
+    const nav = navRef.current;
+
+    if (!nav) {
+      return;
+    }
+
+    const updateNavHeight = () => {
+      setNavHeight(Math.round(nav.getBoundingClientRect().height));
+    };
+
+    updateNavHeight();
+
+    const observer = new ResizeObserver(updateNavHeight);
+    observer.observe(nav);
+    window.addEventListener("resize", updateNavHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateNavHeight);
+    };
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
-      const heroSection = document.getElementById("hero-carousel");
-      if (heroSection) {
-        const heroHeight = heroSection.offsetHeight;
-        const scrollY = window.scrollY;
-        const isScrolledPast = scrollY > heroHeight - 100;
-        setIsScrolled(isScrolledPast);
-      }
-      // Close mobile menu when scrolling
-      if (isMobileMenuOpen) {
+      if (isMobileMenuOpen && window.scrollY > 48) {
         setIsMobileMenuOpen(false);
       }
     };
 
-    // Initial check
     handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
-    // Add scroll listener with throttling
-    let ticking = false;
-    const onScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-    };
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isMobileMenuOpen]);
 
+  useEffect(() => {
+    const heroElement = document.getElementById("landing-hero");
+    const sectionElements = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-scene]")
+    );
+
+    if (!heroElement || !sectionElements.length) {
+      return;
+    }
+
+    const heroObserver = new IntersectionObserver(
+      (entries) => {
+        const heroEntry = entries[0];
+
+        if (!heroEntry) {
+          return;
+        }
+
+        setIsHeroMode(
+          heroEntry.isIntersecting && heroEntry.intersectionRatio > 0.28
+        );
+      },
+      {
+        threshold: [0.15, 0.28, 0.5, 0.75],
+      }
+    );
+
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+        if (visibleEntries[0]) {
+          const target = visibleEntries[0].target as HTMLElement;
+
+          setActiveSection(target.id || target.dataset.scene || trackedSections[0].id);
+        }
+      },
+      {
+        threshold: [0.26, 0.45, 0.68],
+        rootMargin: "-18% 0px -22% 0px",
+      }
+    );
+
+    heroObserver.observe(heroElement);
+    sectionElements.forEach((section) => sectionObserver.observe(section));
+
+    return () => {
+      heroObserver.disconnect();
+      sectionObserver.disconnect();
+    };
+  }, []);
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
-      {/* Modern Navigation with Theme Toggle */}
+    <div
+      className="landing-shell relative overflow-x-hidden text-slate-900 dark:text-white"
+      style={{ fontFamily: "Poppins, Inter, sans-serif" }}
+    >
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-x-0 top-0 h-[74rem] bg-[radial-gradient(circle_at_18%_14%,rgba(24,111,224,0.22),transparent_18%),radial-gradient(circle_at_82%_18%,rgba(63,221,255,0.12),transparent_16%),linear-gradient(180deg,#03060a_0%,#04070d_42%,rgba(4,7,13,0.74)_76%,transparent_100%)]" />
+        <div className="absolute inset-x-0 top-0 h-[54rem] opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:92px_92px]" />
+      </div>
+
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? "header-scrolled" : "header-transparent"
+        ref={navRef}
+        className={`fixed left-0 right-0 top-0 z-50 transition-all duration-500 ${
+          isHeroMode ? "" : "px-4 pt-[max(env(safe-area-inset-top),0.9rem)] sm:px-6 lg:px-8"
         }`}
       >
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="flex items-center relative">
-              <div className="w-15 h-15 flex items-center justify-center">
-                <img
-                  src="./icon1.png"
-                  alt="CTRL"
-                  className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105 logo-adaptive-filter"
-                />
-              </div>
-            </Link>
+        <div
+          className={`flex items-center justify-between backdrop-blur-2xl transition-all duration-500 ${
+            isHeroMode
+              ? "border-b border-white/10 bg-[linear-gradient(180deg,rgba(4,7,13,0.78),rgba(4,7,13,0.36))] px-5 py-[calc(max(env(safe-area-inset-top),0.9rem)+0.85rem)] sm:px-6 lg:px-8"
+              : "mx-auto max-w-[1260px] rounded-full border border-white/12 bg-black/78 px-5 py-3.5 shadow-[0_30px_80px_rgba(0,0,0,0.5)]"
+          }`}
+        >
+          <Link
+            href="#landing-hero"
+            onClick={(event) => {
+              event.preventDefault();
+              scrollToHero();
+            }}
+            className="flex min-w-0 items-center"
+          >
+            <BrandLogo className="w-[134px] sm:w-[150px]" />
+          </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="#features" className="header-link font-medium">
-                Features
-              </Link>
-              <Link href="#testimonials" className="header-link font-medium">
-                Testimonials
-              </Link>
-              <Link href="#contact" className="header-link font-medium">
-                Contact
-              </Link>
-              <Separator
-                orientation="vertical"
-                className={`h-6 ${isScrolled ? "" : "bg-white/30"}`}
-              />
-              <Link href="/auth/login" className="header-link font-medium">
-                Sign In
-              </Link>
-              <Button
-                asChild
-                size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                <Link href="/auth/register">Sign Up</Link>
-              </Button>
-
-              {/* Theme Toggle Button */}
-              <button
-                onClick={toggle}
-                className={`p-2 rounded-full backdrop-blur-sm border transition-all duration-200 hover:scale-110 theme-toggle ${
-                  theme === "dark" ? "dark" : ""
-                } ${
-                  isScrolled
-                    ? "bg-background/80 border-border hover:bg-background"
-                    : "bg-white/20 border-white/30 hover:bg-white/30 text-white"
+          <div className="hidden items-center gap-6 lg:flex">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollToLandingAnchor(item.href.slice(1));
+                }}
+                className={`text-sm font-medium transition-colors ${
+                  !isHeroMode && activeSection === item.href.slice(1)
+                    ? "text-cyan-200"
+                    : "text-white/80 hover:text-white"
                 }`}
-                aria-label="Toggle theme"
               >
-                <Sun className="h-4 w-4 sun-icon" />
-                <Moon className="h-4 w-4 moon-icon" />
-              </button>
-            </div>
+                {item.label}
+              </Link>
+            ))}
+          </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`md:hidden p-2 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 ${
-                isScrolled
-                  ? "bg-background/80 border-border hover:bg-background text-foreground"
-                  : "bg-white/20 border-white/30 hover:bg-white/30 text-white"
-              }`}
-              aria-label="Toggle mobile menu"
-              aria-expanded={isMobileMenuOpen}
+          <div className="hidden items-center gap-3 lg:flex">
+            <Link
+              href="/auth/login"
+              className="text-sm font-medium text-white/80 transition-colors hover:text-white"
             >
-              <div className="relative w-5 h-5">
-                <span
-                  className={`absolute block w-5 h-0.5 bg-current transform transition-all duration-300 ${
-                    isMobileMenuOpen
-                      ? "rotate-45 translate-y-2"
-                      : "translate-y-1"
-                  }`}
-                />
-                <span
-                  className={`absolute block w-5 h-0.5 bg-current transform transition-all duration-300 translate-y-2 ${
-                    isMobileMenuOpen ? "opacity-0" : "opacity-100"
-                  }`}
-                />
-                <span
-                  className={`absolute block w-5 h-0.5 bg-current transform transition-all duration-300 ${
-                    isMobileMenuOpen
-                      ? "-rotate-45 translate-y-2"
-                      : "translate-y-3"
-                  }`}
-                />
-              </div>
+              Sign in
+            </Link>
+            <Button
+              asChild
+              className="h-11 rounded-full border border-cyan-300/16 bg-[linear-gradient(135deg,rgba(58,217,255,0.22),rgba(255,255,255,0.08))] px-5 text-white shadow-[0_18px_40px_rgba(8,116,153,0.28)] hover:bg-[linear-gradient(135deg,rgba(58,217,255,0.28),rgba(255,255,255,0.1))]"
+            >
+              <Link href="/auth/register">Request access</Link>
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2 lg:hidden">
+            <button
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-white/70"
+              aria-label="Toggle navigation"
+              aria-expanded={isMobileMenuOpen}
+              type="button"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
-        <div
-          className={`md:hidden absolute top-full left-0 right-0 backdrop-blur-md border-t transition-all duration-300 overflow-hidden ${
-            isScrolled
-              ? "bg-background/95 border-border"
-              : "bg-black/20 border-white/30"
-          } ${
-            isMobileMenuOpen
-              ? "max-h-96 opacity-100 visible"
-              : "max-h-0 opacity-0 invisible"
-          }`}
-        >
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex flex-col space-y-4">
-              {/* Navigation Links */}
-              <Link
-                href="#features"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block py-3 px-4 rounded-lg font-medium transition-colors ${
-                  isScrolled
-                    ? "text-foreground hover:bg-accent hover:text-accent-foreground"
-                    : "text-white hover:bg-white/10"
-                }`}
-              >
-                Features
-              </Link>
-              <Link
-                href="#testimonials"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block py-3 px-4 rounded-lg font-medium transition-colors ${
-                  isScrolled
-                    ? "text-foreground hover:bg-accent hover:text-accent-foreground"
-                    : "text-white hover:bg-white/10"
-                }`}
-              >
-                Testimonials
-              </Link>
-              <Link
-                href="#contact"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={`block py-3 px-4 rounded-lg font-medium transition-colors ${
-                  isScrolled
-                    ? "text-foreground hover:bg-accent hover:text-accent-foreground"
-                    : "text-white hover:bg-white/10"
-                }`}
-              >
-                Contact
-              </Link>
-
-              {/* Separator */}
-              <div
-                className={`h-px ${isScrolled ? "bg-border" : "bg-white/30"}`}
-              />
-
-              {/* Auth Links */}
+        {isMobileMenuOpen && (
+          <div className="mx-auto mt-3 max-w-[1320px] rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(7,10,17,0.92),rgba(7,10,17,0.82))] p-5 shadow-[0_28px_80px_rgba(0,0,0,0.44)] backdrop-blur-2xl lg:hidden">
+            <div className="flex flex-col gap-4">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    scrollToLandingAnchor(item.href.slice(1));
+                  }}
+                  className="rounded-2xl px-4 py-3 text-sm font-medium text-white/72 transition hover:bg-white/[0.06] hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div className="h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
               <Link
                 href="/auth/login"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`block py-3 px-4 rounded-lg font-medium transition-colors ${
-                  isScrolled
-                    ? "text-foreground hover:bg-accent hover:text-accent-foreground"
-                    : "text-white hover:bg-white/10"
-                }`}
+                className="rounded-2xl px-4 py-3 text-sm font-medium text-white/72 transition hover:bg-white/[0.06] hover:text-white"
               >
-                Sign In
+                Sign in
               </Link>
-
-              <div className="flex items-center space-x-3 px-4">
-                <Button
-                  asChild
-                  size="sm"
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+              <Button
+                asChild
+                className="h-11 rounded-full border border-cyan-300/18 bg-[linear-gradient(135deg,rgba(58,217,255,0.22),rgba(255,255,255,0.08))] text-white hover:bg-[linear-gradient(135deg,rgba(58,217,255,0.28),rgba(255,255,255,0.1))]"
+              >
+                <Link
+                  href="/auth/register"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  <Link href="/auth/register">Sign Up</Link>
-                </Button>
-
-                {/* Theme Toggle in Mobile Menu */}
-                <button
-                  onClick={() => {
-                    toggle();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`p-2 rounded-lg backdrop-blur-sm border transition-all duration-200 theme-toggle ${
-                    theme === "dark" ? "dark" : ""
-                  } ${
-                    isScrolled
-                      ? "bg-background/80 border-border hover:bg-background"
-                      : "bg-white/20 border-white/30 hover:bg-white/30 text-white"
-                  }`}
-                  aria-label="Toggle themºe"
-                >
-                  <Sun className="h-4 w-4 sun-icon" />
-                  <Moon className="h-4 w-4 moon-icon" />
-                </button>
-              </div>
+                  Request access
+                </Link>
+              </Button>
             </div>
           </div>
-        </div>
+        )}
       </nav>
 
-      {/* Overlay for mobile menu */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <main className="relative z-10">
+        <LandingHero navHeight={navHeight} />
 
-      {/* Modern Hero Carousel Section */}
-      <section
-        id="hero-carousel"
-        className="relative h-screen flex items-center justify-center overflow-hidden pt-16"
-      >
-        {/* Carousel Container */}
-        <div className="absolute inset-0 z-0">
-          {slides.map((slide, index) => (
-            <div
-              key={slide.id}
-              className={`carousel-slide ${
-                index === currentSlide ? "active" : ""
-              } bg-gradient-to-br ${slide.background}`}
-              style={{
-                backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url('${slide.image}')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundBlendMode: "overlay",
-              }}
+        <section className="relative px-4 pb-10 pt-16 sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-[#04070d] via-[#04070d]/82 to-transparent sm:h-32" />
+
+          <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8">
+            <section
+              id="why-ctrl"
+              data-scene="why-ctrl"
+              className="landing-anchor-target overflow-hidden rounded-[2.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,17,29,0.98),rgba(6,13,23,0.96))] px-6 py-10 shadow-[0_28px_80px_rgba(0,0,0,0.32)] sm:px-8 sm:py-12 lg:px-10 lg:py-14"
             >
-              <div className="absolute inset-0 bg-black/20"></div>
-            </div>
-          ))}
-        </div>
+              <div className="grid gap-10 xl:grid-cols-[0.92fr_1.08fr]">
+                <ScrollReveal>
+                  <SectionHeading
+                    eyebrow="Core capabilities"
+                    title="A recruitment model built for roles where judgement has to hold under pressure."
+                    body="CTRL replaces generic screening with structured, role-relevant assessment. The goal is clearer evidence for hiring teams and a more credible experience for candidates."
+                    invert
+                  />
 
-        {/* Decorative Elements */}
-        <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-r from-blue-400 to-purple-600 rounded-full opacity-20 blur-xl"></div>
-        <div className="absolute bottom-20 left-10 w-24 h-24 bg-gradient-to-r from-purple-400 to-pink-600 rounded-full opacity-20 blur-xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-400/10 to-transparent rounded-full blur-3xl"></div>
-
-        {/* Dynamic Hero Content */}
-        <div className="relative z-10 text-center text-white px-4 max-w-5xl mx-auto">
-          <Badge
-            variant="secondary"
-            className="inline-flex flex-col items-center justify-center space-y-1 text-center mb-6 bg-background/20 backdrop-blur-sm text-white border-white/20 hover:bg-accent/30 hover:text-accent-foreground transition-all duration-200 animate-fade-in px-3 py-2"
-          >
-            <div>CTRL (Control Room Talent, Recruitment & Logic)</div>
-            <div>
-              Hiring the right people starts with the right intelligence
-            </div>
-          </Badge>
-
-          <h1 className="text-responsive-7xl font-bold mb-8 leading-tight transition-all duration-700 ease-in-out text-white">
-            {slides[currentSlide].title}
-            <br />
-            <span className="bg-gradient-to-r from-blue-200 via-white to-blue-200 bg-clip-text text-transparent">
-              {slides[currentSlide].subtitle}
-            </span>
-          </h1>
-
-          <p className="text-responsive-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed transition-all duration-700 ease-in-out">
-            {slides[currentSlide].description}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-8">
-            <Button
-              asChild
-              size="lg"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-background text-foreground hover:bg-accent hover:text-accent-foreground px-8 py-4 z-20 relative"
-            >
-              <Link href="/demo">Begin Assessment</Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-background text-foreground hover:bg-accent hover:text-accent-foreground px-8 py-4 z-20 relative"
-              asChild
-            >
-              <Link href="#contact">Request Demo</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Modern Features Section */}
-      <section
-        id="features"
-        className="py-24 px-4 bg-gradient-to-br from-background via-muted/30 to-background relative overflow-hidden"
-      >
-        {/* Background Decorations */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 left-20 w-48 h-48 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-full blur-2xl"></div>
-        </div>
-
-        <div className="container mx-auto relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-responsive-5xl font-bold mb-6 title-adaptive">
-              Why emergency control rooms choose CTRL
-            </h2>
-            <p className="text-adaptive-secondary text-responsive-xl max-w-3xl mx-auto leading-relaxed">
-              Emergency control rooms choose CTRL because it combines lived
-              experience, behavioural insight and technology to find capable,
-              resilient and motivated communicators for vital interactions.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {features.map((feature, index) => (
-              <Card
-                key={feature.title}
-                className="text-center group card-adaptive-blur hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10"
-              >
-                <CardHeader className="pb-4">
-                  <div
-                    className={`mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl 
-                    ${
-                      index === 0
-                        ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                        : ""
-                    }
-                    ${
-                      index === 1
-                        ? "bg-gradient-to-br from-green-500 to-green-600"
-                        : ""
-                    }
-                    ${
-                      index === 2
-                        ? "bg-gradient-to-br from-purple-500 to-purple-600"
-                        : ""
-                    }
-                    ${
-                      index === 3
-                        ? "bg-gradient-to-br from-yellow-500 to-orange-500"
-                        : ""
-                    }
-                    ${
-                      index === 4
-                        ? "bg-gradient-to-br from-red-500 to-pink-500"
-                        : ""
-                    }
-                    ${
-                      index === 5
-                        ? "bg-gradient-to-br from-indigo-500 to-blue-500"
-                        : ""
-                    }
-                    ${
-                      index === 6
-                        ? "bg-gradient-to-br from-teal-500 to-cyan-500"
-                        : ""
-                    }
-                    text-white group-hover:scale-110 transition-transform duration-300 shadow-lg`}
-                  >
-                    <feature.icon className="h-8 w-8" />
-                  </div>
-                  <CardTitle className="text-responsive-xl font-bold text-adaptive-primary group-hover:text-primary transition-colors">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-adaptive-secondary leading-relaxed text-responsive-base">
-                    {feature.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Modern Testimonials Section */}
-      <section
-        id="testimonials"
-        className="py-24 px-4 relative overflow-hidden"
-      >
-        {/* Background with gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900"></div>
-
-        <div className="container mx-auto relative z-10">
-          <div className="text-center mb-20">
-            <h2 className="text-responsive-5xl font-bold mb-6 title-adaptive">
-              Trusted by Control Room Professionals
-            </h2>
-            <p className="text-adaptive-secondary text-responsive-xl max-w-2xl mx-auto leading-relaxed">
-              The recruitment partner of choice for selecting capable, resilient
-              and motivated communicators who strive under pressure.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card
-                key={testimonial.name}
-                className="group card-adaptive-blur hover:scale-105 transition-all duration-300 shadow-xl hover:shadow-2xl"
-              >
-                <CardHeader className="text-center pb-4">
-                  {/* Profile Image Placeholder */}
-                  <div className="w-16 h-16 mx-auto mb-4 avatar-adaptive rounded-full flex items-center justify-center text-responsive-xl font-bold shadow-lg">
-                    {testimonial.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </div>
-
-                  <div className="flex items-center justify-center space-x-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star
-                        key={`${testimonial.name}-star-${i}`}
-                        className="h-5 w-5 fill-yellow-400 text-yellow-400"
-                      />
+                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                    {[
+                      "High-pressure role fit",
+                      "Clearer candidate comparison",
+                      "More defensible hiring decisions",
+                    ].map((item, index) => (
+                      <div
+                        key={item}
+                        className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-4 py-4 text-sm font-medium text-white/76"
+                        style={{ transitionDelay: `${index * 40}ms` }}
+                      >
+                        {item}
+                      </div>
                     ))}
                   </div>
+                </ScrollReveal>
 
-                  <CardTitle className="text-responsive-xl font-bold text-adaptive-primary group-hover:text-primary transition-colors">
-                    {testimonial.name}
-                  </CardTitle>
-                  <CardDescription className="text-responsive-sm font-medium text-adaptive-secondary">
-                    {testimonial.role}
-                  </CardDescription>
-                  <CardDescription className="text-responsive-xs text-adaptive-muted">
-                    {testimonial.company}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-adaptive-secondary italic leading-relaxed text-responsive-lg">
-                    "{testimonial.content}"
+                <div className="grid gap-4 lg:grid-cols-3">
+                  {capabilityPillars.map((pillar, index) => {
+                    const Icon = pillar.icon;
+
+                    return (
+                      <ScrollReveal
+                        key={pillar.title}
+                        delay={index * 0.06}
+                        className="h-full"
+                      >
+                        <article className="flex h-full flex-col rounded-[2rem] border border-white/10 bg-white/[0.05] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-sm font-semibold tracking-[0.28em] text-white/45">
+                              {pillar.index}
+                            </div>
+                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] text-cyan-200">
+                              <Icon className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <h3 className="mt-6 text-2xl font-semibold leading-tight text-white">
+                            {pillar.title}
+                          </h3>
+                          <p className="mt-4 text-sm leading-7 text-white/70">
+                            {pillar.description}
+                          </p>
+                          <div className="mt-auto pt-6">
+                            <div className="rounded-[1.35rem] border border-cyan-400/14 bg-cyan-300/[0.06] px-4 py-4 text-sm leading-6 text-cyan-100/88">
+                              {pillar.proof}
+                            </div>
+                          </div>
+                        </article>
+                      </ScrollReveal>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            <section
+              id="how-it-works"
+              data-scene="how-it-works"
+              className="landing-anchor-target overflow-hidden rounded-[2.75rem] border border-white/60 bg-white/82 px-6 py-10 shadow-[0_26px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0f1726]/78 dark:shadow-[0_28px_80px_rgba(2,6,23,0.34)] sm:px-8 sm:py-12 lg:px-10 lg:py-14"
+            >
+              <div className="grid gap-8 xl:grid-cols-[0.84fr_1.16fr] xl:items-start">
+                <ScrollReveal>
+                  <SectionHeading
+                    eyebrow="How it works"
+                    title="A structured assessment flow that stays easy to understand."
+                    body="Candidates complete a guided journey, relevant performance is observed in context, and teams review clearer evidence for shortlist decisions."
+                  />
+
+                  <div className="mt-8 rounded-[2rem] border border-slate-200/80 bg-slate-950 px-5 py-5 text-white shadow-[0_22px_56px_rgba(15,23,42,0.22)] dark:border-white/10">
+                    <div className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-cyan-200/76">
+                      What teams receive
+                    </div>
+                    <div className="mt-4 space-y-3">
+                      {[
+                        "A consistent workflow across candidates.",
+                        "Evidence that is easier to compare and explain.",
+                        "A clearer line from assessment activity to shortlist decisions.",
+                      ].map((item) => (
+                        <div
+                          key={item}
+                          className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-6 text-white/74"
+                        >
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollReveal>
+
+                <div className="grid gap-4 lg:grid-cols-3">
+                  {processSteps.map((step, index) => {
+                    const Icon = step.icon;
+
+                    return (
+                      <ScrollReveal
+                        key={step.title}
+                        delay={index * 0.06}
+                        className="h-full"
+                      >
+                        <article className="flex h-full flex-col rounded-[2rem] border border-slate-200/80 bg-white/90 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-white/[0.04]">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-sm font-semibold tracking-[0.28em] text-sky-700 dark:text-sky-200">
+                              {step.step}
+                            </div>
+                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-white">
+                              <Icon className="h-4 w-4" />
+                            </span>
+                          </div>
+                          <h3 className="mt-6 text-2xl font-semibold leading-tight text-slate-950 dark:text-white">
+                            {step.title}
+                          </h3>
+                          <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                            {step.text}
+                          </p>
+                          <div className="mt-auto pt-6 text-sm font-medium text-slate-500 dark:text-slate-400">
+                            {step.note}
+                          </div>
+                        </article>
+                      </ScrollReveal>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            <section
+              id="audience"
+              data-scene="audience"
+              className="landing-anchor-target overflow-hidden rounded-[2.75rem] border border-white/10 bg-[linear-gradient(180deg,rgba(9,18,30,0.98),rgba(8,14,24,0.96))] px-6 py-10 shadow-[0_26px_70px_rgba(0,0,0,0.28)] sm:px-8 sm:py-12 lg:px-10 lg:py-14"
+            >
+              <ScrollReveal>
+                <SectionHeading
+                  eyebrow="Audience value"
+                  title="Built for the people making the decision and the people moving through it."
+                  body="CTRL has to work for three groups at once: candidates completing the process, recruiters reviewing the evidence, and stakeholders evaluating whether the platform is strong enough to adopt."
+                  invert
+                  centered
+                />
+              </ScrollReveal>
+
+              <div className="mt-8 grid gap-4 xl:grid-cols-3">
+                {audienceGroups.map((group, index) => {
+                  const Icon = group.icon;
+
+                  return (
+                    <ScrollReveal
+                      key={group.title}
+                      delay={index * 0.06}
+                      className="h-full"
+                    >
+                      <article className="flex h-full flex-col rounded-[2rem] border border-white/10 bg-white/[0.05] p-5">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.06] text-cyan-200">
+                            <Icon className="h-5 w-5" />
+                          </span>
+                          <h3 className="text-2xl font-semibold text-white">
+                            {group.title}
+                          </h3>
+                        </div>
+                        <p className="mt-5 text-sm leading-7 text-white/72">
+                          {group.summary}
+                        </p>
+                        <div className="mt-6 space-y-3">
+                          {group.points.map((point) => (
+                            <div
+                              key={point}
+                              className="rounded-[1.2rem] border border-white/10 bg-black/10 px-4 py-3 text-sm leading-6 text-white/72"
+                            >
+                              {point}
+                            </div>
+                          ))}
+                        </div>
+                      </article>
+                    </ScrollReveal>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section
+              id="assessments"
+              data-scene="assessments"
+              className="landing-anchor-target overflow-hidden rounded-[2.75rem] border border-white/60 bg-white/82 px-6 py-10 shadow-[0_26px_70px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0f1726]/78 dark:shadow-[0_28px_80px_rgba(2,6,23,0.34)] sm:px-8 sm:py-12 lg:px-10 lg:py-14"
+            >
+              <div className="grid gap-8 xl:grid-cols-[0.9fr_1.1fr] xl:items-start">
+                <ScrollReveal>
+                  <SectionHeading
+                    eyebrow="Platform detail"
+                    title="Make the platform feel real, structured, and ready to support serious hiring."
+                    body="Below the surface, CTRL should read like a robust operational workflow: role setup, guided assessment, evidence review, and shortlist support."
+                  />
+
+                  <div className="mt-8 rounded-[2rem] border border-white/10 bg-slate-950 px-5 py-5 text-white shadow-[0_22px_56px_rgba(15,23,42,0.22)] dark:border-white/10">
+                    <div className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-cyan-200/76">
+                      Platform workflow
+                    </div>
+
+                    <div className="mt-6 space-y-4">
+                      {workflowStages.map((stage, index) => (
+                        <div
+                          key={stage.label}
+                          className="relative rounded-[1.5rem] border border-white/10 bg-white/[0.04] px-4 py-4"
+                        >
+                          {index < workflowStages.length - 1 ? (
+                            <div className="pointer-events-none absolute bottom-[-1rem] left-6 top-auto h-4 w-px bg-gradient-to-b from-cyan-300/45 to-transparent" />
+                          ) : null}
+                          <div className="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-100/60">
+                            {stage.label}
+                          </div>
+                          <div className="mt-2 text-sm leading-7 text-white/74">
+                            {stage.description}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollReveal>
+
+                <div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {platformHighlights.map((item, index) => {
+                      const Icon = item.icon;
+
+                      return (
+                        <ScrollReveal
+                          key={item.title}
+                          delay={index * 0.06}
+                          className="h-full"
+                        >
+                          <article className="flex h-full flex-col rounded-[1.9rem] border border-slate-200/80 bg-white/92 p-5 shadow-[0_16px_42px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-white/[0.04]">
+                            <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 dark:border-white/10 dark:bg-white/[0.06] dark:text-white">
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            <h3 className="mt-5 text-2xl font-semibold leading-tight text-slate-950 dark:text-white">
+                              {item.title}
+                            </h3>
+                            <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-300">
+                              {item.text}
+                            </p>
+                          </article>
+                        </ScrollReveal>
+                      );
+                    })}
+                  </div>
+
+                  <ScrollReveal className="mt-6">
+                    <div className="rounded-[2rem] border border-slate-200/80 bg-slate-50/90 p-5 dark:border-white/10 dark:bg-white/[0.04]">
+                      <div className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-sky-700 dark:text-sky-200">
+                        What this should signal
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {platformSignals.map((signal) => (
+                          <div
+                            key={signal}
+                            className="rounded-[1.2rem] border border-slate-200/75 bg-white/88 px-4 py-3 text-sm font-medium text-slate-700 dark:border-white/10 dark:bg-black/10 dark:text-slate-200"
+                          >
+                            {signal}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </ScrollReveal>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </section>
+        <section
+          id="contact"
+          data-scene="contact"
+          className="landing-anchor-target landing-snap-start relative isolate min-h-[100svh] overflow-hidden border-y border-white/10 bg-[#04070d] supports-[height:100dvh]:min-h-[100dvh]"
+          style={{ scrollMarginTop: 0 }}
+        >
+          <div className="pointer-events-none absolute inset-0">
+            <PingPongVideoLayer
+              crop={{
+                desktop: { x: 0.68, y: 0.54, scale: 1.14 },
+                tablet: { x: 0.64, y: 0.54, scale: 1.2 },
+                mobile: { x: 0.5, y: 0.42, scale: 1.1 },
+              }}
+              mobilePosterSrc="/assets/landing-closer/footer-closer-poster.png"
+              mobileReverseSrc="/assets/landing-closer/footer-closer-reverse.mp4"
+              mobileSrc="/assets/landing-closer/footer-closer.mp4"
+              posterSrc="/assets/landing-closer/contact-closer-poster.png"
+              priority
+              reverseSrc="/assets/landing-closer/contact-closer-reverse.mp4"
+              src="/assets/landing-closer/contact-closer.mp4"
+            />
+            <div className="contact-media-vignette absolute inset-0" />
+            <div className="contact-media-bloom absolute inset-0" />
+            <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.16)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:112px_112px]" />
+            <div className="hero-media-top-fade absolute inset-x-0 top-0 h-32 sm:h-40" />
+            <div className="hero-media-bottom-fade absolute inset-x-0 bottom-0 h-44 sm:h-56" />
+          </div>
+
+          <div
+            className="relative z-10 mx-auto flex min-h-[100svh] max-w-[1320px] flex-col px-4 supports-[height:100dvh]:min-h-[100dvh] sm:px-6 lg:px-8"
+            style={{
+              paddingTop: `max(calc(${navHeight}px + 2.5rem), 6rem)`,
+              paddingBottom: "max(env(safe-area-inset-bottom), 1.5rem)",
+            }}
+          >
+            <div className="grid flex-1 items-end gap-10 py-10 xl:grid-cols-[0.94fr_1.06fr] xl:gap-14">
+              <ScrollReveal>
+                <div className="max-w-[40rem]">
+                  <div className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-cyan-200/76">
+                    Contact CTRL
+                  </div>
+                  <h2 className="mt-5 max-w-[12ch] text-[clamp(2.9rem,6vw,5.9rem)] font-semibold leading-[0.92] tracking-[-0.07em] text-white">
+                    Move from generic testing to a clearer hiring system.
+                  </h2>
+                  <p className="mt-5 max-w-[33rem] text-[1.02rem] leading-8 text-white/80 sm:text-[1.08rem]">
+                    Give candidates a more professional journey and give hiring
+                    teams the evidence they need to compare, shortlist, and
+                    defend decisions with confidence.
                   </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
 
-          {/* Statistics Section */}
-          <div className="mt-20 bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 rounded-3xl p-8 md:p-12 text-white">
-            <h3 className="text-responsive-3xl font-bold text-center mb-8">
-              Results That Speak for Themselves
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <div className="text-responsive-4xl font-bold mb-2 text-blue-200">
-                  95%
-                </div>
-                <p className="text-blue-100 text-responsive-sm">
-                  Improvement in Response Time
-                </p>
-              </div>
-              <div>
-                <div className="text-responsive-4xl font-bold mb-2 text-green-200">
-                  500+
-                </div>
-                <p className="text-green-100 text-responsive-sm">
-                  Professionals Trained
-                </p>
-              </div>
-              <div>
-                <div className="text-responsive-4xl font-bold mb-2 text-yellow-200">
-                  24/7
-                </div>
-                <p className="text-yellow-100 text-responsive-sm">
-                  Support Available
-                </p>
-              </div>
-              <div>
-                <div className="text-responsive-4xl font-bold mb-2 text-pink-200">
-                  100%
-                </div>
-                <p className="text-pink-100 text-responsive-sm">
-                  Satisfaction Guaranteed
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Modern Contact Section */}
-      <section
-        id="contact"
-        className="py-24 px-4 bg-gradient-to-br from-muted/50 via-background to-muted/30 relative overflow-hidden"
-      >
-        {/* Background Elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-br from-green-500/10 to-blue-500/10 rounded-full blur-2xl"></div>
-
-        <div className="container mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-responsive-5xl font-bold mb-6 title-adaptive leading-tight">
-                  Ready to Transform Your Recruitment?
-                </h2>
-                <p className="text-adaptive-secondary text-responsive-xl leading-relaxed">
-                  Join emergency services across the country who trust CTRL to
-                  identify candidates with the right skills and resilience to
-                  answer life-saving calls.
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                <div className="flex items-center space-x-4 p-4 rounded-2xl contact-item-adaptive">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl text-white">
-                    <Phone className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-adaptive-primary text-responsive-base">
-                      Phone Support
-                    </p>
-                    <p className="text-adaptive-secondary text-responsive-sm">
-                      +1 (555) 123-4567
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4 p-4 rounded-2xl contact-item-adaptive">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl text-white">
-                    <Mail className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-adaptive-primary text-responsive-base">
-                      Email Us
-                    </p>
-                    <p className="text-adaptive-secondary text-responsive-sm">
-                      contact@ctrl-assessment.com
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4 p-4 rounded-2xl contact-item-adaptive">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl text-white">
-                    <MapPin className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-adaptive-primary text-responsive-base">
-                      Visit Us
-                    </p>
-                    <p className="text-adaptive-secondary text-responsive-sm">
-                      123 Emergency Blvd, Safety City, SC 12345
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <Card className="card-adaptive-blur shadow-2xl hover:shadow-3xl transition-all duration-300">
-              <CardHeader className="pb-6">
-                <CardTitle className="text-responsive-2xl font-bold title-adaptive">
-                  See CTRL in Action
-                </CardTitle>
-                <CardDescription className="text-responsive-base text-adaptive-secondary">
-                  Experience how CTRL can help you recruit with confidence
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="nombre"
-                      className="text-responsive-sm font-semibold text-adaptive-primary block mb-2"
+                  <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                    <Button
+                      asChild
+                      className="h-12 rounded-full border border-cyan-300/16 bg-[linear-gradient(135deg,rgba(58,217,255,0.22),rgba(255,255,255,0.08))] px-6 text-white shadow-[0_18px_40px_rgba(8,116,153,0.28)] hover:bg-[linear-gradient(135deg,rgba(58,217,255,0.28),rgba(255,255,255,0.1))]"
                     >
-                      First Name
-                    </label>
-                    <input
-                      id="nombre"
-                      className="w-full px-4 py-3 border border-border/50 rounded-xl bg-background/50 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                      placeholder="Your first name"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="apellido"
-                      className="text-responsive-sm font-semibold text-adaptive-primary block mb-2"
+                      <Link href="/auth/register">
+                        Request access
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => scrollToLandingAnchor("why-ctrl")}
+                      className="h-12 rounded-full border border-white/18 bg-white/[0.06] px-6 text-white hover:bg-white/[0.1] hover:text-white"
                     >
-                      Last Name
-                    </label>
-                    <input
-                      id="apellido"
-                      className="w-full px-4 py-3 border border-border/50 rounded-xl bg-background/50 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                      placeholder="Your last name"
-                    />
+                      Explore the platform
+                    </Button>
                   </div>
                 </div>
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="text-responsive-sm font-semibold text-adaptive-primary block mb-2"
+              </ScrollReveal>
+
+              <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+                {closingSignals.map((signal, index) => (
+                  <ScrollReveal
+                    key={signal}
+                    delay={index * 0.06}
+                    className="h-full"
                   >
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    className="w-full px-4 py-3 border border-border/50 rounded-xl bg-background/50 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    placeholder="your@email.com"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="organizacion"
-                    className="text-responsive-sm font-semibold text-adaptive-primary block mb-2"
-                  >
-                    Organization
-                  </label>
-                  <input
-                    id="organizacion"
-                    className="w-full px-4 py-3 border border-border/50 rounded-xl bg-background/50 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    placeholder="Your organization"
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="message"
-                    className="text-responsive-sm font-semibold text-adaptive-primary block mb-2"
-                  >
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    className="w-full px-4 py-3 border border-border/50 rounded-xl bg-background/50 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 h-32 resize-none"
-                    placeholder="Tell us about your recruitment needs..."
-                  ></textarea>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-lg font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-background text-foreground hover:bg-accent hover:text-accent-foreground w-full py-3">
-                  Request Demo
-                </Button>
-              </CardFooter>
-            </Card>
+                    <div className="flex h-full min-h-[10rem] flex-col justify-between rounded-[2rem] border border-white/14 bg-black/28 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
+                      <div className="text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-cyan-100/72">
+                        {`0${index + 1}`}
+                      </div>
+                      <div className="max-w-[14rem] text-lg font-medium leading-8 text-white">
+                        {signal}
+                      </div>
+                    </div>
+                  </ScrollReveal>
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Modern Footer */}
-      <footer className="relative bg-adaptive-footer text-adaptive-footer-text overflow-hidden border-t border-adaptive-border">
-        {/* Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 left-20 w-48 h-48 bg-gradient-to-br from-accent/10 to-primary/10 rounded-full blur-2xl"></div>
-        </div>
+        <footer className="relative isolate overflow-hidden border-t border-white/10 bg-[#020408]">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(56,189,248,0.12),transparent_20%),radial-gradient(circle_at_82%_16%,rgba(244,114,182,0.08),transparent_18%),linear-gradient(180deg,#020408_0%,#06101a_100%)]" />
+            <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:108px_108px]" />
+          </div>
 
-        <div className="container mx-auto py-16 px-4 relative z-10">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center space-x-3 mb-6">
-                <Link href="/" className="block">
-                  <div className="flex flex-col items-center gap-1 p-2">
-                    <img
-                      alt="CTRL"
-                      className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105"
-                      src="./icon1.png"
-                    />
+          <div className="relative z-10 mx-auto max-w-[1320px] px-4 py-10 sm:px-6 lg:px-8">
+            <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+              <ScrollReveal>
+                <div className="max-w-[40rem]">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.06]">
+                      <BrandMark className="w-7 text-white/90" />
+                    </span>
+                    <div>
+                      <div className="text-sm font-semibold uppercase tracking-[0.28em] text-white">
+                        CTRL
+                      </div>
+                      <div className="text-sm text-white/64">
+                        Recruitment intelligence
+                      </div>
+                    </div>
                   </div>
-                </Link>
-              </div>
-              <p className="text-adaptive-footer-secondary text-base leading-relaxed max-w-md">
-                The trusted standard for assessing and selecting control room
-                professionals. Ensuring every emergency call is answered by
-                someone with the right skills and resilience.
-              </p>
 
-              {/* Social Links or Additional Info */}
-              <div className="mt-6 pt-6 border-t border-adaptive-border">
-                <p className="text-adaptive-footer-accent text-sm font-medium">
-                  🏆 Trusted by 500+ Emergency Services Worldwide
-                </p>
+                  <h2 className="mt-8 max-w-[14ch] text-[clamp(2.4rem,4.8vw,4.8rem)] font-semibold leading-[0.95] tracking-[-0.06em] text-white">
+                    Recruitment intelligence that stays composed under pressure.
+                  </h2>
+                  <p className="mt-5 max-w-[34rem] text-base leading-8 text-white/72 sm:text-[1.05rem]">
+                    CTRL helps serious hiring teams move from assessment activity
+                    to clearer evidence, stronger shortlist conversations, and a
+                    more professional candidate experience.
+                  </p>
+                </div>
+              </ScrollReveal>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <ScrollReveal delay={0.06}>
+                  <div className="rounded-[2rem] border border-white/10 bg-black/24 p-6 backdrop-blur-xl">
+                    <div className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-cyan-100/68">
+                      Explore
+                    </div>
+                    <div className="mt-5 space-y-4">
+                      {footerLinks.map((item) => (
+                        <button
+                          key={item.href}
+                          type="button"
+                          onClick={() => scrollToLandingAnchor(item.href.slice(1))}
+                          className="block text-left text-base font-medium text-white/76 transition hover:text-white"
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollReveal>
+
+                <ScrollReveal delay={0.12}>
+                  <div className="rounded-[2rem] border border-white/10 bg-black/24 p-6 backdrop-blur-xl">
+                    <div className="text-[0.72rem] font-semibold uppercase tracking-[0.32em] text-cyan-100/68">
+                      Access
+                    </div>
+                    <div className="mt-5 space-y-4">
+                      {footerUtilities.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className="block text-base font-medium text-white/76 transition hover:text-white"
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </ScrollReveal>
               </div>
             </div>
 
-            <div>
-              <h3 className="text-adaptive-footer-text font-bold mb-6 text-lg">
-                Platform
-              </h3>
-              <ul className="space-y-3 text-adaptive-footer-secondary">
-                <li>
-                  <Link
-                    href="#features"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Features
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/dashboard"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Dashboard
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/assessment"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Assessments
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/results"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Results
-                    </span>
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h3 className="text-adaptive-footer-text font-bold mb-6 text-lg">
-                Company
-              </h3>
-              <ul className="space-y-3 text-adaptive-footer-secondary">
-                <li>
-                  <Link
-                    href="/about"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      About
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="#contact"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Contact
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/privacy-policy"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Privacy Policy
-                    </span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/terms-conditions"
-                    className="hover:text-adaptive-footer-text transition-colors duration-200 flex items-center group"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Terms & Conditions
-                    </span>
-                  </Link>
-                </li>
-              </ul>
+            <div className="mt-10 border-t border-white/10 py-5 text-sm text-white/56 sm:py-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>&copy; {new Date().getFullYear()} CTRL Assessment Platform.</div>
+                <div className="flex items-center gap-2 text-white/62">
+                  <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                  <div>Built for high-stakes recruitment decisions.</div>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="border-t border-adaptive-border pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <p className="text-adaptive-footer-secondary text-sm">
-                &copy; {new Date().getFullYear()} CTRL Assessment Platform. All
-                rights reserved.
-              </p>
-              <p className="text-adaptive-footer-accent text-sm font-medium">
-                A commitment to public safety through intelligent recruitment.
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      </main>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth/next-auth-options';
 import { resolveCorrelationId, startServerActionTrace } from '@/lib/observability/server-observability';
 import { applyRateLimit, extractClientIp } from '@/lib/security/api-rate-limit';
 
@@ -95,7 +95,6 @@ export async function PUT(request: NextRequest) {
         }
 
         const body = await request.json();
-        console.log('Profile update request body:', body);
 
         const {
             firstName,
@@ -117,15 +116,20 @@ export async function PUT(request: NextRequest) {
         if (privacyConsent !== undefined) updateData.privacyConsent = privacyConsent;
         if (equalityMonitoring !== undefined) updateData.equalityMonitoring = equalityMonitoring;
 
-        console.log('Prepared update data:', updateData);
-
-        // Update user profile in Strapi using proper user ID
+        // Update the signed-in user's own profile without requiring broad user.update permissions.
         const { getStrapiClient } = await import('@/lib/strapi');
         const strapiClient = getStrapiClient(session.user.jwt);
-        const updatedUser = await strapiClient.collection('users').update(
-            String(session.user.id),
-            updateData as Record<string, unknown>
-        ) as unknown as any;
+        const updateResponse = await strapiClient.fetch('/users/me', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData),
+        });
+
+        if (!updateResponse.ok) {
+            throw new Error(`Profile update failed with status ${updateResponse.status}`);
+        }
+
+        const updatedUser = await updateResponse.json() as any;
 
         trace.success({ userId: session.user.id });
         return NextResponse.json({

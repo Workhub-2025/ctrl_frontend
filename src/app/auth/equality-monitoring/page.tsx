@@ -40,7 +40,7 @@ function EqualityMonitoringContent() {
       
       // Check if already completed
       if (user?.equalityMonitoring) {
-        router.push('/candidate-dashboard');
+        router.push('/candidate-dashboard/my-assessments');
         return;
       }
     }
@@ -55,20 +55,24 @@ function EqualityMonitoringContent() {
       console.log('💾 Saving equality monitoring data:', data);
       
       // Use the server action updateEqualityMonitoring
-      const updatedUser = await updateCurrentUserAction(user.id, { equalityMonitoring: {
+      const result = await updateCurrentUserAction(user.id, { equalityMonitoring: {
         ...data,
         completed: true,
         completedAt: new Date().toISOString()
       }});
+
+      if (!result.success) {
+        throw new Error(result.error || 'Could not save equality monitoring');
+      }
       
-      console.log('✅ Equality monitoring data saved successfully:', updatedUser);
+      console.log('✅ Equality monitoring data saved successfully:', result.data);
       
       toast({
         title: 'Thank you!',
         description: 'Your equality monitoring information has been saved.',
       });
       
-      router.push('/candidate-dashboard');
+      router.push('/candidate-dashboard/my-assessments');
     } catch (error) {
       console.error('❌ Error saving equality monitoring:', error);
       toast({
@@ -82,7 +86,7 @@ function EqualityMonitoringContent() {
   };
 
   const handleSkip = () => {
-    router.push('/candidate-dashboard');
+    router.push('/candidate-dashboard/my-assessments');
   };
 
   // Show loading while checking authentication
