@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
+import { closeAssessmentWindow } from '@/lib/assessment-completion';
 
 type CallRun = {
   id: string;
@@ -187,8 +188,8 @@ export default function CallSimulationTest() {
   }, []);
 
   const closeAssessment = useCallback(() => {
-    router.push('/candidate-dashboard/my-assessments/');
-  }, [router]);
+    closeAssessmentWindow();
+  }, []);
 
   const updateForm = (field: keyof IncidentForm, value: string) => {
     setForm((currentForm) => ({

@@ -15,6 +15,7 @@ import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { closeAssessmentWindow } from '@/lib/assessment-completion';
 
 type Incident = {
   id: string;
@@ -190,8 +191,8 @@ export default function PrioritizationTest() {
   }, [content.finalRounds]);
 
   const closeAssessment = useCallback(() => {
-    router.push('/candidate-dashboard/my-assessments/');
-  }, [router]);
+    closeAssessmentWindow();
+  }, []);
 
   const placeIncident = (incidentId: string, targetIndex: number) => {
     setPrioritySlots((currentSlots) => {

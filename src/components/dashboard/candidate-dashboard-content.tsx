@@ -38,6 +38,7 @@ import {
   type CandidatePortalApplication,
   type CandidatePortalAssessment,
 } from "@/services/candidate-session.service";
+import { listenForAssessmentCompletion } from "@/lib/assessment-completion";
 
 type CandidateApplicationStatus =
   | "Awaiting Assessment"
@@ -253,6 +254,12 @@ export function CandidateDashboardContent() {
 
   useEffect(() => {
     void loadApplications();
+  }, [loadApplications]);
+
+  useEffect(() => {
+    return listenForAssessmentCompletion(() => {
+      void loadApplications({ force: true });
+    });
   }, [loadApplications]);
 
   const handlePair = async (e: React.FormEvent) => {

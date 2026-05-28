@@ -13,6 +13,7 @@ import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { closeAssessmentWindow } from '@/lib/assessment-completion';
 
 type Scenario = {
   id: string;
@@ -134,8 +135,8 @@ export default function SituationalJudgementTest() {
   }, []);
 
   const closeAssessment = useCallback(() => {
-    router.push('/candidate-dashboard/my-assessments/');
-  }, [router]);
+    closeAssessmentWindow();
+  }, []);
 
   const recordAnswer = (mode: 'practice' | 'final') => {
     if (selectedOption === null) return;

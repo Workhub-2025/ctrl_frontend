@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AssessmentProgressService } from '@/services/assessment-progress.service';
 import type { TypingTestProgress } from '@/types/assessments-progress.types';
+import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 
 /**
  * Props for the TypingTest component.
@@ -250,8 +251,8 @@ export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTe
   }, [finishRun]);
 
   const closeAssessment = useCallback(() => {
-    router.push('/candidate-dashboard/my-assessments/');
-  }, [router]);
+    closeAssessmentWindow();
+  }, []);
 
   const restartPractice = useCallback(() => {
     setResults((previousResults) =>
@@ -344,6 +345,7 @@ export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTe
         if (!cancelled) {
           if (response.ok || response.status === 409) {
             // 409 = already submitted (idempotency guard) — treat as success
+            notifyAssessmentCompleted('typing');
             setSubmissionStatus('submitted');
           } else {
             const body = await response.json().catch(() => ({}));
