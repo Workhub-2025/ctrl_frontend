@@ -99,6 +99,8 @@ type RawCandidateSession = {
   expiresAt?: string | null;
   usedAt?: string | null;
   completedAt?: string | null;
+  removedAt?: string | null;
+  removalReason?: string | null;
   createdAt?: string;
   users_permissions_users?: Array<{
     documentId?: string;
@@ -329,7 +331,9 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
         return "Ready to issue";
     }
   })();
-  const candidates = session.candidate_sessions ?? [];
+  const candidates = (session.candidate_sessions ?? []).filter(
+    (candidateSession) => candidateSession.sessionStatus !== "expired" && !candidateSession.removedAt
+  );
 
   return {
     id: session.documentId ?? String(session.id ?? session.sessionCode ?? "session"),
