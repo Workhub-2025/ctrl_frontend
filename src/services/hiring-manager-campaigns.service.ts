@@ -359,7 +359,10 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
         name: name || user?.email || candidateSession.candidateCode || "Candidate",
         email: user?.email,
         status: candidateSession.sessionStatus,
-        hasStartedAssessment: results.length > 0,
+        hasStartedAssessment:
+          results.length > 0 ||
+          candidateSession.sessionStatus === "completed" ||
+          candidateSession.sessionStatus === "locked",
         results,
       };
     }),
