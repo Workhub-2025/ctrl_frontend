@@ -219,6 +219,7 @@ export type HiringManagerSessionListItem = {
     name: string;
     email?: string;
     status?: string;
+    hasStartedAssessment?: boolean;
     results: HiringManagerAssessmentResult[];
   }>;
 };
@@ -350,14 +351,16 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
     candidates: candidates.map((candidateSession) => {
       const user = candidateSession.users_permissions_users?.[0];
       const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim();
+      const results = (candidateSession.assessment_results ?? []).map((result) =>
+        normalizeAssessmentResult(result, candidateSession.documentId)
+      );
       return {
         id: candidateSession.documentId ?? String(candidateSession.id ?? candidateSession.candidateCode),
         name: name || user?.email || candidateSession.candidateCode || "Candidate",
         email: user?.email,
         status: candidateSession.sessionStatus,
-        results: (candidateSession.assessment_results ?? []).map((result) =>
-          normalizeAssessmentResult(result, candidateSession.documentId)
-        ),
+        hasStartedAssessment: results.length > 0,
+        results,
       };
     }),
   };

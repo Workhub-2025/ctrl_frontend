@@ -396,15 +396,22 @@ export function HiringManagerSessionsList() {
                               {candidate.name}
                             </p>
                             <p className="mt-1 break-words text-xs text-muted-foreground">
-                              {candidate.email || candidate.status || "Joined"}
+                              {candidate.hasStartedAssessment
+                                ? "Assessment started - contact support to remove completely"
+                                : candidate.email || candidate.status || "Joined"}
                             </p>
                           </div>
                           <Button
                             type="button"
                             variant="outline"
-                            disabled={removingCandidateId === candidate.id}
+                            disabled={removingCandidateId === candidate.id || candidate.hasStartedAssessment}
                             onClick={() => removeCandidate(session.id, candidate.id)}
                             className="h-8 shrink-0 border-red-400/20 bg-red-400/10 px-2 text-xs text-red-700 hover:bg-red-400/15 dark:text-red-100"
+                            title={
+                              candidate.hasStartedAssessment
+                                ? "This candidate has started an assessment. Contact support to remove completely."
+                                : undefined
+                            }
                           >
                             <UserMinus className="mr-1 h-3.5 w-3.5" />
                             Remove
