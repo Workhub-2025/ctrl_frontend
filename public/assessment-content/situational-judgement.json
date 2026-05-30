@@ -1,148 +1,484 @@
 {
-  "practiceScenarios": [
-    {
-      "id": "practice-1",
-      "scenario": "A caller is distressed and speaking very quickly. You can hear another person shouting in the background, but you have not yet confirmed the exact location.",
-      "prompt": "Which response is most appropriate?",
-      "options": [
-        "Ask the caller to calm down and explain everything from the beginning.",
-        "Politely interrupt to confirm the exact location and whether anyone is in immediate danger.",
-        "Transfer the call to a supervisor because the caller is difficult to understand.",
-        "Stay silent and wait for the caller to finish before asking any questions."
-      ]
-    },
-    {
-      "id": "practice-2",
-      "scenario": "A caller reports a minor road collision. During the call, they mention one driver is becoming aggressive and trying to leave the scene.",
-      "prompt": "Which response is most appropriate?",
-      "options": [
-        "Tell the caller to physically stop the driver leaving.",
-        "Focus only on exchanging insurance details because the collision is minor.",
-        "Record the developing risk, keep the caller safe, and gather vehicle and direction details.",
-        "End the call and wait for an online report because there are no injuries."
-      ]
-    },
-    {
-      "id": "practice-3",
-      "scenario": "A caller says their elderly neighbour has not been seen for two days. They can hear a faint noise from inside the property but cannot get a response.",
-      "prompt": "Which response is most appropriate?",
-      "options": [
-        "Advise the caller to wait another day and call back if nothing changes.",
-        "Ask the caller to force entry immediately.",
-        "Treat it as a welfare concern, confirm location/access details, and arrange an appropriate response.",
-        "Log it as information only because the caller has not seen an injury."
-      ]
-    }
-  ],
+  "practiceScenarios": [],
   "finalScenarios": [
     {
-      "id": "final-1",
-      "scenario": "A caller reports hearing screaming from a neighbouring flat. They do not know the flat number but believe the sound is coming from the floor above.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S1",
+      "title": "Emotional overload",
+      "scenario": "You are speaking with someone who is very distressed. They talk quickly, repeat themselves, and jump between points. They sound tearful and occasionally raise their voice. You have limited time and you need to understand what they actually need, but you also want them to feel supported and not shut down.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Ask the caller to investigate the corridor and identify the exact flat.",
-        "Gather the caller's location, what they can hear, any known risks, and arrange a response while keeping them safe.",
-        "Tell the caller no action can be taken without a flat number.",
-        "Advise the caller to record the noise and submit it later."
+        {
+          "id": "A",
+          "text": "Let them continue uninterrupted so they feel heard, even if it takes time."
+        },
+        {
+          "id": "B",
+          "text": "Calmly acknowledge how they feel, slow the pace, and ask one clear question at a time to regain structure."
+        },
+        {
+          "id": "C",
+          "text": "Interrupt firmly and tell them to calm down so you can understand them."
+        },
+        {
+          "id": "D",
+          "text": "End the conversation quickly and refer them elsewhere."
+        }
       ]
     },
     {
-      "id": "final-2",
-      "scenario": "A caller says a person is lying on the pavement after a fight outside a pub. The caller is across the road and does not know if the person is conscious.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S2",
+      "title": "Incomplete information",
+      "scenario": "Someone asks you for help but gives vague or inconsistent details. When you ask clarifying questions, they become frustrated and say, “I’ve already explained this.” You suspect you’re missing something important and you need accuracy, but you don’t want to escalate their frustration.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Ask the caller to approach the injured person immediately.",
-        "Confirm the exact location, assess immediate danger from a safe position, and request relevant emergency support.",
-        "Tell the caller to wait until the fight has fully ended before providing details.",
-        "Record the incident as public disorder only because injury is unconfirmed."
+        {
+          "id": "A",
+          "text": "Accept the information as given to avoid upsetting them further."
+        },
+        {
+          "id": "B",
+          "text": "Explain why clarity matters and ask focused follow-up questions to confirm the key details."
+        },
+        {
+          "id": "C",
+          "text": "Stop asking questions and make assumptions so you can move forward."
+        },
+        {
+          "id": "D",
+          "text": "Tell them you can’t help unless they provide clearer information."
+        }
       ]
     },
     {
-      "id": "final-3",
-      "scenario": "A caller reports a vehicle driving erratically on a busy road. They are following the vehicle closely to keep it in sight.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S3",
+      "title": "Pressure to bypass process",
+      "scenario": "A person is stressed and insists you should bypass a standard process “just this once.” They say it’s urgent and they don’t have time for the normal steps. You understand their pressure, but you also know the process exists for a reason.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Encourage the caller to continue following so the vehicle is not lost.",
-        "Tell the caller to overtake and read the registration plate.",
-        "Advise the caller to keep themselves safe, gather location/direction details, and avoid following dangerously.",
-        "Ask the caller to call back only if a collision happens."
+        {
+          "id": "A",
+          "text": "Agree to bypass the process to help them quickly."
+        },
+        {
+          "id": "B",
+          "text": "Refuse immediately and tell them rules must always be followed."
+        },
+        {
+          "id": "C",
+          "text": "Explain calmly why the process exists and follow it while still offering support and urgency."
+        },
+        {
+          "id": "D",
+          "text": "Delay the process without explaining why."
+        }
       ]
     },
     {
-      "id": "final-4",
-      "scenario": "A caller is reporting threatening messages from an ex-partner. They say the ex-partner has just sent a message saying they are outside.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S4",
+      "title": "Identifying a potential issue",
+      "scenario": "During a non emergency call, something doesn’t quite add up. The caller hasn’t said anything directly concerning, but a detail conflicts with what they said earlier. You’re not sure whether it’s a misunderstanding or something important. Others nearby appear busy and you have to decide how to handle it.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Treat it as a current risk, confirm safety/location, gather details, and arrange an appropriate response.",
-        "Tell the caller to block the number and call back tomorrow.",
-        "Ask the caller to go outside and confirm whether the ex-partner is there.",
-        "Log the messages as a non-urgent report because no assault has happened."
+        {
+          "id": "A",
+          "text": "Ignore it — it’s probably nothing."
+        },
+        {
+          "id": "B",
+          "text": "Ask a clarifying question to check your understanding and resolve the inconsistency."
+        },
+        {
+          "id": "C",
+          "text": "Assume the worst and escalate immediately."
+        },
+        {
+          "id": "D",
+          "text": "Wait to see if the issue becomes clearer later."
+        }
       ]
     },
     {
-      "id": "final-5",
-      "scenario": "A caller reports smoke coming from a small industrial unit. They are unsure if anyone is inside, and staff from nearby units are gathering outside.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S5",
+      "title": "Hostile communication",
+      "scenario": "A caller becomes angry and starts blaming you personally for not helping fast enough. They raise their voice and interrupt you. You can feel tension rising, but you still need to progress the conversation and keep it productive.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Ask staff nearby to enter and check whether anyone is inside.",
-        "Confirm location, visible hazards, possible occupants, and advise people to stay clear while response is arranged.",
-        "Tell the caller to wait until flames are visible before escalating.",
-        "Record it as an alarm activation only because the caller is outside."
+        {
+          "id": "A",
+          "text": "Match their tone to assert control."
+        },
+        {
+          "id": "B",
+          "text": "Apologise repeatedly, even if it’s not your fault, to try to calm them down."
+        },
+        {
+          "id": "C",
+          "text": "Acknowledge their frustration, stay calm, and refocus the conversation on what happens next."
+        },
+        {
+          "id": "D",
+          "text": "End the interaction because they are being disrespectful."
+        }
       ]
     },
     {
-      "id": "final-6",
-      "scenario": "A caller whispers that someone has broken into their home. They are upstairs with the door locked and can hear movement below.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S6",
+      "title": "Compassion vs boundaries",
+      "scenario": "A victim shares something very personal and emotional. They ask you to promise that a specific outcome will happen because they need reassurance. You want to support them, but you can’t guarantee outcomes.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Ask the caller to go downstairs and check who is there.",
-        "Keep the caller on the line, confirm location and safety, gather what can be heard, and arrange urgent support.",
-        "Tell the caller to shout loudly so the intruder leaves.",
-        "Advise the caller to hang up and hide until morning."
+        {
+          "id": "A",
+          "text": "Promise the outcome to reassure them."
+        },
+        {
+          "id": "B",
+          "text": "Avoid responding directly to their request and move on."
+        },
+        {
+          "id": "C",
+          "text": "Show empathy, explain you can’t make promises, and focus on what you can do right now."
+        },
+        {
+          "id": "D",
+          "text": "Change the subject to avoid making things more emotional."
+        }
       ]
     },
     {
-      "id": "final-7",
-      "scenario": "A caller reports a child separated from their parent in a crowded shopping centre. Security staff are searching but the child has not been found.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S7",
+      "title": "Decision-making under uncertainty",
+      "scenario": "You need to decide on next steps but you don’t have all the information. Waiting could reduce risk, but delaying could also make things worse. You must balance action with accuracy and responsibility.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Advise the caller to wait because shopping centres often reunite children quickly.",
-        "Gather description, last known location, time missing, vulnerabilities, and coordinate an appropriate response.",
-        "Tell the parent to search outside alone.",
-        "Record it as lost property because the child is inside a managed venue."
+        {
+          "id": "A",
+          "text": "Act immediately using the information available."
+        },
+        {
+          "id": "B",
+          "text": "Wait until you have complete certainty before doing anything."
+        },
+        {
+          "id": "C",
+          "text": "Take a proportionate step while continuing to gather information."
+        },
+        {
+          "id": "D",
+          "text": "Pass responsibility to someone else to avoid making the wrong decision."
+        }
       ]
     },
     {
-      "id": "final-8",
-      "scenario": "A caller reports a person sitting on the wrong side of a bridge barrier. Traffic is still moving below.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S8",
+      "title": "Correcting a mistake",
+      "scenario": "Partway through a conversation with a caller, you realise you misunderstood something earlier. You notice the misunderstanding could affect what you do next. You feel slightly embarrassed, and the caller is still talking.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Ask the caller to pull the person back over the barrier.",
-        "Keep the caller safe, confirm exact location, assess immediate risk, and arrange urgent support.",
-        "Tell the caller to leave because it is not their responsibility.",
-        "Ask the caller to take a photo so responders can identify the person."
+        {
+          "id": "A",
+          "text": "Ignore it to avoid drawing attention to the mistake."
+        },
+        {
+          "id": "B",
+          "text": "Correct yourself calmly and clarify the accurate information."
+        },
+        {
+          "id": "C",
+          "text": "Suggest the misunderstanding was caused by the caller being unclear."
+        },
+        {
+          "id": "D",
+          "text": "End the conversation and restart it later."
+        }
       ]
     },
     {
-      "id": "final-9",
-      "scenario": "A caller reports a shop theft. The suspect has left, but staff have CCTV and the suspect's direction of travel.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S9",
+      "title": "Competing priorities",
+      "scenario": "On an emergency call, you’re dealing with one urgent situation when another equally urgent issue demands your attention at the same time. You feel pulled in two directions and need to prevent anything being dropped.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Gather key details, preserve evidence, record direction of travel, and assess whether immediate attendance is needed.",
-        "Tell staff to chase the suspect while staying on the phone.",
-        "Ignore the direction of travel because the suspect has already left.",
-        "Advise staff to delete CCTV after writing a description."
+        {
+          "id": "A",
+          "text": "Focus entirely on the first situation and ignore the second."
+        },
+        {
+          "id": "B",
+          "text": "Drop the first situation immediately to deal with the second."
+        },
+        {
+          "id": "C",
+          "text": "Manage both by setting expectations and prioritising based on risk, communicating clearly."
+        },
+        {
+          "id": "D",
+          "text": "Avoid deciding and hope someone else takes responsibility for the second situation."
+        }
       ]
     },
     {
-      "id": "final-10",
-      "scenario": "A caller says their friend has taken tablets and is becoming drowsy. The caller is panicking and does not know the address because they are visiting.",
-      "prompt": "Which response is most appropriate?",
+      "id": "S10",
+      "title": "Emotional self-control",
+      "scenario": "During a difficult interaction you feel yourself becoming frustrated. You notice your patience slipping, and you’re aware your tone could change if you don’t regulate yourself.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
       "options": [
-        "Ask the caller to search their phone for the address before doing anything else.",
-        "Establish the location using all available clues, assess breathing/consciousness, and arrange urgent medical help.",
-        "Tell the caller to drive the friend to hospital immediately.",
-        "End the call and wait for the caller to find the exact postcode."
+        {
+          "id": "A",
+          "text": "Let your frustration show so the caller understands how difficult this is."
+        },
+        {
+          "id": "B",
+          "text": "Suppress your emotions completely and continue without acknowledging them internally."
+        },
+        {
+          "id": "C",
+          "text": "Recognise your frustration internally, regulate your response, and maintain a calm, professional approach."
+        },
+        {
+          "id": "D",
+          "text": "End the interaction with the caller as soon as possible."
+        }
+      ]
+    },
+    {
+      "id": "S11",
+      "title": "Conflicting emotional signals",
+      "scenario": "You’re speaking to a victim who initially sounds calm and composed. As the conversation goes on, they pause for long periods, their answers become shorter, and there’s a brief laugh that sounds forced. They insist they’re fine, but you’re not convinced.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Continue with your normal approach since they haven’t directly said anything is wrong."
+        },
+        {
+          "id": "B",
+          "text": "Gently acknowledge the shift you’ve noticed and ask if they’re coping okay."
+        },
+        {
+          "id": "C",
+          "text": "Assume they’re fine unless they clearly state otherwise."
+        },
+        {
+          "id": "D",
+          "text": "Move quickly to end the conversation since they seem reluctant to engage."
+        }
+      ]
+    },
+    {
+      "id": "S12",
+      "title": "Pressure from authority",
+      "scenario": "Someone who presents themselves as senior/experienced becomes impatient. They insist you should trust their judgement and follow their suggestion immediately. You feel unsure because you don’t have complete clarity yet.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Follow their instruction immediately because they have more experience."
+        },
+        {
+          "id": "B",
+          "text": "Ignore their input completely and continue independently."
+        },
+        {
+          "id": "C",
+          "text": "Acknowledge their perspective, but continue to clarify information and make your own informed decision."
+        },
+        {
+          "id": "D",
+          "text": "Delay taking action until someone else becomes involved."
+        }
+      ]
+    },
+    {
+      "id": "S13",
+      "title": "Emotional manipulation",
+      "scenario": "A caller becomes very emotional and says that if you don’t help them immediately, it will be your fault if something bad happens. They say you’re the only person who can help. You feel pressure and urgency rising.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Prioritise helping them immediately to relieve the emotional pressure."
+        },
+        {
+          "id": "B",
+          "text": "Stay calm, acknowledge their feelings, and continue following the correct process and next steps."
+        },
+        {
+          "id": "C",
+          "text": "Distance yourself emotionally and become very formal to avoid being affected."
+        },
+        {
+          "id": "D",
+          "text": "Tell them they shouldn’t pressure you like this."
+        }
+      ]
+    },
+    {
+      "id": "S14",
+      "title": "Ambiguous responsibility",
+      "scenario": "You notice a situation that appears to need attention, but it’s unclear whose responsibility it is. Nobody has assigned ownership and others look busy. You’re unsure whether stepping in is expected or whether you should wait.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Wait for someone else to take responsibility."
+        },
+        {
+          "id": "B",
+          "text": "Take initiative and begin addressing it appropriately."
+        },
+        {
+          "id": "C",
+          "text": "Ignore it because it hasn’t been formally assigned to you."
+        },
+        {
+          "id": "D",
+          "text": "Raise the concern but avoid becoming directly involved."
+        }
+      ]
+    },
+    {
+      "id": "S15",
+      "title": "Information overload",
+      "scenario": "A caller provides a large amount of information very quickly. Some details are clearly important, others may be irrelevant. You’re concerned you’ll miss key points if you don’t structure the conversation.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Let them continue speaking without interruption."
+        },
+        {
+          "id": "B",
+          "text": "Ask them to slow down and clarify the key details using structured questions."
+        },
+        {
+          "id": "C",
+          "text": "Focus only on the parts that seem most important to you and ignore the rest."
+        },
+        {
+          "id": "D",
+          "text": "Wait until they finish and hope you remember everything correctly."
+        }
+      ]
+    },
+    {
+      "id": "S16",
+      "title": "Personal frustration",
+      "scenario": "A situation is progressing slowly. The caller you’re speaking with doesn’t seem to understand your questions and repeatedly gives unclear answers. You feel your frustration increasing and you’re aware it could affect your tone.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Show your frustration so they understand the seriousness."
+        },
+        {
+          "id": "B",
+          "text": "Remain calm and adjust your approach (simplify, rephrase, check understanding)."
+        },
+        {
+          "id": "C",
+          "text": "End the interaction early to avoid further frustration."
+        },
+        {
+          "id": "D",
+          "text": "Continue without changing your approach."
+        }
+      ]
+    },
+    {
+      "id": "S17",
+      "title": "Uncertainty about next steps",
+      "scenario": "You reach a point where you’re unsure what the correct next step should be. Acting incorrectly could cause problems, but doing nothing could also have consequences. You have to choose a responsible way forward.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Take the safest reasonable step while continuing to assess and clarify."
+        },
+        {
+          "id": "B",
+          "text": "Wait until someone tells you exactly what to do."
+        },
+        {
+          "id": "C",
+          "text": "Avoid acting to prevent making mistakes."
+        },
+        {
+          "id": "D",
+          "text": "Take action quickly to avoid delay, even if you’re not sure."
+        }
+      ]
+    },
+    {
+      "id": "S18",
+      "title": "Emotional detachment vs compassion",
+      "scenario": "You notice that staying emotionally detached helps you think clearly, but the person you’re interacting with seems to need reassurance and calm support. You want to be effective without becoming over-involved.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Remain emotionally detached to stay objective."
+        },
+        {
+          "id": "B",
+          "text": "Provide empathy while maintaining clear boundaries and professional judgement."
+        },
+        {
+          "id": "C",
+          "text": "Focus entirely on emotional support to make them feel better."
+        },
+        {
+          "id": "D",
+          "text": "Limit interaction to essential information only."
+        }
+      ]
+    },
+    {
+      "id": "S19",
+      "title": "Challenging communication style",
+      "scenario": "A caller communicates in a disorganised way. They jump between topics, go off on tangents, and struggle to answer direct questions. You need an accurate understanding, but you also want to avoid making them feel judged.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Allow them to continue without interruption."
+        },
+        {
+          "id": "B",
+          "text": "Guide the conversation using clear, structured questions and summarise back."
+        },
+        {
+          "id": "C",
+          "text": "Ignore confusing details and focus only on what seems clear."
+        },
+        {
+          "id": "D",
+          "text": "End the interaction due to lack of clarity."
+        }
+      ]
+    },
+    {
+      "id": "S20",
+      "title": "Fatigue and cognitive load",
+      "scenario": "You’ve been dealing with demanding interactions for a long period on a busy shift. You notice your concentration dropping, but you still need to maintain accuracy and professionalism. You can’t simply stop, so you must manage your performance.",
+      "prompt": "Select the MOST effective and LEAST effective response.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Continue without adjusting your approach."
+        },
+        {
+          "id": "B",
+          "text": "Become more deliberate: slow down slightly, double-check key details, and maintain accuracy."
+        },
+        {
+          "id": "C",
+          "text": "Rush to complete the interaction more quickly."
+        },
+        {
+          "id": "D",
+          "text": "Disengage mentally to reduce stress."
+        }
       ]
     }
   ]

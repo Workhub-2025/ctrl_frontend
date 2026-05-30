@@ -1,239 +1,869 @@
 {
   "practiceRounds": [
     {
-      "id": "practice-1",
-      "title": "Practice round 1",
+      "id": "PJA-PRACTICE-001",
+      "title": "Basic Prioritisation",
       "incidents": [
         {
-          "id": "P1-01",
-          "type": "Road traffic collision",
-          "location": "Northbound junction near Eastbridge Market",
-          "risk": "Driver trapped, fuel smell reported",
-          "waitTime": "02:40",
-          "details": "Caller says traffic is still moving around the vehicles."
+          "id": "PJA-PRACTICE-001-A",
+          "letter": "A",
+          "title": "Noise complaint from neighbouring flat",
+          "description": "Caller reports loud music coming from a neighbouring flat. No shouting, threats or violence reported.",
+          "timeOfIncident": "Happening now"
         },
         {
-          "id": "P1-02",
-          "type": "Noise complaint",
-          "location": "Flat 12, Milton House",
-          "risk": "No immediate danger reported",
-          "waitTime": "08:15",
-          "details": "Caller reports loud music and shouting from a neighbouring flat."
+          "id": "PJA-PRACTICE-001-B",
+          "letter": "B",
+          "title": "Road traffic collision with injury",
+          "description": "Caller reports two vehicles have collided at a junction. One driver is complaining of neck pain and traffic is building.",
+          "timeOfIncident": "Happening now"
         },
         {
-          "id": "P1-03",
-          "type": "Missing child",
-          "location": "Riverside shopping arcade",
-          "risk": "Seven-year-old missing from parent",
-          "waitTime": "01:35",
-          "details": "Child last seen near the main exit wearing a red coat."
+          "id": "PJA-PRACTICE-001-C",
+          "letter": "C",
+          "title": "Historic theft of mobile phone",
+          "description": "Caller says their mobile phone was stolen from a cafe table earlier in the day. The suspect is no longer present.",
+          "timeOfIncident": "Occurred 5 hours ago"
         },
         {
-          "id": "P1-04",
-          "type": "Suspicious vehicle",
-          "location": "Rear car park, Halden Library",
-          "risk": "Occupants watching staff entrance",
-          "waitTime": "05:20",
-          "details": "No weapons seen. Caller is a staff member locking up."
+          "id": "PJA-PRACTICE-001-D",
+          "letter": "D",
+          "title": "Domestic argument heard next door",
+          "description": "Caller can hear shouting and banging from the neighbouring property. A woman has been heard crying.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-PRACTICE-001-E",
+          "letter": "E",
+          "title": "Shoplifting suspect detained",
+          "description": "Store security have detained a person suspected of stealing items. The suspect is calm and waiting with security.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-PRACTICE-001-F",
+          "letter": "F",
+          "title": "Abandoned vehicle report",
+          "description": "Caller reports a vehicle has been parked outside their home for three weeks and has not moved.",
+          "timeOfIncident": "Ongoing for several weeks"
         }
       ]
     },
     {
-      "id": "practice-2",
-      "title": "Practice round 2",
+      "id": "PJA-PRACTICE-002",
+      "title": "Vulnerability Focus",
       "incidents": [
         {
-          "id": "P2-01",
-          "type": "Domestic disturbance",
-          "location": "17 Cresswell Road",
-          "risk": "Caller whispers that partner is blocking the door",
-          "waitTime": "03:10",
-          "details": "Child heard crying in the background."
+          "id": "PJA-PRACTICE-002-A",
+          "letter": "A",
+          "title": "Elderly person missing from home",
+          "description": "Caller reports their 82-year-old father, who has dementia, left home alone and has not returned.",
+          "timeOfIncident": "Last seen 30 minutes ago"
         },
         {
-          "id": "P2-02",
-          "type": "Shop theft",
-          "location": "High Street convenience store",
-          "risk": "Suspect has left on foot",
-          "waitTime": "06:45",
-          "details": "No injuries. Staff have CCTV and direction of travel."
+          "id": "PJA-PRACTICE-002-B",
+          "letter": "B",
+          "title": "Criminal damage to garden fence",
+          "description": "Caller reports their garden fence was damaged overnight. No suspect has been seen.",
+          "timeOfIncident": "Occurred overnight"
         },
         {
-          "id": "P2-03",
-          "type": "Medical collapse",
-          "location": "Platform 2, Central Station",
-          "risk": "Person unconscious and not responding",
-          "waitTime": "00:55",
-          "details": "Crowd gathering. Caller unsure if breathing is normal."
+          "id": "PJA-PRACTICE-002-C",
+          "letter": "C",
+          "title": "Argument outside takeaway",
+          "description": "Two males are arguing outside a takeaway. No weapons have been seen and no physical violence has been reported.",
+          "timeOfIncident": "Happening now"
         },
         {
-          "id": "P2-04",
-          "type": "Road obstruction",
-          "location": "A47 westbound lay-by",
-          "risk": "Fallen branch partly blocking lane",
-          "waitTime": "11:05",
-          "details": "Vehicles can pass slowly. No collision yet."
+          "id": "PJA-PRACTICE-002-D",
+          "letter": "D",
+          "title": "Child left alone in car",
+          "description": "Caller reports a young child crying inside a parked car. No adult is visible nearby.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-PRACTICE-002-E",
+          "letter": "E",
+          "title": "Lost bank card report",
+          "description": "Caller has lost their bank card and wants to report it to police. No theft is alleged.",
+          "timeOfIncident": "Discovered today"
+        },
+        {
+          "id": "PJA-PRACTICE-002-F",
+          "letter": "F",
+          "title": "Neighbour dispute about parking",
+          "description": "Caller says their neighbour has parked across their driveway. No threats or violence have been reported.",
+          "timeOfIncident": "Happening now"
         }
       ]
     },
     {
-      "id": "practice-3",
-      "title": "Practice round 3",
+      "id": "PJA-PRACTICE-003",
+      "title": "Immediacy and Risk",
       "incidents": [
         {
-          "id": "P3-01",
-          "type": "Fire alarm activation",
-          "location": "Saxon Court care home",
-          "risk": "Smoke visible near laundry room",
-          "waitTime": "02:05",
-          "details": "Elderly residents are being moved by staff."
+          "id": "PJA-PRACTICE-003-A",
+          "letter": "A",
+          "title": "Burglary in progress",
+          "description": "Caller can see two people forcing open the rear door of a neighbour’s house.",
+          "timeOfIncident": "Happening now"
         },
         {
-          "id": "P3-02",
-          "type": "Found property",
-          "location": "Town Hall reception",
-          "risk": "No immediate risk",
-          "waitTime": "14:40",
-          "details": "Wallet handed in by member of public."
+          "id": "PJA-PRACTICE-003-B",
+          "letter": "B",
+          "title": "Historic harassment messages",
+          "description": "Caller reports receiving repeated unwanted messages from an ex-partner over the past week. No threats have been made today.",
+          "timeOfIncident": "Ongoing over one week"
         },
         {
-          "id": "P3-03",
-          "type": "Assault in progress",
-          "location": "Outside Crown public house",
-          "risk": "Two people fighting, one on ground",
-          "waitTime": "01:20",
-          "details": "Caller reports glass bottles nearby."
+          "id": "PJA-PRACTICE-003-C",
+          "letter": "C",
+          "title": "Drunk person asleep at bus stop",
+          "description": "Caller reports a heavily intoxicated person asleep at a bus stop. They are breathing but difficult to wake.",
+          "timeOfIncident": "Happening now"
         },
         {
-          "id": "P3-04",
-          "type": "Concern for welfare",
-          "location": "Canal path near Lock 6",
-          "risk": "Person sitting near water, appears distressed",
-          "waitTime": "04:50",
-          "details": "Caller is keeping visual contact from a distance."
+          "id": "PJA-PRACTICE-003-D",
+          "letter": "D",
+          "title": "Theft from vehicle",
+          "description": "Caller reports tools were stolen from their van overnight. No suspect is present.",
+          "timeOfIncident": "Occurred overnight"
+        },
+        {
+          "id": "PJA-PRACTICE-003-E",
+          "letter": "E",
+          "title": "Youths throwing stones at buses",
+          "description": "Caller reports a group of youths throwing stones at passing buses. One bus window has cracked.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-PRACTICE-003-F",
+          "letter": "F",
+          "title": "Dog fouling complaint",
+          "description": "Caller wants to report repeated dog fouling outside their property.",
+          "timeOfIncident": "Ongoing issue"
         }
       ]
     }
   ],
   "finalRounds": [
     {
-      "id": "final-1",
-      "title": "Final round 1",
+      "id": "PJA-LIVE-001",
+      "title": "Introductory Level",
       "incidents": [
-        { "id": "F1-01", "type": "Armed threat", "location": "Petrol station, Moor Road", "risk": "Knife seen, staff behind counter", "waitTime": "00:45", "details": "Suspect still inside according to caller." },
-        { "id": "F1-02", "type": "Burglary discovered", "location": "Maple Avenue", "risk": "Offender no longer present", "waitTime": "09:30", "details": "Homeowner returned to broken rear door." },
-        { "id": "F1-03", "type": "Collision minor injury", "location": "Station Road roundabout", "risk": "One person with arm pain", "waitTime": "05:10", "details": "Road partially blocked but traffic moving." },
-        { "id": "F1-04", "type": "Domestic incident", "location": "Tower block stairwell", "risk": "Caller reports screaming and banging", "waitTime": "02:15", "details": "Exact flat unknown, sound from upper floors." },
-        { "id": "F1-05", "type": "Missing elderly person", "location": "Oakfield residential area", "risk": "Dementia, left home without coat", "waitTime": "03:35", "details": "Last seen walking toward park entrance." },
-        { "id": "F1-06", "type": "Parking obstruction", "location": "School gates", "risk": "Traffic delay only", "waitTime": "12:20", "details": "Caller reports repeated issue at pickup time." }
+        {
+          "id": "PJA-LIVE-001-A",
+          "letter": "A",
+          "title": "Fight outside a shop",
+          "description": "Caller reports two males fighting outside a local shop. One has fallen to the ground.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-001-B",
+          "letter": "B",
+          "title": "Stolen bicycle",
+          "description": "Caller reports their bicycle was stolen from outside a train station earlier today.",
+          "timeOfIncident": "Occurred 4 hours ago"
+        },
+        {
+          "id": "PJA-LIVE-001-C",
+          "letter": "C",
+          "title": "Loud party complaint",
+          "description": "Caller reports loud music and shouting from a nearby house party. No violence has been reported.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-001-D",
+          "letter": "D",
+          "title": "Suspicious person near vehicles",
+          "description": "Caller reports a person trying car door handles along the street.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-001-E",
+          "letter": "E",
+          "title": "Lost passport",
+          "description": "Caller has lost their passport and wants a police reference number.",
+          "timeOfIncident": "Discovered today"
+        },
+        {
+          "id": "PJA-LIVE-001-F",
+          "letter": "F",
+          "title": "Minor neighbour argument",
+          "description": "Caller says their neighbour shouted at them over a boundary issue. No threats were made.",
+          "timeOfIncident": "Occurred 1 hour ago"
+        }
       ]
     },
     {
-      "id": "final-2",
-      "title": "Final round 2",
+      "id": "PJA-LIVE-002",
+      "title": "Introductory Level",
       "incidents": [
-        { "id": "F2-01", "type": "Person in water", "location": "Riverside footbridge", "risk": "Person struggling in river", "waitTime": "00:30", "details": "Caller can see person drifting downstream." },
-        { "id": "F2-02", "type": "Anti-social behaviour", "location": "Bus interchange", "risk": "Group shouting at passengers", "waitTime": "07:55", "details": "No assault reported." },
-        { "id": "F2-03", "type": "Commercial alarm", "location": "Industrial estate unit 4", "risk": "Alarm only, no visual confirmation", "waitTime": "04:25", "details": "Keyholder is 20 minutes away." },
-        { "id": "F2-04", "type": "Breathing difficulty", "location": "King Street pharmacy", "risk": "Patient short of breath", "waitTime": "01:05", "details": "Pharmacist with patient now." },
-        { "id": "F2-05", "type": "Harassment report", "location": "Caller at home", "risk": "Suspect not present", "waitTime": "10:40", "details": "Ongoing messages received overnight." },
-        { "id": "F2-06", "type": "Vehicle fire", "location": "M6 slip road", "risk": "Smoke and flames near live traffic", "waitTime": "02:50", "details": "Occupants out of vehicle." }
+        {
+          "id": "PJA-LIVE-002-A",
+          "letter": "A",
+          "title": "Missing 10-year-old child",
+          "description": "Caller reports their 10-year-old child has not returned home from school and cannot be contacted.",
+          "timeOfIncident": "Expected home 45 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-002-B",
+          "letter": "B",
+          "title": "Vehicle blocking driveway",
+          "description": "Caller reports an unknown vehicle is blocking their driveway.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-002-C",
+          "letter": "C",
+          "title": "Assault reported after event",
+          "description": "Caller says they were punched outside a bar last night. They are now at home and do not need medical help.",
+          "timeOfIncident": "Occurred last night"
+        },
+        {
+          "id": "PJA-LIVE-002-D",
+          "letter": "D",
+          "title": "Person threatening self-harm",
+          "description": "Caller reports their friend has sent messages saying they want to end their life and is not answering calls.",
+          "timeOfIncident": "Messages sent 10 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-002-E",
+          "letter": "E",
+          "title": "Graffiti on wall",
+          "description": "Caller reports graffiti has appeared on the side wall of their business.",
+          "timeOfIncident": "Discovered this morning"
+        },
+        {
+          "id": "PJA-LIVE-002-F",
+          "letter": "F",
+          "title": "Group drinking in park",
+          "description": "Caller reports a group drinking alcohol in the park and being loud. No threats or violence have been reported.",
+          "timeOfIncident": "Happening now"
+        }
       ]
     },
     {
-      "id": "final-3",
-      "title": "Final round 3",
+      "id": "PJA-LIVE-003",
+      "title": "Introductory to Moderate",
       "incidents": [
-        { "id": "F3-01", "type": "Robbery just occurred", "location": "Cash machine, Fleet Street", "risk": "Victim shaken, suspect running", "waitTime": "03:00", "details": "Suspect described as wearing black hoodie." },
-        { "id": "F3-02", "type": "Gas smell", "location": "Terraced house, Benton Lane", "risk": "Strong gas smell inside property", "waitTime": "01:40", "details": "Caller still inside with two children." },
-        { "id": "F3-03", "type": "Lost dog", "location": "Recreation ground", "risk": "No person at risk", "waitTime": "16:10", "details": "Caller wants incident number for insurance." },
-        { "id": "F3-04", "type": "Fight dispersing", "location": "Car park behind cinema", "risk": "Group leaving in different vehicles", "waitTime": "05:45", "details": "No injuries confirmed." },
-        { "id": "F3-05", "type": "Silent call concern", "location": "Approximate cell location, Westfield estate", "risk": "Open line, possible distress noises", "waitTime": "00:50", "details": "Call taker cannot get verbal response." },
-        { "id": "F3-06", "type": "Shed break-in", "location": "Allotments off Green Lane", "risk": "Cold report", "waitTime": "13:25", "details": "Damage discovered this morning." }
+        {
+          "id": "PJA-LIVE-003-A",
+          "letter": "A",
+          "title": "Domestic incident with child present",
+          "description": "Caller says her partner is shouting, throwing items and refusing to let her leave. Their child is upstairs.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-003-B",
+          "letter": "B",
+          "title": "Historic online fraud",
+          "description": "Caller transferred money to someone online and believes it was a scam.",
+          "timeOfIncident": "Occurred 3 days ago"
+        },
+        {
+          "id": "PJA-LIVE-003-C",
+          "letter": "C",
+          "title": "Shoplifter left store",
+          "description": "Shop staff report a person stole alcohol and left the shop. No staff were threatened.",
+          "timeOfIncident": "Occurred 20 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-003-D",
+          "letter": "D",
+          "title": "Road obstruction",
+          "description": "A fallen tree is blocking one lane of a main road. Vehicles are swerving around it.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-003-E",
+          "letter": "E",
+          "title": "Suspicious package at station",
+          "description": "Caller reports an unattended bag on a train platform. Staff are aware but unsure who it belongs to.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-003-F",
+          "letter": "F",
+          "title": "Ongoing neighbour noise",
+          "description": "Caller says their neighbour plays loud music most evenings. No threats or violence have been reported.",
+          "timeOfIncident": "Ongoing for weeks"
+        }
       ]
     },
     {
-      "id": "final-4",
-      "title": "Final round 4",
+      "id": "PJA-LIVE-004",
+      "title": "Moderate Level",
       "incidents": [
-        { "id": "F4-01", "type": "Child locked in car", "location": "Retail park car park", "risk": "Toddler inside, warm weather", "waitTime": "01:15", "details": "Parent not visible nearby." },
-        { "id": "F4-02", "type": "Online fraud report", "location": "Caller at home", "risk": "Financial loss, no immediate danger", "waitTime": "18:00", "details": "Caller has bank reference number." },
-        { "id": "F4-03", "type": "House fire", "location": "Semi-detached house, Orchard Close", "risk": "Flames visible upstairs", "waitTime": "00:35", "details": "Neighbour unsure if occupants are out." },
-        { "id": "F4-04", "type": "Street drinking", "location": "Town square", "risk": "Low-level disorder", "waitTime": "08:30", "details": "No violence reported." },
-        { "id": "F4-05", "type": "Threats to self", "location": "Caller in vehicle near cliffs", "risk": "Immediate self-harm concern", "waitTime": "02:10", "details": "Caller says goodbye and line remains open." },
-        { "id": "F4-06", "type": "Theft from vehicle", "location": "Station car park", "risk": "Cold report", "waitTime": "11:50", "details": "Window smashed overnight." }
+        {
+          "id": "PJA-LIVE-004-A",
+          "letter": "A",
+          "title": "Robbery just occurred",
+          "description": "Caller says their phone was taken by two males who threatened them. The suspects ran towards the high street.",
+          "timeOfIncident": "Occurred 5 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-004-B",
+          "letter": "B",
+          "title": "Abandoned shopping trolley",
+          "description": "Caller reports a shopping trolley has been left on the pavement outside their home.",
+          "timeOfIncident": "Discovered today"
+        },
+        {
+          "id": "PJA-LIVE-004-C",
+          "letter": "C",
+          "title": "Elderly neighbour not seen",
+          "description": "Caller has not seen their elderly neighbour for two days. Curtains are closed and milk is outside the door.",
+          "timeOfIncident": "Concern raised now"
+        },
+        {
+          "id": "PJA-LIVE-004-D",
+          "letter": "D",
+          "title": "Teenagers knocking on doors",
+          "description": "Caller reports teenagers knocking on doors and running away. No damage has been caused.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-004-E",
+          "letter": "E",
+          "title": "Car collision with no injury",
+          "description": "Two cars have collided at low speed. Drivers are exchanging details but one is becoming angry.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-004-F",
+          "letter": "F",
+          "title": "Historic burglary report",
+          "description": "Caller returned from holiday and found their home had been burgled. The suspect is not present.",
+          "timeOfIncident": "Discovered 1 hour ago"
+        }
       ]
     },
     {
-      "id": "final-5",
-      "title": "Final round 5",
+      "id": "PJA-LIVE-005",
+      "title": "Moderate Level",
       "incidents": [
-        { "id": "F5-01", "type": "Stabbing report", "location": "Underpass near college", "risk": "Person bleeding heavily", "waitTime": "00:25", "details": "Suspect may still be nearby." },
-        { "id": "F5-02", "type": "Abandoned vehicle", "location": "Meadow Way", "risk": "No immediate danger", "waitTime": "20:15", "details": "Vehicle has been parked for three days." },
-        { "id": "F5-03", "type": "Rail trespass", "location": "Trackside near signal box", "risk": "Person walking near live rail", "waitTime": "01:00", "details": "Caller is station staff." },
-        { "id": "F5-04", "type": "Neighbour dispute", "location": "Hawthorn Court", "risk": "Verbal argument only", "waitTime": "09:05", "details": "Caller says this is ongoing." },
-        { "id": "F5-05", "type": "Sick infant", "location": "Flat 6, Roman House", "risk": "Baby not feeding and very drowsy", "waitTime": "02:25", "details": "Parent is distressed." },
-        { "id": "F5-06", "type": "Suspicious package", "location": "Council office reception", "risk": "Unattended bag with wires visible", "waitTime": "03:15", "details": "Reception area still occupied." }
+        {
+          "id": "PJA-LIVE-005-A",
+          "letter": "A",
+          "title": "Suspected drink driver",
+          "description": "Caller reports a vehicle swerving across lanes. The driver appears unable to control the car.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-005-B",
+          "letter": "B",
+          "title": "Ex-partner sending repeated texts",
+          "description": "Caller says their ex-partner has sent 30 unwanted messages today. No direct threats have been made.",
+          "timeOfIncident": "Happening today"
+        },
+        {
+          "id": "PJA-LIVE-005-C",
+          "letter": "C",
+          "title": "Theft of parcel",
+          "description": "Caller reports a parcel was stolen from outside their front door.",
+          "timeOfIncident": "Occurred yesterday"
+        },
+        {
+          "id": "PJA-LIVE-005-D",
+          "letter": "D",
+          "title": "Fight has ended",
+          "description": "Caller reports a fight outside a pub has now ended. One person has a cut lip but both parties have left.",
+          "timeOfIncident": "Occurred 15 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-005-E",
+          "letter": "E",
+          "title": "Child crying in street",
+          "description": "Caller reports a young child alone in the street crying and unable to explain where they live.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-005-F",
+          "letter": "F",
+          "title": "Damage to wing mirror",
+          "description": "Caller found their car wing mirror damaged and believes it happened overnight.",
+          "timeOfIncident": "Occurred overnight"
+        }
       ]
     },
     {
-      "id": "final-6",
-      "title": "Final round 6",
+      "id": "PJA-LIVE-006",
+      "title": "Moderate Level",
       "incidents": [
-        { "id": "F6-01", "type": "Violent disorder", "location": "Outside stadium gate C", "risk": "Large group fighting", "waitTime": "01:50", "details": "Stewards requesting urgent support." },
-        { "id": "F6-02", "type": "Flooding", "location": "Basement flat, Waverley Road", "risk": "Water rising near electrics", "waitTime": "04:05", "details": "Resident unable to isolate power." },
-        { "id": "F6-03", "type": "Bike theft", "location": "University campus", "risk": "Suspect left five minutes ago", "waitTime": "07:10", "details": "Security has CCTV." },
-        { "id": "F6-04", "type": "Cardiac symptoms", "location": "Gym reception", "risk": "Chest pain and sweating", "waitTime": "00:55", "details": "Staff using first aid room." },
-        { "id": "F6-05", "type": "Loose livestock", "location": "B-road near farm entrance", "risk": "Animals on carriageway", "waitTime": "05:30", "details": "Traffic braking suddenly." },
-        { "id": "F6-06", "type": "Historical assault report", "location": "Caller at workplace", "risk": "Suspect not present", "waitTime": "17:45", "details": "Caller wants to report incident from last week." }
+        {
+          "id": "PJA-LIVE-006-A",
+          "letter": "A",
+          "title": "Woman followed from bus stop",
+          "description": "Caller says a man followed her from the bus stop and is now waiting outside her building.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-006-B",
+          "letter": "B",
+          "title": "Dispute over taxi fare",
+          "description": "Taxi driver reports a passenger refusing to pay. The passenger is calm but will not leave the vehicle.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-006-C",
+          "letter": "C",
+          "title": "Shed broken into",
+          "description": "Caller reports their shed was broken into and gardening tools were stolen.",
+          "timeOfIncident": "Occurred overnight"
+        },
+        {
+          "id": "PJA-LIVE-006-D",
+          "letter": "D",
+          "title": "Group fighting with bottles",
+          "description": "Caller reports several people fighting outside a bar. Bottles are being thrown.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-006-E",
+          "letter": "E",
+          "title": "Fraudulent bank transaction",
+          "description": "Caller has noticed an unknown transaction on their bank account and believes it is fraud.",
+          "timeOfIncident": "Discovered today"
+        },
+        {
+          "id": "PJA-LIVE-006-F",
+          "letter": "F",
+          "title": "Car alarm sounding",
+          "description": "Caller reports a car alarm has been sounding for 20 minutes. No one has been seen near the vehicle.",
+          "timeOfIncident": "Happening now"
+        }
       ]
     },
     {
-      "id": "final-7",
-      "title": "Final round 7",
+      "id": "PJA-LIVE-007",
+      "title": "Moderate to Challenging",
       "incidents": [
-        { "id": "F7-01", "type": "Smoke in block", "location": "High-rise corridor, floor 9", "risk": "Smoke spreading, residents confused", "waitTime": "01:10", "details": "Caller reports alarm sounding." },
-        { "id": "F7-02", "type": "Public order", "location": "Taxi rank", "risk": "Argument escalating", "waitTime": "06:25", "details": "No weapons seen." },
-        { "id": "F7-03", "type": "Elderly fall", "location": "Bungalow, Ash Close", "risk": "Person on floor, possible hip injury", "waitTime": "04:40", "details": "Carer cannot lift them." },
-        { "id": "F7-04", "type": "Vehicle pursuit report", "location": "A12 eastbound", "risk": "Car driving wrong side of road", "waitTime": "00:40", "details": "Multiple callers reporting near misses." },
-        { "id": "F7-05", "type": "Criminal damage", "location": "Community centre", "risk": "Suspects have left", "waitTime": "13:00", "details": "Windows smashed." },
-        { "id": "F7-06", "type": "Animal trapped", "location": "Drain near park", "risk": "No human danger", "waitTime": "09:55", "details": "Caller reports distressed cat." }
+        {
+          "id": "PJA-LIVE-007-A",
+          "letter": "A",
+          "title": "Breach of restraining order",
+          "description": "Caller says their ex-partner, who is subject to a restraining order, is outside their address shouting.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-007-B",
+          "letter": "B",
+          "title": "Attempted theft from shop",
+          "description": "Staff challenged a suspect who tried to steal items. The suspect left without the goods.",
+          "timeOfIncident": "Occurred 10 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-007-C",
+          "letter": "C",
+          "title": "Missing teenager",
+          "description": "Parent reports their 15-year-old has not returned home and has missed curfew. This has happened before.",
+          "timeOfIncident": "Last seen 3 hours ago"
+        },
+        {
+          "id": "PJA-LIVE-007-D",
+          "letter": "D",
+          "title": "Motorbike speeding through estate",
+          "description": "Caller reports a motorbike repeatedly riding at speed through a residential estate.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-007-E",
+          "letter": "E",
+          "title": "Wallet stolen in cafe",
+          "description": "Caller reports their wallet was taken from their bag while they were in a cafe.",
+          "timeOfIncident": "Occurred 2 hours ago"
+        },
+        {
+          "id": "PJA-LIVE-007-F",
+          "letter": "F",
+          "title": "Neighbour threatening to damage car",
+          "description": "Caller says their neighbour has threatened to smash their car window during an argument.",
+          "timeOfIncident": "Happening now"
+        }
       ]
     },
     {
-      "id": "final-8",
-      "title": "Final round 8",
+      "id": "PJA-LIVE-008",
+      "title": "Moderate to Challenging",
       "incidents": [
-        { "id": "F8-01", "type": "Abduction concern", "location": "Outside primary school", "risk": "Child pulled toward van", "waitTime": "00:35", "details": "Caller has partial registration." },
-        { "id": "F8-02", "type": "Fireworks nuisance", "location": "Playing fields", "risk": "Youths setting off fireworks", "waitTime": "07:35", "details": "No injuries reported." },
-        { "id": "F8-03", "type": "Chemical spill", "location": "Warehouse loading bay", "risk": "Staff coughing, unknown substance", "waitTime": "02:00", "details": "Area not fully evacuated." },
-        { "id": "F8-04", "type": "Trespass", "location": "Empty building site", "risk": "Youths climbing scaffolding", "waitTime": "04:15", "details": "Fall risk in dark conditions." },
-        { "id": "F8-05", "type": "Lost phone", "location": "Bus route 42", "risk": "No immediate risk", "waitTime": "15:05", "details": "Caller tracking phone location." },
-        { "id": "F8-06", "type": "Agitated patient", "location": "Clinic waiting room", "risk": "Threatening staff, throwing chairs", "waitTime": "03:05", "details": "Patients still in waiting area." }
+        {
+          "id": "PJA-LIVE-008-A",
+          "letter": "A",
+          "title": "Caller trapped in bathroom",
+          "description": "Caller says their partner is outside the bathroom door shouting threats and refusing to let them leave.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-008-B",
+          "letter": "B",
+          "title": "Historic criminal damage",
+          "description": "Caller reports their front window was cracked overnight. No suspect has been seen.",
+          "timeOfIncident": "Occurred overnight"
+        },
+        {
+          "id": "PJA-LIVE-008-C",
+          "letter": "C",
+          "title": "Suspicious male near school gates",
+          "description": "Caller reports a male standing near school gates watching children. No direct approach has been seen.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-008-D",
+          "letter": "D",
+          "title": "Person collapsed in street",
+          "description": "Caller reports a person has collapsed on the pavement. They are breathing but not responding clearly.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-008-E",
+          "letter": "E",
+          "title": "Car broken into",
+          "description": "Caller reports their car window has been smashed and items taken.",
+          "timeOfIncident": "Discovered 30 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-008-F",
+          "letter": "F",
+          "title": "Ongoing barking dog complaint",
+          "description": "Caller reports a dog has been barking continuously next door. No welfare concerns have been raised.",
+          "timeOfIncident": "Happening now"
+        }
       ]
     },
     {
-      "id": "final-9",
-      "title": "Final round 9",
+      "id": "PJA-LIVE-009",
+      "title": "Moderate to Challenging",
       "incidents": [
-        { "id": "F9-01", "type": "Explosion heard", "location": "Industrial units, Dock Road", "risk": "Smoke column visible", "waitTime": "00:50", "details": "Caller unsure which unit." },
-        { "id": "F9-02", "type": "Shoplifter detained", "location": "Retail store security office", "risk": "Suspect compliant", "waitTime": "08:20", "details": "No violence, staff have goods recovered." },
-        { "id": "F9-03", "type": "Cyclist collision", "location": "Bridge Street", "risk": "Cyclist not moving", "waitTime": "01:30", "details": "Vehicle stopped at scene." },
-        { "id": "F9-04", "type": "Threatening messages", "location": "Caller at friend’s house", "risk": "Ex-partner says they are coming over", "waitTime": "03:45", "details": "History of domestic abuse." },
-        { "id": "F9-05", "type": "Graffiti in progress", "location": "Railway arches", "risk": "No immediate danger", "waitTime": "10:10", "details": "Three youths with spray cans." },
-        { "id": "F9-06", "type": "Power outage", "location": "Care facility", "risk": "Medical equipment affected", "waitTime": "05:05", "details": "Backup power failing in one wing." }
+        {
+          "id": "PJA-LIVE-009-A",
+          "letter": "A",
+          "title": "Man with knife seen in park",
+          "description": "Caller reports seeing a man holding what appears to be a knife in a public park. He is walking near other people.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-009-B",
+          "letter": "B",
+          "title": "Harassment by neighbour",
+          "description": "Caller says their neighbour keeps making rude comments when they pass in the hallway.",
+          "timeOfIncident": "Ongoing for several weeks"
+        },
+        {
+          "id": "PJA-LIVE-009-C",
+          "letter": "C",
+          "title": "Missing elderly person returned home",
+          "description": "Caller says their elderly mother went missing earlier but has now returned home safely.",
+          "timeOfIncident": "Resolved 10 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-009-D",
+          "letter": "D",
+          "title": "Cyclist injured after collision",
+          "description": "Caller reports a cyclist has been hit by a car and is lying in the road.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-009-E",
+          "letter": "E",
+          "title": "Suspected drug dealing",
+          "description": "Caller reports people exchanging small packages in an alleyway. No violence has been seen.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-009-F",
+          "letter": "F",
+          "title": "Dispute over online sale",
+          "description": "Caller bought an item online but says the seller has not sent it.",
+          "timeOfIncident": "Occurred over several days"
+        }
       ]
     },
     {
-      "id": "final-10",
-      "title": "Final round 10",
+      "id": "PJA-LIVE-010",
+      "title": "Challenging but Fair",
       "incidents": [
-        { "id": "F10-01", "type": "Active break-in", "location": "Caller hiding upstairs", "risk": "Intruder heard downstairs", "waitTime": "00:45", "details": "Caller alone and whispering." },
-        { "id": "F10-02", "type": "Hazardous driving", "location": "Ring road south", "risk": "Vehicle swerving into traffic", "waitTime": "02:20", "details": "Caller following at distance." },
-        { "id": "F10-03", "type": "Cold fraud report", "location": "Caller at bank branch", "risk": "No immediate physical danger", "waitTime": "14:30", "details": "Bank has frozen account." },
-        { "id": "F10-04", "type": "School medical emergency", "location": "Sports hall", "risk": "Student collapsed during PE", "waitTime": "01:00", "details": "Teacher says student is breathing but unresponsive." },
-        { "id": "F10-05", "type": "Unlicensed street trader", "location": "Market entrance", "risk": "Low priority enforcement issue", "waitTime": "18:45", "details": "Caller is local business owner." },
-        { "id": "F10-06", "type": "Bridge concern", "location": "Pedestrian bridge over bypass", "risk": "Person over barrier", "waitTime": "00:35", "details": "Caller is trying to keep them talking." }
+        {
+          "id": "PJA-LIVE-010-A",
+          "letter": "A",
+          "title": "Silent emergency call",
+          "description": "Call handler can hear movement and muffled crying, but the caller does not speak. Location information is available.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-010-B",
+          "letter": "B",
+          "title": "Youths damaging bus shelter",
+          "description": "Caller reports four youths kicking panels at a bus shelter. No one is being threatened.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-010-C",
+          "letter": "C",
+          "title": "Historic domestic assault report",
+          "description": "Caller says they were assaulted by their partner two days ago. They are now staying with a friend.",
+          "timeOfIncident": "Occurred 2 days ago"
+        },
+        {
+          "id": "PJA-LIVE-010-D",
+          "letter": "D",
+          "title": "Elderly person confused in shop",
+          "description": "Shop staff report an elderly person appears confused, cannot remember their address and has no phone.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-010-E",
+          "letter": "E",
+          "title": "Lost mobile phone",
+          "description": "Caller left their phone on a bus and wants to report it lost.",
+          "timeOfIncident": "Occurred today"
+        },
+        {
+          "id": "PJA-LIVE-010-F",
+          "letter": "F",
+          "title": "Threats between neighbours",
+          "description": "Caller says their neighbour has threatened to “sort them out” after an argument about noise.",
+          "timeOfIncident": "Occurred 20 minutes ago"
+        }
+      ]
+    },
+    {
+      "id": "PJA-LIVE-011",
+      "title": "Challenging but Fair",
+      "incidents": [
+        {
+          "id": "PJA-LIVE-011-A",
+          "letter": "A",
+          "title": "Suspected burglary with occupant inside",
+          "description": "Caller is upstairs and believes someone has broken into the house downstairs. They can hear movement.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-011-B",
+          "letter": "B",
+          "title": "Shoplifting suspect detained and aggressive",
+          "description": "Store security have detained a suspected shoplifter who is now shouting and trying to leave.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-011-C",
+          "letter": "C",
+          "title": "Historic theft from workplace",
+          "description": "Caller believes money was stolen from their locker at work last week.",
+          "timeOfIncident": "Occurred last week"
+        },
+        {
+          "id": "PJA-LIVE-011-D",
+          "letter": "D",
+          "title": "Concern for suicidal caller",
+          "description": "Caller says they have taken tablets and are alone at home. They are becoming drowsy.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-011-E",
+          "letter": "E",
+          "title": "Road rage incident ended",
+          "description": "Caller says another driver shouted abuse and followed them for a short distance. The other driver has now left.",
+          "timeOfIncident": "Occurred 10 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-011-F",
+          "letter": "F",
+          "title": "Repeated nuisance calls",
+          "description": "Caller reports receiving several silent calls from an unknown number over the past two days.",
+          "timeOfIncident": "Ongoing over 2 days"
+        }
+      ]
+    },
+    {
+      "id": "PJA-LIVE-012",
+      "title": "Challenging but Fair",
+      "incidents": [
+        {
+          "id": "PJA-LIVE-012-A",
+          "letter": "A",
+          "title": "Domestic abuse victim reports suspect has left",
+          "description": "Caller says their partner assaulted them 20 minutes ago and has now left. Caller is injured but safe at a neighbour’s address.",
+          "timeOfIncident": "Occurred 20 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-012-B",
+          "letter": "B",
+          "title": "Group chasing male in street",
+          "description": "Caller reports four males chasing another male down the road. One appears to be carrying a metal pole.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-012-C",
+          "letter": "C",
+          "title": "Missing adult not answering phone",
+          "description": "Caller reports their adult brother has not answered calls today. No known vulnerabilities have been disclosed.",
+          "timeOfIncident": "Last contact yesterday evening"
+        },
+        {
+          "id": "PJA-LIVE-012-D",
+          "letter": "D",
+          "title": "Burglary discovered after work",
+          "description": "Caller returned home to find the front door forced and rooms searched. No one appears to be inside.",
+          "timeOfIncident": "Discovered now"
+        },
+        {
+          "id": "PJA-LIVE-012-E",
+          "letter": "E",
+          "title": "Aggressive beggar outside shop",
+          "description": "Caller reports a male shouting at customers and blocking the shop doorway. No weapon has been seen.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-012-F",
+          "letter": "F",
+          "title": "Child reports parent unconscious",
+          "description": "A 9-year-old caller says their parent is on the floor and will not wake up. The child is alone at home.",
+          "timeOfIncident": "Happening now"
+        }
+      ]
+    },
+    {
+      "id": "PJA-LIVE-013",
+      "title": "Challenging but Fair",
+      "incidents": [
+        {
+          "id": "PJA-LIVE-013-A",
+          "letter": "A",
+          "title": "Caller reports being followed in vehicle",
+          "description": "Caller says a car has been following them for several streets. The caller is alone and frightened.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-013-B",
+          "letter": "B",
+          "title": "Historic theft from supermarket",
+          "description": "Supermarket staff report a person stole items earlier in the day and left before security could stop them.",
+          "timeOfIncident": "Occurred 6 hours ago"
+        },
+        {
+          "id": "PJA-LIVE-013-C",
+          "letter": "C",
+          "title": "Concern for elderly resident",
+          "description": "Caller says their elderly neighbour has not collected their medication delivery, which is unusual.",
+          "timeOfIncident": "Concern raised now"
+        },
+        {
+          "id": "PJA-LIVE-013-D",
+          "letter": "D",
+          "title": "Fight reported but parties separated",
+          "description": "Caller reports two people were fighting in the street, but they have now separated and walked away.",
+          "timeOfIncident": "Occurred 5 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-013-E",
+          "letter": "E",
+          "title": "Man shouting at passing traffic",
+          "description": "Caller reports a man standing near the road shouting at passing vehicles. He is stepping close to the kerb.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-013-F",
+          "letter": "F",
+          "title": "Lost set of keys",
+          "description": "Caller has lost their house keys and wants advice. No theft is alleged.",
+          "timeOfIncident": "Discovered today"
+        }
+      ]
+    },
+    {
+      "id": "PJA-LIVE-014",
+      "title": "Challenging but Fair",
+      "incidents": [
+        {
+          "id": "PJA-LIVE-014-A",
+          "letter": "A",
+          "title": "Caller hears screams from nearby alleyway",
+          "description": "Caller can hear a person screaming for help from a nearby alleyway but cannot see what is happening.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-014-B",
+          "letter": "B",
+          "title": "Fraudulent online purchase",
+          "description": "Caller paid for concert tickets online but has not received them and believes the seller was fake.",
+          "timeOfIncident": "Occurred yesterday"
+        },
+        {
+          "id": "PJA-LIVE-014-C",
+          "letter": "C",
+          "title": "Ex-partner waiting outside workplace",
+          "description": "Caller says their ex-partner is waiting outside their workplace and has refused to leave. No threats have been made today.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-014-D",
+          "letter": "D",
+          "title": "Group blocking shop entrance",
+          "description": "Caller reports a group of youths blocking the entrance to a shop and refusing to move. No threats have been made.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-014-E",
+          "letter": "E",
+          "title": "Vehicle collision with trapped driver",
+          "description": "Caller reports a car has hit a wall and the driver appears unable to get out.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-014-F",
+          "letter": "F",
+          "title": "Damage to garden wall",
+          "description": "Caller reports their garden wall has been damaged. They believe it happened during the night.",
+          "timeOfIncident": "Occurred overnight"
+        }
+      ]
+    },
+    {
+      "id": "PJA-LIVE-015",
+      "title": "Most Challenging",
+      "incidents": [
+        {
+          "id": "PJA-LIVE-015-A",
+          "letter": "A",
+          "title": "Report of possible domestic assault",
+          "description": "Caller says they heard a loud argument next door followed by a woman crying. The property has now gone quiet.",
+          "timeOfIncident": "Happened 10 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-015-B",
+          "letter": "B",
+          "title": "Young child missing in shopping centre",
+          "description": "Caller reports their 5-year-old child has gone missing inside a busy shopping centre. Security are searching but have not found them.",
+          "timeOfIncident": "Last seen 8 minutes ago"
+        },
+        {
+          "id": "PJA-LIVE-015-C",
+          "letter": "C",
+          "title": "Vehicle being driven dangerously near school",
+          "description": "Caller reports a car repeatedly speeding past a school entrance while children are leaving.",
+          "timeOfIncident": "Happening now"
+        },
+        {
+          "id": "PJA-LIVE-015-D",
+          "letter": "D",
+          "title": "Historic assault with minor injury",
+          "description": "Caller says they were pushed during an argument yesterday and have a bruised arm. They are now at home.",
+          "timeOfIncident": "Occurred yesterday"
+        },
+        {
+          "id": "PJA-LIVE-015-E",
+          "letter": "E",
+          "title": "Suspected burglary at empty property",
+          "description": "Caller can see a broken window at a neighbour’s empty property. No one is seen inside.",
+          "timeOfIncident": "Discovered now"
+        },
+        {
+          "id": "PJA-LIVE-015-F",
+          "letter": "F",
+          "title": "Verbal argument at bus stop",
+          "description": "Caller reports two people arguing loudly at a bus stop. No weapons or physical violence have been seen.",
+          "timeOfIncident": "Happening now"
+        }
       ]
     }
   ]
