@@ -160,9 +160,9 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
   {
     id: 1,
     slug: "typing",
-    displayName: "Typing Test",
+    displayName: "Typing Assessment",
     description:
-      "Measures typing speed and accuracy using one practice run and three assessment runs.",
+      "Measures transcription speed and accuracy using one practice run and three scored typing runs.",
     isActive: true,
     order: 1,
     timeLimitSeconds: 60,
@@ -179,8 +179,8 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
   {
     id: 2,
     slug: "situational-judgement",
-    displayName: "Situational Judgement Test",
-    description: "Assesses decision-making through realistic workplace scenarios.",
+    displayName: "Situational Judgement Assessment",
+    description: "Measures behavioural judgement using best/worst responses across realistic workplace scenarios.",
     isActive: true,
     order: 2,
     passingScore: 70,
@@ -194,17 +194,17 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
   {
     id: 3,
     slug: "prioritization",
-    displayName: "Prioritisation Assessment",
+    displayName: "Prioritisation Judgement Assessment",
     description:
-      "Assesses how candidates prioritise operational work and competing incidents.",
+      "Measures risk-aware incident prioritisation using six-incident ranking sets.",
     isActive: true,
     order: 3,
-    passingScore: 70,
+    passingScore: 65,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.prioritization",
-      roundCount: 1,
-      passingScore: 70,
+      roundCount: 15,
+      passingScore: 65,
     },
   },
   {

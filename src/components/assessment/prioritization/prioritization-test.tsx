@@ -1,8 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DragEvent, MouseEvent, PointerEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   ClipboardList,
@@ -15,15 +14,14 @@ import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { closeAssessmentWindow } from '@/lib/assessment-completion';
+import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 
 type Incident = {
   id: string;
-  type: string;
-  location: string;
-  risk: string;
-  waitTime: string;
-  details: string;
+  letter: string;
+  title: string;
+  description: string;
+  timeOfIncident: string;
 };
 
 type PriorityRound = {
@@ -49,6 +47,7 @@ type Phase =
 
 type RoundSnapshot = {
   mode: 'practice' | 'final';
+  roundId: string;
   roundNumber: number;
   order: string[];
 };
@@ -65,35 +64,31 @@ const fallbackContent: PrioritizationContent = {
       incidents: [
         {
           id: 'P-01',
-          type: 'Road traffic collision',
-          location: 'Main road junction',
-          risk: 'Possible trapped person',
-          waitTime: '02:00',
-          details: 'Traffic is moving around the scene.',
+          letter: 'A',
+          title: 'Road traffic collision',
+          description: 'Traffic is moving around the scene.',
+          timeOfIncident: 'Happening now',
         },
         {
           id: 'P-02',
-          type: 'Noise complaint',
-          location: 'Residential block',
-          risk: 'No immediate danger',
-          waitTime: '08:00',
-          details: 'Caller reports shouting and loud music.',
+          letter: 'B',
+          title: 'Noise complaint',
+          description: 'Caller reports shouting and loud music.',
+          timeOfIncident: 'Happening now',
         },
         {
           id: 'P-03',
-          type: 'Missing child',
-          location: 'Shopping centre',
-          risk: 'Young child separated from parent',
-          waitTime: '01:00',
-          details: 'Last seen near main exit.',
+          letter: 'C',
+          title: 'Missing child',
+          description: 'Young child separated from parent near the main exit.',
+          timeOfIncident: 'Happening now',
         },
         {
           id: 'P-04',
-          type: 'Suspicious vehicle',
-          location: 'Library car park',
-          risk: 'Occupants watching staff entrance',
-          waitTime: '05:00',
-          details: 'No weapons seen.',
+          letter: 'D',
+          title: 'Suspicious vehicle',
+          description: 'Occupants watching a staff entrance. No weapons seen.',
+          timeOfIncident: 'Happening now',
         },
       ],
     },
@@ -102,7 +97,6 @@ const fallbackContent: PrioritizationContent = {
 };
 
 export default function PrioritizationTest() {
-  const router = useRouter();
   const [phase, setPhase] = useState<Phase>('landing');
   const [content, setContent] = useState<PrioritizationContent>(fallbackContent);
   const [practiceIndex, setPracticeIndex] = useState(0);
@@ -112,6 +106,8 @@ export default function PrioritizationTest() {
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [pressedIncidentId, setPressedIncidentId] = useState<string | null>(null);
   const [draggingIncidentId, setDraggingIncidentId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const startedAtRef = useRef<string | null>(null);
 
   const activeMode: 'practice' | 'final' =
     phase === 'final-round' || phase === 'submitting' || phase === 'submitted'
@@ -168,9 +164,11 @@ export default function PrioritizationTest() {
 
   const startPractice = useCallback(() => {
     const firstRound = content.practiceRounds[0] ?? fallbackContent.practiceRounds[0];
+    startedAtRef.current = new Date().toISOString();
     setPracticeIndex(0);
     setFinalIndex(0);
     setSnapshots([]);
+    setSubmitError(null);
     setPrioritySlots(Array(firstRound.incidents.length).fill(null));
     setSelectedIncidentId(null);
     setPressedIncidentId(null);
@@ -312,6 +310,7 @@ export default function PrioritizationTest() {
   const completePracticeRound = () => {
     const snapshot: RoundSnapshot = {
       mode: 'practice',
+      roundId: activeRound.id,
       roundNumber: practiceIndex + 1,
       order: placedIncidentIds,
     };
@@ -341,6 +340,7 @@ export default function PrioritizationTest() {
   const completeFinalRound = () => {
     const snapshot: RoundSnapshot = {
       mode: 'final',
+      roundId: activeRound.id,
       roundNumber: finalIndex + 1,
       order: placedIncidentIds,
     };
@@ -363,12 +363,52 @@ export default function PrioritizationTest() {
   useEffect(() => {
     if (phase !== 'submitting') return;
 
-    const timerId = window.setTimeout(() => {
-      setPhase('submitted');
-    }, 2600);
+    let cancelled = false;
 
-    return () => window.clearTimeout(timerId);
-  }, [phase]);
+    const submitAssessment = async () => {
+      const finalRounds = snapshots
+        .filter((snapshot) => snapshot.mode === 'final')
+        .map((snapshot) => ({
+          roundId: snapshot.roundId,
+          order: snapshot.order,
+        }));
+
+      try {
+        const response = await fetch('/api/assessment/prioritization/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rounds: finalRounds,
+            startedAt: startedAtRef.current ?? new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+          }),
+        });
+
+        if (cancelled) return;
+
+        if (response.ok || response.status === 409) {
+          notifyAssessmentCompleted('prioritization');
+          setSubmitError(null);
+        } else {
+          const body = await response.json().catch(() => ({}));
+          setSubmitError(
+            (body as { error?: string }).error ??
+              'Submission failed. Please contact support.'
+          );
+        }
+      } catch {
+        if (!cancelled) setSubmitError('Network error. Please contact support.');
+      } finally {
+        if (!cancelled) setPhase('submitted');
+      }
+    };
+
+    void submitAssessment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phase, snapshots]);
 
   const renderRound = (mode: 'practice' | 'final') => {
     const isFinal = mode === 'final';
@@ -456,24 +496,16 @@ export default function PrioritizationTest() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="secondary">{incident.id}</Badge>
-                            <p className="font-semibold text-foreground">{incident.type}</p>
+                            <p className="font-semibold text-foreground">{incident.title}</p>
                           </div>
                           <div className="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
                             <p>
-                              <span className="font-medium text-foreground">Location:</span>{' '}
-                              {incident.location}
+                              <span className="font-medium text-foreground">Time:</span>{' '}
+                              {incident.timeOfIncident}
                             </p>
-                            <p>
-                              <span className="font-medium text-foreground">Waiting:</span>{' '}
-                              {incident.waitTime}
-                            </p>
-                            <p>
-                              <span className="font-medium text-foreground">Risk:</span>{' '}
-                              {incident.risk}
-                            </p>
-                            <p>
-                              <span className="font-medium text-foreground">Details:</span>{' '}
-                              {incident.details}
+                            <p className="md:col-span-2">
+                              <span className="font-medium text-foreground">Description:</span>{' '}
+                              {incident.description}
                             </p>
                           </div>
                         </div>
@@ -549,25 +581,17 @@ export default function PrioritizationTest() {
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="secondary">{incident.id}</Badge>
                             <p className="font-semibold text-foreground">
-                              {incident.type}
+                              {incident.title}
                             </p>
                           </div>
                           <div className="mt-2 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
                             <p>
-                              <span className="font-medium text-foreground">Location:</span>{' '}
-                              {incident.location}
+                              <span className="font-medium text-foreground">Time:</span>{' '}
+                              {incident.timeOfIncident}
                             </p>
-                            <p>
-                              <span className="font-medium text-foreground">Waiting:</span>{' '}
-                              {incident.waitTime}
-                            </p>
-                            <p>
-                              <span className="font-medium text-foreground">Risk:</span>{' '}
-                              {incident.risk}
-                            </p>
-                            <p>
-                              <span className="font-medium text-foreground">Details:</span>{' '}
-                              {incident.details}
+                            <p className="md:col-span-2">
+                              <span className="font-medium text-foreground">Description:</span>{' '}
+                              {incident.description}
                             </p>
                           </div>
                         </div>
@@ -602,11 +626,11 @@ export default function PrioritizationTest() {
   return (
     <AssessmentGameShell
       icon={ClipboardList}
-      title="Prioritization Assessment"
+      title="Prioritisation Judgement Assessment"
       eyebrow="CTRL assessment"
       status={
         phase === 'final-round'
-          ? `Final round ${finalIndex + 1}/10`
+          ? `Final round ${finalIndex + 1}/${content.finalRounds.length}`
           : phase === 'practice-round'
             ? `Practice round ${practiceIndex + 1}/3`
             : 'Incident queue'
@@ -618,7 +642,7 @@ export default function PrioritizationTest() {
             <ClipboardList className="h-8 w-8" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
-            Prioritization Assessment
+            Prioritisation Judgement Assessment
           </p>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
             Review incoming incidents and place them into the order you would
@@ -642,11 +666,11 @@ export default function PrioritizationTest() {
           <div className="mt-6 grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <p className="font-medium text-foreground">Practice block</p>
-              <p className="mt-1">3 rounds with 4 incidents in each round.</p>
+              <p className="mt-1">3 rounds with 6 incidents in each round.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <p className="font-medium text-foreground">Final block</p>
-              <p className="mt-1">10 rounds with 6 incidents in each round.</p>
+              <p className="mt-1">15 rounds with 6 incidents in each round.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <p className="font-medium text-foreground">Drag and place</p>
@@ -710,7 +734,7 @@ export default function PrioritizationTest() {
             Final submission block next
           </p>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Take a break before pressing continue. The final block contains 10
+            Take a break before pressing continue. The final block contains 15
             rounds with 6 incidents per round, and no results are shown at the end.
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
@@ -751,7 +775,7 @@ export default function PrioritizationTest() {
             Submitting assessment
           </p>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Please keep this window open while your prioritization assessment is
+            Please keep this window open while your prioritisation assessment is
             prepared for submission.
           </p>
         </div>
@@ -766,10 +790,9 @@ export default function PrioritizationTest() {
             Assessment submitted
           </p>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Thank you. Your assessment has been submitted successfully. Please
-            complete any remaining assessments in My Assessments. If all
-            sections are complete, await further information from the Hiring
-            Manager.
+            {submitError
+              ? submitError
+              : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments or await further information from the Hiring Manager.'}
           </p>
           <Button variant="outline" className="mt-8 h-11 px-6" onClick={closeAssessment}>
             <LogOut className="mr-2 h-4 w-4" />

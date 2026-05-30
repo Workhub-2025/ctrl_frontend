@@ -62,6 +62,7 @@ export type HiringManagerSessionListItem = {
     name: string;
     email?: string;
     status?: string;
+    hasStartedAssessment?: boolean;
     results: HiringManagerAssessmentResult[];
   }>;
 };

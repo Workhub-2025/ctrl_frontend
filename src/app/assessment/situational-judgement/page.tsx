@@ -13,7 +13,7 @@ export default function SituationalJudgementPage() {
 
   return (
     <SecureAssessmentShell
-      assessmentName="Situational Judgement Test"
+      assessmentName="Situational Judgement Assessment"
       timerLabel="In Progress"
       secureModeActive={true}
       warningsCount={0}

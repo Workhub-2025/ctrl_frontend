@@ -8,7 +8,7 @@ export default function PrioritizationPage() {
 
   return (
     <SecureAssessmentShell
-      assessmentName="Prioritization Assessment"
+      assessmentName="Prioritisation Judgement Assessment"
       timerLabel="In Progress"
       secureModeActive={true}
       warningsCount={0}

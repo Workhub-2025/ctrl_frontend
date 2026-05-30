@@ -63,9 +63,9 @@ function ResultsContent() {
 
     const getTestName = () => {
         switch(test) {
-            case 'typing': return 'Typing Test';
+            case 'typing': return 'Typing Assessment';
             case 'call-simulation': return 'Call Simulation';
-            case 'situational-judgement': return 'Situational Judgement Test';
+            case 'situational-judgement': return 'Situational Judgement Assessment';
             default: return 'Assessment';
         }
     }

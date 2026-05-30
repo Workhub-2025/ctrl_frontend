@@ -427,7 +427,7 @@ export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTe
             <Keyboard className="h-8 w-8" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
-            Typing Test
+            Typing Assessment
           </p>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
             Complete one practice run and three scored runs. Your typing level

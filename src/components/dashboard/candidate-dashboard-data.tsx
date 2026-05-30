@@ -13,16 +13,16 @@ import {
 } from "lucide-react";
 
 export const completionLabels: Record<string, string> = {
-  typing: "Typing Test",
+  typing: "Typing Assessment",
   "call-simulation": "Call Simulation",
-  "situational-judgement": "Situational Judgement",
-  prioritization: "Prioritisation Assessment",
+  "situational-judgement": "Situational Judgement Assessment",
+  prioritization: "Prioritisation Judgement Assessment",
 };
 
 export const candidateAssessmentItems = [
   {
     icon: Keyboard,
-    title: "Typing Test",
+    title: "Typing Assessment",
     description:
       "Complete a timed typing exercise designed to assess speed and accuracy.",
     href: "/assessment/typing",
@@ -40,7 +40,7 @@ export const candidateAssessmentItems = [
   },
   {
     icon: ClipboardCheck,
-    title: "Situational Judgement",
+    title: "Situational Judgement Assessment",
     description:
       "Respond to realistic scenarios that assess judgement, prioritisation, and decision-making.",
     href: "/assessment/situational-judgement",
@@ -49,9 +49,9 @@ export const candidateAssessmentItems = [
   },
   {
     icon: ListOrdered,
-    title: "Prioritisation Assessment",
+    title: "Prioritisation Judgement Assessment",
     description:
-      "Rank operational statements by priority to show how you reason through urgent work.",
+      "Rank incident sets from highest to lowest priority to show operational risk judgement.",
     href: "/assessment/prioritization",
     duration: "Untimed",
     status: "Available now",
