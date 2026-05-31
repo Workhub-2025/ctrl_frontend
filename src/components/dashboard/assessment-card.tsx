@@ -20,6 +20,8 @@ type AssessmentCardProps = Readonly<{
   description: string;
   href: string;
   isCompleted?: boolean;
+  isAvailable?: boolean;
+  availableFromLabel?: string;
 }>;
 
 export function AssessmentCard({
@@ -28,6 +30,8 @@ export function AssessmentCard({
   description,
   href,
   isCompleted,
+  isAvailable = true,
+  availableFromLabel,
 }: AssessmentCardProps) {
   const [showPreflight, setShowPreflight] = useState(false);
 
@@ -54,6 +58,10 @@ export function AssessmentCard({
           {isCompleted ? (
             <Button variant="secondary" className="h-11 w-full rounded-xl text-green-600 dark:text-green-500 bg-green-500/10 hover:bg-green-500/20" disabled>
               <CheckCircle2 className="mr-2 h-4 w-4" /> Submitted
+            </Button>
+          ) : !isAvailable ? (
+            <Button variant="secondary" className="h-11 w-full rounded-xl" disabled>
+              {availableFromLabel ? `Opens ${availableFromLabel}` : "Not open yet"}
             </Button>
           ) : (
             <Button onClick={() => setShowPreflight(true)} className="h-11 w-full rounded-xl">

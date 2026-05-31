@@ -12,7 +12,9 @@ export type CandidatePortalAssessment = {
   documentId?: string;
   slug?: string;
   name?: string;
-  status?: "available" | "completed" | string;
+  status?: "available" | "completed" | "not_open" | string;
+  isAvailable?: boolean;
+  availableFrom?: string | null;
   completedAt?: string | null;
 };
 
@@ -25,6 +27,7 @@ export type CandidatePortalApplication = {
   lockedUntil?: string | null;
   usedAt?: string | null;
   completedAt?: string | null;
+  sessionStartsAt?: string | null;
   portalStatus?: CandidatePortalStatus | string;
   completion?: {
     completed?: number;
@@ -37,6 +40,12 @@ export type CandidatePortalApplication = {
     endDate?: string | null;
     startDate?: string | null;
     location?: string | null;
+  } | null;
+  assessmentSession?: {
+    documentId?: string;
+    name?: string;
+    startsAt?: string | null;
+    sessionStatus?: string;
   } | null;
   assessments?: CandidatePortalAssessment[];
 };

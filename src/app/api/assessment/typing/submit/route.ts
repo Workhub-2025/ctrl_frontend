@@ -29,6 +29,7 @@ interface TypingSubmitPayload {
     startedAt: string;
     completedAt: string;
     assessmentId?: string | null;
+    candidateSessionDocumentId?: string | null;
     difficulty?: "Base" | "Intermediate" | "Advanced";
 }
 
@@ -180,7 +181,14 @@ export async function POST(request: Request) {
             );
         }
 
-        const { runs, startedAt, completedAt, assessmentId, difficulty } = validation.data;
+        const {
+            runs,
+            startedAt,
+            completedAt,
+            assessmentId,
+            candidateSessionDocumentId,
+            difficulty,
+        } = validation.data;
 
         // 4. Compute score from assessment runs only (practice excluded)
         const { score, passed, wpm, accuracy, mistakes } = computeScore(runs);
@@ -236,6 +244,7 @@ export async function POST(request: Request) {
                 metrics,
                 rawData: { assessmentType: "typing", runs },
                 ...(assessmentId ? { assessmentDocumentId: assessmentId } : {}),
+                ...(candidateSessionDocumentId ? { candidateSessionDocumentId } : {}),
             } as Record<string, unknown>);
 
         trace.success({ score, passed, wpm, accuracy, mistakes });

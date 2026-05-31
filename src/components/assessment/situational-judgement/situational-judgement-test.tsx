@@ -60,7 +60,11 @@ const fallbackContent: SjtContent = {
   ],
 };
 
-export default function SituationalJudgementTest() {
+export default function SituationalJudgementTest({
+  candidateSessionDocumentId,
+}: {
+  candidateSessionDocumentId?: string | null;
+}) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [content, setContent] = useState<SjtContent>(fallbackContent);
   const [scenarioIndex, setScenarioIndex] = useState(0);
@@ -148,6 +152,7 @@ export default function SituationalJudgementTest() {
             responses,
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
+            candidateSessionDocumentId,
           }),
         });
 
@@ -175,7 +180,7 @@ export default function SituationalJudgementTest() {
     return () => {
       cancelled = true;
     };
-  }, [phase, responses]);
+  }, [candidateSessionDocumentId, phase, responses]);
 
   const renderOption = (option: ScenarioOption) => {
     const isBest = bestOptionId === option.id;

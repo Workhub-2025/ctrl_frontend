@@ -61,6 +61,7 @@ type CandidateApplication = {
   completedCount: number;
   totalCount: number;
   completionPercent: number;
+  sessionStartsAt?: string | null;
   assessments: CandidatePortalAssessment[];
 };
 
@@ -89,6 +90,21 @@ function formatDate(value?: string | null) {
     day: "2-digit",
     month: "short",
     year: "numeric",
+  }).format(date);
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(date);
 }
 
@@ -137,7 +153,7 @@ function mapApplication(
     code: application.candidateCode ?? application.documentId ?? "Access Code linked",
     campaign: application.campaign?.name ?? "Campaign",
     role: application.campaign?.jobRole ?? "Candidate assessment",
-    date: formatDate(application.campaign?.endDate ?? application.expiresAt),
+    date: formatDate(application.sessionStartsAt ?? application.campaign?.endDate ?? application.expiresAt),
     status: mapPortalStatus(application),
     location: application.campaign?.location ?? application.mode ?? "Location to be confirmed",
     mode: formatMode(application.mode),
@@ -148,6 +164,7 @@ function mapApplication(
     completedCount: completed,
     totalCount: total,
     completionPercent,
+    sessionStartsAt: application.sessionStartsAt ?? application.assessmentSession?.startsAt ?? null,
     assessments: application.assessments ?? [],
   };
 }
@@ -194,9 +211,13 @@ function getAssessmentItemsForApplication(application: CandidateApplication) {
       icon: matchedItem?.icon ?? ClipboardCheck,
       title: assessment.name ?? matchedItem?.title ?? "Assessment",
       description:
-        matchedItem?.description ?? "Complete this assigned assessment.",
-      href: matchedItem?.href ?? `/assessment/${slug}`,
+        assessment.status === "not_open"
+          ? `This assessment opens with the session${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : ""}.`
+          : matchedItem?.description ?? "Complete this assigned assessment.",
+      href: `${matchedItem?.href ?? `/assessment/${slug}`}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
       isCompleted: assessment.status === "completed",
+      isAvailable: assessment.isAvailable !== false && assessment.status !== "not_open",
+      availableFromLabel: formatDateTime(assessment.availableFrom),
     };
   });
 }
@@ -474,7 +495,7 @@ export function CandidateDashboardContent() {
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div className="rounded-xl bg-muted/60 p-3 dark:bg-white/[0.03]">
                       <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5" /> Date
+                        <CalendarDays className="h-3.5 w-3.5" /> Session start
                       </div>
                       <p className="text-foreground">{application.date}</p>
                     </div>
@@ -540,7 +561,9 @@ export function CandidateDashboardContent() {
           <p className="text-sm font-medium text-muted-foreground">{currentApplication.role}</p>
           <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
             {currentApplication.status === "Awaiting Assessment"
-              ? "Your account is linked to this campaign. Begin each assigned assessment when you are ready."
+              ? currentApplication.sessionStartsAt && new Date(currentApplication.sessionStartsAt).getTime() > Date.now()
+                ? "Your account is linked to this campaign. You can view it now, and assessments will open when the session starts."
+                : "Your account is linked to this campaign. Begin each assigned assessment when you are ready."
               : "This campaign has concluded. You can review your completion status below."}
           </p>
           <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
@@ -564,7 +587,9 @@ export function CandidateDashboardContent() {
                 <CheckCircle2 className="h-5 w-5 !text-blue-700 dark:!text-blue-400" />
                 <AlertTitle className="text-blue-800 dark:text-blue-300">Awaiting Assessment</AlertTitle>
                 <AlertDescription className="text-blue-700/80 dark:text-blue-400/80">
-                  Your assigned assessments are available. Start each assessment when you are ready and submit all sections for review.
+                  {currentApplication.sessionStartsAt && new Date(currentApplication.sessionStartsAt).getTime() > Date.now()
+                    ? `Your assigned assessments will open at ${formatDateTime(currentApplication.sessionStartsAt)}.`
+                    : "Your assigned assessments are available. Start each assessment when you are ready and submit all sections for review."}
                 </AlertDescription>
               </Alert>
               {currentAssessmentItems.length > 0 ? (
@@ -577,6 +602,8 @@ export function CandidateDashboardContent() {
                       icon={<item.icon className="h-6 w-6" />}
                       href={item.href}
                       isCompleted={item.isCompleted}
+                      isAvailable={item.isAvailable}
+                      availableFromLabel={item.availableFromLabel ?? undefined}
                     />
                   ))}
                 </div>

@@ -15,7 +15,7 @@ type SjtResponse = {
 };
 
 function validatePayload(body: unknown):
-  | { valid: true; responses: SjtResponse[]; startedAt: string; completedAt: string }
+  | { valid: true; responses: SjtResponse[]; startedAt: string; completedAt: string; candidateSessionDocumentId?: string | null }
   | { valid: false; error: string } {
   if (!body || typeof body !== "object") {
     return { valid: false, error: "Request body must be a JSON object" };
@@ -52,6 +52,10 @@ function validatePayload(body: unknown):
     responses: value.responses as SjtResponse[],
     startedAt: value.startedAt,
     completedAt: value.completedAt,
+    candidateSessionDocumentId:
+      typeof value.candidateSessionDocumentId === "string"
+        ? value.candidateSessionDocumentId
+        : null,
   };
 }
 
@@ -104,6 +108,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         startedAt: validation.startedAt,
         completedAt: validation.completedAt,
+        candidateSessionDocumentId: validation.candidateSessionDocumentId,
         rawData: {
           assessmentType: "situational-judgement",
           responses: validation.responses,

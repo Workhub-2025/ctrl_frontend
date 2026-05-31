@@ -18,6 +18,7 @@ import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessme
  */
 interface TypingTestProps {
   enableAutoSave?: boolean;
+  candidateSessionDocumentId?: string | null;
 }
 
 type TypingContentFile = {
@@ -112,7 +113,10 @@ const calculateResult = (
  * 
  * @param {TypingTestProps} props - Component properties including auto-save toggles.
  */
-export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTestProps>) {
+export default function TypingTest({
+  enableAutoSave = false,
+  candidateSessionDocumentId,
+}: Readonly<TypingTestProps>) {
   const router = useRouter();
   const storeRuns = useTypingSessionStore((s) => s.runs);
   const sessionId = useTypingSessionStore((s) => s.sessionId);
@@ -338,6 +342,7 @@ export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTe
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
             assessmentId: assessmentIdRef.current,
+            candidateSessionDocumentId,
             difficulty: configRef.current.difficulty,
           }),
         });
@@ -371,7 +376,7 @@ export default function TypingTest({ enableAutoSave = false }: Readonly<TypingTe
     return () => {
       cancelled = true;
     };
-  }, [phase, results, setSubmissionStatus]);
+  }, [candidateSessionDocumentId, phase, results, setSubmissionStatus]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (phase !== 'running') return;

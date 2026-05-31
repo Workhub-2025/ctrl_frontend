@@ -2,6 +2,7 @@
 
 import { SecureAssessmentShell, SituationalJudgementTest } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
+import { useSearchParams } from 'next/navigation';
 
 /**
  * SituationalJudgementPage
@@ -10,6 +11,8 @@ import { useSecureExit } from '@/hooks/use-secure-exit';
  */
 export default function SituationalJudgementPage() {
   const { handleExit } = useSecureExit();
+  const searchParams = useSearchParams();
+  const candidateSessionDocumentId = searchParams.get('candidateSessionDocumentId');
 
   return (
     <SecureAssessmentShell
@@ -21,7 +24,7 @@ export default function SituationalJudgementPage() {
       showPauseButton={false}
       enableFocusMonitoring={false}
     >
-      <SituationalJudgementTest />
+      <SituationalJudgementTest candidateSessionDocumentId={candidateSessionDocumentId} />
     </SecureAssessmentShell>
   );
 }

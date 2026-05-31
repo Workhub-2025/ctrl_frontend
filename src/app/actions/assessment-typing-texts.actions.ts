@@ -23,7 +23,7 @@ const FALLBACK_SESSION: TypingSessionData = {
  * Falls back to FALLBACK_SESSION if Strapi is unreachable; the TypingTest
  * component has its own static text fallback for that case.
  */
-export async function initTypingSession(): Promise<TypingSessionData> {
+export async function initTypingSession(candidateSessionDocumentId?: string | null): Promise<TypingSessionData> {
     await getActionAuthContext('initTypingSession');
 
     try {
@@ -33,7 +33,7 @@ export async function initTypingSession(): Promise<TypingSessionData> {
         const response = await client.fetch('/assessment/typing/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({}),
+            body: JSON.stringify({ candidateSessionDocumentId }),
         });
 
         if (!response.ok) {

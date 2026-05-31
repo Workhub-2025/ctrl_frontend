@@ -96,7 +96,11 @@ const fallbackContent: PrioritizationContent = {
   finalRounds: [],
 };
 
-export default function PrioritizationTest() {
+export default function PrioritizationTest({
+  candidateSessionDocumentId,
+}: {
+  candidateSessionDocumentId?: string | null;
+}) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [content, setContent] = useState<PrioritizationContent>(fallbackContent);
   const [practiceIndex, setPracticeIndex] = useState(0);
@@ -381,6 +385,7 @@ export default function PrioritizationTest() {
             rounds: finalRounds,
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
+            candidateSessionDocumentId,
           }),
         });
 
@@ -408,7 +413,7 @@ export default function PrioritizationTest() {
     return () => {
       cancelled = true;
     };
-  }, [phase, snapshots]);
+  }, [candidateSessionDocumentId, phase, snapshots]);
 
   const renderRound = (mode: 'practice' | 'final') => {
     const isFinal = mode === 'final';

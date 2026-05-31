@@ -8,6 +8,7 @@ import type { TypingSessionData } from '@/store/typing-session.store';
 
 interface TypingTestClientProps {
   initialSession: TypingSessionData | null;
+  candidateSessionDocumentId?: string | null;
 }
 
 /**
@@ -17,7 +18,10 @@ interface TypingTestClientProps {
  * (texts + config) into useTypingSessionStore on mount. TypingTest and
  * SecureAssessmentShell read from the store directly — no prop-drilling.
  */
-export function TypingTestClient({ initialSession }: Readonly<TypingTestClientProps>) {
+export function TypingTestClient({
+  initialSession,
+  candidateSessionDocumentId,
+}: Readonly<TypingTestClientProps>) {
   const { handleExit } = useSecureExit();
   const setSession = useTypingSessionStore((s) => s.setSession);
 
@@ -38,7 +42,10 @@ export function TypingTestClient({ initialSession }: Readonly<TypingTestClientPr
       showPauseButton={false}
       enableFocusMonitoring={true}
     >
-      <TypingTest enableAutoSave={true} />
+      <TypingTest
+        enableAutoSave={true}
+        candidateSessionDocumentId={candidateSessionDocumentId}
+      />
     </SecureAssessmentShell>
   );
 }
