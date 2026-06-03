@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'be.ctrl-assess.co.uk',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
