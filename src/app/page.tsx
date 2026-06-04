@@ -1,7 +1,7 @@
 "use client";
 
 import { LandingHero } from "@/components/landing/landing-hero";
-import { BrandLogo, BrandMark } from "@/components/brand-logo";
+import { BrandLogo, BrandMark, CtrlText } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -116,22 +116,24 @@ function SectionHeading({
   centered = false,
 }: {
   eyebrow: string;
-  title: string;
-  body: string;
+  title: React.ReactNode;
+  body: React.ReactNode;
   centered?: boolean;
 }) {
   return (
-    <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-2xl"}>
-      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-        {eyebrow}
+    <ScrollReveal y={20}>
+      <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-2xl"}>
+        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+          {eyebrow}
+        </div>
+        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-white">
+          {title}
+        </h2>
+        <p className={cn("mt-6 text-lg leading-relaxed text-slate-400 font-light", centered && "mx-auto")}>
+          {body}
+        </p>
       </div>
-      <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-white">
-        {title}
-      </h2>
-      <p className={cn("mt-6 text-lg leading-relaxed text-slate-400 font-light", centered && "mx-auto")}>
-        {body}
-      </p>
-    </div>
+    </ScrollReveal>
   );
 }
 
@@ -204,36 +206,45 @@ export default function Home() {
     <div className="bg-[#050505] text-slate-50 selection:bg-white/20 font-sans min-h-screen">
       <nav
         ref={navRef}
-        className={cn(
-          "fixed top-0 w-full z-50 transition-all duration-500",
-          scrolled ? "bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 py-4" : "bg-transparent py-6"
-        )}
+        className="fixed top-4 inset-x-0 mx-auto w-full max-w-[1000px] px-4 sm:px-6 z-50 transition-all duration-500"
       >
-        <div className="mx-auto max-w-[1440px] px-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center group">
-            <BrandLogo className="w-28 sm:w-32 transition-opacity group-hover:opacity-80" />
+        <div className={cn(
+          "flex items-center justify-between rounded-full border transition-all duration-500 px-6",
+          scrolled 
+            ? "bg-[#0a0a0a]/90 backdrop-blur-md border-white/10 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]" 
+            : "bg-transparent border-transparent py-4"
+        )}>
+          {/* Logo */}
+          <Link href="/" className="flex items-center group relative z-10">
+            <BrandLogo className="w-24 sm:w-28 transition-opacity group-hover:opacity-80" />
           </Link>
 
-          <div className="hidden lg:flex items-center gap-10 text-sm font-medium">
+          {/* Links (Desktop) */}
+          <div className="hidden lg:flex items-center gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
             {navItems.map((item) => (
               <button
                 key={item.href}
                 onClick={() => scrollToAnchor(item.href.slice(1))}
-                className="text-slate-400 hover:text-white transition-colors"
+                className="text-slate-400 hover:text-white transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-white after:scale-x-0 after:transition-transform hover:after:scale-x-100 after:origin-left"
               >
                 {item.label}
               </button>
             ))}
           </div>
 
-          <div className="hidden lg:flex items-center gap-6">
-            <Button asChild className="rounded-full bg-white text-black hover:bg-slate-200 h-10 px-6 font-medium transition-all">
+          {/* CTA (Desktop) */}
+          <div className="hidden lg:flex items-center gap-6 relative z-10">
+            <Link href="/auth/login" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+              Log in
+            </Link>
+            <Button asChild className="rounded-full bg-white text-black hover:bg-slate-200 h-9 px-5 font-medium transition-all text-sm">
               <Link href="/auth/register">Get Started</Link>
             </Button>
           </div>
 
+          {/* Mobile Menu Toggle */}
           <button
-            className="lg:hidden text-slate-400 hover:text-white transition-colors"
+            className="lg:hidden text-slate-400 hover:text-white transition-colors relative z-10"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -244,26 +255,32 @@ export default function Home() {
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-full left-0 w-full bg-[#050505]/95 backdrop-blur-2xl border-b border-white/5 p-6 flex flex-col gap-6 lg:hidden shadow-2xl"
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-[calc(100%+16px)] left-4 right-4 sm:left-6 sm:right-6 bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 flex flex-col gap-6 lg:hidden shadow-2xl origin-top"
             >
-              {navItems.map((item) => (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    scrollToAnchor(item.href.slice(1));
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="text-left text-lg font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  {item.label}
-                </button>
-              ))}
-              <hr className="border-white/10 my-2" />
               <div className="flex flex-col gap-4">
-                <Button asChild className="rounded-full bg-white text-black w-full h-12 text-base font-medium mt-2">
+                {navItems.map((item) => (
+                  <button
+                    key={item.href}
+                    onClick={() => {
+                      scrollToAnchor(item.href.slice(1));
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="text-left text-lg font-medium text-slate-300 hover:text-white transition-colors"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <hr className="border-white/10 my-1" />
+              <div className="flex flex-col gap-3">
+                <Link href="/auth/login" className="w-full text-center text-base font-medium text-slate-300 hover:text-white transition-colors py-2">
+                  Log in
+                </Link>
+                <Button asChild className="rounded-full bg-white text-black w-full h-12 text-base font-medium">
                   <Link href="/auth/register">Get Started</Link>
                 </Button>
               </div>
@@ -283,7 +300,7 @@ export default function Home() {
                <SectionHeading
                   eyebrow="Core Engine"
                   title="Beyond standard testing."
-                  body="We don't do typing speed tests disguised as dispatcher exams. CTRL simulates the real cognitive load and pressure of a live control room."
+                  body={<>We don't do typing speed tests disguised as dispatcher exams. <CtrlText /> simulates the real cognitive load and pressure of a live control room.</>}
                   centered
                 />
             </div>
@@ -291,11 +308,11 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
               {/* Card 1 - Full Width */}
               <ScrollReveal delay={0.1} className="md:col-span-2 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a0a0a] p-8 md:p-12 group">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
                   <div className="flex-1">
-                    <div className="h-12 w-12 rounded-full border border-emerald-500/20 bg-emerald-500/10 flex items-center justify-center mb-6">
-                      <PhoneCall className="h-5 w-5 text-emerald-400" />
+                    <div className="h-12 w-12 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center mb-6">
+                      <PhoneCall className="h-5 w-5 text-cyan-400" />
                     </div>
                     <h3 className="text-2xl md:text-3xl font-medium text-white mb-4">Realistic Call Simulation</h3>
                     <p className="text-slate-400 font-light leading-relaxed">
@@ -309,7 +326,7 @@ export default function Home() {
                        {[24, 42, 28, 55, 32, 48, 20, 45, 30, 50, 22, 38].map((peak, i) => (
                          <motion.div
                            key={i}
-                           className="w-1.5 bg-emerald-500/50 rounded-full"
+                           className="w-1.5 bg-cyan-500/50 rounded-full"
                            animate={{ height: ["12px", `${peak}px`, "12px"] }}
                            transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.1, ease: "easeInOut" }}
                          />
@@ -385,18 +402,29 @@ export default function Home() {
                  style={{ height: hiringHeight, transformOrigin: "top" }} 
               />
               
-              <div className="space-y-16 md:space-y-32 relative z-10">
+              <div className="space-y-24 md:space-y-32 relative z-10">
                 {hiringWorkflowSteps.map((step, i) => (
                   <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
-                    <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right" : "md:col-start-3 md:text-left")}>
+                    <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
                         <div className="text-xs font-mono text-slate-500 mb-3">{step.step} {"//"}</div>
                         <h4 className="text-2xl md:text-3xl font-medium text-white mb-3">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
-                    <div className="absolute left-[15px] md:static md:col-start-2 top-0 md:top-auto w-12 h-12 rounded-full border border-white/20 bg-[#0a0a0a] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                    <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-white/20 bg-[#0a0a0a] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
                       <step.icon className="h-5 w-5 text-white/80" />
+                    </div>
+                    <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
+                      <ScrollReveal delay={0.1}>
+                        <div className="w-full aspect-video rounded-xl border border-white/10 bg-white/5 flex flex-col items-center justify-center text-slate-500 text-sm overflow-hidden relative group">
+                           <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
+                           <div className="h-10 w-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center mb-3">
+                             <div className="w-0 h-0 border-y-[6px] border-y-transparent border-l-[10px] border-l-white/50 ml-1" />
+                           </div>
+                           <span>Media Placeholder</span>
+                        </div>
+                      </ScrollReveal>
                     </div>
                   </div>
                 ))}
@@ -419,22 +447,33 @@ export default function Home() {
             <div className="relative max-w-5xl mx-auto py-8">
               <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-white/5 md:-translate-x-1/2" />
               <motion.div 
-                 className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-emerald-500 to-emerald-400 md:-translate-x-1/2 shadow-[0_0_15px_rgba(16,185,129,0.6)]"
+                 className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-cyan-500 to-cyan-400 md:-translate-x-1/2 shadow-[0_0_15px_rgba(6,182,212,0.6)]"
                  style={{ height: candidateHeight, transformOrigin: "top" }} 
               />
               
-              <div className="space-y-16 md:space-y-32 relative z-10">
+              <div className="space-y-24 md:space-y-32 relative z-10">
                 {candidateWorkflowSteps.map((step, i) => (
                   <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
-                    <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right" : "md:col-start-3 md:text-left")}>
+                    <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
-                        <div className="text-xs font-mono text-emerald-500/60 mb-3">{step.step} {"//"}</div>
+                        <div className="text-xs font-mono text-cyan-500/60 mb-3">{step.step} {"//"}</div>
                         <h4 className="text-2xl md:text-3xl font-medium text-white mb-3">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
-                    <div className="absolute left-[15px] md:static md:col-start-2 top-0 md:top-auto w-12 h-12 rounded-full border border-emerald-500/30 bg-[#021f15] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-                      <step.icon className="h-5 w-5 text-emerald-400" />
+                    <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-cyan-500/30 bg-[#041d24] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
+                      <step.icon className="h-5 w-5 text-cyan-400" />
+                    </div>
+                    <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
+                      <ScrollReveal delay={0.1}>
+                        <div className="w-full aspect-video rounded-xl border border-white/10 bg-white/5 flex flex-col items-center justify-center text-slate-500 text-sm overflow-hidden relative group">
+                           <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/[0.02] to-transparent pointer-events-none" />
+                           <div className="h-10 w-10 rounded-full border border-cyan-500/20 bg-cyan-500/5 flex items-center justify-center mb-3">
+                             <div className="w-0 h-0 border-y-[6px] border-y-transparent border-l-[10px] border-l-cyan-500/50 ml-1" />
+                           </div>
+                           <span>Media Placeholder</span>
+                        </div>
+                      </ScrollReveal>
                     </div>
                   </div>
                 ))}
@@ -446,16 +485,14 @@ export default function Home() {
 
           {/* Platform Overview Video/Slideshow Section */}
           <section id="solutions" className="w-full">
-            <ScrollReveal>
-              <div className="mb-16">
-                <SectionHeading
-                  eyebrow="Platform Overview"
-                  title="See CTRL in action."
-                  body="Watch how our platform empowers hiring managers with data and gives candidates a fair, realistic evaluation."
-                  centered
-                />
-              </div>
-            </ScrollReveal>
+            <div className="mb-16">
+              <SectionHeading
+                eyebrow="Platform Overview"
+                title={<>See <CtrlText className="h-[0.9em]" /> in action.</>}
+                body="Watch how our platform empowers hiring managers with data and gives candidates a fair, realistic evaluation."
+                centered
+              />
+            </div>
             
             <ScrollReveal delay={0.2}>
               <div className="relative mx-auto max-w-5xl aspect-video rounded-[2rem] border border-white/10 bg-[#080808] overflow-hidden shadow-2xl group flex items-center justify-center">
@@ -491,8 +528,7 @@ export default function Home() {
              {/* Animated Data Streams Background */}
              <AnimatedBackground />
              
-             {/* Soft fades to blend with the section above and the footer below */}
-             <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#050505] to-transparent pointer-events-none z-10" />
+             {/* Soft fade to blend with the footer below */}
              <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#020202] to-transparent pointer-events-none z-10" />
           </div>
 
@@ -520,38 +556,40 @@ export default function Home() {
         </section>
 
         <footer className="border-t border-white/5 bg-[#020202] pt-24 pb-12 relative z-20">
-          <div className="mx-auto max-w-[1440px] px-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
-              <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
-                <BrandLogo layout="stacked" className="self-start" />
-                <p className="text-slate-500 text-sm leading-relaxed font-light mt-2">
-                  Empowering teams to make objective, data-driven hiring decisions with confidence and speed.
-                </p>
+          <ScrollReveal y={20}>
+            <div className="mx-auto max-w-[1440px] px-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
+                <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
+                  <BrandLogo layout="stacked" className="self-start" />
+                  <p className="text-slate-500 text-sm leading-relaxed font-light mt-2">
+                    Empowering teams to make objective, data-driven hiring decisions with confidence and speed.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-5">
+                  <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Explore</h4>
+                  {navItems.map(item => (
+                    <button key={item.href} onClick={() => scrollToAnchor(item.href.slice(1))} className="text-left text-slate-400 hover:text-white text-sm transition-colors font-light">{item.label}</button>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-5">
+                  <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Access</h4>
+                  <Link href="/auth/register" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Get Started</Link>
+                  <Link href="/privacy-policy" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Privacy Policy</Link>
+                  <Link href="/terms-conditions" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Terms</Link>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-5">
-                <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Explore</h4>
-                {navItems.map(item => (
-                  <button key={item.href} onClick={() => scrollToAnchor(item.href.slice(1))} className="text-left text-slate-400 hover:text-white text-sm transition-colors font-light">{item.label}</button>
-                ))}
-              </div>
-
-              <div className="flex flex-col gap-5">
-                <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Access</h4>
-                <Link href="/auth/register" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Get Started</Link>
-                <Link href="/privacy-policy" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Privacy Policy</Link>
-                <Link href="/terms-conditions" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Terms</Link>
+              <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p className="text-sm text-slate-500 font-light">© {new Date().getFullYear()} <CtrlText className="h-[0.8em]" /> Recruitment. All rights reserved.</p>
+                <div className="flex items-center gap-2 text-sm text-slate-500 font-light">
+                  <span className="h-2 w-2 rounded-full bg-slate-600" />
+                  Built for high-stakes recruitment
+                </div>
               </div>
             </div>
-
-            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-sm text-slate-500 font-light">© {new Date().getFullYear()} CTRL Recruitment. All rights reserved.</p>
-              <div className="flex items-center gap-2 text-sm text-slate-500 font-light">
-                <span className="h-2 w-2 rounded-full bg-slate-600" />
-                Built for high-stakes recruitment
-              </div>
-            </div>
-          </div>
+          </ScrollReveal>
         </footer>
       </main>
     </div>

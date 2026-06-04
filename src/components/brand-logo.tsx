@@ -26,9 +26,19 @@ export function BrandMark({
         // 1. We use `scale-125` to zoom the image slightly to trim the built-in padding.
         // 2. If it still looks off-center, change `translate-x-0` or `translate-y-0` to nudge it! 
         //    (e.g., `-translate-x-1` moves it left, `translate-y-2` moves it down)
-        className="h-full w-full object-contain object-center mix-blend-screen scale-125 -translate-x-1 translate-y-0.5 pointer-events-none"
+        className="h-full w-full object-contain object-center mix-blend-screen scale-125 -translate-x-1 translate-y-0.5 pointer-events-none hue-rotate-[60deg]"
       />
     </div>
+  );
+}
+
+export function CtrlText({ className }: { className?: string }) {
+  return (
+    <img
+      src="https://see.fontimg.com/api/rf5/9MqPB/YWZmYmE0ZjMwZGU1NDI0OTg1NTFiYWM2YzcwNzM4NzUub3Rm/Q1RSTA/tabel-sans.png?r=fs&h=89&w=1000&fg=FFFFFF&bg=000000&tb=1&s=89"
+      alt="CTRL"
+      className={cn("inline-block object-contain mix-blend-screen h-[1em] translate-y-[-0.05em]", className)}
+    />
   );
 }
 
