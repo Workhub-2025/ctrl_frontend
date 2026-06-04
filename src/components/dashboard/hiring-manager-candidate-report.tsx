@@ -15,6 +15,7 @@ import {
 
 type CandidateReportProps = {
   candidateId: string;
+  campaignId?: string;
 };
 
 type CandidateReportData = {
@@ -157,7 +158,7 @@ function getAssessmentStatus(row: AssessmentReportRow) {
   };
 }
 
-export function HiringManagerCandidateReport({ candidateId }: CandidateReportProps) {
+export function HiringManagerCandidateReport({ candidateId, campaignId }: CandidateReportProps) {
   const [reportData, setReportData] = useState<CandidateReportData | null>(null);
   const [decision, setDecision] = useState<"Move forward" | "Reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -170,13 +171,11 @@ export function HiringManagerCandidateReport({ candidateId }: CandidateReportPro
       setIsLoading(true);
       setError(null);
       try {
-        const campaignList = await HiringManagerPortalClientService.getCampaigns();
-        const details = await Promise.all(
-          campaignList.map((campaign) =>
-            HiringManagerPortalClientService.getCampaignDetail(campaign.id)
-          )
-        );
-        const campaigns = details.filter(Boolean) as HiringManagerCampaignDetail[];
+        const campaigns = campaignId
+          ? [
+              await HiringManagerPortalClientService.getCampaignDetail(campaignId),
+            ].filter(Boolean) as HiringManagerCampaignDetail[]
+          : await HiringManagerPortalClientService.getCampaignDetails();
         const matched = campaigns
           .flatMap((campaign) =>
             campaign.joinedCandidates.map((candidate) => ({ candidate, campaign }))
@@ -207,7 +206,7 @@ export function HiringManagerCandidateReport({ candidateId }: CandidateReportPro
     return () => {
       cancelled = true;
     };
-  }, [candidateId]);
+  }, [candidateId, campaignId]);
 
   const rows = useMemo(() => {
     if (!reportData) return [];

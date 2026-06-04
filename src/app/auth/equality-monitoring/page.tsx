@@ -6,12 +6,11 @@ import { useAuth } from '@/hooks/use-auth';
 import EqualityMonitoringForm from '@/components/auth/equality-monitoring-form';
 import { EqualityMonitoringData } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { updateCurrentUserAction } from '@/app/actions/users.actions';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 
 // Component that uses useSearchParams
 function EqualityMonitoringContent() {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, updateProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,7 +20,7 @@ function EqualityMonitoringContent() {
   useEffect(() => {
     if (!authLoading) {
       if (!isAuthenticated) {
-        router.push('/auth/login');
+        router.push('/auth/register');
         return;
       }
       
@@ -38,8 +37,9 @@ function EqualityMonitoringContent() {
         return;
       }
       
-      // Check if already completed
-      if (user?.equalityMonitoring) {
+      // Check if already completed (by checking if the object exists and has properties)
+      const hasCompleted = !!user?.equalityMonitoring && Object.keys(user.equalityMonitoring).length > 0;
+      if (hasCompleted) {
         router.push('/candidate-dashboard/my-assessments');
         return;
       }
@@ -54,18 +54,10 @@ function EqualityMonitoringContent() {
       
       console.log('💾 Saving equality monitoring data:', data);
       
-      // Use the server action updateEqualityMonitoring
-      const result = await updateCurrentUserAction(user.id, { equalityMonitoring: {
-        ...data,
-        completed: true,
-        completedAt: new Date().toISOString()
-      }});
-
-      if (!result.success) {
-        throw new Error(result.error || 'Could not save equality monitoring');
-      }
+      // Use updateProfile so the Zustand store and session stay in sync
+      const updatedUser = await updateProfile({ equalityMonitoring: data });
       
-      console.log('✅ Equality monitoring data saved successfully:', result.data);
+      console.log('✅ Equality monitoring data saved successfully:', updatedUser);
       
       toast({
         title: 'Thank you!',

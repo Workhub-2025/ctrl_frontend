@@ -309,7 +309,7 @@ export function HiringManagerCampaignDetailView({
                       className="h-8 shrink-0 rounded-md border-white/10 bg-[#08101d] px-2.5 text-xs text-slate-100 hover:bg-white/[0.05]"
                       asChild
                     >
-                      <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/`}>
+                      <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}`}>
                         Candidate view
                         <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                       </Link>

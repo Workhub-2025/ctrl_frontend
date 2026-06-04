@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
-import { getCurrentUserAction } from '@/app/actions/users.actions';
+import { getCurrentUserAction, updateCurrentUserAction } from '@/app/actions/users.actions';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -66,7 +66,7 @@ export function useAuth() {
         }
 
         // For candidates, check if equality monitoring is completed
-        return userData.equalityMonitoring?.completed === true;
+        return !!userData.equalityMonitoring && Object.keys(userData.equalityMonitoring).length > 0;
     };
 
     // Helper function to route user after login based on role and profile
@@ -95,7 +95,7 @@ export function useAuth() {
         console.log('📋 Candidate user detected, checking equality monitoring state:', userData?.equalityMonitoring);
 
         // Candidate users: check if they want to complete optional form
-        const hasCompletedEqualityMonitoring = userData?.equalityMonitoring?.completed === true;
+        const hasCompletedEqualityMonitoring = !!userData?.equalityMonitoring && Object.keys(userData.equalityMonitoring).length > 0;
 
         if (hasCompletedEqualityMonitoring) {
             console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard/my-assessments');
@@ -205,7 +205,6 @@ export function useAuth() {
             }
 
             const registeredUser = result?.data?.user;
-            const redirectTo = result?.data?.redirectTo || routeForRole(registeredUser?.role);
 
             if (!registeredUser) {
                 throw new Error('Registration failed - invalid response from server');
@@ -213,7 +212,7 @@ export function useAuth() {
 
             setUserProfile(registeredUser as IUser);
             await loadSession();
-            router.push(redirectTo);
+            routeAfterLogin(registeredUser);
 
             return { success: true, user: registeredUser };
         } catch (error: any) {
@@ -241,20 +240,18 @@ export function useAuth() {
 
     const updateProfile = async (updateData: Partial<IUser>) => {
         try {
-            const response = await fetch('/api/user/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(updateData),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Profile update failed');
+            const userId = user?.id || session?.user?.id;
+            if (!userId) {
+                throw new Error('User not authenticated');
             }
 
-            const updatedUser = await response.json();
+            const response = await updateCurrentUserAction(userId, updateData);
+
+            if (!response.success || !response.data) {
+                throw new Error(response.error || 'Profile update failed');
+            }
+
+            const updatedUser = response.data;
             // Sync updated profile into Zustand store
             setUserProfile(updatedUser as IUser);
             return updatedUser;

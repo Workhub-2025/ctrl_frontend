@@ -20,38 +20,84 @@ type CandidateRow = {
   status?: string;
   campaignId: string;
   campaignName: string;
-  sessionName?: string;
+  sessionNames: string[];
   completedAssessments: number;
   totalAssessments: number;
   completion: number;
 };
 
 function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): CandidateRow[] {
-  return campaigns.flatMap((campaign) =>
-    campaign.joinedCandidates.map((candidate) => {
-      const totalAssessments = Math.max(
+  const rows = new Map<string, CandidateRow & {
+    resultIds: Set<string>;
+    completedResultIds: Set<string>;
+    sessionNameSet: Set<string>;
+  }>();
+
+  for (const campaign of campaigns) {
+    for (const candidate of campaign.joinedCandidates) {
+      const campaignId = candidate.campaignId ?? campaign.id;
+      const candidateKey = candidate.email?.toLowerCase() || candidate.id;
+      const rowKey = `${campaignId}:${candidateKey}`;
+      const existing = rows.get(rowKey);
+      const results = candidate.results ?? [];
+      const assessmentCount = Math.max(
         candidate.assessmentStack?.length ?? campaign.assessmentStack.length,
-        candidate.results?.length ?? 0,
+        results.length,
         1
       );
-      const completedAssessments = candidate.results?.filter(
-        (result) => result.completedAt || result.numericScore !== null
-      ).length ?? 0;
-
-      return {
+      const row = existing ?? {
         id: candidate.id,
         name: candidate.name,
         email: candidate.email,
         status: candidate.status,
-        campaignId: candidate.campaignId ?? campaign.id,
+        campaignId,
         campaignName: candidate.campaignName ?? campaign.name,
-        sessionName: candidate.sessionName,
-        completedAssessments,
-        totalAssessments,
-        completion: Math.round((completedAssessments / totalAssessments) * 100),
+        sessionNames: [],
+        completedAssessments: 0,
+        totalAssessments: assessmentCount,
+        completion: 0,
+        resultIds: new Set<string>(),
+        completedResultIds: new Set<string>(),
+        sessionNameSet: new Set<string>(),
       };
-    })
-  );
+
+      row.name = row.name || candidate.name;
+      row.email = row.email || candidate.email;
+      row.status = candidate.status === "completed" ? candidate.status : row.status || candidate.status;
+      row.totalAssessments = Math.max(row.totalAssessments, assessmentCount);
+
+      if (candidate.sessionName) {
+        row.sessionNameSet.add(candidate.sessionName);
+      }
+
+      for (const result of results) {
+        const resultId = result.id || result.assessment;
+        row.resultIds.add(resultId);
+        if (result.completedAt || result.numericScore !== null) {
+          row.completedResultIds.add(resultId);
+        }
+      }
+
+      rows.set(rowKey, row);
+    }
+  }
+
+  return Array.from(rows.values()).map((row) => {
+    const completedAssessments = row.completedResultIds.size;
+    const totalAssessments = Math.max(row.totalAssessments, row.resultIds.size, 1);
+    return {
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      status: row.status,
+      campaignId: row.campaignId,
+      campaignName: row.campaignName,
+      sessionNames: Array.from(row.sessionNameSet),
+      completedAssessments,
+      totalAssessments,
+      completion: Math.round((completedAssessments / totalAssessments) * 100),
+    };
+  });
 }
 
 export function HiringManagerCandidatesView() {
@@ -63,13 +109,8 @@ export function HiringManagerCandidatesView() {
     setIsRefreshing(true);
     setError(null);
     try {
-      const campaignList = await HiringManagerPortalClientService.getCampaigns({ force });
-      const details = await Promise.all(
-        campaignList.map((campaign) =>
-          HiringManagerPortalClientService.getCampaignDetail(campaign.id)
-        )
-      );
-      setCampaigns(details.filter(Boolean) as HiringManagerCampaignDetail[]);
+      const details = await HiringManagerPortalClientService.getCampaignDetails({ force });
+      setCampaigns(details);
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -147,7 +188,9 @@ export function HiringManagerCandidatesView() {
                   </p>
                   <p className="mt-1 break-words text-xs leading-5 text-slate-500">
                     {candidate.campaignName}
-                    {candidate.sessionName ? ` · ${candidate.sessionName}` : ""}
+                    {candidate.sessionNames.length > 0
+                      ? ` · ${candidate.sessionNames.join(", ")}`
+                      : ""}
                   </p>
                 </div>
 
@@ -166,7 +209,7 @@ export function HiringManagerCandidatesView() {
                   className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
                   asChild
                 >
-                  <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/`}>
+                  <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${candidate.campaignId}`}>
                     View results/report
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
