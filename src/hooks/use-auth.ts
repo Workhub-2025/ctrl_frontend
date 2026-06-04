@@ -245,7 +245,8 @@ export function useAuth() {
                 throw new Error('User not authenticated');
             }
 
-            const response = await updateCurrentUserAction(userId, updateData);
+            // Bypass strict type checking to allow nullable fields mapped from Partial<IUser>
+            const response = await updateCurrentUserAction(userId, updateData as any);
 
             if (!response.success || !response.data) {
                 throw new Error(response.error || 'Profile update failed');
