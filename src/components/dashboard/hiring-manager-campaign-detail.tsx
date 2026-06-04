@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export function HiringManagerCampaignDetailView({
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const loadCampaign = async () => {
+  const loadCampaign = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -42,7 +42,7 @@ export function HiringManagerCampaignDetailView({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [campaignId]);
 
   const getCandidateCompletion = (
     candidate: HiringManagerCampaignDetail["joinedCandidates"][number]
@@ -64,7 +64,7 @@ export function HiringManagerCampaignDetailView({
 
   useEffect(() => {
     void loadCampaign();
-  }, [campaignId]);
+  }, [loadCampaign]);
 
   const deleteCampaign = async () => {
     if (!campaign) return;

@@ -390,7 +390,7 @@ export default function Home() {
                   <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right" : "md:col-start-3 md:text-left")}>
                       <ScrollReveal>
-                        <div className="text-xs font-mono text-slate-500 mb-3">{step.step} //</div>
+                        <div className="text-xs font-mono text-slate-500 mb-3">{step.step} {"//"}</div>
                         <h4 className="text-2xl md:text-3xl font-medium text-white mb-3">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
@@ -428,7 +428,7 @@ export default function Home() {
                   <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right" : "md:col-start-3 md:text-left")}>
                       <ScrollReveal>
-                        <div className="text-xs font-mono text-emerald-500/60 mb-3">{step.step} //</div>
+                        <div className="text-xs font-mono text-emerald-500/60 mb-3">{step.step} {"//"}</div>
                         <h4 className="text-2xl md:text-3xl font-medium text-white mb-3">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
