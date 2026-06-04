@@ -96,7 +96,7 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
               asChild
               className="h-12 md:h-14 rounded-full bg-white px-8 text-black hover:bg-slate-200 transition-all text-sm md:text-base font-medium w-full sm:w-auto"
             >
-              <Link href="/auth/register">
+              <Link href="/auth/register?mode=register">
               Get Started
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { AnimatedBackground } from "@/components/ui/animated-background";
@@ -25,7 +26,8 @@ interface SignUpData {
   agreeToMarketing: boolean;
 }
 
-export default function UnifiedAuthPage() {
+function UnifiedAuthContent() {
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState<SignUpData>({
     firstName: "",
     lastName: "",
@@ -38,7 +40,6 @@ export default function UnifiedAuthPage() {
     agreeToMarketing: false,
   });
 
-  // New states for the unified login/register toggle
   const [isLoginView, setIsLoginView] = useState(false);
   const [loginData, setLoginData] = useState({ email: "", password: "" });
 
@@ -47,6 +48,35 @@ export default function UnifiedAuthPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const { register: registerUser, login, isLoading } = useAuth();
+
+  useEffect(() => {
+    const mode = searchParams.get("mode");
+    const authError = searchParams.get("error");
+    const email = searchParams.get("email");
+
+    if (mode === "login" || mode === "signin" || authError) {
+      setIsLoginView(true);
+    }
+
+    if (mode === "register" || mode === "signup") {
+      setIsLoginView(false);
+    }
+
+    if (email) {
+      setLoginData((prev) => ({ ...prev, email }));
+      setFormData((prev) => ({ ...prev, email }));
+    }
+
+    if (authError) {
+      setError("Please check your email and password, then try again.");
+    }
+  }, [searchParams]);
+
+  const switchAuthMode = useCallback((nextIsLoginView: boolean) => {
+    setIsLoginView(nextIsLoginView);
+    setError("");
+    setSuccess(false);
+  }, []);
 
   const handleInputChange = useCallback(
     (field: keyof SignUpData, value: string | boolean) => {
@@ -213,7 +243,7 @@ export default function UnifiedAuthPage() {
                 Your account has been set up successfully. Please check your inbox for a confirmation email to verify your address.
               </p>
               <Button 
-                onClick={() => { setSuccess(false); setIsLoginView(true); }} 
+                onClick={() => switchAuthMode(true)} 
                 className="h-12 w-full rounded-xl bg-white text-base font-medium text-black hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
               >
                 Sign In Now <ArrowRight className="ml-2 h-4 w-4" />
@@ -226,7 +256,7 @@ export default function UnifiedAuthPage() {
               <div className="mb-8 flex items-center gap-6 border-b border-white/10 pb-4">
                 <button
                   type="button"
-                  onClick={() => { setIsLoginView(true); setError(""); }}
+                  onClick={() => switchAuthMode(true)}
                   className={cn(
                     "relative pb-2 text-lg font-medium transition-colors",
                     isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300"
@@ -239,7 +269,7 @@ export default function UnifiedAuthPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setIsLoginView(false); setError(""); }}
+                  onClick={() => switchAuthMode(false)}
                   className={cn(
                     "relative pb-2 text-lg font-medium transition-colors",
                     !isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300"
@@ -488,5 +518,13 @@ export default function UnifiedAuthPage() {
       </div>
       
     </div>
+  );
+}
+
+export default function UnifiedAuthPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[100svh] bg-black" />}>
+      <UnifiedAuthContent />
+    </Suspense>
   );
 }

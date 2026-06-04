@@ -40,7 +40,8 @@ export async function POST(request: Request) {
   const { ipAddress, userAgent } = getRequestContext(request);
 
   if (!email || !password) {
-    const loginUrl = new URL("/auth/login", request.url);
+    const loginUrl = new URL("/auth/register", request.url);
+    loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
     return NextResponse.redirect(loginUrl, 303);
   }
@@ -123,7 +124,8 @@ export async function POST(request: Request) {
       reason: error instanceof Error ? error.message : "Unknown error",
     });
 
-    const loginUrl = new URL("/auth/login", request.url);
+    const loginUrl = new URL("/auth/register", request.url);
+    loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
     return NextResponse.redirect(loginUrl, 303);
   }

@@ -10,7 +10,8 @@ export default withAuth(
         // Protect admin routes - only allow admin users
         if (pathname.startsWith('/admin')) {
             if (!token) {
-                const loginUrl = new URL('/auth/login', req.url);
+                const loginUrl = new URL('/auth/register', req.url);
+                loginUrl.searchParams.set('mode', 'login');
                 loginUrl.searchParams.set('callbackUrl', pathname);
                 return NextResponse.redirect(loginUrl);
             }

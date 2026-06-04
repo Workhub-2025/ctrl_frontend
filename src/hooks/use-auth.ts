@@ -135,7 +135,9 @@ export function useAuth() {
                 credentials: 'same-origin',
             });
 
-            if (response.redirected && !response.url.includes('/auth/login')) {
+            const redirectedPath = response.url ? new URL(response.url).pathname : '';
+
+            if (response.redirected && !redirectedPath.startsWith('/auth/')) {
                 console.log('✅ SignIn successful, getting user data for routing...');
 
                 const freshSession = await waitForSession();

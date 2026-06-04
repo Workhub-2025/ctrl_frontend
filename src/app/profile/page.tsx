@@ -81,7 +81,7 @@ export default function ProfilePage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      window.location.href = "/auth/login";
+      window.location.href = "/auth/register?mode=login";
     }
   }, [authLoading, isAuthenticated]);
 

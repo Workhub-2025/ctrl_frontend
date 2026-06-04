@@ -182,7 +182,7 @@ export const fetchClient = async (
             if (response.status === 401) {
                 console.warn(`🔒 [${environment}] Unauthorized request`);
                 if (typeof window !== 'undefined') {
-                    window.location.href = '/auth/login';
+                    window.location.href = '/auth/register?mode=login';
                 }
                 throw new Error('Unauthorized - redirecting to login');
             }

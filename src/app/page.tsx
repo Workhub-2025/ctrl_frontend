@@ -234,11 +234,11 @@ export default function Home() {
 
           {/* CTA (Desktop) */}
           <div className="hidden lg:flex items-center gap-6 relative z-10">
-            <Link href="/auth/login" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+            <Link href="/auth/register?mode=login" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
               Log in
             </Link>
             <Button asChild className="rounded-full bg-white text-black hover:bg-slate-200 h-9 px-5 font-medium transition-all text-sm">
-              <Link href="/auth/register">Get Started</Link>
+              <Link href="/auth/register?mode=register">Get Started</Link>
             </Button>
           </div>
 
@@ -277,11 +277,11 @@ export default function Home() {
               </div>
               <hr className="border-white/10 my-1" />
               <div className="flex flex-col gap-3">
-                <Link href="/auth/login" className="w-full text-center text-base font-medium text-slate-300 hover:text-white transition-colors py-2">
+                <Link href="/auth/register?mode=login" className="w-full text-center text-base font-medium text-slate-300 hover:text-white transition-colors py-2">
                   Log in
                 </Link>
                 <Button asChild className="rounded-full bg-white text-black w-full h-12 text-base font-medium">
-                  <Link href="/auth/register">Get Started</Link>
+                  <Link href="/auth/register?mode=register">Get Started</Link>
                 </Button>
               </div>
             </motion.div>
@@ -544,7 +544,7 @@ export default function Home() {
                   </p>
                   <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Button asChild className="h-12 md:h-14 rounded-full bg-white px-8 text-black hover:bg-slate-200 transition-all text-sm md:text-base font-medium">
-                      <Link href="/auth/register">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                      <Link href="/auth/register?mode=register">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
                     </Button>
                     <Button type="button" variant="ghost" onClick={() => scrollToAnchor("capabilities")} className="h-12 md:h-14 rounded-full border border-white/10 bg-transparent px-8 text-slate-300 hover:bg-white/5 hover:text-white transition-all text-sm md:text-base font-medium">
                       Explore Platform
@@ -575,7 +575,7 @@ export default function Home() {
 
                 <div className="flex flex-col gap-5">
                   <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Access</h4>
-                  <Link href="/auth/register" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Get Started</Link>
+                  <Link href="/auth/register?mode=register" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Get Started</Link>
                   <Link href="/privacy-policy" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Privacy Policy</Link>
                   <Link href="/terms-conditions" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Terms</Link>
                 </div>
