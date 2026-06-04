@@ -32,7 +32,6 @@ import EqualityMonitoringForm from "@/components/auth/equality-monitoring-form";
 import { EqualityMonitoringData, IUser } from "@/types";
 import Link from "next/link";
 import { TelInput } from "@/components/ui/telInput";
-import { updateCurrentUserAction } from "@/app/actions/users.actions";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { isAdminRole, routeForRole } from "@/lib/auth/role-model";
 import { useAuthStore } from "@/store/auth.store";
@@ -130,13 +129,9 @@ export default function ProfilePage() {
         throw new Error("User not authenticated");
       }
 
-      const response = await updateCurrentUserAction(user.id, {
+      await updateProfile({
         equalityMonitoring: data,
       });
-
-      if (!response?.data?.id) {
-        throw new Error("Failed to update equality monitoring data");
-      }
 
       toast({
         title: "Equality Monitoring Updated",

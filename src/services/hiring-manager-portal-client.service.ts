@@ -99,6 +99,9 @@ let campaignsInFlight: Promise<HiringManagerCampaignListItem[]> | null = null;
 let campaignsCache: HiringManagerCampaignListItem[] | null = null;
 let campaignsFetchedAt = 0;
 
+const campaignDetailsInFlight = new Map<string, Promise<HiringManagerCampaignDetail | null>>();
+const campaignDetailsCache = new Map<string, HiringManagerCampaignDetail | null>();
+
 let sessionsInFlight: Promise<HiringManagerSessionListItem[]> | null = null;
 let sessionsCache: HiringManagerSessionListItem[] | null = null;
 let sessionsFetchedAt = 0;
@@ -136,13 +139,43 @@ export class HiringManagerPortalClientService {
   }
 
   static async getCampaignDetail(
-    campaignId: string
+    campaignId: string,
+    options?: { force?: boolean }
   ): Promise<HiringManagerCampaignDetail | null> {
-    const response = await fetch(`/api/hiring-manager/campaigns/${campaignId}`, {
+    if (!options?.force && campaignDetailsCache.has(campaignId)) {
+      return campaignDetailsCache.get(campaignId) ?? null;
+    }
+
+    const existingRequest = campaignDetailsInFlight.get(campaignId);
+    if (!options?.force && existingRequest) return existingRequest;
+
+    const request = fetch(`/api/hiring-manager/campaigns/${campaignId}`, {
       cache: "no-store",
-    });
-    const body = await readJson<CampaignDetailResponse>(response);
-    return body.data ?? null;
+    })
+      .then((response) => readJson<CampaignDetailResponse>(response))
+      .then((body) => {
+        const detail = body.data ?? null;
+        campaignDetailsCache.set(campaignId, detail);
+        return detail;
+      })
+      .finally(() => {
+        campaignDetailsInFlight.delete(campaignId);
+      });
+
+    campaignDetailsInFlight.set(campaignId, request);
+    return request;
+  }
+
+  static async getCampaignDetails(options?: {
+    force?: boolean;
+  }): Promise<HiringManagerCampaignDetail[]> {
+    const campaignList = await this.getCampaigns(options);
+    const details = await Promise.all(
+      campaignList.map((campaign) =>
+        this.getCampaignDetail(campaign.id, options)
+      )
+    );
+    return details.filter(Boolean) as HiringManagerCampaignDetail[];
   }
 
   static async getSessions(options?: {
@@ -180,6 +213,8 @@ export class HiringManagerPortalClientService {
     campaignsInFlight = null;
     campaignsCache = null;
     campaignsFetchedAt = 0;
+    campaignDetailsInFlight.clear();
+    campaignDetailsCache.clear();
     sessionsInFlight = null;
     sessionsCache = null;
     sessionsFetchedAt = 0;
@@ -201,6 +236,8 @@ export class HiringManagerPortalClientService {
     campaignsInFlight = null;
     campaignsCache = null;
     campaignsFetchedAt = 0;
+    campaignDetailsInFlight.clear();
+    campaignDetailsCache.clear();
 
     return body.data ?? null;
   }

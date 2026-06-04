@@ -2,21 +2,15 @@
 
 import { useState, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { cn } from "@/lib/utils";
+import { AnimatedBackground } from "@/components/ui/animated-background";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, AlertCircle, CheckCircle, KeyRound } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, CheckCircle, KeyRound, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 interface SignUpData {
@@ -31,7 +25,7 @@ interface SignUpData {
   agreeToMarketing: boolean;
 }
 
-export default function SignUpPage() {
+export default function UnifiedAuthPage() {
   const [formData, setFormData] = useState<SignUpData>({
     firstName: "",
     lastName: "",
@@ -44,15 +38,27 @@ export default function SignUpPage() {
     agreeToMarketing: false,
   });
 
+  // New states for the unified login/register toggle
+  const [isLoginView, setIsLoginView] = useState(false);
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const { register: registerUser, isLoading } = useAuth();
+  const { register: registerUser, login, isLoading } = useAuth();
 
   const handleInputChange = useCallback(
     (field: keyof SignUpData, value: string | boolean) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
+      setError(""); // Clear error when user starts typing
+    },
+    []
+  );
+
+  const handleLoginInputChange = useCallback(
+    (field: keyof typeof loginData, value: string) => {
+      setLoginData((prev) => ({ ...prev, [field]: value }));
       setError(""); // Clear error when user starts typing
     },
     []
@@ -135,298 +141,352 @@ export default function SignUpPage() {
     }
   };
 
-  if (success) {
-    return (
-      <div className="auth-page">
-        <Card className="shadow-2xl auth-card">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-              <CheckCircle className="h-8 w-8" />
-            </div>
-            <CardTitle className="text-2xl font-bold text-green-600">
-              Registration Successful!
-            </CardTitle>
-            <CardDescription>
-              Your account has been created successfully. Please check your
-              email for confirmation, then log in to complete your profile
-              setup.
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button asChild className="w-full">
-              <Link href="/auth/login">Go to Login</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!loginData.email || !loginData.password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    try {
+      await login(loginData.email, loginData.password);
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password.");
+    }
+  };
 
   return (
-    <div className="auth-page">
-      <Card className="shadow-2xl auth-card">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex items-center justify-center auth-logo">
-            <Link href="/" className="block">
-              <div className="flex flex-col items-center gap-1 p-2">
-                <img
-                  src="/icon1.png"
-                  className="h-15 w-15 logo-adaptive cursor-pointer transition-transform hover:scale-105 logo-adaptive-filter"
-                  alt="CTRL Logo"
-                  loading="eager"
-                />
-              </div>
+    <div className="flex min-h-[100svh] w-full bg-black">
+      
+      {/* Left Pane - Branding & Narrative (Hidden on Mobile) */}
+      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-white/10 bg-[#050505] p-12 lg:flex xl:p-16">
+        {/* Background Visuals */}
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <AnimatedBackground />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/90" />
+        </div>
+
+        {/* Top Branding */}
+        <div className="relative z-10">
+          <Link href="/" className="inline-block transition-transform hover:scale-105">
+            <BrandLogo layout="horizontal" className="h-10 w-auto" />
+          </Link>
+        </div>
+
+        {/* Bottom Narrative */}
+        <div className="relative z-10 max-w-lg">
+          <blockquote className="space-y-6">
+            <p className="text-3xl font-medium leading-tight tracking-tight text-white">
+              "We stopped guessing based on interviews. Now we evaluate candidates under actual control room pressure."
+            </p>
+            <footer className="text-sm font-semibold text-emerald-500 uppercase tracking-widest flex items-center gap-3">
+              <span className="h-px w-8 bg-emerald-500" />
+              Mission Critical Assessment
+            </footer>
+          </blockquote>
+        </div>
+      </div>
+
+      {/* Right Pane - Form Area */}
+      <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-12 xl:px-24">
+        <div className="mx-auto w-full max-w-[420px]">
+          
+          {/* Mobile Logo */}
+          <div className="mb-10 flex justify-center lg:hidden">
+            <Link href="/" className="inline-block">
+              <BrandLogo layout="stacked" className="h-16 w-auto transition-transform hover:scale-105" />
             </Link>
           </div>
-          <CardTitle className="text-2xl font-bold">Join CTRL</CardTitle>
-          <CardDescription>
-            Create your account using the access code you were given.
-          </CardDescription>
-        </CardHeader>
 
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="john.smith@organization.com"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                required
-                disabled={isLoading}
-              />
+          {success ? (
+            <div className="flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                <CheckCircle className="h-12 w-12" />
+              </div>
+              <h2 className="mb-3 text-3xl font-semibold tracking-tight text-white">
+                Account Created
+              </h2>
+              <p className="mb-8 text-slate-400 leading-relaxed">
+                Your account has been set up successfully. Please check your inbox for a confirmation email to verify your address.
+              </p>
+              <Button 
+                onClick={() => { setSuccess(false); setIsLoginView(true); }} 
+                className="h-12 w-full rounded-xl bg-white text-base font-medium text-black hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+              >
+                Sign In Now <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
+          ) : (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              
+              {/* Sleek Tab Toggle */}
+              <div className="mb-8 flex items-center gap-6 border-b border-white/10 pb-4">
+                <button
+                  type="button"
+                  onClick={() => { setIsLoginView(true); setError(""); }}
+                  className={cn(
+                    "relative pb-2 text-lg font-medium transition-colors",
+                    isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300"
+                  )}
+                >
+                  Sign In
+                  {isLoginView && (
+                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-emerald-500" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsLoginView(false); setError(""); }}
+                  className={cn(
+                    "relative pb-2 text-lg font-medium transition-colors",
+                    !isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300"
+                  )}
+                >
+                  Create Account
+                  {!isLoginView && (
+                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-emerald-500" />
+                  )}
+                </button>
+              </div>
 
-            {/* Name Fields */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name *</Label>
-                <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="John"
-                  value={formData.firstName}
-                  onChange={(e) =>
-                    handleInputChange("firstName", e.target.value)
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name *</Label>
-                <Input
-                  id="lastName"
-                  type="text"
-                  placeholder="Smith"
-                  value={formData.lastName}
-                  onChange={(e) =>
-                    handleInputChange("lastName", e.target.value)
-                  }
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-
-            {/* Password Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Password *</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Min. 8 characters"
-                    value={formData.password}
-                    onChange={(e) =>
-                      handleInputChange("password", e.target.value)
-                    }
-                    required
-                    disabled={isLoading}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm password"
-                    value={formData.confirmPassword}
-                    onChange={(e) =>
-                      handleInputChange("confirmPassword", e.target.value)
-                    }
-                    required
-                    disabled={isLoading}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    disabled={isLoading}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Access Code */}
-            <div className="rounded-xl border border-border bg-muted/30 p-3">
-              <div className="space-y-2">
-                <Label htmlFor="accessCode">Access Code *</Label>
-                <div className="relative">
-                  <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="accessCode"
-                    type="text"
-                    placeholder="e.g. CTRL-9A2X"
-                    value={formData.accessCode}
-                    onChange={(e) =>
-                      handleInputChange("accessCode", e.target.value)
-                    }
-                    required
-                    disabled={isLoading}
-                    className="pl-10 uppercase tracking-[0.18em]"
-                  />
-                </div>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Your code confirms the type of account and workspace you can
-                  access.
+              {/* Header Text */}
+              <div className="mb-8 space-y-2">
+                <h1 className="text-3xl font-semibold tracking-tight text-white">
+                  {isLoginView ? "Welcome back" : "Join the platform"}
+                </h1>
+                <p className="text-sm text-slate-400">
+                  {isLoginView 
+                    ? "Enter your credentials to securely access your workspace." 
+                    : "Use your agency access code to configure your new account."}
                 </p>
               </div>
-            </div>
 
-            {/* Checkboxes */}
-            <div className="space-y-3">
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("agreeToTerms", !!checked)
-                  }
-                  disabled={isLoading}
-                />
-                <Label htmlFor="agreeToTerms" className="text-sm leading-5">
-                  I agree to the{" "}
-                  <Link
-                    href="/terms-conditions"
-                    target="_blank"
-                    className="text-primary underline"
-                  >
-                    Terms & Conditions
-                  </Link>{" "}
-                  *
-                </Label>
-              </div>
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToDataPrivacyPolicy"
-                  checked={formData.agreeToDataPrivacyPolicy}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("agreeToDataPrivacyPolicy", !!checked)
-                  }
-                  disabled={isLoading}
-                />
-                <Label
-                  htmlFor="agreeToDataPrivacyPolicy"
-                  className="text-sm leading-5"
-                >
-                  I agree to the{" "}
-                  <Link
-                    href="/privacy-policy"
-                    target="_blank"
-                    className="text-primary underline"
-                  >
-                    Data Privacy Policy
-                  </Link>
-                  *
-                </Label>
-              </div>
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToMarketing"
-                  checked={formData.agreeToMarketing}
-                  onCheckedChange={(checked) =>
-                    handleInputChange("agreeToMarketing", !!checked)
-                  }
-                  disabled={isLoading}
-                />
-                <Label htmlFor="agreeToMarketing" className="text-sm leading-5">
-                  I agree to receive marketing communications and updates about
-                  CTRL
-                </Label>
-              </div>
-            </div>
-          </CardContent>
+              {error && (
+                <Alert variant="destructive" className="mb-8 border-red-900/50 bg-red-950/20 text-red-400">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <p
-                className="text-xs text-muted-foreground text-center leading-relaxed"
-              >
-                Your access code will be checked before your account is created.
-                If the code is valid, you will be linked to the correct portal.
-              </p>
-            </div>{" "}
-            <Button
-              type="submit"
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-4 py-2 w-full h-11 bg-slate-800 hover:bg-slate-200 dark:bg-blue-400 dark:hover:bg-slate-800 text-white hover:text-slate-800 dark:hover:text-white transition-all duration-200 border-0 shadow-md hover:shadow-lg"
-              disabled={isLoading}
-            >
-              {isLoading ? "Creating Account..." : "Create Account"}
-            </Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Already have an account?
-                </span>
-              </div>
+              {isLoginView ? (
+                <form onSubmit={handleLoginSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Email Address</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="john.smith@organization.com"
+                      value={loginData.email}
+                      onChange={(e) => handleLoginInputChange("email", e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Password</Label>
+                      <Link href="/auth/forgot-password" className="text-xs font-medium text-emerald-500 hover:text-emerald-400 transition-colors">
+                        Forgot Password?
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={loginData.password}
+                        onChange={(e) => handleLoginInputChange("password", e.target.value)}
+                        required
+                        disabled={isLoading}
+                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50 pr-12"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="mt-6 h-12 w-full rounded-xl bg-white text-base font-medium text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:bg-slate-200"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Signing In..." : "Sign In"}
+                  </Button>
+                </form>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="john.smith@organization.com"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">First Name *</Label>
+                      <Input
+                        id="firstName"
+                        type="text"
+                        placeholder="John"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                        required
+                        disabled={isLoading}
+                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Last Name *</Label>
+                      <Input
+                        id="lastName"
+                        type="text"
+                        placeholder="Smith"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                        required
+                        disabled={isLoading}
+                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Password *</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Min. 8 characters"
+                          value={formData.password}
+                          onChange={(e) => handleInputChange("password", e.target.value)}
+                          required
+                          disabled={isLoading}
+                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50 pr-12"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
+                          onClick={() => setShowPassword(!showPassword)}
+                          disabled={isLoading}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Confirm Password *</Label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm password"
+                          value={formData.confirmPassword}
+                          onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                          required
+                          disabled={isLoading}
+                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50 pr-12"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          disabled={isLoading}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 rounded-2xl border border-white/5 bg-white/[0.01] p-5 shadow-inner">
+                    <div className="space-y-3">
+                      <Label htmlFor="accessCode" className="text-xs font-semibold uppercase tracking-wider text-emerald-500 block">Access Code *</Label>
+                      <div className="relative">
+                        <KeyRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+                        <Input
+                          id="accessCode"
+                          type="text"
+                          placeholder="CTRL-9A2X"
+                          value={formData.accessCode}
+                          onChange={(e) => handleInputChange("accessCode", e.target.value)}
+                          required
+                          disabled={isLoading}
+                          className="h-12 rounded-xl border-white/10 bg-[#050505] pl-12 text-lg font-medium uppercase tracking-[0.2em] text-white transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                        />
+                      </div>
+                      <p className="text-xs leading-relaxed text-slate-500 font-light">
+                        Your code assigns you to the correct agency workspace.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="agreeToTerms"
+                        checked={formData.agreeToTerms}
+                        onCheckedChange={(checked) => handleInputChange("agreeToTerms", !!checked)}
+                        disabled={isLoading}
+                        className="mt-1 border-slate-600 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500"
+                      />
+                      <Label htmlFor="agreeToTerms" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
+                        I agree to the <Link href="/terms-conditions" target="_blank" className="text-white hover:text-emerald-400 underline decoration-white/30 transition-colors">Terms & Conditions</Link> *
+                      </Label>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="agreeToDataPrivacyPolicy"
+                        checked={formData.agreeToDataPrivacyPolicy}
+                        onCheckedChange={(checked) => handleInputChange("agreeToDataPrivacyPolicy", !!checked)}
+                        disabled={isLoading}
+                        className="mt-1 border-slate-600 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500"
+                      />
+                      <Label htmlFor="agreeToDataPrivacyPolicy" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
+                        I agree to the <Link href="/privacy-policy" target="_blank" className="text-white hover:text-emerald-400 underline decoration-white/30 transition-colors">Data Privacy Policy</Link> *
+                      </Label>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="mt-6 h-12 w-full rounded-xl bg-white text-base font-medium text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:bg-slate-200"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating Account..." : "Create Account"}
+                  </Button>
+                </form>
+              )}
             </div>
-            <Button variant="outline" className="w-full h-11" asChild>
-              <Link href="/auth/login">Sign In</Link>
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+          )}
+        </div>
+      </div>
+      
     </div>
   );
 }
