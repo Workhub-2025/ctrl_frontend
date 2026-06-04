@@ -233,12 +233,16 @@ export default function Home() {
           </div>
 
           {/* CTA (Desktop) */}
-          <div className="hidden lg:flex items-center gap-6 relative z-10">
-            <Link href="/auth/register?mode=login" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+          <div className="hidden lg:flex items-center gap-4 relative z-10">
+            <Link href="/auth/register?mode=login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-1.5 rounded-full hover:bg-white/5">
               Log in
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
             </Link>
-            <Button asChild className="rounded-full bg-white text-black hover:bg-slate-200 h-9 px-5 font-medium transition-all text-sm">
-              <Link href="/auth/register?mode=register">Get Started</Link>
+            <Button asChild className="group rounded-full bg-white text-black hover:bg-slate-200 h-9 px-5 font-medium transition-all text-sm">
+              <Link href="/auth/register?mode=register" className="flex items-center gap-1.5">
+                Get Started
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+              </Link>
             </Button>
           </div>
 
@@ -277,8 +281,9 @@ export default function Home() {
               </div>
               <hr className="border-white/10 my-1" />
               <div className="flex flex-col gap-3">
-                <Link href="/auth/register?mode=login" className="w-full text-center text-base font-medium text-slate-300 hover:text-white transition-colors py-2">
+                <Link href="/auth/register?mode=login" className="group w-full flex items-center justify-center gap-2 text-base font-medium text-slate-300 hover:text-white transition-colors py-3 rounded-full hover:bg-white/5">
                   Log in
+                  <ArrowRight className="w-4 h-4 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
                 </Link>
                 <Button asChild className="rounded-full bg-white text-black w-full h-12 text-base font-medium">
                   <Link href="/auth/register?mode=register">Get Started</Link>

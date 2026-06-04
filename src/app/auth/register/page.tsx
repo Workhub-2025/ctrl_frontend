@@ -212,8 +212,8 @@ function UnifiedAuthContent() {
             <p className="text-3xl font-medium leading-tight tracking-tight text-white">
               "We stopped guessing based on interviews. Now we evaluate candidates under actual control room pressure."
             </p>
-            <footer className="text-sm font-semibold text-emerald-500 uppercase tracking-widest flex items-center gap-3">
-              <span className="h-px w-8 bg-emerald-500" />
+            <footer className="text-sm font-semibold text-cyan-400 uppercase tracking-widest flex items-center gap-3">
+              <span className="h-px w-8 bg-cyan-400" />
               Mission Critical Assessment
             </footer>
           </blockquote>
@@ -233,7 +233,7 @@ function UnifiedAuthContent() {
 
           {success ? (
             <div className="flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
-              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-[0_0_30px_rgba(6,182,212,0.2)]">
                 <CheckCircle className="h-12 w-12" />
               </div>
               <h2 className="mb-3 text-3xl font-semibold tracking-tight text-white">
@@ -264,7 +264,7 @@ function UnifiedAuthContent() {
                 >
                   Sign In
                   {isLoginView && (
-                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-emerald-500" />
+                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-cyan-400" />
                   )}
                 </button>
                 <button
@@ -277,7 +277,7 @@ function UnifiedAuthContent() {
                 >
                   Create Account
                   {!isLoginView && (
-                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-emerald-500" />
+                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-cyan-400" />
                   )}
                 </button>
               </div>
@@ -313,14 +313,14 @@ function UnifiedAuthContent() {
                       onChange={(e) => handleLoginInputChange("email", e.target.value)}
                       required
                       disabled={isLoading}
-                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Password</Label>
-                      <Link href="/auth/forgot-password" className="text-xs font-medium text-emerald-500 hover:text-emerald-400 transition-colors">
+                      <Link href="/auth/forgot-password" className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
                         Forgot Password?
                       </Link>
                     </div>
@@ -333,7 +333,7 @@ function UnifiedAuthContent() {
                         onChange={(e) => handleLoginInputChange("password", e.target.value)}
                         required
                         disabled={isLoading}
-                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50 pr-12"
+                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50 pr-12"
                       />
                       <Button
                         type="button"
@@ -368,7 +368,7 @@ function UnifiedAuthContent() {
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
                       disabled={isLoading}
-                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
                     />
                   </div>
 
@@ -383,7 +383,7 @@ function UnifiedAuthContent() {
                         onChange={(e) => handleInputChange("firstName", e.target.value)}
                         required
                         disabled={isLoading}
-                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
                       />
                     </div>
                     <div className="space-y-2">
@@ -396,7 +396,7 @@ function UnifiedAuthContent() {
                         onChange={(e) => handleInputChange("lastName", e.target.value)}
                         required
                         disabled={isLoading}
-                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
                       />
                     </div>
                   </div>
@@ -413,7 +413,7 @@ function UnifiedAuthContent() {
                           onChange={(e) => handleInputChange("password", e.target.value)}
                           required
                           disabled={isLoading}
-                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50 pr-12"
+                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50 pr-12"
                         />
                         <Button
                           type="button"
@@ -438,7 +438,7 @@ function UnifiedAuthContent() {
                           onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                           required
                           disabled={isLoading}
-                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50 pr-12"
+                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50 pr-12"
                         />
                         <Button
                           type="button"
@@ -456,7 +456,7 @@ function UnifiedAuthContent() {
 
                   <div className="mt-2 rounded-2xl border border-white/5 bg-white/[0.01] p-5 shadow-inner">
                     <div className="space-y-3">
-                      <Label htmlFor="accessCode" className="text-xs font-semibold uppercase tracking-wider text-emerald-500 block">Access Code *</Label>
+                      <Label htmlFor="accessCode" className="text-xs font-semibold uppercase tracking-wider text-cyan-400 block">Access Code *</Label>
                       <div className="relative">
                         <KeyRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
                         <Input
@@ -467,7 +467,7 @@ function UnifiedAuthContent() {
                           onChange={(e) => handleInputChange("accessCode", e.target.value)}
                           required
                           disabled={isLoading}
-                          className="h-12 rounded-xl border-white/10 bg-[#050505] pl-12 text-lg font-medium uppercase tracking-[0.2em] text-white transition-all focus-visible:border-emerald-500/50 focus-visible:ring-1 focus-visible:ring-emerald-500/50"
+                          className="h-12 rounded-xl border-white/10 bg-[#050505] pl-12 text-lg font-medium uppercase tracking-[0.2em] text-white transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
                         />
                       </div>
                       <p className="text-xs leading-relaxed text-slate-500 font-light">
@@ -483,10 +483,10 @@ function UnifiedAuthContent() {
                         checked={formData.agreeToTerms}
                         onCheckedChange={(checked) => handleInputChange("agreeToTerms", !!checked)}
                         disabled={isLoading}
-                        className="mt-1 border-slate-600 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500"
+                        className="mt-1 border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500"
                       />
                       <Label htmlFor="agreeToTerms" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
-                        I agree to the <Link href="/terms-conditions" target="_blank" className="text-white hover:text-emerald-400 underline decoration-white/30 transition-colors">Terms & Conditions</Link> *
+                        I agree to the <Link href="/terms-conditions" target="_blank" className="text-white hover:text-cyan-300 underline decoration-white/30 transition-colors">Terms & Conditions</Link> *
                       </Label>
                     </div>
                     <div className="flex items-start space-x-3">
@@ -495,10 +495,10 @@ function UnifiedAuthContent() {
                         checked={formData.agreeToDataPrivacyPolicy}
                         onCheckedChange={(checked) => handleInputChange("agreeToDataPrivacyPolicy", !!checked)}
                         disabled={isLoading}
-                        className="mt-1 border-slate-600 data-[state=checked]:border-emerald-500 data-[state=checked]:bg-emerald-500"
+                        className="mt-1 border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500"
                       />
                       <Label htmlFor="agreeToDataPrivacyPolicy" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
-                        I agree to the <Link href="/privacy-policy" target="_blank" className="text-white hover:text-emerald-400 underline decoration-white/30 transition-colors">Data Privacy Policy</Link> *
+                        I agree to the <Link href="/privacy-policy" target="_blank" className="text-white hover:text-cyan-300 underline decoration-white/30 transition-colors">Data Privacy Policy</Link> *
                       </Label>
                     </div>
                   </div>
