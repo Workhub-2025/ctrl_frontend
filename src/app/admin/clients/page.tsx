@@ -99,7 +99,7 @@ export default function ClientsListPage() {
 
   return (
     <div className="space-y-6">
-      (* Header Area *)
+      {/* Header Area */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h3 className="text-2xl font-bold tracking-tight">Clients</h3>
@@ -121,7 +121,7 @@ export default function ClientsListPage() {
         </div>
       </div>
 
-      (* Filters Area *)
+      {/* Filters Area */}
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -140,7 +140,7 @@ export default function ClientsListPage() {
         </Button>
       </div>
 
-      (* Data Table *)
+      {/* Data Table */}
       <div className="rounded-md border bg-card overflow-hidden">
         <Table>
           <TableHeader>
@@ -162,7 +162,7 @@ export default function ClientsListPage() {
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <div className="font-medium">{client.name}</div>
                   </div>
-                  <div className="teyt-xs text-muted-foreground mt-1">{client.primaryContact}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{client.primaryContact}</div>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className={getStatusColor(client.status)}>
@@ -208,8 +208,7 @@ export default function ClientsListPage() {
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
-            ))
-}
+            ))}
           </TableBody>
         </Table>
       </div>

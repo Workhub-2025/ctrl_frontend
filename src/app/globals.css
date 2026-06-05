@@ -978,6 +978,140 @@ html.landing-scroll-snap {
   }
 }
 
+html[data-ctrl-reading-font="enabled"] .ctrl-landing-page {
+  font-family: Arial, Verdana, system-ui, sans-serif;
+}
+
+html[data-ctrl-text-size="large"] .ctrl-landing-page {
+  font-size: 1.075rem;
+}
+
+html[data-ctrl-text-size="extra-large"] .ctrl-landing-page {
+  font-size: 1.15rem;
+}
+
+html[data-ctrl-text-size="large"] .ctrl-landing-page h1 {
+  font-size: clamp(3.25rem, 7vw, 4.9rem);
+}
+
+html[data-ctrl-text-size="extra-large"] .ctrl-landing-page h1 {
+  font-size: clamp(3.5rem, 7vw, 5.25rem);
+}
+
+html[data-ctrl-text-size="large"] .ctrl-landing-page h2 {
+  font-size: clamp(2.1rem, 5vw, 3.35rem);
+}
+
+html[data-ctrl-text-size="extra-large"] .ctrl-landing-page h2 {
+  font-size: clamp(2.25rem, 5vw, 3.65rem);
+}
+
+html[data-ctrl-line-spacing="comfortable"] .ctrl-landing-page p,
+html[data-ctrl-line-spacing="comfortable"] .ctrl-landing-page li {
+  line-height: 1.8;
+}
+
+html[data-ctrl-line-spacing="spacious"] .ctrl-landing-page p,
+html[data-ctrl-line-spacing="spacious"] .ctrl-landing-page li {
+  line-height: 2;
+}
+
+html[data-ctrl-contrast="high"] .ctrl-landing-page .text-slate-500,
+html[data-ctrl-contrast="high"] .ctrl-landing-page .text-slate-400 {
+  color: rgb(226 232 240) !important;
+}
+
+html[data-ctrl-contrast="high"] .ctrl-landing-page .border-white\/10,
+html[data-ctrl-contrast="high"] .ctrl-landing-page .border-white\/5 {
+  border-color: rgb(148 163 184 / 0.45) !important;
+}
+
+html[data-ctrl-contrast="high"] .ctrl-landing-page .bg-white\/\[0\.02\],
+html[data-ctrl-contrast="high"] .ctrl-landing-page .bg-white\/5 {
+  background-color: rgb(255 255 255 / 0.1) !important;
+}
+
+html[data-ctrl-background="soft-light"] .ctrl-landing-page,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page {
+  color: rgb(15 23 42);
+}
+
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .text-white,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .text-white {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .text-slate-300,
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .text-slate-400,
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .text-slate-500,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .text-slate-300,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .text-slate-400,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .text-slate-500 {
+  color: rgb(51 65 85) !important;
+}
+
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .border-white\/10,
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .border-white\/5,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .border-white\/10,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .border-white\/5 {
+  border-color: rgb(15 23 42 / 0.13) !important;
+}
+
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .bg-white\/\[0\.02\],
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .bg-white\/5,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .bg-white\/\[0\.02\],
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .bg-white\/5 {
+  background-color: rgb(15 23 42 / 0.05) !important;
+}
+
+html[data-ctrl-background="soft-light"] .ctrl-landing-page [class*="bg-[#0a0a0a]"],
+html[data-ctrl-background="soft-light"] .ctrl-landing-page [class*="bg-[#050505]"],
+html[data-ctrl-background="soft-light"] .ctrl-landing-page [class*="bg-[#020202]"],
+html[data-ctrl-background="soft-light"] .ctrl-landing-page [class*="bg-[#080808]"],
+html[data-ctrl-background="soft-light"] .ctrl-landing-page [class*="bg-black"],
+html[data-ctrl-background="light-blue"] .ctrl-landing-page [class*="bg-[#0a0a0a]"],
+html[data-ctrl-background="light-blue"] .ctrl-landing-page [class*="bg-[#050505]"],
+html[data-ctrl-background="light-blue"] .ctrl-landing-page [class*="bg-[#020202]"],
+html[data-ctrl-background="light-blue"] .ctrl-landing-page [class*="bg-[#080808]"],
+html[data-ctrl-background="light-blue"] .ctrl-landing-page [class*="bg-black"] {
+  background-color: rgb(255 255 255 / 0.78) !important;
+}
+
+html[data-ctrl-background="soft-light"] .ctrl-landing-page .bg-white.text-black,
+html[data-ctrl-background="light-blue"] .ctrl-landing-page .bg-white.text-black {
+  background-color: rgb(15 23 42) !important;
+  color: rgb(255 255 255) !important;
+}
+
+html[data-ctrl-focus="enhanced"] .ctrl-landing-page :focus-visible {
+  outline: 3px solid rgb(34 211 238);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 6px rgb(34 211 238 / 0.22);
+}
+
+html[data-ctrl-underline-links="enabled"] .ctrl-landing-page a:not([class*="rounded"]):not([role="button"]) {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+html[data-ctrl-saturation="reduced"] .ctrl-landing-page {
+  filter: saturate(0.72);
+}
+
+html[data-ctrl-saturation="reduced"] .ctrl-landing-page [class*="shadow-"],
+html[data-ctrl-saturation="reduced"] .ctrl-landing-page [class*="blur"] {
+  filter: saturate(0.7);
+}
+
+html[data-ctrl-motion="reduced"] .ctrl-landing-page *,
+html[data-ctrl-motion="reduced"] .ctrl-landing-page *::before,
+html[data-ctrl-motion="reduced"] .ctrl-landing-page *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
+}
+
 .cinema-page {
   background:
     radial-gradient(circle at 12% 18%, rgba(56, 189, 248, 0.12), transparent 24%),

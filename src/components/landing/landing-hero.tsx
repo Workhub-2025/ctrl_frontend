@@ -28,9 +28,11 @@ function scrollToScene(id: string) {
 
 type LandingHeroProps = {
   navHeight?: number;
+  bgColor?: string;
+  reduceMotion?: boolean;
 };
 
-export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
+export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion = false }: LandingHeroProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -39,23 +41,31 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
 
   if (!mounted) return null;
 
+  // Extract color for gradient (e.g., from "bg-[#000f24]" to "#000f24")
+  const gradientColor = bgColor.startsWith("bg-[") 
+    ? bgColor.slice(4, -1) 
+    : bgColor.replace("bg-", "");
+
   return (
     <section
       id="landing-hero"
-      className="relative min-h-[90svh] lg:min-h-[100svh] overflow-hidden flex flex-col items-center justify-center bg-black"
+      className={`relative min-h-[90svh] lg:min-h-[100svh] overflow-hidden flex flex-col items-center justify-center ${bgColor}`}
     >
       {/* Animated Data Streams Background */}
-      <AnimatedBackground />
+      <AnimatedBackground disabled={reduceMotion} />
       
       {/* Soft bottom fade to seamlessly blend into the next section */}
-      <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-black to-transparent pointer-events-none z-0" />
+      <div 
+        className="absolute bottom-0 inset-x-0 h-48 pointer-events-none z-0" 
+        style={{ background: `linear-gradient(to top, ${gradientColor.startsWith('#') ? gradientColor : (gradientColor === 'black' ? 'black' : 'var(--tw-gradient-from)')}, transparent)` }}
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6" style={{ paddingTop: navHeight }}>
         <div className="flex flex-col items-center text-center max-w-[54rem] mx-auto">
           
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
           >
             {/* Reduced sizing slightly, cleaner tracking, removed intense italic */}
@@ -65,8 +75,8 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           >
             {/* Softened text color, increased line height for breathability */}
@@ -76,8 +86,8 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
           >
@@ -106,13 +116,13 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
       <motion.button
         onClick={() => scrollToScene("capabilities")}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-slate-500 hover:text-white transition-colors"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={reduceMotion ? false : { opacity: 0, y: -10 }}
+        animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
         aria-label="Scroll down"
       >
         <motion.div
-          animate={{ y: [0, 8, 0] }}
+          animate={reduceMotion ? {} : { y: [0, 8, 0] }}
           transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
         >
           <ChevronDown className="h-8 w-8" />
