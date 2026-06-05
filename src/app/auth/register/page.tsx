@@ -1,17 +1,17 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { AnimatedBackground } from "@/components/ui/animated-background";
+import { AnimatedSubmitButton, ButtonState } from "@/components/ui/animated-submit-button";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, EyeOff, AlertCircle, CheckCircle, KeyRound, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, KeyRound, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 interface SignUpData {
@@ -25,6 +25,18 @@ interface SignUpData {
   agreeToDataPrivacyPolicy: boolean;
   agreeToMarketing: boolean;
 }
+
+type AuthField =
+  | "loginEmail"
+  | "loginPassword"
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "password"
+  | "confirmPassword"
+  | "accessCode"
+  | "terms"
+  | "privacy";
 
 function UnifiedAuthContent() {
   const searchParams = useSearchParams();
@@ -47,7 +59,23 @@ function UnifiedAuthContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [authAction, setAuthAction] = useState<"login" | "register" | null>(null);
+  const [submitStatus, setSubmitStatus] = useState<ButtonState>("idle");
+  const [invalidFields, setInvalidFields] = useState<AuthField[]>([]);
+  const invalidResetTimer = useRef<number | null>(null);
   const { register: registerUser, login, isLoading } = useAuth();
+  const isAuthBusy = authAction !== null || isLoading;
+  const authActionMessage = authAction === "login"
+    ? "Checking your credentials..."
+    : "Setting up your account...";
+
+  useEffect(() => {
+    return () => {
+      if (invalidResetTimer.current) {
+        window.clearTimeout(invalidResetTimer.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const mode = searchParams.get("mode");
@@ -68,66 +96,119 @@ function UnifiedAuthContent() {
     }
 
     if (authError) {
-      setError("Please check your email and password, then try again.");
+      setError("Credentials not verified.");
     }
   }, [searchParams]);
 
   const switchAuthMode = useCallback((nextIsLoginView: boolean) => {
+    if (authAction) return;
+
     setIsLoginView(nextIsLoginView);
     setError("");
+    setInvalidFields([]);
     setSuccess(false);
+    setSubmitStatus("idle");
+  }, [authAction]);
+
+  const showFieldErrors = useCallback((fields: AuthField[]) => {
+    if (invalidResetTimer.current) {
+      window.clearTimeout(invalidResetTimer.current);
+    }
+
+    setError("");
+    setInvalidFields([]);
+    setSubmitStatus("idle");
+    window.setTimeout(() => {
+      setInvalidFields(fields);
+      setSubmitStatus("invalid");
+      invalidResetTimer.current = window.setTimeout(() => {
+        setInvalidFields([]);
+      }, 1800);
+    }, 0);
   }, []);
+
+  const hasInvalidField = useCallback(
+    (field: AuthField) => invalidFields.includes(field),
+    [invalidFields]
+  );
+
+  const inputClassName = useCallback(
+    (field: AuthField, extra?: string) => cn(
+      "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50",
+      hasInvalidField(field) && "border-red-500/80 bg-red-950/15 focus-visible:border-red-400/80 focus-visible:ring-red-400/40",
+      extra
+    ),
+    [hasInvalidField]
+  );
 
   const handleInputChange = useCallback(
     (field: keyof SignUpData, value: string | boolean) => {
+      if (invalidResetTimer.current) {
+        window.clearTimeout(invalidResetTimer.current);
+      }
+
       setFormData((prev) => ({ ...prev, [field]: value }));
       setError(""); // Clear error when user starts typing
+      setInvalidFields([]);
+      setSubmitStatus("idle");
     },
     []
   );
 
   const handleLoginInputChange = useCallback(
     (field: keyof typeof loginData, value: string) => {
+      if (invalidResetTimer.current) {
+        window.clearTimeout(invalidResetTimer.current);
+      }
+
       setLoginData((prev) => ({ ...prev, [field]: value }));
       setError(""); // Clear error when user starts typing
+      setInvalidFields([]);
+      setSubmitStatus("idle");
     },
     []
   );
 
-  const validateForm = (): string | null => {
-    if (!formData.firstName.trim()) return "First name is required";
-    if (!formData.lastName.trim()) return "Last name is required";
-    if (!formData.email.trim()) return "Email is required";
-    if (!formData.password) return "Password is required";
-    if (formData.password.length < 8)
-      return "Password must be at least 8 characters";
-    if (formData.password !== formData.confirmPassword)
-      return "Passwords do not match";
-    if (!formData.accessCode.trim()) return "Access code is required";
+  const validateForm = (): AuthField[] => {
+    const fields: AuthField[] = [];
+
+    if (!formData.firstName.trim()) fields.push("firstName");
+    if (!formData.lastName.trim()) fields.push("lastName");
+    if (!formData.email.trim()) fields.push("email");
+    if (!formData.password || formData.password.length < 8) fields.push("password");
+    if (!formData.confirmPassword || formData.password !== formData.confirmPassword) {
+      fields.push("confirmPassword");
+    }
+    if (!formData.accessCode.trim()) fields.push("accessCode");
     if (!formData.agreeToTerms)
-      return "You must agree to the Terms & Conditions";
+      fields.push("terms");
     if (!formData.agreeToDataPrivacyPolicy)
-      return "You must agree to the Data Privacy Policy";
+      fields.push("privacy");
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email))
-      return "Please enter a valid email address";
+    if (formData.email.trim() && !emailRegex.test(formData.email)) {
+      fields.push("email");
+    }
 
-    return null;
+    return Array.from(new Set(fields));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    if (authAction) return;
 
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+    setError("");
+    setInvalidFields([]);
+
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      showFieldErrors(validationErrors);
       return;
     }
 
     try {
+      setAuthAction("register");
+      setSubmitStatus("loading");
       // The backend assigns the role from the access code.
       const registrationData = {
         username: formData.email, // Strapi uses username for login
@@ -151,45 +232,58 @@ function UnifiedAuthContent() {
       // Call registration via useAuth hook. Backend validates and attaches the access code.
       const result = await registerUser(registrationData);
       console.log("✅ Registration result:", result);
-
+      setSubmitStatus("success");
       // Success will be handled by the useAuth hook (redirect to login)
       // No need to set success state here since we'll be redirected
     } catch (err: any) {
       console.error("Registration error:", err);
       const message = String(err?.message || "");
       if (/email|username|already|taken/i.test(message)) {
-        setError(
-          "An account with this email already exists. Please sign in, then enter this access code from your candidate portal."
-        );
+        setError("An account with this email already exists.");
+        setAuthAction(null);
+        setSubmitStatus("error");
         return;
       }
 
-      setError(
-        message ||
-          "An error occurred during registration. Please try again."
-      );
+      if (/access|code|credential|invalid|expired|not found|not verified/i.test(message)) {
+        setError("Credentials not verified.");
+      } else {
+        setError("Account creation failed.");
+      }
+      setAuthAction(null);
+      setSubmitStatus("error");
     }
   };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (authAction) return;
+
     setError("");
+    setInvalidFields([]);
 
     if (!loginData.email || !loginData.password) {
-      setError("Please enter your email and password.");
+      const fields: AuthField[] = [];
+      if (!loginData.email) fields.push("loginEmail");
+      if (!loginData.password) fields.push("loginPassword");
+      showFieldErrors(fields);
       return;
     }
 
     try {
+      setAuthAction("login");
+      setSubmitStatus("loading");
       await login(loginData.email, loginData.password);
+      setSubmitStatus("success");
     } catch (err: any) {
-      setError(err.message || "Invalid email or password.");
+      setError("Credentials not verified.");
+      setAuthAction(null);
+      setSubmitStatus("error");
     }
   };
 
   return (
-    <div className="flex min-h-[100svh] w-full bg-black">
-      
+    <div className="relative flex min-h-[100svh] w-full bg-black">
       {/* Left Pane - Branding & Narrative (Hidden on Mobile) */}
       <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-white/10 bg-[#050505] p-12 lg:flex xl:p-16">
         {/* Background Visuals */}
@@ -250,16 +344,17 @@ function UnifiedAuthContent() {
               </Button>
             </div>
           ) : (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              
+            <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500" aria-busy={isAuthBusy}>
               {/* Sleek Tab Toggle */}
               <div className="mb-8 flex items-center gap-6 border-b border-white/10 pb-4">
                 <button
                   type="button"
                   onClick={() => switchAuthMode(true)}
+                  disabled={isAuthBusy}
                   className={cn(
                     "relative pb-2 text-lg font-medium transition-colors",
-                    isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300"
+                    isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300",
+                    isAuthBusy && "cursor-not-allowed opacity-60"
                   )}
                 >
                   Sign In
@@ -270,9 +365,11 @@ function UnifiedAuthContent() {
                 <button
                   type="button"
                   onClick={() => switchAuthMode(false)}
+                  disabled={isAuthBusy}
                   className={cn(
                     "relative pb-2 text-lg font-medium transition-colors",
-                    !isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300"
+                    !isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300",
+                    isAuthBusy && "cursor-not-allowed opacity-60"
                   )}
                 >
                   Create Account
@@ -294,15 +391,8 @@ function UnifiedAuthContent() {
                 </p>
               </div>
 
-              {error && (
-                <Alert variant="destructive" className="mb-8 border-red-900/50 bg-red-950/20 text-red-400">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
               {isLoginView ? (
-                <form onSubmit={handleLoginSubmit} className="space-y-5">
+                <form onSubmit={handleLoginSubmit} className="space-y-5" noValidate>
                   <div className="space-y-2">
                     <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Email Address</Label>
                     <Input
@@ -312,8 +402,8 @@ function UnifiedAuthContent() {
                       value={loginData.email}
                       onChange={(e) => handleLoginInputChange("email", e.target.value)}
                       required
-                      disabled={isLoading}
-                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
+                      disabled={isAuthBusy}
+                      className={inputClassName("loginEmail")}
                     />
                   </div>
 
@@ -332,8 +422,8 @@ function UnifiedAuthContent() {
                         value={loginData.password}
                         onChange={(e) => handleLoginInputChange("password", e.target.value)}
                         required
-                        disabled={isLoading}
-                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50 pr-12"
+                        disabled={isAuthBusy}
+                        className={inputClassName("loginPassword", "pr-12")}
                       />
                       <Button
                         type="button"
@@ -341,23 +431,26 @@ function UnifiedAuthContent() {
                         size="sm"
                         className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
                         onClick={() => setShowPassword(!showPassword)}
-                        disabled={isLoading}
+                        disabled={isAuthBusy}
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="mt-6 h-12 w-full rounded-xl bg-white text-base font-medium text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:bg-slate-200"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Signing In..." : "Sign In"}
-                  </Button>
+                  <div className="mt-6">
+                    <AnimatedSubmitButton
+                      type="submit"
+                      status={submitStatus}
+                      idleText="Sign In"
+                      errorMessage={submitStatus === "error" ? error : undefined}
+                      disabled={isAuthBusy}
+                      className="w-full"
+                    />
+                  </div>
                 </form>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Email Address *</Label>
                     <Input
@@ -367,8 +460,8 @@ function UnifiedAuthContent() {
                       value={formData.email}
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
-                      disabled={isLoading}
-                      className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
+                      disabled={isAuthBusy}
+                      className={inputClassName("email")}
                     />
                   </div>
 
@@ -382,8 +475,8 @@ function UnifiedAuthContent() {
                         value={formData.firstName}
                         onChange={(e) => handleInputChange("firstName", e.target.value)}
                         required
-                        disabled={isLoading}
-                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
+                        disabled={isAuthBusy}
+                        className={inputClassName("firstName")}
                       />
                     </div>
                     <div className="space-y-2">
@@ -395,8 +488,8 @@ function UnifiedAuthContent() {
                         value={formData.lastName}
                         onChange={(e) => handleInputChange("lastName", e.target.value)}
                         required
-                        disabled={isLoading}
-                        className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
+                        disabled={isAuthBusy}
+                        className={inputClassName("lastName")}
                       />
                     </div>
                   </div>
@@ -412,8 +505,8 @@ function UnifiedAuthContent() {
                           value={formData.password}
                           onChange={(e) => handleInputChange("password", e.target.value)}
                           required
-                          disabled={isLoading}
-                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50 pr-12"
+                          disabled={isAuthBusy}
+                          className={inputClassName("password", "pr-12")}
                         />
                         <Button
                           type="button"
@@ -421,7 +514,7 @@ function UnifiedAuthContent() {
                           size="sm"
                           className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
                           onClick={() => setShowPassword(!showPassword)}
-                          disabled={isLoading}
+                          disabled={isAuthBusy}
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
@@ -437,8 +530,8 @@ function UnifiedAuthContent() {
                           value={formData.confirmPassword}
                           onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                           required
-                          disabled={isLoading}
-                          className="h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50 pr-12"
+                          disabled={isAuthBusy}
+                          className={inputClassName("confirmPassword", "pr-12")}
                         />
                         <Button
                           type="button"
@@ -446,7 +539,7 @@ function UnifiedAuthContent() {
                           size="sm"
                           className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          disabled={isLoading}
+                          disabled={isAuthBusy}
                         >
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
@@ -466,8 +559,8 @@ function UnifiedAuthContent() {
                           value={formData.accessCode}
                           onChange={(e) => handleInputChange("accessCode", e.target.value)}
                           required
-                          disabled={isLoading}
-                          className="h-12 rounded-xl border-white/10 bg-[#050505] pl-12 text-lg font-medium uppercase tracking-[0.2em] text-white transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50"
+                          disabled={isAuthBusy}
+                          className={inputClassName("accessCode", "bg-[#050505] pl-12 text-lg font-medium uppercase tracking-[0.2em]")}
                         />
                       </div>
                       <p className="text-xs leading-relaxed text-slate-500 font-light">
@@ -477,25 +570,37 @@ function UnifiedAuthContent() {
                   </div>
 
                   <div className="space-y-4 pt-2">
-                    <div className="flex items-start space-x-3">
+                    <div className={cn(
+                      "flex items-center space-x-3 rounded-lg border border-transparent p-1 transition-colors",
+                      hasInvalidField("terms") && "border-red-500/40 bg-red-950/10"
+                    )}>
                       <Checkbox
                         id="agreeToTerms"
                         checked={formData.agreeToTerms}
                         onCheckedChange={(checked) => handleInputChange("agreeToTerms", !!checked)}
-                        disabled={isLoading}
-                        className="mt-1 border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500"
+                        disabled={isAuthBusy}
+                        className={cn(
+                          "border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500",
+                          hasInvalidField("terms") && "border-red-500"
+                        )}
                       />
                       <Label htmlFor="agreeToTerms" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
                         I agree to the <Link href="/terms-conditions" target="_blank" className="text-white hover:text-cyan-300 underline decoration-white/30 transition-colors">Terms & Conditions</Link> *
                       </Label>
                     </div>
-                    <div className="flex items-start space-x-3">
+                    <div className={cn(
+                      "flex items-center space-x-3 rounded-lg border border-transparent p-1 transition-colors",
+                      hasInvalidField("privacy") && "border-red-500/40 bg-red-950/10"
+                    )}>
                       <Checkbox
                         id="agreeToDataPrivacyPolicy"
                         checked={formData.agreeToDataPrivacyPolicy}
                         onCheckedChange={(checked) => handleInputChange("agreeToDataPrivacyPolicy", !!checked)}
-                        disabled={isLoading}
-                        className="mt-1 border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500"
+                        disabled={isAuthBusy}
+                        className={cn(
+                          "border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500",
+                          hasInvalidField("privacy") && "border-red-500"
+                        )}
                       />
                       <Label htmlFor="agreeToDataPrivacyPolicy" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
                         I agree to the <Link href="/privacy-policy" target="_blank" className="text-white hover:text-cyan-300 underline decoration-white/30 transition-colors">Data Privacy Policy</Link> *
@@ -503,13 +608,16 @@ function UnifiedAuthContent() {
                     </div>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="mt-6 h-12 w-full rounded-xl bg-white text-base font-medium text-black shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all hover:bg-slate-200"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Creating Account..." : "Create Account"}
-                  </Button>
+                  <div className="mt-6">
+                    <AnimatedSubmitButton
+                      type="submit"
+                      status={submitStatus}
+                      idleText="Create Account"
+                      errorMessage={submitStatus === "error" ? error : undefined}
+                      disabled={isAuthBusy}
+                      className="w-full"
+                    />
+                  </div>
                 </form>
               )}
             </div>

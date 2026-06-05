@@ -11,6 +11,9 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarSeparator,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarGroupContent,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -20,18 +23,17 @@ import {
 } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import {
-  Users,
-  BarChart3,
-  FileText,
   User,
   LogOut,
   UserCircle,
-  Shield,
-  Database,
-  ChartNoAxesColumn,
-  Text,
-  FileAudio,
-  LucideFileQuestion,
+  LayoutDashboard,
+  TrendingUp,
+  CreditCard,
+  Users,
+  History,
+  Settings,
+  Building2,
+  PlusCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -130,83 +132,89 @@ export default function AdminLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Dashboard Overview">
                   <Link href="/admin">
-                    <BarChart3 />
+                    <LayoutDashboard />
                     <span className="font-medium text-foreground">
-                      Dashboard
+                      Overview
                     </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Candidate Results">
-                  <Link href="/admin/candidates">
+                <SidebarMenuButton asChild tooltip="Upgrade Requests">
+                  <Link href="/admin/upgrade-requests">
+                    <TrendingUp />
+                    <span className="font-medium text-foreground">
+                      Upgrade Requests
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Billing">
+                  <Link href="/admin/billing">
+                    <CreditCard />
+                    <span className="font-medium text-foreground">
+                      Billing
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Users">
+                  <Link href="/admin/users">
                     <Users />
                     <span className="font-medium text-foreground">
-                      Candidates
+                      Users
                     </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Texts for tiping tests">
-                  <Link href="/admin/texts">
-                    <Text />
+                <SidebarMenuButton asChild tooltip="Audit Logs">
+                  <Link href="/admin/audit-logs">
+                    <History />
                     <span className="font-medium text-foreground">
-                      Texts for typing
+                      Audit Logs
                     </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Call's audios">
-                  <Link href="/admin/calls">
-                    <FileAudio />
+                <SidebarMenuButton asChild tooltip="Settings">
+                  <Link href="/admin/settings">
+                    <Settings />
                     <span className="font-medium text-foreground">
-                      Call's audios
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip="Situational-judgement test's questions"
-                >
-                  <Link href="/admin/questions">
-                    <LucideFileQuestion />
-                    <span className="font-medium text-foreground">
-                      Situational questions
+                      Settings
                     </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarSeparator />
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Assessment Reports">
-                  <Link href="/admin/reports">
-                    <FileText />
-                    <span className="font-medium text-foreground">Reports</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Analytics & Statistics">
-                  <Link href="/admin/analytics">
-                    <ChartNoAxesColumn />
-                    <span className="font-medium text-foreground">
-                      Analytics
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="System Management">
-                  <Link href="/admin/system">
-                    <Database />
-                    <span className="font-medium text-foreground">System</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <SidebarGroup>
+                <SidebarGroupLabel>Clients</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Client List">
+                      <Link href="/admin/clients">
+                        <Building2 />
+                        <span className="font-medium text-foreground">
+                          Client List
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Create Client">
+                      <Link href="/admin/clients/create">
+                        <PlusCircle />
+                        <span className="font-medium text-foreground">
+                          Create Client
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarGroupContent>
+              </SidebarGroup>
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>

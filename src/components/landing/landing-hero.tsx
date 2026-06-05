@@ -56,17 +56,6 @@ export function LandingHero({ navHeight = 96 }: LandingHeroProps) {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-slate-400 mb-10 backdrop-blur-sm">
-              <span className="flex h-1.5 w-1.5 rounded-full bg-slate-400 mr-2" />
-              Mission-Critical Assessment Platform
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
           >
             {/* Reduced sizing slightly, cleaner tracking, removed intense italic */}
