@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,10 +8,16 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Building2, CheckCircle, Clock, FileText, Send, User, XCircle } from "lucide-react";
 import Link from "next/link";
 
-export default function UpgradeRequestDetailPage({ params }: { params: { id: string } }) {
+type UpgradeRequestDetailPageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default function UpgradeRequestDetailPage({ params }: UpgradeRequestDetailPageProps) {
+  const { id } = use(params);
+
   // Mock data for display purposes
   const request = {
-    id: params.id,
+    id,
     client: "Met Police",
     type: "HM Seats",
     status: "Payment Pending",
