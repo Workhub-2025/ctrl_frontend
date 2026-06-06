@@ -40,7 +40,7 @@ function EqualityMonitoringContent() {
       // Check if already completed (by checking if the object exists and has properties)
       const hasCompleted = !!user?.equalityMonitoring && Object.keys(user.equalityMonitoring).length > 0;
       if (hasCompleted) {
-        router.push('/candidate-dashboard/my-campaigns/');
+        router.push('/candidate-dashboard/');
         return;
       }
     }
@@ -64,7 +64,7 @@ function EqualityMonitoringContent() {
         description: 'Your equality monitoring information has been saved.',
       });
       
-      router.push('/candidate-dashboard/my-campaigns/');
+      router.push('/candidate-dashboard/');
     } catch (error) {
       console.error('❌ Error saving equality monitoring:', error);
       toast({
@@ -78,7 +78,7 @@ function EqualityMonitoringContent() {
   };
 
   const handleSkip = () => {
-    router.push('/candidate-dashboard/my-campaigns/');
+    router.push('/candidate-dashboard/');
   };
 
   // Show loading while checking authentication

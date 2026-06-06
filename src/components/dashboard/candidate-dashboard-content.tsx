@@ -410,7 +410,7 @@ export function CandidateDashboardContent() {
             </div>
             <CardTitle className="text-2xl mb-2 text-foreground">No campaigns linked yet</CardTitle>
             <CardDescription className="max-w-md text-base">
-              You haven't joined any campaigns yet. Return to the Dashboard Home to enter an Access Code provided by your Hiring Manager.
+              You haven't joined any campaigns yet. Return to the Dashboard to enter an Access Code provided by your Hiring Manager.
             </CardDescription>
           </CardContent>
         </Card>

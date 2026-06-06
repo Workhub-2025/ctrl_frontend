@@ -71,19 +71,8 @@ export function useAuth() {
             return;
         }
 
-        console.log('📋 Candidate user detected, checking equality monitoring state:', userData?.equalityMonitoring);
-
-        // Candidate users: check if they want to complete optional form
-        const hasCompletedEqualityMonitoring = !!userData?.equalityMonitoring && Object.keys(userData.equalityMonitoring).length > 0;
-
-        if (hasCompletedEqualityMonitoring) {
-            console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard/my-campaigns/');
-            router.push('/candidate-dashboard/my-campaigns/');
-        } else {
-            console.log('📋 Candidate without equality monitoring, offering optional form');
-            // Show optional equality monitoring form with skip option
-            router.push('/auth/equality-monitoring?optional=true');
-        }
+        console.log('👤 Candidate user, redirecting to dashboard');
+        router.push('/candidate-dashboard/');
     };
 
     const waitForSession = async (attempts = 12, delayMs = 120) => {

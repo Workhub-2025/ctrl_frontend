@@ -17,7 +17,7 @@ export default function CandidateDashboardLayout({
       navItems={[
         {
           href: "/candidate-dashboard/",
-          label: "Dashboard Home",
+          label: "Dashboard",
           icon: LayoutDashboard,
         },
         {
