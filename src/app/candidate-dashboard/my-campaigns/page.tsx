@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { CandidateDashboardContent } from "@/components/dashboard/candidate-dashboard-content";
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function MyCampaignsPage() {
-  return <CandidateDashboardContent />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CandidateDashboardContent />
+    </Suspense>
+  );
 }

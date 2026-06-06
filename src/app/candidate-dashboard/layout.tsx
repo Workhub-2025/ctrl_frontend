@@ -1,6 +1,6 @@
 "use client";
 
-import { BriefcaseBusiness, HelpCircle, Route } from "lucide-react";
+import { BriefcaseBusiness, HelpCircle, LayoutDashboard } from "lucide-react";
 import { RoleDashboardShell } from "@/components/dashboard/role-dashboard-shell";
 
 export default function CandidateDashboardLayout({
@@ -14,14 +14,14 @@ export default function CandidateDashboardLayout({
       subtitle="Campaign access, assessment progress, and support"
       navItems={[
         {
+          href: "/candidate-dashboard/",
+          label: "Dashboard Home",
+          icon: LayoutDashboard,
+        },
+        {
           href: "/candidate-dashboard/my-campaigns/",
           label: "My Campaigns",
           icon: BriefcaseBusiness,
-        },
-        {
-          href: "/candidate-dashboard/next-steps/",
-          label: "What To Do Next",
-          icon: Route,
         },
         {
           href: "/candidate-dashboard/help-support/",

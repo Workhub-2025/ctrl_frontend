@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,8 +31,9 @@ import {
   ShieldCheck,
   Target,
   XCircle,
+  PlayCircle
 } from "lucide-react";
-import { AssessmentCard } from "@/components/dashboard/assessment-card";
+import { SecurePreflightModal } from "@/components/assessment";
 import { candidateAssessmentItems } from "@/components/dashboard/candidate-dashboard-data";
 import {
   CandidateSessionService,
@@ -82,10 +84,8 @@ const statusClassNames: Record<CandidateApplicationStatus, string> = {
 
 function formatDate(value?: string | null) {
   if (!value) return "Date to be confirmed";
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Date to be confirmed";
-
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
@@ -95,10 +95,8 @@ function formatDate(value?: string | null) {
 
 function formatDateTime(value?: string | null) {
   if (!value) return null;
-
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
@@ -110,7 +108,6 @@ function formatDateTime(value?: string | null) {
 
 function formatRefreshTime(value: number | null) {
   if (!value) return "Not refreshed yet";
-
   return new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
     minute: "2-digit",
@@ -123,21 +120,15 @@ function mapPortalStatus(
 ): CandidateApplicationStatus {
   switch (application.portalStatus ?? application.sessionStatus) {
     case "in_progress":
-    case "active":
-      return "In Progress";
-    case "completed":
-      return "Completed";
-    case "progressed":
-      return "Progressed";
-    case "unsuccessful":
-      return "Unsuccessful";
+    case "active": return "In Progress";
+    case "completed": return "Completed";
+    case "progressed": return "Progressed";
+    case "unsuccessful": return "Unsuccessful";
     case "soft_locked":
-    case "locked":
-      return "Soft Locked";
+    case "locked": return "Soft Locked";
     case "awaiting_assessment":
     case "pending":
-    default:
-      return "Awaiting Assessment";
+    default: return "Awaiting Assessment";
   }
 }
 
@@ -157,10 +148,7 @@ function mapApplication(
     status: mapPortalStatus(application),
     location: application.campaign?.location ?? application.mode ?? "Location to be confirmed",
     mode: formatMode(application.mode),
-    completion:
-      total > 0
-        ? `${completed} of ${total} assessments submitted`
-        : "No assessments assigned yet",
+    completion: total > 0 ? `${completed} of ${total} assessments submitted` : "No assessments assigned yet",
     completedCount: completed,
     totalCount: total,
     completionPercent,
@@ -171,22 +159,15 @@ function mapApplication(
 
 function formatMode(value?: string | null) {
   switch (value) {
-    case "remote":
-      return "Remote";
-    case "hybrid":
-      return "Hybrid";
-    case "in_person":
-      return "In-person";
-    default:
-      return "Mode to be confirmed";
+    case "remote": return "Remote";
+    case "hybrid": return "Hybrid";
+    case "in_person": return "In-person";
+    default: return "Mode to be confirmed";
   }
 }
 
 function normaliseSlug(value?: string) {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/_/g, "-")
-    .replace("prioritisation", "prioritization");
+  return (value ?? "").toLowerCase().replace(/_/g, "-").replace("prioritisation", "prioritization");
 }
 
 function getCandidateAssessmentSlug(item: (typeof candidateAssessmentItems)[number]) {
@@ -194,9 +175,7 @@ function getCandidateAssessmentSlug(item: (typeof candidateAssessmentItems)[numb
 }
 
 function getAssessmentItemsForApplication(application: CandidateApplication) {
-  if (!application.assessments.length) {
-    return [];
-  }
+  if (!application.assessments.length) return [];
 
   return application.assessments.map((assessment) => {
     const slug = normaliseSlug(assessment.slug);
@@ -212,7 +191,7 @@ function getAssessmentItemsForApplication(application: CandidateApplication) {
       title: assessment.name ?? matchedItem?.title ?? "Assessment",
       description:
         assessment.status === "not_open"
-          ? `This assessment opens with the session${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : ""}.`
+          ? `Opens ${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : ""}.`
           : matchedItem?.description ?? "Complete this assigned assessment.",
       href: `${matchedItem?.href ?? `/assessment/${slug}`}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
       isCompleted: assessment.status === "completed",
@@ -222,51 +201,105 @@ function getAssessmentItemsForApplication(application: CandidateApplication) {
   });
 }
 
+// New Assessment List Item for the unified Checklist pattern
+function AssessmentListItem({ item, step }: { item: any, step: number }) {
+  const [showPreflight, setShowPreflight] = useState(false);
+
+  return (
+    <>
+      <div className={`relative flex items-start gap-4 p-5 rounded-2xl border transition-all duration-300 ${
+        item.isCompleted 
+          ? "bg-muted/30 border-border dark:bg-white/[0.01] dark:border-white/5 opacity-80" 
+          : "bg-card border-border shadow-sm hover:shadow-md hover:border-primary/30 dark:bg-[#080c16]/70 dark:border-white/10"
+      }`}>
+        {/* Step Indicator / Icon */}
+        <div className={`flex shrink-0 h-12 w-12 items-center justify-center rounded-2xl ${
+          item.isCompleted ? "bg-green-500/10 text-green-600 dark:text-green-500" : "bg-primary/10 text-primary"
+        }`}>
+          {item.isCompleted ? <CheckCircle2 className="h-6 w-6" /> : <item.icon className="h-6 w-6" />}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 pt-1">
+          <div className="flex flex-wrap gap-2 items-center justify-between mb-1">
+            <h4 className="font-semibold text-foreground text-lg tracking-tight">{item.title}</h4>
+            <Badge variant="outline" className="text-xs uppercase tracking-wider font-medium opacity-70">
+              Assessment {step}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{item.description}</p>
+          
+          {/* Action Button */}
+          <div>
+            {item.isCompleted ? (
+              <Button variant="outline" className="w-full sm:w-auto h-9 text-green-600 border-green-600/20 bg-green-500/5 hover:bg-green-500/10 dark:text-green-500 pointer-events-none">
+                <CheckCircle2 className="mr-2 h-4 w-4" /> Submitted
+              </Button>
+            ) : !item.isAvailable ? (
+              <Button variant="secondary" className="w-full sm:w-auto h-9" disabled>
+                {item.availableFromLabel ? `Opens ${item.availableFromLabel}` : "Not open yet"}
+              </Button>
+            ) : (
+              <Button onClick={() => setShowPreflight(true)} className="w-full sm:w-auto h-9 gap-2 shadow-sm transition-transform hover:scale-[1.02]">
+                <PlayCircle className="h-4 w-4" /> Start Assessment
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+      <SecurePreflightModal 
+        isOpen={showPreflight} 
+        onClose={() => setShowPreflight(false)} 
+        assessmentName={item.title} 
+        href={item.href} 
+      />
+    </>
+  );
+}
+
 export function CandidateDashboardContent() {
-  const [selectedApplicationKey, setSelectedApplicationKey] = useState<
-    string | null
-  >(null);
-  const [isPairingNew, setIsPairingNew] = useState(false);
-  const [accessCodeInput, setAccessCodeInput] = useState("");
+  const searchParams = useSearchParams();
+  const sessionParam = searchParams.get("session");
+  const [selectedApplicationKey, setSelectedApplicationKey] = useState<string | null>(sessionParam);
   const [applications, setApplications] = useState<CandidateApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
   const [loadError, setLoadError] = useState("");
-  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(
-    CandidateSessionService.getMyApplicationsLastRefresh()
-  );
+  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(CandidateSessionService.getMyApplicationsLastRefresh());
+
+  useEffect(() => {
+    setSelectedApplicationKey(sessionParam);
+  }, [sessionParam]);
 
   const loadApplications = useCallback(async (options?: { force?: boolean }) => {
     const isManualRefresh = !!options?.force;
-    if (isManualRefresh) {
-      setIsRefreshing(true);
-    } else {
-      setIsLoading(true);
-    }
+    if (isManualRefresh) setIsRefreshing(true);
+    else setIsLoading(true);
     setLoadError("");
 
     try {
-      const portalApplications =
-        await CandidateSessionService.getMyApplications({
-          force: options?.force,
-        });
+      const portalApplications = await CandidateSessionService.getMyApplications({ force: options?.force });
       const mappedApplications = portalApplications.map(mapApplication);
+      
+      // Sort: Active ones first, then completed
+      mappedApplications.sort((a, b) => {
+         const aActive = a.status === "Awaiting Assessment" || a.status === "In Progress" ? -1 : 1;
+         const bActive = b.status === "Awaiting Assessment" || b.status === "In Progress" ? -1 : 1;
+         return aActive - bActive;
+      });
 
       setApplications(mappedApplications);
       setLastRefreshAt(CandidateSessionService.getMyApplicationsLastRefresh());
-      setSelectedApplicationKey((currentKey) =>
-        currentKey &&
-        mappedApplications.some((application) => application.key === currentKey)
-          ? currentKey
-          : null
-      );
+      
+      // Keep an explicit selection if it still exists. Without a session query,
+      // land on the campaign list instead of silently opening the first item.
+      setSelectedApplicationKey((currentKey) => {
+         if (currentKey && mappedApplications.some(app => app.key === currentKey)) return currentKey;
+         return null;
+      });
     } catch (applicationError) {
       console.error("[CandidateDashboard] Failed to load applications:", applicationError);
-      setLoadError(
-        "We could not load your campaigns. Please refresh or try again shortly."
-      );
+      setLoadError("We could not load your campaigns. Please refresh or try again shortly.");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -283,456 +316,215 @@ export function CandidateDashboardContent() {
     });
   }, [loadApplications]);
 
-  const handlePair = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const currentApplication = applications.find(app => app.key === selectedApplicationKey);
+  const currentAssessmentItems = currentApplication ? getAssessmentItemsForApplication(currentApplication) : [];
 
-    const code = accessCodeInput.trim();
-    if (!code) {
-      setError("Enter the Access Code provided by your Hiring Manager.");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      await CandidateSessionService.joinWithAccessCode(code);
-      const portalApplications =
-        await CandidateSessionService.getMyApplications({ force: true });
-      const mappedApplications = portalApplications.map(mapApplication);
-      const matchingApplication = mappedApplications.find(
-        (application) => application.code === code
-      );
-
-      setApplications(mappedApplications);
-      setLastRefreshAt(CandidateSessionService.getMyApplicationsLastRefresh());
-      setSelectedApplicationKey(
-        matchingApplication?.key ?? mappedApplications[0]?.key ?? null
-      );
-      setIsPairingNew(false);
-      setAccessCodeInput("");
-    } catch (pairingError) {
-      const message =
-        pairingError instanceof Error
-          ? pairingError.message
-          : "Invalid Access Code. Please check the code provided by your Hiring Manager.";
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const currentApplication = applications.find(
-    (application) => application.key === selectedApplicationKey
-  );
-  const currentAssessmentItems = currentApplication
-    ? getAssessmentItemsForApplication(currentApplication)
-    : [];
-
-  if (!selectedApplicationKey || !currentApplication) {
+  if (loadError) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-500">
-        <section className="overflow-hidden rounded-[1.5rem] border border-primary/15 bg-card shadow-md shadow-primary/5 ring-1 ring-primary/5 dark:border-white/10 dark:bg-[#080c16] dark:shadow-black/20">
-          <div className="relative grid gap-0 lg:grid-cols-[1.4fr_0.8fr]">
-            <div className="relative z-10 space-y-6 p-6 sm:p-7">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold font-headline text-foreground sm:text-4xl lg:text-5xl">
-                  My Campaigns
-                </h1>
-                <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
-                  Join campaign sessions, complete assigned assessments, and keep track of what has already been submitted.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 shadow-sm dark:border-white/5 dark:bg-white/[0.04]">
-                  <Briefcase className="h-4 w-4 text-primary" />
-                  {applications.length} campaign{applications.length === 1 ? "" : "s"} linked
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 shadow-sm dark:border-white/5 dark:bg-white/[0.04]">
-                  <RefreshCw className="h-4 w-4 text-primary" />
-                  Last refresh: {formatRefreshTime(lastRefreshAt)}
-                </span>
-              </div>
-            </div>
-            <div className="relative z-10 flex flex-col justify-end border-t border-border bg-muted/50 p-6 dark:border-white/5 dark:bg-white/[0.04] lg:border-l lg:border-t-0">
-              <div
-                className={`mt-auto flex flex-col ${
-                  isPairingNew ? "gap-2" : "gap-0"
-                }`}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => void loadApplications({ force: true })}
-                    disabled={isLoading || isRefreshing}
-                    className="gap-2"
-                  >
-                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                    Refresh
-                  </Button>
-                  <Button
-                    onClick={() => setIsPairingNew(!isPairingNew)}
-                    className="gap-2"
-                    aria-expanded={isPairingNew}
-                    aria-controls="candidate-access-code-panel"
-                  >
-                    Enter Access Code
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform duration-300 ${
-                        isPairingNew ? "rotate-180" : ""
-                      }`}
-                    />
-                  </Button>
-                </div>
-                <div
-                  id="candidate-access-code-panel"
-                  className={`grid transition-all duration-300 ease-out ${
-                    isPairingNew
-                      ? "grid-rows-[1fr] opacity-100"
-                      : "grid-rows-[0fr] opacity-0"
-                  }`}
-                >
-                  <div className="min-h-0 overflow-hidden">
-                    <form
-                      onSubmit={handlePair}
-                      className="rounded-2xl border border-border bg-background/80 p-3 shadow-sm dark:border-white/5 dark:bg-[#04070d]/80"
-                    >
-                      <div className="space-y-3">
-                        <div className="relative">
-                          <KeyRound className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                          <Input
-                            id="code"
-                            aria-label="Access Code"
-                            value={accessCodeInput}
-                            onChange={(e) => setAccessCodeInput(e.target.value)}
-                            placeholder="e.g. CTRL-9A2X"
-                            className="h-11 font-mono tracking-wider pl-10"
-                          />
-                        </div>
-                        {error && <p className="text-sm text-red-500">{error}</p>}
-                        <Button
-                          type="submit"
-                          className="h-11 w-full"
-                          disabled={!accessCodeInput.trim() || isSubmitting}
-                        >
-                          {isSubmitting && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          )}
-                          Join Campaign
-                        </Button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {loadError && (
-          <Alert className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400">
-            <AlertTitle>Campaigns unavailable</AlertTitle>
-            <AlertDescription>{loadError}</AlertDescription>
-          </Alert>
-        )}
-
-        {isLoading ? (
-          <Card className="border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/50 dark:shadow-none">
-            <CardContent className="flex items-center gap-3 p-6 text-muted-foreground">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Loading campaigns</p>
-                <p className="text-sm text-muted-foreground">
-                  Checking whether any campaign sessions are linked to your account.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : applications.length === 0 ? (
-          <Card className="overflow-hidden border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/50 dark:shadow-none">
-            <CardContent className="relative grid gap-5 p-6 md:grid-cols-[auto_1fr] md:items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Briefcase className="h-7 w-7" />
-              </div>
-              <div className="space-y-2">
-                <CardTitle className="text-xl">No campaigns linked yet</CardTitle>
-                <CardDescription className="max-w-2xl">
-                  Once you receive an Access Code from a Hiring Manager, use the panel above to link the campaign to this portal. Linked campaigns will appear here with their location, mode, assessment progress, and submission status.
-                </CardDescription>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {applications.map((application) => (
-              <Card
-                key={application.key}
-                className="group cursor-pointer overflow-hidden border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md dark:border-white/5 dark:bg-[#080c16]/70 dark:hover:bg-[#0b1120]"
-                onClick={() => setSelectedApplicationKey(application.key)}
-              >
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <Briefcase className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <CardTitle className="truncate text-lg">{application.campaign}</CardTitle>
-                        <CardDescription className="mt-1 text-sm">{application.role}</CardDescription>
-                      </div>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className={statusClassNames[application.status]}
-                    >
-                      {application.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm text-muted-foreground">
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    <div className="rounded-xl bg-muted/60 p-3 dark:bg-white/[0.03]">
-                      <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5" /> Session start
-                      </div>
-                      <p className="text-foreground">{application.date}</p>
-                    </div>
-                    <div className="rounded-xl bg-muted/60 p-3 dark:bg-white/[0.03]">
-                      <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        <MapPin className="h-3.5 w-3.5" /> Location
-                      </div>
-                      <p className="text-foreground">{application.location}</p>
-                    </div>
-                    <div className="rounded-xl bg-muted/60 p-3 dark:bg-white/[0.03]">
-                      <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                        <Target className="h-3.5 w-3.5" /> Mode
-                      </div>
-                      <p className="text-foreground">{application.mode}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-medium text-foreground">Assessment progress</span>
-                      <span>{application.completion}</span>
-                    </div>
-                    <Progress value={application.completionPercent} className="h-2 bg-muted dark:bg-white/10" />
-                  </div>
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 dark:border-white/5">
-                    <span className="font-mono text-xs text-muted-foreground">{application.code}</span>
-                    <span className="inline-flex items-center gap-2 font-medium text-primary">
-                      {application.status === "Awaiting Assessment" ||
-                      application.status === "In Progress"
-                        ? "Open campaign"
-                        : "View campaign"}
-                      <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+      <div className="p-6">
+        <Alert className="border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400">
+          <AlertTitle>Campaigns unavailable</AlertTitle>
+          <AlertDescription>{loadError}</AlertDescription>
+        </Alert>
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-500">
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button
-            variant="ghost"
-            className="gap-2 px-0 text-muted-foreground hover:text-foreground"
-            onClick={() => setSelectedApplicationKey(null)}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Return to My Campaigns
-          </Button>
-          <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-            Access Code: {currentApplication.code}
-          </Badge>
-        </div>
-        <div className="space-y-3">
-          <h1 className="text-3xl font-bold font-headline leading-tight text-foreground">
-            {currentApplication.campaign}
-          </h1>
-          <p className="text-sm font-medium text-muted-foreground">{currentApplication.role}</p>
-          <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
-            {currentApplication.status === "Awaiting Assessment"
-              ? currentApplication.sessionStartsAt && new Date(currentApplication.sessionStartsAt).getTime() > Date.now()
-                ? "Your account is linked to this campaign. You can view it now, and assessments will open when the session starts."
-                : "Your account is linked to this campaign. Begin each assigned assessment when you are ready."
-              : "This campaign has concluded. You can review your completion status below."}
-          </p>
-          <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 dark:bg-white/5">
-              <Target className="h-4 w-4 text-primary" />
-              {currentApplication.mode}
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 dark:bg-white/5">
-              <Clock className="h-4 w-4 text-primary" />
-              {currentApplication.completion}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      <div className={`grid gap-6 ${currentApplication.status !== "Awaiting Assessment" && currentApplication.status !== "In Progress" ? "lg:grid-cols-[1.5fr_1fr]" : ""}`}>
-        <div className="space-y-6">
-          {(currentApplication.status === "Awaiting Assessment" || currentApplication.status === "In Progress") && (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              <Alert className="border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400">
-                <CheckCircle2 className="h-5 w-5 !text-blue-700 dark:!text-blue-400" />
-                <AlertTitle className="text-blue-800 dark:text-blue-300">Awaiting Assessment</AlertTitle>
-                <AlertDescription className="text-blue-700/80 dark:text-blue-400/80">
-                  {currentApplication.sessionStartsAt && new Date(currentApplication.sessionStartsAt).getTime() > Date.now()
-                    ? `Your assigned assessments will open at ${formatDateTime(currentApplication.sessionStartsAt)}.`
-                    : "Your assigned assessments are available. Start each assessment when you are ready and submit all sections for review."}
-                </AlertDescription>
-              </Alert>
-              {currentAssessmentItems.length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {currentAssessmentItems.map((item) => (
-                    <AssessmentCard
-                      key={item.title}
-                      title={item.title}
-                      description={item.description}
-                      icon={<item.icon className="h-6 w-6" />}
-                      href={item.href}
-                      isCompleted={item.isCompleted}
-                      isAvailable={item.isAvailable}
-                      availableFromLabel={item.availableFromLabel ?? undefined}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
-                  <CardHeader>
-                    <CardTitle className="text-lg">No assessments assigned yet</CardTitle>
-                    <CardDescription>
-                      This campaign is linked to your account, but the assigned assessments are not available yet.
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {currentApplication.status === "Progressed" && (
-            <Card className="relative overflow-hidden border-green-500/20 bg-green-500/5 shadow-none dark:bg-green-500/10">
-              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                <CheckCircle2 className="h-32 w-32" />
-              </div>
-              <CardHeader>
-                <CardTitle className="text-xl text-green-700 dark:text-green-300">Progressed</CardTitle>
-                <CardDescription className="mt-1 flex items-center gap-2 text-base text-foreground/80">
-                  Your completed application has moved to the next recruitment stage.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground max-w-md relative z-10">
-                  The Hiring Manager has reviewed this application. You do not need to complete anything else here.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {currentApplication.status === "Unsuccessful" && (
-            <Card className="relative overflow-hidden border-red-500/20 bg-red-500/5 shadow-none dark:bg-red-500/10">
-              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                <XCircle className="h-32 w-32" />
-              </div>
-              <CardHeader>
-                <CardTitle className="text-xl text-red-700 dark:text-red-300">Unsuccessful</CardTitle>
-                <CardDescription className="mt-1 flex items-center gap-2 text-base text-foreground/80">
-                  This application has now concluded.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground max-w-md relative z-10">
-                  Thank you for completing the assessment process. Any further updates will come from the Hiring Manager.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {currentApplication.status === "Completed" && (
-            <Card className="relative overflow-hidden border-blue-500/20 bg-blue-500/5 shadow-none dark:bg-blue-500/10">
-              <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-                <CheckCircle2 className="h-32 w-32" />
-              </div>
-              <CardHeader>
-                <CardTitle className="text-xl text-blue-700 dark:text-blue-300">Assessment process complete</CardTitle>
-                <CardDescription className="mt-1 flex items-center gap-2 text-base text-foreground/80">
-                  Your responses have been submitted for review.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground max-w-md relative z-10">
-                  You do not need to take further action unless the Hiring Manager contacts you.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {currentApplication.status === "Soft Locked" && (
-            <Card className="relative overflow-hidden border-slate-500/20 bg-slate-500/5 shadow-none dark:bg-slate-500/10">
-              <CardHeader>
-                <CardTitle className="text-xl text-slate-700 dark:text-slate-300">Access currently unavailable</CardTitle>
-                <CardDescription className="mt-1 flex items-center gap-2 text-base text-foreground/80">
-                  This application is not currently available for action.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  If you have been given a new Access Code, return to My Campaigns and enter it to reconnect where permitted.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {currentApplication.status !== "Awaiting Assessment" && currentApplication.status !== "In Progress" && (
-          <div className="space-y-6">
-            <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
-              <CardHeader>
-                <CardTitle className="text-lg">Application details</CardTitle>
-                <CardDescription>{currentApplication.code}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">{currentApplication.date}</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">{currentApplication.location}</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">Status: {currentApplication.status}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none">
-              <CardHeader>
-                <CardTitle className="text-lg">Need help?</CardTitle>
-                <CardDescription>Contact the Hiring Manager if you have questions about this application.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full gap-2 border-border dark:border-white/5 bg-background dark:bg-[#04070d] hover:bg-muted dark:hover:bg-white/5" asChild>
-                  <a href="mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query">
-                    <Mail className="h-4 w-4" /> Contact Hiring Manager
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+  if (isLoading && applications.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-muted-foreground animate-pulse">
+        <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
+        <p>Loading your campaigns...</p>
       </div>
+    );
+  }
+
+  if (applications.length === 0) {
+    return (
+      <div className="p-6">
+        <Card className="overflow-hidden border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/50">
+          <CardContent className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4">
+              <Briefcase className="h-8 w-8" />
+            </div>
+            <CardTitle className="text-2xl mb-2 text-foreground">No campaigns linked yet</CardTitle>
+            <CardDescription className="max-w-md text-base">
+              You haven't joined any campaigns yet. Return to the Dashboard Home to enter an Access Code provided by your Hiring Manager.
+            </CardDescription>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Mobile visibility states
+  const showListOnMobile = !selectedApplicationKey;
+  const showDetailOnMobile = !!selectedApplicationKey;
+
+  return (
+    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-6rem)] w-full gap-0 lg:gap-6 animate-in fade-in duration-500">
+      
+      {/* LEFT PANE: CAMPAIGN LIST (Master) */}
+      <div className={`w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col gap-4 ${showListOnMobile ? 'block' : 'hidden lg:flex'}`}>
+         <div className="flex items-center justify-between px-2 lg:px-0">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">My Campaigns</h2>
+            <Button variant="ghost" size="icon" onClick={() => void loadApplications({ force: true })} disabled={isRefreshing} className="h-8 w-8 rounded-full" title="Refresh">
+               <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            </Button>
+         </div>
+
+         <div className="flex-1 overflow-y-auto pr-2 pb-8 space-y-3 custom-scrollbar">
+            {applications.map((app) => {
+               const isActive = app.status === "Awaiting Assessment" || app.status === "In Progress";
+               const isSelected = app.key === selectedApplicationKey;
+               
+               return (
+                  <div 
+                    key={app.key} 
+                    onClick={() => setSelectedApplicationKey(app.key)}
+                    className={`group cursor-pointer rounded-2xl p-4 border transition-all duration-200 ${
+                       isSelected 
+                         ? "border-primary/50 bg-primary/5 shadow-sm dark:bg-primary/10 dark:border-primary/50 ring-1 ring-primary/20" 
+                         : "border-border bg-card hover:border-primary/30 hover:shadow-sm dark:border-white/5 dark:bg-[#080c16]/50 dark:hover:bg-[#0b1120]"
+                    }`}
+                  >
+                     <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-semibold text-foreground line-clamp-1">{app.campaign}</h3>
+                        {/* Status Indicator Dot */}
+                        <div className="flex items-center gap-1.5 shrink-0 mt-1">
+                           <div className={`h-2 w-2 rounded-full ${isActive ? 'bg-primary animate-pulse' : 'bg-muted-foreground'}`} />
+                        </div>
+                     </div>
+                     <p className="text-sm text-muted-foreground line-clamp-1 mb-3">{app.role}</p>
+                     
+                     <div className="flex items-center justify-between text-xs font-medium">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                           <CalendarDays className="h-3.5 w-3.5" /> {app.date}
+                        </span>
+                        <Badge variant="secondary" className={`bg-transparent border-none p-0 ${
+                           isActive ? 'text-primary' : 'text-muted-foreground'
+                        }`}>
+                           {app.completionPercent}%
+                        </Badge>
+                     </div>
+                     <Progress value={app.completionPercent} className={`h-1 mt-2 ${isSelected ? 'bg-primary/20' : ''}`} />
+                  </div>
+               );
+            })}
+         </div>
+      </div>
+
+      {/* RIGHT PANE: CAMPAIGN DETAILS (Detail) */}
+      <div className={`flex-1 flex flex-col min-w-0 ${showDetailOnMobile ? 'block' : 'hidden lg:flex'}`}>
+         {currentApplication ? (
+            <div className="flex-1 bg-card border-border border rounded-[2rem] shadow-sm overflow-hidden flex flex-col dark:bg-[#060a12] dark:border-white/10 animate-in slide-in-from-right-4 lg:slide-in-from-bottom-4 duration-300">
+               
+               {/* Detail Header */}
+               <div className="relative p-6 sm:p-8 border-b border-border dark:border-white/10 bg-muted/20 dark:bg-white/[0.01]">
+                  {/* Mobile Back Button */}
+                  <Button variant="ghost" className="lg:hidden mb-4 -ml-2 text-muted-foreground hover:text-foreground" onClick={() => setSelectedApplicationKey(null)}>
+                     <ArrowLeft className="h-4 w-4 mr-2" /> Back to list
+                  </Button>
+
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                     <div className="space-y-1 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                           <Badge variant="outline" className="text-xs bg-background/50 backdrop-blur-sm shadow-sm">{currentApplication.code}</Badge>
+                           <Badge className={statusClassNames[currentApplication.status]}>{currentApplication.status}</Badge>
+                        </div>
+                        <h2 className="text-3xl font-bold font-headline text-foreground tracking-tight line-clamp-2">{currentApplication.campaign}</h2>
+                        <p className="text-base text-muted-foreground">{currentApplication.role}</p>
+                     </div>
+                     
+                     {/* Info Pills */}
+                     <div className="flex flex-col sm:items-end gap-2 shrink-0 pt-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground bg-background border border-border px-3 py-1.5 rounded-lg shadow-sm dark:bg-white/[0.03]">
+                           <MapPin className="h-4 w-4 text-primary" /> {currentApplication.location}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground bg-background border border-border px-3 py-1.5 rounded-lg shadow-sm dark:bg-white/[0.03]">
+                           <Target className="h-4 w-4 text-primary" /> {currentApplication.mode}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+
+               {/* Detail Body (Scrollable) */}
+               <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-8 custom-scrollbar">
+                  
+                  {/* Status Banner */}
+                  {(currentApplication.status === "Awaiting Assessment" || currentApplication.status === "In Progress") && (
+                     <Alert className="border-primary/20 bg-primary/5 text-primary">
+                        <Target className="h-5 w-5" />
+                        <AlertTitle className="text-lg font-semibold tracking-tight">Your Tasks</AlertTitle>
+                        <AlertDescription className="text-foreground/80 mt-1 leading-relaxed text-sm">
+                           {currentApplication.sessionStartsAt && new Date(currentApplication.sessionStartsAt).getTime() > Date.now()
+                           ? `Your assigned assessments will open on ${formatDateTime(currentApplication.sessionStartsAt)}.`
+                           : "Work through the assessments below. Submit each one to progress."}
+                        </AlertDescription>
+                     </Alert>
+                  )}
+
+                  {currentApplication.status === "Completed" && (
+                     <Alert className="border-green-500/20 bg-green-500/5 text-green-600 dark:text-green-400">
+                        <CheckCircle2 className="h-5 w-5" />
+                        <AlertTitle>Process Complete</AlertTitle>
+                        <AlertDescription>Your responses have been securely submitted. You do not need to take further action.</AlertDescription>
+                     </Alert>
+                  )}
+
+                  {/* Assessments Checklist */}
+                  <div className="space-y-4">
+                     <h3 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                        <ClipboardCheck className="h-5 w-5 text-muted-foreground" />
+                        Assessment Checklist
+                     </h3>
+                     
+                     {currentAssessmentItems.length > 0 ? (
+                        <div className="grid gap-3 relative">
+                           {/* Vertical connecting line for visual journey effect */}
+                           <div className="absolute left-11 top-10 bottom-10 w-[2px] bg-border dark:bg-white/10 hidden sm:block z-0" />
+                           
+                           {currentAssessmentItems.map((item, index) => (
+                              <div key={item.title} className="relative z-10">
+                                 <AssessmentListItem item={item} step={index + 1} />
+                              </div>
+                           ))}
+                        </div>
+                     ) : (
+                        <div className="rounded-2xl border border-dashed border-border bg-transparent p-8 text-center text-muted-foreground">
+                           <p>No assessments assigned to this campaign yet.</p>
+                        </div>
+                     )}
+                  </div>
+                  
+                  {/* Help Section */}
+                  <div className="pt-6 border-t border-border dark:border-white/10">
+                     <Card className="bg-muted/30 border-none shadow-none dark:bg-white/[0.02]">
+                        <CardHeader className="pb-3">
+                           <CardTitle className="text-base">Need Support?</CardTitle>
+                           <CardDescription>If you encounter technical issues or have questions about the process.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                           <Button variant="outline" className="bg-background shadow-sm hover:border-primary/50 transition-colors" asChild>
+                              <a href="mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query">
+                                 <Mail className="h-4 w-4 mr-2" /> Contact Hiring Manager
+                              </a>
+                           </Button>
+                        </CardContent>
+                     </Card>
+                  </div>
+
+               </div>
+            </div>
+         ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-muted-foreground bg-muted/20 border-border border rounded-[2rem] border-dashed dark:bg-white/[0.01]">
+               <ClipboardCheck className="h-12 w-12 text-muted-foreground/30 mb-4" />
+               <p className="text-lg font-medium text-foreground">Select a campaign</p>
+               <p className="max-w-xs mt-2">Choose a campaign from the list to view its details and begin your assessments.</p>
+            </div>
+         )}
+      </div>
+
     </div>
   );
 }
