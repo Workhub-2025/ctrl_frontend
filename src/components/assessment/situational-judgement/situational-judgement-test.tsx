@@ -2,11 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   ClipboardCheck,
+  ListChecks,
   Loader2,
   LogOut,
   Play,
+  ShieldCheck,
+  Target,
+  Timer,
 } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
@@ -237,7 +242,11 @@ export default function SituationalJudgementTest({
     >
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Secure judgement exercise
+          </div>
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
             <ClipboardCheck className="h-8 w-8" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
@@ -246,6 +255,23 @@ export default function SituationalJudgementTest({
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
             Read each scenario and choose the most effective and least effective response.
           </p>
+          <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <Timer className="mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Three practice scenarios</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Practice questions help you understand the format.</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <Target className="mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Best and worst choice</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Select one most effective and one least effective action.</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <ListChecks className="mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Twenty live scenarios</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Your live judgement decisions are submitted securely.</p>
+            </div>
+          </div>
           <Button className="mt-8 h-12 px-7" size="lg" onClick={() => setPhase('rules')}>
             Start Assessment
             <Play className="ml-2 h-4 w-4" />
@@ -254,10 +280,13 @@ export default function SituationalJudgementTest({
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-4xl flex-col justify-center py-10">
+        <div className="mx-auto flex min-h-[520px] w-full max-w-5xl flex-col justify-center py-10">
           <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
-            <div>
-              <h1 className="text-3xl font-semibold leading-tight text-foreground mb-4">CTRL Situational Judgement Assessment</h1>
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
+                Behavioural judgement
+              </Badge>
+              <h1 className="mb-4 text-3xl font-semibold leading-tight text-foreground">CTRL Situational Judgement Assessment</h1>
               <p>
                 This assessment is designed to understand how you are likely to respond in workplace situations involving communication, judgement, professionalism, empathy, integrity and decision-making.
               </p>
@@ -266,73 +295,112 @@ export default function SituationalJudgementTest({
               </p>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-2">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground mb-3">What You Will See</h2>
+            <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <ClipboardCheck className="h-5 w-5" />
+                </div>
+                <h2 className="mb-3 text-lg font-semibold text-foreground">What You Will See</h2>
                 <p>Each scenario contains:</p>
-                <ul className="mt-2 list-disc pl-5 space-y-1">
-                  <li>A short workplace situation</li>
-                  <li>Four possible actions labelled A, B, C and D</li>
-                </ul>
+                <div className="mt-4 grid gap-2">
+                  {['A short workplace situation', 'Four possible actions labelled A, B, C and D'].map((item) => (
+                    <div key={item} className="flex items-center gap-2 rounded-lg bg-muted p-3 text-foreground dark:bg-white/5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div>
-                <h2 className="text-lg font-semibold text-foreground mb-3">Your Task</h2>
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <ListChecks className="h-5 w-5" />
+                </div>
+                <h2 className="mb-3 text-lg font-semibold text-foreground">Your Task</h2>
                 <p>For each scenario, you must:</p>
-                <ul className="mt-2 list-disc pl-5 space-y-1">
-                  <li>Choose the MOST effective action.</li>
-                  <li>Choose the LEAST effective action.</li>
-                </ul>
-                <div className="mt-4 rounded-lg bg-primary/10 p-4 text-primary dark:bg-primary/20">
-                  <p className="font-semibold">Important selection rule:</p>
-                  <p className="mt-1">
-                    You must choose one MOST effective action and one LEAST effective action for every scenario. You cannot select the same option as both MOST effective and LEAST effective.
-                  </p>
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-background p-4 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                    <p className="text-sm font-semibold text-foreground">MOST effective</p>
+                    <p className="mt-1 text-xs text-muted-foreground">The strongest response.</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background p-4 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                    <p className="text-sm font-semibold text-foreground">LEAST effective</p>
+                    <p className="mt-1 text-xs text-muted-foreground">The weakest response.</p>
+                  </div>
+                </div>
+                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p>
+                      You cannot select the same option as both MOST effective and LEAST effective.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">How to Approach Each Scenario</h2>
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <h2 className="mb-3 text-lg font-semibold text-foreground">How to Approach Each Scenario</h2>
               <p>When making your decisions, think about:</p>
-              <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Professional behaviour</li>
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Communication</li>
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Empathy</li>
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Responsibility</li>
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Integrity</li>
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Accuracy</li>
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Remaining calm under pressure</li>
-                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Making sensible and proportionate decisions</li>
-              </ul>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  'Professional behaviour',
+                  'Clear communication',
+                  'Empathy and calm',
+                  'Responsibility',
+                  'Integrity and accuracy',
+                  'Proportionate decisions',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2 rounded-lg bg-muted p-3 text-foreground dark:bg-white/5">
+                    <Target className="h-4 w-4 shrink-0 text-primary" />
+                    {item}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-2">
-              <div className="rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
-                <h2 className="text-lg font-semibold text-foreground mb-3">Practice Questions</h2>
-                <p>The assessment contains 3 practice questions. Practice questions are not scored. Practice question answers do not affect your final result.</p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Timer className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Practice Questions</h2>
+                </div>
+                <p>The assessment contains 3 practice questions. They are not scored and do not affect your final result.</p>
               </div>
 
-              <div className="rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
-                <h2 className="text-lg font-semibold text-foreground mb-3">Live Assessment Questions</h2>
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Live Assessment Questions</h2>
+                </div>
                 <p>The live assessment contains 20 scored scenarios. Each scenario contains one situation and four possible actions.</p>
               </div>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-foreground mb-3">Step-by-Step Instructions</h2>
-              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
-                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 1:</span> Read the situation carefully</div>
-                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 2:</span> Read all four actions</div>
-                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 3:</span> Decide which action is MOST effective</div>
-                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 4:</span> Decide which action is LEAST effective</div>
-                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 5:</span> Check your selections</div>
-                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 6:</span> Submit your answer</div>
+              <h2 className="mb-3 text-lg font-semibold text-foreground">Step-by-Step Instructions</h2>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  'Read the situation carefully',
+                  'Read all four actions',
+                  'Choose the MOST effective action',
+                  'Choose the LEAST effective action',
+                  'Check your selections',
+                  'Submit your answer',
+                ].map((step, index) => (
+                  <div key={step} className="rounded-lg bg-muted p-3 dark:bg-white/5">
+                    <span className="font-semibold text-foreground">Step {index + 1}:</span> {step}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row border-t border-border pt-8 dark:border-white/10">
+          <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
             <Button size="lg" className="h-12" onClick={startAssessment}>
               Begin scenarios
               <Play className="ml-2 h-4 w-4" />

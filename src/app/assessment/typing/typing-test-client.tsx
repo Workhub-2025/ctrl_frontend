@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SecureAssessmentShell, TypingTest } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
 import { useTypingSessionStore } from '@/store/typing-session.store';
@@ -24,6 +24,7 @@ export function TypingTestClient({
 }: Readonly<TypingTestClientProps>) {
   const { handleExit } = useSecureExit();
   const setSession = useTypingSessionStore((s) => s.setSession);
+  const [integrityMonitoringActive, setIntegrityMonitoringActive] = useState(false);
 
   useEffect(() => {
     if (initialSession) {
@@ -41,10 +42,12 @@ export function TypingTestClient({
       onExit={handleExit}
       showPauseButton={false}
       enableFocusMonitoring={true}
+      integrityMonitoringActive={integrityMonitoringActive}
     >
       <TypingTest
         enableAutoSave={true}
         candidateSessionDocumentId={candidateSessionDocumentId}
+        onIntegrityMonitoringChange={setIntegrityMonitoringActive}
       />
     </SecureAssessmentShell>
   );

@@ -4,15 +4,11 @@ import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
 import { getCurrentUserAction, updateCurrentUserAction } from '@/app/actions/users.actions';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
+import { clearClientSessionCache, getClientSession, type ClientAuthSession } from '@/lib/auth/client-session';
 import { useAuthStore } from '@/store/auth.store';
 
-type ClientSession = {
-    user?: any;
-    expires?: string;
-} | null;
-
 export function useAuth() {
-    const [session, setSession] = useState<ClientSession>(null);
+    const [session, setSession] = useState<ClientAuthSession>(null);
     const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
     const router = useRouter();
     const { setUserProfile, clearUserProfile } = useAuthStore();
@@ -21,30 +17,13 @@ export function useAuth() {
     const isAuthenticated = status === 'authenticated';
     const user = session?.user;
 
-    const loadSession = useCallback(async () => {
-        try {
-            const response = await fetch('/api/auth/session', {
-                credentials: 'same-origin',
-                cache: 'no-store',
-            });
+    const loadSession = useCallback(async (options?: { force?: boolean }) => {
+        const nextSession = await getClientSession({ force: options?.force });
+        const hasUser = !!nextSession?.user;
 
-            if (!response.ok) {
-                setSession(null);
-                setStatus('unauthenticated');
-                return null;
-            }
-
-            const nextSession = await response.json();
-            const hasUser = !!nextSession?.user;
-
-            setSession(hasUser ? nextSession : null);
-            setStatus(hasUser ? 'authenticated' : 'unauthenticated');
-            return hasUser ? nextSession : null;
-        } catch {
-            setSession(null);
-            setStatus('unauthenticated');
-            return null;
-        }
+        setSession(hasUser ? nextSession : null);
+        setStatus(hasUser ? 'authenticated' : 'unauthenticated');
+        return hasUser ? nextSession : null;
     }, []);
 
     useEffect(() => {
@@ -109,7 +88,7 @@ export function useAuth() {
 
     const waitForSession = async (attempts = 12, delayMs = 120) => {
         for (let attempt = 0; attempt < attempts; attempt += 1) {
-            const freshSession = await loadSession();
+            const freshSession = await loadSession({ force: true });
             if (freshSession?.user) {
                 return freshSession;
             }
@@ -213,7 +192,7 @@ export function useAuth() {
             }
 
             setUserProfile(registeredUser as IUser);
-            await loadSession();
+            await loadSession({ force: true });
             routeAfterLogin(registeredUser);
 
             return { success: true, user: registeredUser };
@@ -226,6 +205,7 @@ export function useAuth() {
     const logout = async () => {
         try {
             clearUserProfile();
+            clearClientSessionCache();
             setSession(null);
             setStatus('unauthenticated');
 

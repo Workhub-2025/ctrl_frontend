@@ -32,8 +32,8 @@ export type SubmissionStatus = 'idle' | 'submitting' | 'submitted' | 'error';
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
 export const DEFAULT_TYPING_CONFIG: TypingConfig = {
-    roundCount: 3,
-    timeLimitPerRound: 60,
+    roundCount: 1,
+    timeLimitPerRound: 90,
     minWpm: 32,
     minAccuracy: 90,
     difficulty: 'Base',

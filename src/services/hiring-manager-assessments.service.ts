@@ -165,13 +165,13 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       "Measures transcription speed and accuracy using one practice run and three scored typing runs.",
     isActive: true,
     order: 1,
-    timeLimitSeconds: 60,
+    timeLimitSeconds: 90,
     passingScore: 70,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.typing",
-      roundCount: 3,
-      timeLimitPerRound: 60,
+      roundCount: 1,
+      timeLimitPerRound: 90,
       minWpm: 40,
       minAccuracy: 95,
     },
@@ -265,7 +265,7 @@ function inferDurationSeconds(
 
   switch (config?.__component) {
     case "assessment-config.typing":
-      return (config.roundCount ?? 3) * (config.timeLimitPerRound ?? 60);
+      return (config.roundCount ?? 1) * (config.timeLimitPerRound ?? 90);
     case "assessment-config.situational-judgement":
       return config.questionCount ? config.questionCount * 60 : null;
     case "assessment-config.prioritization":

@@ -14,16 +14,15 @@ import {
   Loader2,
   ChevronRight,
   Target,
-  Clock,
-  MapPin,
   CalendarDays,
   CheckCircle2,
   AlertCircle,
   Clock3,
   Building2,
-  Laptop,
   Route,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  Video
 } from "lucide-react";
 import {
   CandidateSessionService,
@@ -154,7 +153,7 @@ export default function CandidateDashboardOverviewPage() {
   });
 
   return (
-    <div className="flex flex-col gap-10 animate-in fade-in duration-500 pb-12">
+    <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-3 duration-500 pb-12">
       
       {/* 1. HERO SECTION - JOIN A SESSION */}
       <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-lg dark:border-white/10 dark:bg-[#060a12] p-8 sm:p-12 lg:p-16">
@@ -297,43 +296,82 @@ export default function CandidateDashboardOverviewPage() {
 
       {/* 3. INTEGRATED NEXT STEPS TIMELINE */}
       <section className="space-y-6">
-         <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-foreground">How It Works</h2>
-            <p className="text-sm text-muted-foreground">A quick guide to your assessment journey.</p>
+         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1">
+               <h2 className="text-2xl font-bold text-foreground">How It Works</h2>
+               <p className="text-sm text-muted-foreground">Your campaign card will show whether your session is remote, in-person, or hybrid.</p>
+            </div>
+            <Badge variant="outline" className="w-fit border-primary/30 bg-primary/10 px-3 py-1 text-primary">
+              <Route className="mr-1.5 h-3.5 w-3.5" />
+              Candidate journey
+            </Badge>
          </div>
          
-         <div className="grid gap-4 md:grid-cols-3 relative">
-            {/* Desktop connecting line */}
-            <div className="hidden md:block absolute top-[28px] left-[16%] right-[16%] h-[2px] bg-border dark:bg-white/10 pointer-events-none" />
-
+         <div className="grid gap-4 xl:grid-cols-[1fr_1.45fr_1fr]">
             {[
               {
                 step: "01",
-                title: "Join Session",
-                body: "Enter the code supplied by the Hiring Manager.",
-                icon: MapPin,
+                title: "Join the Campaign",
+                body: "Enter your Access Code and we'll attach the correct campaign, date, mode, and assessment list to your portal.",
+                icon: KeyRound,
+                tone: "bg-primary/10 text-primary border-primary/20",
               },
               {
                 step: "02",
-                title: "Complete Tasks",
-                body: "Finish assigned assessments in a quiet environment.",
-                icon: Laptop,
+                title: "Prepare for Your Mode",
+                body: "Remote and in-person campaigns follow the same assessment standards, but the setup is different.",
+                icon: ShieldCheck,
+                tone: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+                modes: true,
               },
               {
                 step: "03",
-                title: "Await Review",
-                body: "Submissions are sent securely for recruiter review.",
+                title: "Submit and Wait",
+                body: "Once your assigned assessments are complete, your responses are securely sent for hiring-team review.",
                 icon: Clock3,
+                tone: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
               },
-            ].map((step, i) => (
-               <div key={step.step} className="relative bg-card border border-border dark:border-white/5 dark:bg-[#080c16]/50 p-6 rounded-2xl shadow-sm flex flex-col items-center text-center">
-                  <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-full border-4 border-card bg-primary/10 text-primary mb-4 shadow-sm">
-                    <step.icon className="h-6 w-6" />
-                  </div>
-                  <Badge variant="secondary" className="mb-3 bg-muted dark:bg-white/5 text-muted-foreground">Step {step.step}</Badge>
-                  <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground">{step.body}</p>
-               </div>
+            ].map((step) => (
+               <Card key={step.step} className="relative overflow-hidden border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/60">
+                  <CardContent className="flex h-full flex-col gap-5 p-5 sm:p-6">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${step.tone}`}>
+                        <step.icon className="h-5 w-5" />
+                      </div>
+                      <Badge variant="secondary" className="bg-muted text-muted-foreground dark:bg-white/5">
+                        Step {step.step}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold tracking-tight text-foreground">{step.title}</h3>
+                      <p className="text-sm leading-relaxed text-muted-foreground">{step.body}</p>
+                    </div>
+
+                    {step.modes && (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-xl border border-border bg-muted/30 p-4 dark:border-white/5 dark:bg-white/[0.02]">
+                          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                            <Video className="h-4 w-4 text-primary" />
+                            Remote
+                          </div>
+                          <p className="text-sm leading-relaxed text-muted-foreground">
+                            Use a quiet space, stable internet, and a laptop or desktop. You will launch the secure assessment window from this portal.
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-border bg-muted/30 p-4 dark:border-white/5 dark:bg-white/[0.02]">
+                          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            In-person
+                          </div>
+                          <p className="text-sm leading-relaxed text-muted-foreground">
+                            Attend the venue or supervised session shared by the hiring team. Your portal still tracks progress and submitted tasks.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+               </Card>
             ))}
          </div>
       </section>

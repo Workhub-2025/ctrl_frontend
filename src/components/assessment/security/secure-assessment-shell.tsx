@@ -23,6 +23,7 @@ type SecureAssessmentShellProps = {
   children: ReactNode;
   showPauseButton?: boolean;
   enableFocusMonitoring?: boolean;
+  integrityMonitoringActive?: boolean;
   /** When provided, integrity violations are persisted via AssessmentIntegrityService. */
   assessmentType?: string;
 };
@@ -36,6 +37,7 @@ export function SecureAssessmentShell({
   children,
   showPauseButton = true,
   enableFocusMonitoring = true,
+  integrityMonitoringActive = true,
   assessmentType,
 }: Readonly<SecureAssessmentShellProps>) {
   const integrityEvents = useAssessmentStore((s) => s.integrityEvents);
@@ -60,7 +62,7 @@ export function SecureAssessmentShell({
       );
     }
 
-    if (!enableFocusMonitoring) return;
+    if (!enableFocusMonitoring || !integrityMonitoringActive) return;
 
     // 2. Event Handlers for Anti-Cheat Monitoring
     const handleVisibilityChange = () => {
@@ -101,7 +103,7 @@ export function SecureAssessmentShell({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [addIntegrityEvent, assessmentType, enableFocusMonitoring, secureModeActive]);
+  }, [addIntegrityEvent, assessmentType, enableFocusMonitoring, integrityMonitoringActive, secureModeActive]);
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground transition-colors duration-300">

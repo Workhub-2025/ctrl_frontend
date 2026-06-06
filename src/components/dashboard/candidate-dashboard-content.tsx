@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -15,23 +15,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
+  ArrowUpDown,
   Briefcase,
   CalendarDays,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
   ClipboardCheck,
-  Clock,
-  KeyRound,
   Loader2,
   Mail,
   MapPin,
+  PlayCircle,
   RefreshCw,
-  ShieldCheck,
   Target,
-  XCircle,
-  PlayCircle
 } from "lucide-react";
 import { SecurePreflightModal } from "@/components/assessment";
 import { candidateAssessmentItems } from "@/components/dashboard/candidate-dashboard-data";
@@ -56,6 +58,8 @@ type CandidateApplication = {
   campaign: string;
   role: string;
   date: string;
+  dueAt?: string | null;
+  linkedAt?: string | null;
   status: CandidateApplicationStatus;
   location: string;
   mode: string;
@@ -66,6 +70,15 @@ type CandidateApplication = {
   sessionStartsAt?: string | null;
   assessments: CandidatePortalAssessment[];
 };
+
+type CampaignSortOption =
+  | "attention"
+  | "due_closest"
+  | "progress_low"
+  | "progress_high"
+  | "name_az"
+  | "status"
+  | "newest";
 
 const statusClassNames: Record<CandidateApplicationStatus, string> = {
   "Awaiting Assessment":
@@ -81,6 +94,25 @@ const statusClassNames: Record<CandidateApplicationStatus, string> = {
   "Soft Locked":
     "bg-slate-500/10 text-slate-600 border-slate-500/20 dark:text-slate-400",
 };
+
+const statusSortRank: Record<CandidateApplicationStatus, number> = {
+  "Awaiting Assessment": 0,
+  "In Progress": 1,
+  "Soft Locked": 2,
+  Completed: 3,
+  Progressed: 4,
+  Unsuccessful: 5,
+};
+
+function getSortTimestamp(value?: string | null, fallback = Number.POSITIVE_INFINITY) {
+  if (!value) return fallback;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? fallback : date.getTime();
+}
+
+function compareText(left: string, right: string) {
+  return left.localeCompare(right, undefined, { sensitivity: "base" });
+}
 
 function formatDate(value?: string | null) {
   if (!value) return "Date to be confirmed";
@@ -138,13 +170,16 @@ function mapApplication(
   const completed = application.completion?.completed ?? 0;
   const total = application.completion?.total ?? application.assessments?.length ?? 0;
   const completionPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const dueAt = application.sessionStartsAt ?? application.campaign?.endDate ?? application.expiresAt ?? null;
 
   return {
     key: application.documentId ?? application.candidateCode ?? crypto.randomUUID(),
     code: application.candidateCode ?? application.documentId ?? "Access Code linked",
     campaign: application.campaign?.name ?? "Campaign",
     role: application.campaign?.jobRole ?? "Candidate assessment",
-    date: formatDate(application.sessionStartsAt ?? application.campaign?.endDate ?? application.expiresAt),
+    date: formatDate(dueAt),
+    dueAt,
+    linkedAt: application.usedAt ?? null,
     status: mapPortalStatus(application),
     location: application.campaign?.location ?? application.mode ?? "Location to be confirmed",
     mode: formatMode(application.mode),
@@ -265,6 +300,7 @@ export function CandidateDashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [sortBy, setSortBy] = useState<CampaignSortOption>("attention");
   const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(CandidateSessionService.getMyApplicationsLastRefresh());
 
   useEffect(() => {
@@ -280,13 +316,6 @@ export function CandidateDashboardContent() {
     try {
       const portalApplications = await CandidateSessionService.getMyApplications({ force: options?.force });
       const mappedApplications = portalApplications.map(mapApplication);
-      
-      // Sort: Active ones first, then completed
-      mappedApplications.sort((a, b) => {
-         const aActive = a.status === "Awaiting Assessment" || a.status === "In Progress" ? -1 : 1;
-         const bActive = b.status === "Awaiting Assessment" || b.status === "In Progress" ? -1 : 1;
-         return aActive - bActive;
-      });
 
       setApplications(mappedApplications);
       setLastRefreshAt(CandidateSessionService.getMyApplicationsLastRefresh());
@@ -318,6 +347,38 @@ export function CandidateDashboardContent() {
 
   const currentApplication = applications.find(app => app.key === selectedApplicationKey);
   const currentAssessmentItems = currentApplication ? getAssessmentItemsForApplication(currentApplication) : [];
+  const sortedApplications = useMemo(() => {
+    const sorted = [...applications];
+
+    sorted.sort((a, b) => {
+      switch (sortBy) {
+        case "due_closest":
+          return getSortTimestamp(a.dueAt) - getSortTimestamp(b.dueAt)
+            || compareText(a.campaign, b.campaign);
+        case "progress_low":
+          return a.completionPercent - b.completionPercent
+            || compareText(a.campaign, b.campaign);
+        case "progress_high":
+          return b.completionPercent - a.completionPercent
+            || compareText(a.campaign, b.campaign);
+        case "name_az":
+          return compareText(a.campaign, b.campaign);
+        case "status":
+          return statusSortRank[a.status] - statusSortRank[b.status]
+            || compareText(a.campaign, b.campaign);
+        case "newest":
+          return getSortTimestamp(b.linkedAt, 0) - getSortTimestamp(a.linkedAt, 0)
+            || compareText(a.campaign, b.campaign);
+        case "attention":
+        default:
+          return statusSortRank[a.status] - statusSortRank[b.status]
+            || getSortTimestamp(a.dueAt) - getSortTimestamp(b.dueAt)
+            || compareText(a.campaign, b.campaign);
+      }
+    });
+
+    return sorted;
+  }, [applications, sortBy]);
 
   if (loadError) {
     return (
@@ -365,16 +426,33 @@ export function CandidateDashboardContent() {
     <div className="flex flex-col lg:flex-row min-h-[calc(100vh-6rem)] w-full gap-0 lg:gap-6 animate-in fade-in duration-500">
       
       {/* LEFT PANE: CAMPAIGN LIST (Master) */}
-      <div className={`w-full lg:w-[360px] xl:w-[400px] shrink-0 flex flex-col gap-4 ${showListOnMobile ? 'block' : 'hidden lg:flex'}`}>
-         <div className="flex items-center justify-between px-2 lg:px-0">
+      <div className={`w-full lg:w-[400px] xl:w-[460px] 2xl:w-[520px] shrink-0 flex flex-col gap-4 ${showListOnMobile ? 'block' : 'hidden lg:flex'}`}>
+         <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between lg:px-0">
             <h2 className="text-2xl font-bold tracking-tight text-foreground">My Campaigns</h2>
-            <Button variant="ghost" size="icon" onClick={() => void loadApplications({ force: true })} disabled={isRefreshing} className="h-8 w-8 rounded-full" title="Refresh">
-               <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as CampaignSortOption)}>
+                <SelectTrigger className="h-9 w-[190px] rounded-xl bg-background shadow-sm">
+                  <ArrowUpDown className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <SelectValue aria-label="Sort campaigns" />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  <SelectItem value="attention">Needs attention</SelectItem>
+                  <SelectItem value="due_closest">Due closest</SelectItem>
+                  <SelectItem value="progress_low">Progress: lowest</SelectItem>
+                  <SelectItem value="progress_high">Progress: highest</SelectItem>
+                  <SelectItem value="name_az">Campaign A-Z</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                  <SelectItem value="newest">Newest linked</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="ghost" size="icon" onClick={() => void loadApplications({ force: true })} disabled={isRefreshing} className="h-8 w-8 rounded-full" title="Refresh">
+                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+              </Button>
+            </div>
          </div>
 
          <div className="flex-1 overflow-y-auto pr-2 pb-8 space-y-3 custom-scrollbar">
-            {applications.map((app) => {
+            {sortedApplications.map((app) => {
                const isActive = app.status === "Awaiting Assessment" || app.status === "In Progress";
                const isSelected = app.key === selectedApplicationKey;
                

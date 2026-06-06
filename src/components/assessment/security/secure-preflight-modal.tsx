@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import { CheckCircle2, XCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,13 +38,17 @@ export function SecurePreflightModal({
   assessmentName: string;
   href: string;
 }) {
-  const router = useRouter();
   const [acknowledged, setAcknowledged] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   // Mock environment checks
   const [desktopEligible, setDesktopEligible] = useState(true);
   const [fullscreenCapable, setFullscreenCapable] = useState(true);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,7 +59,7 @@ export function SecurePreflightModal({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const canProceed = desktopEligible && fullscreenCapable;
 
@@ -92,9 +96,9 @@ export function SecurePreflightModal({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <Card className="w-full max-w-2xl bg-card shadow-2xl border-border dark:border-white/10 animate-in zoom-in-95 duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <Card className="relative z-[101] w-full max-w-2xl bg-card shadow-2xl border-border dark:border-white/10 animate-in zoom-in-95 duration-200">
         <CardHeader className="flex flex-row items-start justify-between pb-4 border-b border-border/50">
           <div className="space-y-1">
             <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Environment Validation</p>
@@ -143,6 +147,7 @@ export function SecurePreflightModal({
           </Button>
         </CardFooter>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 }

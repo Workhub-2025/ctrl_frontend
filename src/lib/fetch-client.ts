@@ -1,3 +1,5 @@
+import { getClientSession } from "@/lib/auth/client-session";
+
 const normalizeApiBaseUrl = (value: string | undefined, fallback: string) => {
     const trimmed = value?.trim() || fallback;
     const withoutTrailingSlash = trimmed.replace(/\/+$/, '');
@@ -78,27 +80,13 @@ const getSessionContext = async (): Promise<SessionContext> => {
             return { jwt: null, tenant: null };
         }
     } else {
-        // Client-side: read the local NextAuth session endpoint directly.
-        try {
-            const response = await fetch('/api/auth/session', {
-                credentials: 'same-origin',
-                cache: 'no-store',
-            });
+        // Client-side: share the same in-memory NextAuth session lookup as useAuth.
+        const session = await getClientSession();
 
-            if (!response.ok) {
-                return { jwt: null, tenant: null };
-            }
-
-            const session = await response.json();
-
-            return {
-                jwt: session?.user?.jwt ?? null,
-                tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
-            };
-        } catch (sessionError: any) {
-            console.debug('NextAuth session unavailable:', sessionError.message);
-            return { jwt: null, tenant: null };
-        }
+        return {
+            jwt: session?.user?.jwt ?? null,
+            tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
+        };
     }
 };
 

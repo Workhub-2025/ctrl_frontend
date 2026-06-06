@@ -3,12 +3,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DragEvent, MouseEvent, PointerEvent } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   ClipboardList,
   GripVertical,
+  ListChecks,
   Loader2,
   LogOut,
   Play,
+  ShieldCheck,
+  Target,
+  Timer,
 } from 'lucide-react';
 import { AssessmentGameShell } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
@@ -652,15 +657,36 @@ export default function PrioritizationTest({
     >
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Secure judgement exercise
+          </div>
+          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
             <ClipboardList className="h-8 w-8" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
             Prioritisation Judgement Assessment
           </p>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
-            This assessment evaluates your judgement in prioritising multiple incoming incidents. Please read the instructions carefully before you begin.
+            Review incoming incidents, decide what needs attention first, and place every item into a clear priority order.
           </p>
+          <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <Timer className="mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Three practice rounds</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Get used to the format before scoring begins.</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <Target className="mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Six incidents each</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Rank each queue from highest to lowest priority.</p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <ListChecks className="mb-2 h-5 w-5 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Fifteen live rounds</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">Your live ranking decisions are submitted securely.</p>
+            </div>
+          </div>
           <Button className="mt-8 h-12 px-7" size="lg" onClick={() => setPhase('rules')}>
             Read Instructions
             <Play className="ml-2 h-4 w-4" />
@@ -669,73 +695,133 @@ export default function PrioritizationTest({
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center py-10">
-          <h1 className="text-3xl font-bold text-foreground mb-4">CTRL Prioritisation Judgement Assessment</h1>
-          <p className="text-muted-foreground mb-8 text-sm leading-6">
-            This assessment is designed to understand how you prioritise reported incidents when several incidents are presented at the same time. It assesses judgement, not formal police knowledge. You are not expected to know formal police grading policies, deployment procedures, force-specific systems or emergency service terminology. Simply use your own judgement based on the information provided.
-          </p>
+        <div className="mx-auto flex min-h-[520px] w-full max-w-5xl flex-col justify-center py-10">
+          <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
+                Incident priority judgement
+              </Badge>
+              <h1 className="mb-4 text-3xl font-semibold leading-tight text-foreground">CTRL Prioritisation Judgement Assessment</h1>
+              <p>
+                This assessment is designed to understand how you prioritise reported incidents when several incidents are presented at the same time. It assesses judgement, not formal police knowledge.
+              </p>
+              <p className="mt-4">
+                You are not expected to know formal police grading policies, deployment procedures, force-specific systems or emergency service terminology. Use your own judgement based on the information provided.
+              </p>
+            </div>
 
-          <h2 className="text-xl font-semibold text-foreground mb-3">What You Will See</h2>
-          <p className="text-muted-foreground text-sm mb-3">Each question contains six incident tiles. Each incident tile contains only:</p>
-          <ul className="list-disc pl-6 text-muted-foreground text-sm mb-8 space-y-1">
-            <li>Incident Title</li>
-            <li>Incident Description</li>
-            <li>Time of Incident</li>
-          </ul>
+            <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <ClipboardList className="h-5 w-5" />
+                </div>
+                <h2 className="mb-3 text-lg font-semibold text-foreground">What You Will See</h2>
+                <p>Each question contains six incident tiles. Each tile contains:</p>
+                <div className="mt-4 grid gap-2">
+                  {['Incident title', 'Incident description', 'Time of incident'].map((item) => (
+                    <div key={item} className="flex items-center gap-2 rounded-lg bg-muted p-3 text-foreground dark:bg-white/5">
+                      <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          <h2 className="text-xl font-semibold text-foreground mb-3">Your Task</h2>
-          <p className="text-muted-foreground text-sm mb-3">
-            For each question, you must review all six incident tiles and rank them from highest priority to lowest priority using the following scale:
-          </p>
-          <ul className="list-disc pl-6 text-muted-foreground text-sm mb-4 space-y-1">
-            <li>1 = Highest priority</li>
-            <li>2 = Second highest priority</li>
-            <li>3 = Third highest priority</li>
-            <li>4 = Fourth highest priority</li>
-            <li>5 = Fifth highest priority</li>
-            <li>6 = Lowest priority</li>
-          </ul>
-          <p className="text-foreground font-medium text-sm mb-8">
-            Each incident must be given a different ranking number. You must not give the same ranking to more than one incident.
-          </p>
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                  <ListChecks className="h-5 w-5" />
+                </div>
+                <h2 className="mb-3 text-lg font-semibold text-foreground">Your Task</h2>
+                <p>Review all six incidents and rank them from highest priority to lowest priority.</p>
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {[
+                    ['1', 'Highest'],
+                    ['2', 'Second'],
+                    ['3', 'Third'],
+                    ['4', 'Fourth'],
+                    ['5', 'Fifth'],
+                    ['6', 'Lowest'],
+                  ].map(([rank, label]) => (
+                    <div key={rank} className="rounded-lg border border-border bg-background p-3 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                      <p className="text-lg font-semibold text-foreground">{rank}</p>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p>
+                      Each incident must have a different ranking. Do not give the same ranking to more than one incident.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <h2 className="text-xl font-semibold text-foreground mb-3">How to Decide the Priority Order</h2>
-          <p className="text-muted-foreground text-sm mb-3">When deciding your priority order, consider:</p>
-          <ul className="list-disc pl-6 text-muted-foreground text-sm mb-8 space-y-1">
-            <li>How urgent the incident appears to be</li>
-            <li>How serious the incident appears to be</li>
-            <li>Whether the incident is happening now</li>
-            <li>Whether the incident has already happened</li>
-            <li>Whether anyone may be at immediate risk</li>
-            <li>Whether someone vulnerable may be involved</li>
-            <li>Whether the situation could get worse if not dealt with quickly</li>
-            <li>Whether there is a risk to the wider public</li>
-            <li>Whether there are signs of threat, harm or escalation</li>
-            <li>Whether there are welfare or safeguarding concerns</li>
-          </ul>
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <h2 className="mb-3 text-lg font-semibold text-foreground">How to Decide the Priority Order</h2>
+              <p>When deciding your order, consider:</p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  'Urgency and seriousness',
+                  'Whether it is happening now',
+                  'Immediate risk to anyone involved',
+                  'Vulnerability or welfare concerns',
+                  'Threat, harm, or escalation',
+                  'Risk to the wider public',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2 rounded-lg bg-muted p-3 text-foreground dark:bg-white/5">
+                    <Target className="h-4 w-4 shrink-0 text-primary" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
 
-          <h2 className="text-xl font-semibold text-foreground mb-3">Practice Questions</h2>
-          <p className="text-muted-foreground text-sm mb-8 leading-6">
-            The assessment begins with three practice questions. These are provided to help you get used to the format and are not scored. Your answers to the practice questions will not affect your final result.
-          </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Timer className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Practice Questions</h2>
+                </div>
+                <p>Start with three practice questions. They help you get used to the format and are not scored.</p>
+              </div>
 
-          <h2 className="text-xl font-semibold text-foreground mb-3">Live Assessment Questions</h2>
-          <p className="text-muted-foreground text-sm mb-8 leading-6">
-            After the practice section, you will complete 15 live questions. These questions are scored. Each live question contains six incidents for you to rank.
-          </p>
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Live Assessment Questions</h2>
+                </div>
+                <p>After practice, you will complete 15 scored live questions. Each live question contains six incidents to rank.</p>
+              </div>
+            </div>
 
-          <h2 className="text-xl font-semibold text-foreground mb-3">Step-by-Step Instructions</h2>
-          <ul className="space-y-2 text-muted-foreground text-sm mb-10">
-            <li><strong>Step 1:</strong> Read the question</li>
-            <li><strong>Step 2:</strong> Read all six incidents</li>
-            <li><strong>Step 3:</strong> Identify the incidents that appear most urgent</li>
-            <li><strong>Step 4:</strong> Identify the incidents that appear less urgent</li>
-            <li><strong>Step 5:</strong> Rank all six incidents</li>
-            <li><strong>Step 6:</strong> Review your order</li>
-            <li><strong>Step 7:</strong> Submit your answer</li>
-          </ul>
+            <div>
+              <h2 className="mb-3 text-lg font-semibold text-foreground">Step-by-Step Instructions</h2>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  'Read the question',
+                  'Read all six incidents',
+                  'Identify the most urgent items',
+                  'Identify less urgent items',
+                  'Rank all six incidents',
+                  'Review your order',
+                  'Submit your answer',
+                ].map((step, index) => (
+                  <div key={step} className="rounded-lg bg-muted p-3 dark:bg-white/5">
+                    <span className="font-semibold text-foreground">Step {index + 1}:</span> {step}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row border-t border-border dark:border-white/10 pt-8">
+          <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
             <Button size="lg" className="h-12" onClick={startPractice}>
               Start practice block
               <Play className="ml-2 h-4 w-4" />
