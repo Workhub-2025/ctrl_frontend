@@ -84,26 +84,26 @@ function segmentedClassName(isActive: boolean) {
 const hiringWorkflowSteps = [
   {
     step: "01",
-    title: "Define the Parameters",
-    text: "Set your technical requirements, necessary experience, and protocol non-negotiables within our intuitive interface to create a precise control room profile.",
+    title: "Define What Good Looks Like",
+    text: "Start by identifying the skills, behaviours and operational standards that matter most to your organisation. CTRL then evaluates candidates against these criteria, creating a consistent and evidence-based recruitment process.",
     icon: Crosshair,
   },
   {
     step: "02",
     title: "Simulate the Environment",
-    text: "Candidates enter a live-paced assessment where they manage dynamic incoming calls, allocate resources, and log critical details.",
+    text: "CTRL recreates realistic operational environments where candidates must manage information, prioritise competing demands and make decisions in real time. By observing performance in context, organisations gain deeper insight into who is most likely to succeed in role.",
     icon: Radio,
   },
   {
     step: "03",
-    title: "Analyze Responses",
-    text: "Review detailed playback logs, decision trees, response times, and prioritization logic generated from the simulation.",
+    title: "Hire with Confidence.",
+    text: "Review assessment results, compare candidate performance and identify those best suited to the demands of the role. CTRL provides a structured and objective foundation for more informed recruitment decisions.",
     icon: BarChart3,
   },
   {
     step: "04",
-    title: "Deploy with Confidence",
-    text: "Hire operators proven to handle the stress of the control room. Reduce washout rates during live floor training.",
+    title: "Train with Purpose.",
+    text: "CTRL helps organisations identify candidates with the skills, judgement and potential to succeed in demanding operational environments, enabling more informed recruitment decisions before investment in training begins.",
     icon: ShieldCheck,
   },
 ];
@@ -111,26 +111,26 @@ const hiringWorkflowSteps = [
 const candidateWorkflowSteps = [
   {
     step: "01",
-    title: "Enter the Simulation",
-    text: "Step into our immersive control room interface. No biased resume parsing—just you and the console.",
+    title: "Enter the Assessment Experience",
+    text: "Complete a series of carefully designed assessments that measure the skills and behaviours required for success in high-pressure operational roles.",
     icon: Activity,
   },
   {
     step: "02",
-    title: "Process Emergency Events",
-    text: "Handle incoming emergency and non-emergency calls. Triage information, make rapid decisions, and follow established protocols.",
+    title: "Take on Realistic Scenarios",
+    text: "Navigate interactive call simulations and decision-making exercises that reflect the challenges faced by operational teams every day.",
     icon: PhoneCall,
   },
   {
     step: "03",
-    title: "Demonstrate Composure",
-    text: "Show your ability to remain calm under simulated pressure. Every correct decision builds your competence profile.",
+    title: "Demonstrate Performance Under Pressure",
+    text: "Show how you communicate, prioritise information and make decisions when faced with realistic demands and competing priorities.",
     icon: ShieldCheck,
   },
   {
     step: "04",
-    title: "Earn Your Position",
-    text: "Get hired based on your actual on-the-job capability. Connect with agencies searching for your proven skills.",
+    title: "Unlock New Opportunities",
+    text: "Help organisations gain a clearer understanding of your strengths, potential and suitability for roles where performance matters most.",
     icon: CheckCircle2,
   },
 ];
@@ -656,8 +656,8 @@ export default function Home() {
             <div className="text-center max-w-3xl mx-auto mb-16">
                <SectionHeading
                   eyebrow="Core Engine"
-                  title="Beyond standard testing."
-                  body={<>We don't do typing speed tests disguised as dispatcher exams. <CtrlText /> simulates the real cognitive load and pressure of a live control room.</>}
+                  title="Assess Skills. Simulate Reality."
+                  body={<><CtrlText /> combines proven recruitment assessments with immersive call simulation technology, providing a more complete picture of candidate suitability. Beyond measuring individual skills, <CtrlText /> reveals how candidates apply them in realistic operational scenarios where pressure, judgement and decision-making matter most.</>}
                   centered
                 />
             </div>
@@ -671,9 +671,9 @@ export default function Home() {
                     <div className="h-12 w-12 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center mb-6">
                       <PhoneCall className="h-5 w-5 text-cyan-400" />
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-medium text-white mb-4">Realistic Call Simulation</h3>
+                    <h3 className="text-2xl md:text-3xl font-medium text-white mb-4">See Beyond the Candidate. See the Future Employee.</h3>
                     <p className="text-slate-400 font-light leading-relaxed">
-                      Immerse candidates in dynamic audio and text-based scenarios. We recreate the urgency of real emergency calls tailored to the high-stakes environment of a control room.
+                      CTRL's Call Simulation Assessment recreates realistic operational scenarios that require candidates to think, prioritise and respond in real time. The result is deeper behavioural insight and greater confidence in every recruitment decision.
                     </p>
                   </div>
                   <div className="flex-1 w-full relative aspect-[4/3] md:aspect-auto md:h-64 rounded-2xl border border-white/5 bg-[#050505] overflow-hidden flex items-center justify-center shadow-inner">
@@ -699,9 +699,9 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-6 relative z-10">
                   <Activity className="h-5 w-5 text-blue-400" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10">Stress & Decision Analysis</h3>
+                <h3 className="text-xl font-medium text-white mb-3 relative z-10">Understanding Performance Beyond the Interview</h3>
                 <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                  Measure cognitive load, task prioritization, and strict protocol adherence while the candidate operates under pressure.
+                  CTRL assesses how candidates process information, adapt to changing circumstances and make decisions under pressure, delivering behavioural insight that traditional recruitment methods often fail to uncover.
                 </p>
                 <div className="w-full h-32 rounded-xl border border-white/5 bg-[#050505] overflow-hidden relative flex items-end p-4">
                    {/* Visual Mockup for Chart/Stress */}
@@ -719,9 +719,9 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-full border border-purple-500/20 bg-purple-500/10 flex items-center justify-center mb-6 relative z-10">
                   <ShieldCheck className="h-5 w-5 text-purple-400" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10">Defensible, Unbiased Data</h3>
+                <h3 className="text-xl font-medium text-white mb-3 relative z-10">Recruit with Evidence. Decide with Confidence.</h3>
                 <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                  Make high-stakes hiring decisions based on objective metrics. Ensure your operators are empirically proven to handle the chaos.
+                  CTRL combines objective assessment data with realistic performance insight, helping organisations make fairer, more informed recruitment decisions while reducing risk and increasing confidence in candidate selection.
                 </p>
                 <div className="w-full h-32 rounded-xl border border-white/5 bg-[#050505] overflow-hidden relative flex items-center justify-center p-6">
                    {/* Visual Mockup for Shield/Data */}
@@ -747,8 +747,8 @@ export default function Home() {
             <div className="text-center mb-16 max-w-3xl mx-auto">
                <SectionHeading 
                   eyebrow="For Hiring Teams" 
-                  title="A workflow built for certainty." 
-                  body="Stop guessing based on resumes. Use concrete assessment data to build a pipeline of pre-qualified talent." 
+                  title="Build Stronger Talent Pipelines with Confidence" 
+                  body="CTRL helps organisations identify high-potential candidates earlier in the recruitment process, using behavioural insight and realistic performance data to support smarter, more informed hiring decisions." 
                   centered 
                />
             </div>
@@ -796,8 +796,8 @@ export default function Home() {
             <div className="text-center mb-16 max-w-3xl mx-auto">
                <SectionHeading 
                   eyebrow="For Candidates" 
-                  title="Let your skills do the talking." 
-                  body="Bypass the resume black hole. Complete rigorous assessments that prove your capabilities directly to top employers." 
+                  title="Where Capability Speaks for Itself" 
+                  body="Show how you think, respond and perform when faced with realistic operational challenges, helping organisations see your potential with greater clarity and confidence." 
                   centered 
                />
             </div>
@@ -895,9 +895,9 @@ export default function Home() {
                   <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-slate-400 mb-8 backdrop-blur-sm">
                     Get Started
                   </div>
-                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-6">Ready to secure your control room?</h2>
+                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-6">Ready to Transform Your Recruitment Process?</h2>
                   <p className="text-lg md:text-xl leading-relaxed text-slate-400 font-light mb-10 max-w-xl mx-auto">
-                    Join forward-thinking agencies that have transformed their hiring. Stop guessing and start validating with data-driven simulations.
+                    Discover how CTRL helps organisations identify high-potential candidates, reduce recruitment risk and make more confident hiring decisions through realistic assessments and immersive simulation.
                   </p>
                   <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Button asChild className="h-12 md:h-14 rounded-full bg-white px-8 text-black hover:bg-slate-200 transition-all text-sm md:text-base font-medium">

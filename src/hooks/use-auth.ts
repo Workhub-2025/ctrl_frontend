@@ -98,8 +98,8 @@ export function useAuth() {
         const hasCompletedEqualityMonitoring = !!userData?.equalityMonitoring && Object.keys(userData.equalityMonitoring).length > 0;
 
         if (hasCompletedEqualityMonitoring) {
-            console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard/my-assessments');
-            router.push('/candidate-dashboard/my-assessments');
+            console.log('✅ Candidate with completed profile, redirecting to /candidate-dashboard/my-campaigns/');
+            router.push('/candidate-dashboard/my-campaigns/');
         } else {
             console.log('📋 Candidate without equality monitoring, offering optional form');
             // Show optional equality monitoring form with skip option

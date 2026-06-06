@@ -70,7 +70,7 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
           >
             {/* Reduced sizing slightly, cleaner tracking, removed intense italic */}
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight text-white mb-8 leading-[1.1]">
-              Evaluate performance under actual pressure.
+              Hiring the Right People Starts with the Right Intelligence
             </h1>
           </motion.div>
 
@@ -81,7 +81,7 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
           >
             {/* Softened text color, increased line height for breathability */}
             <p className="text-lg md:text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-              Stop guessing based on interviews. Immerse candidates in realistic control room simulations to see how they handle true emergency scenarios before you hire.
+              CTRL reveals how candidates think, respond and perform under pressure, providing the behavioural insight needed to recruit with confidence, reduce risk and build stronger operational teams.
             </p>
           </motion.div>
 

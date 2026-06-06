@@ -72,6 +72,6 @@ export const routeForRole = (role: unknown): string => {
       return "/client-dashboard";
     case "candidate":
     default:
-      return "/candidate-dashboard/my-assessments";
+      return "/candidate-dashboard/my-campaigns/";
   }
 };
