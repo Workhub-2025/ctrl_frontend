@@ -433,11 +433,20 @@ export default function PrioritizationTest({
               <p className="mt-1 text-xl font-semibold text-foreground">
                 {activeRound.title}
               </p>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Drag each incident from the bank into the priority list. Highest
-                priority belongs in position 1. You can also click a card, then
-                click a slot or another placed card to move it.
-              </p>
+              <div className="mt-2 max-w-2xl space-y-4 text-sm leading-6 text-muted-foreground">
+                <p>Review the six incidents below.</p>
+                <div>
+                  <p>Rank them from 1 to 6, with:</p>
+                  <ul className="ml-4 list-disc space-y-1 mt-1">
+                    <li>1 = Highest priority</li>
+                    <li>6 = Lowest priority</li>
+                  </ul>
+                </div>
+                <p>Each incident must have a different ranking.</p>
+                <p>
+                  Consider urgency, seriousness, vulnerability, immediacy, public safety and potential risk when deciding your order.
+                </p>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline">
@@ -650,43 +659,83 @@ export default function PrioritizationTest({
             Prioritisation Judgement Assessment
           </p>
           <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
-            Review incoming incidents and place them into the order you would
-            handle them. Highest priority belongs at the top.
+            This assessment evaluates your judgement in prioritising multiple incoming incidents. Please read the instructions carefully before you begin.
           </p>
           <Button className="mt-8 h-12 px-7" size="lg" onClick={() => setPhase('rules')}>
-            Start Assessment
+            Read Instructions
             <Play className="ml-2 h-4 w-4" />
           </Button>
         </div>
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center">
-          <Badge className="mb-5 w-fit" variant="secondary">
-            How this test works
-          </Badge>
-          <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            You will complete one practice block, then one final submission block.
+        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center py-10">
+          <h1 className="text-3xl font-bold text-foreground mb-4">CTRL Prioritisation Judgement Assessment</h1>
+          <p className="text-muted-foreground mb-8 text-sm leading-6">
+            This assessment is designed to understand how you prioritise reported incidents when several incidents are presented at the same time. It assesses judgement, not formal police knowledge. You are not expected to know formal police grading policies, deployment procedures, force-specific systems or emergency service terminology. Simply use your own judgement based on the information provided.
           </p>
-          <div className="mt-6 grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Practice block</p>
-              <p className="mt-1">3 rounds with 6 incidents in each round.</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Final block</p>
-              <p className="mt-1">15 rounds with 6 incidents in each round.</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Drag and place</p>
-              <p className="mt-1">Drag incidents into the priority list, with the highest priority at number 1.</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Judgement</p>
-              <p className="mt-1">Consider risk to life, vulnerability, hazards, urgency, and delay.</p>
-            </div>
-          </div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+
+          <h2 className="text-xl font-semibold text-foreground mb-3">What You Will See</h2>
+          <p className="text-muted-foreground text-sm mb-3">Each question contains six incident tiles. Each incident tile contains only:</p>
+          <ul className="list-disc pl-6 text-muted-foreground text-sm mb-8 space-y-1">
+            <li>Incident Title</li>
+            <li>Incident Description</li>
+            <li>Time of Incident</li>
+          </ul>
+
+          <h2 className="text-xl font-semibold text-foreground mb-3">Your Task</h2>
+          <p className="text-muted-foreground text-sm mb-3">
+            For each question, you must review all six incident tiles and rank them from highest priority to lowest priority using the following scale:
+          </p>
+          <ul className="list-disc pl-6 text-muted-foreground text-sm mb-4 space-y-1">
+            <li>1 = Highest priority</li>
+            <li>2 = Second highest priority</li>
+            <li>3 = Third highest priority</li>
+            <li>4 = Fourth highest priority</li>
+            <li>5 = Fifth highest priority</li>
+            <li>6 = Lowest priority</li>
+          </ul>
+          <p className="text-foreground font-medium text-sm mb-8">
+            Each incident must be given a different ranking number. You must not give the same ranking to more than one incident.
+          </p>
+
+          <h2 className="text-xl font-semibold text-foreground mb-3">How to Decide the Priority Order</h2>
+          <p className="text-muted-foreground text-sm mb-3">When deciding your priority order, consider:</p>
+          <ul className="list-disc pl-6 text-muted-foreground text-sm mb-8 space-y-1">
+            <li>How urgent the incident appears to be</li>
+            <li>How serious the incident appears to be</li>
+            <li>Whether the incident is happening now</li>
+            <li>Whether the incident has already happened</li>
+            <li>Whether anyone may be at immediate risk</li>
+            <li>Whether someone vulnerable may be involved</li>
+            <li>Whether the situation could get worse if not dealt with quickly</li>
+            <li>Whether there is a risk to the wider public</li>
+            <li>Whether there are signs of threat, harm or escalation</li>
+            <li>Whether there are welfare or safeguarding concerns</li>
+          </ul>
+
+          <h2 className="text-xl font-semibold text-foreground mb-3">Practice Questions</h2>
+          <p className="text-muted-foreground text-sm mb-8 leading-6">
+            The assessment begins with three practice questions. These are provided to help you get used to the format and are not scored. Your answers to the practice questions will not affect your final result.
+          </p>
+
+          <h2 className="text-xl font-semibold text-foreground mb-3">Live Assessment Questions</h2>
+          <p className="text-muted-foreground text-sm mb-8 leading-6">
+            After the practice section, you will complete 15 live questions. These questions are scored. Each live question contains six incidents for you to rank.
+          </p>
+
+          <h2 className="text-xl font-semibold text-foreground mb-3">Step-by-Step Instructions</h2>
+          <ul className="space-y-2 text-muted-foreground text-sm mb-10">
+            <li><strong>Step 1:</strong> Read the question</li>
+            <li><strong>Step 2:</strong> Read all six incidents</li>
+            <li><strong>Step 3:</strong> Identify the incidents that appear most urgent</li>
+            <li><strong>Step 4:</strong> Identify the incidents that appear less urgent</li>
+            <li><strong>Step 5:</strong> Rank all six incidents</li>
+            <li><strong>Step 6:</strong> Review your order</li>
+            <li><strong>Step 7:</strong> Submit your answer</li>
+          </ul>
+
+          <div className="flex flex-col gap-3 sm:flex-row border-t border-border dark:border-white/10 pt-8">
             <Button size="lg" className="h-12" onClick={startPractice}>
               Start practice block
               <Play className="ml-2 h-4 w-4" />

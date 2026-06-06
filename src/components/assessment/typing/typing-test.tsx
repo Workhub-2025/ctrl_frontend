@@ -104,6 +104,41 @@ const calculateResult = (
   };
 };
 
+const getLines = (text: string, charsPerLine: number = 60) => {
+  const lines: { text: string; startIndex: number; endIndex: number }[] = [];
+  const words = text.split(' ');
+  let currentLineText = '';
+  let startIndex = 0;
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const isLastWord = i === words.length - 1;
+    const wordWithSpace = isLastWord ? word : word + ' ';
+
+    if (currentLineText === '') {
+      currentLineText = wordWithSpace;
+    } else if (currentLineText.length + wordWithSpace.length <= charsPerLine) {
+      currentLineText += wordWithSpace;
+    } else {
+      lines.push({
+        text: currentLineText,
+        startIndex,
+        endIndex: startIndex + currentLineText.length,
+      });
+      startIndex += currentLineText.length;
+      currentLineText = wordWithSpace;
+    }
+  }
+  if (currentLineText) {
+    lines.push({
+      text: currentLineText,
+      startIndex,
+      endIndex: startIndex + currentLineText.length,
+    });
+  }
+  return lines;
+};
+
 /**
  * TypingTest Component
  * 
@@ -419,6 +454,16 @@ export default function TypingTest({
     ? ((currentDuration - timeLeft) / currentDuration) * 100
     : 0;
 
+  const lines = useMemo(() => getLines(currentText, 60), [currentText]);
+  const activeLineIndex = useMemo(() => {
+    let index = lines.findIndex(l => typedCount >= l.startIndex && typedCount < l.endIndex);
+    if (index === -1) {
+       index = lines.length > 0 ? lines.length - 1 : 0;
+    }
+    return index;
+  }, [typedCount, lines]);
+  const visibleLines = lines.slice(activeLineIndex, activeLineIndex + 3);
+
   return (
     <AssessmentGameShell
       icon={Keyboard}
@@ -471,7 +516,7 @@ export default function TypingTest({
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <p className="font-medium text-foreground">Typing display</p>
-              <p className="mt-1">Correct characters turn green. Mistakes turn red.</p>
+              <p className="mt-1">Completed text turns grey. Mistakes are highlighted in red.</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <p className="font-medium text-foreground">Corrections</p>

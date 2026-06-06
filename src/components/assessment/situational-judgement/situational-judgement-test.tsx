@@ -254,32 +254,85 @@ export default function SituationalJudgementTest({
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center">
-          <Badge className="mb-5 w-fit" variant="secondary">
-            How this assessment works
-          </Badge>
-          <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            You will make two selections for each scenario.
-          </p>
-          <div className="mt-6 grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">20 scenarios</p>
-              <p className="mt-1">Each scenario has four possible responses.</p>
+        <div className="mx-auto flex min-h-[520px] w-full max-w-4xl flex-col justify-center py-10">
+          <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
+            <div>
+              <h1 className="text-3xl font-semibold leading-tight text-foreground mb-4">CTRL Situational Judgement Assessment</h1>
+              <p>
+                This assessment is designed to understand how you are likely to respond in workplace situations involving communication, judgement, professionalism, empathy, integrity and decision-making.
+              </p>
+              <p className="mt-4">
+                The assessment measures behavioural judgement, not job knowledge. You are not expected to have previous experience in policing, emergency services, customer service, contact centres or any specific profession. You should respond using your own judgement and select the actions you believe would be most and least effective in each situation.
+              </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Best and worst</p>
-              <p className="mt-1">Select one most effective and one least effective response.</p>
+
+            <div className="grid gap-8 md:grid-cols-2">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-3">What You Will See</h2>
+                <p>Each scenario contains:</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                  <li>A short workplace situation</li>
+                  <li>Four possible actions labelled A, B, C and D</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-3">Your Task</h2>
+                <p>For each scenario, you must:</p>
+                <ul className="mt-2 list-disc pl-5 space-y-1">
+                  <li>Choose the MOST effective action.</li>
+                  <li>Choose the LEAST effective action.</li>
+                </ul>
+                <div className="mt-4 rounded-lg bg-primary/10 p-4 text-primary dark:bg-primary/20">
+                  <p className="font-semibold">Important selection rule:</p>
+                  <p className="mt-1">
+                    You must choose one MOST effective action and one LEAST effective action for every scenario. You cannot select the same option as both MOST effective and LEAST effective.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">No duplicate choices</p>
-              <p className="mt-1">The same response cannot be both best and worst.</p>
+
+            <div>
+              <h2 className="text-lg font-semibold text-foreground mb-3">How to Approach Each Scenario</h2>
+              <p>When making your decisions, think about:</p>
+              <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Professional behaviour</li>
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Communication</li>
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Empathy</li>
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Responsibility</li>
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Integrity</li>
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Accuracy</li>
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Remaining calm under pressure</li>
+                <li className="flex items-center gap-2"><div className="h-1.5 w-1.5 rounded-full bg-primary" />Making sensible and proportionate decisions</li>
+              </ul>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">No result shown</p>
-              <p className="mt-1">Your result is saved for the Hiring Manager report.</p>
+
+            <div className="grid gap-8 md:grid-cols-2">
+              <div className="rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
+                <h2 className="text-lg font-semibold text-foreground mb-3">Practice Questions</h2>
+                <p>The assessment contains 3 practice questions. Practice questions are not scored. Practice question answers do not affect your final result.</p>
+              </div>
+
+              <div className="rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
+                <h2 className="text-lg font-semibold text-foreground mb-3">Live Assessment Questions</h2>
+                <p>The live assessment contains 20 scored scenarios. Each scenario contains one situation and four possible actions.</p>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold text-foreground mb-3">Step-by-Step Instructions</h2>
+              <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 1:</span> Read the situation carefully</div>
+                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 2:</span> Read all four actions</div>
+                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 3:</span> Decide which action is MOST effective</div>
+                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 4:</span> Decide which action is LEAST effective</div>
+                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 5:</span> Check your selections</div>
+                <div className="rounded-lg bg-muted p-3 dark:bg-white/5"><span className="font-semibold text-foreground">Step 6:</span> Submit your answer</div>
+              </div>
             </div>
           </div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row border-t border-border pt-8 dark:border-white/10">
             <Button size="lg" className="h-12" onClick={startAssessment}>
               Begin scenarios
               <Play className="ml-2 h-4 w-4" />
@@ -292,7 +345,21 @@ export default function SituationalJudgementTest({
       )}
 
       {phase === 'scenario' && (
-        <div className="mx-auto flex min-h-[560px] w-full max-w-[1180px] flex-col justify-center">
+        <div className="mx-auto flex min-h-[560px] w-full max-w-[1180px] flex-col justify-center py-6">
+          <div className="mb-6 rounded-xl border border-border bg-card p-5 text-sm text-foreground shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <h3 className="mb-2 font-semibold text-base">Candidate Task Screen Instruction</h3>
+            <p>Read the situation below.</p>
+            <p>Review all four actions carefully.</p>
+            <p className="mt-3 font-medium">Select:</p>
+            <ul className="mt-1 list-disc pl-5 space-y-1">
+              <li><strong>MOST Effective</strong> – the action you believe would be the most effective response.</li>
+              <li><strong>LEAST Effective</strong> – the action you believe would be the least effective response.</li>
+            </ul>
+            <p className="mt-3">You must select one MOST effective action and one LEAST effective action.</p>
+            <p>You cannot select the same action twice.</p>
+            <p className="mt-3 text-muted-foreground">Use your own judgement and consider professionalism, communication, empathy, responsibility, integrity and decision-making when making your choices.</p>
+          </div>
+
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
@@ -311,7 +378,7 @@ export default function SituationalJudgementTest({
 
           <div className="mt-5 rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Scenario
+              Situation
             </p>
             <p className="mt-3 text-lg leading-8 text-foreground">{activeScenario.scenario}</p>
           </div>
