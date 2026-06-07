@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const created = await createAdminClient(validation.data);
+    const created = await createAdminClient(validation.data, session.user.jwt);
     return NextResponse.json({ data: created }, { status: 201 });
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);

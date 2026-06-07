@@ -25,6 +25,7 @@ function getApiToken(): string | undefined {
     // @strapi/client from throwing "A valid API token is required" at init.
     return (
         process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
+        process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
         process.env.STRAPI_API_TOKEN ||
         process.env.NEXT_PUBLIC_STRAPI_API_TOKEN ||
         undefined

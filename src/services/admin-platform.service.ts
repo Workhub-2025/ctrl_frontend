@@ -17,6 +17,7 @@ function getStrapiBaseUrl() {
 function getAdminApiToken() {
   return (
     process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
+    process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
     process.env.STRAPI_API_TOKEN ||
     undefined
   );
@@ -37,10 +38,16 @@ export function getStrapiErrorStatus(error: unknown) {
   return getBaseStrapiErrorStatus(error);
 }
 
-async function adminStrapiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = getAdminApiToken();
+async function adminStrapiRequest<T>(
+  path: string,
+  init?: RequestInit,
+  authToken?: string | null
+): Promise<T> {
+  const token = authToken || getAdminApiToken() || undefined;
   if (!token) {
-    throw new Error("STRAPI_API_FULL_ACCESS_TOKEN is required for admin client creation");
+    throw new Error(
+      "A Strapi API token or authenticated admin session is required for admin client creation"
+    );
   }
 
   const response = await fetch(
@@ -98,21 +105,47 @@ type RawContract = {
   documentId?: string;
   seatCount?: number;
   status?: "active" | "soft_locked" | "pending_deletion";
+  startDate?: string;
   endDate?: string;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 type RawClient = {
   id?: number;
   documentId?: string;
   name?: string;
+  legalName?: string | null;
+  officeAddress?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  timeZone?: string | null;
   primaryContactEmail?: string;
   primaryContactName?: string;
+  primaryContactPhone?: string | null;
   campaignApprovalMode?: "auto_approve" | "require_approval";
   softLockedAt?: string | null;
+  onboardingCompleted?: boolean;
+  createdAt?: string;
   contracts?: RawContract[];
   users?: RawUser[];
-  campaigns?: Array<{ approvalStatus?: "pending" | "approved" | "rejected" }>;
-  access_codes?: Array<{ status?: string; targetRole?: string }>;
+  campaigns?: Array<{
+    documentId?: string;
+    title?: string;
+    name?: string;
+    approvalStatus?: "pending" | "approved" | "rejected";
+    status?: string;
+    createdAt?: string;
+  }>;
+  access_codes?: Array<{
+    documentId?: string;
+    status?: string;
+    targetRole?: string;
+    expiresAt?: string;
+    createdAt?: string;
+  }>;
   updatedAt?: string;
 };
 
@@ -210,6 +243,50 @@ export type AdminClientCreateResult = {
   };
 };
 
+export type AdminClientDetails = AdminClientRow & {
+  legalName: string;
+  primaryContactName: string;
+  primaryContactEmail: string;
+  primaryContactPhone: string;
+  address: string;
+  timeZone: string;
+  campaignApprovalMode: "auto_approve" | "require_approval";
+  onboardingCompleted: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+  activeContract: {
+    documentId: string;
+    status: string;
+    startDate: string | null;
+    endDate: string | null;
+    seatCount: number;
+    notes: string;
+  } | null;
+  users: AdminUserRow[];
+  campaigns: Array<{
+    id: string;
+    title: string;
+    status: string;
+    approvalStatus: string;
+    createdAt: string | null;
+  }>;
+  accessCodes: Array<{
+    id: string;
+    status: string;
+    targetRole: string;
+    expiresAt: string | null;
+    createdAt: string | null;
+  }>;
+};
+
+export type AdminClientAccessCodeResult = {
+  documentId: string;
+  code: string;
+  expiresAt: string;
+  status: string;
+  targetRole: string;
+};
+
 type RawAuditLog = {
   id?: number;
   documentId?: string;
@@ -277,6 +354,56 @@ function normalizeClient(client: RawClient): AdminClientRow {
       "No primary contact",
     lastActivity: relativeDate(client.updatedAt),
     pendingCampaignApprovals,
+  };
+}
+
+function formatAddress(client: RawClient) {
+  return [client.officeAddress, client.city, client.state, client.zipCode]
+    .filter(Boolean)
+    .join(", ") || "No address recorded";
+}
+
+function normalizeClientDetails(client: RawClient): AdminClientDetails {
+  const row = normalizeClient(client);
+  const activeContract = getActiveContract(client);
+
+  return {
+    ...row,
+    legalName: client.legalName || "No legal name recorded",
+    primaryContactName: client.primaryContactName || "No primary contact",
+    primaryContactEmail: client.primaryContactEmail || "No email recorded",
+    primaryContactPhone: client.primaryContactPhone || "No phone recorded",
+    address: formatAddress(client),
+    timeZone: client.timeZone || "Europe/London",
+    campaignApprovalMode: client.campaignApprovalMode ?? "auto_approve",
+    onboardingCompleted: Boolean(client.onboardingCompleted),
+    createdAt: client.createdAt ?? null,
+    updatedAt: client.updatedAt ?? null,
+    activeContract: activeContract
+      ? {
+          documentId: activeContract.documentId ?? "",
+          status: activeContract.status ?? "unknown",
+          startDate: activeContract.startDate ?? null,
+          endDate: activeContract.endDate ?? null,
+          seatCount: activeContract.seatCount ?? 0,
+          notes: activeContract.notes ?? "",
+        }
+      : null,
+    users: (client.users ?? []).map(normalizeUser),
+    campaigns: (client.campaigns ?? []).map((campaign) => ({
+      id: campaign.documentId ?? `${campaign.title ?? campaign.name ?? "campaign"}-${campaign.createdAt ?? ""}`,
+      title: campaign.title || campaign.name || "Untitled campaign",
+      status: campaign.status || "unknown",
+      approvalStatus: campaign.approvalStatus || "unknown",
+      createdAt: campaign.createdAt ?? null,
+    })),
+    accessCodes: (client.access_codes ?? []).map((code) => ({
+      id: code.documentId ?? `${code.targetRole ?? "code"}-${code.createdAt ?? ""}`,
+      status: code.status || "unknown",
+      targetRole: code.targetRole || "unknown",
+      expiresAt: code.expiresAt ?? null,
+      createdAt: code.createdAt ?? null,
+    })),
   };
 }
 
@@ -378,7 +505,55 @@ export async function getAdminClients(): Promise<AdminClientRow[]> {
   return clients.map(normalizeClient);
 }
 
-export async function createAdminClient(input: AdminClientCreateInput): Promise<AdminClientCreateResult> {
+export async function getAdminClientDetails(clientDocumentId: string): Promise<AdminClientDetails> {
+  const response = await strapiRequest<StrapiListResponse<RawClient>>(
+    `/clients?filters[documentId][$eq]=${encodeURIComponent(clientDocumentId)}&populate[contracts]=true&populate[users][populate][role]=true&populate[campaigns]=true&populate[access_codes]=true&pagination[pageSize]=1`
+  );
+  const client = response.data?.[0];
+  if (!client) {
+    throw new AdminStrapiRequestError("Client not found", 404);
+  }
+  return normalizeClientDetails(client);
+}
+
+export async function generateAdminClientAccessCode(
+  clientDocumentId: string,
+  authToken?: string | null
+): Promise<AdminClientAccessCodeResult> {
+  const response = await adminStrapiRequest<{ data?: AdminClientAccessCodeResult }>(
+    "/access-codes/generate-client",
+    {
+      method: "POST",
+      body: JSON.stringify({ clientDocumentId }),
+    },
+    authToken
+  );
+
+  if (!response.data?.code) {
+    throw new AdminStrapiRequestError("Client access code could not be generated", 500);
+  }
+  return response.data;
+}
+
+export async function deleteAdminClient(
+  clientDocumentId: string,
+  confirmName: string,
+  authToken?: string | null
+): Promise<void> {
+  await adminStrapiRequest(
+    `/admin/clients/${encodeURIComponent(clientDocumentId)}`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ confirmName }),
+    },
+    authToken
+  );
+}
+
+export async function createAdminClient(
+  input: AdminClientCreateInput,
+  authToken?: string | null
+): Promise<AdminClientCreateResult> {
   const response = await adminStrapiRequest<{
     data?: {
       client?: RawClient;
@@ -390,7 +565,8 @@ export async function createAdminClient(input: AdminClientCreateInput): Promise<
     {
       method: "POST",
       body: JSON.stringify(input),
-    }
+    },
+    authToken
   );
 
   const createdClient = response.data?.client;
