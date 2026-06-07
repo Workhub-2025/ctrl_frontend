@@ -64,11 +64,16 @@ export function HiringManagerSessionsList() {
     try {
       const data = await HiringManagerPortalClientService.getSessions({ force });
       const campaignData = await HiringManagerPortalClientService.getCampaigns({ force });
+      const approvedCampaigns = campaignData.filter(
+        (campaign) => campaign.documentId && campaign.approvalStatus !== "Pending approval" && campaign.approvalStatus !== "Rejected"
+      );
       setSessions(data);
-      setCampaigns(campaignData.filter((campaign) => campaign.documentId));
+      setCampaigns(approvedCampaigns);
       setDraft((current) => ({
         ...current,
-        campaignDocumentId: current.campaignDocumentId || campaignData[0]?.documentId || "",
+        campaignDocumentId: approvedCampaigns.some((campaign) => campaign.documentId === current.campaignDocumentId)
+          ? current.campaignDocumentId
+          : approvedCampaigns[0]?.documentId || "",
       }));
       setLastRefreshAt(HiringManagerPortalClientService.getSessionsLastRefresh());
     } catch (loadError) {
@@ -206,7 +211,7 @@ export function HiringManagerSessionsList() {
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {campaigns.length === 0 ? (
-                <option value="">Create a campaign first</option>
+                <option value="">No approved campaigns available</option>
               ) : (
                 campaigns.map((campaign) => (
                   <option key={campaign.id} value={campaign.documentId ?? ""}>
@@ -282,7 +287,7 @@ export function HiringManagerSessionsList() {
 
           <div className="flex flex-col gap-3 border-t border-border pt-5 dark:border-white/5 sm:flex-row sm:items-center sm:justify-between">
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              After creation, copy the generated session code and share it with candidates for this session.
+              Only client-approved campaigns can create sessions. After creation, copy the generated session code and share it with candidates for this session.
             </p>
             <Button
               type="button"

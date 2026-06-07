@@ -1,22 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, History, Download } from "lucide-react";
+import { Search, Filter, Download } from "lucide-react";
 
-const MOCK_LOGS = [
-  { id: "log_1", actor: "Sarah Jenkins", timestamp: "2026-06-04 14:32", event: "Upgrade Activated", client: "Met Police", details: "Activated +3 HM Seats" },
-  { id: "log_2", actor: "System", timestamp: "2026-06-04 12:00", event: "Invoice Paid", client: "Met Police", details: "Invoice #1042 marked as Paid" },
-  { id: "log_3", actor: "Mike Ross", timestamp: "2026-06-03 09:15", event: "Module Enabled", client: "NHS Digital", details: "Call Simulation module enabled" },
-  { id: "log_4", actor: "Sarah Jenkins", timestamp: "2026-06-02 16:45", event: "Role Changed", client: "London Fire Brigade", details: "Emma Wilson role changed to Client Admin" },
-  { id: "log_5", actor: "John Smith", timestamp: "2026-06-01 10:30", event: "Upgrade Requested", client: "Met Police", details: "Requested +3 HM Seats" },
-];
+type AuditLogRow = {
+  id: string;
+  actor: string;
+  timestamp: string;
+  event: string;
+  client: string;
+  details: string;
+};
 
 export default function AuditLogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [logs, setLogs] = useState<AuditLogRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/admin/audit-logs", { cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || "Audit logs could not be loaded");
+        return Array.isArray(body.data) ? body.data as AuditLogRow[] : [];
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setLogs(data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Audit logs could not be loaded");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filteredLogs = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return logs;
+
+    return logs.filter((log) =>
+      [log.actor, log.event, log.client, log.details]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [logs, searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -37,6 +80,12 @@ export default function AuditLogsPage() {
         <Button variant="outline" className="border-dashed"><Filter className="mr-2 h-4 w-4"/> Event Type</Button>
       </div>
 
+      {error && (
+        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
       <div className="rounded-md border bg-card overflow-hidden">
         <Table>
           <TableHeader>
@@ -49,8 +98,22 @@ export default function AuditLogsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {MOCK_LOGS.filter(l => l.actor.toLowerCase().includes(searchTerm.toLowerCase()) || l.event.toLowerCase().includes(searchTerm.toLowerCase())).map((log) => (
-              <TableRow key={log.id}>
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                  Loading audit logs...
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredLogs.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                  No audit logs match the current search.
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredLogs.map((log, index) => (
+              <TableRow key={`${log.id || "audit-log"}-${index}`}>
                 <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{log.timestamp}</TableCell>
                 <TableCell className="font-medium">{log.actor}</TableCell>
                 <TableCell>

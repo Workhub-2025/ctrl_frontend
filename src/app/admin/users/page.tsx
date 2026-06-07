@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,53 +35,15 @@ type AdminUser = {
   lastLogin: string;
 };
 
-const MOCK_USERS: AdminUser[] = [
-  {
-    id: "u_1",
-    name: "Sarah Jenkins",
-    email: "sarah@ctrl-assess.co.uk",
-    role: "CTRL Admin",
-    client: "CTRL Internal",
-    status: "Active",
-    lastLogin: "2 hours ago",
-  },
-  {
-    id: "u_2",
-    name: "John Smith",
-    email: "john.smith@met.police.uk",
-    role: "Client Contact",
-    client: "Met Police",
-    status: "Active",
-    lastLogin: "Yesterday",
-  },
-  {
-    id: "u_3",
-    name: "Amelia Brown",
-    email: "amelia.brown@met.police.uk",
-    role: "Hiring Manager",
-    client: "Met Police",
-    status: "Active",
-    lastLogin: "5 minutes ago",
-  },
-  {
-    id: "u_4",
-    name: "David Wilson",
-    email: "david.wilson@example.com",
-    role: "Candidate",
-    client: "Met Police",
-    status: "Invited",
-    lastLogin: "Never",
-  },
-  {
-    id: "u_5",
-    name: "Bethany Clarke",
-    email: "bethany.clarke@nhs.example",
-    role: "Hiring Manager",
-    client: "NHS Trust",
-    status: "Disabled",
-    lastLogin: "1 month ago",
-  },
-];
+type AdminUsersPayload = {
+  users: AdminUser[];
+  totals: {
+    all: number;
+    hiringManagers: number;
+    candidates: number;
+    disabled: number;
+  };
+};
 
 const statusClassName: Record<UserStatus, string> = {
   Active: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
@@ -91,19 +53,67 @@ const statusClassName: Record<UserStatus, string> = {
 
 export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [payload, setPayload] = useState<AdminUsersPayload>({
+    users: [],
+    totals: {
+      all: 0,
+      hiringManagers: 0,
+      candidates: 0,
+      disabled: 0,
+    },
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/admin/users", { cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || "Users could not be loaded");
+        return body.data as AdminUsersPayload;
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setPayload({
+            users: Array.isArray(data?.users) ? data.users : [],
+            totals: data?.totals ?? {
+              all: 0,
+              hiringManagers: 0,
+              candidates: 0,
+              disabled: 0,
+            },
+          });
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Users could not be loaded");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
-    if (!query) return MOCK_USERS;
+    if (!query) return payload.users;
 
-    return MOCK_USERS.filter((user) =>
+    return payload.users.filter((user) =>
       [user.name, user.email, user.role, user.client, user.status]
         .join(" ")
         .toLowerCase()
         .includes(query)
     );
-  }, [searchTerm]);
+  }, [payload.users, searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -129,27 +139,27 @@ export default function AdminUsersPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Total users</p>
-          <p className="mt-2 text-2xl font-semibold">{MOCK_USERS.length}</p>
+          <p className="mt-2 text-2xl font-semibold">{payload.totals.all}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Hiring managers</p>
-          <p className="mt-2 text-2xl font-semibold">
-            {MOCK_USERS.filter((user) => user.role === "Hiring Manager").length}
-          </p>
+          <p className="mt-2 text-2xl font-semibold">{payload.totals.hiringManagers}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Candidates</p>
-          <p className="mt-2 text-2xl font-semibold">
-            {MOCK_USERS.filter((user) => user.role === "Candidate").length}
-          </p>
+          <p className="mt-2 text-2xl font-semibold">{payload.totals.candidates}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <p className="text-sm text-muted-foreground">Disabled</p>
-          <p className="mt-2 text-2xl font-semibold">
-            {MOCK_USERS.filter((user) => user.status === "Disabled").length}
-          </p>
+          <p className="mt-2 text-2xl font-semibold">{payload.totals.disabled}</p>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
 
       <div className="rounded-lg border bg-card">
         <div className="flex flex-col gap-3 border-b p-4 md:flex-row md:items-center md:justify-between">
@@ -182,8 +192,22 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user) => (
-                <TableRow key={user.id}>
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    Loading users...
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && filteredUsers.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                    No users match the current search.
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && filteredUsers.map((user, index) => (
+                <TableRow key={`${user.id || user.email || "user"}-${index}`}>
                   <TableCell>
                     <div className="font-medium text-foreground">{user.name}</div>
                     <div className="text-sm text-muted-foreground">{user.email}</div>
@@ -191,7 +215,7 @@ export default function AdminUsersPage() {
                   <TableCell>{user.role}</TableCell>
                   <TableCell>{user.client}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusClassName[user.status]}>
+                    <Badge variant="outline" className={statusClassName[user.status] ?? statusClassName.Active}>
                       {user.status}
                     </Badge>
                   </TableCell>

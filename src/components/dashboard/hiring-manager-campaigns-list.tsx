@@ -103,6 +103,19 @@ export function HiringManagerCampaignsList() {
                       <Badge className="rounded-md border-border bg-background text-xs text-muted-foreground hover:bg-background dark:border-white/10 dark:bg-white/[0.03]">
                         {campaign.deliveryMode}
                       </Badge>
+                      {campaign.approvalStatus && (
+                        <Badge
+                          className={
+                            campaign.approvalStatus === "Pending approval"
+                              ? "rounded-md border-orange-500/20 bg-orange-500/10 text-xs text-orange-600 hover:bg-orange-500/10"
+                              : campaign.approvalStatus === "Rejected"
+                                ? "rounded-md border-red-500/20 bg-red-500/10 text-xs text-red-600 hover:bg-red-500/10"
+                                : "rounded-md border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600 hover:bg-emerald-500/10"
+                          }
+                        >
+                          {campaign.approvalStatus}
+                        </Badge>
+                      )}
                     </div>
                     <div className="min-w-0 space-y-1">
                       <h2 className="break-words text-base font-semibold leading-snug text-foreground">

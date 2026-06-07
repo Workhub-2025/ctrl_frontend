@@ -29,7 +29,7 @@ class StrapiRequestError extends Error {
   }
 }
 
-async function strapiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+export async function strapiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const jwt = await getJwt();
   if (!jwt) {
     throw new Error("Authentication required");
@@ -130,6 +130,7 @@ type RawCampaign = {
   name?: string;
   jobRole?: string;
   campaignStatus?: "draft" | "configured" | "live" | "closed" | "archived";
+  approvalStatus?: "pending" | "approved" | "rejected";
   assessmentMode?: "in_person" | "remote" | "hybrid";
   startDate?: string | null;
   endDate?: string | null;
@@ -161,6 +162,7 @@ export type HiringManagerCampaignListItem = {
   name: string;
   role: string;
   status: "Live" | "Configured" | "Draft" | "Closed" | "Archived";
+  approvalStatus?: "Pending approval" | "Approved" | "Rejected";
   deliveryMode: "In-person" | "Remote" | "Hybrid";
   completion: number;
   candidateCount: number;
@@ -249,6 +251,20 @@ function formatStatus(status?: RawCampaign["campaignStatus"]): HiringManagerCamp
     case "draft":
     default:
       return "Draft";
+  }
+}
+
+function formatApprovalStatus(
+  status?: RawCampaign["approvalStatus"]
+): HiringManagerCampaignListItem["approvalStatus"] {
+  switch (status) {
+    case "pending":
+      return "Pending approval";
+    case "rejected":
+      return "Rejected";
+    case "approved":
+    default:
+      return "Approved";
   }
 }
 
@@ -385,6 +401,7 @@ function normalizeCampaign(campaign: RawCampaign): HiringManagerCampaignListItem
     name: campaign.name ?? "Untitled campaign",
     role: campaign.jobRole ?? "Role not set",
     status: formatStatus(campaign.campaignStatus),
+    approvalStatus: formatApprovalStatus(campaign.approvalStatus),
     deliveryMode: formatMode(campaign.assessmentMode) as "In-person" | "Remote" | "Hybrid",
     completion,
     candidateCount: campaign.vacancyCount ?? sessions.length,
@@ -394,7 +411,11 @@ function normalizeCampaign(campaign: RawCampaign): HiringManagerCampaignListItem
     nextMilestone:
       campaign.assessment_sessions?.length
         ? `${campaign.assessment_sessions.length} Session${campaign.assessment_sessions.length === 1 ? "" : "s"} created`
-        : "Create a session",
+        : campaign.approvalStatus === "pending"
+          ? "Awaiting client approval"
+          : campaign.approvalStatus === "rejected"
+            ? "Client rejected campaign"
+            : "Create a session",
   };
 }
 

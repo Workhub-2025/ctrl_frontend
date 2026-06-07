@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -22,65 +22,73 @@ import {
 import { MoreHorizontal, Plus, Search, Download, Building2 } from "lucide-react";
 import Link from "next/link";
 
-// Mock Data
-const MOCK_CLIENTS = [
-  {
-    id: "c_1",
-    name: "Met Police",
-    status: "Active",
-    plan: "Enterprise",
-    seatsUsed: 4,
-    seatsAllowed: 5,
-    enabledAssessments: ["Typing", "SJT", "Call Simulation"],
-    billingStatus: "Paid",
-    primaryContact: "j.smith@met.police.uk",
-    lastActivity: "2 hours ago",
-  },
-  {
-    id: "c_2",
-    name: "NHS Digital",
-    status: "Active",
-    plan: "Professional",
-    seatsUsed: 12,
-    seatsAllowed: 15,
-    enabledAssessments: ["Typing", "Prioritization"],
-    billingStatus: "Pending",
-    primaryContact: "sarah.j@nhs.net",
-    lastActivity: "1 day ago",
-  },
-  {
-    id: "c_3",
-    name: "London Fire Brigade",
-    status: "Trial",
-    plan: "Standard",
-    seatsUsed: 2,
-    seatsAllowed: 2,
-    enabledAssessments: [ "SJT"],
-    billingStatus: "Comped",
-    primaryContact: "admin@london-fire.gov.uk",
-    lastActivity: "3 days ago",
-  },
-  {
-    id: "c_4",
-    name: "BUPA Trust",
-    status: "Paused",
-    plan: "Custom",
-    seatsUsed: 1,
-    seatsAllowed: 10,
-    enabledAssessments: ["Typing", "Call Simulation"],
-    billingStatus: "Overdue",
-    primaryContact: "billing@bupa.co.uk",
-    lastActivity: "2 weeks ago",
-  },
-];
+type AdminClientRow = {
+  id: string;
+  name: string;
+  status: "Active" | "Paused" | "Expired" | "Pending";
+  plan: string;
+  seatsUsed: number;
+  seatsAllowed: number;
+  enabledAssessments: string[];
+  billingStatus: "Active" | "Pending" | "Expired" | "Paused";
+  primaryContact: string;
+  lastActivity: string;
+  pendingCampaignApprovals: number;
+};
 
 export default function ClientsListPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [clients, setClients] = useState<AdminClientRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [generatedCode, setGeneratedCode] = useState<{
+    clientName: string;
+    code: string;
+    expiresAt: string;
+  } | null>(null);
+  const [generatingClientId, setGeneratingClientId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/admin/clients", { cache: "no-store" })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || "Clients could not be loaded");
+        return Array.isArray(body.data) ? body.data as AdminClientRow[] : [];
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setClients(data);
+          setError(null);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Clients could not be loaded");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filteredClients = useMemo(
+    () =>
+      clients.filter((client) =>
+        [client.name, client.primaryContact, client.status, client.plan]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      ),
+    [clients, searchTerm]
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Active": return "bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20";
-      case "Trial": return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20";
+      case "Pending": return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20";
       case "Paused": return "bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 border-orange-500/20";
       case "Expired": return "bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20";
       default: return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20";
@@ -90,10 +98,34 @@ export default function ClientsListPage() {
   const getBillingColor = (status: string) => {
     switch (status) {
       case "Paid": return "text-green-500 border-green-500/20";
+      case "Active": return "text-green-500 border-green-500/20";
       case "Pending": return "text-yellow-500 border-yellow-500/20";
-      case "Overdue": return "text-red-500 border-red-500/20";
-      case "Comped": return "text-blue-500 border-blue-500/20";
+      case "Expired": return "text-red-500 border-red-500/20";
+      case "Paused": return "text-orange-500 border-orange-500/20";
       default: return "text-gray-500";
+    }
+  };
+
+  const generateClientCode = async (client: AdminClientRow) => {
+    setGeneratingClientId(client.id);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/access-codes/client", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientDocumentId: client.id }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Client access code could not be generated");
+      setGeneratedCode({
+        clientName: client.name,
+        code: body.data?.code ?? "",
+        expiresAt: body.data?.expiresAt ?? "",
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Client access code could not be generated");
+    } finally {
+      setGeneratingClientId(null);
     }
   };
 
@@ -140,6 +172,22 @@ export default function ClientsListPage() {
         </Button>
       </div>
 
+      {error && (
+        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+          {error}
+        </div>
+      )}
+      {generatedCode && (
+        <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 px-4 py-3 text-sm">
+          <p className="font-medium">Client access code for {generatedCode.clientName}</p>
+          <p className="mt-2 font-mono text-base tracking-wide">{generatedCode.code}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Expires {generatedCode.expiresAt ? new Date(generatedCode.expiresAt).toLocaleString("en-GB") : "soon"}.
+            This code is shown once.
+          </p>
+        </div>
+      )}
+
       {/* Data Table */}
       <div className="rounded-md border bg-card overflow-hidden">
         <Table>
@@ -155,8 +203,22 @@ export default function ClientsListPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {MOCK_CLIENTS.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase())).map((client) => (
-              <TableRow key={client.id}>
+            {loading && (
+              <TableRow>
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                  Loading clients...
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredClients.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                  No clients match the current search.
+                </TableCell>
+              </TableRow>
+            )}
+            {!loading && filteredClients.map((client, index) => (
+              <TableRow key={`${client.id || "client"}-${index}`}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -177,11 +239,16 @@ export default function ClientsListPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex gap-1 flex-wrap max-w-[150px]">
-                    {client.enabledAssessments.map(a => (
-                      <Badge key={a} variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                    {client.enabledAssessments.slice(0, 4).map((a, assessmentIndex) => (
+                      <Badge key={`${a}-${assessmentIndex}`} variant="secondary" className="text-[10px] px-1 py-0 h-4">
                         {a}
                       </Badge>
                     ))}
+                    {client.pendingCampaignApprovals > 0 && (
+                      <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 text-orange-500 border-orange-500/20">
+                        {client.pendingCampaignApprovals} pending
+                      </Badge>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -201,6 +268,12 @@ export default function ClientsListPage() {
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/clients/${client.id}`}>View Details</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={generatingClientId === client.id}
+                        onClick={() => generateClientCode(client)}
+                      >
+                        Generate Client Code
                       </DropdownMenuItem>
                       <DropdownMenuItem>Upgrade Client</DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">Pause Account</DropdownMenuItem>
