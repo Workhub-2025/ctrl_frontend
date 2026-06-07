@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, CheckCircle, KeyRound, ArrowRight, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
+import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
 
 interface SignUpData {
   firstName: string;
@@ -40,6 +42,14 @@ type AuthField =
 
 function UnifiedAuthContent() {
   const searchParams = useSearchParams();
+  const {
+    settings: accessibilitySettings,
+    updateSettings: updateAccessibilitySettings,
+    resetSettings: resetAccessibilitySettings,
+    reduceMotion,
+    backgroundClassName: bgColor,
+  } = useAccessibilitySettings();
+  
   const [formData, setFormData] = useState<SignUpData>({
     firstName: "",
     lastName: "",
@@ -283,14 +293,14 @@ function UnifiedAuthContent() {
   };
 
   return (
-    <div className="relative flex min-h-[100svh] w-full bg-black">
+    <div className={cn("relative flex min-h-[100svh] w-full ctrl-landing-page transition-colors duration-500", bgColor)}>
       {/* Left Pane - Branding & Narrative (Hidden on Mobile) */}
       <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-white/10 bg-[#050505] p-12 lg:flex xl:p-16">
         {/* Background Visuals */}
         <div className="absolute inset-0 pointer-events-none z-0">
-          <AnimatedBackground />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/90" />
+          <AnimatedBackground disabled={reduceMotion} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/90 mix-blend-multiply" />
         </div>
 
         {/* Top Branding */}
@@ -315,7 +325,16 @@ function UnifiedAuthContent() {
       </div>
 
       {/* Right Pane - Form Area */}
-      <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-12 xl:px-24">
+      <div className="relative flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-12 xl:px-24">
+        {/* Accessibility Dropdown at Top Right */}
+        <div className="absolute top-6 right-6 lg:top-8 lg:right-8 z-50">
+          <AccessibilityDropdown
+            settings={accessibilitySettings}
+            updateSettings={updateAccessibilitySettings}
+            resetSettings={resetAccessibilitySettings}
+          />
+        </div>
+
         <div className="mx-auto w-full max-w-[420px]">
           
           {/* Mobile Logo */}

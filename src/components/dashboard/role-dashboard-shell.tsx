@@ -49,7 +49,6 @@ type RoleDashboardShellProps = Readonly<{
   navItems: NavItem[];
   hideSidebar?: boolean;
   contentWidth?: "default" | "wide" | "full";
-  enableAccessibilityTools?: boolean;
   children: React.ReactNode;
 }>;
 
@@ -61,12 +60,10 @@ function RoleDashboardHeader({
   accessibilitySettings,
   updateAccessibilitySettings,
   resetAccessibilitySettings,
-  enableAccessibilityTools,
 }: Pick<RoleDashboardShellProps, "title" | "subtitle" | "hideSidebar"> & {
   accessibilitySettings: AccessibilitySettings;
   updateAccessibilitySettings: (patch: Partial<AccessibilitySettings>) => void;
   resetAccessibilitySettings: () => void;
-  enableAccessibilityTools?: boolean;
 }) {
   const { user, logout } = useAuth();
   const { userProfile } = useAuthStore();
@@ -99,14 +96,12 @@ function RoleDashboardHeader({
 
       {/* User Actions & Settings */}
       <div className="flex items-center gap-2">
-        {enableAccessibilityTools && (
-          <AccessibilityDropdown
-            settings={accessibilitySettings}
-            updateSettings={updateAccessibilitySettings}
-            resetSettings={resetAccessibilitySettings}
-            description="Adjust the candidate portal display."
-          />
-        )}
+        <AccessibilityDropdown
+          settings={accessibilitySettings}
+          updateSettings={updateAccessibilitySettings}
+          resetSettings={resetAccessibilitySettings}
+          description="Adjust the portal display."
+        />
 
         {/* User Profile Dropdown */}
         <DropdownMenu>
@@ -159,7 +154,6 @@ function RoleDashboardFrame({
   navItems,
   hideSidebar,
   contentWidth = "default",
-  enableAccessibilityTools = false,
   children,
 }: RoleDashboardShellProps) {
   const pathname = usePathname();
@@ -168,7 +162,7 @@ function RoleDashboardFrame({
     updateSettings: updateAccessibilitySettings,
     resetSettings: resetAccessibilitySettings,
     backgroundClassName: accessibilityBackgroundClassName,
-  } = useAccessibilitySettings({ enabled: enableAccessibilityTools });
+  } = useAccessibilitySettings({ enabled: true });
   const contentWidthClass =
     contentWidth === "full"
       ? "max-w-none"
@@ -181,7 +175,7 @@ function RoleDashboardFrame({
       <div
         className={cn(
           "flex min-h-screen w-full flex-col selection:bg-primary/30 transition-colors duration-300",
-          enableAccessibilityTools ? ["ctrl-candidate-portal", accessibilityBackgroundClassName] : "bg-muted/30 dark:bg-[#04070d]"
+          "ctrl-portal", accessibilityBackgroundClassName
         )}
       >
         <RoleDashboardHeader
@@ -191,7 +185,6 @@ function RoleDashboardFrame({
           accessibilitySettings={accessibilitySettings}
           updateAccessibilitySettings={updateAccessibilitySettings}
           resetAccessibilitySettings={resetAccessibilitySettings}
-          enableAccessibilityTools={enableAccessibilityTools}
         />
         <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
           <div className={cn("mx-auto w-full", contentWidthClass)}>{children}</div>
@@ -205,7 +198,7 @@ function RoleDashboardFrame({
       <div
         className={cn(
           "flex min-h-screen w-full flex-1 relative selection:bg-primary/30 transition-colors duration-300",
-          enableAccessibilityTools ? ["ctrl-candidate-portal", accessibilityBackgroundClassName] : "bg-muted/30 dark:bg-[#04070d]"
+          "ctrl-portal", accessibilityBackgroundClassName
         )}
       >
       {/* Sidebar Section */}
@@ -217,8 +210,8 @@ function RoleDashboardFrame({
             className="flex items-center gap-3 rounded-2xl border border-border dark:border-white/5 bg-muted/50 dark:bg-white/[0.02] px-3 py-3 transition-colors hover:bg-muted dark:hover:bg-white/[0.04]"
           >
             <img
-              src="/icon1.png"
-              className="h-10 w-10 logo-adaptive-filter"
+              src="/assets/newlogo.png"
+              className="h-10 w-10 object-contain object-center mix-blend-screen scale-125 pointer-events-none hue-rotate-[60deg]"
               alt="CTRL Logo"
             />
             <div>
@@ -262,7 +255,6 @@ function RoleDashboardFrame({
           accessibilitySettings={accessibilitySettings}
           updateAccessibilitySettings={updateAccessibilitySettings}
           resetAccessibilitySettings={resetAccessibilitySettings}
-          enableAccessibilityTools={enableAccessibilityTools}
         />
         <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
           <div className={cn("mx-auto w-full", contentWidthClass)}>{children}</div>

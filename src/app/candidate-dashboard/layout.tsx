@@ -13,7 +13,6 @@ export default function CandidateDashboardLayout({
       title="Candidate Portal"
       subtitle="Campaign access, assessment progress, and support"
       contentWidth="wide"
-      enableAccessibilityTools={true}
       navItems={[
         {
           href: "/candidate-dashboard/",

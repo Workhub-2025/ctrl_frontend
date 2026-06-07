@@ -495,7 +495,7 @@ export function CandidateDashboardContent() {
       {/* RIGHT PANE: CAMPAIGN DETAILS (Detail) */}
       <div className={`flex-1 flex flex-col min-w-0 ${showDetailOnMobile ? 'block' : 'hidden lg:flex'}`}>
          {currentApplication ? (
-            <div className="flex-1 bg-card border-border border rounded-[2rem] shadow-sm overflow-hidden flex flex-col dark:bg-[#060a12] dark:border-white/10 animate-in slide-in-from-right-4 lg:slide-in-from-bottom-4 duration-300">
+            <div className="flex-1 bg-card border-border border rounded-[2rem] shadow-sm overflow-hidden flex flex-col dark:border-white/10 animate-in slide-in-from-right-4 lg:slide-in-from-bottom-4 duration-300">
                
                {/* Detail Header */}
                <div className="relative p-6 sm:p-8 border-b border-border dark:border-white/10 bg-muted/20 dark:bg-white/[0.01]">

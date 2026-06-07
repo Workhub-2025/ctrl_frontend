@@ -217,7 +217,7 @@ export default function Home() {
     <div className={cn(bgColor, "ctrl-landing-page selection:bg-white/20 font-sans min-h-screen transition-colors duration-500")}>
       <nav
         ref={navRef}
-        className="fixed top-4 inset-x-0 mx-auto w-full max-w-[1000px] px-4 sm:px-6 z-50 transition-all duration-500"
+        className="fixed top-4 inset-x-0 mx-auto w-full max-w-[1200px] px-4 sm:px-6 z-50 transition-all duration-500"
       >
         <div className={cn(
           "flex items-center justify-between rounded-full border transition-all duration-500 px-6",
@@ -557,7 +557,7 @@ export default function Home() {
              <AnimatedBackground disabled={reduceMotion} />
              
              {/* Soft fade to blend with the footer below */}
-             <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#020202] to-transparent pointer-events-none z-10" />
+             <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t footer-blend-fade pointer-events-none z-10" />
           </div>
 
           <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col justify-center px-6 py-32">

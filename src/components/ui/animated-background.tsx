@@ -29,7 +29,7 @@ export function AnimatedBackground({ disabled = false }: { disabled?: boolean })
   if (disabled) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <div className="animated-bg-container absolute inset-0 pointer-events-none overflow-hidden z-0">
       {ANIMATED_LINES.map((line) => (
         <motion.div
           key={line.id}

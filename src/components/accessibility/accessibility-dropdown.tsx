@@ -23,8 +23,8 @@ const backgroundOptions: {
 
 function segmentedClassName(isActive: boolean) {
   return cn(
-    "rounded-md px-3 py-1.5 text-sm transition-colors",
-    isActive ? "bg-white/10 text-white" : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+    "rounded-md px-3 py-1.5 text-sm transition-all border",
+    isActive ? "bg-white/10 border-current text-white shadow-sm font-medium" : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200"
   );
 }
 
@@ -105,12 +105,12 @@ export function AccessibilityDropdown({
       <span
         className={cn(
           "flex h-6 w-10 shrink-0 items-center rounded-full border p-0.5 transition-colors",
-          checked ? "border-cyan-500/50 bg-cyan-500/25" : "border-white/10 bg-white/5"
+          checked ? "border-current bg-white/20 text-white" : "border-transparent bg-white/10 text-slate-400"
         )}
       >
         <span
           className={cn(
-            "h-4 w-4 rounded-full bg-white transition-transform",
+            "h-4 w-4 rounded-full bg-current transition-transform",
             checked && "translate-x-4"
           )}
         />
@@ -167,20 +167,21 @@ export function AccessibilityDropdown({
                         type="button"
                         onClick={() => updateSettings({ background: option.value })}
                         className={cn(
-                          "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm transition-colors",
+                          "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm transition-all",
                           isActive
-                            ? "border-cyan-400 bg-cyan-400/10 text-white"
-                            : "border-white/10 text-slate-400 hover:border-white/20 hover:bg-white/5 hover:text-slate-200"
+                            ? "border-current bg-white/10 text-white font-medium shadow-sm"
+                            : "border-white/10 text-slate-400 hover:border-white/30 hover:bg-white/5 hover:text-slate-200"
                         )}
                       >
                         <span
                           className={cn(
-                            "h-5 w-5 rounded-full border border-white/20 shadow-inner",
+                            "h-5 w-5 rounded-full border shadow-inner",
+                            isActive ? "border-current" : "border-white/20",
                             accessibilityBackgroundClassName[option.value] ?? option.swatch
                           )}
                         />
                         <span className="min-w-0 flex-1 text-left">{option.label}</span>
-                        {isActive && <CheckCircle2 className="h-4 w-4 shrink-0 text-cyan-300" aria-hidden="true" />}
+                        {isActive && <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />}
                       </button>
                     );
                   })}

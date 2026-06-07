@@ -156,7 +156,7 @@ export default function CandidateDashboardOverviewPage() {
     <div className="flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-3 duration-500 pb-12">
       
       {/* 1. HERO SECTION - JOIN A SESSION */}
-      <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-lg dark:border-white/10 dark:bg-[#060a12] p-8 sm:p-12 lg:p-16">
+      <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-lg dark:border-white/10 p-8 sm:p-12 lg:p-16">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent pointer-events-none" />
         
         {/* Subtle decorative circles */}

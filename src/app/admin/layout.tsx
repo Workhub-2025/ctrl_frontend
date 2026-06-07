@@ -40,8 +40,20 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { useAuth } from "@/hooks/use-auth";
+import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
+import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
+import type { AccessibilitySettings } from "@/hooks/use-accessibility-settings";
+import { cn } from "@/lib/utils";
 
-function AdminHeader() {
+function AdminHeader({
+  accessibilitySettings,
+  updateAccessibilitySettings,
+  resetAccessibilitySettings,
+}: {
+  accessibilitySettings: AccessibilitySettings;
+  updateAccessibilitySettings: (patch: Partial<AccessibilitySettings>) => void;
+  resetAccessibilitySettings: () => void;
+}) {
   const { user, logout } = useAuth();
 
   const handleLogout = async () => {
@@ -53,7 +65,7 @@ function AdminHeader() {
   };
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-card px-2 sm:px-4 lg:px-6">
+    <header className="flex h-14 items-center justify-between border-b bg-card px-2 sm:px-4 lg:px-6 transition-colors duration-300">
       <div className="text-foreground">
         <SidebarTrigger />
       </div>
@@ -65,6 +77,12 @@ function AdminHeader() {
         </h4>
       </div>
       <div className="flex items-center space-x-1 sm:space-x-2">
+        <AccessibilityDropdown
+          settings={accessibilitySettings}
+          updateSettings={updateAccessibilitySettings}
+          resetSettings={resetAccessibilitySettings}
+          description="Adjust the admin portal display."
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -116,10 +134,18 @@ export default function AdminLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const {
+    settings: accessibilitySettings,
+    updateSettings: updateAccessibilitySettings,
+    resetSettings: resetAccessibilitySettings,
+    backgroundClassName,
+  } = useAccessibilitySettings({ enabled: true });
+
   return (
     <AuthProvider>
+      <div className={cn("ctrl-portal selection:bg-primary/30 min-h-screen", backgroundClassName)}>
       <SidebarProvider>
-        <Sidebar>
+        <Sidebar className="transition-colors duration-300">
           <SidebarHeader>
             <div className="flex items-center gap-2">
               <Link href="/admin" className="block">
@@ -219,10 +245,15 @@ export default function AdminLayout({
           </SidebarContent>
         </Sidebar>
         <SidebarInset>
-          <AdminHeader />
+          <AdminHeader
+            accessibilitySettings={accessibilitySettings}
+            updateAccessibilitySettings={updateAccessibilitySettings}
+            resetAccessibilitySettings={resetAccessibilitySettings}
+          />
           <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
         </SidebarInset>
       </SidebarProvider>
+      </div>
     </AuthProvider>
   );
 }
