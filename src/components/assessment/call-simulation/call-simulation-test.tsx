@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   FileText,
@@ -18,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
-import { closeAssessmentWindow } from '@/lib/assessment-completion';
+import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 
 type CallRun = {
   id: string;
@@ -101,12 +100,17 @@ const formatTime = (seconds: number) => {
   return `${minutes}:${remainingSeconds}`;
 };
 
-export default function CallSimulationTest() {
-  const router = useRouter();
+export default function CallSimulationTest({
+  candidateSessionDocumentId,
+}: {
+  candidateSessionDocumentId?: string | null;
+}) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const formRef = useRef<IncidentForm>(emptyForm);
   const runIndexRef = useRef(0);
   const isFinalRunRef = useRef(false);
+  const startedAtRef = useRef<string | null>(null);
+  const snapshotsRef = useRef<RunSnapshot[]>([]);
   const [phase, setPhase] = useState<CallPhase>('landing');
   const [runs, setRuns] = useState<CallRun[]>(fallbackRuns);
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
@@ -118,6 +122,7 @@ export default function CallSimulationTest() {
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [reviewTimeLeft, setReviewTimeLeft] = useState(REVIEW_SECONDS);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const currentRun = useMemo(() => {
     return runs[currentRunIndex] ?? fallbackRuns[currentRunIndex] ?? fallbackRuns[0];
@@ -181,6 +186,9 @@ export default function CallSimulationTest() {
   }, [currentRun.audioSrc, currentRunIndex]);
 
   const beginRun = useCallback((runIndex: number) => {
+    if (!startedAtRef.current) {
+      startedAtRef.current = new Date().toISOString();
+    }
     setCurrentRunIndex(runIndex);
     setForm(emptyForm);
     setReviewTimeLeft(REVIEW_SECONDS);
@@ -220,7 +228,8 @@ export default function CallSimulationTest() {
       form: formRef.current,
     };
 
-    setSnapshots((currentSnapshots) => [...currentSnapshots, snapshot]);
+    snapshotsRef.current = [...snapshotsRef.current, snapshot];
+    setSnapshots(snapshotsRef.current);
 
     if (isFinalRunRef.current) {
       setPhase('submitting');
@@ -253,12 +262,44 @@ export default function CallSimulationTest() {
   useEffect(() => {
     if (phase !== 'submitting') return;
 
-    const timerId = window.setTimeout(() => {
-      setPhase('submitted');
-    }, 2600);
+    let cancelled = false;
 
-    return () => window.clearTimeout(timerId);
-  }, [phase]);
+    const submitAssessment = async () => {
+      try {
+        const response = await fetch('/api/assessment/call-simulation/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            snapshots: snapshotsRef.current,
+            startedAt: startedAtRef.current ?? new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            candidateSessionDocumentId,
+          }),
+        });
+
+        if (!response.ok && response.status !== 409) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body?.error ?? 'Submission failed');
+        }
+
+        if (!cancelled) {
+          notifyAssessmentCompleted('call-simulation');
+          setPhase('submitted');
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSubmitError(error instanceof Error ? error.message : 'Submission failed');
+          setPhase('submitted');
+        }
+      }
+    };
+
+    void submitAssessment();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [candidateSessionDocumentId, phase]);
 
   return (
     <AssessmentGameShell
@@ -599,17 +640,16 @@ export default function CallSimulationTest() {
 
       {phase === 'submitted' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
-          <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10 text-green-600 dark:text-green-400">
+          <div className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl ${submitError ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
             <CheckCircle2 className="h-8 w-8" />
           </div>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
           </p>
           <p className="mt-4 max-w-md text-muted-foreground">
-            Thank you. Your assessment has been submitted successfully. Please
-            complete any remaining assessments in My Assessments. If all
-            sections are complete, await further information from the Hiring
-            Manager.
+            {submitError
+              ? submitError
+              : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments in My Assessments. If all sections are complete, await further information from the Hiring Manager.'}
           </p>
           <Button
             variant="outline"

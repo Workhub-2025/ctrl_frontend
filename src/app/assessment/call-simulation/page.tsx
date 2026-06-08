@@ -2,6 +2,7 @@
 
 import { CallSimulationTest, SecureAssessmentShell } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
+import { useSearchParams } from 'next/navigation';
 
 /**
  * CallSimulationPage
@@ -10,6 +11,8 @@ import { useSecureExit } from '@/hooks/use-secure-exit';
  */
 export default function CallSimulationPage() {
   const { handleExit } = useSecureExit();
+  const searchParams = useSearchParams();
+  const candidateSessionDocumentId = searchParams.get('candidateSessionDocumentId');
 
   return (
     <SecureAssessmentShell
@@ -21,7 +24,7 @@ export default function CallSimulationPage() {
       showPauseButton={false}
       enableFocusMonitoring={false}
     >
-      <CallSimulationTest />
+      <CallSimulationTest candidateSessionDocumentId={candidateSessionDocumentId} />
     </SecureAssessmentShell>
   );
 }

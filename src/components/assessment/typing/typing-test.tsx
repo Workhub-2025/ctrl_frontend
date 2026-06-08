@@ -263,15 +263,19 @@ export default function TypingTest({
       results: { wpm: latest.wpm, accuracy: latest.accuracy },
       status: 'in-progress',
     };
-    void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
-  }, [enableAutoSave, results]);
+    void AssessmentProgressService.saveProgress(
+      progress,
+      sessionIdRef.current,
+      candidateSessionDocumentId
+    );
+  }, [candidateSessionDocumentId, enableAutoSave, results]);
 
   // Clear saved progress and store session once the assessment is fully submitted
   useEffect(() => {
     if (phase !== 'submitted') return;
-    void AssessmentProgressService.clearProgress('typing');
+    void AssessmentProgressService.clearProgress('typing', candidateSessionDocumentId);
     clearSession();
-  }, [phase, clearSession]);
+  }, [candidateSessionDocumentId, phase, clearSession]);
 
   const resetTypedState = useCallback((_runIndex: number) => {
     setTypedCharacters([]);
@@ -378,7 +382,11 @@ export default function TypingTest({
           timeLeft: Math.max(Math.ceil((endTime - Date.now()) / 1000), 0),
           status: 'in-progress',
         };
-        void AssessmentProgressService.saveProgress(progress, sessionIdRef.current);
+        void AssessmentProgressService.saveProgress(
+          progress,
+          sessionIdRef.current,
+          candidateSessionDocumentId
+        );
       }, 15_000);
     }
 
@@ -386,7 +394,7 @@ export default function TypingTest({
       globalThis.clearInterval(timerId);
       if (autoSaveIntervalId !== undefined) globalThis.clearInterval(autoSaveIntervalId);
     };
-  }, [phase, enableAutoSave, runStarted]);
+  }, [candidateSessionDocumentId, phase, enableAutoSave, runStarted]);
 
   useEffect(() => {
     if (phase !== 'submitting') return;

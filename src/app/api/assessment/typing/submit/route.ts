@@ -33,51 +33,6 @@ interface TypingSubmitPayload {
     difficulty?: "Base" | "Intermediate" | "Advanced";
 }
 
-// ─── Scoring helpers ──────────────────────────────────────────────────────────
-
-const DEFAULT_WPM_THRESHOLD = 32;
-const DEFAULT_ACCURACY_THRESHOLD = 90;
-
-/**
- * Computes the aggregate score from the three assessment runs.
- * Practice run index 0 is excluded from the official result.
- *
- * Score = average of normalised WPM (0-100) and accuracy (0-100).
- * WPM is normalised relative to a 60 WPM ceiling (reasonable professional target).
- */
-function computeScore(runs: RunResult[]): {
-    score: number;
-    passed: boolean;
-    wpm: number;
-    accuracy: number;
-    mistakes: number;
-} {
-    const scoredRuns = runs.filter((r) => r.runIndex > 0);
-
-    if (scoredRuns.length === 0) {
-        return { score: 0, passed: false, wpm: 0, accuracy: 0, mistakes: 0 };
-    }
-
-    const wpm = Math.round(
-        scoredRuns.reduce((sum, run) => sum + run.wpm, 0) / scoredRuns.length
-    );
-    const accuracy = Math.round(
-        scoredRuns.reduce((sum, run) => sum + run.accuracy, 0) / scoredRuns.length
-    );
-    const mistakes = Math.round(
-        scoredRuns.reduce((sum, run) => sum + run.mistakeCharacters, 0) / scoredRuns.length
-    );
-
-    // Normalise WPM to 0-100 with 60 WPM as the 100% ceiling.
-    const normalisedWpm = Math.min(Math.round((wpm / 60) * 100), 100);
-    const score = Math.round((normalisedWpm + accuracy) / 2);
-
-    const passed =
-        wpm >= DEFAULT_WPM_THRESHOLD && accuracy >= DEFAULT_ACCURACY_THRESHOLD;
-
-    return { score, passed, wpm, accuracy, mistakes };
-}
-
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 function validatePayload(
@@ -185,69 +140,62 @@ export async function POST(request: Request) {
             runs,
             startedAt,
             completedAt,
-            assessmentId,
             candidateSessionDocumentId,
             difficulty,
         } = validation.data;
 
-        // 4. Compute score from assessment runs only (practice excluded)
-        const { score, passed, wpm, accuracy, mistakes } = computeScore(runs);
-
-        const durationSeconds = Math.round(
-            (new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 1000
-        );
-
-        // 5. Persist to Strapi using the user's own JWT so Strapi applies the
-        //    Authenticated role permissions. The controller overrides `create` to
-        //    enforce ownership, idempotency, and server-side score recomputation.
+        // 4. Persist through the same assessment submission endpoint used by the
+        //    other assessments. Strapi resolves candidate session -> campaign/session
+        //    and performs server-side scoring/idempotency.
         const strapiClient = getStrapiClient(session.user.jwt);
 
         const assessmentRuns = runs.filter((r) => r.runIndex > 0);
         const practiceRuns = runs.filter((r) => r.runIndex === 0);
-        const metrics = {
-            assessmentType: "typing",
-            difficulty,
-            assessmentRuns: assessmentRuns.map((r) => ({
-                runIndex: r.runIndex,
-                wpm: r.wpm,
-                accuracy: r.accuracy,
-                correctCharacters: r.correctCharacters,
-                mistakeCharacters: r.mistakeCharacters,
-                typedCharacters: r.typedCharacters,
-                duration: r.duration,
-            })),
-            practiceRuns: practiceRuns.map((r) => ({
-                runIndex: r.runIndex,
-                wpm: r.wpm,
-                accuracy: r.accuracy,
-                correctCharacters: r.correctCharacters,
-                mistakeCharacters: r.mistakeCharacters,
-            })),
-            averageWpm: wpm,
-            averageAccuracy: accuracy,
-            averageMistakes: mistakes,
-            thresholds: {
-                wpm: DEFAULT_WPM_THRESHOLD,
-                accuracy: DEFAULT_ACCURACY_THRESHOLD,
-            },
-        };
 
-        const created = await strapiClient
-            .collection("assessment-results")
-            .create({
-                wpm,
-                accuracy,
-                mistakeCount: mistakes,
+        const created = await strapiClient.fetch("/assessment/typing/results", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
                 startedAt,
                 completedAt,
-                durationSeconds,
-                metrics,
-                rawData: { assessmentType: "typing", runs },
-                ...(assessmentId ? { assessmentDocumentId: assessmentId } : {}),
-                ...(candidateSessionDocumentId ? { candidateSessionDocumentId } : {}),
-            } as Record<string, unknown>);
+                candidateSessionDocumentId,
+                rawData: {
+                    assessmentType: "typing",
+                    difficulty,
+                    rounds: assessmentRuns.map((r) => ({
+                        runIndex: r.runIndex,
+                        wpm: r.wpm,
+                        accuracy: r.accuracy,
+                        correctCharacters: r.correctCharacters,
+                        mistakeCharacters: r.mistakeCharacters,
+                        typedCharacters: r.typedCharacters,
+                        duration: r.duration,
+                    })),
+                    assessmentRuns,
+                    practiceRuns,
+                    averageMistakes: Math.round(
+                        assessmentRuns.reduce((sum, run) => sum + run.mistakeCharacters, 0) /
+                        Math.max(assessmentRuns.length, 1)
+                    ),
+                },
+            }),
+        });
 
-        trace.success({ score, passed, wpm, accuracy, mistakes });
+        if (!created.ok) {
+            const body = await created.json().catch(() => ({}));
+            const message = (body as { error?: { message?: string }; message?: string })?.error?.message
+                ?? (body as { message?: string })?.message
+                ?? "Submission failed";
+            trace.failure(new Error(message));
+            return NextResponse.json(
+                { error: message },
+                { status: created.status, headers: { "x-correlation-id": correlationId } }
+            );
+        }
+
+        const result = await created.json();
+
+        trace.success({ userId: session.user.id });
 
         // 6. Return confirmation — deliberately omit score so candidates cannot
         //    read their own result from the response (FR-10).
@@ -255,7 +203,7 @@ export async function POST(request: Request) {
             {
                 success: true,
                 submitted: true,
-                resultId: (created as unknown as Record<string, unknown>)?.documentId ?? null,
+                resultId: result?.data?.documentId ?? null,
             },
             { status: 201, headers: { "x-correlation-id": correlationId } }
         );
