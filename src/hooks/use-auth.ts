@@ -40,7 +40,7 @@ export function useAuth() {
         if (!userData) return false;
 
         // For non-candidates, profile is always considered complete
-        if (normalizeRole(userData.role?.name || userData.role) !== 'candidate') {
+        if (normalizeRole(userData.role) !== 'candidate') {
             return true;
         }
 
@@ -53,7 +53,7 @@ export function useAuth() {
         console.log('🔄 Routing user after login:', userData);
 
         // Get role name - handle both Strapi direct response and NextAuth session formats
-        const userRole = normalizeRole(userData?.role?.name || userData?.role || 'candidate');
+        const userRole = normalizeRole(userData?.role || 'candidate');
 
         console.log('🎯 Determined user role:', userRole);
 
@@ -90,6 +90,11 @@ export function useAuth() {
 
     const login = async (email: string, password: string) => {
         try {
+            clearUserProfile();
+            clearClientSessionCache();
+            setSession(null);
+            setStatus('loading');
+
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
@@ -98,7 +103,6 @@ export function useAuth() {
                 body: new URLSearchParams({
                     email,
                     password,
-                    callbackUrl: routeForRole(undefined),
                 }),
                 credentials: 'same-origin',
             });

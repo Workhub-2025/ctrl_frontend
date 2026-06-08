@@ -115,7 +115,7 @@ export const authOptions = {
                         const userRole = authResponse.user.role;
                         const fallbackDevRole = inferDevSeededRole(authResponse.user.email || normalizedEmail);
                         const roleValue = userRole
-                            ? normalizeRole((typeof userRole === 'object' && userRole !== null && 'name' in userRole) ? (userRole as any).name : userRole)
+                            ? normalizeRole(userRole)
                             : fallbackDevRole ?? 'candidate';
 
                         console.log('🎯 Role extracted from Strapi:', roleValue);

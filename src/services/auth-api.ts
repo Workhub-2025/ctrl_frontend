@@ -2,6 +2,50 @@ import { fetchApi } from '@/lib/fetch-client';
 import { IUser, StrapiAuthResponse, LoginUserData } from '@/types/users.types';
 import { IRole } from '@/types/role.types';
 
+const normalizeApiBaseUrl = (value: string | undefined, fallback: string) => {
+    const trimmed = value?.trim() || fallback;
+    const withoutTrailingSlash = trimmed.replace(/\/+$/, '');
+
+    return withoutTrailingSlash.endsWith('/api')
+        ? withoutTrailingSlash
+        : `${withoutTrailingSlash}/api`;
+};
+
+const getServerStrapiBaseUrl = () =>
+    normalizeApiBaseUrl(
+        process.env.STRAPI_API_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL,
+        'http://strapi:1337/api'
+    );
+
+const getServerApiToken = () =>
+    process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
+    process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
+    process.env.STRAPI_API_TOKEN ||
+    undefined;
+
+const hasRole = (user: StrapiAuthResponse['user'] | undefined) =>
+    Boolean(user?.role && typeof user.role === 'object');
+
+async function fetchUserWithRoleFromServer(userId: string | number) {
+    if (typeof window !== 'undefined') return null;
+
+    const token = getServerApiToken();
+    if (!token) return null;
+
+    const response = await fetch(
+        `${getServerStrapiBaseUrl()}/users/${encodeURIComponent(String(userId))}?populate=role`,
+        {
+            cache: 'no-store',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        }
+    );
+
+    if (!response.ok) return null;
+    return response.json() as Promise<StrapiAuthResponse['user']>;
+}
+
 export class AuthAPI {
     /**
      * Register a new user
@@ -76,18 +120,30 @@ export class AuthAPI {
 
                     console.log('✅ Complete user data retrieved:', {
                         userEmail: userResponse.email,
-                        roleName: typeof userResponse.role === 'object' && userResponse.role !== null ? userResponse.role.name : 'Candidate',
-                        roleId: typeof userResponse.role === 'object' && userResponse.role !== null ? userResponse.role.id : 4,
+                        roleName: typeof userResponse.role === 'object' && userResponse.role !== null ? userResponse.role.name : 'Missing',
+                        roleId: typeof userResponse.role === 'object' && userResponse.role !== null ? userResponse.role.id : 'Missing',
                         fullRole: userResponse.role
                     });
+
+                    const serverRoleUser = hasRole(userResponse)
+                        ? null
+                        : await fetchUserWithRoleFromServer(userResponse.id ?? response.user?.id);
+
+                    if (serverRoleUser?.role) {
+                        console.log('✅ Role recovered via server user lookup:', {
+                            userEmail: serverRoleUser.email,
+                            role: serverRoleUser.role,
+                        });
+                    }
 
                     // Return enhanced response with complete user data
                     return {
                         jwt: response.jwt,
                         user: {
                             ...userResponse,
+                            ...(serverRoleUser ?? {}),
                             // Ensure role is properly structured
-                            role: userResponse.role
+                            role: serverRoleUser?.role ?? userResponse.role
                         }
                     };
                 } catch (userError: any) {

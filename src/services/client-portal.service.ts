@@ -72,6 +72,23 @@ export type ClientAccessCode = {
   status: string;
   targetRole: string;
   createdAt?: string;
+  updatedAt?: string;
+};
+
+export type ClientHiringManagerSeat = {
+  documentId: string;
+  name: string;
+  email: string;
+  createdAt?: string;
+  candidatesOnboarded: number;
+  campaigns: Array<{
+    documentId: string;
+    name: string;
+    jobRole: string;
+    campaignStatus: string;
+    approvalStatus: string;
+    candidatesOnboarded: number;
+  }>;
 };
 
 function formatStatus(status?: RawCampaign["campaignStatus"]): HiringManagerCampaignListItem["status"] {
@@ -201,4 +218,56 @@ export async function generateHiringManagerAccessCode() {
   );
 
   return response.data;
+}
+
+export async function refreshHiringManagerAccessCode(refreshCodeDocumentId: string) {
+  const response = await strapiRequest<{ data?: ClientAccessCode }>(
+    "/access-codes/generate",
+    {
+      method: "POST",
+      body: JSON.stringify({ refreshCodeDocumentId }),
+    }
+  );
+
+  return response.data;
+}
+
+export async function getClientHiringManagers(clientDocumentId: string) {
+  const response = await strapiRequest<{ data?: Array<{
+    documentId?: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    username?: string | null;
+    email?: string | null;
+    createdAt?: string;
+    candidatesOnboarded?: number;
+    campaigns?: Array<{
+      documentId?: string;
+      name?: string | null;
+      jobRole?: string | null;
+      campaignStatus?: string | null;
+      approvalStatus?: string | null;
+      candidatesOnboarded?: number;
+    }>;
+  }> }>(`/clients/${encodeURIComponent(clientDocumentId)}/hiring-managers`);
+
+  return (response.data ?? []).map((manager) => {
+    const name = [manager.firstName, manager.lastName].filter(Boolean).join(" ").trim();
+
+    return {
+      documentId: manager.documentId ?? manager.email ?? "hiring-manager",
+      name: name || manager.username || manager.email || "Hiring manager",
+      email: manager.email || "No email recorded",
+      createdAt: manager.createdAt,
+      candidatesOnboarded: manager.candidatesOnboarded ?? 0,
+      campaigns: (manager.campaigns ?? []).map((campaign) => ({
+        documentId: campaign.documentId ?? campaign.name ?? "campaign",
+        name: campaign.name || "Untitled campaign",
+        jobRole: campaign.jobRole || "Role not set",
+        campaignStatus: campaign.campaignStatus || "unknown",
+        approvalStatus: campaign.approvalStatus || "unknown",
+        candidatesOnboarded: campaign.candidatesOnboarded ?? 0,
+      })),
+    } satisfies ClientHiringManagerSeat;
+  });
 }

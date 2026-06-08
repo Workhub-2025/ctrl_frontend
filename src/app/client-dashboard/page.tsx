@@ -11,15 +11,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  BriefcaseBusiness,
   CheckCircle2,
   ClipboardCheck,
+  Eye,
   KeyRound,
+  RefreshCw,
+  UserCheck,
   Users,
   XCircle,
 } from "lucide-react";
 
 type ClientDashboardSummary = {
   client?: {
+    documentId?: string;
     name?: string;
     campaignApprovalMode?: "auto_approve" | "require_approval";
   };
@@ -52,7 +64,29 @@ type ClientAccessCode = {
   expiresAt: string;
   status: string;
   targetRole: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
+
+type ClientHiringManager = {
+  documentId: string;
+  name: string;
+  email: string;
+  createdAt?: string;
+  candidatesOnboarded: number;
+  campaigns: Array<{
+    documentId: string;
+    name: string;
+    jobRole: string;
+    campaignStatus: string;
+    approvalStatus: string;
+    candidatesOnboarded: number;
+  }>;
+};
+
+type SeatSlot =
+  | { type: "occupied"; label: string; manager: ClientHiringManager }
+  | { type: "empty"; label: string; accessCode?: ClientAccessCode };
 
 async function readJson<T>(response: Response): Promise<T> {
   const body = await response.json().catch(() => ({}));
@@ -65,10 +99,12 @@ async function readJson<T>(response: Response): Promise<T> {
 export default function ClientDashboardPage() {
   const [summary, setSummary] = useState<ClientDashboardSummary | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignApproval[]>([]);
+  const [accessCodes, setAccessCodes] = useState<ClientAccessCode[]>([]);
+  const [hiringManagers, setHiringManagers] = useState<ClientHiringManager[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
-  const [generatedCode, setGeneratedCode] = useState<ClientAccessCode | null>(null);
-  const [generatingCode, setGeneratingCode] = useState(false);
+  const [selectedSeat, setSelectedSeat] = useState<SeatSlot | null>(null);
+  const [codeBusy, setCodeBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const pendingCampaigns = useMemo(
@@ -76,19 +112,43 @@ export default function ClientDashboardPage() {
     [campaigns]
   );
 
+  const seatSlots = useMemo<SeatSlot[]>(() => {
+    const occupied = hiringManagers.map((manager, index) => ({
+      type: "occupied" as const,
+      label: `Seat ${index + 1}`,
+      manager,
+    }));
+    const emptyCount = Math.max(0, (summary?.seats.limit ?? 0) - occupied.length);
+    const empty = Array.from({ length: emptyCount }, (_, index) => ({
+      type: "empty" as const,
+      label: `Seat ${occupied.length + index + 1}`,
+      accessCode: accessCodes[index],
+    }));
+
+    return [...occupied, ...empty];
+  }, [accessCodes, hiringManagers, summary?.seats.limit]);
+
   const loadDashboard = async () => {
     setLoading(true);
-    const [summaryResponse, approvalsResponse] = await Promise.all([
+    const [summaryResponse, approvalsResponse, codesResponse, managersResponse] = await Promise.all([
       fetch("/api/client/dashboard", { cache: "no-store" }).then((response) =>
         readJson<{ data?: ClientDashboardSummary }>(response)
       ),
       fetch("/api/client/campaign-approvals", { cache: "no-store" }).then((response) =>
         readJson<{ data?: CampaignApproval[] }>(response)
       ),
+      fetch("/api/client/access-codes", { cache: "no-store" }).then((response) =>
+        readJson<{ data?: ClientAccessCode[] }>(response)
+      ),
+      fetch("/api/client/hiring-managers", { cache: "no-store" }).then((response) =>
+        readJson<{ data?: ClientHiringManager[] }>(response)
+      ),
     ]);
 
     setSummary(summaryResponse.data ?? null);
     setCampaigns(approvalsResponse.data ?? []);
+    setAccessCodes(codesResponse.data ?? []);
+    setHiringManagers(managersResponse.data ?? []);
     setError(null);
     setLoading(false);
   };
@@ -122,19 +182,50 @@ export default function ClientDashboardPage() {
     }
   };
 
-  const generateHmCode = async () => {
-    setGeneratingCode(true);
+  const openEmptySeat = async (seat: Extract<SeatSlot, { type: "empty" }>) => {
     setError(null);
+    if (seat.accessCode?.code) {
+      setSelectedSeat(seat);
+      return;
+    }
+
+    setCodeBusy(seat.label);
     try {
       const body = await fetch("/api/client/access-codes", {
         method: "POST",
       }).then((response) => readJson<{ data?: ClientAccessCode }>(response));
-      setGeneratedCode(body.data ?? null);
+      if (body.data) {
+        const updatedSeat = { ...seat, accessCode: body.data };
+        setSelectedSeat(updatedSeat);
+      }
       await loadDashboard();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Access code could not be generated");
     } finally {
-      setGeneratingCode(false);
+      setCodeBusy(null);
+    }
+  };
+
+  const refreshSeatCode = async (seat: Extract<SeatSlot, { type: "empty" }>) => {
+    if (!seat.accessCode?.documentId) return;
+
+    setCodeBusy(seat.label);
+    setError(null);
+    try {
+      const body = await fetch("/api/client/access-codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshCodeDocumentId: seat.accessCode.documentId }),
+      }).then((response) => readJson<{ data?: ClientAccessCode }>(response));
+
+      if (body.data) {
+        setSelectedSeat({ ...seat, accessCode: body.data });
+      }
+      await loadDashboard();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Access code could not be refreshed");
+    } finally {
+      setCodeBusy(null);
     }
   };
 
@@ -163,16 +254,6 @@ export default function ClientDashboardPage() {
           {error}
         </div>
       )}
-      {generatedCode?.code && (
-        <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 px-4 py-3 text-sm">
-          <p className="font-medium">Hiring manager access code generated</p>
-          <p className="mt-2 font-mono text-base tracking-wide">{generatedCode.code}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Expires {new Date(generatedCode.expiresAt).toLocaleString("en-GB")}. This code is shown once.
-          </p>
-        </div>
-      )}
-
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -200,16 +281,6 @@ export default function ClientDashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{summary?.availableAccessCodes ?? "..."}</div>
             <p className="text-xs text-muted-foreground">Unused hiring-manager invite codes</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-4 w-full"
-              onClick={generateHmCode}
-              disabled={generatingCode || (summary?.seats.available ?? 0) < 1}
-            >
-              <KeyRound className="mr-2 h-4 w-4" />
-              {generatingCode ? "Generating..." : "Generate HM code"}
-            </Button>
           </CardContent>
         </Card>
 
@@ -224,6 +295,77 @@ export default function ClientDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hiring Managers</CardTitle>
+          <CardDescription>
+            Seat access and hiring-manager activity for this client.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading && (
+            <p className="text-sm text-muted-foreground">Loading hiring-manager seats...</p>
+          )}
+          {!loading && seatSlots.length === 0 && (
+            <p className="text-sm text-muted-foreground">No hiring-manager seats are available.</p>
+          )}
+          <div className="grid gap-3 md:grid-cols-2">
+            {seatSlots.map((seat) => (
+              <div key={seat.label} className="rounded-md border p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={seat.type === "occupied" ? "default" : "outline"}>
+                        {seat.label}
+                      </Badge>
+                      {seat.type === "occupied" ? (
+                        <span className="text-sm font-medium">Occupied</span>
+                      ) : (
+                        <span className="text-sm font-medium">Empty seat</span>
+                      )}
+                    </div>
+                    {seat.type === "occupied" ? (
+                      <>
+                        <p className="truncate text-sm text-muted-foreground">
+                          {seat.manager.name} • {seat.manager.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {seat.manager.campaigns.length} campaign{seat.manager.campaigns.length === 1 ? "" : "s"} • {seat.manager.candidatesOnboarded} candidates onboarded
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {seat.accessCode ? "Access code ready" : "No active access code"}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (seat.type === "occupied") {
+                        setSelectedSeat(seat);
+                      } else {
+                        void openEmptySeat(seat);
+                      }
+                    }}
+                    disabled={seat.type === "empty" && codeBusy === seat.label}
+                  >
+                    {seat.type === "occupied" ? (
+                      <UserCheck className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Eye className="mr-2 h-4 w-4" />
+                    )}
+                    {seat.type === "occupied" ? "View details" : codeBusy === seat.label ? "Loading..." : "View Access Code"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -282,6 +424,98 @@ export default function ClientDashboardPage() {
           ))}
         </CardContent>
       </Card>
+
+      <Dialog open={Boolean(selectedSeat)} onOpenChange={(open) => !open && setSelectedSeat(null)}>
+        <DialogContent>
+          {selectedSeat?.type === "empty" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedSeat.label} Access Code</DialogTitle>
+                <DialogDescription>
+                  Share this code with the hiring manager assigned to this seat.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="rounded-md border bg-muted/40 p-4">
+                  <p className="break-all font-mono text-lg font-semibold tracking-wide">
+                    {selectedSeat.accessCode?.code ?? "No code available"}
+                  </p>
+                </div>
+                <div className="grid gap-2 text-sm text-muted-foreground">
+                  <p>
+                    Last refresh: {formatDateTime(selectedSeat.accessCode?.updatedAt ?? selectedSeat.accessCode?.createdAt)}
+                  </p>
+                  <p>Expires: {formatDateTime(selectedSeat.accessCode?.expiresAt)}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void refreshSeatCode(selectedSeat)}
+                  disabled={!selectedSeat.accessCode || codeBusy === selectedSeat.label}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {codeBusy === selectedSeat.label ? "Refreshing..." : "Refresh code"}
+                </Button>
+              </div>
+            </>
+          )}
+          {selectedSeat?.type === "occupied" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedSeat.manager.name}</DialogTitle>
+                <DialogDescription>{selectedSeat.manager.email}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-md border p-3">
+                    <p className="text-xs text-muted-foreground">Campaigns</p>
+                    <p className="text-2xl font-semibold">{selectedSeat.manager.campaigns.length}</p>
+                  </div>
+                  <div className="rounded-md border p-3">
+                    <p className="text-xs text-muted-foreground">Candidates onboarded</p>
+                    <p className="text-2xl font-semibold">{selectedSeat.manager.candidatesOnboarded}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {selectedSeat.manager.campaigns.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No campaigns are attached to this hiring manager.</p>
+                  )}
+                  {selectedSeat.manager.campaigns.map((campaign) => (
+                    <div key={campaign.documentId} className="rounded-md border p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium">{campaign.name}</p>
+                          <p className="text-sm text-muted-foreground">{campaign.jobRole}</p>
+                        </div>
+                        <BriefcaseBusiness className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Badge variant="outline">{campaign.campaignStatus}</Badge>
+                        <Badge variant="secondary">{campaign.approvalStatus}</Badge>
+                        <Badge variant="secondary">{campaign.candidatesOnboarded} candidates</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return "Not recorded";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }

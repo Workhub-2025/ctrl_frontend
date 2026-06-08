@@ -41,6 +41,15 @@ export const normalizeRole = (role: unknown): AppRole => {
   if (
     role &&
     typeof role === "object" &&
+    "type" in role &&
+    typeof (role as { type?: unknown }).type === "string"
+  ) {
+    return normalizeRole((role as { type: string }).type);
+  }
+
+  if (
+    role &&
+    typeof role === "object" &&
     "name" in role &&
     typeof (role as { name?: unknown }).name === "string"
   ) {
