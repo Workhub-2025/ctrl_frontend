@@ -83,6 +83,17 @@ type SessionsResponse = {
   error?: string;
 };
 
+type HiringManagerOverview = {
+  campaigns: HiringManagerCampaignListItem[];
+  campaignDetails: HiringManagerCampaignDetail[];
+  sessions: HiringManagerSessionListItem[];
+};
+
+type OverviewResponse = {
+  data?: HiringManagerOverview;
+  error?: string;
+};
+
 type SessionCreateInput = {
   campaignDocumentId: string;
   name: string;
@@ -107,6 +118,26 @@ let sessionsInFlight: Promise<HiringManagerSessionListItem[]> | null = null;
 let sessionsCache: HiringManagerSessionListItem[] | null = null;
 let sessionsFetchedAt = 0;
 
+let overviewInFlight: Promise<HiringManagerOverview> | null = null;
+let overviewCache: HiringManagerOverview | null = null;
+let overviewFetchedAt = 0;
+const PORTAL_CACHE_TTL_MS = 30_000;
+
+function isFresh(timestamp: number) {
+  return timestamp > 0 && Date.now() - timestamp < PORTAL_CACHE_TTL_MS;
+}
+
+function hydrateOverviewCaches(overview: HiringManagerOverview) {
+  campaignsCache = overview.campaigns;
+  sessionsCache = overview.sessions;
+  campaignsFetchedAt = Date.now();
+  sessionsFetchedAt = campaignsFetchedAt;
+  campaignDetailsCache.clear();
+  for (const detail of overview.campaignDetails) {
+    campaignDetailsCache.set(detail.id, detail);
+  }
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => ({}))) as T & { error?: string };
   if (!response.ok) {
@@ -119,7 +150,7 @@ export class HiringManagerPortalClientService {
   static async getCampaigns(options?: {
     force?: boolean;
   }): Promise<HiringManagerCampaignListItem[]> {
-    if (!options?.force && campaignsCache) return campaignsCache;
+    if (!options?.force && campaignsCache && isFresh(campaignsFetchedAt)) return campaignsCache;
     if (!options?.force && campaignsInFlight) return campaignsInFlight;
 
     campaignsInFlight = fetch("/api/hiring-manager/campaigns", {
@@ -143,7 +174,7 @@ export class HiringManagerPortalClientService {
     campaignId: string,
     options?: { force?: boolean }
   ): Promise<HiringManagerCampaignDetail | null> {
-    if (!options?.force && campaignDetailsCache.has(campaignId)) {
+    if (!options?.force && campaignDetailsCache.has(campaignId) && isFresh(overviewFetchedAt || campaignsFetchedAt)) {
       return campaignDetailsCache.get(campaignId) ?? null;
     }
 
@@ -170,19 +201,14 @@ export class HiringManagerPortalClientService {
   static async getCampaignDetails(options?: {
     force?: boolean;
   }): Promise<HiringManagerCampaignDetail[]> {
-    const campaignList = await this.getCampaigns(options);
-    const details = await Promise.all(
-      campaignList.map((campaign) =>
-        this.getCampaignDetail(campaign.id, options)
-      )
-    );
-    return details.filter(Boolean) as HiringManagerCampaignDetail[];
+    const overview = await this.getOverview(options);
+    return overview.campaignDetails;
   }
 
   static async getSessions(options?: {
     force?: boolean;
   }): Promise<HiringManagerSessionListItem[]> {
-    if (!options?.force && sessionsCache) return sessionsCache;
+    if (!options?.force && sessionsCache && isFresh(sessionsFetchedAt)) return sessionsCache;
     if (!options?.force && sessionsInFlight) return sessionsInFlight;
 
     sessionsInFlight = fetch("/api/hiring-manager/sessions", {
@@ -210,6 +236,32 @@ export class HiringManagerPortalClientService {
     return sessionsFetchedAt || null;
   }
 
+  static async getOverview(options?: {
+    force?: boolean;
+  }): Promise<HiringManagerOverview> {
+    if (!options?.force && overviewCache && isFresh(overviewFetchedAt)) {
+      return overviewCache;
+    }
+    if (!options?.force && overviewInFlight) return overviewInFlight;
+
+    overviewInFlight = fetch("/api/hiring-manager/overview", {
+      cache: "no-store",
+    })
+      .then((response) => readJson<OverviewResponse>(response))
+      .then((body) => {
+        const overview = body.data ?? { campaigns: [], campaignDetails: [], sessions: [] };
+        overviewCache = overview;
+        overviewFetchedAt = Date.now();
+        hydrateOverviewCaches(overview);
+        return overview;
+      })
+      .finally(() => {
+        overviewInFlight = null;
+      });
+
+    return overviewInFlight;
+  }
+
   static invalidate() {
     campaignsInFlight = null;
     campaignsCache = null;
@@ -219,6 +271,9 @@ export class HiringManagerPortalClientService {
     sessionsInFlight = null;
     sessionsCache = null;
     sessionsFetchedAt = 0;
+    overviewInFlight = null;
+    overviewCache = null;
+    overviewFetchedAt = 0;
   }
 
   static async createSession(
@@ -239,6 +294,9 @@ export class HiringManagerPortalClientService {
     campaignsFetchedAt = 0;
     campaignDetailsInFlight.clear();
     campaignDetailsCache.clear();
+    overviewInFlight = null;
+    overviewCache = null;
+    overviewFetchedAt = 0;
 
     return body.data ?? null;
   }
@@ -261,6 +319,9 @@ export class HiringManagerPortalClientService {
     sessionsInFlight = null;
     sessionsCache = null;
     sessionsFetchedAt = 0;
+    overviewInFlight = null;
+    overviewCache = null;
+    overviewFetchedAt = 0;
   }
 
   static async deleteCampaign(campaignId: string): Promise<void> {

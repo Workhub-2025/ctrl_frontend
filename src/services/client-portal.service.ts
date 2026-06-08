@@ -91,6 +91,13 @@ export type ClientHiringManagerSeat = {
   }>;
 };
 
+export type ClientOverviewData = {
+  summary: ClientDashboardSummary | null;
+  campaigns: ClientCampaignApprovalItem[];
+  accessCodes: ClientAccessCode[];
+  hiringManagers: ClientHiringManagerSeat[];
+};
+
 function formatStatus(status?: RawCampaign["campaignStatus"]): HiringManagerCampaignListItem["status"] {
   switch (status) {
     case "live":
@@ -182,6 +189,47 @@ export async function getClientDashboardSummary() {
   );
 
   return response.data;
+}
+
+export async function updateClientCampaignApprovalMode(
+  clientDocumentId: string,
+  mode: "auto_approve" | "require_approval"
+) {
+  if (!clientDocumentId) {
+    throw new Error("Client account could not be resolved");
+  }
+
+  const response = await strapiRequest<StrapiSingleResponse<ClientDashboardSummary["client"]>>(
+    `/clients/${encodeURIComponent(clientDocumentId)}/approval-mode`,
+    {
+      method: "POST",
+      body: JSON.stringify({ mode }),
+    }
+  );
+
+  return response.data;
+}
+
+export async function getClientOverview(): Promise<ClientOverviewData> {
+  const summary = await getClientDashboardSummary();
+  const clientDocumentId = summary?.client?.documentId;
+
+  if (!clientDocumentId) {
+    throw new Error("Client account could not be resolved");
+  }
+
+  const [campaigns, accessCodes, hiringManagers] = await Promise.all([
+    getClientCampaignApprovals(),
+    getClientAccessCodes(),
+    getClientHiringManagers(clientDocumentId),
+  ]);
+
+  return {
+    summary: summary ?? null,
+    campaigns,
+    accessCodes,
+    hiringManagers,
+  };
 }
 
 export async function reviewClientCampaign(input: {

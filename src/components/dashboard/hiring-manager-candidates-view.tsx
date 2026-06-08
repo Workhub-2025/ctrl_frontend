@@ -109,8 +109,8 @@ export function HiringManagerCandidatesView() {
     setIsRefreshing(true);
     setError(null);
     try {
-      const details = await HiringManagerPortalClientService.getCampaignDetails({ force });
-      setCampaigns(details);
+      const overview = await HiringManagerPortalClientService.getOverview({ force });
+      setCampaigns(overview.campaignDetails);
     } catch (loadError) {
       setError(
         loadError instanceof Error

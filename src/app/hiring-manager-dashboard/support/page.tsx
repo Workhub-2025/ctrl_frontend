@@ -6,7 +6,7 @@ import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-p
 
 export default function HiringManagerSupportPage() {
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="max-w-7xl space-y-6">
       <HiringManagerPageHeader
         eyebrow="Support"
         title="Support"

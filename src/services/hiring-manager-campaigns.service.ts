@@ -521,6 +521,32 @@ export async function getHiringManagerSessions(): Promise<{
   }
 }
 
+export async function getHiringManagerOverview(): Promise<{
+  campaigns: HiringManagerCampaignListItem[];
+  campaignDetails: HiringManagerCampaignDetail[];
+  sessions: HiringManagerSessionListItem[];
+  error: string | null;
+}> {
+  const campaignsResult = await getHiringManagerCampaigns();
+  const [detailsResults, sessionsResult] = await Promise.all([
+    Promise.all(
+      campaignsResult.campaigns.map((campaign) =>
+        getHiringManagerCampaignDetail(campaign.id)
+      )
+    ),
+    getHiringManagerSessions(),
+  ]);
+
+  return {
+    campaigns: campaignsResult.campaigns,
+    campaignDetails: detailsResults
+      .map((result) => result.campaign)
+      .filter(Boolean) as HiringManagerCampaignDetail[],
+    sessions: sessionsResult.sessions,
+    error: campaignsResult.error ?? sessionsResult.error ?? detailsResults.find((result) => result.error)?.error ?? null,
+  };
+}
+
 export async function createHiringManagerCampaign(
   input: HiringManagerCampaignCreateInput
 ): Promise<HiringManagerCampaignCreateResult> {

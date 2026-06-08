@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, UserCheck, MessageSquare } from "lucide-react";
+import { ClipboardCheck, Home, MessageSquare, TrendingUp, Users } from "lucide-react";
 import { RoleDashboardShell } from "@/components/dashboard/role-dashboard-shell";
 
 export default function ClientDashboardLayout({
@@ -10,19 +10,29 @@ export default function ClientDashboardLayout({
 }) {
   return (
     <RoleDashboardShell
-      title="Client dashboard"
-      subtitle="Review progressed candidates and communicate with your Hiring Manager"
+      title="Client Portal"
+      subtitle="Seat access, campaign approvals, and hiring-manager oversight"
       navItems={[
         { href: "/client-dashboard/", label: "Overview", icon: Home },
         {
+          href: "/client-dashboard/hiring-managers/",
+          label: "Hiring Managers",
+          icon: Users,
+        },
+        {
           href: "/client-dashboard/progressed/",
-          label: "Progressed Candidates",
-          icon: UserCheck,
+          label: "Approvals",
+          icon: ClipboardCheck,
         },
         {
           href: "/client-dashboard/messages/",
-          label: "HM Communications",
+          label: "Messages",
           icon: MessageSquare,
+        },
+        {
+          href: "/client-dashboard/upgrade-requests/",
+          label: "Upgrade Requests",
+          icon: TrendingUp,
         },
       ]}
     >

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,13 +18,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import {
+  AlertCircle,
+  Building2,
   BriefcaseBusiness,
   CheckCircle2,
   ClipboardCheck,
   Eye,
   KeyRound,
   RefreshCw,
+  ShieldCheck,
   UserCheck,
   Users,
   XCircle,
@@ -88,12 +95,49 @@ type SeatSlot =
   | { type: "occupied"; label: string; manager: ClientHiringManager }
   | { type: "empty"; label: string; accessCode?: ClientAccessCode };
 
+type ClientOverviewData = {
+  summary: ClientDashboardSummary | null;
+  campaigns: CampaignApproval[];
+  accessCodes: ClientAccessCode[];
+  hiringManagers: ClientHiringManager[];
+};
+
+const OVERVIEW_CACHE_TTL_MS = 30_000;
+let overviewCache: { data: ClientOverviewData; timestamp: number } | null = null;
+let overviewInFlight: Promise<ClientOverviewData> | null = null;
+
 async function readJson<T>(response: Response): Promise<T> {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(body.error || `Request failed with ${response.status}`);
   }
   return body as T;
+}
+
+async function getClientOverview(force = false) {
+  const now = Date.now();
+  if (!force && overviewCache && now - overviewCache.timestamp < OVERVIEW_CACHE_TTL_MS) {
+    return overviewCache.data;
+  }
+
+  if (!force && overviewInFlight) {
+    return overviewInFlight;
+  }
+
+  overviewInFlight = fetch("/api/client/overview", { cache: "no-store" })
+    .then((response) => readJson<{ data?: ClientOverviewData }>(response))
+    .then((body) => {
+      if (!body.data) {
+        throw new Error("Client overview could not be loaded");
+      }
+      overviewCache = { data: body.data, timestamp: Date.now() };
+      return body.data;
+    })
+    .finally(() => {
+      overviewInFlight = null;
+    });
+
+  return overviewInFlight;
 }
 
 export default function ClientDashboardPage() {
@@ -105,6 +149,7 @@ export default function ClientDashboardPage() {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selectedSeat, setSelectedSeat] = useState<SeatSlot | null>(null);
   const [codeBusy, setCodeBusy] = useState<string | null>(null);
+  const [approvalModeBusy, setApprovalModeBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pendingCampaigns = useMemo(
@@ -128,27 +173,14 @@ export default function ClientDashboardPage() {
     return [...occupied, ...empty];
   }, [accessCodes, hiringManagers, summary?.seats.limit]);
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (force = false) => {
     setLoading(true);
-    const [summaryResponse, approvalsResponse, codesResponse, managersResponse] = await Promise.all([
-      fetch("/api/client/dashboard", { cache: "no-store" }).then((response) =>
-        readJson<{ data?: ClientDashboardSummary }>(response)
-      ),
-      fetch("/api/client/campaign-approvals", { cache: "no-store" }).then((response) =>
-        readJson<{ data?: CampaignApproval[] }>(response)
-      ),
-      fetch("/api/client/access-codes", { cache: "no-store" }).then((response) =>
-        readJson<{ data?: ClientAccessCode[] }>(response)
-      ),
-      fetch("/api/client/hiring-managers", { cache: "no-store" }).then((response) =>
-        readJson<{ data?: ClientHiringManager[] }>(response)
-      ),
-    ]);
+    const overview = await getClientOverview(force);
 
-    setSummary(summaryResponse.data ?? null);
-    setCampaigns(approvalsResponse.data ?? []);
-    setAccessCodes(codesResponse.data ?? []);
-    setHiringManagers(managersResponse.data ?? []);
+    setSummary(overview.summary);
+    setCampaigns(overview.campaigns);
+    setAccessCodes(overview.accessCodes);
+    setHiringManagers(overview.hiringManagers);
     setError(null);
     setLoading(false);
   };
@@ -174,7 +206,7 @@ export default function ClientDashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decision }),
       }).then((response) => readJson(response));
-      await loadDashboard();
+      await loadDashboard(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Campaign could not be reviewed");
     } finally {
@@ -195,10 +227,9 @@ export default function ClientDashboardPage() {
         method: "POST",
       }).then((response) => readJson<{ data?: ClientAccessCode }>(response));
       if (body.data) {
-        const updatedSeat = { ...seat, accessCode: body.data };
-        setSelectedSeat(updatedSeat);
+        setSelectedSeat({ ...seat, accessCode: body.data });
       }
-      await loadDashboard();
+      await loadDashboard(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Access code could not be generated");
     } finally {
@@ -221,11 +252,65 @@ export default function ClientDashboardPage() {
       if (body.data) {
         setSelectedSeat({ ...seat, accessCode: body.data });
       }
-      await loadDashboard();
+      await loadDashboard(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Access code could not be refreshed");
     } finally {
       setCodeBusy(null);
+    }
+  };
+
+  const updateApprovalMode = async (checked: boolean) => {
+    const nextMode = checked ? "auto_approve" : "require_approval";
+    const previousSummary = summary;
+    const clientDocumentId = summary?.client?.documentId;
+
+    if (!clientDocumentId) {
+      setError("Client account could not be resolved");
+      return;
+    }
+
+    setApprovalModeBusy(true);
+    setError(null);
+    setSummary((current) =>
+      current?.client
+        ? {
+            ...current,
+            client: {
+              ...current.client,
+              campaignApprovalMode: nextMode,
+            },
+          }
+        : current
+    );
+
+    try {
+      await fetch("/api/client/approval-mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientDocumentId, mode: nextMode }),
+      }).then((response) => readJson(response));
+
+      if (overviewCache?.data.summary?.client) {
+        overviewCache = {
+          data: {
+            ...overviewCache.data,
+            summary: {
+              ...overviewCache.data.summary,
+              client: {
+                ...overviewCache.data.summary.client,
+                campaignApprovalMode: nextMode,
+              },
+            },
+          },
+          timestamp: Date.now(),
+        };
+      }
+    } catch (err) {
+      setSummary(previousSummary);
+      setError(err instanceof Error ? err.message : "Campaign approval mode could not be updated");
+    } finally {
+      setApprovalModeBusy(false);
     }
   };
 
@@ -234,28 +319,47 @@ export default function ClientDashboardPage() {
     : 0;
 
   return (
-    <div className="space-y-8 max-w-6xl">
-      <section className="space-y-4">
-        <Badge variant="outline" className="border-primary/30 bg-primary/5 text-primary">
-          Client view
-        </Badge>
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold font-headline text-foreground">
-            {summary?.client?.name ?? "Client workspace"}
-          </h1>
-          <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">
-            Review hiring-manager capacity, campaign approvals, and candidate progression from one place.
-          </p>
-        </div>
-      </section>
+    <div className="max-w-7xl space-y-6">
+      <HiringManagerPageHeader
+        eyebrow="Client workspace"
+        title={summary?.client?.name ?? "Client Portal"}
+        description="Review hiring-manager capacity, campaign approvals, and candidate progression from one place."
+        icon={Building2}
+        stats={[
+          { icon: Users, label: "Seat oversight" },
+          { icon: ClipboardCheck, label: "Campaign approvals" },
+          { icon: ShieldCheck, label: "Controlled access" },
+        ]}
+        notice={
+          error ? (
+            <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">
+              {error}
+            </p>
+          ) : null
+        }
+        action={
+          <div className="grid w-full gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <HeaderMetric
+              icon={Users}
+              label="Seats used"
+              value={summary ? `${summary.seats.used}/${summary.seats.limit}` : "..."}
+            />
+            <HeaderMetric
+              icon={KeyRound}
+              label="Active codes"
+              value={summary?.availableAccessCodes ?? "..."}
+            />
+            <HeaderMetric
+              icon={ClipboardCheck}
+              label="Pending approvals"
+              value={summary?.campaignsPendingApproval ?? "..."}
+            />
+          </div>
+        }
+      />
 
-      {error && (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Hiring Manager Seats</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -264,16 +368,14 @@ export default function ClientDashboardPage() {
             <div className="text-2xl font-bold">
               {summary ? `${summary.seats.used}/${summary.seats.limit}` : "..."}
             </div>
-            <div className="mt-3 h-2 w-full rounded-full bg-secondary">
-              <div className="h-full rounded-full bg-cyan-600" style={{ width: `${seatPercent}%` }} />
-            </div>
+            <Progress value={seatPercent} className="mt-3 h-2 bg-muted dark:bg-white/10" />
             <p className="mt-2 text-xs text-muted-foreground">
               {summary?.seats.available ?? 0} seat{summary?.seats.available === 1 ? "" : "s"} available
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Available HM Codes</CardTitle>
             <KeyRound className="h-4 w-4 text-muted-foreground" />
@@ -284,7 +386,7 @@ export default function ClientDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Campaign Approvals</CardTitle>
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
@@ -296,54 +398,93 @@ export default function ClientDashboardPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Hiring Managers</CardTitle>
-          <CardDescription>
-            Seat access and hiring-manager activity for this client.
-          </CardDescription>
+      <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Hiring Managers</CardTitle>
+            <CardDescription>
+              Seat access and hiring-manager activity for this client.
+            </CardDescription>
+          </div>
+          <Badge className="w-fit rounded-md border-primary/20 bg-primary/10 text-primary hover:bg-primary/10">
+            {summary?.seats.available ?? 0} open seat{summary?.seats.available === 1 ? "" : "s"}
+          </Badge>
         </CardHeader>
         <CardContent>
           {loading && (
             <p className="text-sm text-muted-foreground">Loading hiring-manager seats...</p>
           )}
           {!loading && seatSlots.length === 0 && (
-            <p className="text-sm text-muted-foreground">No hiring-manager seats are available.</p>
+            <div className="rounded-xl border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
+              No hiring-manager seats are available.
+            </div>
           )}
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             {seatSlots.map((seat) => (
-              <div key={seat.label} className="rounded-md border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Badge variant={seat.type === "occupied" ? "default" : "outline"}>
+              <div
+                key={seat.label}
+                className="rounded-xl border border-border bg-background p-4 shadow-sm transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-white/[0.03]"
+              >
+                <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={seat.type === "occupied" ? "rounded-md bg-primary text-primary-foreground" : "rounded-md border-border bg-card text-muted-foreground hover:bg-card"}>
                         {seat.label}
                       </Badge>
-                      {seat.type === "occupied" ? (
-                        <span className="text-sm font-medium">Occupied</span>
-                      ) : (
-                        <span className="text-sm font-medium">Empty seat</span>
-                      )}
+                      <Badge
+                        className={
+                          seat.type === "occupied"
+                            ? "rounded-md border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10"
+                            : "rounded-md border-cyan-500/20 bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/10"
+                        }
+                      >
+                        {seat.type === "occupied" ? "Occupied" : "Empty seat"}
+                      </Badge>
                     </div>
+
                     {seat.type === "occupied" ? (
-                      <>
-                        <p className="truncate text-sm text-muted-foreground">
-                          {seat.manager.name} • {seat.manager.email}
+                      <div className="space-y-1">
+                        <h2 className="break-words text-base font-semibold leading-snug text-foreground">
+                          {seat.manager.name}
+                        </h2>
+                        <p className="break-words text-sm leading-5 text-muted-foreground">
+                          {seat.manager.email}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {seat.manager.campaigns.length} campaign{seat.manager.campaigns.length === 1 ? "" : "s"} • {seat.manager.candidatesOnboarded} candidates onboarded
-                        </p>
-                      </>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          <MiniPanel
+                            label="Campaigns"
+                            value={seat.manager.campaigns.length}
+                            icon={BriefcaseBusiness}
+                          />
+                          <MiniPanel
+                            label="Candidates"
+                            value={seat.manager.candidatesOnboarded}
+                            icon={UserCheck}
+                          />
+                        </div>
+                      </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        {seat.accessCode ? "Access code ready" : "No active access code"}
-                      </p>
+                      <div className="space-y-1">
+                        <h2 className="text-base font-semibold leading-snug text-foreground">
+                          {seat.accessCode ? "Access code ready" : "No active access code"}
+                        </h2>
+                        <p className="text-sm leading-5 text-muted-foreground">
+                          {seat.accessCode
+                            ? `Expires ${formatDateTime(seat.accessCode.expiresAt)}`
+                            : "Generate a controlled access code for this seat."}
+                        </p>
+                        <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs leading-5 text-muted-foreground dark:border-white/10 dark:bg-[#04070d]">
+                          <KeyRound className="mb-2 h-4 w-4 text-primary" />
+                          Codes expire after 7 days or immediately when refreshed.
+                        </div>
+                      </div>
                     )}
                   </div>
+
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
+                    className="w-full sm:w-auto"
                     onClick={() => {
                       if (seat.type === "occupied") {
                         setSelectedSeat(seat);
@@ -367,58 +508,110 @@ export default function ClientDashboardPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Campaign Approval Queue</CardTitle>
-          <CardDescription>
-            Hiring managers can create sessions only after you approve the campaign.
-          </CardDescription>
+      <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Campaign Approval Queue</CardTitle>
+            <CardDescription>
+              Choose whether new campaigns need client review before sessions can be created.
+            </CardDescription>
+          </div>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
+            <ApprovalModeControl
+              mode={summary?.client?.campaignApprovalMode ?? "require_approval"}
+              disabled={loading || approvalModeBusy || !summary?.client?.documentId}
+              onChange={(checked) => void updateApprovalMode(checked)}
+            />
+            <Button type="button" variant="outline" onClick={() => void loadDashboard(true)} disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {loading && (
             <p className="text-sm text-muted-foreground">Loading campaign approvals...</p>
           )}
           {!loading && pendingCampaigns.length === 0 && (
-            <p className="text-sm text-muted-foreground">No campaigns are pending approval.</p>
+            <div className="rounded-xl border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
+              No campaigns are pending approval.
+            </div>
           )}
           {pendingCampaigns.map((campaign) => (
             <div
               key={campaign.id}
-              className="flex flex-col gap-4 rounded-md border p-4 md:flex-row md:items-center md:justify-between"
+              className="rounded-xl border border-border bg-background p-4 shadow-sm transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-white/[0.03]"
             >
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-semibold">{campaign.name}</h2>
-                  <Badge variant="outline">{campaign.deliveryMode}</Badge>
-                  <Badge variant="secondary">{campaign.candidateCount} candidates</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {campaign.role} • Created by {campaign.createdBy}
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {campaign.assessmentStack.map((assessment) => (
-                    <Badge key={assessment} variant="secondary" className="text-xs">
-                      {assessment}
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+                <div className="min-w-0 space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="rounded-md border-orange-500/20 bg-orange-500/10 text-orange-600 hover:bg-orange-500/10">
+                      Pending approval
                     </Badge>
-                  ))}
+                    <Badge className="rounded-md border-border bg-card text-xs text-muted-foreground hover:bg-card dark:border-white/10 dark:bg-white/[0.03]">
+                      {campaign.deliveryMode}
+                    </Badge>
+                    <Badge className="rounded-md border-border bg-card text-xs text-muted-foreground hover:bg-card dark:border-white/10 dark:bg-white/[0.03]">
+                      {campaign.candidateCount} candidates
+                    </Badge>
+                  </div>
+                  <div className="min-w-0 space-y-1">
+                    <h2 className="break-words text-base font-semibold leading-snug text-foreground">
+                      {campaign.name}
+                    </h2>
+                    <p className="text-sm leading-5 text-muted-foreground">
+                      {campaign.role} | Created by {campaign.createdBy}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-card p-3 shadow-sm dark:border-white/10 dark:bg-[#04070d]">
+                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                      Assessment stack
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {campaign.assessmentStack.length === 0 ? (
+                        <span className="text-xs text-muted-foreground">No assessments attached</span>
+                      ) : (
+                        campaign.assessmentStack.map((assessment) => (
+                          <span
+                            key={assessment}
+                            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]"
+                          >
+                            {assessment}
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  disabled={reviewingId === campaign.id}
-                  onClick={() => reviewCampaign(campaign.id, "rejected")}
-                >
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Reject
-                </Button>
-                <Button
-                  disabled={reviewingId === campaign.id}
-                  onClick={() => reviewCampaign(campaign.id, "approved")}
-                >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Approve
-                </Button>
+
+                <div className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm dark:border-white/10 dark:bg-[#04070d]">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <AlertCircle className="h-4 w-4 text-orange-500" />
+                      Review required
+                    </div>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      Approving unlocks session creation for this campaign.
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
+                    <Button
+                      disabled={reviewingId === campaign.id}
+                      onClick={() => reviewCampaign(campaign.id, "approved")}
+                    >
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Approve
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={reviewingId === campaign.id}
+                      onClick={() => reviewCampaign(campaign.id, "rejected")}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Reject
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -426,7 +619,7 @@ export default function ClientDashboardPage() {
       </Card>
 
       <Dialog open={Boolean(selectedSeat)} onOpenChange={(open) => !open && setSelectedSeat(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-[1.25rem] border-border dark:border-white/10">
           {selectedSeat?.type === "empty" && (
             <>
               <DialogHeader>
@@ -436,7 +629,7 @@ export default function ClientDashboardPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="rounded-md border bg-muted/40 p-4">
+                <div className="rounded-xl border border-border bg-muted/40 p-4 dark:border-white/10 dark:bg-white/[0.03]">
                   <p className="break-all font-mono text-lg font-semibold tracking-wide">
                     {selectedSeat.accessCode?.code ?? "No code available"}
                   </p>
@@ -467,11 +660,11 @@ export default function ClientDashboardPage() {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-md border p-3">
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 dark:border-white/10 dark:bg-white/[0.03]">
                     <p className="text-xs text-muted-foreground">Campaigns</p>
                     <p className="text-2xl font-semibold">{selectedSeat.manager.campaigns.length}</p>
                   </div>
-                  <div className="rounded-md border p-3">
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 dark:border-white/10 dark:bg-white/[0.03]">
                     <p className="text-xs text-muted-foreground">Candidates onboarded</p>
                     <p className="text-2xl font-semibold">{selectedSeat.manager.candidatesOnboarded}</p>
                   </div>
@@ -481,7 +674,7 @@ export default function ClientDashboardPage() {
                     <p className="text-sm text-muted-foreground">No campaigns are attached to this hiring manager.</p>
                   )}
                   {selectedSeat.manager.campaigns.map((campaign) => (
-                    <div key={campaign.documentId} className="rounded-md border p-3">
+                    <div key={campaign.documentId} className="rounded-xl border border-border p-3 dark:border-white/10">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-medium">{campaign.name}</p>
@@ -502,6 +695,79 @@ export default function ClientDashboardPage() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function HeaderMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+        <Icon className="h-4 w-4 text-primary" />
+      </div>
+      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function MiniPanel({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-3 shadow-sm dark:border-white/10 dark:bg-[#04070d]">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+        <Icon className="h-4 w-4 text-primary" />
+      </div>
+      <p className="mt-2 text-lg font-semibold text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function ApprovalModeControl({
+  mode,
+  disabled,
+  onChange,
+}: {
+  mode: "auto_approve" | "require_approval";
+  disabled: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const isAutoApprove = mode === "auto_approve";
+
+  return (
+    <div className="w-full rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/10 dark:bg-white/[0.03] sm:w-[320px]">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">
+            {isAutoApprove ? "Auto approve campaigns" : "Client reviews campaigns"}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Applies to campaigns created after this setting changes.
+          </p>
+        </div>
+        <Switch
+          checked={isAutoApprove}
+          disabled={disabled}
+          onCheckedChange={onChange}
+          aria-label="Toggle campaign auto approval"
+        />
+      </div>
     </div>
   );
 }

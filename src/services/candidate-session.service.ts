@@ -61,6 +61,15 @@ type CandidateJoinResponse = {
 let myApplicationsInFlight: Promise<CandidatePortalApplication[]> | null = null;
 let myApplicationsCache: CandidatePortalApplication[] | null = null;
 let myApplicationsFetchedAt = 0;
+const CANDIDATE_APPLICATIONS_CACHE_TTL_MS = 30_000;
+
+function hasFreshApplicationsCache() {
+  return (
+    Boolean(myApplicationsCache) &&
+    myApplicationsFetchedAt > 0 &&
+    Date.now() - myApplicationsFetchedAt < CANDIDATE_APPLICATIONS_CACHE_TTL_MS
+  );
+}
 
 export class CandidateSessionService {
   private static readonly BASE_PATH = "/candidate-sessions";
@@ -68,7 +77,7 @@ export class CandidateSessionService {
   static async getMyApplications(options?: {
     force?: boolean;
   }): Promise<CandidatePortalApplication[]> {
-    if (!options?.force && myApplicationsCache) {
+    if (!options?.force && hasFreshApplicationsCache()) {
       return myApplicationsCache;
     }
 

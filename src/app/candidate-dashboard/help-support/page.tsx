@@ -10,7 +10,7 @@ import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-heade
  */
 export default function HelpSupportPage() {
   return (
-    <div className="max-w-4xl space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
+    <div className="max-w-7xl space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
       <DashboardPageHeader 
         title="Help & Support" 
         description="Get assistance with your assessment process." 

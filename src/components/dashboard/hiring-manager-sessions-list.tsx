@@ -62,12 +62,11 @@ export function HiringManagerSessionsList() {
     setIsRefreshing(true);
     setError(null);
     try {
-      const data = await HiringManagerPortalClientService.getSessions({ force });
-      const campaignData = await HiringManagerPortalClientService.getCampaigns({ force });
-      const approvedCampaigns = campaignData.filter(
+      const overview = await HiringManagerPortalClientService.getOverview({ force });
+      const approvedCampaigns = overview.campaigns.filter(
         (campaign) => campaign.documentId && campaign.approvalStatus !== "Pending approval" && campaign.approvalStatus !== "Rejected"
       );
-      setSessions(data);
+      setSessions(overview.sessions);
       setCampaigns(approvedCampaigns);
       setDraft((current) => ({
         ...current,
