@@ -78,7 +78,7 @@ export class CandidateSessionService {
     force?: boolean;
   }): Promise<CandidatePortalApplication[]> {
     if (!options?.force && hasFreshApplicationsCache()) {
-      return myApplicationsCache;
+      return myApplicationsCache!;
     }
 
     if (!options?.force && myApplicationsInFlight) {
