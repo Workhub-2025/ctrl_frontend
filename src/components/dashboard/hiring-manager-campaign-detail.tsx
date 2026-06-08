@@ -6,13 +6,15 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, RefreshCw, Trash2 } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
 } from "@/services/hiring-manager-portal-client.service";
+
+type CampaignSession = HiringManagerCampaignDetail["assessmentSessions"][number];
 
 type HiringManagerCampaignDetailProps = {
   campaignId: string;
@@ -26,13 +28,20 @@ export function HiringManagerCampaignDetailView({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<CampaignSession | null>(null);
 
-  const loadCampaign = useCallback(async () => {
-    setIsLoading(true);
+  const loadCampaign = useCallback(async (force = false) => {
+    if (!force) setIsLoading(true);
     setError(null);
     try {
-      const data = await HiringManagerPortalClientService.getCampaignDetail(campaignId);
+      const data = await HiringManagerPortalClientService.getCampaignDetail(campaignId, { force });
       setCampaign(data);
+      setSelectedSession((current) =>
+        current
+          ? data?.assessmentSessions.find((session) => session.id === current.id) ?? null
+          : null
+      );
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -43,24 +52,6 @@ export function HiringManagerCampaignDetailView({
       setIsLoading(false);
     }
   }, [campaignId]);
-
-  const getCandidateCompletion = (
-    candidate: HiringManagerCampaignDetail["joinedCandidates"][number]
-  ) => {
-    const totalAssessments = Math.max(
-      candidate.assessmentStack?.length ?? campaign?.assessmentStack.length ?? 0,
-      candidate.results?.length ?? 0,
-      1
-    );
-    const completedAssessments = candidate.results?.filter(
-      (result) => result.completedAt || result.numericScore !== null
-    ).length ?? 0;
-    return {
-      completedAssessments,
-      totalAssessments,
-      completion: Math.round((completedAssessments / totalAssessments) * 100),
-    };
-  };
 
   useEffect(() => {
     void loadCampaign();
@@ -88,6 +79,32 @@ export function HiringManagerCampaignDetailView({
       );
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const removeCandidate = async (sessionId: string, candidateSessionId: string) => {
+    const confirmed = window.confirm(
+      "Kick this candidate from the session? They will need a fresh invite to rejoin."
+    );
+    if (!confirmed) return;
+
+    setRemovingCandidateId(candidateSessionId);
+    setError(null);
+    try {
+      await HiringManagerPortalClientService.removeCandidateFromSession({
+        sessionId,
+        candidateSessionId,
+        reason: "Removed by hiring manager",
+      });
+      await loadCampaign(true);
+    } catch (removeError) {
+      setError(
+        removeError instanceof Error
+          ? removeError.message
+          : "Candidate could not be removed from the session."
+      );
+    } finally {
+      setRemovingCandidateId(null);
     }
   };
 
@@ -175,7 +192,7 @@ export function HiringManagerCampaignDetailView({
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
           <CardContent className="p-4">
             <p className="text-xs uppercase text-slate-500">Expected candidates</p>
@@ -190,23 +207,6 @@ export function HiringManagerCampaignDetailView({
             <p className="mt-2 text-2xl font-semibold text-white">
               {campaign.sessions}
             </p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Joined candidates</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {campaign.joinedCandidates.length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Completion</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {campaign.completion}%
-            </p>
-            <Progress value={campaign.completion} className="mt-3 h-2 bg-white/10" />
           </CardContent>
         </Card>
       </div>
@@ -256,7 +256,7 @@ export function HiringManagerCampaignDetailView({
             campaign.assessmentSessions.map((session) => (
               <div
                 key={session.id}
-                className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 md:grid-cols-[minmax(0,1fr)_220px]"
+                className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 md:grid-cols-[minmax(0,1fr)_auto]"
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -271,65 +271,33 @@ export function HiringManagerCampaignDetailView({
                     {session.date} · {session.location}
                   </p>
                 </div>
-                <div className="rounded-md border border-white/10 bg-[#08101d] p-3 text-sm text-slate-300">
-                  {session.candidateCount} of {session.candidateLimit} candidates joined
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 rounded-md border-white/10 bg-[#08101d] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
+                  onClick={() => setSelectedSession(session)}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  View session details
+                </Button>
               </div>
             ))
           )}
         </CardContent>
       </Card>
 
-      <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-        <CardHeader className="border-b border-white/10 p-4">
-          <CardTitle className="text-base text-white">Joined candidates</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 p-4 md:grid-cols-2">
-          {campaign.joinedCandidates.length === 0 ? (
-            <p className="text-sm text-slate-400">No candidates have joined yet.</p>
-          ) : (
-            campaign.joinedCandidates.map((candidate) => {
-              const completion = getCandidateCompletion(candidate);
-              return (
-                <div
-                  key={candidate.id}
-                  className="rounded-lg border border-white/10 bg-white/[0.03] p-3"
-                >
-                  <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="break-words text-sm font-medium text-white">
-                        {candidate.name}
-                      </p>
-                      <p className="mt-1 break-words text-xs text-slate-500">
-                        {candidate.email || candidate.status || "Joined"} · {candidate.sessionName}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      className="h-8 shrink-0 rounded-md border-white/10 bg-[#08101d] px-2.5 text-xs text-slate-100 hover:bg-white/[0.05]"
-                      asChild
-                    >
-                      <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`}>
-                        Candidate view
-                        <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                      </Link>
-                    </Button>
-                  </div>
-                  <div className="mt-3 rounded-md border border-white/10 bg-[#08101d] p-3">
-                    <div className="flex items-center justify-between gap-3 text-xs text-slate-300">
-                      <span>Completed assessments</span>
-                      <span className="font-medium text-white">
-                        {completion.completedAssessments}/{completion.totalAssessments}
-                      </span>
-                    </div>
-                    <Progress value={completion.completion} className="mt-3 h-2 bg-white/10" />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
+      <HiringManagerSessionDetailsDialog
+        session={selectedSession}
+        open={Boolean(selectedSession)}
+        onOpenChange={(open) => !open && setSelectedSession(null)}
+        campaignName={campaign.name}
+        expectedAssessmentCount={campaign.assessmentStack.length}
+        removingCandidateId={removingCandidateId}
+        onKickCandidate={removeCandidate}
+        getResultsHref={(candidate) =>
+          `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`
+        }
+      />
     </div>
   );
 }

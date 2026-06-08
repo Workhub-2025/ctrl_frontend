@@ -6,7 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowRight, RefreshCw, UserCheck, Users } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowRight, Filter, RefreshCw, UserCheck, Users } from "lucide-react";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
@@ -21,32 +28,40 @@ type CandidateRow = {
   status?: string;
   campaignId: string;
   campaignName: string;
-  sessionNames: string[];
+  sessionName: string;
+  progress: "completed" | "in_progress" | "not_started";
   completedAssessments: number;
   totalAssessments: number;
   completion: number;
 };
 
 function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): CandidateRow[] {
-  const rows = new Map<string, CandidateRow & {
-    resultIds: Set<string>;
-    completedResultIds: Set<string>;
-    sessionNameSet: Set<string>;
-  }>();
+  const rows: CandidateRow[] = [];
 
   for (const campaign of campaigns) {
     for (const candidate of campaign.joinedCandidates) {
       const campaignId = candidate.campaignId ?? campaign.id;
-      const candidateKey = candidate.email?.toLowerCase() || candidate.id;
-      const rowKey = `${campaignId}:${candidateKey}`;
-      const existing = rows.get(rowKey);
       const results = candidate.results ?? [];
       const assessmentCount = Math.max(
         candidate.assessmentStack?.length ?? campaign.assessmentStack.length,
         results.length,
         1
       );
-      const row = existing ?? {
+      const completedAssessments = new Set(
+        results
+          .filter((result) => result.completedAt || result.numericScore !== null)
+          .map((result) => result.id || result.assessment)
+      ).size;
+      const totalAssessments = Math.max(assessmentCount, results.length, 1);
+      const completion = Math.round((completedAssessments / totalAssessments) * 100);
+      const progress =
+        completedAssessments >= totalAssessments
+          ? "completed"
+          : completedAssessments > 0
+            ? "in_progress"
+            : "not_started";
+
+      rows.push({
         id: candidate.id,
         candidateSessionId: candidate.id,
         name: candidate.name,
@@ -54,64 +69,45 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
         status: candidate.status,
         campaignId,
         campaignName: candidate.campaignName ?? campaign.name,
-        sessionNames: [],
-        completedAssessments: 0,
-        totalAssessments: assessmentCount,
-        completion: 0,
-        resultIds: new Set<string>(),
-        completedResultIds: new Set<string>(),
-        sessionNameSet: new Set<string>(),
-      };
-
-      row.name = row.name || candidate.name;
-      row.email = row.email || candidate.email;
-      row.status = candidate.status === "completed" ? candidate.status : row.status || candidate.status;
-      row.totalAssessments = Math.max(row.totalAssessments, assessmentCount);
-
-      if (results.some((result) => result.completedAt || result.numericScore !== null)) {
-        row.id = candidate.id;
-        row.candidateSessionId = candidate.id;
-      }
-
-      if (candidate.sessionName) {
-        row.sessionNameSet.add(candidate.sessionName);
-      }
-
-      for (const result of results) {
-        const resultId = result.id || result.assessment;
-        row.resultIds.add(resultId);
-        if (result.completedAt || result.numericScore !== null) {
-          row.completedResultIds.add(resultId);
-        }
-      }
-
-      rows.set(rowKey, row);
+        sessionName: candidate.sessionName ?? "Session",
+        progress,
+        completedAssessments,
+        totalAssessments,
+        completion,
+      });
     }
   }
 
-  return Array.from(rows.values()).map((row) => {
-    const completedAssessments = row.completedResultIds.size;
-    const totalAssessments = Math.max(row.totalAssessments, row.resultIds.size, 1);
-    return {
-      id: row.id,
-      candidateSessionId: row.candidateSessionId,
-      name: row.name,
-      email: row.email,
-      status: row.status,
-      campaignId: row.campaignId,
-      campaignName: row.campaignName,
-      sessionNames: Array.from(row.sessionNameSet),
-      completedAssessments,
-      totalAssessments,
-      completion: Math.round((completedAssessments / totalAssessments) * 100),
-    };
-  });
+  return rows.sort((a, b) =>
+    `${a.campaignName}${a.sessionName}${a.name}`.localeCompare(
+      `${b.campaignName}${b.sessionName}${b.name}`
+    )
+  );
+}
+
+function uniqueOptions(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+}
+
+function progressLabel(progress: CandidateRow["progress"]) {
+  switch (progress) {
+    case "completed":
+      return "Completed";
+    case "in_progress":
+      return "In progress";
+    case "not_started":
+    default:
+      return "Not started";
+  }
 }
 
 export function HiringManagerCandidatesView() {
   const [campaigns, setCampaigns] = useState<HiringManagerCampaignDetail[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [campaignFilter, setCampaignFilter] = useState("all");
+  const [sessionFilter, setSessionFilter] = useState("all");
+  const [progressFilter, setProgressFilter] = useState("all");
 
   const loadCandidates = async (force = false) => {
     setIsRefreshing(true);
@@ -135,6 +131,29 @@ export function HiringManagerCandidatesView() {
   }, []);
 
   const candidates = useMemo(() => buildCandidateRows(campaigns), [campaigns]);
+  const campaignOptions = useMemo(
+    () => uniqueOptions(candidates.map((candidate) => candidate.campaignName)),
+    [candidates]
+  );
+  const sessionOptions = useMemo(
+    () =>
+      uniqueOptions(
+        candidates
+          .filter((candidate) => campaignFilter === "all" || candidate.campaignName === campaignFilter)
+          .map((candidate) => candidate.sessionName)
+      ),
+    [campaignFilter, candidates]
+  );
+  const filteredCandidates = useMemo(
+    () =>
+      candidates.filter((candidate) => {
+        const matchesCampaign = campaignFilter === "all" || candidate.campaignName === campaignFilter;
+        const matchesSession = sessionFilter === "all" || candidate.sessionName === sessionFilter;
+        const matchesProgress = progressFilter === "all" || candidate.progress === progressFilter;
+        return matchesCampaign && matchesSession && matchesProgress;
+      }),
+    [campaignFilter, candidates, progressFilter, sessionFilter]
+  );
 
   return (
     <div className="max-w-7xl space-y-6">
@@ -145,6 +164,7 @@ export function HiringManagerCandidatesView() {
         icon={Users}
         stats={[
           { icon: UserCheck, label: `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}` },
+          { icon: Filter, label: `${filteredCandidates.length} shown` },
           { icon: RefreshCw, label: "Manual refresh" },
         ]}
         action={
@@ -166,17 +186,52 @@ export function HiringManagerCandidatesView() {
         </p>
       )}
 
+      <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
+        <CardContent className="grid gap-3 p-4 md:grid-cols-3">
+          <FilterSelect
+            label="Campaign"
+            allLabel="All campaigns"
+            value={campaignFilter}
+            onChange={(value) => {
+              setCampaignFilter(value);
+              setSessionFilter("all");
+            }}
+            options={campaignOptions}
+          />
+          <FilterSelect
+            label="Session"
+            allLabel="All sessions"
+            value={sessionFilter}
+            onChange={setSessionFilter}
+            options={sessionOptions}
+          />
+          <FilterSelect
+            label="Progress"
+            allLabel="All progress"
+            value={progressFilter}
+            onChange={setProgressFilter}
+            options={[
+              { label: "Completed", value: "completed" },
+              { label: "In progress", value: "in_progress" },
+              { label: "Not started", value: "not_started" },
+            ]}
+          />
+        </CardContent>
+      </Card>
+
       <div className="grid gap-3">
-        {candidates.length === 0 ? (
+        {filteredCandidates.length === 0 ? (
           <Card className="rounded-[1.25rem] border border-dashed border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#080c16]/50 dark:shadow-none">
             <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
-              No candidates have joined a campaign session yet.
+              {candidates.length === 0
+                ? "No candidates have joined a campaign session yet."
+                : "No candidate sessions match the current filters."}
             </CardContent>
           </Card>
         ) : (
-          candidates.map((candidate) => (
+          filteredCandidates.map((candidate) => (
             <Card
-              key={`${candidate.campaignId}-${candidate.id}`}
+              key={`${candidate.campaignId}-${candidate.candidateSessionId}`}
               className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none"
             >
               <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(220px,0.8fr)_auto] lg:items-center">
@@ -187,7 +242,7 @@ export function HiringManagerCandidatesView() {
                     </h2>
                     {candidate.status && (
                       <Badge className="rounded-md border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
-                        {candidate.status}
+                        {progressLabel(candidate.progress)}
                       </Badge>
                     )}
                   </div>
@@ -195,10 +250,7 @@ export function HiringManagerCandidatesView() {
                     {candidate.email || "Email not available"}
                   </p>
                   <p className="mt-1 break-words text-xs leading-5 text-slate-500">
-                    {candidate.campaignName}
-                    {candidate.sessionNames.length > 0
-                      ? ` · ${candidate.sessionNames.join(", ")}`
-                      : ""}
+                    {candidate.campaignName} · {candidate.sessionName}
                   </p>
                 </div>
 
@@ -227,6 +279,42 @@ export function HiringManagerCandidatesView() {
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  allLabel,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  allLabel: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<string | { label: string; value: string }>;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium uppercase text-slate-500">{label}</p>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">{allLabel}</SelectItem>
+          {options.map((option) => {
+            const item = typeof option === "string" ? { label: option, value: option } : option;
+            return (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

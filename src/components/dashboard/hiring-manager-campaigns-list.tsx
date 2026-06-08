@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { ArrowRight, RefreshCw } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import {
@@ -128,17 +127,8 @@ export function HiringManagerCampaignsList() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>Completion</span>
-                      <span className="font-medium text-foreground">
-                        {campaign.completion}%
-                      </span>
-                    </div>
-                    <Progress value={campaign.completion} className="mt-3 h-2 bg-muted dark:bg-white/10" />
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {campaign.nextMilestone}
-                    </p>
+                  <div className="rounded-xl border border-border bg-background p-3 text-sm text-muted-foreground shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
+                    {campaign.nextMilestone}
                   </div>
                 </div>
 
@@ -173,9 +163,9 @@ export function HiringManagerCampaignsList() {
                             {campaign.nextMilestone}
                           </p>
                         </div>
-                        <span className="shrink-0 text-sm font-medium text-primary">
-                          {campaign.completion}%
-                        </span>
+                        <Badge className="shrink-0 rounded-md border-primary/20 bg-primary/10 text-xs text-primary hover:bg-primary/10">
+                          Ready
+                        </Badge>
                       </div>
                     </div>
                   </div>

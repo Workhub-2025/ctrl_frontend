@@ -18,26 +18,6 @@ export default function HiringManagerSessionsPage() {
         ]}
       />
 
-      <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/60 dark:shadow-none">
-        <CardHeader>
-          <CardTitle className="text-base text-foreground">Guided flow</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 lg:grid-cols-3">
-          {sessionGuideSteps.map((step, index) => (
-            <div
-              key={step.title}
-              className="rounded-xl border border-border bg-background p-4 shadow-sm dark:border-white/5 dark:bg-white/[0.03]"
-            >
-              <p className="text-xs font-medium uppercase text-muted-foreground">
-                Step 0{index + 1}
-              </p>
-              <p className="mt-2 text-sm font-semibold text-foreground">{step.title}</p>
-              <p className="mt-2 text-xs leading-5 text-muted-foreground">{step.body}</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
       <HiringManagerSessionsList />
     </div>
   );

@@ -7,24 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   CalendarClock,
   Copy,
+  Eye,
   KeyRound,
   MapPin,
   Plus,
   RefreshCw,
-  UserMinus,
   Users,
 } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   HiringManagerPortalClientService,
+  type HiringManagerCampaignDetail,
   type HiringManagerCampaignListItem,
   type HiringManagerSessionListItem,
 } from "@/services/hiring-manager-portal-client.service";
@@ -41,6 +37,7 @@ function formatLastRefresh(value: number | null) {
 export function HiringManagerSessionsList() {
   const [sessions, setSessions] = useState<HiringManagerSessionListItem[]>([]);
   const [campaigns, setCampaigns] = useState<HiringManagerCampaignListItem[]>([]);
+  const [campaignDetails, setCampaignDetails] = useState<HiringManagerCampaignDetail[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createdMessage, setCreatedMessage] = useState<string | null>(null);
@@ -50,6 +47,7 @@ export function HiringManagerSessionsList() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<HiringManagerSessionListItem | null>(null);
   const [draft, setDraft] = useState({
     campaignDocumentId: "",
     name: "",
@@ -67,6 +65,12 @@ export function HiringManagerSessionsList() {
         (campaign) => campaign.documentId && campaign.approvalStatus !== "Pending approval" && campaign.approvalStatus !== "Rejected"
       );
       setSessions(overview.sessions);
+      setCampaignDetails(overview.campaignDetails);
+      setSelectedSession((current) =>
+        current
+          ? overview.sessions.find((session) => session.id === current.id) ?? null
+          : null
+      );
       setCampaigns(approvedCampaigns);
       setDraft((current) => ({
         ...current,
@@ -94,6 +98,14 @@ export function HiringManagerSessionsList() {
     () => `Last refresh: ${formatLastRefresh(lastRefreshAt)}`,
     [lastRefreshAt]
   );
+
+  const selectedCampaignDetail = useMemo(() => {
+    if (!selectedSession) return null;
+    return campaignDetails.find((campaign) =>
+      campaign.assessmentSessions.some((session) => session.id === selectedSession.id)
+      || campaign.name === selectedSession.campaign
+    ) ?? null;
+  }, [campaignDetails, selectedSession]);
 
   const createSession = async () => {
     setCreateError(null);
@@ -388,65 +400,37 @@ export function HiringManagerSessionsList() {
                       <Copy className="mr-2 h-4 w-4" />
                       Copy code
                     </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setSelectedSession(session)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View details
+                    </Button>
                   </div>
                 </div>
-                {session.candidates.length > 0 && (
-                  <div className="mt-4 rounded-xl border border-border bg-background p-4 shadow-sm dark:border-white/5 dark:bg-white/[0.03] xl:col-span-2">
-                    <p className="text-xs font-medium uppercase text-muted-foreground">
-                      Joined candidates
-                    </p>
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
-                      {session.candidates.map((candidate) => (
-                        <div
-                          key={candidate.id}
-                          className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 dark:border-white/10 dark:bg-[#04070d]"
-                        >
-                          <div className="min-w-0">
-                            <p className="break-words text-sm font-medium text-foreground">
-                              {candidate.name}
-                            </p>
-                            <p className="mt-1 break-words text-xs text-muted-foreground">
-                              {candidate.email || candidate.status || "Joined"}
-                            </p>
-                          </div>
-                          {candidate.hasStartedAssessment ? (
-                            <TooltipProvider delayDuration={150}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span
-                                    className="inline-flex h-8 w-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground opacity-55 dark:border-white/10 dark:bg-white/[0.04]"
-                                    aria-label="Contact support"
-                                  >
-                                    <UserMinus className="h-3.5 w-3.5" />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent side="left">
-                                  Contact support
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              disabled={removingCandidateId === candidate.id}
-                              onClick={() => removeCandidate(session.id, candidate.id)}
-                              className="h-8 shrink-0 border-red-400/20 bg-red-400/10 px-2 text-xs text-red-700 hover:bg-red-400/15 dark:text-red-100"
-                            >
-                              <UserMinus className="mr-1 h-3.5 w-3.5" />
-                              Remove
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))
         )}
       </div>
+
+      <HiringManagerSessionDetailsDialog
+        session={selectedSession}
+        open={Boolean(selectedSession)}
+        onOpenChange={(open) => !open && setSelectedSession(null)}
+        campaignName={selectedCampaignDetail?.name}
+        expectedAssessmentCount={selectedCampaignDetail?.assessmentStack.length}
+        removingCandidateId={removingCandidateId}
+        onKickCandidate={removeCandidate}
+        getResultsHref={
+          selectedCampaignDetail
+            ? (candidate) =>
+                `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${selectedCampaignDetail.id}&candidateSessionId=${candidate.id}`
+            : undefined
+        }
+      />
     </div>
   );
 }

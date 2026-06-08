@@ -164,7 +164,6 @@ export type HiringManagerCampaignListItem = {
   status: "Live" | "Configured" | "Draft" | "Closed" | "Archived";
   approvalStatus?: "Pending approval" | "Approved" | "Rejected";
   deliveryMode: "In-person" | "Remote" | "Hybrid";
-  completion: number;
   candidateCount: number;
   sessions: number;
   assessmentStack: string[];
@@ -385,15 +384,31 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
   };
 }
 
+function getCampaignCandidateSessions(campaign: RawCampaign) {
+  const byId = new Map<string, RawCandidateSession>();
+
+  for (const session of campaign.candidate_sessions ?? []) {
+    const key = session.documentId ?? String(session.id ?? session.candidateCode ?? byId.size);
+    byId.set(key, session);
+  }
+
+  for (const assessmentSession of campaign.assessment_sessions ?? []) {
+    for (const session of assessmentSession.candidate_sessions ?? []) {
+      const key = session.documentId ?? String(session.id ?? session.candidateCode ?? byId.size);
+      byId.set(key, session);
+    }
+  }
+
+  return Array.from(byId.values()).filter(
+    (session) => session.sessionStatus !== "expired" && !session.removedAt
+  );
+}
+
 function normalizeCampaign(campaign: RawCampaign): HiringManagerCampaignListItem {
-  const sessions = campaign.candidate_sessions ?? [];
-  const completed = sessions.filter((session) =>
-    ["completed", "locked"].includes(session.sessionStatus ?? "")
-  ).length;
-  const completion = sessions.length ? Math.round((completed / sessions.length) * 100) : 0;
   const assessmentStack = (campaign.assessments ?? []).map(
     (assessment) => assessment.displayName || assessment.slug || "Assessment"
   );
+  const candidateSessions = getCampaignCandidateSessions(campaign);
 
   return {
     id: campaign.documentId ?? String(campaign.id ?? campaign.name ?? "campaign"),
@@ -403,8 +418,7 @@ function normalizeCampaign(campaign: RawCampaign): HiringManagerCampaignListItem
     status: formatStatus(campaign.campaignStatus),
     approvalStatus: formatApprovalStatus(campaign.approvalStatus),
     deliveryMode: formatMode(campaign.assessmentMode) as "In-person" | "Remote" | "Hybrid",
-    completion,
-    candidateCount: campaign.vacancyCount ?? sessions.length,
+    candidateCount: campaign.vacancyCount ?? candidateSessions.length,
     sessions: campaign.assessment_sessions?.length ?? 0,
     assessmentStack,
     assessmentSettings: campaign.assessmentSettings ?? null,

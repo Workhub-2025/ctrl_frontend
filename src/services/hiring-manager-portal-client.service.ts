@@ -6,7 +6,6 @@ export type HiringManagerCampaignListItem = {
   status: "Live" | "Configured" | "Draft" | "Closed" | "Archived";
   approvalStatus?: "Pending approval" | "Approved" | "Rejected";
   deliveryMode: "In-person" | "Remote" | "Hybrid";
-  completion: number;
   candidateCount: number;
   sessions: number;
   assessmentStack: string[];

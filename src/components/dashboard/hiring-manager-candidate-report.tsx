@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, Clock3, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, Clock3, ThumbsDown, ThumbsUp } from "lucide-react";
 import {
   HiringManagerPortalClientService,
   type HiringManagerAssessmentResult,
@@ -67,9 +67,7 @@ function getCampaignWeights(
   if (!rawWeights) return buildEqualWeights(assessmentStack);
 
   return assessmentStack.reduce<Record<string, number>>((weights, assessmentName) => {
-    const matchedEntry = Object.entries(rawWeights).find(([key]) =>
-      isSameAssessment(assessmentName, key)
-    );
+    const matchedEntry = Object.entries(rawWeights).find(([key]) => isSameAssessment(assessmentName, key));
     const numericValue = matchedEntry ? Number(matchedEntry[1]) : Number.NaN;
     weights[assessmentName] = Number.isFinite(numericValue) ? numericValue : 0;
     return weights;
@@ -77,9 +75,40 @@ function getCampaignWeights(
 }
 
 function isSameAssessment(expectedName: string, resultName: string) {
-  const expected = expectedName.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const result = resultName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const expectedKey = getAssessmentKey(expectedName);
+  const resultKey = getAssessmentKey(resultName);
+
+  if (expectedKey && resultKey) return expectedKey === resultKey;
+
+  const expected = normalizeAssessmentText(expectedName);
+  const result = normalizeAssessmentText(resultName);
   return expected.includes(result) || result.includes(expected);
+}
+
+function normalizeAssessmentText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/prioritisation/g, "prioritization")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function getAssessmentKey(value: string) {
+  const normalized = normalizeAssessmentText(value);
+
+  if (normalized.includes("prioritization") || normalized === "pja") {
+    return "prioritization";
+  }
+  if (normalized.includes("situationaljudgement") || normalized === "sjt") {
+    return "situational-judgement";
+  }
+  if (normalized.includes("callsimulation")) {
+    return "call-simulation";
+  }
+  if (normalized.includes("typing")) {
+    return "typing";
+  }
+
+  return "";
 }
 
 function getRating(overallScore: number) {
@@ -112,9 +141,13 @@ function buildAssessmentRows(
       weight,
       result,
       score,
-      contribution: score === null ? 0 : Math.round((score * weight) / 100),
+      contribution: score === null ? 0 : Number(((score * weight) / 100).toFixed(2)),
     };
   });
+}
+
+function formatPercent(value: number) {
+  return Number.isInteger(value) ? `${value}%` : `${value.toFixed(1)}%`;
 }
 
 function formatCompletion(value?: string | null) {
@@ -164,6 +197,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   const [decision, setDecision] = useState<"Move forward" | "Reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [openBreakdownKey, setOpenBreakdownKey] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,9 +258,11 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
   const completedRows = rows.filter((row) => row.score !== null);
   const allAssessmentsCompleted = rows.length > 0 && completedRows.length === rows.length;
-  const overallScore = rows.reduce((total, row) => total + row.contribution, 0);
-  const totalWeight = rows.reduce((total, row) => total + row.weight, 0);
+  const overallScore = Math.round(rows.reduce((total, row) => total + row.contribution, 0));
   const rating = getRating(overallScore);
+  const displayedRating = allAssessmentsCompleted
+    ? rating
+    : { label: "Pending Completion", tone: "text-amber-300" };
 
   if (isLoading) {
     return (
@@ -321,12 +357,12 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         </p>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
           <CardContent className="p-4">
             <p className="text-xs uppercase text-slate-500">Overall rating</p>
-            <p className={`mt-2 text-2xl font-semibold ${rating.tone}`}>
-              {rating.label}
+            <p className={`mt-2 text-2xl font-semibold ${displayedRating.tone}`}>
+              {displayedRating.label}
             </p>
           </CardContent>
         </Card>
@@ -347,14 +383,6 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             </p>
           </CardContent>
         </Card>
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Configured weighting</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {totalWeight}%
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
@@ -366,6 +394,10 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             const status = getAssessmentStatus(row);
             const typingRuns = getTypingRuns(row.result?.metrics);
             const scoreValue = row.score ?? 0;
+            const hasBreakdown =
+              typingRuns.length > 0 ||
+              row.result?.wpm !== null && row.result?.wpm !== undefined;
+            const breakdownOpen = openBreakdownKey === row.name;
 
             return (
               <div
@@ -393,15 +425,15 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                       </p>
                     </div>
                     <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Weighting</p>
+                      <p className="text-xs text-slate-500">Duration</p>
                       <p className="mt-1 text-lg font-semibold text-white">
-                        {row.weight}%
+                        {formatDuration(row.result?.durationSeconds)}
                       </p>
                     </div>
                     <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
                       <p className="text-xs text-slate-500">Overall contribution</p>
                       <p className="mt-1 text-lg font-semibold text-sky-200">
-                        {row.contribution}%
+                        {row.score === null ? "Pending" : formatPercent(row.contribution)}
                       </p>
                     </div>
                   </div>
@@ -416,13 +448,9 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                       </span>
                     </div>
                     <Progress value={scoreValue} className="h-2 bg-white/10" />
-                    <p className="text-xs leading-5 text-slate-500">
-                      This assessment contributes {row.weight}% toward the
-                      candidate&apos;s overall campaign rating.
-                    </p>
                   </div>
 
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                  <div className="grid gap-2 lg:grid-cols-1">
                     <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
                       <p className="text-xs text-slate-500">Result status</p>
                       <div className="mt-2 flex items-center gap-2 text-sm text-slate-200">
@@ -434,89 +462,96 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                         {row.score !== null ? "Submitted" : "Awaiting completion"}
                       </div>
                     </div>
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Duration</p>
-                      <p className="mt-2 text-sm text-slate-200">
-                        {formatDuration(row.result?.durationSeconds)}
-                      </p>
-                    </div>
                   </div>
                 </div>
 
-                {row.result?.wpm !== null && row.result?.wpm !== undefined && (
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Average WPM</p>
-                      <p className="mt-1 text-xl font-semibold text-white">
-                        {row.result.wpm}
-                      </p>
-                    </div>
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Average accuracy</p>
-                      <p className="mt-1 text-xl font-semibold text-white">
-                        {row.result.accuracy ?? "Pending"}%
-                      </p>
-                    </div>
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Average mistakes</p>
-                      <p className="mt-1 text-xl font-semibold text-white">
-                        {row.result.mistakeCount ?? "Pending"}
-                      </p>
-                    </div>
-                  </div>
-                )}
+                {hasBreakdown && (
+                  <div className="space-y-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setOpenBreakdownKey(breakdownOpen ? null : row.name)}
+                      className="h-9 rounded-md border-white/10 bg-[#08101d] px-3 text-xs text-slate-100 hover:bg-white/[0.05]"
+                    >
+                      <ChevronDown
+                        className={`mr-2 h-4 w-4 transition-transform ${breakdownOpen ? "rotate-180" : ""}`}
+                      />
+                      {breakdownOpen ? "Hide breakdown" : "View breakdown"}
+                    </Button>
 
-                {typingRuns.length > 0 && (
-                  <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                      Typing run detail
-                    </p>
-                    <div className="mt-3 grid gap-2 md:grid-cols-3">
-                      {typingRuns.map((run, index) => (
-                        <div
-                          key={`${row.name}-${run.runIndex ?? index}`}
-                          className="rounded-md border border-white/10 bg-white/[0.03] p-3"
-                        >
-                          <p className="text-xs font-medium text-slate-300">
-                            Run {run.runIndex ?? index + 1}
-                          </p>
-                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                            <div>
-                              <p className="text-slate-500">WPM</p>
-                              <p className="mt-1 font-semibold text-white">
-                                {run.wpm ?? "Pending"}
+                    {breakdownOpen && (
+                      <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
+                        {row.result?.wpm !== null && row.result?.wpm !== undefined && (
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                              <p className="text-xs text-slate-500">Average WPM</p>
+                              <p className="mt-1 text-xl font-semibold text-white">
+                                {row.result.wpm}
                               </p>
                             </div>
-                            <div>
-                              <p className="text-slate-500">Accuracy</p>
-                              <p className="mt-1 font-semibold text-white">
-                                {run.accuracy ?? "Pending"}%
+                            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                              <p className="text-xs text-slate-500">Average accuracy</p>
+                              <p className="mt-1 text-xl font-semibold text-white">
+                                {row.result.accuracy ?? "Pending"}%
                               </p>
                             </div>
-                            <div>
-                              <p className="text-slate-500">Mistakes</p>
-                              <p className="mt-1 font-semibold text-white">
-                                {run.mistakeCharacters ?? "Pending"}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-slate-500">Characters</p>
-                              <p className="mt-1 font-semibold text-white">
-                                {run.correctCharacters ?? 0}/{run.typedCharacters ?? 0}
+                            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+                              <p className="text-xs text-slate-500">Average mistakes</p>
+                              <p className="mt-1 text-xl font-semibold text-white">
+                                {row.result.mistakeCount ?? "Pending"}
                               </p>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                        )}
 
-                {row.score === null && (
-                  <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-100">
-                    This assessment has not been submitted yet, so it contributes
-                    0% until a result is available.
-                  </p>
+                        {typingRuns.length > 0 && (
+                          <div className="mt-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                              Typing run detail
+                            </p>
+                            <div className="mt-3 grid gap-2 md:grid-cols-3">
+                              {typingRuns.map((run, index) => (
+                                <div
+                                  key={`${row.name}-${run.runIndex ?? index}`}
+                                  className="rounded-md border border-white/10 bg-white/[0.03] p-3"
+                                >
+                                  <p className="text-xs font-medium text-slate-300">
+                                    Run {run.runIndex ?? index + 1}
+                                  </p>
+                                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <p className="text-slate-500">WPM</p>
+                                      <p className="mt-1 font-semibold text-white">
+                                        {run.wpm ?? "Pending"}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-slate-500">Accuracy</p>
+                                      <p className="mt-1 font-semibold text-white">
+                                        {run.accuracy ?? "Pending"}%
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-slate-500">Mistakes</p>
+                                      <p className="mt-1 font-semibold text-white">
+                                        {run.mistakeCharacters ?? "Pending"}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-slate-500">Characters</p>
+                                      <p className="mt-1 font-semibold text-white">
+                                        {run.correctCharacters ?? 0}/{run.typedCharacters ?? 0}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             );
