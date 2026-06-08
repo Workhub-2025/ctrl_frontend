@@ -16,6 +16,7 @@ import {
 type CandidateReportProps = {
   candidateId: string;
   campaignId?: string;
+  candidateSessionId?: string;
 };
 
 type CandidateReportData = {
@@ -158,7 +159,7 @@ function getAssessmentStatus(row: AssessmentReportRow) {
   };
 }
 
-export function HiringManagerCandidateReport({ candidateId, campaignId }: CandidateReportProps) {
+export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId }: CandidateReportProps) {
   const [reportData, setReportData] = useState<CandidateReportData | null>(null);
   const [decision, setDecision] = useState<"Move forward" | "Reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -180,7 +181,11 @@ export function HiringManagerCandidateReport({ candidateId, campaignId }: Candid
           .flatMap((campaign) =>
             campaign.joinedCandidates.map((candidate) => ({ candidate, campaign }))
           )
-          .find((item) => item.candidate.id === candidateId);
+          .find((item) =>
+            candidateSessionId
+              ? item.candidate.id === candidateSessionId
+              : item.candidate.id === candidateId
+          );
 
         if (!cancelled) {
           setReportData(matched ?? null);
@@ -206,7 +211,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId }: Candid
     return () => {
       cancelled = true;
     };
-  }, [candidateId, campaignId]);
+  }, [candidateId, campaignId, candidateSessionId]);
 
   const rows = useMemo(() => {
     if (!reportData) return [];

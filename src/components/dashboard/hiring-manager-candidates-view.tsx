@@ -15,6 +15,7 @@ import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-p
 
 type CandidateRow = {
   id: string;
+  candidateSessionId: string;
   name: string;
   email?: string;
   status?: string;
@@ -47,6 +48,7 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
       );
       const row = existing ?? {
         id: candidate.id,
+        candidateSessionId: candidate.id,
         name: candidate.name,
         email: candidate.email,
         status: candidate.status,
@@ -65,6 +67,11 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
       row.email = row.email || candidate.email;
       row.status = candidate.status === "completed" ? candidate.status : row.status || candidate.status;
       row.totalAssessments = Math.max(row.totalAssessments, assessmentCount);
+
+      if (results.some((result) => result.completedAt || result.numericScore !== null)) {
+        row.id = candidate.id;
+        row.candidateSessionId = candidate.id;
+      }
 
       if (candidate.sessionName) {
         row.sessionNameSet.add(candidate.sessionName);
@@ -87,6 +94,7 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
     const totalAssessments = Math.max(row.totalAssessments, row.resultIds.size, 1);
     return {
       id: row.id,
+      candidateSessionId: row.candidateSessionId,
       name: row.name,
       email: row.email,
       status: row.status,
@@ -209,7 +217,7 @@ export function HiringManagerCandidatesView() {
                   className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
                   asChild
                 >
-                  <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${candidate.campaignId}`}>
+                  <Link href={`/hiring-manager-dashboard/candidates/${candidate.candidateSessionId}/?campaignId=${candidate.campaignId}&candidateSessionId=${candidate.candidateSessionId}`}>
                     View results/report
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>

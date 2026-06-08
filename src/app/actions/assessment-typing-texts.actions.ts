@@ -17,8 +17,8 @@ const FALLBACK_SESSION: TypingSessionData = {
  *
  * Calls POST /api/assessment/typing/session on Strapi using the candidate's
  * own JWT so that the assessment-progress record is owned by the correct user.
- * The backend selects texts randomly from the configured pool and persists the
- * selection — reloading the page returns the same texts (idempotent).
+ * The backend selects texts randomly from the configured pool. Live autosave
+ * progress is created separately once the candidate starts the assessment.
  *
  * Falls back to FALLBACK_SESSION if Strapi is unreachable; the TypingTest
  * component has its own static text fallback for that case.
@@ -44,13 +44,13 @@ export async function initTypingSession(candidateSessionDocumentId?: string | nu
         }
 
         const body = await response.json() as {
-            sessionId: string;
+            sessionId: string | null;
             assessmentId: string;
             runs: TypingRun[];
             config: TypingConfig;
         };
 
-        if (!body.sessionId || !Array.isArray(body.runs) || !body.config) {
+        if (!Array.isArray(body.runs) || !body.config) {
             console.error('[initTypingSession] Unexpected response shape — using fallback', body);
             return FALLBACK_SESSION;
         }
