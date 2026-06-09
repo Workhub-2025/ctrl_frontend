@@ -141,7 +141,6 @@ export function HiringManagerCampaignsList() {
                   <div className="flex items-start gap-2.5 rounded-xl border border-primary/10 bg-[#08101d]/60 p-3.5 text-xs text-foreground shadow-sm dark:border-white/5 dark:bg-white/[0.01]">
                     <Target className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary animate-pulse" />
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Milestone</p>
                       <p className="mt-1 font-medium leading-relaxed text-foreground">{campaign.nextMilestone}</p>
                     </div>
                   </div>
