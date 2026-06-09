@@ -365,8 +365,8 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md p-6 shadow-xl">
         <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
         
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-4">
+        <div className="relative space-y-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Button
               variant="outline"
               className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
@@ -378,62 +378,62 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
               </Link>
             </Button>
             
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-center gap-2">
-                <Badge className="pointer-events-none rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
-                  Candidate Report
-                </Badge>
-                {allAssessmentsCompleted && (
-                  <Badge className="pointer-events-none rounded-md bg-emerald-500/10 text-emerald-400 border-none px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" /> Fully Verified
-                  </Badge>
-                )}
+            {allAssessmentsCompleted && (
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <Button
+                  type="button"
+                  onClick={() => setDecision("Reject")}
+                  className="h-8.5 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                >
+                  <ThumbsDown className="mr-1.5 h-3.5 w-3.5" />
+                  Reject
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setDecision("Move forward")}
+                  className="h-8.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-xs font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_15px_rgba(52,211,153,0.15)]"
+                >
+                  <ThumbsUp className="mr-1.5 h-3.5 w-3.5 text-slate-950" />
+                  Pass
+                </Button>
               </div>
-              <div>
-                <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl">
-                  {candidate.name}
-                </h1>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
-                  <span className="font-semibold text-slate-300">{candidate.email || "No email listed"}</span>
-                  <span className="text-slate-600">•</span>
-                  <span>Campaign: <strong className="text-slate-200">{campaign.name}</strong></span>
-                  {candidate.sessionName && (
-                    <>
-                      <span className="text-slate-600">•</span>
-                      <span>Session: <strong className="text-slate-200">{candidate.sessionName}</strong></span>
-                    </>
-                  )}
-                  {campaign.role && (
-                    <>
-                      <span className="text-slate-600">•</span>
-                      <span>Role: <strong className="text-slate-200">{campaign.role}</strong></span>
-                    </>
-                  )}
-                </div>
+            )}
+          </div>
+          
+          <div className="flex flex-col gap-2.5 pt-1">
+            <div className="flex items-center gap-2">
+              <Badge className="pointer-events-none rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
+                Candidate Report
+              </Badge>
+              {allAssessmentsCompleted && (
+                <Badge className="pointer-events-none rounded-md bg-emerald-500/10 text-emerald-400 border-none px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Fully Verified
+                </Badge>
+              )}
+            </div>
+            <div>
+              <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                <span>{candidate.name}</span>
+                <span className="text-slate-600 font-normal text-lg">•</span>
+                <span className="text-sm font-medium text-slate-400">{candidate.email || "No email listed"}</span>
+              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+                <span>Campaign: <strong className="text-slate-200">{campaign.name}</strong></span>
+                {candidate.sessionName && (
+                  <>
+                    <span className="text-slate-600">•</span>
+                    <span>Session Date: <strong className="text-slate-200">{candidate.sessionName}</strong></span>
+                  </>
+                )}
+                {campaign.role && (
+                  <>
+                    <span className="text-slate-600">•</span>
+                    <span>Role: <strong className="text-slate-200">{campaign.role}</strong></span>
+                  </>
+                )}
               </div>
             </div>
           </div>
-
-          {allAssessmentsCompleted && (
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <Button
-                type="button"
-                onClick={() => setDecision("Reject")}
-                className="h-10 rounded-xl bg-red-500/10 border border-red-500/20 px-4 text-sm font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
-              >
-                <ThumbsDown className="mr-2 h-4 w-4" />
-                Reject Candidate
-              </Button>
-              <Button
-                type="button"
-                onClick={() => setDecision("Move forward")}
-                className="h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-5 text-sm font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_20px_rgba(52,211,153,0.2)]"
-              >
-                <ThumbsUp className="mr-2 h-4 w-4 text-slate-950" />
-                Pass & Move Forward
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
