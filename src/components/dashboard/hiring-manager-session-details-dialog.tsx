@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -25,6 +25,15 @@ import {
   PhoneCall,
   FileQuestion,
   MoreVertical,
+  CalendarClock,
+  MapPin,
+  Globe,
+  Building,
+  Check,
+  Copy,
+  Users,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +41,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 
 type SessionCandidate = HiringManagerSessionListItem["candidates"][number];
@@ -59,41 +69,134 @@ export function HiringManagerSessionDetailsDialog({
   getResultsHref,
   assessmentStack,
 }: HiringManagerSessionDetailsDialogProps) {
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(null);
+
+  const toggleCandidateExpand = (candidateId: string) => {
+    setExpandedCandidateId((current) => (current === candidateId ? null : candidateId));
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    onOpenChange(isOpen);
+    if (!isOpen) {
+      setExpandedCandidateId(null);
+      setCopiedCode(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto rounded-[1.25rem] border-border bg-card text-foreground dark:border-white/10 dark:bg-[#0b1220] sm:max-w-3xl">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[85vh] w-full sm:max-w-4xl overflow-y-auto rounded-[2rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 text-slate-100 backdrop-blur-md p-6 shadow-2xl flex flex-col gap-5 [&>button]:text-slate-400 [&>button]:hover:text-white [&>button]:transition-colors">
+        {/* Ambient background glows */}
+        <div className="absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
+        <div className="absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+
         {session && (
           <>
-            <DialogHeader>
-              <DialogTitle>{campaignName || session.campaign}</DialogTitle>
-              <DialogDescription>
-                {session.date} · {session.location}
-              </DialogDescription>
+            <DialogHeader className="border-b border-white/5 pb-4 relative z-10 text-left pr-12 flex flex-col gap-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <DialogTitle className="text-xl font-bold text-white leading-snug">
+                  {campaignName || session.campaign}
+                </DialogTitle>
+                <Badge className={[
+                  "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
+                  getStatusTone(session.status)
+                ].join(" ")}>
+                  {session.status}
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium flex-wrap">
+                <CalendarClock className="h-3.5 w-3.5 text-slate-500" />
+                <span>{session.date}</span>
+                <span className="text-slate-600 font-bold">·</span>
+                <MapPin className="h-3.5 w-3.5 text-slate-500" />
+                <span className="truncate max-w-[200px]">{session.location}</span>
+              </p>
             </DialogHeader>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <SessionMetric label="Session code" value={session.accessValue} />
-              <SessionMetric label="Joined" value={`${session.candidateCount}/${session.candidateLimit}`} />
-              <SessionMetric label="Status" value={session.status} />
+            {/* Upgraded Metric Cards Grid */}
+            <div className="grid gap-4 sm:grid-cols-3 relative z-10">
+              {/* Access Code Card */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
+                <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-indigo-500/10 blur-md pointer-events-none" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Access Code</span>
+                <div className="flex items-center justify-between gap-2 mt-3 bg-black/35 p-1.5 rounded-lg border border-white/5">
+                  <span className="font-mono text-sm font-bold text-white tracking-wider truncate pl-1">{session.accessValue}</span>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(session.accessValue);
+                      setCopiedCode(true);
+                      setTimeout(() => setCopiedCode(false), 2000);
+                    }}
+                    className="h-7 w-7 rounded-md text-slate-400 hover:text-white hover:bg-white/10 shrink-0"
+                  >
+                    {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Joined Occupancy Card */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
+                <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-primary/10 blur-md pointer-events-none" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Occupancy</span>
+                <div className="mt-3 flex items-baseline justify-between">
+                  <span className="text-base font-black text-white">{session.candidateCount} <span className="text-xs text-slate-400 font-medium">/ {session.candidateLimit}</span></span>
+                  <span className="text-[10px] font-bold text-slate-400 bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/5">
+                    {Math.round((session.candidateCount / session.candidateLimit) * 100)}% Capacity
+                  </span>
+                </div>
+                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-2 border border-white/5">
+                  <div 
+                    className="bg-primary h-full rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Delivery Type Card */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
+                <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-emerald-500/10 blur-md pointer-events-none" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Delivery Type</span>
+                <div className="mt-3 flex items-center gap-2">
+                  {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") ? (
+                    <Globe className="h-4 w-4 text-indigo-400" />
+                  ) : (
+                    <Building className="h-4 w-4 text-indigo-400" />
+                  )}
+                  <span className="text-xs font-bold text-white leading-none capitalize">
+                    {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") ? "Virtual (Remote)" : "In-Person"}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 font-medium truncate mt-2">{session.location}</span>
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-medium text-foreground">Joined candidates</p>
-                <Badge className="rounded-md border-border bg-background text-xs text-muted-foreground hover:bg-background dark:border-white/10 dark:bg-white/[0.03]">
-                  {session.candidates.length}
+            {/* Candidates Section */}
+            <div className="space-y-4 relative z-10 mt-2 flex-1">
+              <div className="flex items-center justify-between gap-3 border-b border-white/5 pb-2">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Users className="h-4 w-4 text-primary" />
+                  Joined Candidates
+                </h3>
+                <Badge variant="secondary" className="rounded-full border-none bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary pointer-events-none">
+                  {session.candidates.length} Total
                 </Badge>
               </div>
 
               {session.candidates.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border bg-background p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
-                  No candidates have joined this session yet.
+                <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.01] p-6 text-sm text-center leading-relaxed text-slate-400">
+                  No candidates have joined this session yet. Copy and share the session code with candidates to allow them to take the assessments.
                 </div>
               ) : (
-                <div className="grid gap-3">
+                <div className="space-y-3">
                   {session.candidates.map((candidate) => {
                     const progress = getCandidateProgress(candidate, expectedAssessmentCount);
                     const resultsHref = getResultsHref?.(candidate, session);
+                    const isExpanded = expandedCandidateId === candidate.id;
 
                     const displayAssessments = (assessmentStack || []).map((stackName) => {
                       const matchedResult = (candidate.results || []).find((r) =>
@@ -121,175 +224,211 @@ export function HiringManagerSessionDetailsDialog({
                           result: r,
                         }));
 
+                    const initials = candidate.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase();
+
                     return (
                       <div
                         key={candidate.id}
-                        className="rounded-xl border border-border bg-background p-4 shadow-sm dark:border-white/10 dark:bg-[#04070d] space-y-4"
+                        className={[
+                          "rounded-xl border transition-all duration-300 overflow-hidden",
+                          isExpanded
+                            ? "border-primary/45 bg-[#0e172e]/40 shadow-[0_4px_20px_rgba(99,102,241,0.05)]"
+                            : "border-white/10 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.03]"
+                        ].join(" ")}
                       >
-                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-center">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <p className="break-words text-sm font-medium text-foreground">
-                                  {candidate.name}
-                                </p>
-                                {onKickCandidate && (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:!text-white hover:!bg-white/10 dark:hover:!bg-white/[0.08] transition-colors"
-                                        aria-label="Candidate actions"
-                                      >
-                                        <MoreVertical className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                      align="start"
-                                      className="border-border bg-card dark:border-white/10 dark:bg-[#0b1220] text-foreground"
-                                    >
-                                      <DropdownMenuItem
-                                        disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
-                                        onClick={() => onKickCandidate(session.id, candidate.id)}
-                                        className="flex items-center gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive dark:focus:bg-red-950/30 cursor-pointer"
-                                      >
-                                        <UserMinus className="h-4 w-4" />
-                                        <span>{removingCandidateId === candidate.id ? "Removing..." : "Remove candidate"}</span>
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                )}
-                              </div>
-                              <p className="mt-1 break-words text-xs text-muted-foreground">
-                                {candidate.email || candidate.status || "Joined"}
-                              </p>
+                        {/* Accordion Header */}
+                        <div
+                          onClick={() => toggleCandidateExpand(candidate.id)}
+                          className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between cursor-pointer select-none"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
+                              {initials}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-bold text-white leading-tight truncate">{candidate.name}</h4>
+                              <p className="text-xs text-slate-400 mt-0.5 truncate">{candidate.email || "No email provided"}</p>
                             </div>
                           </div>
 
-                          <div className="rounded-lg border border-border bg-card p-3 dark:border-white/10 dark:bg-white/[0.03]">
-                            <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                              <span>Progress</span>
-                              <span className="font-medium text-foreground">
-                                {progress.completed}/{progress.total}
+                          <div className="flex flex-wrap items-center gap-4 sm:justify-end">
+                            {/* Candidate Progress Badge */}
+                            <div className="flex items-center gap-2 bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-lg">
+                              <span className="text-[10px] text-slate-400 font-semibold">Progress:</span>
+                              <span className="text-[10px] font-bold text-white">
+                                {progress.completed}/{progress.total} Completed
                               </span>
                             </div>
-                            <Progress value={progress.percent} className="mt-2.5 h-2 bg-muted dark:bg-white/10" />
-                          </div>
 
-                          <div className="flex items-center justify-end gap-2">
-                             {resultsHref && (
-                               <Button
-                                 variant="outline"
-                                 className="h-9 rounded-md border-border bg-card px-3 text-xs text-foreground hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:bg-[#08101d] dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
-                                 asChild
-                               >
-                                 <Link href={resultsHref}>View results</Link>
-                               </Button>
-                             )}
+                            {/* Action Row */}
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              {resultsHref && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 rounded-lg border-white/10 bg-transparent text-slate-300 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] px-3 text-xs transition-colors"
+                                  asChild
+                                >
+                                  <Link href={resultsHref}>View results</Link>
+                                </Button>
+                              )}
+
+                              {onKickCandidate && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 dark:hover:!bg-white/[0.08] transition-colors"
+                                      aria-label="Candidate actions"
+                                    >
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    align="end"
+                                    className="border-white/10 bg-slate-900 text-slate-200"
+                                  >
+                                    <DropdownMenuItem
+                                      disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
+                                      onClick={() => onKickCandidate(session.id, candidate.id)}
+                                      className="flex items-center gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-300 cursor-pointer"
+                                    >
+                                      <UserMinus className="h-4 w-4" />
+                                      <span>{removingCandidateId === candidate.id ? "Removing..." : "Remove candidate"}</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-slate-400" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                              )}
+                            </div>
                           </div>
                         </div>
 
-                        {/* Detailed assessment metrics cards */}
-                        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 pt-3.5 border-t border-border/40 dark:border-white/5">
-                          {finalDisplayList.map((item, idx) => {
-                            const Icon = getAssessmentIcon(item.name);
-                            const isCompleted = item.status === "completed" && item.result;
-                            const key = getAssessmentKey(item.name, item.result);
-                            const isTyping = key === "typing";
-                            const isPrioritisation = key === "prioritization";
-                            const isSJT = key === "situational-judgement";
-                            const isCallSimulation = key === "call-simulation";
+                        {/* Accordion Body */}
+                        {isExpanded && (
+                          <div className="border-t border-white/5 bg-black/10 p-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                            {/* Detailed assessment metrics cards */}
+                            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                              {finalDisplayList.map((item, idx) => {
+                                const Icon = getAssessmentIcon(item.name);
+                                const isCompleted = item.status === "completed" && item.result;
+                                const key = getAssessmentKey(item.name, item.result);
+                                const isTyping = key === "typing";
+                                const isPrioritisation = key === "prioritization";
+                                const isSJT = key === "situational-judgement";
+                                const isCallSimulation = key === "call-simulation";
 
-                            return (
-                              <div
-                                key={`${item.name}-${idx}`}
-                                className={[
-                                  "relative flex flex-col justify-between rounded-xl border p-3 transition-all",
-                                  isCompleted
-                                    ? "border-border bg-card/50 dark:border-white/10 dark:bg-white/[0.02]"
-                                    : "border-dashed border-border bg-muted/10 dark:border-white/5 dark:bg-white/[0.005]"
-                                ].join(" ")}
-                              >
-                                <div className="flex items-start justify-between gap-2">
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <Icon className={["h-4 w-4 shrink-0", isCompleted ? "text-primary" : "text-muted-foreground"].join(" ")} />
-                                    <span className="truncate text-xs font-semibold text-foreground">
-                                      {item.name}
-                                    </span>
+                                return (
+                                  <div
+                                    key={`${item.name}-${idx}`}
+                                    className={[
+                                      "relative flex flex-col justify-between rounded-xl border p-3.5 transition-all",
+                                      isCompleted
+                                        ? "border-white/10 bg-white/[0.02]"
+                                        : "border-dashed border-white/5 bg-white/[0.002]"
+                                    ].join(" ")}
+                                  >
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <Icon className={["h-3.5 w-3.5 shrink-0", isCompleted ? "text-primary" : "text-slate-500"].join(" ")} />
+                                        <span className="truncate text-xs font-bold text-slate-200">
+                                          {item.name}
+                                        </span>
+                                      </div>
+                                      {isCompleted ? (
+                                        <Badge className="h-4 px-1.5 text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border-none hover:bg-emerald-500/10">
+                                          Done
+                                        </Badge>
+                                      ) : (
+                                        <Badge className="h-4 px-1.5 text-[9px] font-bold bg-amber-500/10 text-amber-400 border-none animate-pulse hover:bg-amber-500/10">
+                                          Pending
+                                        </Badge>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-3 relative">
+                                      {isCompleted && item.result ? (
+                                        <div className="space-y-1">
+                                          {!isPrioritisation && (
+                                            <div className="flex items-baseline justify-between">
+                                              <span className="text-sm font-black text-white">
+                                                {item.result.score}
+                                              </span>
+                                              {item.result.passed !== null && item.result.passed !== undefined && (
+                                                <span className={["text-[9px] font-bold tracking-wider", item.result.passed ? "text-emerald-400" : "text-rose-400"].join(" ")}>
+                                                  {item.result.passed ? "PASSED" : "REVIEW"}
+                                                </span>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {isTyping && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
+                                            <div className="flex flex-wrap gap-2 text-[10px] text-slate-400 border-t border-white/5 pt-1 mt-1">
+                                              {typeof item.result.wpm === 'number' && (
+                                                <span><strong>{item.result.wpm}</strong> WPM</span>
+                                              )}
+                                              {typeof item.result.accuracy === 'number' && (
+                                                <span><strong>{Math.round(item.result.accuracy)}%</strong> Accuracy</span>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          {isPrioritisation && item.result.metrics && (
+                                            <div className="flex flex-col gap-1.5 text-[10px] text-slate-400 pt-1">
+                                              <div className="flex justify-between items-center">
+                                                <span>High Priority Acc:</span>
+                                                <strong className="text-slate-200">{Math.round((item.result.metrics as any).highPriorityAccuracy ?? 0)}%</strong>
+                                              </div>
+                                              <div className="flex justify-between items-center">
+                                                <span>Mid Priority Acc:</span>
+                                                <strong className="text-slate-200">{Math.round((item.result.metrics as any).mediumPriorityAccuracy ?? 0)}%</strong>
+                                              </div>
+                                              <div className="flex justify-between items-center">
+                                                <span>Low Priority Acc:</span>
+                                                <strong className="text-slate-200">{Math.round((item.result.metrics as any).lowPriorityAccuracy ?? 0)}%</strong>
+                                              </div>
+                                            </div>
+                                          )}
+
+                                          {isSJT && item.result.metrics && (
+                                            <div className="flex flex-wrap gap-2 text-[10px] text-slate-400 border-t border-white/5 pt-1 mt-1">
+                                              <span>Band: <strong className={
+                                                (item.result.metrics as any).decisionBand === 'GREEN' ? "text-emerald-400" :
+                                                (item.result.metrics as any).decisionBand === 'AMBER' ? "text-amber-400" : "text-rose-400"
+                                              }>{(item.result.metrics as any).decisionBand ?? '—'}</strong></span>
+                                              <span>Flags: <strong className="text-slate-200">{Number((item.result.metrics as any).materialRiskFlagCount ?? 0) + Number((item.result.metrics as any).moderateRiskFlagCount ?? 0)}</strong></span>
+                                            </div>
+                                          )}
+
+                                          {isCallSimulation && typeof item.result.durationSeconds === 'number' && (
+                                            <div className="flex gap-2 text-[10px] text-slate-400 border-t border-white/5 pt-1 mt-1">
+                                              <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="text-[11px] text-slate-500 italic min-h-[30px] flex items-center">
+                                          Awaiting completion
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  {isCompleted ? (
-                                    <Badge className="h-4 px-1 text-[9px] font-semibold bg-green-500/10 text-green-700 dark:text-green-300 border-none hover:bg-green-500/10">
-                                      Done
-                                    </Badge>
-                                  ) : (
-                                    <Badge className="h-4 px-1 text-[9px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border-none animate-pulse hover:bg-amber-500/10">
-                                      Pending
-                                    </Badge>
-                                  )}
-                                </div>
-
-                                <div className="mt-3">
-                                  {isCompleted && item.result ? (
-                                    <div className="space-y-1">
-                                      {!isPrioritisation && (
-                                        <div className="flex items-baseline justify-between">
-                                          <span className="text-base font-bold text-foreground">
-                                            {item.result.score}
-                                          </span>
-                                          {item.result.passed !== null && item.result.passed !== undefined && (
-                                            <span className={["text-[10px] font-semibold tracking-wider", item.result.passed ? "text-green-600 dark:text-green-400" : "text-red-500"].join(" ")}>
-                                              {item.result.passed ? "PASSED" : "REVIEW"}
-                                            </span>
-                                          )}
-                                        </div>
-                                      )}
-
-                                      {isTyping && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
-                                        <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5">
-                                          {typeof item.result.wpm === 'number' && (
-                                            <span><strong>{item.result.wpm}</strong> WPM</span>
-                                          )}
-                                          {typeof item.result.accuracy === 'number' && (
-                                            <span><strong>{Math.round(item.result.accuracy)}%</strong> Acc</span>
-                                          )}
-                                        </div>
-                                      )}
-
-                                      {isPrioritisation && item.result.metrics && (
-                                        <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5 mt-1">
-                                          <span>High: <strong>{Math.round((item.result.metrics as any).highPriorityAccuracy ?? 0)}%</strong></span>
-                                          <span>Mid: <strong>{Math.round((item.result.metrics as any).mediumPriorityAccuracy ?? 0)}%</strong></span>
-                                          <span>Low: <strong>{Math.round((item.result.metrics as any).lowPriorityAccuracy ?? 0)}%</strong></span>
-                                        </div>
-                                      )}
-
-                                      {isSJT && item.result.metrics && (
-                                        <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5 mt-1">
-                                          <span>Band: <strong className={
-                                            (item.result.metrics as any).decisionBand === 'GREEN' ? "text-emerald-400" :
-                                            (item.result.metrics as any).decisionBand === 'AMBER' ? "text-amber-400" : "text-rose-400"
-                                          }>{(item.result.metrics as any).decisionBand ?? '—'}</strong></span>
-                                          <span>Flags: <strong>{Number((item.result.metrics as any).materialRiskFlagCount ?? 0) + Number((item.result.metrics as any).moderateRiskFlagCount ?? 0)}</strong></span>
-                                        </div>
-                                      )}
-
-                                      {isCallSimulation && typeof item.result.durationSeconds === 'number' && (
-                                        <div className="flex gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5">
-                                          <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="text-xs text-muted-foreground/75 italic min-h-[34px] flex items-center">
-                                      Awaiting completion
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -300,15 +439,6 @@ export function HiringManagerSessionDetailsDialog({
         )}
       </DialogContent>
     </Dialog>
-  );
-}
-
-function SessionMetric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-      <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
-      <p className="mt-2 break-words text-sm font-semibold text-foreground">{value}</p>
-    </div>
   );
 }
 
