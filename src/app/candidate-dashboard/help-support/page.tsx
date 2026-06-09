@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Ticket, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-header";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
 /**
  * HelpSupportPage
@@ -11,9 +11,11 @@ import { DashboardPageHeader } from "@/components/dashboard/dashboard-page-heade
 export default function HelpSupportPage() {
   return (
     <div className="max-w-7xl space-y-6 animate-in fade-in slide-in-from-bottom-3 duration-500">
-      <DashboardPageHeader 
+      <HiringManagerPageHeader 
+        eyebrow="Help & Support"
         title="Help & Support" 
-        description="Get assistance with your assessment process." 
+        description="Get assistance with your assessment process or report technical issues." 
+        icon={Ticket}
       />
       
       <div className="grid gap-6 md:grid-cols-2">

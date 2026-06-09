@@ -129,7 +129,7 @@ export default function CandidateDashboardOverviewPage() {
     try {
       await CandidateSessionService.joinWithAccessCode(code);
       await loadApplications({ force: true });
-      setSuccess("Successfully joined the campaign!");
+      setSuccess("Successfully linked your assessments!");
       setAccessCodeInput("");
     } catch (err) {
       setError(
@@ -211,10 +211,10 @@ export default function CandidateDashboardOverviewPage() {
               <AlertCircle className="h-6 w-6 text-primary" /> 
               Needs Attention
             </h2>
-            <p className="text-sm text-slate-400">Campaigns that are currently active or awaiting your input.</p>
+            <p className="text-sm text-slate-400">Assessments that are currently active or awaiting your input.</p>
           </div>
           {activeApps.length > 0 && (
-             <Link href="/candidate-dashboard/my-campaigns" className="text-sm font-semibold text-primary hover:underline hidden sm:flex items-center gap-1 transition-colors">
+             <Link href="/candidate-dashboard/my-assessments" className="text-sm font-semibold text-primary hover:underline hidden sm:flex items-center gap-1 transition-colors">
                View all <ArrowRight className="h-4 w-4" />
              </Link>
           )}
@@ -236,9 +236,9 @@ export default function CandidateDashboardOverviewPage() {
               const total = Math.max(1, app.completion?.total || app.assessments?.length || 1);
               const percent = Math.round((completed / total) * 100);
               const applicationKey = getApplicationKey(app);
-              const campaignHref = applicationKey
-                ? `/candidate-dashboard/my-campaigns?session=${encodeURIComponent(applicationKey)}`
-                : "/candidate-dashboard/my-campaigns";
+              const assessmentHref = applicationKey
+                ? `/candidate-dashboard/my-assessments?session=${encodeURIComponent(applicationKey)}`
+                : "/candidate-dashboard/my-assessments";
 
               return (
                 <Card key={app.documentId || app.candidateCode} className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl hover:dark:border-white/30">
@@ -248,7 +248,7 @@ export default function CandidateDashboardOverviewPage() {
                   <CardHeader className="pb-4">
                     <div className="flex justify-between items-start gap-2">
                         <div className="min-w-0">
-                          <CardTitle className="text-xl font-bold line-clamp-1">{app.campaign?.name || "Campaign"}</CardTitle>
+                          <CardTitle className="text-xl font-bold line-clamp-1">{app.campaign?.name || "Assessment"}</CardTitle>
                           <CardDescription className="text-sm mt-1 text-slate-400 truncate">{app.campaign?.jobRole || "Role"}</CardDescription>
                         </div>
                         <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0 px-2.5 py-0.5 font-semibold rounded-lg">
@@ -302,7 +302,7 @@ export default function CandidateDashboardOverviewPage() {
                     )}
 
                     <Button className="w-full gap-2 font-semibold shadow-md" asChild>
-                      <Link href={campaignHref}>
+                      <Link href={assessmentHref}>
                         Continue Assessment <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                       </Link>
                     </Button>
@@ -319,7 +319,7 @@ export default function CandidateDashboardOverviewPage() {
             </div>
             <h3 className="text-xl font-bold text-foreground mb-2">You're all caught up!</h3>
             <p className="max-w-sm mx-auto text-sm text-slate-400 leading-relaxed">
-              You don't have any active campaigns right now. Enter your access code in the welcome hero above to link your session and begin.
+              You don't have any active assessments right now. Enter your access code in the welcome hero above to link your session and begin.
             </p>
           </div>
         )}
@@ -357,23 +357,23 @@ export default function CandidateDashboardOverviewPage() {
                 </div>
                 <div className="lg:hidden">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Step 01</p>
-                  <h3 className="text-lg font-bold text-foreground">Join the Campaign</h3>
+                  <h3 className="text-lg font-bold text-foreground">Join Assessment Session</h3>
                 </div>
               </div>
               {/* Card */}
               <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/20 dark:hover:border-primary/20 group">
                 <div className="hidden lg:block">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">Step 01</p>
-                  <h3 className="text-lg font-bold text-foreground">Join the Campaign</h3>
+                  <h3 className="text-lg font-bold text-foreground">Join Assessment Session</h3>
                 </div>
                 <p className="text-sm leading-relaxed text-slate-400">
-                  Enter the <span className="text-foreground font-semibold">Access Code</span> provided by your Hiring Manager. We'll instantly link the correct campaign, date, assessment mode, and task list to your portal.
+                  Enter the <span className="text-foreground font-semibold">Access Code</span> provided by your Hiring Manager. We'll instantly link the correct assessment session, date, mode, and task list to your portal.
                 </p>
                 {/* Visual accent */}
                 <div className="rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-white/[0.02] px-4 py-3 flex items-center gap-3">
                   <div className="font-mono text-base tracking-[0.25em] font-bold text-foreground bg-background dark:bg-[#04070d]/60 border border-border dark:border-white/10 px-3 py-1.5 rounded-lg text-sm">CTRL–9A2X</div>
                   <ArrowRight className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-xs text-slate-400 font-medium">Campaign linked</span>
+                  <span className="text-xs text-slate-400 font-medium">Session linked</span>
                 </div>
               </div>
             </div>
@@ -398,7 +398,7 @@ export default function CandidateDashboardOverviewPage() {
                   <h3 className="text-lg font-bold text-foreground">Prepare for Your Mode</h3>
                 </div>
                 <p className="text-sm leading-relaxed text-slate-400">
-                  All campaigns follow the <span className="text-foreground font-semibold">same assessment standards</span> — but setup requirements differ based on delivery mode.
+                  All assessment sessions follow the <span className="text-foreground font-semibold">same assessment standards</span> — but setup requirements differ based on delivery mode.
                 </p>
                 {/* Mode sub-cards */}
                 <div className="grid grid-cols-2 gap-2.5">
@@ -459,27 +459,27 @@ export default function CandidateDashboardOverviewPage() {
         </div>
       </section>
 
-      {/* 4. COMPLETED CAMPAIGNS (Collapsible/Secondary) */}
+      {/* 4. COMPLETED ASSESSMENTS (Collapsible/Secondary) */}
       {completedApps.length > 0 && (
         <section className="space-y-4 pt-6 border-t border-border dark:border-white/5">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-400" /> Past Campaigns
+              <CheckCircle2 className="h-5 w-5 text-green-400" /> Past Assessments
             </h3>
             <span className="text-xs text-slate-400">{completedApps.length} session{completedApps.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
              {completedApps.map(app => {
                 const applicationKey = getApplicationKey(app);
-                const campaignHref = applicationKey
-                  ? `/candidate-dashboard/my-campaigns?session=${encodeURIComponent(applicationKey)}`
-                  : "/candidate-dashboard/my-campaigns";
+                const assessmentHref = applicationKey
+                  ? `/candidate-dashboard/my-assessments?session=${encodeURIComponent(applicationKey)}`
+                  : "/candidate-dashboard/my-assessments";
 
                 return (
-                <Link key={app.documentId || app.candidateCode} href={campaignHref} className="block group">
+                <Link key={app.documentId || app.candidateCode} href={assessmentHref} className="block group">
                   <Card className="h-full rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1329]/20 dark:backdrop-blur-sm hover:dark:border-white/30">
                     <CardHeader className="p-4 space-y-2">
-                       <CardTitle className="text-base font-bold line-clamp-1 group-hover:text-primary transition-colors">{app.campaign?.name || "Campaign"}</CardTitle>
+                       <CardTitle className="text-base font-bold line-clamp-1 group-hover:text-primary transition-colors">{app.campaign?.name || "Assessment"}</CardTitle>
                        <CardDescription className="text-xs text-slate-400 line-clamp-1">{app.campaign?.jobRole || "Role"}</CardDescription>
                        <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-md text-slate-400 border-border dark:border-white/5">{mapPortalStatus(app)}</Badge>
                     </CardHeader>

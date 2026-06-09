@@ -39,11 +39,11 @@ export function SimulatedAssessmentPlaceholder({
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("ctrl_secure_lock");
       if (window.opener) {
-        window.opener.location.href = `/candidate-dashboard/my-campaigns/`;
+        window.opener.location.href = `/candidate-dashboard/my-assessments/`;
         window.close();
       }
     }
-    router.push(`/candidate-dashboard/my-campaigns/`);
+    router.push(`/candidate-dashboard/my-assessments/`);
   };
 
   return (

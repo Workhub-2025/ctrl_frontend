@@ -87,7 +87,7 @@ function getCampaignWeights(
   }, {});
 }
 
-function isSameAssessment(expectedName: string, resultName: string) {
+function isSameAssessment(expectedName?: string | null, resultName?: string | null) {
   const expectedKey = getAssessmentKey(expectedName);
   const resultKey = getAssessmentKey(resultName);
 
@@ -95,17 +95,17 @@ function isSameAssessment(expectedName: string, resultName: string) {
 
   const expected = normalizeAssessmentText(expectedName);
   const result = normalizeAssessmentText(resultName);
-  return expected.includes(result) || result.includes(expected);
+  return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
 }
 
-function normalizeAssessmentText(value: string) {
-  return value
+function normalizeAssessmentText(value?: string | null) {
+  return (value ?? "")
     .toLowerCase()
     .replace(/prioritisation/g, "prioritization")
     .replace(/[^a-z0-9]/g, "");
 }
 
-function getAssessmentKey(value: string) {
+function getAssessmentKey(value?: string | null) {
   const normalized = normalizeAssessmentText(value);
 
   if (normalized.includes("prioritization") || normalized === "pja") {
@@ -243,6 +243,15 @@ function getAssessmentIcon(name: string) {
   }
   return FileQuestion;
 }
+
+const COMPETENCY_FLOORS: Record<string, number> = {
+  C1: 55,
+  C2: 55,
+  C3: 60,
+  C4: 45,
+  C5: 55,
+  C6: 40,
+};
 
 export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId }: CandidateReportProps) {
   const [reportData, setReportData] = useState<CandidateReportData | null>(null);
@@ -538,9 +547,13 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             const status = getAssessmentStatus(row);
             const typingRuns = getTypingRuns(row.result?.metrics);
             const scoreValue = row.score ?? 0;
+            const key = getAssessmentKey(row.name);
+            const isPrioritization = key === "prioritization";
+            const isSJT = key === "situational-judgement";
             const hasBreakdown =
               typingRuns.length > 0 ||
-              (row.result?.wpm !== null && row.result?.wpm !== undefined);
+              (row.result?.wpm !== null && row.result?.wpm !== undefined) ||
+              (row.score !== null && (isPrioritization || isSJT) && row.result?.metrics !== null && row.result?.metrics !== undefined);
             const breakdownOpen = openBreakdownKey === row.name;
 
             return (
@@ -572,19 +585,21 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                     </div>
                   </div>
 
-                  <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[470px]">
+                  <div className={`grid gap-2 sm:grid-cols-${(isPrioritization || isSJT) ? "2" : "3"} lg:min-w-[470px]`}>
                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                       <p className="text-xs text-slate-500 font-medium">Assessment Score</p>
                       <p className="mt-1 text-lg font-bold text-white">
                         {row.score === null ? "Pending" : `${row.score}%`}
                       </p>
                     </div>
-                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
-                      <p className="text-xs text-slate-500 font-medium">Duration</p>
-                      <p className="mt-1 text-lg font-bold text-white">
-                        {formatDuration(row.result?.durationSeconds)}
-                      </p>
-                    </div>
+                    {!(isPrioritization || isSJT) && (
+                      <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                        <p className="text-xs text-slate-500 font-medium">Duration</p>
+                        <p className="mt-1 text-lg font-bold text-white">
+                          {formatDuration(row.result?.durationSeconds)}
+                        </p>
+                      </div>
+                    )}
                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                       <p className="text-xs text-slate-500 font-medium">Overall Contribution</p>
                       <p className="mt-1 text-lg font-bold text-indigo-400">
@@ -625,17 +640,30 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
                 {hasBreakdown && (
                   <div className="space-y-3 pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setOpenBreakdownKey(breakdownOpen ? null : row.name)}
-                      className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:bg-white/[0.05] hover:text-white"
-                    >
-                      <ChevronDown
-                        className={`mr-1.5 h-3.5 w-3.5 transition-transform ${breakdownOpen ? "rotate-180" : ""}`}
-                      />
-                      {breakdownOpen ? "Hide performance breakdown" : "View performance breakdown"}
-                    </Button>
+                    <div className="flex justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setOpenBreakdownKey(breakdownOpen ? null : row.name)}
+                        className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:bg-white/[0.05] hover:text-white"
+                      >
+                        <ChevronDown
+                          className="mr-1.5 h-3.5 w-3.5"
+                          style={{
+                            transform: breakdownOpen ? "rotate(-180deg)" : "rotate(0deg)",
+                            transition: "transform 300ms ease",
+                          }}
+                        />
+                        {breakdownOpen ? "Hide performance breakdown" : "View performance breakdown"}
+                        <ChevronDown
+                          className="ml-1.5 h-3.5 w-3.5"
+                          style={{
+                            transform: breakdownOpen ? "rotate(180deg)" : "rotate(0deg)",
+                            transition: "transform 300ms ease",
+                          }}
+                        />
+                      </Button>
+                    </div>
 
                     {breakdownOpen && (
                       <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
@@ -693,6 +721,123 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                             </div>
                           </div>
                         )}
+
+                        {isPrioritization && row.result?.metrics && (() => {
+                          const pjaMetrics = row.result.metrics as any;
+                          return (
+                            <div className="space-y-4">
+                              <div className="space-y-3.5 rounded-lg border border-white/5 bg-white/[0.01] p-4">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                  Priority Band Accuracy
+                                </p>
+                                <div className="space-y-3">
+                                  {[
+                                    { label: "High Priority", score: pjaMetrics.highPriorityAccuracy ?? 0, color: "bg-emerald-500", textColor: "text-emerald-400" },
+                                    { label: "Medium Priority", score: pjaMetrics.mediumPriorityAccuracy ?? 0, color: "bg-sky-500", textColor: "text-sky-400" },
+                                    { label: "Low Priority", score: pjaMetrics.lowPriorityAccuracy ?? 0, color: "bg-slate-400", textColor: "text-slate-400" }
+                                  ].map((band) => (
+                                    <div key={band.label} className="space-y-1.5">
+                                      <div className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-300 font-medium">{band.label}</span>
+                                        <span className={`font-bold ${band.textColor}`}>{Math.round(band.score)}%</span>
+                                      </div>
+                                      <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                                        <div
+                                          className={`h-full rounded-full ${band.color}`}
+                                          style={{ width: `${band.score}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Outcome Band</p>
+                                  <p className="mt-1.5 text-lg font-bold text-white">
+                                    {pjaMetrics.performanceBand ?? pjaMetrics.outcome ?? "—"}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Critical Misprioritizations</p>
+                                  <p className={`mt-1.5 text-lg font-bold ${pjaMetrics.criticalMisprioritisationCount > 0 ? "text-rose-400" : "text-white"}`}>
+                                    {pjaMetrics.criticalMisprioritisationCount ?? 0}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
+                        {isSJT && row.result?.metrics && (() => {
+                          const sjtMetrics = row.result.metrics as any;
+                          return (
+                            <div className="space-y-4">
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Decision Band</p>
+                                  <p className={`mt-1.5 text-2xl font-black ${
+                                    sjtMetrics.decisionBand === 'GREEN' ? "text-emerald-400" :
+                                    sjtMetrics.decisionBand === 'AMBER' ? "text-amber-400" : "text-rose-400"
+                                  }`}>
+                                    {sjtMetrics.decisionBand ?? "—"}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Material Risk Flags</p>
+                                  <p className={`mt-1.5 text-2xl font-black ${sjtMetrics.materialRiskFlagCount > 0 ? "text-rose-400 font-bold" : "text-white"}`}>
+                                    {sjtMetrics.materialRiskFlagCount ?? 0}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Moderate Risk Flags</p>
+                                  <p className="mt-1.5 text-2xl font-black text-white">
+                                    {sjtMetrics.moderateRiskFlagCount ?? 0}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+                                  Competency Scores
+                                </p>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                  {Object.entries(sjtMetrics.competencyScores || {}).map(([key, score]: any) => {
+                                    const label = sjtMetrics.competencyLabels?.[key] || key;
+                                    const floor = COMPETENCY_FLOORS[key] ?? 50;
+                                    const isBelowFloor = score < floor;
+                                    
+                                    return (
+                                      <div key={key} className="rounded-lg border border-white/5 bg-white/[0.01] p-3 space-y-2">
+                                        <div className="flex justify-between items-start text-xs">
+                                          <span className="text-slate-300 font-medium line-clamp-1" title={label}>{label}</span>
+                                          <span className={`font-bold ${isBelowFloor ? "text-red-400" : "text-white"}`}>{Math.round(score)}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden relative">
+                                          <div
+                                            className={`h-full rounded-full ${isBelowFloor ? "bg-red-500" : "bg-primary"}`}
+                                            style={{ width: `${score}%` }}
+                                          />
+                                          {/* safety floor indicator mark */}
+                                          <div 
+                                            className="absolute top-0 bottom-0 w-0.5 bg-red-400/50"
+                                            style={{ left: `${floor}%` }}
+                                            title={`Safety Floor: ${floor}%`}
+                                          />
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] text-slate-500">
+                                          <span>Floor: {floor}%</span>
+                                          {isBelowFloor && <span className="text-red-400 font-semibold">Below Floor</span>}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>

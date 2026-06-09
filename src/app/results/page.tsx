@@ -121,7 +121,7 @@ function ResultsContent() {
         </CardContent>
         <CardFooter>
           <Button asChild className="w-full" size="lg">
-            <Link href="/candidate-dashboard/my-campaigns/">Return to My Campaigns</Link>
+            <Link href="/candidate-dashboard/my-assessments/">Return to My Assessments</Link>
           </Button>
         </CardFooter>
       </Card>

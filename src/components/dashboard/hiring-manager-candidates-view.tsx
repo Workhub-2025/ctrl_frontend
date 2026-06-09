@@ -464,22 +464,52 @@ export function HiringManagerCandidatesView() {
                                   )}
                                 </div>
 
-                                {item.name.toLowerCase().includes("typing") && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
-                                  <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1">
-                                    {typeof item.result.wpm === 'number' && (
-                                      <span><strong>{item.result.wpm}</strong> WPM</span>
-                                    )}
-                                    {typeof item.result.accuracy === 'number' && (
-                                      <span><strong>{Math.round(item.result.accuracy)}%</strong> Acc</span>
-                                    )}
-                                  </div>
-                                )}
+                                {(() => {
+                                  const key = getAssessmentKey(item.name, item.result);
+                                  const isTyping = key === "typing";
+                                  const isPrioritisation = key === "prioritization";
+                                  const isSJT = key === "situational-judgement";
+                                  const isCallSimulation = key === "call-simulation";
 
-                                {(item.name.toLowerCase().includes("prioriti") || item.name.toLowerCase().includes("order") || item.name.toLowerCase().includes("call") || item.name.toLowerCase().includes("audio")) && typeof item.result.durationSeconds === 'number' && (
-                                  <div className="flex gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1">
-                                    <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
-                                  </div>
-                                )}
+                                  return (
+                                    <>
+                                      {isTyping && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
+                                        <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1">
+                                          {typeof item.result.wpm === 'number' && (
+                                            <span><strong>{item.result.wpm}</strong> WPM</span>
+                                          )}
+                                          {typeof item.result.accuracy === 'number' && (
+                                            <span><strong>{Math.round(item.result.accuracy)}%</strong> Acc</span>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {isPrioritisation && item.result.metrics && (
+                                        <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1 mt-1">
+                                          <span>High: <strong>{Math.round((item.result.metrics as any).highPriorityAccuracy ?? 0)}%</strong></span>
+                                          <span>Mid: <strong>{Math.round((item.result.metrics as any).mediumPriorityAccuracy ?? 0)}%</strong></span>
+                                          <span>Low: <strong>{Math.round((item.result.metrics as any).lowPriorityAccuracy ?? 0)}%</strong></span>
+                                        </div>
+                                      )}
+
+                                      {isSJT && item.result.metrics && (
+                                        <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1 mt-1">
+                                          <span>Band: <strong className={
+                                            (item.result.metrics as any).decisionBand === 'GREEN' ? "text-emerald-400" :
+                                            (item.result.metrics as any).decisionBand === 'AMBER' ? "text-amber-400" : "text-rose-400"
+                                          }>{(item.result.metrics as any).decisionBand ?? '—'}</strong></span>
+                                          <span>Flags: <strong>{Number((item.result.metrics as any).materialRiskFlagCount ?? 0) + Number((item.result.metrics as any).moderateRiskFlagCount ?? 0)}</strong></span>
+                                        </div>
+                                      )}
+
+                                      {isCallSimulation && typeof item.result.durationSeconds === 'number' && (
+                                        <div className="flex gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1 mt-1">
+                                          <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             ) : (
                               <div className="text-[11px] text-slate-500 italic min-h-[30px] flex items-center">
@@ -499,6 +529,51 @@ export function HiringManagerCandidatesView() {
       </div>
     </div>
   );
+}
+
+function normalizeAssessmentText(value?: string | null) {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/prioritisation/g, "prioritization")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function getAssessmentKey(value?: string | null, result?: any) {
+  const normalized = normalizeAssessmentText(value);
+
+  if (normalized.includes("prioritization") || normalized === "pja") {
+    return "prioritization";
+  }
+  if (normalized.includes("situationaljudgement") || normalized === "sjt") {
+    return "situational-judgement";
+  }
+  if (normalized.includes("callsimulation")) {
+    return "call-simulation";
+  }
+  if (normalized.includes("typing")) {
+    return "typing";
+  }
+
+  // Resilient guess fallback if name is generic (like "Assessment")
+  if (result) {
+    if (typeof result.wpm === 'number' || typeof result.accuracy === 'number') {
+      return "typing";
+    }
+    if (result.metrics) {
+      const m = result.metrics;
+      if (m.highPriorityAccuracy !== undefined || m.mediumPriorityAccuracy !== undefined || m.lowPriorityAccuracy !== undefined) {
+        return "prioritization";
+      }
+      if (m.decisionBand !== undefined || m.materialRiskFlagCount !== undefined || m.moderateRiskFlagCount !== undefined) {
+        return "situational-judgement";
+      }
+    }
+    if (typeof result.durationSeconds === 'number') {
+      return "call-simulation";
+    }
+  }
+
+  return "";
 }
 
 function getAssessmentIcon(name: string) {

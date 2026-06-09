@@ -15,6 +15,7 @@ import {
   Plus,
   RefreshCw,
   Users,
+  Check,
 } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
@@ -48,6 +49,7 @@ export function HiringManagerSessionsList() {
   const [isCreating, setIsCreating] = useState(false);
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<HiringManagerSessionListItem | null>(null);
+  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
   const [draft, setDraft] = useState({
     campaignDocumentId: "",
     name: "",
@@ -365,16 +367,23 @@ export function HiringManagerSessionsList() {
             >
               <CardContent className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="min-w-0 space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={[
-                      "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
-                      getStatusTone(session.status)
-                    ].join(" ")}>
-                      {session.status}
-                    </Badge>
-                    <Badge className="rounded-md border-white/10 bg-white/[0.03] text-[10px] text-slate-300 font-semibold hover:bg-white/[0.03]">
-                      {session.type}
-                    </Badge>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className={[
+                        "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
+                        getStatusTone(session.status)
+                      ].join(" ")}>
+                        {session.status}
+                      </Badge>
+                      <Badge className="rounded-md border-white/10 bg-white/[0.03] text-[10px] text-slate-300 font-semibold hover:bg-white/[0.03]">
+                        {session.type}
+                      </Badge>
+                    </div>
+
+                    <div className="text-[10px] font-bold text-slate-300 bg-white/[0.02] border border-white/10 px-2.5 py-1 rounded flex items-center gap-1.5 shadow-sm">
+                      <Users className="h-3.5 w-3.5 text-primary" />
+                      <span>{session.candidateCount} of {session.candidateLimit} Candidates</span>
+                    </div>
                   </div>
                   <div>
                     <h2 className="break-words text-base font-bold leading-snug text-white">
@@ -384,10 +393,6 @@ export function HiringManagerSessionsList() {
                       {session.date} · {session.location}
                     </p>
                   </div>
-                  <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-slate-300 font-medium">
-                    <Users className="h-3.5 w-3.5 text-primary" />
-                    {session.candidateCount} of {session.candidateLimit} candidates joined
-                  </p>
                 </div>
 
                 <div className="rounded-xl border border-white/10 bg-[#0b1329]/25 p-4 shadow-sm backdrop-blur-sm">
@@ -406,11 +411,24 @@ export function HiringManagerSessionsList() {
                     <Button
                       type="button"
                       size="sm"
-                      onClick={() => navigator.clipboard?.writeText(session.accessValue)}
-                      className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 flex-1"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(session.accessValue);
+                        setCopiedSessionId(session.id);
+                        setTimeout(() => setCopiedSessionId(null), 2000);
+                      }}
+                      className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 flex-1 transition-all duration-300"
                     >
-                      <Copy className="mr-1.5 h-3.5 w-3.5" />
-                      Copy code
+                      {copiedSessionId === session.id ? (
+                        <>
+                          <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400 animate-in zoom-in-50 duration-200" />
+                          <span className="text-emerald-400 animate-in fade-in duration-200">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="mr-1.5 h-3.5 w-3.5" />
+                          Copy code
+                        </>
+                      )}
                     </Button>
                     <Button
                       type="button"

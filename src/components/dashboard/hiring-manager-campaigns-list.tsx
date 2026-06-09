@@ -105,50 +105,49 @@ export function HiringManagerCampaignsList() {
               className="group rounded-[1.25rem] border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/40 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300 hover:-translate-y-0.5"
             >
               <CardContent className="space-y-4 p-5">
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-                  <div className="min-w-0 space-y-3.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={getStatusTone(campaign.status)}>
-                        {campaign.status}
+                <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={getStatusTone(campaign.status)}>
+                      {campaign.status}
+                    </Badge>
+                    <Badge className="rounded-md border-white/5 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
+                      {campaign.deliveryMode}
+                    </Badge>
+                    {campaign.approvalStatus && (
+                      <Badge
+                        className={[
+                          "rounded-md border-none text-xs font-semibold px-2 py-0.5",
+                          campaign.approvalStatus === "Pending approval"
+                            ? "bg-orange-500/10 text-orange-400"
+                            : campaign.approvalStatus === "Rejected"
+                              ? "bg-red-500/10 text-red-400"
+                              : "bg-emerald-500/10 text-emerald-400"
+                        ].join(" ")}
+                      >
+                        {campaign.approvalStatus}
                       </Badge>
-                      <Badge className="rounded-md border-white/5 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
-                        {campaign.deliveryMode}
-                      </Badge>
-                      {campaign.approvalStatus && (
-                        <Badge
-                          className={[
-                            "rounded-md border-none text-xs font-semibold px-2 py-0.5",
-                            campaign.approvalStatus === "Pending approval"
-                              ? "bg-orange-500/10 text-orange-400"
-                              : campaign.approvalStatus === "Rejected"
-                                ? "bg-red-500/10 text-red-400"
-                                : "bg-emerald-500/10 text-emerald-400"
-                          ].join(" ")}
-                        >
-                          {campaign.approvalStatus}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="min-w-0 space-y-2">
-                      <h2 className="break-words text-lg font-bold leading-snug text-foreground">
-                        {campaign.name}
-                      </h2>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Next Milestone Box */}
-                  <div className="flex items-start gap-2.5 rounded-xl border border-primary/10 bg-[#08101d]/60 p-3.5 text-xs text-foreground shadow-sm dark:border-white/5 dark:bg-white/[0.01]">
-                    <Target className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary animate-pulse" />
-                    <div>
-                      <p className="mt-1 font-medium leading-relaxed text-foreground">{campaign.nextMilestone}</p>
-                    </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs text-primary shadow-sm w-fit">
+                    <Target className="h-3.5 w-3.5 shrink-0 text-primary animate-pulse" />
+                    <span className="font-semibold">{campaign.nextMilestone}</span>
                   </div>
                 </div>
 
-                <div className="grid gap-3 xl:grid-cols-[1fr_0.95fr] pt-2">
+                <div className="min-w-0 space-y-1">
+                  <h2 className="break-words text-lg font-bold leading-snug text-foreground">
+                    {campaign.name}
+                  </h2>
+                  <p className="text-sm text-slate-400 font-medium">
+                    {campaign.role} · {campaign.candidateCount} candidate{campaign.candidateCount === 1 ? "" : "s"} ·{" "}
+                    {campaign.sessions} session{campaign.sessions === 1 ? "" : "s"}
+                  </p>
+                </div>
+
+                <div className="pt-2">
                   {/* Assessment Stack Card */}
-                  <div className="rounded-xl border border-border bg-background/30 p-3.5 shadow-sm dark:border-white/5 dark:bg-white/[0.01]">
+                  <div className="rounded-xl border border-border bg-[#08101d]/30 p-3.5 shadow-sm dark:border-white/5 dark:bg-white/[0.01] w-full">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Assessment stack
                     </p>
@@ -165,28 +164,6 @@ export function HiringManagerCampaignsList() {
                           </span>
                         );
                       })}
-                    </div>
-                  </div>
-
-                  {/* Session Readiness Card */}
-                  <div className="rounded-xl border border-border bg-background/30 p-3.5 shadow-sm dark:border-white/5 dark:bg-white/[0.01]">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Session readiness
-                    </p>
-                    <div className="mt-3 rounded-lg border border-border bg-card p-3 dark:border-white/10 dark:bg-[#04070d]/60">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="min-w-0">
-                          <p className="break-words text-sm font-semibold leading-none text-foreground">
-                            {campaign.sessions} Access Code{campaign.sessions === 1 ? "" : "s"}
-                          </p>
-                          <p className="mt-1.5 break-words text-[11px] leading-tight text-muted-foreground">
-                            {campaign.nextMilestone}
-                          </p>
-                        </div>
-                        <Badge className="shrink-0 rounded-md border-none bg-emerald-500/10 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
-                          Active
-                        </Badge>
-                      </div>
                     </div>
                   </div>
                 </div>

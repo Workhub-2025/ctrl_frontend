@@ -43,7 +43,7 @@ export function listenForAssessmentCompletion(callback: () => void) {
   };
 }
 
-export function closeAssessmentWindow(fallbackPath = "/candidate-dashboard/my-campaigns/") {
+export function closeAssessmentWindow(fallbackPath = "/candidate-dashboard/my-assessments/") {
   if (typeof window === "undefined") return;
 
   try {

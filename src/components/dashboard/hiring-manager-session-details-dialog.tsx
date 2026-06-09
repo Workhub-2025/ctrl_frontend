@@ -95,12 +95,10 @@ export function HiringManagerSessionDetailsDialog({
                     const progress = getCandidateProgress(candidate, expectedAssessmentCount);
                     const resultsHref = getResultsHref?.(candidate, session);
 
-                    const resultsMap = new Map(
-                      (candidate.results || []).map((r) => [r.assessment.toLowerCase(), r])
-                    );
-
                     const displayAssessments = (assessmentStack || []).map((stackName) => {
-                      const matchedResult = resultsMap.get(stackName.toLowerCase());
+                      const matchedResult = (candidate.results || []).find((r) =>
+                        isSameAssessment(stackName, r.assessment)
+                      );
                       if (matchedResult) {
                         return {
                           name: stackName,
@@ -197,6 +195,11 @@ export function HiringManagerSessionDetailsDialog({
                           {finalDisplayList.map((item, idx) => {
                             const Icon = getAssessmentIcon(item.name);
                             const isCompleted = item.status === "completed" && item.result;
+                            const key = getAssessmentKey(item.name, item.result);
+                            const isTyping = key === "typing";
+                            const isPrioritisation = key === "prioritization";
+                            const isSJT = key === "situational-judgement";
+                            const isCallSimulation = key === "call-simulation";
 
                             return (
                               <div
@@ -229,18 +232,20 @@ export function HiringManagerSessionDetailsDialog({
                                 <div className="mt-3">
                                   {isCompleted && item.result ? (
                                     <div className="space-y-1">
-                                      <div className="flex items-baseline justify-between">
-                                        <span className="text-base font-bold text-foreground">
-                                          {item.result.score}
-                                        </span>
-                                        {item.result.passed !== null && item.result.passed !== undefined && (
-                                          <span className={["text-[10px] font-semibold tracking-wider", item.result.passed ? "text-green-600 dark:text-green-400" : "text-red-500"].join(" ")}>
-                                            {item.result.passed ? "PASSED" : "FAILED"}
+                                      {!isPrioritisation && (
+                                        <div className="flex items-baseline justify-between">
+                                          <span className="text-base font-bold text-foreground">
+                                            {item.result.score}
                                           </span>
-                                        )}
-                                      </div>
+                                          {item.result.passed !== null && item.result.passed !== undefined && (
+                                            <span className={["text-[10px] font-semibold tracking-wider", item.result.passed ? "text-green-600 dark:text-green-400" : "text-red-500"].join(" ")}>
+                                              {item.result.passed ? "PASSED" : "REVIEW"}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
 
-                                      {item.name.toLowerCase().includes("typing") && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
+                                      {isTyping && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
                                         <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5">
                                           {typeof item.result.wpm === 'number' && (
                                             <span><strong>{item.result.wpm}</strong> WPM</span>
@@ -251,7 +256,25 @@ export function HiringManagerSessionDetailsDialog({
                                         </div>
                                       )}
 
-                                      {(item.name.toLowerCase().includes("prioriti") || item.name.toLowerCase().includes("order") || item.name.toLowerCase().includes("call") || item.name.toLowerCase().includes("audio")) && typeof item.result.durationSeconds === 'number' && (
+                                      {isPrioritisation && item.result.metrics && (
+                                        <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5 mt-1">
+                                          <span>High: <strong>{Math.round((item.result.metrics as any).highPriorityAccuracy ?? 0)}%</strong></span>
+                                          <span>Mid: <strong>{Math.round((item.result.metrics as any).mediumPriorityAccuracy ?? 0)}%</strong></span>
+                                          <span>Low: <strong>{Math.round((item.result.metrics as any).lowPriorityAccuracy ?? 0)}%</strong></span>
+                                        </div>
+                                      )}
+
+                                      {isSJT && item.result.metrics && (
+                                        <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5 mt-1">
+                                          <span>Band: <strong className={
+                                            (item.result.metrics as any).decisionBand === 'GREEN' ? "text-emerald-400" :
+                                            (item.result.metrics as any).decisionBand === 'AMBER' ? "text-amber-400" : "text-rose-400"
+                                          }>{(item.result.metrics as any).decisionBand ?? '—'}</strong></span>
+                                          <span>Flags: <strong>{Number((item.result.metrics as any).materialRiskFlagCount ?? 0) + Number((item.result.metrics as any).moderateRiskFlagCount ?? 0)}</strong></span>
+                                        </div>
+                                      )}
+
+                                      {isCallSimulation && typeof item.result.durationSeconds === 'number' && (
                                         <div className="flex gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5">
                                           <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
                                         </div>
@@ -368,4 +391,60 @@ function getAssessmentIcon(name: string) {
     return PhoneCall;
   }
   return FileQuestion;
+}
+
+function normalizeAssessmentText(value?: string | null) {
+  return (value ?? "")
+    .toLowerCase()
+    .replace(/prioritisation/g, "prioritization")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function getAssessmentKey(value?: string | null, result?: any) {
+  const normalized = normalizeAssessmentText(value);
+
+  if (normalized.includes("prioritization") || normalized === "pja") {
+    return "prioritization";
+  }
+  if (normalized.includes("situationaljudgement") || normalized === "sjt") {
+    return "situational-judgement";
+  }
+  if (normalized.includes("callsimulation")) {
+    return "call-simulation";
+  }
+  if (normalized.includes("typing")) {
+    return "typing";
+  }
+
+  // Resilient guess fallback if name is generic (like "Assessment")
+  if (result) {
+    if (typeof result.wpm === 'number' || typeof result.accuracy === 'number') {
+      return "typing";
+    }
+    if (result.metrics) {
+      const m = result.metrics;
+      if (m.highPriorityAccuracy !== undefined || m.mediumPriorityAccuracy !== undefined || m.lowPriorityAccuracy !== undefined) {
+        return "prioritization";
+      }
+      if (m.decisionBand !== undefined || m.materialRiskFlagCount !== undefined || m.moderateRiskFlagCount !== undefined) {
+        return "situational-judgement";
+      }
+    }
+    if (typeof result.durationSeconds === 'number') {
+      return "call-simulation";
+    }
+  }
+
+  return "";
+}
+
+function isSameAssessment(expectedName?: string | null, resultName?: string | null) {
+  const expectedKey = getAssessmentKey(expectedName);
+  const resultKey = getAssessmentKey(resultName);
+
+  if (expectedKey && resultKey) return expectedKey === resultKey;
+
+  const expected = normalizeAssessmentText(expectedName);
+  const result = normalizeAssessmentText(resultName);
+  return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
 }

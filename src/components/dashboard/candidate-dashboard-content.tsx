@@ -43,6 +43,7 @@ import {
   type CandidatePortalAssessment,
 } from "@/services/candidate-session.service";
 import { listenForAssessmentCompletion } from "@/lib/assessment-completion";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
 type CandidateApplicationStatus =
   | "Awaiting Assessment"
@@ -71,7 +72,7 @@ type CandidateApplication = {
   assessments: CandidatePortalAssessment[];
 };
 
-type CampaignSortOption =
+type AssessmentSortOption =
   | "attention"
   | "due_closest"
   | "progress_low"
@@ -175,7 +176,7 @@ function mapApplication(
   return {
     key: application.documentId ?? application.candidateCode ?? crypto.randomUUID(),
     code: application.candidateCode ?? application.documentId ?? "Access Code linked",
-    campaign: application.campaign?.name ?? "Campaign",
+    campaign: application.campaign?.name ?? "Assessment",
     role: application.campaign?.jobRole ?? "Candidate assessment",
     date: formatDate(dueAt),
     dueAt,
@@ -317,7 +318,7 @@ export function CandidateDashboardContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const [sortBy, setSortBy] = useState<CampaignSortOption>("attention");
+  const [sortBy, setSortBy] = useState<AssessmentSortOption>("attention");
   const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(
     CandidateSessionService.getMyApplicationsLastRefresh()
   );
@@ -347,7 +348,7 @@ export function CandidateDashboardContent() {
       });
     } catch (applicationError) {
       console.error("[CandidateDashboard] Failed to load applications:", applicationError);
-      setLoadError("We could not load your campaigns. Please refresh or try again shortly.");
+      setLoadError("We could not load your assessments. Please refresh or try again shortly.");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -400,7 +401,7 @@ export function CandidateDashboardContent() {
     return (
       <div className="p-6">
         <Alert className="border-red-500/30 bg-red-500/10 text-red-400 rounded-2xl">
-          <AlertTitle className="font-bold">Campaigns unavailable</AlertTitle>
+          <AlertTitle className="font-bold">Assessments unavailable</AlertTitle>
           <AlertDescription className="text-sm leading-relaxed">{loadError}</AlertDescription>
         </Alert>
       </div>
@@ -411,7 +412,7 @@ export function CandidateDashboardContent() {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-slate-400 animate-pulse">
         <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
-        <p>Loading your campaigns...</p>
+        <p>Loading your assessments...</p>
       </div>
     );
   }
@@ -424,9 +425,9 @@ export function CandidateDashboardContent() {
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4 shadow-inner border border-primary/20">
               <Briefcase className="h-8 w-8" />
             </div>
-            <CardTitle className="text-2xl mb-2 text-foreground font-bold">No campaigns linked yet</CardTitle>
+            <CardTitle className="text-2xl mb-2 text-foreground font-bold">No assessments linked yet</CardTitle>
             <CardDescription className="max-w-md text-slate-400 text-base leading-relaxed">
-              You haven't joined any campaigns yet. Return to the Dashboard to enter an Access Code provided by your Hiring Manager.
+              You haven't linked any assessments yet. Return to the Dashboard to enter an Access Code provided by your Hiring Manager.
             </CardDescription>
           </CardContent>
         </Card>
@@ -439,27 +440,39 @@ export function CandidateDashboardContent() {
   const showDetailOnMobile = !!selectedApplicationKey;
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-[calc(100vh-6rem)] w-full gap-0 lg:gap-6 animate-in fade-in duration-500">
-      {/* LEFT PANE: CAMPAIGN LIST (Master) */}
-      <div
-        className={`w-full lg:w-[400px] xl:w-[460px] 2xl:w-[520px] shrink-0 flex flex-col gap-4 ${
-          showListOnMobile ? "block" : "hidden lg:flex"
-        }`}
-      >
-        <div className="flex flex-col gap-3 px-2 sm:flex-row sm:items-center sm:justify-between lg:px-0">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">My Campaigns</h2>
+    <div className="max-w-7xl space-y-6">
+      {(!selectedApplicationKey || !showDetailOnMobile) && (
+        <HiringManagerPageHeader
+          eyebrow="My Assessments"
+          title="My Assessments"
+          description="View and manage your active assessment sessions and progress."
+          icon={Briefcase}
+        />
+      )}
+
+      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-6rem)] w-full gap-0 lg:gap-6 animate-in fade-in duration-500">
+        {/* LEFT PANE: ASSESSMENT LIST (Master) */}
+        <div
+          className={`w-full lg:w-[400px] xl:w-[460px] 2xl:w-[520px] shrink-0 flex flex-col gap-4 ${
+            showListOnMobile ? "block" : "hidden lg:flex"
+          }`}
+        >
+          <div className="flex items-center justify-between px-2 lg:px-0 h-10">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Linked Assessments ({applications.length})
+            </span>
           <div className="flex items-center gap-2">
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value as CampaignSortOption)}>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as AssessmentSortOption)}>
               <SelectTrigger className="h-9 w-[190px] rounded-xl bg-background dark:bg-[#0b1329]/40 dark:border-white/10 shadow-sm">
                 <ArrowUpDown className="mr-2 h-4 w-4 text-slate-400" />
-                <SelectValue aria-label="Sort campaigns" />
+                <SelectValue aria-label="Sort assessments" />
               </SelectTrigger>
               <SelectContent align="end">
                 <SelectItem value="attention">Needs attention</SelectItem>
                 <SelectItem value="due_closest">Due closest</SelectItem>
                 <SelectItem value="progress_low">Progress: lowest</SelectItem>
                 <SelectItem value="progress_high">Progress: highest</SelectItem>
-                <SelectItem value="name_az">Campaign A-Z</SelectItem>
+                <SelectItem value="name_az">Assessment A-Z</SelectItem>
                 <SelectItem value="status">Status</SelectItem>
                 <SelectItem value="newest">Newest linked</SelectItem>
               </SelectContent>
@@ -527,7 +540,7 @@ export function CandidateDashboardContent() {
         </div>
       </div>
 
-      {/* RIGHT PANE: CAMPAIGN DETAILS (Detail) */}
+      {/* RIGHT PANE: ASSESSMENT DETAILS (Detail) */}
       <div className={`flex-1 flex flex-col min-w-0 ${showDetailOnMobile ? "block" : "hidden lg:flex"}`}>
         {currentApplication ? (
           <div className="flex-1 bg-card border border-border dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-right-4 lg:slide-in-from-bottom-4 duration-300">
@@ -546,27 +559,28 @@ export function CandidateDashboardContent() {
                 <ArrowLeft className="h-4 w-4 mr-2" /> Back to list
               </Button>
 
-              <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
-                <div className="space-y-2.5 min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="text-xs bg-background/50 border border-border dark:border-white/10 dark:bg-[#04070d]/50 px-2.5 py-0.5 rounded-lg font-mono tracking-wider text-slate-300">
-                      {currentApplication.code}
-                    </Badge>
-                    <Badge className={statusClassNames[currentApplication.status]}>{currentApplication.status}</Badge>
-                  </div>
+              <div className="flex flex-col gap-3.5 relative z-10">
+                <div>
+                  <Badge className={statusClassNames[currentApplication.status]}>
+                    {currentApplication.status}
+                  </Badge>
+                </div>
+                <div className="space-y-2 min-w-0">
                   <h2 className="text-3xl font-extrabold text-foreground tracking-tight line-clamp-2">
                     {currentApplication.campaign}
                   </h2>
-                  <p className="text-base text-slate-400 font-medium">{currentApplication.role}</p>
-                </div>
-
-                {/* Info Pills */}
-                <div className="flex flex-col sm:items-end gap-2 shrink-0 pt-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground bg-background/50 border border-border dark:border-white/10 dark:bg-white/[0.02] px-3.5 py-2 rounded-xl shadow-sm">
-                    <MapPin className="h-4 w-4 text-primary" /> {currentApplication.location}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground bg-background/50 border border-border dark:border-white/10 dark:bg-white/[0.02] px-3.5 py-2 rounded-xl shadow-sm">
-                    <Target className="h-4 w-4 text-primary" /> {currentApplication.mode}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-slate-400 text-sm mt-1">
+                    <span className="font-semibold text-slate-300">{currentApplication.role}</span>
+                    <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
+                    <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
+                      <MapPin className="h-3.5 w-3.5 text-primary/80 shrink-0" />
+                      <span>{currentApplication.location}</span>
+                    </div>
+                    <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
+                    <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
+                      <Target className="h-3.5 w-3.5 text-primary/80 shrink-0" />
+                      <span>{currentApplication.mode}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -618,7 +632,7 @@ export function CandidateDashboardContent() {
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-border bg-transparent p-8 text-center text-slate-400">
-                    <p>No assessments assigned to this campaign yet.</p>
+                    <p>No assessments assigned to this session yet.</p>
                   </div>
                 )}
               </div>
@@ -650,13 +664,14 @@ export function CandidateDashboardContent() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400 bg-muted/20 border-border border rounded-[2rem] border-dashed dark:bg-[#0b1329]/20 dark:border-white/10">
             <ClipboardCheck className="h-12 w-12 text-primary/30 mb-4" />
-            <p className="text-lg font-bold text-foreground">Select a campaign</p>
+            <p className="text-lg font-bold text-foreground">Select an assessment session</p>
             <p className="max-w-xs mt-2 text-sm">
-              Choose a campaign from the list to view its details and begin your assessments.
+              Choose a session from the list to view its details and begin your assessments.
             </p>
           </div>
         )}
       </div>
     </div>
+  </div>
   );
 }

@@ -11,7 +11,7 @@ export default function CandidateDashboardLayout({
   return (
     <RoleDashboardShell
       title="Candidate Portal"
-      subtitle="Campaign access, assessment progress, and support"
+      subtitle="Assessment access, progress, and support"
       contentWidth="wide"
       navItems={[
         {
@@ -20,8 +20,8 @@ export default function CandidateDashboardLayout({
           icon: LayoutDashboard,
         },
         {
-          href: "/candidate-dashboard/my-campaigns/",
-          label: "My Campaigns",
+          href: "/candidate-dashboard/my-assessments/",
+          label: "My Assessments",
           icon: BriefcaseBusiness,
         },
         {
