@@ -42,6 +42,7 @@ export function HiringManagerCampaignsList() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadCampaigns = async (force = false) => {
+    const startTime = Date.now();
     setIsRefreshing(true);
     setError(null);
     try {
@@ -55,6 +56,13 @@ export function HiringManagerCampaignsList() {
           : "Campaigns could not be loaded."
       );
     } finally {
+      if (force) {
+        const elapsedTime = Date.now() - startTime;
+        const minSpin = 800; // ms to ensure smooth spin
+        if (elapsedTime < minSpin) {
+          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
+        }
+      }
       setIsRefreshing(false);
     }
   };
@@ -77,7 +85,7 @@ export function HiringManagerCampaignsList() {
           variant="outline"
           onClick={() => loadCampaigns(true)}
           disabled={isRefreshing}
-          className="w-fit"
+          className="w-fit hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           Refresh
@@ -171,7 +179,7 @@ export function HiringManagerCampaignsList() {
                 <div className="flex justify-end pt-2">
                   <Button
                     variant="outline"
-                    className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs font-medium text-slate-100 hover:bg-white/[0.05] group-hover:border-primary/30"
+                    className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs font-medium text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors group-hover:border-primary/30"
                     asChild
                   >
                     <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}>

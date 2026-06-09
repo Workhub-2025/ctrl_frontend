@@ -38,7 +38,7 @@ export default function HelpSupportPage() {
             <CardDescription>Questions about the recruitment process.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full" variant="outline" asChild>
+            <Button className="w-full hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/10 dark:hover:!text-white transition-colors" variant="outline" asChild>
               <a href="mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query">Send Email</a>
             </Button>
           </CardContent>

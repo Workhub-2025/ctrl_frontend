@@ -174,15 +174,27 @@ export default function ClientDashboardPage() {
   }, [accessCodes, hiringManagers, summary?.seats.limit]);
 
   const loadDashboard = async (force = false) => {
+    const startTime = Date.now();
     setLoading(true);
-    const overview = await getClientOverview(force);
-
-    setSummary(overview.summary);
-    setCampaigns(overview.campaigns);
-    setAccessCodes(overview.accessCodes);
-    setHiringManagers(overview.hiringManagers);
     setError(null);
-    setLoading(false);
+    try {
+      const overview = await getClientOverview(force);
+      setSummary(overview.summary);
+      setCampaigns(overview.campaigns);
+      setAccessCodes(overview.accessCodes);
+      setHiringManagers(overview.hiringManagers);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Client dashboard could not be loaded");
+    } finally {
+      if (force) {
+        const elapsedTime = Date.now() - startTime;
+        const minSpin = 800; // ms to ensure smooth spin
+        if (elapsedTime < minSpin) {
+          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
+        }
+      }
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -337,7 +349,7 @@ export default function ClientDashboardPage() {
           ) : null
         }
         action={
-          <Button type="button" variant="outline" className="h-9 border-border hover:bg-muted dark:border-white/10 dark:hover:bg-white/5" onClick={() => void loadDashboard(true)} disabled={loading}>
+          <Button type="button" variant="outline" className="h-9 border-border hover:!bg-white/10 hover:!text-white dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors" onClick={() => void loadDashboard(true)} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin text-primary" : ""}`} />
             Refresh
           </Button>
@@ -482,7 +494,7 @@ export default function ClientDashboardPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto h-10 border-white/10 hover:bg-white/5 hover:text-white"
+                    className="w-full sm:w-auto h-10 border-white/10 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
                     onClick={() => {
                       if (seat.type === "occupied") {
                         setSelectedSeat(seat);
@@ -602,7 +614,7 @@ export default function ClientDashboardPage() {
                       variant="outline"
                       disabled={reviewingId === campaign.id}
                       onClick={() => reviewCampaign(campaign.id, "rejected")}
-                      className="border-red-500/20 hover:border-red-500/50 hover:bg-red-500/10 text-red-500 gap-2 font-semibold bg-transparent"
+                      className="border-red-500/20 hover:!border-red-500/50 hover:!bg-red-500/10 hover:!text-red-400 text-red-500 gap-2 font-semibold bg-transparent transition-colors"
                     >
                       <XCircle className="h-4 w-4" />
                       Reject
@@ -641,7 +653,7 @@ export default function ClientDashboardPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full border-white/10 hover:bg-white/5 gap-2"
+                  className="w-full border-white/10 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white gap-2 transition-colors"
                   onClick={() => void refreshSeatCode(selectedSeat)}
                   disabled={!selectedSeat.accessCode || codeBusy === selectedSeat.label}
                 >

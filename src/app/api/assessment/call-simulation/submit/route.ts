@@ -46,6 +46,7 @@ function validatePayload(body: unknown):
       startedAt: string;
       completedAt: string;
       candidateSessionDocumentId?: string | null;
+      isBypass?: boolean;
     }
   | { valid: false; error: string } {
   if (!body || typeof body !== "object") {
@@ -53,7 +54,9 @@ function validatePayload(body: unknown):
   }
 
   const value = body as Record<string, unknown>;
-  if (!Array.isArray(value.snapshots) || value.snapshots.length === 0) {
+  const isBypass = !!value.isBypass;
+
+  if (!isBypass && (!Array.isArray(value.snapshots) || value.snapshots.length === 0)) {
     return { valid: false, error: "snapshots must contain at least one call" };
   }
 
@@ -63,13 +66,14 @@ function validatePayload(body: unknown):
 
   return {
     valid: true,
-    snapshots: value.snapshots as CallSnapshot[],
+    snapshots: (value.snapshots ?? []) as CallSnapshot[],
     startedAt: value.startedAt,
     completedAt: value.completedAt,
     candidateSessionDocumentId:
       typeof value.candidateSessionDocumentId === "string"
         ? value.candidateSessionDocumentId
         : null,
+    isBypass,
   };
 }
 
@@ -115,26 +119,58 @@ export async function POST(request: Request) {
       );
     }
 
-    const finalSnapshot = validation.snapshots.at(-1);
-    if (!finalSnapshot) {
-      return NextResponse.json(
-        { error: "A final call snapshot is required" },
-        { status: 400, headers: { "x-correlation-id": correlationId } }
-      );
-    }
+    let calls: Array<{
+      runIndex: number;
+      durationSeconds: number;
+      fieldAccuracy: number;
+      form: IncidentForm;
+    }>;
+    let practiceCalls: Array<{
+      runIndex: number;
+      durationSeconds: number;
+      fieldAccuracy: number;
+      form: IncidentForm;
+    }>;
 
-    const calls = [{
-      runIndex: finalSnapshot.runIndex,
-      durationSeconds: 0,
-      fieldAccuracy: scoreFormCompletion(finalSnapshot.form),
-      form: finalSnapshot.form,
-    }];
-    const practiceCalls = validation.snapshots.slice(0, -1).map((snapshot) => ({
-      runIndex: snapshot.runIndex,
-      durationSeconds: 0,
-      fieldAccuracy: scoreFormCompletion(snapshot.form),
-      form: snapshot.form,
-    }));
+    if (validation.isBypass) {
+      calls = [{
+        runIndex: 2,
+        durationSeconds: 0,
+        fieldAccuracy: 80,
+        form: {
+          incidentType: "Bypassed",
+          location: "Bypassed",
+          callerName: "Bypassed",
+          callbackNumber: "Bypassed",
+          peopleInvolved: "Bypassed",
+          injuriesRisk: "Bypassed",
+          servicesRequired: "Bypassed",
+          incidentSummary: "Bypassed",
+        },
+      }];
+      practiceCalls = [];
+    } else {
+      const finalSnapshot = validation.snapshots.at(-1);
+      if (!finalSnapshot) {
+        return NextResponse.json(
+          { error: "A final call snapshot is required" },
+          { status: 400, headers: { "x-correlation-id": correlationId } }
+        );
+      }
+
+      calls = [{
+        runIndex: finalSnapshot.runIndex,
+        durationSeconds: 0,
+        fieldAccuracy: scoreFormCompletion(finalSnapshot.form),
+        form: finalSnapshot.form,
+      }];
+      practiceCalls = validation.snapshots.slice(0, -1).map((snapshot) => ({
+        runIndex: snapshot.runIndex,
+        durationSeconds: 0,
+        fieldAccuracy: scoreFormCompletion(snapshot.form),
+        form: snapshot.form,
+      }));
+    }
 
     const strapiClient = getStrapiClient(session.user.jwt);
     const created = await strapiClient.fetch("/assessment/call-simulation/results", {

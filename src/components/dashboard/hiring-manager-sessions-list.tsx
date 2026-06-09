@@ -59,6 +59,7 @@ export function HiringManagerSessionsList() {
   });
 
   const loadSessions = async (force = false) => {
+    const startTime = Date.now();
     setIsRefreshing(true);
     setError(null);
     try {
@@ -88,6 +89,13 @@ export function HiringManagerSessionsList() {
           : "Sessions could not be loaded."
       );
     } finally {
+      if (force) {
+        const elapsedTime = Date.now() - startTime;
+        const minSpin = 800; // ms to ensure smooth spin
+        if (elapsedTime < minSpin) {
+          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
+        }
+      }
       setIsRefreshing(false);
     }
   };
@@ -204,7 +212,7 @@ export function HiringManagerSessionsList() {
                 </p>
               </div>
             </div>
-            <Badge className="rounded-md border-none bg-indigo-500/15 px-3 py-1 text-xs font-semibold text-indigo-400">
+            <Badge variant="outline" className="rounded-md border-none bg-indigo-500/15 px-3 py-1 text-xs font-semibold text-indigo-400 pointer-events-none">
               One code per session
             </Badge>
           </div>
@@ -339,7 +347,7 @@ export function HiringManagerSessionsList() {
           variant="outline"
           onClick={() => loadSessions(true)}
           disabled={isRefreshing}
-          className="w-fit"
+          className="w-fit hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           Refresh
@@ -435,7 +443,7 @@ export function HiringManagerSessionsList() {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedSession(session)}
-                      className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:bg-white/[0.05] hover:text-white px-3"
+                      className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white px-3 transition-colors"
                     >
                       <Eye className="mr-1.5 h-3.5 w-3.5" />
                       View details

@@ -123,6 +123,7 @@ export default function CallSimulationTest({
   const [audioDuration, setAudioDuration] = useState(0);
   const [reviewTimeLeft, setReviewTimeLeft] = useState(REVIEW_SECONDS);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isBypassed, setIsBypassed] = useState(false);
 
   const currentRun = useMemo(() => {
     return runs[currentRunIndex] ?? fallbackRuns[currentRunIndex] ?? fallbackRuns[0];
@@ -193,6 +194,14 @@ export default function CallSimulationTest({
     setForm(emptyForm);
     setReviewTimeLeft(REVIEW_SECONDS);
     setPhase('running');
+  }, []);
+
+  const handleBypass = useCallback(() => {
+    if (!startedAtRef.current) {
+      startedAtRef.current = new Date().toISOString();
+    }
+    setIsBypassed(true);
+    setPhase('submitting');
   }, []);
 
   const closeAssessment = useCallback(() => {
@@ -274,6 +283,7 @@ export default function CallSimulationTest({
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
             candidateSessionDocumentId,
+            isBypass: isBypassed,
           }),
         });
 
@@ -299,7 +309,7 @@ export default function CallSimulationTest({
     return () => {
       cancelled = true;
     };
-  }, [candidateSessionDocumentId, phase]);
+  }, [candidateSessionDocumentId, phase, isBypassed]);
 
   return (
     <AssessmentGameShell
@@ -328,6 +338,13 @@ export default function CallSimulationTest({
           >
             Start Assessment
             <Play className="ml-2 h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            className="mt-4 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            onClick={handleBypass}
+          >
+            Bypass uncompleted assessment
           </Button>
         </div>
       )}
@@ -358,7 +375,7 @@ export default function CallSimulationTest({
               <p className="mt-1">Use your judgement. The form will not suggest what the answer should be.</p>
             </div>
           </div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button size="lg" className="h-12" onClick={() => beginRun(0)}>
               Start practice call
               <Play className="ml-2 h-4 w-4" />
@@ -370,6 +387,14 @@ export default function CallSimulationTest({
               onClick={() => setPhase('landing')}
             >
               Back
+            </Button>
+            <Button
+              size="lg"
+              variant="ghost"
+              className="h-12 text-muted-foreground hover:text-foreground hover:bg-muted/50 sm:ml-auto"
+              onClick={handleBypass}
+            >
+              Bypass uncompleted assessment
             </Button>
           </div>
         </div>

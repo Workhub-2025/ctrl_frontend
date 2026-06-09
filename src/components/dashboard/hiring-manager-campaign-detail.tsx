@@ -40,12 +40,15 @@ export function HiringManagerCampaignDetailView({
   const [campaign, setCampaign] = useState<HiringManagerCampaignDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<CampaignSession | null>(null);
 
   const loadCampaign = useCallback(async (force = false) => {
+    const startTime = Date.now();
     if (!force) setIsLoading(true);
+    else setIsRefreshing(true);
     setError(null);
     try {
       const data = await HiringManagerPortalClientService.getCampaignDetail(campaignId, { force });
@@ -62,7 +65,15 @@ export function HiringManagerCampaignDetailView({
           : "Campaign could not be loaded."
       );
     } finally {
+      if (force) {
+        const elapsedTime = Date.now() - startTime;
+        const minSpin = 800; // ms to ensure smooth spin
+        if (elapsedTime < minSpin) {
+          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
+        }
+      }
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, [campaignId]);
 
@@ -134,7 +145,7 @@ export function HiringManagerCampaignDetailView({
       <div className="space-y-4">
         <Button
           variant="outline"
-          className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
+          className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
           asChild
         >
           <Link href="/hiring-manager-dashboard/campaigns/">
@@ -155,7 +166,7 @@ export function HiringManagerCampaignDetailView({
         <div className="space-y-3">
           <Button
             variant="outline"
-            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
+            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
             asChild
           >
             <Link href="/hiring-manager-dashboard/campaigns/">
@@ -188,9 +199,10 @@ export function HiringManagerCampaignDetailView({
           <Button
             variant="outline"
             onClick={() => loadCampaign(true)}
-            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
+            disabled={isRefreshing}
+            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
           >
-            <RefreshCw className="mr-2 h-4 w-4" />
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
           </Button>
           <Button
@@ -300,7 +312,7 @@ export function HiringManagerCampaignDetailView({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:bg-white/[0.06] hover:text-white"
+                  className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
                   onClick={() => setSelectedSession(session)}
                 >
                   <Eye className="mr-1.5 h-3.5 w-3.5" />

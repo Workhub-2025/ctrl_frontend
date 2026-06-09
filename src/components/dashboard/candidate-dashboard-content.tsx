@@ -250,10 +250,6 @@ function AssessmentListItem({ item, step }: { item: any; step: number }) {
             : "bg-card border-border shadow-md hover:shadow-lg hover:border-primary/40 dark:bg-[#0b1329]/40 dark:border-white/10"
         }`}
       >
-        {/* Subtle hover overlay glow */}
-        {!item.isCompleted && (
-          <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-primary/5 blur-xl pointer-events-none" />
-        )}
 
         {/* Step Indicator / Icon */}
         <div
@@ -270,7 +266,7 @@ function AssessmentListItem({ item, step }: { item: any; step: number }) {
         <div className="flex-1 min-w-0 pt-1">
           <div className="flex flex-wrap gap-2 items-center justify-between mb-1">
             <h4 className="font-bold text-foreground text-lg tracking-tight">{item.title}</h4>
-            <Badge className="text-xs uppercase tracking-wider font-semibold rounded-md border border-white/5 bg-white/[0.04] text-slate-400 px-2 py-0.5">
+            <Badge variant="outline" className="text-xs uppercase tracking-wider font-semibold rounded-md border border-white/5 bg-white/[0.04] text-slate-400 px-2 py-0.5 pointer-events-none">
               Assessment {step}
             </Badge>
           </div>
@@ -329,6 +325,7 @@ export function CandidateDashboardContent() {
 
   const loadApplications = useCallback(async (options?: { force?: boolean }) => {
     const isManualRefresh = !!options?.force;
+    const startTime = Date.now();
     if (isManualRefresh) setIsRefreshing(true);
     else setIsLoading(true);
     setLoadError("");
@@ -350,6 +347,13 @@ export function CandidateDashboardContent() {
       console.error("[CandidateDashboard] Failed to load applications:", applicationError);
       setLoadError("We could not load your assessments. Please refresh or try again shortly.");
     } finally {
+      if (isManualRefresh) {
+        const elapsedTime = Date.now() - startTime;
+        const minSpin = 800; // ms to ensure smooth complete spin
+        if (elapsedTime < minSpin) {
+          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
+        }
+      }
       setIsLoading(false);
       setIsRefreshing(false);
     }
@@ -441,19 +445,19 @@ export function CandidateDashboardContent() {
 
   return (
     <div className="max-w-7xl space-y-6">
-      {(!selectedApplicationKey || !showDetailOnMobile) && (
+      <div className={selectedApplicationKey ? "hidden lg:block" : "block"}>
         <HiringManagerPageHeader
           eyebrow="My Assessments"
           title="My Assessments"
           description="View and manage your active assessment sessions and progress."
           icon={Briefcase}
         />
-      )}
+      </div>
 
       <div className="flex flex-col lg:flex-row min-h-[calc(100vh-6rem)] w-full gap-0 lg:gap-6 animate-in fade-in duration-500">
         {/* LEFT PANE: ASSESSMENT LIST (Master) */}
         <div
-          className={`w-full lg:w-[400px] xl:w-[460px] 2xl:w-[520px] shrink-0 flex flex-col gap-4 ${
+          className={`w-full lg:w-[400px] xl:w-[460px] 2xl:w-[520px] shrink-0 flex flex-col gap-4 lg:sticky lg:top-[5.5rem] lg:self-start lg:max-h-[calc(100vh-8rem)] ${
             showListOnMobile ? "block" : "hidden lg:flex"
           }`}
         >
@@ -482,7 +486,7 @@ export function CandidateDashboardContent() {
               size="icon"
               onClick={() => void loadApplications({ force: true })}
               disabled={isRefreshing}
-              className="h-8 w-8 rounded-full hover:bg-white/5"
+              className="h-8 w-8 rounded-full hover:!bg-white/10 hover:!text-white text-slate-400 transition-colors"
               title="Refresh"
             >
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
@@ -544,16 +548,13 @@ export function CandidateDashboardContent() {
       <div className={`flex-1 flex flex-col min-w-0 ${showDetailOnMobile ? "block" : "hidden lg:flex"}`}>
         {currentApplication ? (
           <div className="flex-1 bg-card border border-border dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-right-4 lg:slide-in-from-bottom-4 duration-300">
-            {/* Decorative glows inside details */}
-            <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 h-40 w-40 rounded-full bg-indigo-500/5 blur-3xl pointer-events-none" />
 
             {/* Detail Header */}
             <div className="relative p-6 sm:p-8 border-b border-border dark:border-white/10 dark:bg-[#0b1220]/20 bg-white/[0.02]">
               {/* Mobile Back Button */}
               <Button
                 variant="ghost"
-                className="lg:hidden mb-4 -ml-2 text-slate-400 hover:text-foreground hover:bg-white/5"
+                className="lg:hidden mb-4 -ml-2 text-slate-400 hover:!text-white hover:!bg-white/10 transition-colors"
                 onClick={() => setSelectedApplicationKey(null)}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" /> Back to list
@@ -561,7 +562,7 @@ export function CandidateDashboardContent() {
 
               <div className="flex flex-col gap-3.5 relative z-10">
                 <div>
-                  <Badge className={statusClassNames[currentApplication.status]}>
+                  <Badge variant="outline" className={`${statusClassNames[currentApplication.status]} pointer-events-none`}>
                     {currentApplication.status}
                   </Badge>
                 </div>
@@ -621,14 +622,14 @@ export function CandidateDashboardContent() {
 
                 {currentAssessmentItems.length > 0 ? (
                   <div className="grid gap-3 relative">
-                    {/* Vertical connecting line for visual journey effect */}
-                    <div className="absolute left-11 top-10 bottom-10 w-[2px] bg-border dark:bg-white/10 hidden sm:block z-0" />
+                     {/* Vertical connecting line for visual journey effect */}
+                     <div className="absolute left-11 top-10 bottom-10 w-[2px] bg-border dark:bg-white/10 hidden sm:block z-0" />
 
-                    {currentAssessmentItems.map((item, index) => (
-                      <div key={item.title} className="relative z-10">
-                        <AssessmentListItem item={item} step={index + 1} />
-                      </div>
-                    ))}
+                     {currentAssessmentItems.map((item, index) => (
+                       <div key={item.title} className="relative z-10">
+                         <AssessmentListItem item={item} step={index + 1} />
+                       </div>
+                     ))}
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-border bg-transparent p-8 text-center text-slate-400">
@@ -649,7 +650,7 @@ export function CandidateDashboardContent() {
                   <CardContent className="px-5 pb-5">
                     <Button
                       variant="outline"
-                      className="bg-background dark:bg-transparent border-white/10 shadow-sm hover:bg-white/5 transition-colors font-semibold rounded-lg h-10"
+                      className="bg-background dark:bg-transparent border-white/10 shadow-sm hover:!bg-white/10 hover:!text-white transition-colors font-semibold rounded-lg h-10"
                       asChild
                     >
                       <a href="mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query">

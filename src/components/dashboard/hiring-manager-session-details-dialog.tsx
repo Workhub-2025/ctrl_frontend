@@ -139,7 +139,7 @@ export function HiringManagerSessionDetailsDialog({
                                       <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground dark:hover:bg-white/[0.04]"
+                                        className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:!text-white hover:!bg-white/10 dark:hover:!bg-white/[0.08] transition-colors"
                                         aria-label="Candidate actions"
                                       >
                                         <MoreVertical className="h-4 w-4" />
@@ -178,15 +178,15 @@ export function HiringManagerSessionDetailsDialog({
                           </div>
 
                           <div className="flex items-center justify-end gap-2">
-                            {resultsHref && (
-                              <Button
-                                variant="outline"
-                                className="h-9 rounded-md border-border bg-card px-3 text-xs text-foreground hover:bg-muted dark:border-white/10 dark:bg-[#08101d] dark:hover:bg-white/[0.05]"
-                                asChild
-                              >
-                                <Link href={resultsHref}>View results</Link>
-                              </Button>
-                            )}
+                             {resultsHref && (
+                               <Button
+                                 variant="outline"
+                                 className="h-9 rounded-md border-border bg-card px-3 text-xs text-foreground hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:bg-[#08101d] dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
+                                 asChild
+                               >
+                                 <Link href={resultsHref}>View results</Link>
+                               </Button>
+                             )}
                           </div>
                         </div>
 

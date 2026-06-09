@@ -168,7 +168,7 @@ export default function CandidateDashboardOverviewPage() {
 
         <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto space-y-6">
           <div className="space-y-4">
-            <Badge className="border-primary/30 bg-primary/15 text-primary px-3.5 py-1 text-xs font-semibold rounded-lg shadow-sm">
+            <Badge variant="outline" className="border-primary/30 bg-primary/15 text-primary px-3.5 py-1 text-xs font-semibold rounded-lg shadow-sm pointer-events-none">
               Welcome back, {displayName.split(" ")[0]}
             </Badge>
             <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
@@ -241,7 +241,7 @@ export default function CandidateDashboardOverviewPage() {
                 : "/candidate-dashboard/my-assessments";
 
               return (
-                <Card key={app.documentId || app.candidateCode} className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl hover:dark:border-white/30">
+                <Card key={app.documentId || app.candidateCode} className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-primary to-blue-500" />
                   <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/5 blur-xl pointer-events-none" />
                   
@@ -251,7 +251,7 @@ export default function CandidateDashboardOverviewPage() {
                           <CardTitle className="text-xl font-bold line-clamp-1">{app.campaign?.name || "Assessment"}</CardTitle>
                           <CardDescription className="text-sm mt-1 text-slate-400 truncate">{app.campaign?.jobRole || "Role"}</CardDescription>
                         </div>
-                        <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0 px-2.5 py-0.5 font-semibold rounded-lg">
+                        <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0 px-2.5 py-0.5 font-semibold rounded-lg pointer-events-none">
                            {mapPortalStatus(app)}
                         </Badge>
                     </div>
@@ -301,9 +301,9 @@ export default function CandidateDashboardOverviewPage() {
                       </div>
                     )}
 
-                    <Button className="w-full gap-2 font-semibold shadow-md" asChild>
+                    <Button className="group w-full gap-2 font-semibold shadow-md" asChild>
                       <Link href={assessmentHref}>
-                        Continue Assessment <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        Continue Assessment <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                       </Link>
                     </Button>
                   </CardContent>
@@ -333,7 +333,7 @@ export default function CandidateDashboardOverviewPage() {
             <h2 className="text-2xl font-bold text-foreground">How It Works</h2>
             <p className="text-sm text-slate-400">Your step-by-step guide to completing the assessment process.</p>
           </div>
-          <Badge className="w-fit border-primary/20 bg-primary/15 px-3.5 py-1 text-primary font-semibold rounded-lg shadow-sm">
+          <Badge variant="outline" className="w-fit border-primary/20 bg-primary/15 px-3.5 py-1 text-primary font-semibold rounded-lg shadow-sm pointer-events-none">
             <Route className="mr-1.5 h-3.5 w-3.5" />
             Candidate Journey
           </Badge>

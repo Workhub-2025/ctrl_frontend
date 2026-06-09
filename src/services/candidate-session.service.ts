@@ -85,8 +85,12 @@ export class CandidateSessionService {
       return myApplicationsInFlight;
     }
 
+    const path = options?.force
+      ? `${this.BASE_PATH}/me?_t=${Date.now()}`
+      : `${this.BASE_PATH}/me`;
+
     myApplicationsInFlight = fetchApi
-      .get<CandidateApplicationsResponse>(`${this.BASE_PATH}/me`, {
+      .get<CandidateApplicationsResponse>(path, {
         cache: "no-store",
       })
       .then((response) => {

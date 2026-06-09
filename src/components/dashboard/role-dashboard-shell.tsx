@@ -106,7 +106,7 @@ function RoleDashboardHeader({
         {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full border border-border dark:border-white/10 hover:bg-muted dark:hover:bg-white/5 transition-colors">
+            <Button variant="ghost" size="icon" className="rounded-full border border-border dark:border-white/10 hover:!bg-muted dark:hover:!bg-white/10 hover:!text-foreground dark:hover:!text-white transition-colors">
               <User className="h-5 w-5" />
               <span className="sr-only">Open account menu</span>
             </Button>
