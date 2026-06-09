@@ -380,11 +380,11 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-2">
-                <Badge className="rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
-                  Hiring Candidate Report
+                <Badge className="pointer-events-none rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
+                  Candidate Report
                 </Badge>
                 {allAssessmentsCompleted && (
-                  <Badge className="rounded-md bg-emerald-500/10 text-emerald-400 border-none px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
+                  <Badge className="pointer-events-none rounded-md bg-emerald-500/10 text-emerald-400 border-none px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
                     <CheckCircle2 className="h-3 w-3" /> Fully Verified
                   </Badge>
                 )}

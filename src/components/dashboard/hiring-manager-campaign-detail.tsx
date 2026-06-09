@@ -330,7 +330,7 @@ export function HiringManagerCampaignDetailView({
           <CardTitle className="text-base font-bold text-white flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" /> Candidates in Campaign ({campaign.joinedCandidates.length})
           </CardTitle>
-          <Badge className="bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
+          <Badge className="pointer-events-none bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
             Real-time assessment results
           </Badge>
         </CardHeader>

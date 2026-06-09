@@ -110,21 +110,21 @@ export function HiringManagerCampaignsList() {
           campaigns.map((campaign) => (
             <Card
               key={campaign.id}
-              className="group rounded-[1.25rem] border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/40 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300 hover:-translate-y-0.5"
+              className="rounded-[1.25rem] border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45"
             >
               <CardContent className="space-y-4 p-5">
                 <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={getStatusTone(campaign.status)}>
+                    <Badge className={`${getStatusTone(campaign.status)} pointer-events-none`}>
                       {campaign.status}
                     </Badge>
-                    <Badge className="rounded-md border-white/5 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
+                    <Badge className="pointer-events-none rounded-md border-white/5 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
                       {campaign.deliveryMode}
                     </Badge>
                     {campaign.approvalStatus && (
                       <Badge
                         className={[
-                          "rounded-md border-none text-xs font-semibold px-2 py-0.5",
+                          "pointer-events-none rounded-md border-none text-xs font-semibold px-2 py-0.5",
                           campaign.approvalStatus === "Pending approval"
                             ? "bg-orange-500/10 text-orange-400"
                             : campaign.approvalStatus === "Rejected"
@@ -179,7 +179,7 @@ export function HiringManagerCampaignsList() {
                 <div className="flex justify-end pt-2">
                   <Button
                     variant="outline"
-                    className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs font-medium text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors group-hover:border-primary/30"
+                    className="group h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs font-medium text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors hover:border-primary/30"
                     asChild
                   >
                     <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}>
