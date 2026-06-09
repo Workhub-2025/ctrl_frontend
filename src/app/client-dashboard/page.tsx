@@ -319,123 +319,121 @@ export default function ClientDashboardPage() {
     : 0;
 
   return (
-    <div className="max-w-7xl space-y-6">
+    <div className="relative max-w-7xl space-y-6">
+      {/* Decorative background glows */}
+      <div className="absolute top-0 right-1/4 -z-10 h-72 w-72 rounded-full bg-primary/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/3 left-1/4 -z-10 h-96 w-96 rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
+
       <HiringManagerPageHeader
         eyebrow="Client workspace"
         title={summary?.client?.name ?? "Client Portal"}
         description="Review hiring-manager capacity, campaign approvals, and candidate progression from one place."
         icon={Building2}
-        stats={[
-          { icon: Users, label: "Seat oversight" },
-          { icon: ClipboardCheck, label: "Campaign approvals" },
-          { icon: ShieldCheck, label: "Controlled access" },
-        ]}
         notice={
           error ? (
-            <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">
+            <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-200">
               {error}
             </p>
           ) : null
         }
         action={
-          <div className="grid w-full gap-3 sm:grid-cols-3 lg:grid-cols-1">
-            <HeaderMetric
-              icon={Users}
-              label="Seats used"
-              value={summary ? `${summary.seats.used}/${summary.seats.limit}` : "..."}
-            />
-            <HeaderMetric
-              icon={KeyRound}
-              label="Active codes"
-              value={summary?.availableAccessCodes ?? "..."}
-            />
-            <HeaderMetric
-              icon={ClipboardCheck}
-              label="Pending approvals"
-              value={summary?.campaignsPendingApproval ?? "..."}
-            />
-          </div>
+          <Button type="button" variant="outline" className="h-9 border-border hover:bg-muted dark:border-white/10 dark:hover:bg-white/5" onClick={() => void loadDashboard(true)} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin text-primary" : ""}`} />
+            Refresh
+          </Button>
         }
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
+        <Card className="relative overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl">
+          <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/5 blur-xl pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hiring Manager Seats</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-400">Hiring Manager Seats</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+              <Users className="h-4 w-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="pt-2">
+            <div className="text-3xl font-extrabold text-foreground">
               {summary ? `${summary.seats.used}/${summary.seats.limit}` : "..."}
             </div>
             <Progress value={seatPercent} className="mt-3 h-2 bg-muted dark:bg-white/10" />
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-3 text-xs text-slate-400">
               {summary?.seats.available ?? 0} seat{summary?.seats.available === 1 ? "" : "s"} available
             </p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
+        <Card className="relative overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl">
+          <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-cyan-500/5 blur-xl pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Available HM Codes</CardTitle>
-            <KeyRound className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-400">Available invites</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
+              <KeyRound className="h-4 w-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary?.availableAccessCodes ?? "..."}</div>
-            <p className="text-xs text-muted-foreground">Unused hiring-manager invite codes</p>
+          <CardContent className="pt-2">
+            <div className="text-3xl font-extrabold text-foreground">{summary?.availableAccessCodes ?? "..."}</div>
+            <p className="mt-3 text-xs text-slate-400">Unused hiring-manager invite codes</p>
           </CardContent>
         </Card>
 
-        <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
+        <Card className="relative overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl">
+          <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-orange-500/5 blur-xl pointer-events-none" />
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Campaign Approvals</CardTitle>
-            <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-400">Campaign Approvals</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-500/20 bg-orange-500/10 text-orange-400">
+              <ClipboardCheck className="h-4 w-4" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{summary?.campaignsPendingApproval ?? "..."}</div>
-            <p className="text-xs text-muted-foreground">Waiting for your decision</p>
+          <CardContent className="pt-2">
+            <div className="text-3xl font-extrabold text-foreground">{summary?.campaignsPendingApproval ?? "..."}</div>
+            <p className="mt-3 text-xs text-slate-400">Campaigns waiting for your review</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <Card className="relative overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl">
+        <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-border/50 dark:border-white/5 pb-5">
           <div>
-            <CardTitle>Hiring Managers</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl font-bold">Hiring Managers</CardTitle>
+            <CardDescription className="text-slate-400">
               Seat access and hiring-manager activity for this client.
             </CardDescription>
           </div>
-          <Badge className="w-fit rounded-md border-primary/20 bg-primary/10 text-primary hover:bg-primary/10">
+          <Badge className="w-fit rounded-lg border-primary/20 bg-primary/15 text-primary hover:bg-primary/20 px-3 py-1 font-semibold">
             {summary?.seats.available ?? 0} open seat{summary?.seats.available === 1 ? "" : "s"}
           </Badge>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {loading && (
-            <p className="text-sm text-muted-foreground">Loading hiring-manager seats...</p>
+            <p className="text-sm text-slate-400 flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" /> Loading hiring-manager seats...
+            </p>
           )}
           {!loading && seatSlots.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="rounded-2xl border border-dashed border-border bg-background/50 p-6 text-sm text-slate-400 dark:border-white/10 dark:bg-white/[0.01]">
               No hiring-manager seats are available.
             </div>
           )}
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-2">
             {seatSlots.map((seat) => (
               <div
                 key={seat.label}
-                className="rounded-xl border border-border bg-background p-4 shadow-sm transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-white/[0.03]"
+                className="relative overflow-hidden rounded-xl border border-border bg-background/50 p-5 shadow-sm transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1220]/50 hover:dark:border-white/30"
               >
                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={seat.type === "occupied" ? "rounded-md bg-primary text-primary-foreground" : "rounded-md border-border bg-card text-muted-foreground hover:bg-card"}>
+                      <Badge className={seat.type === "occupied" ? "rounded-lg bg-primary text-primary-foreground font-semibold px-2.5 py-0.5" : "rounded-lg border-border bg-card text-slate-400 hover:bg-card px-2.5 py-0.5"}>
                         {seat.label}
                       </Badge>
                       <Badge
                         className={
                           seat.type === "occupied"
-                            ? "rounded-md border-emerald-500/20 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/10"
-                            : "rounded-md border-cyan-500/20 bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/10"
+                            ? "rounded-lg border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/10 font-semibold px-2.5 py-0.5"
+                            : "rounded-lg border-cyan-500/20 bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/10 font-semibold px-2.5 py-0.5"
                         }
                       >
                         {seat.type === "occupied" ? "Occupied" : "Empty seat"}
@@ -444,13 +442,13 @@ export default function ClientDashboardPage() {
 
                     {seat.type === "occupied" ? (
                       <div className="space-y-1">
-                        <h2 className="break-words text-base font-semibold leading-snug text-foreground">
+                        <h2 className="break-words text-lg font-bold text-foreground">
                           {seat.manager.name}
                         </h2>
-                        <p className="break-words text-sm leading-5 text-muted-foreground">
+                        <p className="break-words text-sm text-slate-400">
                           {seat.manager.email}
                         </p>
-                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
                           <MiniPanel
                             label="Campaigns"
                             value={seat.manager.campaigns.length}
@@ -465,17 +463,17 @@ export default function ClientDashboardPage() {
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        <h2 className="text-base font-semibold leading-snug text-foreground">
+                        <h2 className="text-lg font-bold text-foreground">
                           {seat.accessCode ? "Access code ready" : "No active access code"}
                         </h2>
-                        <p className="text-sm leading-5 text-muted-foreground">
+                        <p className="text-sm text-slate-400">
                           {seat.accessCode
-                            ? `Expires ${formatDateTime(seat.accessCode.expiresAt)}`
+                             ? `Expires ${formatDateTime(seat.accessCode.expiresAt)}`
                             : "Generate a controlled access code for this seat."}
                         </p>
-                        <div className="mt-3 rounded-xl border border-border bg-card p-3 text-xs leading-5 text-muted-foreground dark:border-white/10 dark:bg-[#04070d]">
-                          <KeyRound className="mb-2 h-4 w-4 text-primary" />
-                          Codes expire after 7 days or immediately when refreshed.
+                        <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-muted/20 p-3 text-xs text-slate-400 dark:border-white/5 dark:bg-[#04070d]/40">
+                          <KeyRound className="h-4 w-4 text-primary shrink-0" />
+                          <span>Codes expire after 7 days or when refreshed.</span>
                         </div>
                       </div>
                     )}
@@ -484,7 +482,7 @@ export default function ClientDashboardPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto h-10 border-white/10 hover:bg-white/5 hover:text-white"
                     onClick={() => {
                       if (seat.type === "occupied") {
                         setSelectedSeat(seat);
@@ -508,73 +506,70 @@ export default function ClientDashboardPage() {
         </CardContent>
       </Card>
 
-      <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <Card className="relative overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl">
+        <div className="absolute -right-20 -bottom-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between border-b border-border/50 dark:border-white/5 pb-5">
           <div>
-            <CardTitle>Campaign Approval Queue</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl font-bold">Campaign Approval Queue</CardTitle>
+            <CardDescription className="text-slate-400">
               Choose whether new campaigns need client review before sessions can be created.
             </CardDescription>
           </div>
-          <div className="flex w-full flex-col gap-3 sm:w-auto sm:items-end">
-            <ApprovalModeControl
-              mode={summary?.client?.campaignApprovalMode ?? "require_approval"}
-              disabled={loading || approvalModeBusy || !summary?.client?.documentId}
-              onChange={(checked) => void updateApprovalMode(checked)}
-            />
-            <Button type="button" variant="outline" onClick={() => void loadDashboard(true)} disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </div>
+          <ApprovalModeControl
+            mode={summary?.client?.campaignApprovalMode ?? "require_approval"}
+            disabled={loading || approvalModeBusy || !summary?.client?.documentId}
+            onChange={(checked) => void updateApprovalMode(checked)}
+          />
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4 pt-6">
           {loading && (
-            <p className="text-sm text-muted-foreground">Loading campaign approvals...</p>
+            <p className="text-sm text-slate-400 flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" /> Loading campaign approvals...
+            </p>
           )}
           {!loading && pendingCampaigns.length === 0 && (
-            <div className="rounded-xl border border-dashed border-border bg-background p-5 text-sm leading-6 text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="rounded-2xl border border-dashed border-border bg-background/50 p-6 text-sm text-slate-400 dark:border-white/10 dark:bg-white/[0.01]">
               No campaigns are pending approval.
             </div>
           )}
           {pendingCampaigns.map((campaign) => (
             <div
               key={campaign.id}
-              className="rounded-xl border border-border bg-background p-4 shadow-sm transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-white/[0.03]"
+              className="rounded-xl border border-border bg-background/50 p-5 shadow-sm transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1220]/50 hover:dark:border-white/30"
             >
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
                 <div className="min-w-0 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className="rounded-md border-orange-500/20 bg-orange-500/10 text-orange-600 hover:bg-orange-500/10">
+                    <Badge className="rounded-lg border-orange-500/20 bg-orange-500/10 text-orange-400 hover:bg-orange-500/10 font-semibold px-2.5 py-0.5">
                       Pending approval
                     </Badge>
-                    <Badge className="rounded-md border-border bg-card text-xs text-muted-foreground hover:bg-card dark:border-white/10 dark:bg-white/[0.03]">
+                    <Badge className="rounded-lg border-border bg-card text-xs text-slate-400 hover:bg-card dark:border-white/5 dark:bg-white/[0.03] px-2.5 py-0.5">
                       {campaign.deliveryMode}
                     </Badge>
-                    <Badge className="rounded-md border-border bg-card text-xs text-muted-foreground hover:bg-card dark:border-white/10 dark:bg-white/[0.03]">
+                    <Badge className="rounded-lg border-border bg-card text-xs text-slate-400 hover:bg-card dark:border-white/5 dark:bg-white/[0.03] px-2.5 py-0.5">
                       {campaign.candidateCount} candidates
                     </Badge>
                   </div>
                   <div className="min-w-0 space-y-1">
-                    <h2 className="break-words text-base font-semibold leading-snug text-foreground">
+                    <h2 className="break-words text-lg font-bold text-foreground">
                       {campaign.name}
                     </h2>
-                    <p className="text-sm leading-5 text-muted-foreground">
+                    <p className="text-sm text-slate-400">
                       {campaign.role} | Created by {campaign.createdBy}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-border bg-card p-3 shadow-sm dark:border-white/10 dark:bg-[#04070d]">
-                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                  <div className="rounded-xl border border-border bg-card/60 p-4 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                       Assessment stack
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {campaign.assessmentStack.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">No assessments attached</span>
+                        <span className="text-xs text-slate-400">No assessments attached</span>
                       ) : (
                         campaign.assessmentStack.map((assessment) => (
                           <span
                             key={assessment}
-                            className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]"
+                            className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground dark:border-white/5 dark:bg-white/[0.04]"
                           >
                             {assessment}
                           </span>
@@ -584,13 +579,13 @@ export default function ClientDashboardPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-card p-3 shadow-sm dark:border-white/10 dark:bg-[#04070d]">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                      <AlertCircle className="h-4 w-4 text-orange-500" />
+                <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card/60 p-4 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                      <AlertCircle className="h-4 w-4 text-orange-400" />
                       Review required
                     </div>
-                    <p className="text-xs leading-5 text-muted-foreground">
+                    <p className="text-xs leading-relaxed text-slate-400">
                       Approving unlocks session creation for this campaign.
                     </p>
                   </div>
@@ -598,16 +593,18 @@ export default function ClientDashboardPage() {
                     <Button
                       disabled={reviewingId === campaign.id}
                       onClick={() => reviewCampaign(campaign.id, "approved")}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold"
                     >
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      <CheckCircle2 className="h-4 w-4" />
                       Approve
                     </Button>
                     <Button
                       variant="outline"
                       disabled={reviewingId === campaign.id}
                       onClick={() => reviewCampaign(campaign.id, "rejected")}
+                      className="border-red-500/20 hover:border-red-500/50 hover:bg-red-500/10 text-red-500 gap-2 font-semibold bg-transparent"
                     >
-                      <XCircle className="mr-2 h-4 w-4" />
+                      <XCircle className="h-4 w-4" />
                       Reject
                     </Button>
                   </div>
@@ -619,22 +616,23 @@ export default function ClientDashboardPage() {
       </Card>
 
       <Dialog open={Boolean(selectedSeat)} onOpenChange={(open) => !open && setSelectedSeat(null)}>
-        <DialogContent className="rounded-[1.25rem] border-border dark:border-white/10">
+        <DialogContent className="rounded-[1.25rem] border border-border dark:border-white/10 dark:bg-[#0a0f1d] max-w-md">
           {selectedSeat?.type === "empty" && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedSeat.label} Access Code</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-xl font-bold">{selectedSeat.label} Access Code</DialogTitle>
+                <DialogDescription className="text-slate-400">
                   Share this code with the hiring manager assigned to this seat.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="rounded-xl border border-border bg-muted/40 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-                  <p className="break-all font-mono text-lg font-semibold tracking-wide">
+              <div className="space-y-5 pt-3">
+                <div className="relative overflow-hidden rounded-xl border border-border bg-muted/40 p-5 dark:border-white/10 dark:bg-white/[0.02] shadow-inner">
+                  <div className="absolute top-0 right-0 h-16 w-16 bg-primary/10 blur-xl pointer-events-none" />
+                  <p className="break-all font-mono text-2xl font-bold tracking-widest text-primary text-center">
                     {selectedSeat.accessCode?.code ?? "No code available"}
                   </p>
                 </div>
-                <div className="grid gap-2 text-sm text-muted-foreground">
+                <div className="grid gap-1.5 text-xs text-slate-400">
                   <p>
                     Last refresh: {formatDateTime(selectedSeat.accessCode?.updatedAt ?? selectedSeat.accessCode?.createdAt)}
                   </p>
@@ -643,10 +641,11 @@ export default function ClientDashboardPage() {
                 <Button
                   type="button"
                   variant="outline"
+                  className="w-full border-white/10 hover:bg-white/5 gap-2"
                   onClick={() => void refreshSeatCode(selectedSeat)}
                   disabled={!selectedSeat.accessCode || codeBusy === selectedSeat.label}
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
+                  <RefreshCw className={`h-4 w-4 ${codeBusy === selectedSeat.label ? "animate-spin" : ""}`} />
                   {codeBusy === selectedSeat.label ? "Refreshing..." : "Refresh code"}
                 </Button>
               </div>
@@ -655,37 +654,37 @@ export default function ClientDashboardPage() {
           {selectedSeat?.type === "occupied" && (
             <>
               <DialogHeader>
-                <DialogTitle>{selectedSeat.manager.name}</DialogTitle>
-                <DialogDescription>{selectedSeat.manager.email}</DialogDescription>
+                <DialogTitle className="text-xl font-bold">{selectedSeat.manager.name}</DialogTitle>
+                <DialogDescription className="text-slate-400">{selectedSeat.manager.email}</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-5 pt-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border bg-muted/30 p-3 dark:border-white/10 dark:bg-white/[0.03]">
-                    <p className="text-xs text-muted-foreground">Campaigns</p>
-                    <p className="text-2xl font-semibold">{selectedSeat.manager.campaigns.length}</p>
+                  <div className="rounded-xl border border-border bg-muted/30 p-4 dark:border-white/10 dark:bg-white/[0.02] shadow-inner">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Campaigns</p>
+                    <p className="text-3xl font-extrabold text-foreground mt-1">{selectedSeat.manager.campaigns.length}</p>
                   </div>
-                  <div className="rounded-xl border border-border bg-muted/30 p-3 dark:border-white/10 dark:bg-white/[0.03]">
-                    <p className="text-xs text-muted-foreground">Candidates onboarded</p>
-                    <p className="text-2xl font-semibold">{selectedSeat.manager.candidatesOnboarded}</p>
+                  <div className="rounded-xl border border-border bg-muted/30 p-4 dark:border-white/10 dark:bg-white/[0.02] shadow-inner">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Onboarded</p>
+                    <p className="text-3xl font-extrabold text-foreground mt-1">{selectedSeat.manager.candidatesOnboarded}</p>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                   {selectedSeat.manager.campaigns.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No campaigns are attached to this hiring manager.</p>
+                    <p className="text-sm text-slate-400 text-center py-4">No campaigns are attached to this hiring manager.</p>
                   )}
                   {selectedSeat.manager.campaigns.map((campaign) => (
-                    <div key={campaign.documentId} className="rounded-xl border border-border p-3 dark:border-white/10">
+                    <div key={campaign.documentId} className="rounded-xl border border-border bg-background/40 p-4 transition-colors hover:border-primary/20 dark:border-white/5 dark:bg-white/[0.02] space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium">{campaign.name}</p>
-                          <p className="text-sm text-muted-foreground">{campaign.jobRole}</p>
+                        <div className="min-w-0">
+                          <p className="font-bold text-foreground truncate">{campaign.name}</p>
+                          <p className="text-xs text-slate-400 truncate">{campaign.jobRole}</p>
                         </div>
-                        <BriefcaseBusiness className="h-4 w-4 text-muted-foreground" />
+                        <BriefcaseBusiness className="h-4 w-4 text-primary shrink-0" />
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Badge variant="outline">{campaign.campaignStatus}</Badge>
-                        <Badge variant="secondary">{campaign.approvalStatus}</Badge>
-                        <Badge variant="secondary">{campaign.candidatesOnboarded} candidates</Badge>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-md text-slate-400 border-border dark:border-white/5">{campaign.campaignStatus}</Badge>
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-md text-slate-300 dark:bg-white/5">{campaign.approvalStatus}</Badge>
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 rounded-md text-slate-300 dark:bg-white/5">{campaign.candidatesOnboarded} candidates</Badge>
                       </div>
                     </div>
                   ))}
@@ -709,12 +708,12 @@ function HeaderMetric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
+    <div className="rounded-xl border border-border bg-background/50 p-3 shadow-inner transition-colors dark:border-white/5 dark:bg-[#0b1220]/40">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
         <Icon className="h-4 w-4 text-primary" />
       </div>
-      <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+      <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
     </div>
   );
 }
@@ -729,12 +728,12 @@ function MiniPanel({
   value: string | number;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-3 shadow-sm dark:border-white/10 dark:bg-[#04070d]">
+    <div className="rounded-xl border border-border bg-card/60 p-3 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
         <Icon className="h-4 w-4 text-primary" />
       </div>
-      <p className="mt-2 text-lg font-semibold text-foreground">{value}</p>
+      <p className="mt-1 text-lg font-bold text-foreground">{value}</p>
     </div>
   );
 }
@@ -751,13 +750,13 @@ function ApprovalModeControl({
   const isAutoApprove = mode === "auto_approve";
 
   return (
-    <div className="w-full rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/10 dark:bg-white/[0.03] sm:w-[320px]">
+    <div className="w-full rounded-xl border border-border bg-background/50 p-4 shadow-inner dark:border-white/10 dark:bg-[#0b1220]/40 sm:w-[320px]">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground">
+          <p className="text-sm font-semibold text-foreground">
             {isAutoApprove ? "Auto approve campaigns" : "Client reviews campaigns"}
           </p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          <p className="mt-1 text-xs leading-relaxed text-slate-400">
             Applies to campaigns created after this setting changes.
           </p>
         </div>

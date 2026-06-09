@@ -304,9 +304,7 @@ export const updateCurrentUserAction = async (id: string | number, data: UserUpd
         }
 
         const scopedData = isSelfUpdate ? data : enforceTenantWrite(data, authContext);
-        const updatedUser = isSelfUpdate
-            ? await UsersService.updateCurrentUser(scopedData)
-            : await UsersService.updateUser(id, scopedData);
+        const updatedUser = await UsersService.updateUser(id, scopedData);
 
         if (!updatedUser) {
             return {

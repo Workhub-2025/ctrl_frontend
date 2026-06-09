@@ -17,10 +17,6 @@ export default async function CreateHiringManagerCampaignPage() {
         title="Create campaign"
         description="Configure the campaign details, choose the assessment stack, and set the weighting before candidates join."
         icon={FolderPlus}
-        stats={[
-          { icon: ClipboardList, label: "Assessment stack" },
-          { icon: Weight, label: "Weighted scoring" },
-        ]}
         notice={
           error ? (
             <p className="max-w-3xl rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">

@@ -1,79 +1,58 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 
-type HiringManagerPageHeaderStat = {
-  icon: LucideIcon;
-  label: string;
-};
-
-type HiringManagerPageHeaderProps = {
+type PortalPageHeaderProps = {
   eyebrow: string;
   title: string;
   description: string;
   icon: LucideIcon;
-  stats?: HiringManagerPageHeaderStat[];
+  /** Optional single badge/action rendered to the right of the title row */
+  badge?: ReactNode;
+  /** Optional action button(s) aligned to the right of the header */
   action?: ReactNode;
+  /** Optional notice/alert rendered below the description */
   notice?: ReactNode;
 };
 
+/** Slim page-level header used across all portals (Client, HM, Candidate). */
 export function HiringManagerPageHeader({
   eyebrow,
   title,
   description,
   icon: Icon,
-  stats = [],
+  badge,
   action,
   notice,
-}: HiringManagerPageHeaderProps) {
+}: PortalPageHeaderProps) {
   return (
-    <section className="overflow-hidden rounded-[1.5rem] border border-primary/15 bg-card shadow-md shadow-primary/5 ring-1 ring-primary/5 dark:border-white/10 dark:bg-[#080c16] dark:shadow-black/20">
-      <div className="relative grid gap-0 lg:grid-cols-[1.4fr_0.8fr]">
-        <div className="relative z-10 space-y-5 p-6 sm:p-7">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
-              <Icon className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                {eyebrow}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Hiring Manager Portal
-              </p>
-            </div>
+    <section className="rounded-2xl border border-border bg-card px-6 py-5 shadow-sm dark:border-white/10 dark:bg-[#080c16]/80">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {/* Left: icon + text */}
+        <div className="flex items-start gap-4 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm mt-0.5">
+            <Icon className="h-4.5 w-4.5" />
           </div>
-
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold font-headline text-foreground sm:text-4xl lg:text-5xl">
-              {title}
-            </h1>
-            <p className="max-w-2xl text-base leading-relaxed text-muted-foreground">
+          <div className="min-w-0 space-y-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+              {eyebrow}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold text-foreground sm:text-2xl">
+                {title}
+              </h1>
+              {badge}
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground max-w-2xl">
               {description}
             </p>
+            {notice && <div className="pt-1">{notice}</div>}
           </div>
-
-          {stats.length > 0 && (
-            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-              {stats.map((stat) => (
-                <span
-                  key={stat.label}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 shadow-sm dark:border-white/5 dark:bg-white/[0.04]"
-                >
-                  <stat.icon className="h-4 w-4 text-primary" />
-                  {stat.label}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {notice}
         </div>
 
+        {/* Right: action */}
         {action && (
-          <div className="relative z-10 flex flex-col justify-end border-t border-border bg-muted/50 p-6 dark:border-white/5 dark:bg-white/[0.04] lg:border-l lg:border-t-0">
-            <div className="mt-auto flex flex-wrap items-center gap-2">
-              {action}
-            </div>
+          <div className="flex shrink-0 items-center gap-2 sm:pt-1">
+            {action}
           </div>
         )}
       </div>

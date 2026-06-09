@@ -24,10 +24,6 @@ export function ClientProductionPlaceholder({
         title={title}
         description={description}
         icon={icon}
-        stats={[
-          { icon: Construction, label: "In Production" },
-          { icon: ShieldCheck, label: "Client Portal" },
-        ]}
       />
 
       <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">

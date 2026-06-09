@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -13,10 +12,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowRight, Filter, RefreshCw, UserCheck, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Filter,
+  RefreshCw,
+  UserCheck,
+  Users,
+  Keyboard,
+  ClipboardList,
+  BrainCircuit,
+  PhoneCall,
+  FileQuestion,
+  CheckCircle2,
+  Clock3,
+  TrendingUp,
+} from "lucide-react";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
+  type HiringManagerAssessmentResult,
 } from "@/services/hiring-manager-portal-client.service";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
@@ -33,6 +47,8 @@ type CandidateRow = {
   completedAssessments: number;
   totalAssessments: number;
   completion: number;
+  results: HiringManagerAssessmentResult[];
+  assessmentStack: string[];
 };
 
 function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): CandidateRow[] {
@@ -74,6 +90,8 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
         completedAssessments,
         totalAssessments,
         completion,
+        results,
+        assessmentStack: candidate.assessmentStack ?? campaign.assessmentStack ?? [],
       });
     }
   }
@@ -105,6 +123,7 @@ export function HiringManagerCandidatesView() {
   const [campaigns, setCampaigns] = useState<HiringManagerCampaignDetail[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(null);
   const [campaignFilter, setCampaignFilter] = useState("all");
   const [sessionFilter, setSessionFilter] = useState("all");
   const [progressFilter, setProgressFilter] = useState("all");
@@ -115,6 +134,7 @@ export function HiringManagerCandidatesView() {
     try {
       const overview = await HiringManagerPortalClientService.getOverview({ force });
       setCampaigns(overview.campaignDetails);
+      setLastRefreshAt(Date.now());
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -155,28 +175,36 @@ export function HiringManagerCandidatesView() {
     [campaignFilter, candidates, progressFilter, sessionFilter]
   );
 
+  const stats = useMemo(() => {
+    let completed = 0;
+    let inProgress = 0;
+    let notStarted = 0;
+
+    for (const c of candidates) {
+      if (c.progress === "completed") completed++;
+      else if (c.progress === "in_progress") inProgress++;
+      else notStarted++;
+    }
+
+    return {
+      total: candidates.length,
+      completed,
+      inProgress,
+      notStarted,
+    };
+  }, [candidates]);
+
   return (
     <div className="max-w-7xl space-y-6">
       <HiringManagerPageHeader
-        eyebrow="Candidate view"
+        eyebrow="Candidate workspace"
         title="Candidates"
         description="All joined candidates across active campaigns, with assessment progress and report access."
         icon={Users}
-        stats={[
-          { icon: UserCheck, label: `${candidates.length} candidate${candidates.length === 1 ? "" : "s"}` },
-          { icon: Filter, label: `${filteredCandidates.length} shown` },
-          { icon: RefreshCw, label: "Manual refresh" },
-        ]}
-        action={
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => loadCandidates(true)}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
+        badge={
+          <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            {candidates.length} {candidates.length === 1 ? "candidate" : "candidates"}
+          </span>
         }
       />
 
@@ -186,7 +214,47 @@ export function HiringManagerCandidatesView() {
         </p>
       )}
 
-      <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
+      {/* Stats Summary Widget Row */}
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <Card className="border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full">
+            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">Total joined</span>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-white">{stats.total}</span>
+              <span className="text-xs text-slate-500">applicants</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-emerald-500/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full">
+            <span className="text-xs uppercase text-emerald-500/80 font-semibold tracking-wider">Completed</span>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-emerald-400">{stats.completed}</span>
+              <span className="text-xs text-slate-500">ready for review</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-orange-500/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full">
+            <span className="text-xs uppercase text-orange-500/80 font-semibold tracking-wider">In progress</span>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-orange-400">{stats.inProgress}</span>
+              <span className="text-xs text-slate-500">active sessions</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-slate-500/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full">
+            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">Not started</span>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-slate-300">{stats.notStarted}</span>
+              <span className="text-xs text-slate-500">awaiting start</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="rounded-lg border border-white/10 bg-[#0b1220]/50 backdrop-blur-md shadow-none">
         <CardContent className="grid gap-3 p-4 md:grid-cols-3">
           <FilterSelect
             label="Campaign"
@@ -219,7 +287,25 @@ export function HiringManagerCandidatesView() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs leading-5 text-muted-foreground">
+          {lastRefreshAt
+            ? `Last refresh: ${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(lastRefreshAt))}`
+            : "Not refreshed yet"}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => loadCandidates(true)}
+          disabled={isRefreshing}
+          className="w-fit"
+        >
+          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="grid gap-4">
         {filteredCandidates.length === 0 ? (
           <Card className="rounded-[1.25rem] border border-dashed border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#080c16]/50 dark:shadow-none">
             <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
@@ -232,48 +318,180 @@ export function HiringManagerCandidatesView() {
           filteredCandidates.map((candidate) => (
             <Card
               key={`${candidate.campaignId}-${candidate.candidateSessionId}`}
-              className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none"
+              className="group rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/40 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300"
             >
-              <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(220px,0.8fr)_auto] lg:items-center">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="break-words text-base font-semibold leading-snug text-white">
-                      {candidate.name}
-                    </h2>
-                    {candidate.status && (
-                      <Badge className="rounded-md border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
-                        {progressLabel(candidate.progress)}
-                      </Badge>
-                    )}
+              <CardContent className="space-y-4 p-5">
+                {/* Top row: info + view button */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="break-words text-base font-bold leading-snug text-white">
+                        {candidate.name}
+                      </h2>
+                      {candidate.status && (
+                        <Badge className={[
+                          "rounded-md border-none text-xs font-semibold px-2 py-0.5",
+                          candidate.progress === "completed"
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : candidate.progress === "in_progress"
+                              ? "bg-orange-500/10 text-orange-400"
+                              : "bg-slate-500/10 text-slate-400"
+                        ].join(" ")}>
+                          {progressLabel(candidate.progress)}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-1 break-words text-sm leading-5 text-slate-400">
+                      {candidate.email || "Email not available"}
+                    </p>
+                    <p className="mt-1.5 break-words text-xs leading-5 text-slate-500 font-medium">
+                      {candidate.campaignName} · {candidate.sessionName}
+                    </p>
                   </div>
-                  <p className="mt-1 break-words text-sm leading-5 text-slate-400">
-                    {candidate.email || "Email not available"}
-                  </p>
-                  <p className="mt-1 break-words text-xs leading-5 text-slate-500">
-                    {candidate.campaignName} · {candidate.sessionName}
-                  </p>
+                  <Button
+                    variant="outline"
+                    className="h-9 w-fit shrink-0 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs font-medium text-slate-100 hover:bg-white/[0.05] group-hover:border-primary/30"
+                    asChild
+                  >
+                    <Link href={`/hiring-manager-dashboard/candidates/${candidate.candidateSessionId}/?campaignId=${candidate.campaignId}&candidateSessionId=${candidate.candidateSessionId}`}>
+                      View results/report
+                      <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  </Button>
                 </div>
 
-                <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-                  <div className="flex items-center justify-between text-xs text-slate-300">
-                    <span>Completed assessments</span>
-                    <span className="font-medium text-white">
-                      {candidate.completedAssessments}/{candidate.totalAssessments}
+                {/* Full-width assessment completion pill track */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span className="font-medium">Assessments completed</span>
+                    <span className="font-semibold text-white tabular-nums">
+                      {candidate.completedAssessments} of {candidate.totalAssessments}
                     </span>
                   </div>
-                  <Progress value={candidate.completion} className="mt-3 h-2 bg-white/10" />
+                  <div className="flex gap-1.5">
+                    {Array.from({ length: candidate.totalAssessments || 1 }, (_, idx) => {
+                      const isDone = idx < (candidate.completedAssessments || 0);
+                      const assessmentName = candidate.assessmentStack?.[idx] ?? `Assessment ${idx + 1}`;
+                      return (
+                        <div
+                          key={idx}
+                          title={`${assessmentName}: ${isDone ? "Completed" : "Pending"}`}
+                          className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                            isDone
+                              ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
+                              : "bg-white/10 border border-white/5"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
 
-                <Button
-                  variant="outline"
-                  className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
-                  asChild
-                >
-                  <Link href={`/hiring-manager-dashboard/candidates/${candidate.candidateSessionId}/?campaignId=${candidate.campaignId}&candidateSessionId=${candidate.candidateSessionId}`}>
-                    View results/report
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                {/* Granular Assessment score grid */}
+                <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3 pt-4 border-t border-white/5">
+                  {(() => {
+                    const resultsMap = new Map(
+                      (candidate.results || []).map((r) => [r.assessment.toLowerCase(), r])
+                    );
+
+                    const displayList = (candidate.assessmentStack || []).map((stackName) => {
+                      const matchedResult = resultsMap.get(stackName.toLowerCase());
+                      if (matchedResult) {
+                        return {
+                          name: stackName,
+                          status: matchedResult.completedAt || matchedResult.numericScore !== null ? "completed" : "pending",
+                          result: matchedResult,
+                        };
+                      }
+                      return {
+                        name: stackName,
+                        status: "pending",
+                        result: null,
+                      };
+                    });
+
+                    const finalDisplayList = displayList.length > 0
+                      ? displayList
+                      : (candidate.results || []).map((r) => ({
+                          name: r.assessment,
+                          status: r.completedAt || r.numericScore !== null ? "completed" : "pending",
+                          result: r,
+                        }));
+
+                    return finalDisplayList.map((item, idx) => {
+                      const Icon = getAssessmentIcon(item.name);
+                      const isCompleted = item.status === "completed" && item.result;
+
+                      return (
+                        <div
+                          key={`${item.name}-${idx}`}
+                          className={[
+                            "relative flex flex-col justify-between rounded-xl border p-2.5 transition-all text-xs",
+                            isCompleted
+                              ? "border-white/10 bg-white/[0.02] dark:bg-white/[0.005]"
+                              : "border-dashed border-white/5 bg-transparent"
+                          ].join(" ")}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Icon className={["h-3.5 w-3.5 shrink-0", isCompleted ? "text-primary" : "text-slate-500"].join(" ")} />
+                              <span className="truncate font-semibold text-slate-200">
+                                {item.name}
+                              </span>
+                            </div>
+                            {isCompleted ? (
+                              <Badge className="h-4 px-1 text-[8px] font-semibold bg-green-500/10 text-green-400 border-none hover:bg-green-500/10">
+                                Done
+                              </Badge>
+                            ) : (
+                              <Badge className="h-4 px-1 text-[8px] font-semibold bg-amber-500/10 text-amber-400 border-none animate-pulse hover:bg-amber-500/10">
+                                Pending
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="mt-2.5">
+                            {isCompleted && item.result ? (
+                              <div className="space-y-1">
+                                <div className="flex items-baseline justify-between">
+                                  <span className="text-sm font-bold text-white">
+                                    {item.result.score}
+                                  </span>
+                                  {item.result.passed !== null && item.result.passed !== undefined && (
+                                    <span className={["text-[9px] font-bold tracking-wider", item.result.passed ? "text-green-400" : "text-red-400"].join(" ")}>
+                                      {item.result.passed ? "PASSED" : "FAILED"}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {item.name.toLowerCase().includes("typing") && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
+                                  <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1">
+                                    {typeof item.result.wpm === 'number' && (
+                                      <span><strong>{item.result.wpm}</strong> WPM</span>
+                                    )}
+                                    {typeof item.result.accuracy === 'number' && (
+                                      <span><strong>{Math.round(item.result.accuracy)}%</strong> Acc</span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {(item.name.toLowerCase().includes("prioriti") || item.name.toLowerCase().includes("order") || item.name.toLowerCase().includes("call") || item.name.toLowerCase().includes("audio")) && typeof item.result.durationSeconds === 'number' && (
+                                  <div className="flex gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1">
+                                    <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-500 italic min-h-[30px] flex items-center">
+                                Awaiting completion
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </CardContent>
             </Card>
           ))
@@ -281,6 +499,23 @@ export function HiringManagerCandidatesView() {
       </div>
     </div>
   );
+}
+
+function getAssessmentIcon(name: string) {
+  const lowercase = name.toLowerCase();
+  if (lowercase.includes("typing")) {
+    return Keyboard;
+  }
+  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
+    return ClipboardList;
+  }
+  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
+    return BrainCircuit;
+  }
+  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
+    return PhoneCall;
+  }
+  return FileQuestion;
 }
 
 function FilterSelect({

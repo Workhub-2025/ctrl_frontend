@@ -2,7 +2,7 @@
 
 import { ThemeProvider as NextThemeProvider, useTheme as useNextTheme } from "next-themes";
 
-type ThemeMode = "dark";
+type ThemeMode = "light" | "dark";
 
 export function ThemeProvider({
   children,
@@ -15,9 +15,8 @@ export function ThemeProvider({
       defaultTheme="dark"
       disableTransitionOnChange
       enableSystem={false}
-      forcedTheme="dark"
       storageKey="theme"
-      themes={["dark"]}
+      themes={["light", "dark"]}
     >
       {children}
     </NextThemeProvider>
@@ -25,12 +24,11 @@ export function ThemeProvider({
 }
 
 export function useTheme() {
-  const { setTheme } = useNextTheme();
-  const theme: ThemeMode = "dark";
+  const { theme, setTheme } = useNextTheme();
 
   return {
-    theme,
+    theme: (theme as ThemeMode) || "dark",
     setTheme: (nextTheme: ThemeMode) => setTheme(nextTheme),
-    toggle: () => setTheme("dark"),
+    toggle: () => setTheme(theme === "dark" ? "light" : "dark"),
   };
 }

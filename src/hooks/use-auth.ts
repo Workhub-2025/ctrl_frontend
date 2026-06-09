@@ -155,6 +155,7 @@ export function useAuth() {
             throw new Error('Authentication failed: wrong user or password');
         } catch (error) {
             console.error('Login error:', error);
+            setStatus('unauthenticated');
             throw error;
         }
     };

@@ -74,7 +74,7 @@ function RoleDashboardHeader({
   const displayEmail = userProfile?.email || user?.email;
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 min-w-0 items-center justify-between border-b border-border bg-background/95 px-3 backdrop-blur-xl transition-colors duration-300 dark:border-white/5 dark:bg-[#04070d]/95 sm:px-5 lg:px-6">
+    <header className="sticky top-0 z-20 flex h-16 min-w-0 items-center justify-between border-b border-border/80 bg-background/80 px-4 backdrop-blur-md transition-all duration-300 dark:border-white/5 dark:bg-[#02040a]/60 sm:px-6 lg:px-8 shadow-sm">
       {/* Sidebar Trigger & Title */}
       <div className="flex items-center gap-3 text-foreground">
         {!hideSidebar && <SidebarTrigger />}
@@ -106,7 +106,7 @@ function RoleDashboardHeader({
         {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button variant="ghost" size="icon" className="rounded-full border border-border dark:border-white/10 hover:bg-muted dark:hover:bg-white/5 transition-colors">
               <User className="h-5 w-5" />
               <span className="sr-only">Open account menu</span>
             </Button>
@@ -161,7 +161,7 @@ function RoleDashboardFrame({
     settings: accessibilitySettings,
     updateSettings: updateAccessibilitySettings,
     resetSettings: resetAccessibilitySettings,
-    backgroundClassName: accessibilityBackgroundClassName,
+    themeClassName: accessibilityThemeClassName,
   } = useAccessibilitySettings({ enabled: true });
   const contentWidthClass =
     contentWidth === "full"
@@ -175,7 +175,7 @@ function RoleDashboardFrame({
       <div
         className={cn(
           "flex min-h-screen w-full flex-col selection:bg-primary/30 transition-colors duration-300",
-          "ctrl-portal", accessibilityBackgroundClassName
+          "ctrl-portal", accessibilityThemeClassName
         )}
       >
         <RoleDashboardHeader
@@ -198,16 +198,16 @@ function RoleDashboardFrame({
       <div
         className={cn(
           "flex min-h-screen w-full flex-1 relative selection:bg-primary/30 transition-colors duration-300",
-          "ctrl-portal", accessibilityBackgroundClassName
+          "ctrl-portal", accessibilityThemeClassName
         )}
       >
       {/* Sidebar Section */}
-      <Sidebar className="border-r border-border dark:border-white/5 bg-background dark:bg-[#080c16] transition-colors duration-300">
+      <Sidebar className="border-r border-border dark:border-white/5 bg-white/70 dark:bg-[#02040a]/40 backdrop-blur-md transition-all duration-300">
         <SidebarHeader className="px-4 pt-4 group-data-[collapsible=icon]:px-2">
           {/* Sidebar Branding */}
           <Link
             href={navItems[0]?.href || "#"}
-            className="flex items-center gap-3 rounded-2xl border border-border dark:border-white/5 bg-muted/50 dark:bg-white/[0.02] px-3 py-3 transition-colors hover:bg-muted dark:hover:bg-white/[0.04]"
+            className="flex items-center gap-3 rounded-2xl border border-border dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] px-3 py-3 transition-all hover:bg-slate-100/50 dark:hover:bg-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 shadow-sm"
           >
             <img
               src="/assets/newlogo.png"
@@ -231,7 +231,7 @@ function RoleDashboardFrame({
                   asChild
                   isActive={pathname === item.href || pathname === `${item.href}/`}
                   tooltip={item.label}
-                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-colors duration-300"
+                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-all duration-300 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3"
                 >
                   <Link
                     href={item.href}

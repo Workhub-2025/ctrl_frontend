@@ -184,139 +184,146 @@ export function HiringManagerSessionsList() {
   };
 
   return (
-    <div className="space-y-4">
-      <Card className="overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
-        <CardHeader className="border-b border-border bg-muted/40 p-5 dark:border-white/5 dark:bg-white/[0.03]">
+    <div className="space-y-5">
+      <Card className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0b1329]/40 backdrop-blur-md shadow-2xl">
+        {/* Subtle glow effect */}
+        <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/15 blur-3xl" />
+        
+        <CardHeader className="border-b border-white/10 p-5 bg-white/[0.01]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-inner">
                 <KeyRound className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-lg text-foreground">Create session</CardTitle>
-                <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Create one access code for a campaign session. Multiple candidates can join the same session up to the limit you set.
+                <CardTitle className="text-lg font-bold text-white">Create assessment session</CardTitle>
+                <p className="mt-1 max-w-2xl text-xs text-slate-400">
+                  Create a unique access code for a campaign session. Multiple candidates can join the same session up to the limit you set.
                 </p>
               </div>
             </div>
-            <Badge className="rounded-full border-primary/20 bg-primary/10 px-3 py-1 text-xs text-primary hover:bg-primary/10">
+            <Badge className="rounded-md border-none bg-indigo-500/15 px-3 py-1 text-xs font-semibold text-indigo-400">
               One code per session
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="space-y-5 p-5">
           <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-          <div className="space-y-2">
-            <Label htmlFor="sessionCampaign">
-              Campaign
-            </Label>
-            <select
-              id="sessionCampaign"
-              value={draft.campaignDocumentId}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  campaignDocumentId: event.target.value,
-                }))
-              }
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {campaigns.length === 0 ? (
-                <option value="">No approved campaigns available</option>
-              ) : (
-                campaigns.map((campaign) => (
-                  <option key={campaign.id} value={campaign.documentId ?? ""}>
-                    {campaign.name}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="sessionName">
-              Session name
-            </Label>
-            <Input
-              id="sessionName"
-              value={draft.name}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, name: event.target.value }))
-              }
-              placeholder="e.g. Morning assessment"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="sessionCampaign" className="text-xs font-semibold text-slate-300">
+                Campaign
+              </Label>
+              <select
+                id="sessionCampaign"
+                value={draft.campaignDocumentId}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    campaignDocumentId: event.target.value,
+                  }))
+                }
+                className="h-10 w-full rounded-md border border-white/10 bg-white/[0.03] px-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {campaigns.length === 0 ? (
+                  <option value="" className="bg-[#0b1329]">No approved campaigns available</option>
+                ) : (
+                  campaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.documentId ?? ""} className="bg-[#0b1329]">
+                      {campaign.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sessionName" className="text-xs font-semibold text-slate-300">
+                Session name
+              </Label>
+              <Input
+                id="sessionName"
+                value={draft.name}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, name: event.target.value }))
+                }
+                placeholder="e.g. Morning assessment"
+                className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary"
+              />
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="candidateLimit" className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-primary" />
-              Candidate limit
-            </Label>
-            <Input
-              id="candidateLimit"
-              type="number"
-              min="1"
-              value={draft.candidateLimit}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  candidateLimit: event.target.value,
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="sessionStartsAt" className="flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-primary" />
-              Starts at
-            </Label>
-            <Input
-              id="sessionStartsAt"
-              type="datetime-local"
-              value={draft.startsAt}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, startsAt: event.target.value }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="sessionLocation" className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-primary" />
-              Location
-            </Label>
-            <Input
-              id="sessionLocation"
-              value={draft.location}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, location: event.target.value }))
-              }
-              placeholder="Optional session location"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="candidateLimit" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                <Users className="h-4 w-4 text-indigo-400" />
+                Candidate limit
+              </Label>
+              <Input
+                id="candidateLimit"
+                type="number"
+                min="1"
+                value={draft.candidateLimit}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    candidateLimit: event.target.value,
+                  }))
+                }
+                className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sessionStartsAt" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                <CalendarClock className="h-4 w-4 text-indigo-400" />
+                Starts at
+              </Label>
+              <Input
+                id="sessionStartsAt"
+                type="datetime-local"
+                value={draft.startsAt}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, startsAt: event.target.value }))
+                }
+                className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100 focus-visible:ring-primary"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="sessionLocation" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                <MapPin className="h-4 w-4 text-indigo-400" />
+                Location
+              </Label>
+              <Input
+                id="sessionLocation"
+                value={draft.location}
+                onChange={(event) =>
+                  setDraft((current) => ({ ...current, location: event.target.value }))
+                }
+                placeholder="Optional session location"
+                className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-border pt-5 dark:border-white/5 sm:flex-row sm:items-center sm:justify-between">
-            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              Only client-approved campaigns can create sessions. After creation, copy the generated session code and share it with candidates for this session.
+          <div className="flex flex-col gap-3 border-t border-white/5 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-xl text-xs text-slate-400">
+              Only approved campaigns can generate active sessions. Copy and share the generated session code with candidates to allow them to join.
             </p>
             <Button
               type="button"
               onClick={createSession}
               disabled={isCreating || campaigns.length === 0}
-              className="w-full sm:w-auto"
+              className="h-10 rounded-xl bg-gradient-to-r from-primary to-indigo-500 font-bold text-white hover:opacity-95 shadow-[0_0_15px_rgba(99,102,241,0.15)] disabled:opacity-50"
             >
               <Plus className="mr-2 h-4 w-4" />
               {isCreating ? "Creating..." : "Create session"}
             </Button>
           </div>
           {createError && (
-            <p className="rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs leading-5 text-red-700 dark:text-red-100">
+            <p className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs leading-5 text-red-400">
               {createError}
             </p>
           )}
           {createdMessage && (
-            <p className="rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs leading-5 text-emerald-700 dark:text-emerald-100">
+            <p className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs leading-5 text-emerald-400">
               {createdMessage}
             </p>
           )}
@@ -343,10 +350,10 @@ export function HiringManagerSessionsList() {
         </p>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {sessions.length === 0 ? (
-          <Card className="rounded-[1.25rem] border border-dashed border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#080c16]/50 dark:shadow-none">
-            <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
+          <Card className="rounded-[1.25rem] border border-dashed border-white/10 bg-[#080c16]/50 shadow-none">
+            <CardContent className="p-6 text-sm leading-6 text-slate-400">
               No sessions have been created yet. Create a session to generate a candidate access code.
             </CardContent>
           </Card>
@@ -354,58 +361,65 @@ export function HiringManagerSessionsList() {
           sessions.map((session) => (
             <Card
               key={session.id}
-              className="rounded-[1.25rem] border border-border bg-card shadow-sm transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none"
+              className="group rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/45 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300"
             >
-              <CardContent className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+              <CardContent className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="min-w-0 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={getStatusTone(session.status)}>
+                    <Badge className={[
+                      "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
+                      getStatusTone(session.status)
+                    ].join(" ")}>
                       {session.status}
                     </Badge>
-                    <Badge className="rounded-md border-border bg-background text-xs text-muted-foreground hover:bg-background dark:border-white/10 dark:bg-white/[0.03]">
+                    <Badge className="rounded-md border-white/10 bg-white/[0.03] text-[10px] text-slate-300 font-semibold hover:bg-white/[0.03]">
                       {session.type}
                     </Badge>
                   </div>
                   <div>
-                    <h2 className="break-words text-base font-semibold leading-snug text-foreground">
+                    <h2 className="break-words text-base font-bold leading-snug text-white">
                       {session.campaign}
                     </h2>
-                    <p className="mt-2 break-words text-sm leading-5 text-muted-foreground">
+                    <p className="mt-1.5 break-words text-xs leading-5 text-slate-400 font-medium">
                       {session.date} · {session.location}
                     </p>
                   </div>
-                  <p className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-sm leading-6 text-muted-foreground dark:border-white/5 dark:bg-white/[0.03]">
-                    <Users className="h-4 w-4 text-primary" />
+                  <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-slate-300 font-medium">
+                    <Users className="h-3.5 w-3.5 text-primary" />
                     {session.candidateCount} of {session.candidateLimit} candidates joined
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-border bg-background p-4 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
-                  <p className="text-xs font-medium uppercase text-muted-foreground">
-                    Session code
+                <div className="rounded-xl border border-white/10 bg-[#0b1329]/25 p-4 shadow-sm backdrop-blur-sm">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Session Access Code
                   </p>
-                  <div className="mt-3 rounded-lg border border-border bg-card p-3 dark:border-white/10 dark:bg-[#04070d]">
-                    <p className="text-xs uppercase text-muted-foreground">
+                  <div className="mt-2.5 rounded-lg border border-white/15 bg-black/45 p-3">
+                    <p className="text-[9px] font-semibold uppercase text-indigo-400 tracking-wider">
                       {session.accessMode}
                     </p>
-                    <p className="mt-2 break-all font-mono text-sm font-semibold text-foreground">
+                    <p className="mt-1 break-all font-mono text-sm font-bold text-white tracking-wider">
                       {session.accessValue}
                     </p>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-3">
+                  <div className="mt-3.5 flex flex-wrap gap-2">
                     <Button
                       type="button"
+                      size="sm"
                       onClick={() => navigator.clipboard?.writeText(session.accessValue)}
+                      className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 flex-1"
                     >
-                      <Copy className="mr-2 h-4 w-4" />
+                      <Copy className="mr-1.5 h-3.5 w-3.5" />
                       Copy code
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
+                      size="sm"
                       onClick={() => setSelectedSession(session)}
+                      className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:bg-white/[0.05] hover:text-white px-3"
                     >
-                      <Eye className="mr-2 h-4 w-4" />
+                      <Eye className="mr-1.5 h-3.5 w-3.5" />
                       View details
                     </Button>
                   </div>
@@ -430,6 +444,7 @@ export function HiringManagerSessionsList() {
                 `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${selectedCampaignDetail.id}&candidateSessionId=${candidate.id}`
             : undefined
         }
+        assessmentStack={selectedCampaignDetail?.assessmentStack}
       />
     </div>
   );

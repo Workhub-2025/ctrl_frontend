@@ -6,7 +6,7 @@ import { useReducedMotion } from "framer-motion";
 export const ACCESSIBILITY_STORAGE_KEY = "ctrl-accessibility-settings";
 
 export type AccessibilitySettings = {
-  background: "dark-blue" | "black" | "soft-light" | "light-blue";
+  theme: "dark-blue" | "black" | "soft-cream" | "light-blue";
   textSize: "default" | "large" | "extra-large";
   lineSpacing: "default" | "comfortable" | "spacious";
   contrast: "default" | "high";
@@ -18,7 +18,7 @@ export type AccessibilitySettings = {
 };
 
 export const defaultAccessibilitySettings: AccessibilitySettings = {
-  background: "dark-blue",
+  theme: "dark-blue",
   textSize: "default",
   lineSpacing: "default",
   contrast: "default",
@@ -29,18 +29,18 @@ export const defaultAccessibilitySettings: AccessibilitySettings = {
   saturation: "default",
 };
 
-export const accessibilityBackgroundClassName: Record<AccessibilitySettings["background"], string> = {
-  "dark-blue": "bg-[#000a1f]",
+export const accessibilityThemeClassName: Record<AccessibilitySettings["theme"], string> = {
+  "dark-blue": "bg-[#02040a]",
   black: "bg-black",
-  "soft-light": "bg-[#f8fbff]",
+  "soft-cream": "bg-[#fdfaf2]",
   "light-blue": "bg-[#eaf6ff]",
 };
 
 function sanitiseSettings(input: Partial<AccessibilitySettings>): AccessibilitySettings {
   const next = { ...defaultAccessibilitySettings, ...input };
 
-  if (!(next.background in accessibilityBackgroundClassName)) {
-    next.background = defaultAccessibilitySettings.background;
+  if (!(next.theme in accessibilityThemeClassName)) {
+    next.theme = defaultAccessibilitySettings.theme;
   }
 
   return next;
@@ -70,7 +70,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
     window.localStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(settings));
 
     const root = document.documentElement;
-    root.dataset.ctrlBackground = settings.background;
+    root.dataset.ctrlTheme = settings.theme;
     root.dataset.ctrlTextSize = settings.textSize;
     root.dataset.ctrlLineSpacing = settings.lineSpacing;
     root.dataset.ctrlContrast = settings.contrast;
@@ -79,6 +79,16 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
     root.dataset.ctrlReadingFont = settings.readingFont ? "enabled" : "default";
     root.dataset.ctrlUnderlineLinks = settings.underlineLinks ? "enabled" : "default";
     root.dataset.ctrlSaturation = settings.saturation;
+
+    // Synchronise root dark/light class
+    const isLight = settings.theme === "soft-cream" || settings.theme === "light-blue";
+    if (isLight) {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    } else {
+      root.classList.remove("light");
+      root.classList.add("dark");
+    }
   }, [enabled, settings, reduceMotion]);
 
   return {
@@ -87,6 +97,6 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
       setSettings((current) => sanitiseSettings({ ...current, ...patch })),
     resetSettings: () => setSettings(defaultAccessibilitySettings),
     reduceMotion,
-    backgroundClassName: accessibilityBackgroundClassName[settings.background],
+    themeClassName: accessibilityThemeClassName[settings.theme],
   };
 }

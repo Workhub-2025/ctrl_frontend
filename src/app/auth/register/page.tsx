@@ -47,7 +47,7 @@ function UnifiedAuthContent() {
     updateSettings: updateAccessibilitySettings,
     resetSettings: resetAccessibilitySettings,
     reduceMotion,
-    backgroundClassName: bgColor,
+    themeClassName: bgColor,
   } = useAccessibilitySettings();
   
   const [formData, setFormData] = useState<SignUpData>({

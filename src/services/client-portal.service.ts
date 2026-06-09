@@ -158,7 +158,6 @@ function normalizeCampaign(campaign: RawCampaign): ClientCampaignApprovalItem {
     status: formatStatus(campaign.campaignStatus),
     approvalStatus: formatApprovalStatus(campaign.approvalStatus),
     deliveryMode: formatMode(campaign.assessmentMode) as "In-person" | "Remote" | "Hybrid",
-    completion: 0,
     candidateCount: campaign.vacancyCount ?? candidateSessions.length,
     sessions: assessmentSessions.length,
     assessmentStack,

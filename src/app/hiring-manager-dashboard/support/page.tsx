@@ -12,10 +12,6 @@ export default function HiringManagerSupportPage() {
         title="Support"
         description="Get help with sessions, campaign setup, assessment guidance, and access requests."
         icon={LifeBuoy}
-        stats={[
-          { icon: ShieldCheck, label: "Access guidance" },
-          { icon: MailPlus, label: "Request support" },
-        ]}
       />
 
       <div className="grid gap-3 lg:grid-cols-3">

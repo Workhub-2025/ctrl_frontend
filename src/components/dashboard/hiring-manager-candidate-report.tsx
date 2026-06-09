@@ -6,7 +6,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, ChevronDown, Clock3, ThumbsDown, ThumbsUp } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronDown,
+  Clock3,
+  ThumbsDown,
+  ThumbsUp,
+  Keyboard,
+  ClipboardList,
+  BrainCircuit,
+  PhoneCall,
+  FileQuestion,
+  ShieldCheck
+} from "lucide-react";
 import {
   HiringManagerPortalClientService,
   type HiringManagerAssessmentResult,
@@ -112,10 +125,32 @@ function getAssessmentKey(value: string) {
 }
 
 function getRating(overallScore: number) {
-  if (overallScore >= 75) return { label: "Strong", tone: "text-emerald-300" };
-  if (overallScore >= 55) return { label: "Move forward", tone: "text-sky-300" };
-  if (overallScore >= 35) return { label: "Hold", tone: "text-amber-300" };
-  return { label: "Review carefully", tone: "text-red-300" };
+  if (overallScore >= 75) {
+    return {
+      label: "Strong Match",
+      tone: "text-emerald-400",
+      badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_15px_rgba(16,185,129,0.06)]"
+    };
+  }
+  if (overallScore >= 55) {
+    return {
+      label: "Move Forward",
+      tone: "text-sky-400",
+      badge: "bg-sky-500/10 text-sky-400 border-sky-500/25 shadow-[0_0_15px_rgba(14,165,233,0.06)]"
+    };
+  }
+  if (overallScore >= 35) {
+    return {
+      label: "Hold / Under Review",
+      tone: "text-amber-400",
+      badge: "bg-amber-500/10 text-amber-400 border-amber-500/25 shadow-[0_0_15px_rgba(245,158,11,0.06)]"
+    };
+  }
+  return {
+    label: "Review Carefully",
+    tone: "text-red-400",
+    badge: "bg-red-500/10 text-red-400 border-red-500/25 shadow-[0_0_15px_rgba(239,68,68,0.06)]"
+  };
 }
 
 function buildAssessmentRows(
@@ -176,20 +211,37 @@ function formatDuration(seconds?: number | null) {
 function getAssessmentStatus(row: AssessmentReportRow) {
   if (row.score === null) {
     return {
-      label: "Not completed",
-      className: "border-amber-400/20 bg-amber-400/10 text-amber-100",
+      label: "Awaiting Completion",
+      className: "bg-amber-500/10 text-amber-400 border-none hover:bg-amber-500/10",
     };
   }
   if (row.result?.passed === false) {
     return {
-      label: "Completed - below threshold",
-      className: "border-red-400/20 bg-red-400/10 text-red-100",
+      label: "Review Required",
+      className: "bg-red-500/10 text-red-400 border-none hover:bg-red-500/10",
     };
   }
   return {
     label: "Completed",
-    className: "border-emerald-400/20 bg-emerald-400/10 text-emerald-100",
+    className: "bg-emerald-500/10 text-emerald-400 border-none hover:bg-emerald-500/10",
   };
+}
+
+function getAssessmentIcon(name: string) {
+  const lowercase = name.toLowerCase();
+  if (lowercase.includes("typing")) {
+    return Keyboard;
+  }
+  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
+    return ClipboardList;
+  }
+  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
+    return BrainCircuit;
+  }
+  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
+    return PhoneCall;
+  }
+  return FileQuestion;
 }
 
 export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId }: CandidateReportProps) {
@@ -262,7 +314,11 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   const rating = getRating(overallScore);
   const displayedRating = allAssessmentsCompleted
     ? rating
-    : { label: "Pending Completion", tone: "text-amber-300" };
+    : {
+        label: "Pending Completion",
+        tone: "text-amber-300",
+        badge: "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-none"
+      };
 
   if (isLoading) {
     return (
@@ -296,55 +352,84 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
   return (
     <div className="max-w-7xl space-y-6">
-      <section className="flex flex-col gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
-          <Button
-            variant="outline"
-            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
-            asChild
-          >
-            <Link href="/hiring-manager-dashboard/candidates/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to candidates
-            </Link>
-          </Button>
-          <Badge className="rounded-md border-sky-400/20 bg-sky-400/10 px-2.5 py-1 text-xs text-sky-100 hover:bg-sky-400/10">
-            Candidate report
-          </Badge>
-          <div>
-            <h1 className="break-words text-xl font-semibold leading-7 text-white sm:text-2xl">
-              {candidate.name}
-            </h1>
-            <p className="mt-2 break-words text-sm leading-6 text-slate-300">
-              {candidate.email || "Email not available"} · {campaign.name}
-            </p>
+      {/* Premium Header Card */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md p-6 shadow-xl">
+        <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+        
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-4">
+            <Button
+              variant="outline"
+              className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+              asChild
+            >
+              <Link href="/hiring-manager-dashboard/candidates/">
+                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+                Back to candidates
+              </Link>
+            </Button>
+            
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center gap-2">
+                <Badge className="rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
+                  Hiring Candidate Report
+                </Badge>
+                {allAssessmentsCompleted && (
+                  <Badge className="rounded-md bg-emerald-500/10 text-emerald-400 border-none px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Fully Verified
+                  </Badge>
+                )}
+              </div>
+              <div>
+                <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl">
+                  {candidate.name}
+                </h1>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+                  <span className="font-semibold text-slate-300">{candidate.email || "No email listed"}</span>
+                  <span className="text-slate-600">•</span>
+                  <span>Campaign: <strong className="text-slate-200">{campaign.name}</strong></span>
+                  {candidate.sessionName && (
+                    <>
+                      <span className="text-slate-600">•</span>
+                      <span>Session: <strong className="text-slate-200">{candidate.sessionName}</strong></span>
+                    </>
+                  )}
+                  {campaign.role && (
+                    <>
+                      <span className="text-slate-600">•</span>
+                      <span>Role: <strong className="text-slate-200">{campaign.role}</strong></span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {allAssessmentsCompleted && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[300px]">
-            <Button
-              type="button"
-              onClick={() => setDecision("Reject")}
-              className="h-10 rounded-md bg-red-500 px-3 text-sm font-medium text-white hover:bg-red-400"
-            >
-              <ThumbsDown className="mr-2 h-4 w-4" />
-              Reject
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setDecision("Move forward")}
-              className="h-10 rounded-md bg-emerald-400 px-3 text-sm font-medium text-slate-950 hover:bg-emerald-300"
-            >
-              <ThumbsUp className="mr-2 h-4 w-4" />
-              Move forward
-            </Button>
-          </div>
-        )}
-      </section>
+          {allAssessmentsCompleted && (
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <Button
+                type="button"
+                onClick={() => setDecision("Reject")}
+                className="h-10 rounded-xl bg-red-500/10 border border-red-500/20 px-4 text-sm font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+              >
+                <ThumbsDown className="mr-2 h-4 w-4" />
+                Reject Candidate
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setDecision("Move forward")}
+                className="h-10 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 px-5 text-sm font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_20px_rgba(52,211,153,0.2)]"
+              >
+                <ThumbsUp className="mr-2 h-4 w-4 text-slate-950" />
+                Pass & Move Forward
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {!allAssessmentsCompleted && (
-        <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm leading-6 text-amber-100">
+        <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm leading-6 text-amber-200">
           This candidate has not completed all assigned assessments yet. Results
           can be reviewed as they arrive, but final hiring actions are hidden
           until every selected assessment is complete.
@@ -352,153 +437,226 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
       )}
 
       {decision && (
-        <p className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-slate-200">
-          Decision selected: <span className="font-medium text-white">{decision}</span>
-        </p>
+        <div className={[
+          "rounded-xl border px-4 py-3 flex items-center justify-between text-sm shadow-sm",
+          decision === "Move forward"
+            ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
+            : "border-red-500/20 bg-red-500/5 text-red-300"
+        ].join(" ")}>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5" />
+            <span>Candidate decision finalized: <strong className="text-white uppercase font-bold tracking-wider">{decision}</strong></span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDecision(null)}
+            className="text-slate-400 hover:text-white hover:bg-white/10 h-7 text-[11px]"
+          >
+            Reset decision
+          </Button>
+        </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Overall rating</p>
-            <p className={`mt-2 text-2xl font-semibold ${displayedRating.tone}`}>
-              {displayedRating.label}
+      {/* Stats Summary Cards Row */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
+          <CardContent className="p-5">
+            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Overall Recommendation
+            </span>
+            <div className="mt-3 flex items-center gap-3">
+              <span className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1 text-sm font-semibold ${displayedRating.badge}`}>
+                {displayedRating.label}
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-slate-400">
+              Based on overall cumulative score from weighted assessments.
             </p>
           </CardContent>
         </Card>
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Weighted score</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {overallScore}%
+
+        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
+          <CardContent className="p-5">
+            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider flex items-center justify-between">
+              <span>Weighted Score</span>
+              <span className="text-sm font-bold text-white">{overallScore}%</span>
+            </span>
+            <div className="mt-4">
+              <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full transition-all duration-500"
+                  style={{ width: `${overallScore}%` }}
+                />
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-slate-400">
+              Composite score weighted by custom campaign settings.
             </p>
-            <Progress value={overallScore} className="mt-3 h-2 bg-white/10" />
           </CardContent>
         </Card>
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Assessments completed</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {completedRows.length}/{rows.length || 1}
-            </p>
+
+        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
+          <CardContent className="p-5">
+            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+              Assessments completed
+            </span>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-white">{completedRows.length}</span>
+              <span className="text-xs text-slate-500">of {rows.length || 1} completed</span>
+            </div>
+            <div className="mt-3.5 flex gap-1.5">
+              {rows.map((row, idx) => {
+                const isDone = row.score !== null;
+                return (
+                  <div
+                    key={`${row.name}-${idx}`}
+                    title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
+                    className={`h-2 flex-1 rounded-full transition-all duration-300 ${
+                      isDone
+                        ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
+                        : "bg-white/10 border border-white/5"
+                    }`}
+                  />
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-        <CardHeader className="border-b border-white/10 p-4">
-          <CardTitle className="text-base text-white">Assessment breakdown</CardTitle>
+      {/* Assessment Breakdown List */}
+      <Card className="rounded-2xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-2xl">
+        <CardHeader className="border-b border-white/10 p-5">
+          <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-primary" /> Assessment breakdown
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 p-4">
+        <CardContent className="space-y-5 p-5">
           {rows.map((row) => {
+            const Icon = getAssessmentIcon(row.name);
             const status = getAssessmentStatus(row);
             const typingRuns = getTypingRuns(row.result?.metrics);
             const scoreValue = row.score ?? 0;
             const hasBreakdown =
               typingRuns.length > 0 ||
-              row.result?.wpm !== null && row.result?.wpm !== undefined;
+              (row.result?.wpm !== null && row.result?.wpm !== undefined);
             const breakdownOpen = openBreakdownKey === row.name;
 
             return (
               <div
                 key={row.name}
-                className="space-y-4 rounded-lg border border-white/10 bg-white/[0.03] p-4"
+                className="space-y-4 rounded-xl border border-white/10 bg-[#0b1329]/20 p-5 hover:border-primary/30 transition-all duration-300"
               >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="break-words text-base font-semibold text-white">
-                        {row.name}
-                      </p>
-                      <Badge className={status.className}>{status.label}</Badge>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border ${row.score !== null ? 'border-primary/20 bg-primary/5 text-primary' : 'border-white/10 bg-white/5 text-slate-500'}`}>
+                      <Icon className="h-5 w-5" />
                     </div>
-                    <p className="mt-2 text-xs text-slate-500">
-                      Completed: {formatCompletion(row.result?.completedAt)}
-                    </p>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="break-words text-base font-bold text-white">
+                          {row.name}
+                        </h3>
+                        <Badge className={[
+                          "rounded-md border-none text-xs font-semibold px-2 py-0.5",
+                          status.className
+                        ].join(" ")}>
+                          {status.label}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500 flex items-center gap-1">
+                        <Clock3 className="h-3 w-3" />
+                        Completed: {formatCompletion(row.result?.completedAt)}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[470px]">
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Assessment score</p>
-                      <p className="mt-1 text-lg font-semibold text-white">
+                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                      <p className="text-xs text-slate-500 font-medium">Assessment Score</p>
+                      <p className="mt-1 text-lg font-bold text-white">
                         {row.score === null ? "Pending" : `${row.score}%`}
                       </p>
                     </div>
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Duration</p>
-                      <p className="mt-1 text-lg font-semibold text-white">
+                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                      <p className="text-xs text-slate-500 font-medium">Duration</p>
+                      <p className="mt-1 text-lg font-bold text-white">
                         {formatDuration(row.result?.durationSeconds)}
                       </p>
                     </div>
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Overall contribution</p>
-                      <p className="mt-1 text-lg font-semibold text-sky-200">
+                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                      <p className="text-xs text-slate-500 font-medium">Overall Contribution</p>
+                      <p className="mt-1 text-lg font-bold text-indigo-400">
                         {row.score === null ? "Pending" : formatPercent(row.contribution)}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_260px]">
-                  <div className="space-y-3 rounded-md border border-white/10 bg-[#08101d] p-3">
-                    <div className="flex items-center justify-between gap-3 text-xs text-slate-400">
-                      <span>Score against assessment weighting</span>
-                      <span className="text-slate-300">
-                        {row.score === null ? "Awaiting submission" : `${row.score}% of ${row.weight}%`}
+                <div className="grid gap-4 md:grid-cols-12 pt-3 border-t border-white/5">
+                  <div className="space-y-2 md:col-span-8 rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="text-slate-400 font-medium">Score against assessment weighting</span>
+                      <span className="text-slate-200 font-semibold">
+                        {row.score === null ? "Awaiting submission" : `${row.score}% of ${row.weight}% weight`}
                       </span>
                     </div>
-                    <Progress value={scoreValue} className="h-2 bg-white/10" />
+                    <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary/80 to-indigo-500 rounded-full transition-all duration-300"
+                        style={{ width: `${scoreValue}%` }}
+                      />
+                    </div>
                   </div>
 
-                  <div className="grid gap-2 lg:grid-cols-1">
-                    <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
-                      <p className="text-xs text-slate-500">Result status</p>
-                      <div className="mt-2 flex items-center gap-2 text-sm text-slate-200">
-                        {row.score !== null ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-                        ) : (
-                          <Clock3 className="h-4 w-4 text-amber-300" />
-                        )}
-                        {row.score !== null ? "Submitted" : "Awaiting completion"}
-                      </div>
+                  <div className="md:col-span-4 rounded-lg border border-white/5 bg-white/[0.01] p-3 flex flex-col justify-between">
+                    <p className="text-xs text-slate-500 font-medium">Result status</p>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-slate-200 font-semibold">
+                      {row.score !== null ? (
+                        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />
+                      ) : (
+                        <Clock3 className="h-4.5 w-4.5 text-amber-400 animate-pulse" />
+                      )}
+                      {row.score !== null ? "Submitted & Verified" : "Awaiting candidate"}
                     </div>
                   </div>
                 </div>
 
                 {hasBreakdown && (
-                  <div className="space-y-3">
+                  <div className="space-y-3 pt-2">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setOpenBreakdownKey(breakdownOpen ? null : row.name)}
-                      className="h-9 rounded-md border-white/10 bg-[#08101d] px-3 text-xs text-slate-100 hover:bg-white/[0.05]"
+                      className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:bg-white/[0.05] hover:text-white"
                     >
                       <ChevronDown
-                        className={`mr-2 h-4 w-4 transition-transform ${breakdownOpen ? "rotate-180" : ""}`}
+                        className={`mr-1.5 h-3.5 w-3.5 transition-transform ${breakdownOpen ? "rotate-180" : ""}`}
                       />
-                      {breakdownOpen ? "Hide breakdown" : "View breakdown"}
+                      {breakdownOpen ? "Hide performance breakdown" : "View performance breakdown"}
                     </Button>
 
                     {breakdownOpen && (
-                      <div className="rounded-md border border-white/10 bg-[#08101d] p-3">
+                      <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
                         {row.result?.wpm !== null && row.result?.wpm !== undefined && (
-                          <div className="grid gap-3 md:grid-cols-3">
-                            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                              <p className="text-xs text-slate-500">Average WPM</p>
-                              <p className="mt-1 text-xl font-semibold text-white">
-                                {row.result.wpm}
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                              <p className="text-xs text-slate-500 font-medium">Average Speed</p>
+                              <p className="mt-1.5 text-2xl font-black text-white">
+                                {row.result.wpm} <span className="text-xs font-semibold text-slate-400">WPM</span>
                               </p>
                             </div>
-                            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                              <p className="text-xs text-slate-500">Average accuracy</p>
-                              <p className="mt-1 text-xl font-semibold text-white">
-                                {row.result.accuracy ?? "Pending"}%
+                            <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                              <p className="text-xs text-slate-500 font-medium">Average Accuracy</p>
+                              <p className="mt-1.5 text-2xl font-black text-emerald-400">
+                                {row.result.accuracy ?? "—"}%
                               </p>
                             </div>
-                            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
-                              <p className="text-xs text-slate-500">Average mistakes</p>
-                              <p className="mt-1 text-xl font-semibold text-white">
-                                {row.result.mistakeCount ?? "Pending"}
+                            <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                              <p className="text-xs text-slate-500 font-medium">Total Mistakes</p>
+                              <p className="mt-1.5 text-2xl font-black text-red-400">
+                                {row.result.mistakeCount ?? "—"}
                               </p>
                             </div>
                           </div>
@@ -506,46 +664,32 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
                         {typingRuns.length > 0 && (
                           <div className="mt-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                              Typing run detail
+                            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
+                              Detailed Typing Run Performance
                             </p>
-                            <div className="mt-3 grid gap-2 md:grid-cols-3">
-                              {typingRuns.map((run, index) => (
-                                <div
-                                  key={`${row.name}-${run.runIndex ?? index}`}
-                                  className="rounded-md border border-white/10 bg-white/[0.03] p-3"
-                                >
-                                  <p className="text-xs font-medium text-slate-300">
-                                    Run {run.runIndex ?? index + 1}
-                                  </p>
-                                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                      <p className="text-slate-500">WPM</p>
-                                      <p className="mt-1 font-semibold text-white">
-                                        {run.wpm ?? "Pending"}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-slate-500">Accuracy</p>
-                                      <p className="mt-1 font-semibold text-white">
-                                        {run.accuracy ?? "Pending"}%
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-slate-500">Mistakes</p>
-                                      <p className="mt-1 font-semibold text-white">
-                                        {run.mistakeCharacters ?? "Pending"}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-slate-500">Characters</p>
-                                      <p className="mt-1 font-semibold text-white">
-                                        {run.correctCharacters ?? 0}/{run.typedCharacters ?? 0}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
+                            <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                                    <th className="p-3">Run</th>
+                                    <th className="p-3 text-right">WPM</th>
+                                    <th className="p-3 text-right">Accuracy</th>
+                                    <th className="p-3 text-right">Mistakes</th>
+                                    <th className="p-3 text-right">Characters (Correct/Total)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5 text-slate-200 font-medium">
+                                  {typingRuns.map((run, index) => (
+                                    <tr key={`${row.name}-${run.runIndex ?? index}`} className="hover:bg-white/[0.02] transition-colors">
+                                      <td className="p-3 text-slate-300 font-bold">Run {run.runIndex ?? index + 1}</td>
+                                      <td className="p-3 text-right text-white font-extrabold">{run.wpm ?? "—"}</td>
+                                      <td className="p-3 text-right text-emerald-400 font-extrabold">{run.accuracy ?? "—"}%</td>
+                                      <td className="p-3 text-right text-red-400 font-extrabold">{run.mistakeCharacters ?? "0"}</td>
+                                      <td className="p-3 text-right text-slate-400">{run.correctCharacters ?? 0} / {run.typedCharacters ?? 0}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
                             </div>
                           </div>
                         )}

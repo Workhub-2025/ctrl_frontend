@@ -5,7 +5,19 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import {
+  ArrowRight,
+  RefreshCw,
+  Keyboard,
+  ClipboardList,
+  BrainCircuit,
+  PhoneCall,
+  FileQuestion,
+  Target,
+  Users,
+  CalendarDays,
+  Layers3,
+} from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import {
   HiringManagerPortalClientService,
@@ -90,95 +102,105 @@ export function HiringManagerCampaignsList() {
           campaigns.map((campaign) => (
             <Card
               key={campaign.id}
-              className="rounded-[1.25rem] border border-border bg-card shadow-sm transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none"
+              className="group rounded-[1.25rem] border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/40 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300 hover:-translate-y-0.5"
             >
-              <CardContent className="space-y-4 p-4">
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px]">
-                  <div className="min-w-0 space-y-3">
+              <CardContent className="space-y-4 p-5">
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+                  <div className="min-w-0 space-y-3.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge className={getStatusTone(campaign.status)}>
                         {campaign.status}
                       </Badge>
-                      <Badge className="rounded-md border-border bg-background text-xs text-muted-foreground hover:bg-background dark:border-white/10 dark:bg-white/[0.03]">
+                      <Badge className="rounded-md border-white/5 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
                         {campaign.deliveryMode}
                       </Badge>
                       {campaign.approvalStatus && (
                         <Badge
-                          className={
+                          className={[
+                            "rounded-md border-none text-xs font-semibold px-2 py-0.5",
                             campaign.approvalStatus === "Pending approval"
-                              ? "rounded-md border-orange-500/20 bg-orange-500/10 text-xs text-orange-600 hover:bg-orange-500/10"
+                              ? "bg-orange-500/10 text-orange-400"
                               : campaign.approvalStatus === "Rejected"
-                                ? "rounded-md border-red-500/20 bg-red-500/10 text-xs text-red-600 hover:bg-red-500/10"
-                                : "rounded-md border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-600 hover:bg-emerald-500/10"
-                          }
+                                ? "bg-red-500/10 text-red-400"
+                                : "bg-emerald-500/10 text-emerald-400"
+                          ].join(" ")}
                         >
                           {campaign.approvalStatus}
                         </Badge>
                       )}
                     </div>
-                    <div className="min-w-0 space-y-1">
-                      <h2 className="break-words text-base font-semibold leading-snug text-foreground">
+                    
+                    <div className="min-w-0 space-y-2">
+                      <h2 className="break-words text-lg font-bold leading-snug text-foreground">
                         {campaign.name}
                       </h2>
-                      <p className="text-sm leading-5 text-muted-foreground">
-                        {campaign.role} · {campaign.candidateCount} candidates ·{" "}
-                        {campaign.sessions} session{campaign.sessions === 1 ? "" : "s"}
-                      </p>
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-background p-3 text-sm text-muted-foreground shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
-                    {campaign.nextMilestone}
+                  {/* Next Milestone Box */}
+                  <div className="flex items-start gap-2.5 rounded-xl border border-primary/10 bg-[#08101d]/60 p-3.5 text-xs text-foreground shadow-sm dark:border-white/5 dark:bg-white/[0.01]">
+                    <Target className="mt-0.5 h-4.5 w-4.5 shrink-0 text-primary animate-pulse" />
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Next Milestone</p>
+                      <p className="mt-1 font-medium leading-relaxed text-foreground">{campaign.nextMilestone}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3 xl:grid-cols-[1fr_0.95fr]">
-                  <div className="rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
-                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                <div className="grid gap-3 xl:grid-cols-[1fr_0.95fr] pt-2">
+                  {/* Assessment Stack Card */}
+                  <div className="rounded-xl border border-border bg-background/30 p-3.5 shadow-sm dark:border-white/5 dark:bg-white/[0.01]">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Assessment stack
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {campaign.assessmentStack.map((item) => (
-                        <span
-                          key={item}
-                          className="rounded-md border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]"
-                        >
-                          {item}
-                        </span>
-                      ))}
+                      {campaign.assessmentStack.map((item) => {
+                        const Icon = getAssessmentIcon(item);
+                        return (
+                          <span
+                            key={item}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.02]"
+                          >
+                            <Icon className="h-3.5 w-3.5 text-primary/70 shrink-0" />
+                            {item}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/5 dark:bg-white/[0.03]">
-                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                  {/* Session Readiness Card */}
+                  <div className="rounded-xl border border-border bg-background/30 p-3.5 shadow-sm dark:border-white/5 dark:bg-white/[0.01]">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Session readiness
                     </p>
-                    <div className="mt-3 rounded-lg border border-border bg-card p-3 dark:border-white/10 dark:bg-[#04070d]">
+                    <div className="mt-3 rounded-lg border border-border bg-card p-3 dark:border-white/10 dark:bg-[#04070d]/60">
                       <div className="flex items-center justify-between gap-4">
                         <div className="min-w-0">
-                          <p className="break-words text-sm font-medium leading-snug text-foreground">
+                          <p className="break-words text-sm font-semibold leading-none text-foreground">
                             {campaign.sessions} Access Code{campaign.sessions === 1 ? "" : "s"}
                           </p>
-                          <p className="mt-1 break-words text-xs leading-5 text-muted-foreground">
+                          <p className="mt-1.5 break-words text-[11px] leading-tight text-muted-foreground">
                             {campaign.nextMilestone}
                           </p>
                         </div>
-                        <Badge className="shrink-0 rounded-md border-primary/20 bg-primary/10 text-xs text-primary hover:bg-primary/10">
-                          Ready
+                        <Badge className="shrink-0 rounded-md border-none bg-emerald-500/10 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10">
+                          Active
                         </Badge>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end pt-2">
                   <Button
                     variant="outline"
+                    className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs font-medium text-slate-100 hover:bg-white/[0.05] group-hover:border-primary/30"
                     asChild
                   >
                     <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}>
                       Open campaign view
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </Button>
                 </div>
@@ -189,4 +211,21 @@ export function HiringManagerCampaignsList() {
       </div>
     </div>
   );
+}
+
+function getAssessmentIcon(name: string) {
+  const lowercase = name.toLowerCase();
+  if (lowercase.includes("typing")) {
+    return Keyboard;
+  }
+  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
+    return ClipboardList;
+  }
+  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
+    return BrainCircuit;
+  }
+  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
+    return PhoneCall;
+  }
+  return FileQuestion;
 }

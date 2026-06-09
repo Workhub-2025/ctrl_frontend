@@ -6,7 +6,20 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Eye, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Eye,
+  RefreshCw,
+  Trash2,
+  Keyboard,
+  ClipboardList,
+  BrainCircuit,
+  PhoneCall,
+  FileQuestion,
+  Users,
+  Calendar,
+  Briefcase
+} from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
@@ -174,7 +187,7 @@ export function HiringManagerCampaignDetailView({
         <div className="flex flex-wrap gap-3">
           <Button
             variant="outline"
-            onClick={loadCampaign}
+            onClick={() => loadCampaign(true)}
             className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
           >
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -192,96 +205,205 @@ export function HiringManagerCampaignDetailView({
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Expected candidates</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {campaign.candidateCount}
+      <div className="w-full">
+        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 backdrop-blur-md hover:border-primary/45 transition-colors duration-300">
+          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-sky-400" />
+          <CardContent className="p-5 flex flex-col justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Briefcase className="h-3.5 w-3.5 text-indigo-400" /> Active Assessment Sessions
             </p>
-          </CardContent>
-        </Card>
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardContent className="p-4">
-            <p className="text-xs uppercase text-slate-500">Sessions</p>
-            <p className="mt-2 text-2xl font-semibold text-white">
-              {campaign.sessions}
-            </p>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-3xl font-black text-white">{campaign.sessions}</span>
+              <span className="text-xs text-slate-500">scheduled events</span>
+            </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
+        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
           <CardHeader className="border-b border-white/10 p-4">
-            <CardTitle className="text-base text-white">Assessment stack</CardTitle>
+            <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <ClipboardList className="h-4 w-4 text-primary" /> Assessment stack
+            </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2 p-4">
+          <CardContent className="flex flex-wrap gap-2.5 p-4">
             {campaign.assessmentStack.length === 0 ? (
-              <p className="text-sm text-slate-400">No assessments linked.</p>
+              <p className="text-xs text-slate-500 italic">No assessments linked.</p>
             ) : (
-              campaign.assessmentStack.map((assessment) => (
-                <span
-                  key={assessment}
-                  className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-xs text-slate-300"
-                >
-                  {assessment}
-                </span>
-              ))
+              campaign.assessmentStack.map((assessment) => {
+                const Icon = getAssessmentIcon(assessment);
+                return (
+                  <span
+                    key={assessment}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-slate-200"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-primary" />
+                    {assessment}
+                  </span>
+                );
+              })
             )}
           </CardContent>
         </Card>
 
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
+        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
           <CardHeader className="border-b border-white/10 p-4">
-            <CardTitle className="text-base text-white">Dates</CardTitle>
+            <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Calendar className="h-4 w-4 text-primary" /> Campaign Timeline
+            </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 p-4 text-sm text-slate-300">
-            <p>Start: {campaign.startDate}</p>
-            <p>End: {campaign.endDate}</p>
+          <CardContent className="grid gap-3.5 p-4 text-xs text-slate-300">
+            <div className="flex items-center justify-between border-b border-white/5 pb-2">
+              <span className="text-slate-500">Start Date</span>
+              <span className="font-semibold text-white">{campaign.startDate}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500">End Date</span>
+              <span className="font-semibold text-white">{campaign.endDate}</span>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
+      <Card className="rounded-xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-lg">
         <CardHeader className="border-b border-white/10 p-4">
-          <CardTitle className="text-base text-white">Sessions</CardTitle>
+          <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider">Sessions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4">
           {campaign.assessmentSessions.length === 0 ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-xs text-slate-500 italic">
               No sessions created yet. Create sessions from the Sessions tab.
             </p>
           ) : (
             campaign.assessmentSessions.map((session) => (
               <div
                 key={session.id}
-                className="grid gap-3 rounded-lg border border-white/10 bg-white/[0.03] p-3 md:grid-cols-[minmax(0,1fr)_auto]"
+                className="grid gap-3 rounded-lg border border-white/10 bg-[#0b1329]/20 p-4 md:grid-cols-[minmax(0,1fr)_auto] items-center hover:border-primary/20 transition-all duration-300"
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={getStatusTone(session.status)}>
+                    <Badge className={[
+                      "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
+                      getStatusTone(session.status)
+                    ].join(" ")}>
                       {session.status}
                     </Badge>
                     <span className="break-all text-sm font-semibold text-white">
                       {session.accessValue}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-slate-400">
+                  <p className="mt-2 text-xs text-slate-400">
                     {session.date} · {session.location}
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-9 rounded-md border-white/10 bg-[#08101d] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
+                  className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:bg-white/[0.06] hover:text-white"
                   onClick={() => setSelectedSession(session)}
                 >
-                  <Eye className="mr-2 h-4 w-4" />
-                  View session details
+                  <Eye className="mr-1.5 h-3.5 w-3.5" />
+                  View details
                 </Button>
               </div>
             ))
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Candidates in Campaign Section */}
+      <Card className="rounded-xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-2xl">
+        <CardHeader className="border-b border-white/10 p-5 flex flex-row items-center justify-between">
+          <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" /> Candidates in Campaign ({campaign.joinedCandidates.length})
+          </CardTitle>
+          <Badge className="bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
+            Real-time assessment results
+          </Badge>
+        </CardHeader>
+        <CardContent className="p-5">
+          {campaign.joinedCandidates.length === 0 ? (
+            <p className="text-xs text-slate-500 italic text-center py-6">
+              No candidates have joined sessions for this campaign yet.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-white/10 bg-[#080c16]/30">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/[0.02] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                    <th className="p-3">Candidate</th>
+                    <th className="p-3">Session</th>
+                    <th className="p-3">Assessments Progress</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {campaign.joinedCandidates.map((candidate) => {
+                    const results = candidate.results ?? [];
+                    const totalCount = Math.max(
+                      candidate.assessmentStack?.length ?? campaign.assessmentStack.length,
+                      results.length,
+                      1
+                    );
+                    const completedCount = results.filter(
+                      (r) => r.completedAt || r.numericScore !== null
+                    ).length;
+                    const completionPercent = Math.round((completedCount / totalCount) * 100);
+                    const progressStatus =
+                      completedCount >= totalCount
+                        ? "completed"
+                        : completedCount > 0
+                          ? "in_progress"
+                          : "not_started";
+
+                    return (
+                      <tr key={candidate.id} className="hover:bg-white/[0.01] transition-colors">
+                        <td className="p-3">
+                          <div className="font-semibold text-white">{candidate.name}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{candidate.email}</div>
+                        </td>
+                        <td className="p-3 text-slate-300">
+                          {candidate.sessionName ?? "Main Session"}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-3 max-w-[200px]">
+                            <div className="h-1.5 flex-1 rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className={[
+                                  "h-full rounded-full transition-all duration-300",
+                                  progressStatus === "completed"
+                                    ? "bg-emerald-400"
+                                    : progressStatus === "in_progress"
+                                      ? "bg-orange-400"
+                                      : "bg-slate-500"
+                                ].join(" ")}
+                                style={{ width: `${completionPercent}%` }}
+                              />
+                            </div>
+                            <span className="font-semibold shrink-0 text-slate-300">
+                              {completedCount}/{totalCount}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            className="h-8 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
+                          >
+                            <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`}>
+                              View report
+                            </Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -297,7 +419,25 @@ export function HiringManagerCampaignDetailView({
         getResultsHref={(candidate) =>
           `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`
         }
+        assessmentStack={campaign.assessmentStack}
       />
     </div>
   );
+}
+
+function getAssessmentIcon(name: string) {
+  const lowercase = name.toLowerCase();
+  if (lowercase.includes("typing")) {
+    return Keyboard;
+  }
+  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
+    return ClipboardList;
+  }
+  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
+    return BrainCircuit;
+  }
+  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
+    return PhoneCall;
+  }
+  return FileQuestion;
 }

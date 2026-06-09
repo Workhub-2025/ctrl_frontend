@@ -179,7 +179,7 @@ export default function Home() {
     updateSettings: updateAccessibilitySettings,
     resetSettings: resetAccessibilitySettings,
     reduceMotion,
-    backgroundClassName: bgColor,
+    themeClassName: bgColor,
   } = useAccessibilitySettings();
 
   const { scrollYProgress: hiringProgress } = useScroll({

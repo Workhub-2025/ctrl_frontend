@@ -12,10 +12,6 @@ export default function HiringManagerCampaignsPage() {
         title="Campaigns"
         description="Manage campaign setup, delivery mode, candidate completion, and report readiness."
         icon={FolderKanban}
-        stats={[
-          { icon: Users, label: "Candidate progress" },
-          { icon: CalendarDays, label: "Session planning" },
-        ]}
         action={
           <Button asChild>
             <Link href="/hiring-manager-dashboard/campaigns/create/?returnTo=/hiring-manager-dashboard/campaigns/">

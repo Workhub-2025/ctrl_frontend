@@ -12,10 +12,6 @@ export default function HiringManagerSessionsPage() {
         title="Sessions"
         description="Create sessions, issue access, and monitor delivery readiness."
         icon={Layers3}
-        stats={[
-          { icon: KeyRound, label: "Session codes" },
-          { icon: ShieldCheck, label: "Audited removal" },
-        ]}
       />
 
       <HiringManagerSessionsList />

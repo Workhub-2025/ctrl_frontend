@@ -15,10 +15,6 @@ export default async function HiringManagerAssessmentsPage() {
         title="Assessments"
         description="Browse assessment modules, duration, measured skills, and operational relevance."
         icon={BookOpenCheck}
-        stats={[
-          { icon: Clock, label: "Configured duration" },
-          { icon: Settings2, label: "Campaign selectable" },
-        ]}
         notice={
           error ? (
             <p className="max-w-3xl rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">

@@ -179,18 +179,14 @@ export default class UsersService {
         }
     }
 
-    /**
-     * Update current user
-     */
     static async updateCurrentUser(data: UserUpdateData): Promise<IPublicUser | null> {
         try {
-            const client = await getServerStrapiClient();
-            const response = await client.fetch(this.ME_URL, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
-            });
-            return response.json() as Promise<IPublicUser>;
+            const user = await this.getCurrentUser();
+            if (!user || !user.id) {
+                console.error('[UsersService] No authenticated user found to update');
+                return null;
+            }
+            return await this.updateUser(user.id, data);
         } catch (error) {
             console.error('[UsersService] Error updating current user:', error);
             return null;

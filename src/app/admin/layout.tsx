@@ -138,12 +138,12 @@ export default function AdminLayout({
     settings: accessibilitySettings,
     updateSettings: updateAccessibilitySettings,
     resetSettings: resetAccessibilitySettings,
-    backgroundClassName,
+    themeClassName,
   } = useAccessibilitySettings({ enabled: true });
 
   return (
     <AuthProvider>
-      <div className={cn("ctrl-portal selection:bg-primary/30 min-h-screen", backgroundClassName)}>
+      <div className={cn("ctrl-portal selection:bg-primary/30 min-h-screen", themeClassName)}>
       <SidebarProvider>
         <Sidebar className="transition-colors duration-300">
           <SidebarHeader>

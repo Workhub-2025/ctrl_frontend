@@ -63,7 +63,7 @@ const emptyDraft: CampaignDraft = {
   roleTitle: "",
   location: "",
   deliveryMode: "in-person",
-  candidateVolume: "",
+  candidateVolume: "100",
   startDate: "",
   notes: "",
   assessmentSlugs: [],
@@ -315,22 +315,7 @@ export function HiringManagerCampaignBuilder({
                 className="border-white/10 bg-[#08101d] text-slate-100 placeholder:text-slate-500"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="candidateVolume" className="text-slate-200">
-                Expected candidates
-              </Label>
-              <Input
-                id="candidateVolume"
-                type="number"
-                min="1"
-                value={draft.candidateVolume}
-                onChange={(event) =>
-                  updateDraft("candidateVolume", event.target.value)
-                }
-                placeholder="Number of candidates"
-                className="border-white/10 bg-[#08101d] text-slate-100 placeholder:text-slate-500"
-              />
-            </div>
+
             <div className="space-y-2">
               <Label htmlFor="startDate" className="text-slate-200">
                 Planned start

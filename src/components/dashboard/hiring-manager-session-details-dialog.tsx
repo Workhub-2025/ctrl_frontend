@@ -17,7 +17,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { UserMinus } from "lucide-react";
+import {
+  UserMinus,
+  Keyboard,
+  ClipboardList,
+  BrainCircuit,
+  PhoneCall,
+  FileQuestion,
+  MoreVertical,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 
 type SessionCandidate = HiringManagerSessionListItem["candidates"][number];
@@ -31,6 +45,7 @@ type HiringManagerSessionDetailsDialogProps = {
   removingCandidateId?: string | null;
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
   getResultsHref?: (candidate: SessionCandidate, session: HiringManagerSessionListItem) => string;
+  assessmentStack?: string[];
 };
 
 export function HiringManagerSessionDetailsDialog({
@@ -42,6 +57,7 @@ export function HiringManagerSessionDetailsDialog({
   removingCandidateId,
   onKickCandidate,
   getResultsHref,
+  assessmentStack,
 }: HiringManagerSessionDetailsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -74,29 +90,79 @@ export function HiringManagerSessionDetailsDialog({
                   No candidates have joined this session yet.
                 </div>
               ) : (
-                <div className="grid gap-2">
+                <div className="grid gap-3">
                   {session.candidates.map((candidate) => {
                     const progress = getCandidateProgress(candidate, expectedAssessmentCount);
                     const resultsHref = getResultsHref?.(candidate, session);
 
+                    const resultsMap = new Map(
+                      (candidate.results || []).map((r) => [r.assessment.toLowerCase(), r])
+                    );
+
+                    const displayAssessments = (assessmentStack || []).map((stackName) => {
+                      const matchedResult = resultsMap.get(stackName.toLowerCase());
+                      if (matchedResult) {
+                        return {
+                          name: stackName,
+                          status: matchedResult.completedAt || matchedResult.numericScore !== null ? "completed" : "pending",
+                          result: matchedResult,
+                        };
+                      }
+                      return {
+                        name: stackName,
+                        status: "pending",
+                        result: null,
+                      };
+                    });
+
+                    const finalDisplayList = displayAssessments.length > 0
+                      ? displayAssessments
+                      : (candidate.results || []).map((r) => ({
+                          name: r.assessment,
+                          status: r.completedAt || r.numericScore !== null ? "completed" : "pending",
+                          result: r,
+                        }));
+
                     return (
                       <div
                         key={candidate.id}
-                        className="rounded-xl border border-border bg-background p-3 shadow-sm dark:border-white/10 dark:bg-[#04070d]"
+                        className="rounded-xl border border-border bg-background p-4 shadow-sm dark:border-white/10 dark:bg-[#04070d] space-y-4"
                       >
                         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-center">
                           <div className="flex min-w-0 items-center gap-3">
-                            {onKickCandidate && (
-                              <KickButton
-                                disabled={Boolean(candidate.hasStartedAssessment)}
-                                isRemoving={removingCandidateId === candidate.id}
-                                onKick={() => onKickCandidate(session.id, candidate.id)}
-                              />
-                            )}
-                            <div className="min-w-0">
-                              <p className="break-words text-sm font-medium text-foreground">
-                                {candidate.name}
-                              </p>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="break-words text-sm font-medium text-foreground">
+                                  {candidate.name}
+                                </p>
+                                {onKickCandidate && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-foreground dark:hover:bg-white/[0.04]"
+                                        aria-label="Candidate actions"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      align="start"
+                                      className="border-border bg-card dark:border-white/10 dark:bg-[#0b1220] text-foreground"
+                                    >
+                                      <DropdownMenuItem
+                                        disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
+                                        onClick={() => onKickCandidate(session.id, candidate.id)}
+                                        className="flex items-center gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive dark:focus:bg-red-950/30 cursor-pointer"
+                                      >
+                                        <UserMinus className="h-4 w-4" />
+                                        <span>{removingCandidateId === candidate.id ? "Removing..." : "Remove candidate"}</span>
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
                               <p className="mt-1 break-words text-xs text-muted-foreground">
                                 {candidate.email || candidate.status || "Joined"}
                               </p>
@@ -110,7 +176,7 @@ export function HiringManagerSessionDetailsDialog({
                                 {progress.completed}/{progress.total}
                               </span>
                             </div>
-                            <Progress value={progress.percent} className="mt-3 h-2 bg-muted dark:bg-white/10" />
+                            <Progress value={progress.percent} className="mt-2.5 h-2 bg-muted dark:bg-white/10" />
                           </div>
 
                           <div className="flex items-center justify-end gap-2">
@@ -124,6 +190,82 @@ export function HiringManagerSessionDetailsDialog({
                               </Button>
                             )}
                           </div>
+                        </div>
+
+                        {/* Detailed assessment metrics cards */}
+                        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 pt-3.5 border-t border-border/40 dark:border-white/5">
+                          {finalDisplayList.map((item, idx) => {
+                            const Icon = getAssessmentIcon(item.name);
+                            const isCompleted = item.status === "completed" && item.result;
+
+                            return (
+                              <div
+                                key={`${item.name}-${idx}`}
+                                className={[
+                                  "relative flex flex-col justify-between rounded-xl border p-3 transition-all",
+                                  isCompleted
+                                    ? "border-border bg-card/50 dark:border-white/10 dark:bg-white/[0.02]"
+                                    : "border-dashed border-border bg-muted/10 dark:border-white/5 dark:bg-white/[0.005]"
+                                ].join(" ")}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Icon className={["h-4 w-4 shrink-0", isCompleted ? "text-primary" : "text-muted-foreground"].join(" ")} />
+                                    <span className="truncate text-xs font-semibold text-foreground">
+                                      {item.name}
+                                    </span>
+                                  </div>
+                                  {isCompleted ? (
+                                    <Badge className="h-4 px-1 text-[9px] font-semibold bg-green-500/10 text-green-700 dark:text-green-300 border-none hover:bg-green-500/10">
+                                      Done
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="h-4 px-1 text-[9px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border-none animate-pulse hover:bg-amber-500/10">
+                                      Pending
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                <div className="mt-3">
+                                  {isCompleted && item.result ? (
+                                    <div className="space-y-1">
+                                      <div className="flex items-baseline justify-between">
+                                        <span className="text-base font-bold text-foreground">
+                                          {item.result.score}
+                                        </span>
+                                        {item.result.passed !== null && item.result.passed !== undefined && (
+                                          <span className={["text-[10px] font-semibold tracking-wider", item.result.passed ? "text-green-600 dark:text-green-400" : "text-red-500"].join(" ")}>
+                                            {item.result.passed ? "PASSED" : "FAILED"}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {item.name.toLowerCase().includes("typing") && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
+                                        <div className="flex flex-wrap gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5">
+                                          {typeof item.result.wpm === 'number' && (
+                                            <span><strong>{item.result.wpm}</strong> WPM</span>
+                                          )}
+                                          {typeof item.result.accuracy === 'number' && (
+                                            <span><strong>{Math.round(item.result.accuracy)}%</strong> Acc</span>
+                                          )}
+                                        </div>
+                                      )}
+
+                                      {(item.name.toLowerCase().includes("prioriti") || item.name.toLowerCase().includes("order") || item.name.toLowerCase().includes("call") || item.name.toLowerCase().includes("audio")) && typeof item.result.durationSeconds === 'number' && (
+                                        <div className="flex gap-2 text-[10px] text-muted-foreground border-t border-border/30 pt-1 dark:border-white/5">
+                                          <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="text-xs text-muted-foreground/75 italic min-h-[34px] flex items-center">
+                                      Awaiting completion
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -209,4 +351,21 @@ function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCou
     total,
     percent: Math.round((completed / total) * 100),
   };
+}
+
+function getAssessmentIcon(name: string) {
+  const lowercase = name.toLowerCase();
+  if (lowercase.includes("typing")) {
+    return Keyboard;
+  }
+  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
+    return ClipboardList;
+  }
+  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
+    return BrainCircuit;
+  }
+  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
+    return PhoneCall;
+  }
+  return FileQuestion;
 }
