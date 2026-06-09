@@ -14,9 +14,7 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowRight,
-  Filter,
   RefreshCw,
-  UserCheck,
   Users,
   Keyboard,
   ClipboardList,
@@ -25,7 +23,7 @@ import {
   FileQuestion,
   CheckCircle2,
   Clock3,
-  TrendingUp,
+  Search,
 } from "lucide-react";
 import {
   HiringManagerPortalClientService,
@@ -49,6 +47,8 @@ type CandidateRow = {
   completion: number;
   results: HiringManagerAssessmentResult[];
   assessmentStack: string[];
+  overallScore: number;
+  weights: Record<string, number>;
 };
 
 function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): CandidateRow[] {
@@ -77,6 +77,23 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
             ? "in_progress"
             : "not_started";
 
+      // Calculate overall weighted score using campaign weights
+      const weights = getCampaignWeights(
+        candidate.assessmentStack ?? campaign.assessmentStack ?? [],
+        campaign.assessmentSettings
+      );
+      
+      let overallScore = 0;
+      const expectedAssessments = candidate.assessmentStack ?? campaign.assessmentStack ?? [];
+      expectedAssessments.forEach((name) => {
+        const weight = weights[name] ?? 0;
+        const result = results.find((r) => isSameAssessment(name, r.assessment));
+        if (result && result.numericScore !== null) {
+          overallScore += (result.numericScore * weight) / 100;
+        }
+      });
+      const roundedOverallScore = Math.round(overallScore);
+
       rows.push({
         id: candidate.id,
         candidateSessionId: candidate.id,
@@ -92,6 +109,8 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
         completion,
         results,
         assessmentStack: candidate.assessmentStack ?? campaign.assessmentStack ?? [],
+        overallScore: roundedOverallScore,
+        weights,
       });
     }
   }
@@ -127,6 +146,7 @@ export function HiringManagerCandidatesView() {
   const [campaignFilter, setCampaignFilter] = useState("all");
   const [sessionFilter, setSessionFilter] = useState("all");
   const [progressFilter, setProgressFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadCandidates = async (force = false) => {
     const startTime = Date.now();
@@ -178,9 +198,12 @@ export function HiringManagerCandidatesView() {
         const matchesCampaign = campaignFilter === "all" || candidate.campaignName === campaignFilter;
         const matchesSession = sessionFilter === "all" || candidate.sessionName === sessionFilter;
         const matchesProgress = progressFilter === "all" || candidate.progress === progressFilter;
-        return matchesCampaign && matchesSession && matchesProgress;
+        const matchesSearch = !searchQuery.trim() ||
+          candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (candidate.email ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCampaign && matchesSession && matchesProgress && matchesSearch;
       }),
-    [campaignFilter, candidates, progressFilter, sessionFilter]
+    [campaignFilter, candidates, progressFilter, sessionFilter, searchQuery]
   );
 
   const stats = useMemo(() => {
@@ -224,74 +247,138 @@ export function HiringManagerCandidatesView() {
 
       {/* Stats Summary Widget Row */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">Total joined</span>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-white">{stats.total}</span>
-              <span className="text-xs text-slate-500">applicants</span>
+        {/* Card 1: Total Candidates */}
+        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Total Candidates</span>
+              <Users className="h-4 w-4 text-indigo-400/85" />
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-white leading-none tracking-tight">{stats.total}</span>
+              <span className="text-[10px] text-slate-500 font-medium">registered applicants</span>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-emerald-500/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <span className="text-xs uppercase text-emerald-500/80 font-semibold tracking-wider">Completed</span>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-emerald-400">{stats.completed}</span>
-              <span className="text-xs text-slate-500">ready for review</span>
+
+        {/* Card 2: Completed */}
+        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase text-emerald-400 font-bold tracking-wider">Completed</span>
+              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-emerald-400 leading-none tracking-tight">{stats.completed}</span>
+              <span className="text-[10px] text-slate-500 font-medium font-semibold">
+                {stats.total > 0 ? `${Math.round((stats.completed / stats.total) * 100)}% completion rate` : "ready for review"}
+              </span>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-orange-500/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <span className="text-xs uppercase text-orange-500/80 font-semibold tracking-wider">In progress</span>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-orange-400">{stats.inProgress}</span>
-              <span className="text-xs text-slate-500">active sessions</span>
+
+        {/* Card 3: In Progress */}
+        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase text-orange-400 font-bold tracking-wider">In Progress</span>
+              <RefreshCw className="h-3.5 w-3.5 text-orange-400" />
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-orange-400 leading-none tracking-tight">{stats.inProgress}</span>
+              <span className="text-[10px] text-slate-500 font-medium">active evaluation sessions</span>
             </div>
           </CardContent>
         </Card>
-        <Card className="border-slate-500/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full">
-            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">Not started</span>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-slate-300">{stats.notStarted}</span>
-              <span className="text-xs text-slate-500">awaiting start</span>
+
+        {/* Card 4: Not Started */}
+        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
+          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Not Started</span>
+              <Clock3 className="h-4 w-4 text-slate-400" />
+            </div>
+            <div className="mt-2.5 flex items-baseline gap-2">
+              <span className="text-2xl font-black text-slate-300 leading-none tracking-tight">{stats.notStarted}</span>
+              <span className="text-[10px] text-slate-500 font-medium">awaiting first assessment</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="rounded-lg border border-white/10 bg-[#0b1220]/50 backdrop-blur-md shadow-none">
-        <CardContent className="grid gap-3 p-4 md:grid-cols-3">
-          <FilterSelect
-            label="Campaign"
-            allLabel="All campaigns"
-            value={campaignFilter}
-            onChange={(value) => {
-              setCampaignFilter(value);
-              setSessionFilter("all");
-            }}
-            options={campaignOptions}
-          />
-          <FilterSelect
-            label="Session"
-            allLabel="All sessions"
-            value={sessionFilter}
-            onChange={setSessionFilter}
-            options={sessionOptions}
-          />
-          <FilterSelect
-            label="Progress"
-            allLabel="All progress"
-            value={progressFilter}
-            onChange={setProgressFilter}
-            options={[
-              { label: "Completed", value: "completed" },
-              { label: "In progress", value: "in_progress" },
-              { label: "Not started", value: "not_started" },
-            ]}
-          />
+      {/* Unified Search & Filters Card */}
+      <Card className="border border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/45 backdrop-blur-md">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end">
+            {/* Search Input */}
+            <div className="flex-1 space-y-2">
+              <p className="text-xs font-semibold uppercase text-slate-500 tracking-wider">Search</p>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                <input
+                  type="text"
+                  placeholder="Search candidate by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-10 pl-9 pr-4 rounded-md border border-white/10 bg-white/[0.03] text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Select Filters */}
+            <div className="grid gap-3 sm:grid-cols-3 flex-[2] md:flex-[3]">
+              <FilterSelect
+                label="Campaign"
+                allLabel="All campaigns"
+                value={campaignFilter}
+                onChange={(value) => {
+                  setCampaignFilter(value);
+                  setSessionFilter("all");
+                }}
+                options={campaignOptions}
+              />
+              <FilterSelect
+                label="Session"
+                allLabel="All sessions"
+                value={sessionFilter}
+                onChange={setSessionFilter}
+                options={sessionOptions}
+              />
+              <FilterSelect
+                label="Progress"
+                allLabel="All progress"
+                value={progressFilter}
+                onChange={setProgressFilter}
+                options={[
+                  { label: "Completed", value: "completed" },
+                  { label: "In progress", value: "in_progress" },
+                  { label: "Not started", value: "not_started" },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* Active Filters Summary */}
+          {(campaignFilter !== "all" || sessionFilter !== "all" || progressFilter !== "all" || searchQuery !== "") && (
+            <div className="flex items-center justify-between border-t border-white/5 pt-3">
+              <p className="text-xs text-slate-500">
+                Found {filteredCandidates.length} matches of {candidates.length} total candidates
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setCampaignFilter("all");
+                  setSessionFilter("all");
+                  setProgressFilter("all");
+                  setSearchQuery("");
+                }}
+                className="h-8 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+              >
+                Reset Filters
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -313,10 +400,11 @@ export function HiringManagerCandidatesView() {
         </Button>
       </div>
 
+      {/* Candidate List Container */}
       <div className="grid gap-4">
         {filteredCandidates.length === 0 ? (
           <Card className="rounded-[1.25rem] border border-dashed border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#080c16]/50 dark:shadow-none">
-            <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
+            <CardContent className="p-6 text-sm text-center leading-6 text-muted-foreground">
               {candidates.length === 0
                 ? "No candidates have joined a campaign session yet."
                 : "No candidate sessions match the current filters."}
@@ -326,19 +414,22 @@ export function HiringManagerCandidatesView() {
           filteredCandidates.map((candidate) => (
             <Card
               key={`${candidate.campaignId}-${candidate.candidateSessionId}`}
-              className="group rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/40 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300"
+              className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0b1329]/40 to-[#080c16]/30 dark:from-[#0f1b36]/30 dark:to-[#080c16]/25 shadow-lg hover:border-primary/30 transition-all duration-300"
             >
-              <CardContent className="space-y-4 p-5">
-                {/* Top row: info + view button */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="break-words text-base font-bold leading-snug text-white">
-                        {candidate.name}
-                      </h2>
-                      {candidate.status && (
+              <CardContent className="p-5 space-y-5">
+                {/* Top Section: Avatar, Meta Info, and Actions */}
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/25 to-indigo-500/25 border border-primary/20 text-sm font-black text-primary uppercase shadow-sm">
+                      {candidate.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="text-base font-bold text-white tracking-tight leading-snug">
+                          {candidate.name}
+                        </h2>
                         <Badge className={[
-                          "rounded-md border-none text-xs font-semibold px-2 py-0.5",
+                          "pointer-events-none rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
                           candidate.progress === "completed"
                             ? "bg-emerald-500/10 text-emerald-400"
                             : candidate.progress === "in_progress"
@@ -347,189 +438,181 @@ export function HiringManagerCandidatesView() {
                         ].join(" ")}>
                           {progressLabel(candidate.progress)}
                         </Badge>
-                      )}
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5 break-all font-medium">
+                        {candidate.email || "Email not available"}
+                      </p>
+                      <p className="text-[10px] text-slate-500 mt-1 font-semibold tracking-wide uppercase">
+                        {candidate.campaignName} · {candidate.sessionName}
+                      </p>
                     </div>
-                    <p className="mt-1 break-words text-sm leading-5 text-slate-400">
-                      {candidate.email || "Email not available"}
-                    </p>
-                    <p className="mt-1.5 break-words text-xs leading-5 text-slate-500 font-medium">
-                      {candidate.campaignName} · {candidate.sessionName}
-                    </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    className="h-9 w-fit shrink-0 rounded-md border-white/10 bg-white/[0.02] px-3.5 text-xs font-medium text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors group-hover:border-primary/30"
-                    asChild
-                  >
-                    <Link href={`/hiring-manager-dashboard/candidates/${candidate.candidateSessionId}/?campaignId=${candidate.campaignId}&candidateSessionId=${candidate.candidateSessionId}`}>
-                      View results/report
-                      <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </Link>
-                  </Button>
-                </div>
 
-                {/* Full-width assessment completion pill track */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span className="font-medium">Assessments completed</span>
-                    <span className="font-semibold text-white tabular-nums">
-                      {candidate.completedAssessments} of {candidate.totalAssessments}
-                    </span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {Array.from({ length: candidate.totalAssessments || 1 }, (_, idx) => {
-                      const isDone = idx < (candidate.completedAssessments || 0);
-                      const assessmentName = candidate.assessmentStack?.[idx] ?? `Assessment ${idx + 1}`;
-                      return (
-                        <div
-                          key={idx}
-                          title={`${assessmentName}: ${isDone ? "Completed" : "Pending"}`}
-                          className={`h-2 flex-1 rounded-full transition-all duration-300 ${
-                            isDone
-                              ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
-                              : "bg-white/10 border border-white/5"
-                          }`}
-                        />
-                      );
-                    })}
+                  <div className="flex items-center justify-between gap-5 sm:justify-end shrink-0">
+                    {/* Completion stats */}
+                    <div className="text-right border-r border-white/5 pr-4">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Completed</p>
+                      <p className="text-sm font-extrabold text-white tabular-nums">
+                        {candidate.completedAssessments}/{candidate.totalAssessments} Done
+                      </p>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="group h-9 rounded-xl border-white/10 bg-white/[0.02] px-4 text-xs font-semibold text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors hover:border-primary/30"
+                      asChild
+                    >
+                      <Link href={`/hiring-manager-dashboard/candidates/${candidate.candidateSessionId}/?campaignId=${candidate.campaignId}&candidateSessionId=${candidate.candidateSessionId}`}>
+                        View report
+                        <ArrowRight className="ml-1.5 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                      </Link>
+                    </Button>
                   </div>
                 </div>
 
-                {/* Granular Assessment score grid */}
-                <div className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3 pt-4 border-t border-white/5">
-                  {(() => {
-                    const resultsMap = new Map(
-                      (candidate.results || []).map((r) => [r.assessment.toLowerCase(), r])
-                    );
+                {/* Redesigned Performance breakdown segment tracks */}
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                  {/* Segmented scores bar */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs text-slate-400">
+                      <span className="font-medium">Assessment performance breakdown</span>
+                      <span className="font-semibold text-white tabular-nums">
+                        Hover segments for detailed scores
+                      </span>
+                    </div>
+                    <div className="h-3 w-full flex gap-1.5 overflow-visible">
+                      {(() => {
+                        const resultsMap = new Map(
+                          (candidate.results || []).map((r) => [r.assessment.toLowerCase(), r])
+                        );
 
-                    const displayList = (candidate.assessmentStack || []).map((stackName) => {
-                      const matchedResult = resultsMap.get(stackName.toLowerCase());
-                      if (matchedResult) {
-                        return {
-                          name: stackName,
-                          status: matchedResult.completedAt || matchedResult.numericScore !== null ? "completed" : "pending",
-                          result: matchedResult,
-                        };
-                      }
-                      return {
-                        name: stackName,
-                        status: "pending",
-                        result: null,
-                      };
-                    });
+                        const expectedAssessments = candidate.assessmentStack || [];
+                        return expectedAssessments.map((stackName, idx) => {
+                          const matchedResult = resultsMap.get(stackName.toLowerCase());
+                          const isCompleted = matchedResult && (matchedResult.completedAt || matchedResult.numericScore !== null);
+                          const scoreValue = matchedResult?.numericScore ?? 0;
+                          const key = getAssessmentKey(stackName, matchedResult);
 
-                    const finalDisplayList = displayList.length > 0
-                      ? displayList
-                      : (candidate.results || []).map((r) => ({
-                          name: r.assessment,
-                          status: r.completedAt || r.numericScore !== null ? "completed" : "pending",
-                          result: r,
-                        }));
+                          // 4 different colors for the 4 types
+                          let colorClass = "bg-primary";
+                          if (key === "typing") colorClass = "bg-indigo-500";
+                          else if (key === "prioritization") colorClass = "bg-sky-500";
+                          else if (key === "situational-judgement") colorClass = "bg-violet-500";
+                          else if (key === "call-simulation") colorClass = "bg-emerald-500";
 
-                    return finalDisplayList.map((item, idx) => {
-                      const Icon = getAssessmentIcon(item.name);
-                      const isCompleted = item.status === "completed" && item.result;
+                          // Tooltip metrics content
+                          let metricsContent = null;
+                          if (isCompleted && matchedResult) {
+                            if (key === "typing") {
+                              metricsContent = (
+                                <span>{matchedResult.wpm ?? 0} WPM · {Math.round(matchedResult.accuracy ?? 0)}% Acc</span>
+                              );
+                            } else if (key === "prioritization" && matchedResult.metrics) {
+                              const m = matchedResult.metrics as any;
+                              metricsContent = (
+                                <span>High: {Math.round(m.highPriorityAccuracy ?? 0)}% · Mid: {Math.round(m.mediumPriorityAccuracy ?? 0)}% · Low: {Math.round(m.lowPriorityAccuracy ?? 0)}%</span>
+                              );
+                            } else if (key === "situational-judgement" && matchedResult.metrics) {
+                              const m = matchedResult.metrics as any;
+                              metricsContent = (
+                                <span>Band: {m.decisionBand ?? "—"} · Flags: {Number(m.materialRiskFlagCount ?? 0) + Number(m.moderateRiskFlagCount ?? 0)}</span>
+                              );
+                            } else if (key === "call-simulation" && typeof matchedResult.durationSeconds === 'number') {
+                              metricsContent = (
+                                <span>Duration: {Math.round(matchedResult.durationSeconds / 60)}m {matchedResult.durationSeconds % 60}s</span>
+                              );
+                            }
+                          }
 
-                      return (
-                        <div
-                          key={`${item.name}-${idx}`}
-                          className={[
-                            "relative flex flex-col justify-between rounded-xl border p-2.5 transition-all text-xs",
-                            isCompleted
-                              ? "border-white/10 bg-white/[0.02] dark:bg-white/[0.005]"
-                              : "border-dashed border-white/5 bg-transparent"
-                          ].join(" ")}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <Icon className={["h-3.5 w-3.5 shrink-0", isCompleted ? "text-primary" : "text-slate-500"].join(" ")} />
-                              <span className="truncate font-semibold text-slate-200">
-                                {item.name}
-                              </span>
+                          return (
+                            <div
+                              key={`${stackName}-${idx}`}
+                              className="relative group flex-1 h-full bg-white/[0.04] border border-white/10 rounded-full overflow-visible"
+                            >
+                              {/* Inner filled score bar */}
+                              <div
+                                className={`h-full ${colorClass} transition-all duration-500 rounded-full`}
+                                style={{ width: `${isCompleted ? scoreValue : 0}%` }}
+                              />
+                              
+                              {/* Tooltip */}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl border border-white/10 bg-slate-950/95 backdrop-blur-md text-sm text-slate-200 hidden group-hover:block z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
+                                <p className="font-bold text-white mb-1">{stackName}</p>
+                                {isCompleted && matchedResult ? (
+                                  <div className="space-y-1">
+                                    <div className="flex justify-between items-center text-xs">
+                                      <span className="text-slate-400 font-medium">Overall Score</span>
+                                      <span className="font-extrabold text-white">{scoreValue}%</span>
+                                    </div>
+                                    {metricsContent && (
+                                      <div className="border-t border-white/5 pt-1 mt-1 text-xs text-slate-400 font-semibold">
+                                        {metricsContent}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-amber-400 italic text-xs">Awaiting completion (Pending)</p>
+                                )}
+                              </div>
                             </div>
-                            {isCompleted ? (
-                              <Badge className="h-4 px-1 text-[8px] font-semibold bg-green-500/10 text-green-400 border-none hover:bg-green-500/10">
-                                Done
-                              </Badge>
-                            ) : (
-                              <Badge className="h-4 px-1 text-[8px] font-semibold bg-amber-500/10 text-amber-400 border-none animate-pulse hover:bg-amber-500/10">
-                                Pending
-                              </Badge>
-                            )}
-                          </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
 
-                          <div className="mt-2.5">
-                            {isCompleted && item.result ? (
-                              <div className="space-y-1">
-                                <div className="flex items-baseline justify-between">
-                                  <span className="text-sm font-bold text-white">
-                                    {item.result.score}
-                                  </span>
-                                  {item.result.passed !== null && item.result.passed !== undefined && (
-                                    <span className={["text-[9px] font-bold tracking-wider", item.result.passed ? "text-green-400" : "text-red-400"].join(" ")}>
-                                      {item.result.passed ? "PASSED" : "FAILED"}
-                                    </span>
+                  {/* Overall Weighted Score Bar */}
+                  {candidate.completedAssessments > 0 && (
+                    <div className="relative group space-y-2">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span className="font-medium text-slate-300">Overall weighted score</span>
+                        <span className="font-extrabold text-indigo-400 tabular-nums">
+                          {candidate.overallScore}%
+                        </span>
+                      </div>
+                      <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden border border-white/5">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-500"
+                          style={{ width: `${candidate.overallScore}%` }}
+                        />
+                      </div>
+
+                      {/* Tooltip with weighted score breakdown */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-xl border border-white/10 bg-slate-950/95 backdrop-blur-md text-sm text-slate-200 hidden group-hover:block z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
+                        <p className="font-bold text-white mb-2">Weighted Score Breakdown</p>
+                        <div className="space-y-1.5">
+                          {candidate.assessmentStack.map((name) => {
+                            const weight = candidate.weights[name] ?? 0;
+                            const result = candidate.results.find((r) => isSameAssessment(name, r.assessment));
+                            const isCompleted = result && (result.completedAt || result.numericScore !== null);
+                            const score = result?.numericScore ?? 0;
+                            const contribution = isCompleted ? parseFloat(((score * weight) / 100).toFixed(1)) : 0;
+
+                            return (
+                              <div key={name} className="flex justify-between items-center text-xs">
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-slate-300 font-medium truncate">{name}</span>
+                                  <span className="text-[0.625rem] text-slate-500 font-semibold">Weight: {weight}%</span>
+                                </div>
+                                <div className="text-right pl-2 shrink-0">
+                                  <span className="font-semibold text-slate-400">{isCompleted ? `${score}%` : "Pending"}</span>
+                                  {isCompleted && (
+                                    <span className="text-[0.625rem] text-indigo-400 font-bold ml-1.5">(+{contribution}%)</span>
                                   )}
                                 </div>
-
-                                {(() => {
-                                  const key = getAssessmentKey(item.name, item.result);
-                                  const isTyping = key === "typing";
-                                  const isPrioritisation = key === "prioritization";
-                                  const isSJT = key === "situational-judgement";
-                                  const isCallSimulation = key === "call-simulation";
-
-                                  return (
-                                    <>
-                                      {isTyping && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
-                                        <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1">
-                                          {typeof item.result.wpm === 'number' && (
-                                            <span><strong>{item.result.wpm}</strong> WPM</span>
-                                          )}
-                                          {typeof item.result.accuracy === 'number' && (
-                                            <span><strong>{Math.round(item.result.accuracy)}%</strong> Acc</span>
-                                          )}
-                                        </div>
-                                      )}
-
-                                      {isPrioritisation && item.result.metrics && (
-                                        <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1 mt-1">
-                                          <span>High: <strong>{Math.round((item.result.metrics as any).highPriorityAccuracy ?? 0)}%</strong></span>
-                                          <span>Mid: <strong>{Math.round((item.result.metrics as any).mediumPriorityAccuracy ?? 0)}%</strong></span>
-                                          <span>Low: <strong>{Math.round((item.result.metrics as any).lowPriorityAccuracy ?? 0)}%</strong></span>
-                                        </div>
-                                      )}
-
-                                      {isSJT && item.result.metrics && (
-                                        <div className="flex flex-wrap gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1 mt-1">
-                                          <span>Band: <strong className={
-                                            (item.result.metrics as any).decisionBand === 'GREEN' ? "text-emerald-400" :
-                                            (item.result.metrics as any).decisionBand === 'AMBER' ? "text-amber-400" : "text-rose-400"
-                                          }>{(item.result.metrics as any).decisionBand ?? '—'}</strong></span>
-                                          <span>Flags: <strong>{Number((item.result.metrics as any).materialRiskFlagCount ?? 0) + Number((item.result.metrics as any).moderateRiskFlagCount ?? 0)}</strong></span>
-                                        </div>
-                                      )}
-
-                                      {isCallSimulation && typeof item.result.durationSeconds === 'number' && (
-                                        <div className="flex gap-2 text-[9px] text-slate-400 border-t border-white/5 pt-1 mt-1">
-                                          <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
-                                        </div>
-                                      )}
-                                    </>
-                                  );
-                                })()}
                               </div>
-                            ) : (
-                              <div className="text-[11px] text-slate-500 italic min-h-[30px] flex items-center">
-                                Awaiting completion
-                              </div>
-                            )}
+                            );
+                          })}
+                          <div className="border-t border-white/10 pt-1.5 mt-1.5 flex justify-between items-center text-xs font-bold text-white">
+                            <span>Total Weighted Score</span>
+                            <span className="text-indigo-400">{candidate.overallScore}%</span>
                           </div>
                         </div>
-                      );
-                    });
-                  })()}
+                      </div>
+                    </div>
+                  )}
                 </div>
+
               </CardContent>
             </Card>
           ))
@@ -601,6 +684,49 @@ function getAssessmentIcon(name: string) {
   return FileQuestion;
 }
 
+function buildEqualWeights(assessmentStack: string[]) {
+  if (assessmentStack.length === 0) return {};
+  const baseWeight = Math.floor(100 / assessmentStack.length);
+  const remainder = 100 - baseWeight * assessmentStack.length;
+  return assessmentStack.reduce<Record<string, number>>((weights, name, index) => {
+    weights[name] = baseWeight + (index < remainder ? 1 : 0);
+    return weights;
+  }, {});
+}
+
+function getCampaignWeights(
+  assessmentStack: string[],
+  assessmentSettings?: Record<string, unknown> | null
+) {
+  const rawWeights =
+    assessmentSettings &&
+    typeof assessmentSettings.weights === "object" &&
+    assessmentSettings.weights !== null &&
+    !Array.isArray(assessmentSettings.weights)
+      ? (assessmentSettings.weights as Record<string, unknown>)
+      : null;
+
+  if (!rawWeights) return buildEqualWeights(assessmentStack);
+
+  return assessmentStack.reduce<Record<string, number>>((weights, assessmentName) => {
+    const matchedEntry = Object.entries(rawWeights).find(([key]) => isSameAssessment(assessmentName, key));
+    const numericValue = matchedEntry ? Number(matchedEntry[1]) : Number.NaN;
+    weights[assessmentName] = Number.isFinite(numericValue) ? numericValue : 0;
+    return weights;
+  }, {});
+}
+
+function isSameAssessment(expectedName?: string | null, resultName?: string | null) {
+  const expectedKey = getAssessmentKey(expectedName);
+  const resultKey = getAssessmentKey(resultName);
+
+  if (expectedKey && resultKey) return expectedKey === resultKey;
+
+  const expected = normalizeAssessmentText(expectedName);
+  const result = normalizeAssessmentText(resultName);
+  return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
+}
+
 function FilterSelect({
   label,
   allLabel,
@@ -618,7 +744,7 @@ function FilterSelect({
     <div className="space-y-2">
       <p className="text-xs font-medium uppercase text-slate-500">{label}</p>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100">
+        <SelectTrigger className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100 hover:bg-white/[0.06] hover:text-white transition-colors">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

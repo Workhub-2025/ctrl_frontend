@@ -366,10 +366,10 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
         
         <div className="relative space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Button
               variant="outline"
-              className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+              className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white shrink-0"
               asChild
             >
               <Link href="/hiring-manager-dashboard/candidates/">
@@ -377,9 +377,16 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                 Back to candidates
               </Link>
             </Button>
+
+            {/* Centered Candidate Report Badge */}
+            <div className="flex justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2 shrink-0">
+              <Badge className="pointer-events-none rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
+                Candidate Report
+              </Badge>
+            </div>
             
             {allAssessmentsCompleted && (
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
                 <Button
                   type="button"
                   onClick={() => setDecision("Reject")}
@@ -401,16 +408,6 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
           </div>
           
           <div className="flex flex-col gap-2.5 pt-1">
-            <div className="flex items-center gap-2">
-              <Badge className="pointer-events-none rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
-                Candidate Report
-              </Badge>
-              {allAssessmentsCompleted && (
-                <Badge className="pointer-events-none rounded-md bg-emerald-500/10 text-emerald-400 border-none px-2.5 py-0.5 text-xs font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Fully Verified
-                </Badge>
-              )}
-            </div>
             <div>
               <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl flex flex-wrap items-center gap-x-2.5 gap-y-1">
                 <span>{candidate.name}</span>

@@ -20,6 +20,7 @@ import {
   BrainCircuit,
   Headphones,
   Lock,
+  Unlock,
   Save,
   ShieldCheck,
   SlidersHorizontal,
@@ -49,7 +50,7 @@ type CampaignDraft = {
   campaignName: string;
   roleTitle: string;
   location: string;
-  deliveryMode: "in-person" | "remote" | "hybrid";
+  deliveryMode: "in-person" | "remote";
   candidateVolume: string;
   startDate: string;
   notes: string;
@@ -108,6 +109,7 @@ export function HiringManagerCampaignBuilder({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [draft, setDraft] = useState<CampaignDraft>(emptyDraft);
+  const [lockedSlugs, setLockedSlugs] = useState<string[]>([]);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -153,12 +155,32 @@ export function HiringManagerCampaignBuilder({
     setErrorMessage(null);
   };
 
+  const toggleLockSlug = (slug: string) => {
+    setLockedSlugs((current) => {
+      const exists = current.includes(slug);
+      if (exists) {
+        return current.filter((item) => item !== slug);
+      }
+      // Enforce at least one unlocked assessment to absorb changes
+      const unlockedCount = draft.assessmentSlugs.length - current.length;
+      if (unlockedCount <= 1) {
+        return current;
+      }
+      return [...current, slug];
+    });
+  };
+
   const toggleAssessment = (slug: string) => {
     setDraft((current) => {
       const exists = current.assessmentSlugs.includes(slug);
       const assessmentSlugs = exists
         ? current.assessmentSlugs.filter((item) => item !== slug)
         : [...current.assessmentSlugs, slug];
+
+      if (exists) {
+        setLockedSlugs((locked) => locked.filter((item) => item !== slug));
+      }
+
       return {
         ...current,
         assessmentSlugs,
@@ -171,13 +193,68 @@ export function HiringManagerCampaignBuilder({
 
   const updateAssessmentWeight = (slug: string, value: string) => {
     const parsed = Number.parseInt(value, 10);
-    setDraft((current) => ({
-      ...current,
-      assessmentWeights: {
-        ...current.assessmentWeights,
-        [slug]: Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 100)) : 0,
-      },
-    }));
+    const newWeightRaw = Number.isFinite(parsed) ? Math.max(0, Math.min(parsed, 100)) : 0;
+
+    setDraft((current) => {
+      const currentWeights = current.assessmentWeights;
+      const slugs = current.assessmentSlugs;
+
+      if (slugs.length <= 1) {
+        return {
+          ...current,
+          assessmentWeights: slugs.reduce<Record<string, number>>((acc, s) => {
+            acc[s] = 100;
+            return acc;
+          }, {}),
+        };
+      }
+
+      // Calculate sum of other locked weights
+      const otherLockedSlugs = lockedSlugs.filter((s) => s !== slug && slugs.includes(s));
+      const sumLocked = otherLockedSlugs.reduce((sum, s) => sum + (currentWeights[s] ?? 0), 0);
+
+      // Cap newWeight so it doesn't exceed 100 - sumLocked
+      const newWeight = Math.min(newWeightRaw, 100 - sumLocked);
+
+      // Other unlocked slugs that need to absorb the difference
+      const otherUnlockedSlugs = slugs.filter((s) => s !== slug && !lockedSlugs.includes(s));
+
+      if (otherUnlockedSlugs.length === 0) {
+        return current;
+      }
+
+      const newWeights = { ...currentWeights };
+      newWeights[slug] = newWeight;
+
+      // Distribute the remaining weight: 100 - newWeight - sumLocked
+      const remaining = 100 - newWeight - sumLocked;
+
+      // Sum of current weights of other unlocked slugs
+      const sumUnlocked = otherUnlockedSlugs.reduce((sum, s) => sum + (currentWeights[s] ?? 0), 0);
+
+      if (sumUnlocked > 0) {
+        otherUnlockedSlugs.forEach((s) => {
+          newWeights[s] = Math.round(((currentWeights[s] ?? 0) / sumUnlocked) * remaining);
+        });
+      } else {
+        otherUnlockedSlugs.forEach((s) => {
+          newWeights[s] = Math.round(remaining / otherUnlockedSlugs.length);
+        });
+      }
+
+      // Handle rounding error to ensure exact sum of 100
+      const totalCalculated = slugs.reduce((sum, s) => sum + (newWeights[s] ?? 0), 0);
+      const error = 100 - totalCalculated;
+      if (error !== 0 && otherUnlockedSlugs.length > 0) {
+        const targetSlug = otherUnlockedSlugs[0];
+        newWeights[targetSlug] = Math.max(0, (newWeights[targetSlug] ?? 0) + error);
+      }
+
+      return {
+        ...current,
+        assessmentWeights: newWeights,
+      };
+    });
     setSavedMessage(null);
     setErrorMessage(null);
   };
@@ -221,9 +298,7 @@ export function HiringManagerCampaignBuilder({
           assessmentMode:
             draft.deliveryMode === "remote"
               ? "remote"
-              : draft.deliveryMode === "hybrid"
-                ? "hybrid"
-                : "in_person",
+              : "in_person",
           assessmentDocumentIds: selectedAssessments
             .map((assessment) => assessment.documentId)
             .filter(Boolean),
@@ -274,13 +349,13 @@ export function HiringManagerCampaignBuilder({
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-5">
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardHeader className="border-b border-white/10 p-4">
-            <CardTitle className="text-base text-white">Campaign details</CardTitle>
+        <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/50 backdrop-blur-md shadow-xl">
+          <CardHeader className="border-b border-white/5 p-5">
+            <CardTitle className="text-base font-bold text-white">Campaign details</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 p-4 md:grid-cols-2">
+          <CardContent className="grid gap-4 p-5 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="campaignName" className="text-slate-200">
+              <Label htmlFor="campaignName" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Campaign name
               </Label>
               <Input
@@ -288,11 +363,11 @@ export function HiringManagerCampaignBuilder({
                 value={draft.campaignName}
                 onChange={(event) => updateDraft("campaignName", event.target.value)}
                 placeholder="e.g. Spring control room intake"
-                className="border-white/10 bg-[#08101d] text-slate-100 placeholder:text-slate-500"
+                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="roleTitle" className="text-slate-200">
+              <Label htmlFor="roleTitle" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Role title
               </Label>
               <Input
@@ -300,11 +375,11 @@ export function HiringManagerCampaignBuilder({
                 value={draft.roleTitle}
                 onChange={(event) => updateDraft("roleTitle", event.target.value)}
                 placeholder="Emergency call handler"
-                className="border-white/10 bg-[#08101d] text-slate-100 placeholder:text-slate-500"
+                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="location" className="text-slate-200">
+              <Label htmlFor="location" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Location
               </Label>
               <Input
@@ -312,12 +387,12 @@ export function HiringManagerCampaignBuilder({
                 value={draft.location}
                 onChange={(event) => updateDraft("location", event.target.value)}
                 placeholder="Assessment centre or operational area"
-                className="border-white/10 bg-[#08101d] text-slate-100 placeholder:text-slate-500"
+                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-slate-200">
+              <Label htmlFor="startDate" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Planned start
               </Label>
               <Input
@@ -325,11 +400,11 @@ export function HiringManagerCampaignBuilder({
                 type="date"
                 value={draft.startDate}
                 onChange={(event) => updateDraft("startDate", event.target.value)}
-                className="border-white/10 bg-[#08101d] text-slate-100"
+                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes" className="text-slate-200">
+              <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Operational notes
               </Label>
               <Textarea
@@ -337,26 +412,26 @@ export function HiringManagerCampaignBuilder({
                 value={draft.notes}
                 onChange={(event) => updateDraft("notes", event.target.value)}
                 placeholder="Optional notes for recruiters, assessors, or session planning."
-                className="min-h-24 border-white/10 bg-[#08101d] text-slate-100 placeholder:text-slate-500"
+                className="min-h-24 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
               />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardHeader className="border-b border-white/10 p-4">
+        <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/50 backdrop-blur-md shadow-xl">
+          <CardHeader className="border-b border-white/5 p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="text-base text-white">
+              <CardTitle className="text-base font-bold text-white">
                 Assessment stack
               </CardTitle>
-              <Badge className="w-fit rounded-md border-sky-400/20 bg-sky-400/10 text-xs text-sky-100 hover:bg-sky-400/10">
+              <Badge className="w-fit rounded-md border-primary/20 bg-primary/10 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 px-2 py-0.5 pointer-events-none">
                 {assessments.length} active from backend
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3 p-4">
+          <CardContent className="space-y-3 p-5">
             {assessments.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-white/10 bg-white/[0.03] p-4 text-sm leading-6 text-slate-300">
+              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-sm leading-6 text-slate-400 text-center">
                 No active assessments came back from Strapi. Start the backend,
                 check role permissions for `assessments`, then refresh this page.
               </div>
@@ -377,10 +452,10 @@ export function HiringManagerCampaignBuilder({
                     }}
                     role="button"
                     tabIndex={0}
-                    className={`rounded-lg border p-3 text-left transition ${
+                    className={`rounded-xl border p-4 text-left transition-all duration-300 cursor-pointer ${
                       checked
-                        ? "border-sky-300/30 bg-sky-400/[0.08]"
-                        : "border-white/10 bg-white/[0.03] hover:border-sky-300/30 hover:bg-sky-400/[0.06]"
+                        ? "border-primary/45 bg-[#0e172e]/60 shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+                        : "border-white/10 bg-white/[0.02] hover:border-primary/30 hover:bg-[#0e172e]/30"
                     }`}
                   >
                     <div className="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-start">
@@ -388,19 +463,21 @@ export function HiringManagerCampaignBuilder({
                         checked={checked}
                         onCheckedChange={() => toggleAssessment(assessment.slug)}
                         onClick={(event) => event.stopPropagation()}
-                        className="mt-1 border-white/30 data-[state=checked]:border-sky-300 data-[state=checked]:bg-sky-400"
+                        className="mt-1.5 border-white/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary rounded-md"
                         aria-label={`Select ${assessment.title}`}
                       />
                       <div className="min-w-0">
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-sky-400/20 bg-sky-400/10 text-sky-200">
+                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+                            checked ? "border-primary/30 bg-primary/15 text-primary" : "border-white/15 bg-white/[0.04] text-slate-400"
+                          }`}>
                             <Icon className="h-4 w-4" />
                           </span>
                           <div className="min-w-0">
-                            <p className="break-words text-sm font-semibold leading-5 text-white">
+                            <p className="break-words text-sm font-bold leading-5 text-white">
                               {assessment.title}
                             </p>
-                            <p className="mt-0.5 text-xs text-slate-500">
+                            <p className="mt-0.5 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
                               {assessment.skills.slice(0, 3).join(" · ")}
                             </p>
                           </div>
@@ -409,12 +486,12 @@ export function HiringManagerCampaignBuilder({
                           {assessment.summary}
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-2 sm:justify-end">
-                        <Badge className="rounded-md border-white/10 bg-white/5 text-xs text-slate-300 hover:bg-white/5">
+                      <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                        <Badge className="rounded-md border-white/10 bg-white/5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 px-2 py-0.5 pointer-events-none">
                           {assessment.duration}
                         </Badge>
                         {assessment.passingScore !== null && (
-                          <Badge className="rounded-md border-white/10 bg-white/5 text-xs text-slate-300 hover:bg-white/5">
+                          <Badge className="rounded-md border-white/10 bg-white/5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 px-2 py-0.5 pointer-events-none">
                             Pass {assessment.passingScore}%
                           </Badge>
                         )}
@@ -429,17 +506,17 @@ export function HiringManagerCampaignBuilder({
       </div>
 
       <aside className="space-y-4">
-        <Card className="sticky top-24 rounded-lg border border-white/10 bg-[#0b1220] shadow-none">
-          <CardHeader className="border-b border-white/10 p-4">
-            <CardTitle className="text-base text-white">Campaign review</CardTitle>
+        <Card className="sticky top-24 rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/60 backdrop-blur-md shadow-xl">
+          <CardHeader className="border-b border-white/5 p-5">
+            <CardTitle className="text-base font-bold text-white">Campaign review</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 p-4">
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+          <CardContent className="space-y-4 p-5">
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                 Delivery mode
               </p>
               <div className="mt-3 grid gap-2">
-                {(["in-person", "remote", "hybrid"] as const).map((mode) => {
+                {(["in-person", "remote"] as const).map((mode) => {
                   const locked = mode !== "in-person";
                   return (
                     <button
@@ -447,79 +524,96 @@ export function HiringManagerCampaignBuilder({
                       type="button"
                       disabled={locked}
                       onClick={() => updateDraft("deliveryMode", mode)}
-                      className={`flex items-center justify-between rounded-md border px-3 py-2 text-sm capitalize ${
+                      className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                         draft.deliveryMode === mode
-                          ? "border-sky-300/40 bg-sky-400/10 text-sky-100"
-                          : "border-white/10 bg-white/[0.03] text-slate-300"
-                      } ${locked ? "cursor-not-allowed opacity-60" : ""}`}
+                          ? "border-primary/40 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                          : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
+                      } ${locked ? "cursor-not-allowed opacity-50" : ""}`}
                     >
                       {mode.replace("-", " ")}
-                      {locked && <Lock className="h-3.5 w-3.5 text-amber-200" />}
+                      {locked && <Lock className="h-3.5 w-3.5 text-amber-400" />}
                     </button>
                   );
                 })}
               </div>
-              <p className="mt-3 text-xs leading-5 text-amber-100">
-                Remote and hybrid are visible for planning, but locked until paid
+              <p className="mt-3 text-[10px] leading-relaxed text-amber-300/80">
+                Remote is visible for planning, but locked until paid
                 permissions are enabled.
               </p>
             </div>
 
-            <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-xs uppercase tracking-wide text-slate-500">
-                Selected stack
-              </p>
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                  Selected stack
+                </p>
+                {selectedAssessments.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setLockedSlugs([]);
+                      updateDraft("assessmentWeights", buildEqualWeights(draft.assessmentSlugs));
+                    }}
+                    className="h-6 rounded-md px-2 text-[9px] font-bold uppercase tracking-wider text-indigo-400 hover:bg-indigo-400/10 hover:text-indigo-300 transition-colors"
+                  >
+                    Distribute Equally
+                  </Button>
+                )}
+              </div>
               <div className="mt-3 space-y-2">
                 {selectedAssessments.length === 0 ? (
-                  <p className="text-sm leading-6 text-slate-400">
-                    Select at least one assessment from Strapi.
+                  <p className="text-xs leading-normal text-slate-500 italic">
+                    Select at least one assessment from the stack on the left.
                   </p>
                 ) : (
                   selectedAssessments.map((assessment, index) => (
                     <div
                       key={assessment.slug}
-                      className="rounded-md border border-white/10 bg-[#08101d] px-3 py-2"
+                      className="rounded-xl border border-white/10 bg-white/[0.01] px-3 py-3"
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs text-slate-500">
+                        <span className="text-[10px] text-slate-500 font-bold">
                           {String(index + 1).padStart(2, "0")}
                         </span>
-                        <span className="min-w-0 flex-1 break-words text-sm text-slate-100">
+                        <span className="min-w-0 flex-1 break-words text-xs font-bold text-slate-100">
                           {assessment.title}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-[10px] text-slate-500 font-semibold">
                           {assessment.duration}
                         </span>
                       </div>
                       {assessment.slug === "typing" && (
                         <div className="mt-3 space-y-2">
-                          <Label className="text-xs text-slate-400">
+                          <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                             Typing level
                           </Label>
-                          <Select
-                            value={draft.typingDifficulty}
-                            onValueChange={(value) =>
-                              updateDraft(
-                                "typingDifficulty",
-                                value as CampaignDraft["typingDifficulty"]
-                              )
-                            }
-                          >
-                            <SelectTrigger className="h-9 border-white/10 bg-white/[0.03] text-slate-100">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Base">Base</SelectItem>
-                              <SelectItem value="Intermediate">Intermediate</SelectItem>
-                              <SelectItem value="Advanced">Advanced</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="mt-2 grid gap-1.5">
+                            {(["Base", "Intermediate", "Advanced"] as const).map((level) => {
+                              const isActive = draft.typingDifficulty === level;
+                              return (
+                                <button
+                                  key={level}
+                                  type="button"
+                                  onClick={() => updateDraft("typingDifficulty", level)}
+                                  className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
+                                    isActive
+                                      ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                                      : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
+                                  }`}
+                                >
+                                  {level}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                       <div className="mt-3 space-y-2">
                         <Label
                           htmlFor={`weight-${assessment.slug}`}
-                          className="text-xs text-slate-400"
+                          className="text-[10px] uppercase font-bold tracking-wider text-slate-500"
                         >
                           Weighting
                         </Label>
@@ -530,15 +624,37 @@ export function HiringManagerCampaignBuilder({
                             min="0"
                             max="100"
                             value={draft.assessmentWeights[assessment.slug] ?? 0}
+                            disabled={lockedSlugs.includes(assessment.slug)}
                             onChange={(event) =>
                               updateAssessmentWeight(
                                 assessment.slug,
                                 event.target.value
                               )
                             }
-                            className="h-9 border-white/10 bg-white/[0.03] text-slate-100"
+                            className="h-9 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
                           />
-                          <span className="text-sm text-slate-400">%</span>
+                          <span className="text-xs text-slate-400 font-bold mr-1">%</span>
+                          
+                          {draft.assessmentSlugs.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => toggleLockSlug(assessment.slug)}
+                              className={`h-9 w-9 shrink-0 rounded-lg transition-colors ${
+                                lockedSlugs.includes(assessment.slug)
+                                  ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
+                                  : "bg-white/[0.02] text-slate-500 hover:bg-white/[0.05] hover:text-slate-400"
+                              }`}
+                              title={lockedSlugs.includes(assessment.slug) ? "Weight locked (Click to unlock)" : "Weight unlocked (Click to lock)"}
+                            >
+                              {lockedSlugs.includes(assessment.slug) ? (
+                                <Lock className="h-3.5 w-3.5" />
+                              ) : (
+                                <Unlock className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -549,41 +665,40 @@ export function HiringManagerCampaignBuilder({
 
             {selectedAssessments.length > 0 && (
               <div
-                className={`rounded-lg border p-3 ${
+                className={`rounded-xl border p-3.5 ${
                   assessmentWeightTotal === 100
-                    ? "border-emerald-400/20 bg-emerald-400/10"
-                    : "border-red-400/20 bg-red-400/10"
+                    ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
+                    : "border-red-500/20 bg-red-500/5 text-red-300"
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-white">
-                    Total assessment weighting
+                  <p className="text-xs font-semibold">
+                    Total weighting
                   </p>
                   <p
-                    className={`text-lg font-semibold ${
+                    className={`text-base font-bold ${
                       assessmentWeightTotal === 100
-                        ? "text-emerald-100"
-                        : "text-red-100"
+                        ? "text-emerald-400"
+                        : "text-red-400"
                     }`}
                   >
                     {assessmentWeightTotal}%
                   </p>
                 </div>
                 {assessmentWeightTotal !== 100 && (
-                  <p className="mt-2 text-xs leading-5 text-red-100">
-                    Assessment weights must equal 100% overall before you can
-                    create the campaign.
+                  <p className="mt-2 text-[10px] leading-relaxed text-red-400/80">
+                    Weights must sum to 100% before the campaign can be created.
                   </p>
                 )}
               </div>
             )}
 
-            <div className="rounded-lg border border-sky-400/20 bg-sky-400/10 p-3">
-              <div className="flex items-center gap-2 text-sky-100">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+              <div className="flex items-center gap-2 text-primary">
                 <ShieldCheck className="h-4 w-4" />
-                <p className="text-sm font-medium">Estimated assessment time</p>
+                <p className="text-xs uppercase font-bold tracking-wider">Estimated time</p>
               </div>
-              <p className="mt-2 text-2xl font-semibold text-white">
+              <p className="mt-2 text-2xl font-black text-white">
                 {formatTotalDuration(totalDurationSeconds)}
               </p>
             </div>
@@ -592,20 +707,20 @@ export function HiringManagerCampaignBuilder({
               type="button"
               disabled={!hasRequiredSetup || isSaving}
               onClick={saveDraft}
-              className="h-10 w-full rounded-md bg-sky-500 text-sm font-medium text-slate-950 hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-10 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 shadow-[0_4px_20px_rgba(99,102,241,0.15)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Save className="mr-2 h-4 w-4" />
               {isSaving ? "Creating..." : "Create campaign"}
             </Button>
 
             {savedMessage && (
-              <p className="rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs leading-5 text-emerald-100">
+              <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs leading-normal text-emerald-400">
                 {savedMessage}
               </p>
             )}
 
             {errorMessage && (
-              <p className="rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs leading-5 text-red-100">
+              <p className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs leading-normal text-red-400">
                 {errorMessage}
               </p>
             )}
