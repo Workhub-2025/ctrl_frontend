@@ -17,6 +17,7 @@ import {
   Users,
   CalendarDays,
   Layers3,
+  Plus,
 } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import {
@@ -77,19 +78,40 @@ export function HiringManagerCampaignsList() {
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-5 text-muted-foreground">{refreshLabel}</p>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => loadCampaigns(true)}
-          disabled={isRefreshing}
-          className="w-fit hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+    <div className="space-y-5">
+      {/* Active Campaigns Toolbar */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-bold text-white">Active Campaigns</h2>
+            <Badge variant="secondary" className="rounded-full border-none bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              {campaigns.length}
+            </Badge>
+          </div>
+          <p className="text-xs leading-5 text-muted-foreground mt-0.5">{refreshLabel}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => loadCampaigns(true)}
+            disabled={isRefreshing}
+            className="h-10 border-white/10 bg-transparent hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors text-slate-300"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button
+            type="button"
+            asChild
+            className="h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 hover:opacity-95 shadow-[0_4px_20px_rgba(99,102,241,0.15)]"
+          >
+            <Link href="/hiring-manager-dashboard/campaigns/create/?returnTo=/hiring-manager-dashboard/campaigns/">
+              <Plus className="mr-2 h-4 w-4" />
+              Create campaign
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {error && (
