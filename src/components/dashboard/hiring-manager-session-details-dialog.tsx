@@ -491,7 +491,7 @@ export function CandidateResultsDialog({
         </div>
 
         <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/5 pb-4 pr-12">
-          <span className="truncate text-sm font-bold text-white">{resultsDialog.candidateName}</span>
+          <DialogTitle className="truncate text-sm font-bold text-white">{resultsDialog.candidateName}</DialogTitle>
           {resultsDialog.candidateEmail && (
             <>
               <span className="text-slate-600">·</span>
