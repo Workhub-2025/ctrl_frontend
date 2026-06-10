@@ -5,6 +5,7 @@ const BaseQuestionSchema = z.object({
     documentId: z.string().optional(),
     createdAt: z.date().optional(),
     updatedAt: z.date().optional(),
+    title: z.string().optional(),
     type: z.enum(['mcp', 'text']),
     question: z.string(),
 })

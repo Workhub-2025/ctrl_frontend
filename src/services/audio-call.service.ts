@@ -10,7 +10,7 @@ export default class AudioCallService {
     private static readonly COLLECTION = 'audio-calls';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'AudioCallService',
-        searchFields: ['description', 'transcription', 'rubric'],
+        searchFields: ['title', 'description', 'transcription', 'rubric'],
         defaultSort: 'createdAt:desc'
     };
 
@@ -64,7 +64,7 @@ export default class AudioCallService {
                 });
 
                 if (!uploadedFiles?.length) {
-                    throw new Error('File upload failed');
+                     throw new Error('File upload failed');
                 }
 
                 const uploadedFileId = uploadedFiles[0].id;
@@ -72,6 +72,7 @@ export default class AudioCallService {
                 // PASO 2: Crear la entrada con el archivo asociado
                 const entryData = Object.fromEntries(
                     Object.entries({
+                        title: audioCallData.title,
                         description: audioCallData.description ?? '',
                         transcription: audioCallData.transcription,
                         rubric: audioCallData.rubric,
@@ -123,6 +124,7 @@ export default class AudioCallService {
 
                 const updateData = Object.fromEntries(
                     Object.entries({
+                        title: audioCallData.title,
                         description: audioCallData.description ?? '',
                         transcription: audioCallData.transcription,
                         rubric: audioCallData.rubric,

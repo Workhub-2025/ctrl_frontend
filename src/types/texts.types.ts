@@ -5,6 +5,7 @@ export const TypingTextSchema = z.object({
     documentId: z.string().optional(),
     createdAt: z.date().optional(),
     updatedAt: z.date().optional(),
+    title: z.string().optional(),
     type: z.enum(["practice", "test"]).optional(),
     difficulty: z.enum(["Base", "Intermediate", "Advanced"]).optional(),
     text: z.string().optional()

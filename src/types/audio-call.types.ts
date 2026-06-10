@@ -32,6 +32,7 @@ export const AudioCallSchema = z.object({
     publishedAt: z.date().optional().nullable(),
 
     // Audio Call specific fields from schema
+    title: z.string().optional().nullable(),
     description: z.string().optional().nullable(),
     transcription: z.string().optional().nullable(),
     file: AudioFileSchema.optional().nullable(),
@@ -43,6 +44,7 @@ export type IAudioCall = z.infer<typeof AudioCallSchema>;
 
 // Type for creating new audio calls
 export interface CreateAudioCallData {
+    title?: string;
     description?: string;
     transcription?: string;
     file?: File | string; // File object for upload or file ID/URL
@@ -51,6 +53,7 @@ export interface CreateAudioCallData {
 
 // Type for updating audio calls
 export interface UpdateAudioCallData {
+    title?: string;
     description?: string;
     transcription?: string;
     file?: File | string; // File object for upload or file ID/URL
@@ -60,6 +63,7 @@ export interface UpdateAudioCallData {
 // Type for audio call file upload
 export interface AudioCallFileUpload {
     file: File;
+    title?: string;
     description?: string;
     transcription?: string;
     rubric?: string;
@@ -82,6 +86,7 @@ export const validateAudioCall = (data: unknown): IAudioCall => {
 
 export const validateCreateAudioCallData = (data: unknown): CreateAudioCallData => {
     const createSchema = z.object({
+        title: z.string().optional(),
         description: z.string().optional(),
         transcription: z.string().optional(),
         file: z.union([z.instanceof(File), z.string()]).optional(),
@@ -93,6 +98,7 @@ export const validateCreateAudioCallData = (data: unknown): CreateAudioCallData 
 
 export const validateUpdateAudioCallData = (data: unknown): UpdateAudioCallData => {
     const updateSchema = z.object({
+        title: z.string().optional(),
         description: z.string().optional(),
         transcription: z.string().optional(),
         file: z.union([z.instanceof(File), z.string()]).optional(),
