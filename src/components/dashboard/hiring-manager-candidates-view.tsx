@@ -467,7 +467,58 @@ export function HiringManagerCandidatesView() {
 
                 {/* Redesigned Performance breakdown segment tracks */}
                 <div className="space-y-4 pt-4 border-t border-white/5">
-                  {/* Segmented scores bar */}
+                  {/* Overall Weighted Score Bar — shown first */}
+                  {candidate.completedAssessments > 0 && (
+                    <div className="relative group space-y-2">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span className="font-medium text-slate-300">Overall weighted score</span>
+                        <span className="font-extrabold text-indigo-400 tabular-nums">
+                          {candidate.overallScore}%
+                        </span>
+                      </div>
+                      <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden border border-white/5">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-500"
+                          style={{ width: `${candidate.overallScore}%` }}
+                        />
+                      </div>
+
+                      {/* Tooltip with weighted score breakdown */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-xl border border-white/10 bg-slate-950/95 backdrop-blur-md text-sm text-slate-200 hidden group-hover:block z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
+                        <p className="font-bold text-white mb-2">Weighted Score Breakdown</p>
+                        <div className="space-y-1.5">
+                          {candidate.assessmentStack.map((name) => {
+                            const weight = candidate.weights[name] ?? 0;
+                            const result = candidate.results.find((r) => isSameAssessment(name, r.assessment));
+                            const isCompleted = result && (result.completedAt || result.numericScore !== null);
+                            const score = result?.numericScore ?? 0;
+                            const contribution = isCompleted ? parseFloat(((score * weight) / 100).toFixed(1)) : 0;
+
+                            return (
+                              <div key={name} className="flex justify-between items-center text-xs">
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-slate-300 font-medium truncate">{name}</span>
+                                  <span className="text-[0.625rem] text-slate-500 font-semibold">Weight: {weight}%</span>
+                                </div>
+                                <div className="text-right pl-2 shrink-0">
+                                  <span className="font-semibold text-slate-400">{isCompleted ? `${score}%` : "Pending"}</span>
+                                  {isCompleted && (
+                                    <span className="text-[0.625rem] text-indigo-400 font-bold ml-1.5">(+{contribution}%)</span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          <div className="border-t border-white/10 pt-1.5 mt-1.5 flex justify-between items-center text-xs font-bold text-white">
+                            <span>Total Weighted Score</span>
+                            <span className="text-indigo-400">{candidate.overallScore}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Segmented per-assessment scores bar — shown second */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs text-slate-400">
                       <span className="font-medium">Assessment performance breakdown</span>
@@ -529,14 +580,13 @@ export function HiringManagerCandidatesView() {
                                 className={`h-full ${colorClass} transition-all duration-500 rounded-full`}
                                 style={{ width: `${isCompleted ? scoreValue : 0}%` }}
                               />
-                              
-                              {/* Tooltip */}
+                                              {/* Tooltip */}
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl border border-white/10 bg-slate-950/95 backdrop-blur-md text-sm text-slate-200 hidden group-hover:block z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
                                 <p className="font-bold text-white mb-1">{stackName}</p>
                                 {isCompleted && matchedResult ? (
                                   <div className="space-y-1">
                                     <div className="flex justify-between items-center text-xs">
-                                      <span className="text-slate-400 font-medium">Overall Score</span>
+                                      <span className="text-slate-400 font-medium">Assessment Score</span>
                                       <span className="font-extrabold text-white">{scoreValue}%</span>
                                     </div>
                                     {metricsContent && (
@@ -555,57 +605,6 @@ export function HiringManagerCandidatesView() {
                       })()}
                     </div>
                   </div>
-
-                  {/* Overall Weighted Score Bar */}
-                  {candidate.completedAssessments > 0 && (
-                    <div className="relative group space-y-2">
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span className="font-medium text-slate-300">Overall weighted score</span>
-                        <span className="font-extrabold text-indigo-400 tabular-nums">
-                          {candidate.overallScore}%
-                        </span>
-                      </div>
-                      <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden border border-white/5">
-                        <div
-                          className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-500"
-                          style={{ width: `${candidate.overallScore}%` }}
-                        />
-                      </div>
-
-                      {/* Tooltip with weighted score breakdown */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-xl border border-white/10 bg-slate-950/95 backdrop-blur-md text-sm text-slate-200 hidden group-hover:block z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
-                        <p className="font-bold text-white mb-2">Weighted Score Breakdown</p>
-                        <div className="space-y-1.5">
-                          {candidate.assessmentStack.map((name) => {
-                            const weight = candidate.weights[name] ?? 0;
-                            const result = candidate.results.find((r) => isSameAssessment(name, r.assessment));
-                            const isCompleted = result && (result.completedAt || result.numericScore !== null);
-                            const score = result?.numericScore ?? 0;
-                            const contribution = isCompleted ? parseFloat(((score * weight) / 100).toFixed(1)) : 0;
-
-                            return (
-                              <div key={name} className="flex justify-between items-center text-xs">
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-slate-300 font-medium truncate">{name}</span>
-                                  <span className="text-[0.625rem] text-slate-500 font-semibold">Weight: {weight}%</span>
-                                </div>
-                                <div className="text-right pl-2 shrink-0">
-                                  <span className="font-semibold text-slate-400">{isCompleted ? `${score}%` : "Pending"}</span>
-                                  {isCompleted && (
-                                    <span className="text-[0.625rem] text-indigo-400 font-bold ml-1.5">(+{contribution}%)</span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                          <div className="border-t border-white/10 pt-1.5 mt-1.5 flex justify-between items-center text-xs font-bold text-white">
-                            <span>Total Weighted Score</span>
-                            <span className="text-indigo-400">{candidate.overallScore}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
               </CardContent>

@@ -779,6 +779,8 @@ export function HiringManagerSessionsList() {
         open={Boolean(selectedSession)}
         onOpenChange={(open) => !open && setSelectedSession(null)}
         campaignName={selectedCampaignDetail?.name}
+        campaignRole={selectedCampaignDetail?.role}
+        campaignId={selectedCampaignDetail?.id}
         expectedAssessmentCount={selectedCampaignDetail?.assessmentStack.length}
         removingCandidateId={removingCandidateId}
         onKickCandidate={removeCandidate}

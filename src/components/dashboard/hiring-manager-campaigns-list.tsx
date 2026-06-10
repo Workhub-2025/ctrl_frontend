@@ -205,7 +205,7 @@ export function HiringManagerCampaignsList() {
                     asChild
                   >
                     <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}>
-                      Open campaign view
+                      View More
                       <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                     </Link>
                   </Button>

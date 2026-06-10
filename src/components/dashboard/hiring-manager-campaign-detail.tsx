@@ -21,7 +21,11 @@ import {
   Briefcase
 } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
-import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
+import {
+  CandidateResultsDialog,
+  HiringManagerSessionDetailsDialog,
+  type ResultsDialogState,
+} from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
@@ -44,6 +48,7 @@ export function HiringManagerCampaignDetailView({
   const [isDeleting, setIsDeleting] = useState(false);
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<CampaignSession | null>(null);
+  const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
 
   const loadCampaign = useCallback(async (force = false) => {
     const startTime = Date.now();
@@ -400,14 +405,23 @@ export function HiringManagerCampaignDetailView({
                         </td>
                         <td className="p-3 text-right">
                           <Button
+                            type="button"
                             variant="ghost"
                             size="sm"
-                            asChild
+                            onClick={() =>
+                              setSelectedReport({
+                                candidateId: candidate.id,
+                                campaignId: campaign.id,
+                                candidateSessionId: candidate.id,
+                                candidateName: candidate.name,
+                                candidateEmail: candidate.email,
+                                role: campaign.role,
+                                campaignName: campaign.name,
+                              })
+                            }
                             className="h-8 text-xs text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10"
                           >
-                            <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`}>
-                              View report
-                            </Link>
+                            View report
                           </Button>
                         </td>
                       </tr>
@@ -425,6 +439,8 @@ export function HiringManagerCampaignDetailView({
         open={Boolean(selectedSession)}
         onOpenChange={(open) => !open && setSelectedSession(null)}
         campaignName={campaign.name}
+        campaignRole={campaign.role}
+        campaignId={campaign.id}
         expectedAssessmentCount={campaign.assessmentStack.length}
         removingCandidateId={removingCandidateId}
         onKickCandidate={removeCandidate}
@@ -432,6 +448,11 @@ export function HiringManagerCampaignDetailView({
           `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`
         }
         assessmentStack={campaign.assessmentStack}
+      />
+
+      <CandidateResultsDialog
+        resultsDialog={selectedReport}
+        onClose={() => setSelectedReport(null)}
       />
     </div>
   );

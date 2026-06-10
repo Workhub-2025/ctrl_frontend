@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import {
   Tooltip,
   TooltipContent,
@@ -19,11 +17,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
   UserMinus,
-  Keyboard,
-  ClipboardList,
-  BrainCircuit,
-  PhoneCall,
-  FileQuestion,
   MoreVertical,
   CalendarClock,
   MapPin,
@@ -34,6 +27,9 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  X,
+  ArrowLeft,
+  Eye,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -42,15 +38,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 
 type SessionCandidate = HiringManagerSessionListItem["candidates"][number];
+
+export type ResultsDialogState = {
+  candidateId: string;
+  campaignId: string;
+  candidateSessionId: string;
+  candidateName: string;
+  candidateEmail?: string;
+  role?: string;
+  campaignName?: string;
+};
 
 type HiringManagerSessionDetailsDialogProps = {
   session: HiringManagerSessionListItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaignName?: string;
+  campaignRole?: string;
+  campaignId?: string;
   expectedAssessmentCount?: number;
   removingCandidateId?: string | null;
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
@@ -63,6 +72,8 @@ export function HiringManagerSessionDetailsDialog({
   open,
   onOpenChange,
   campaignName,
+  campaignRole,
+  campaignId,
   expectedAssessmentCount,
   removingCandidateId,
   onKickCandidate,
@@ -71,212 +82,275 @@ export function HiringManagerSessionDetailsDialog({
 }: HiringManagerSessionDetailsDialogProps) {
   const [copiedCode, setCopiedCode] = useState(false);
   const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(null);
+  const [resultsDialog, setResultsDialog] = useState<ResultsDialogState | null>(null);
 
   const toggleCandidateExpand = (candidateId: string) => {
     setExpandedCandidateId((current) => (current === candidateId ? null : candidateId));
   };
 
-  const handleOpenChange = (isOpen: boolean) => {
-    onOpenChange(isOpen);
-    if (!isOpen) {
-      setExpandedCandidateId(null);
-      setCopiedCode(false);
-    }
+  const handleClose = () => {
+    onOpenChange(false);
+    setExpandedCandidateId(null);
+    setCopiedCode(false);
+  };
+
+  const handleOpenResults = (candidate: SessionCandidate) => {
+    setResultsDialog({
+      candidateId: candidate.id,
+      campaignId: campaignId ?? "",
+      candidateSessionId: candidate.id,
+      candidateName: candidate.name,
+      candidateEmail: candidate.email,
+      role: campaignRole,
+      campaignName,
+    });
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-h-[85vh] w-full sm:max-w-4xl overflow-y-auto rounded-[2rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 text-slate-100 backdrop-blur-md p-6 shadow-2xl flex flex-col gap-5 [&>button]:text-slate-400 [&>button]:hover:text-white [&>button]:transition-colors">
-        {/* Ambient background glows */}
-        <div className="absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+    <>
+      <Dialog open={open} onOpenChange={() => { }}>
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          className="fixed left-1/2 top-1/2 h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[1.5rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 p-6 text-slate-100 shadow-2xl backdrop-blur-md flex flex-col gap-5 [&>button]:hidden"
+        >
+          {/* Ambient glows */}
+          <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+          <div className="pointer-events-none absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
 
-        {session && (
-          <>
-            <DialogHeader className="border-b border-white/5 pb-4 relative z-10 text-left pr-12 flex flex-col gap-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
-              <div className="flex flex-wrap items-center gap-2.5">
-                <DialogTitle className="text-xl font-bold text-white leading-snug">
-                  {campaignName || session.campaign}
-                </DialogTitle>
-                <Badge className={[
-                  "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
-                  getStatusTone(session.status)
-                ].join(" ")}>
-                  {session.status}
-                </Badge>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5 font-medium flex-wrap">
-                <CalendarClock className="h-3.5 w-3.5 text-slate-500" />
-                <span>{session.date}</span>
-                <span className="text-slate-600 font-bold">·</span>
-                <MapPin className="h-3.5 w-3.5 text-slate-500" />
-                <span className="truncate max-w-[200px]">{session.location}</span>
-              </p>
-            </DialogHeader>
+          {/* X close — wrapped in div to escape [&>button]:hidden */}
+          <div className="absolute right-5 top-5 z-20">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-            {/* Upgraded Metric Cards Grid */}
-            <div className="grid gap-4 sm:grid-cols-3 relative z-10">
-              {/* Access Code Card */}
-              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
-                <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-indigo-500/10 blur-md pointer-events-none" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Access Code</span>
-                <div className="flex items-center justify-between gap-2 mt-3 bg-black/35 p-1.5 rounded-lg border border-white/5">
-                  <span className="font-mono text-sm font-bold text-white tracking-wider truncate pl-1">{session.accessValue}</span>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => {
-                      void navigator.clipboard?.writeText(session.accessValue);
-                      setCopiedCode(true);
-                      setTimeout(() => setCopiedCode(false), 2000);
-                    }}
-                    className="h-7 w-7 rounded-md text-slate-400 hover:text-white hover:bg-white/10 shrink-0"
-                  >
-                    {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-                  </Button>
+          {session && (
+            <>
+              {/* Header */}
+              <DialogHeader className="border-b border-white/5 pb-4 relative z-10 text-left pr-12 flex flex-col gap-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <DialogTitle className="text-xl font-bold text-white leading-snug">
+                    {campaignName || session.campaign}
+                  </DialogTitle>
+                  <Badge className={[
+                    "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
+                    getStatusTone(session.status)
+                  ].join(" ")}>
+                    {session.status}
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5 font-medium">
+                  <CalendarClock className="h-3.5 w-3.5 text-slate-500" />
+                  <span>{session.date}</span>
+                  <span className="text-slate-600">·</span>
+                  <MapPin className="h-3.5 w-3.5 text-slate-500" />
+                  <span className="truncate max-w-[220px]">{session.location}</span>
+                </p>
+              </DialogHeader>
+
+              {/* Metric Cards */}
+              <div className="grid gap-4 sm:grid-cols-3 relative z-10">
+                {/* Access Code */}
+                <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 p-4 shadow-sm">
+                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-indigo-500/10 blur-xl" />
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Code</p>
+                  <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-2.5 py-1.5">
+                    <span className="flex-1 truncate font-mono text-sm font-bold tracking-widest text-white">
+                      {session.accessValue}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(session.accessValue);
+                        setCopiedCode(true);
+                        setTimeout(() => setCopiedCode(false), 2000);
+                      }}
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Occupancy */}
+                <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 p-4 shadow-sm">
+                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-primary/10 blur-xl" />
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Occupancy</p>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <span className="text-2xl font-black text-white tabular-nums">{session.candidateCount}</span>
+                    <span className="text-xs text-slate-400 font-semibold">/ {session.candidateLimit} seats</span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-500"
+                      style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Delivery */}
+                <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 p-4 shadow-sm">
+                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-emerald-500/10 blur-xl" />
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Delivery Type</p>
+                  <div className="mt-2 flex items-center gap-2">
+                    {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http")
+                      ? <Globe className="h-4 w-4 text-indigo-400" />
+                      : <Building className="h-4 w-4 text-slate-400" />}
+                    <span className="text-sm font-bold text-white">
+                      {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http")
+                        ? "Virtual"
+                        : "In-Person"}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 truncate text-[11px] text-slate-400 font-medium">{session.location}</p>
                 </div>
               </div>
 
-              {/* Joined Occupancy Card */}
-              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
-                <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-primary/10 blur-md pointer-events-none" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Occupancy</span>
-                <div className="mt-3 flex items-baseline justify-between">
-                  <span className="text-base font-black text-white">{session.candidateCount} <span className="text-xs text-slate-400 font-medium">/ {session.candidateLimit}</span></span>
-                  <span className="text-[10px] font-bold text-slate-400 bg-white/[0.03] px-1.5 py-0.5 rounded border border-white/5">
-                    {Math.round((session.candidateCount / session.candidateLimit) * 100)}% Capacity
-                  </span>
+              {/* Candidates */}
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+                    <Users className="h-4 w-4 text-primary" />
+                    Joined Candidates
+                  </h3>
+                  <Badge variant="secondary" className="rounded-full border-none bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary pointer-events-none">
+                    {session.candidates.length}
+                  </Badge>
                 </div>
-                <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden mt-2 border border-white/5">
-                  <div 
-                    className="bg-primary h-full rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
-                  />
-                </div>
-              </div>
 
-              {/* Delivery Type Card */}
-              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col justify-between shadow-sm relative overflow-hidden">
-                <div className="absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-emerald-500/10 blur-md pointer-events-none" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Delivery Type</span>
-                <div className="mt-3 flex items-center gap-2">
-                  {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") ? (
-                    <Globe className="h-4 w-4 text-indigo-400" />
-                  ) : (
-                    <Building className="h-4 w-4 text-indigo-400" />
-                  )}
-                  <span className="text-xs font-bold text-white leading-none capitalize">
-                    {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") ? "Virtual (Remote)" : "In-Person"}
-                  </span>
-                </div>
-                <span className="text-[10px] text-slate-400 font-medium truncate mt-2">{session.location}</span>
-              </div>
-            </div>
+                {session.candidates.length === 0 ? (
+                  <div className="rounded-[1.25rem] border border-dashed border-white/10 bg-[#080c16]/50 p-6 text-sm text-center text-slate-400">
+                    No candidates have joined this session yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {session.candidates.map((candidate) => {
+                      const progress = getCandidateProgress(candidate, expectedAssessmentCount);
+                      const isExpanded = expandedCandidateId === candidate.id;
 
-            {/* Candidates Section */}
-            <div className="space-y-4 relative z-10 mt-2 flex-1">
-              <div className="flex items-center justify-between gap-3 border-b border-white/5 pb-2">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Users className="h-4 w-4 text-primary" />
-                  Joined Candidates
-                </h3>
-                <Badge variant="secondary" className="rounded-full border-none bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary pointer-events-none">
-                  {session.candidates.length} Total
-                </Badge>
-              </div>
+                      const displayAssessments = (assessmentStack || []).map((stackName) => {
+                        const matchedResult = (candidate.results || []).find((r) =>
+                          isSameAssessment(stackName, r.assessment)
+                        );
+                        return matchedResult
+                          ? {
+                            name: stackName,
+                            status: (matchedResult.completedAt || matchedResult.numericScore !== null) ? "completed" : "pending",
+                            result: matchedResult,
+                          }
+                          : { name: stackName, status: "pending", result: null };
+                      });
 
-              {session.candidates.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.01] p-6 text-sm text-center leading-relaxed text-slate-400">
-                  No candidates have joined this session yet. Copy and share the session code with candidates to allow them to take the assessments.
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {session.candidates.map((candidate) => {
-                    const progress = getCandidateProgress(candidate, expectedAssessmentCount);
-                    const resultsHref = getResultsHref?.(candidate, session);
-                    const isExpanded = expandedCandidateId === candidate.id;
-
-                    const displayAssessments = (assessmentStack || []).map((stackName) => {
-                      const matchedResult = (candidate.results || []).find((r) =>
-                        isSameAssessment(stackName, r.assessment)
-                      );
-                      if (matchedResult) {
-                        return {
-                          name: stackName,
-                          status: matchedResult.completedAt || matchedResult.numericScore !== null ? "completed" : "pending",
-                          result: matchedResult,
-                        };
-                      }
-                      return {
-                        name: stackName,
-                        status: "pending",
-                        result: null,
-                      };
-                    });
-
-                    const finalDisplayList = displayAssessments.length > 0
-                      ? displayAssessments
-                      : (candidate.results || []).map((r) => ({
+                      const finalDisplayList = displayAssessments.length > 0
+                        ? displayAssessments
+                        : (candidate.results || []).map((r) => ({
                           name: r.assessment,
-                          status: r.completedAt || r.numericScore !== null ? "completed" : "pending",
+                          status: (r.completedAt || r.numericScore !== null) ? "completed" : "pending",
                           result: r,
                         }));
 
-                    const initials = candidate.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase();
+                      // Compute overall weighted score (equal weights)
+                      const stackForWeights = assessmentStack || finalDisplayList.map((i) => i.name);
+                      const equalWeight = stackForWeights.length > 0 ? 100 / stackForWeights.length : 0;
+                      let overallScore = 0;
+                      stackForWeights.forEach((name) => {
+                        const matched = finalDisplayList.find((i) => i.name === name || isSameAssessment(name, i.name));
+                        if (matched?.status === "completed" && matched.result?.numericScore !== null && matched.result?.numericScore !== undefined) {
+                          overallScore += (matched.result.numericScore * equalWeight) / 100;
+                        }
+                      });
+                      const roundedOverall = Math.round(overallScore);
+                      const hasScore = progress.completed > 0;
 
-                    return (
-                      <div
-                        key={candidate.id}
-                        className={[
-                          "rounded-xl border transition-all duration-300 overflow-hidden",
-                          isExpanded
-                            ? "border-primary/45 bg-[#0e172e]/40 shadow-[0_4px_20px_rgba(99,102,241,0.05)]"
-                            : "border-white/10 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.03]"
-                        ].join(" ")}
-                      >
-                        {/* Accordion Header */}
+                      const initials = candidate.name
+                        .split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+
+                      return (
                         <div
-                          onClick={() => toggleCandidateExpand(candidate.id)}
-                          className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between cursor-pointer select-none"
+                          key={candidate.id}
+                          className={[
+                            "rounded-2xl border transition-all duration-300",
+                            isExpanded
+                              ? "border-primary/30 bg-gradient-to-br from-[#0b1329]/40 to-[#080c16]/30 shadow-[0_4px_20px_rgba(99,102,241,0.06)]"
+                              : "border-white/10 bg-gradient-to-br from-[#0b1329]/40 to-[#080c16]/30 hover:border-primary/20"
+                          ].join(" ")}
                         >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
-                              {initials}
+                          {/* Row header */}
+                          <div
+                            onClick={() => toggleCandidateExpand(candidate.id)}
+                            className="grid cursor-pointer select-none gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_104px_auto] sm:items-center"
+                          >
+                            {/* Left: avatar + info */}
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/25 to-indigo-500/25 border border-primary/20 text-xs font-black text-primary uppercase shadow-sm">
+                                {initials}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="text-sm font-bold text-white tracking-tight leading-snug">{candidate.name}</h4>
+                                  <Badge className={[
+                                    "pointer-events-none rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
+                                    progress.completed >= progress.total
+                                      ? "bg-emerald-500/10 text-emerald-400"
+                                      : progress.completed > 0
+                                        ? "bg-orange-500/10 text-orange-400"
+                                        : "bg-slate-500/10 text-slate-400"
+                                  ].join(" ")}>
+                                    {progress.completed >= progress.total ? "Completed" : progress.completed > 0 ? "In Progress" : "Not Started"}
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-slate-400 mt-0.5 break-all font-medium">{candidate.email || "No email provided"}</p>
+                              </div>
                             </div>
-                            <div className="min-w-0">
-                              <h4 className="text-sm font-bold text-white leading-tight truncate">{candidate.name}</h4>
-                              <p className="text-xs text-slate-400 mt-0.5 truncate">{candidate.email || "No email provided"}</p>
-                            </div>
-                          </div>
 
-                          <div className="flex flex-wrap items-center gap-4 sm:justify-end">
-                            {/* Candidate Progress Badge */}
-                            <div className="flex items-center gap-2 bg-white/[0.02] border border-white/5 px-2.5 py-1 rounded-lg">
-                              <span className="text-[10px] text-slate-400 font-semibold">Progress:</span>
-                              <span className="text-[10px] font-bold text-white">
-                                {progress.completed}/{progress.total} Completed
-                              </span>
+                            <div className="flex justify-center sm:justify-self-center">
+                              <ScoreRing value={hasScore ? roundedOverall : null} />
                             </div>
 
-                            {/* Action Row */}
-                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                              {resultsHref && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 rounded-lg border-white/10 bg-transparent text-slate-300 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] px-3 text-xs transition-colors"
-                                  asChild
-                                >
-                                  <Link href={resultsHref}>View results</Link>
-                                </Button>
-                              )}
+                            {/* Right: stats + actions */}
+                            <div className="flex items-center justify-between gap-4 sm:justify-end shrink-0" onClick={(e) => e.stopPropagation()}>
+                              <div className="min-w-[130px] border-r border-white/5 pr-4">
+                                <div className="text-right">
+                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Progress</p>
+                                  <p className="text-sm font-extrabold text-white tabular-nums">
+                                    {progress.completed}/{progress.total}
+                                  </p>
+                                </div>
+                                <div className="mt-2 flex justify-end gap-1">
+                                  {finalDisplayList.map((item, idx) => {
+                                    const isCompleted = item.status === "completed";
+                                    return (
+                                      <span
+                                        key={`${item.name}-${idx}`}
+                                        title={`${item.name}: ${isCompleted ? "Completed" : "Pending"}`}
+                                        className={[
+                                          "h-2.5 w-6 rounded-full border transition-colors",
+                                          isCompleted
+                                            ? "border-emerald-400/40 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.24)]"
+                                            : "border-white/10 bg-white/[0.04]"
+                                        ].join(" ")}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenResults(candidate)}
+                                className="h-9 rounded-xl border-white/10 bg-white/[0.02] px-4 text-xs font-semibold text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors hover:border-primary/30"
+                              >
+                                <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                View results
+                              </Button>
 
                               {onKickCandidate && (
                                 <DropdownMenu>
@@ -284,243 +358,221 @@ export function HiringManagerSessionDetailsDialog({
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-8 w-8 shrink-0 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 dark:hover:!bg-white/[0.08] transition-colors"
-                                      aria-label="Candidate actions"
+                                      className="h-9 w-9 shrink-0 rounded-xl text-slate-400 hover:bg-white/[0.06] hover:text-white transition-colors"
                                     >
                                       <MoreVertical className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    align="end"
-                                    className="border-white/10 bg-slate-900 text-slate-200"
-                                  >
+                                  <DropdownMenuContent align="end" className="border-white/10 bg-slate-900 text-slate-200">
                                     <DropdownMenuItem
                                       disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
                                       onClick={() => onKickCandidate(session.id, candidate.id)}
                                       className="flex items-center gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-300 cursor-pointer"
                                     >
                                       <UserMinus className="h-4 w-4" />
-                                      <span>{removingCandidateId === candidate.id ? "Removing..." : "Remove candidate"}</span>
+                                      {removingCandidateId === candidate.id ? "Removing…" : "Remove candidate"}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}
 
-                              {isExpanded ? (
-                                <ChevronUp className="h-4 w-4 text-slate-400" />
-                              ) : (
-                                <ChevronDown className="h-4 w-4 text-slate-400" />
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => toggleCandidateExpand(candidate.id)}
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                aria-label={isExpanded ? "Collapse candidate details" : "Expand candidate details"}
+                              >
+                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </button>
                             </div>
                           </div>
+
+                          {/* Accordion body — segment bars */}
+                          {isExpanded && (
+                            <div className="border-t border-white/5 bg-black/10 p-4 animate-in fade-in slide-in-from-top-1 duration-200 space-y-3">
+                              <div className="flex items-center justify-between text-sm text-slate-400">
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Assessment Breakdown</span>
+                                <span className="text-xs font-semibold text-slate-400">{progress.completed}/{progress.total} completed</span>
+                              </div>
+                              {/* Segment bars */}
+                              <div className="h-4 w-full flex gap-1.5">
+                                {finalDisplayList.map((item, idx) => {
+                                  const isCompleted = item.status === "completed";
+                                  const scoreVal = item.result?.numericScore ?? 0;
+                                  const key = getAssessmentKey(item.name, item.result);
+                                  let colorClass = "bg-primary";
+                                  if (key === "typing") colorClass = "bg-indigo-500";
+                                  else if (key === "prioritization") colorClass = "bg-sky-500";
+                                  else if (key === "situational-judgement") colorClass = "bg-violet-500";
+                                  else if (key === "call-simulation") colorClass = "bg-emerald-500";
+                                  return (
+                                    <div
+                                      key={`${item.name}-${idx}`}
+                                      className="relative flex-1 h-full bg-white/[0.04] border border-white/10 rounded-full overflow-hidden"
+                                      title={`${item.name}: ${isCompleted ? `${scoreVal}%` : "Pending"}`}
+                                    >
+                                      <div
+                                        className={`h-full ${colorClass} transition-all duration-500 rounded-full`}
+                                        style={{ width: `${isCompleted ? scoreVal : 0}%` }}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              {/* Labels row */}
+                              <div className="flex gap-1.5">
+                                {finalDisplayList.map((item, idx) => {
+                                  const isCompleted = item.status === "completed";
+                                  const scoreVal = item.result?.numericScore ?? 0;
+                                  return (
+                                    <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
+                                      <span className="w-full truncate text-center text-sm font-bold tabular-nums text-slate-300">
+                                        {isCompleted ? `${scoreVal}%` : "—"}
+                                      </span>
+                                      <span className="w-full truncate text-center text-xs font-medium leading-tight text-slate-500">
+                                        {item.name.split(" ")[0]}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-                        {/* Accordion Body */}
-                        {isExpanded && (
-                          <div className="border-t border-white/5 bg-black/10 p-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                            {/* Detailed assessment metrics cards */}
-                            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                              {finalDisplayList.map((item, idx) => {
-                                const Icon = getAssessmentIcon(item.name);
-                                const isCompleted = item.status === "completed" && item.result;
-                                const key = getAssessmentKey(item.name, item.result);
-                                const isTyping = key === "typing";
-                                const isPrioritisation = key === "prioritization";
-                                const isSJT = key === "situational-judgement";
-                                const isCallSimulation = key === "call-simulation";
+      <CandidateResultsDialog
+        resultsDialog={resultsDialog}
+        onClose={() => setResultsDialog(null)}
+      />
+    </>
+  );
+}
 
-                                return (
-                                  <div
-                                    key={`${item.name}-${idx}`}
-                                    className={[
-                                      "relative flex flex-col justify-between rounded-xl border p-3.5 transition-all",
-                                      isCompleted
-                                        ? "border-white/10 bg-white/[0.02]"
-                                        : "border-dashed border-white/5 bg-white/[0.002]"
-                                    ].join(" ")}
-                                  >
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <Icon className={["h-3.5 w-3.5 shrink-0", isCompleted ? "text-primary" : "text-slate-500"].join(" ")} />
-                                        <span className="truncate text-xs font-bold text-slate-200">
-                                          {item.name}
-                                        </span>
-                                      </div>
-                                      {isCompleted ? (
-                                        <Badge className="h-4 px-1.5 text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border-none hover:bg-emerald-500/10">
-                                          Done
-                                        </Badge>
-                                      ) : (
-                                        <Badge className="h-4 px-1.5 text-[9px] font-bold bg-amber-500/10 text-amber-400 border-none animate-pulse hover:bg-amber-500/10">
-                                          Pending
-                                        </Badge>
-                                      )}
-                                    </div>
+export function CandidateResultsDialog({
+  resultsDialog,
+  onClose,
+}: {
+  resultsDialog: ResultsDialogState | null;
+  onClose: () => void;
+}) {
+  if (!resultsDialog) return null;
+  const campaignRoleLabel = [resultsDialog.campaignName, resultsDialog.role]
+    .filter(Boolean)
+    .join(", ");
 
-                                    <div className="mt-3 relative">
-                                      {isCompleted && item.result ? (
-                                        <div className="space-y-1">
-                                          {!isPrioritisation && (
-                                            <div className="flex items-baseline justify-between">
-                                              <span className="text-sm font-black text-white">
-                                                {item.result.score}
-                                              </span>
-                                              {item.result.passed !== null && item.result.passed !== undefined && (
-                                                <span className={["text-[9px] font-bold tracking-wider", item.result.passed ? "text-emerald-400" : "text-rose-400"].join(" ")}>
-                                                  {item.result.passed ? "PASSED" : "REVIEW"}
-                                                </span>
-                                              )}
-                                            </div>
-                                          )}
+  return (
+    <Dialog open={Boolean(resultsDialog)} onOpenChange={() => { }}>
+      <DialogContent
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        className="fixed left-1/2 top-1/2 h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[1.5rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 p-6 text-slate-100 shadow-2xl backdrop-blur-md flex flex-col gap-5 [&>button]:hidden"
+      >
+        <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
 
-                                          {isTyping && (typeof item.result.wpm === 'number' || typeof item.result.accuracy === 'number') && (
-                                            <div className="flex flex-wrap gap-2 text-[10px] text-slate-400 border-t border-white/5 pt-1 mt-1">
-                                              {typeof item.result.wpm === 'number' && (
-                                                <span><strong>{item.result.wpm}</strong> WPM</span>
-                                              )}
-                                              {typeof item.result.accuracy === 'number' && (
-                                                <span><strong>{Math.round(item.result.accuracy)}%</strong> Accuracy</span>
-                                              )}
-                                            </div>
-                                          )}
+        <div className="absolute right-5 top-5 z-20">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Close results"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-                                          {isPrioritisation && item.result.metrics && (
-                                            <div className="flex flex-col gap-1.5 text-[10px] text-slate-400 pt-1">
-                                              <div className="flex justify-between items-center">
-                                                <span>High Priority Acc:</span>
-                                                <strong className="text-slate-200">{Math.round((item.result.metrics as any).highPriorityAccuracy ?? 0)}%</strong>
-                                              </div>
-                                              <div className="flex justify-between items-center">
-                                                <span>Mid Priority Acc:</span>
-                                                <strong className="text-slate-200">{Math.round((item.result.metrics as any).mediumPriorityAccuracy ?? 0)}%</strong>
-                                              </div>
-                                              <div className="flex justify-between items-center">
-                                                <span>Low Priority Acc:</span>
-                                                <strong className="text-slate-200">{Math.round((item.result.metrics as any).lowPriorityAccuracy ?? 0)}%</strong>
-                                              </div>
-                                            </div>
-                                          )}
+        <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/5 pb-4 pr-12">
+          <span className="truncate text-sm font-bold text-white">{resultsDialog.candidateName}</span>
+          {resultsDialog.candidateEmail && (
+            <>
+              <span className="text-slate-600">·</span>
+              <span className="truncate text-xs font-medium text-slate-400">{resultsDialog.candidateEmail}</span>
+            </>
+          )}
+          {campaignRoleLabel && (
+            <>
+              <span className="text-slate-600">·</span>
+              <span className="truncate text-xs font-medium text-slate-300">{campaignRoleLabel}</span>
+            </>
+          )}
+        </div>
 
-                                          {isSJT && item.result.metrics && (
-                                            <div className="flex flex-wrap gap-2 text-[10px] text-slate-400 border-t border-white/5 pt-1 mt-1">
-                                              <span>Band: <strong className={
-                                                (item.result.metrics as any).decisionBand === 'GREEN' ? "text-emerald-400" :
-                                                (item.result.metrics as any).decisionBand === 'AMBER' ? "text-amber-400" : "text-rose-400"
-                                              }>{(item.result.metrics as any).decisionBand ?? '—'}</strong></span>
-                                              <span>Flags: <strong className="text-slate-200">{Number((item.result.metrics as any).materialRiskFlagCount ?? 0) + Number((item.result.metrics as any).moderateRiskFlagCount ?? 0)}</strong></span>
-                                            </div>
-                                          )}
-
-                                          {isCallSimulation && typeof item.result.durationSeconds === 'number' && (
-                                            <div className="flex gap-2 text-[10px] text-slate-400 border-t border-white/5 pt-1 mt-1">
-                                              <span>Time: <strong>{Math.round(item.result.durationSeconds / 60)}m {item.result.durationSeconds % 60}s</strong></span>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <div className="text-[11px] text-slate-500 italic min-h-[30px] flex items-center">
-                                          Awaiting completion
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        <div className="relative z-10">
+          <HiringManagerCandidateReport
+            candidateId={resultsDialog.candidateId}
+            campaignId={resultsDialog.campaignId}
+            candidateSessionId={resultsDialog.candidateSessionId}
+            embedded
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-function KickButton({
-  disabled,
-  isRemoving,
-  onKick,
-}: {
-  disabled: boolean;
-  isRemoving: boolean;
-  onKick: () => void;
-}) {
-  if (disabled) {
-    return (
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span
-              className="inline-flex h-9 w-9 shrink-0 cursor-not-allowed items-center justify-center rounded-md border border-border bg-muted/40 text-muted-foreground opacity-55 dark:border-white/10 dark:bg-white/[0.04]"
-              aria-label="Kick"
-            >
-              <UserMinus className="h-3.5 w-3.5" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent side="left">Kick</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
+function ScoreRing({ value }: { value: number | null }) {
+  const normalizedValue =
+    typeof value === "number" && Number.isFinite(value)
+      ? Math.max(0, Math.min(100, value))
+      : null;
+  const radius = 25;
+  const circumference = 2 * Math.PI * radius;
+  const progress = normalizedValue === null ? 0 : normalizedValue / 100;
+  const scoreHue = Math.round((normalizedValue ?? 0) * 1.2);
+  const scoreColor =
+    normalizedValue === null ? "rgb(100 116 139)" : `hsl(${scoreHue}, 72%, 58%)`;
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            disabled={isRemoving}
-            onClick={onKick}
-            className="h-9 w-9 shrink-0 border-red-400/25 bg-red-400/10 p-0 text-red-700 hover:border-red-400/35 hover:bg-red-400/15 hover:text-red-800 dark:text-red-100 dark:hover:text-red-50"
-            aria-label="Kick"
-          >
-            <UserMinus className="h-3.5 w-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left">Kick</TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <div className="flex items-center justify-center">
+      <div className="relative h-16 w-16">
+        <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64" aria-hidden="true">
+          <circle
+            cx="32"
+            cy="32"
+            r={radius}
+            fill="none"
+            stroke="rgba(255,255,255,0.1)"
+            strokeWidth="6"
+          />
+          <circle
+            cx="32"
+            cy="32"
+            r={radius}
+            fill="none"
+            stroke={scoreColor}
+            strokeLinecap="round"
+            strokeWidth="6"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - progress)}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-base font-black leading-none tabular-nums text-white">
+            {normalizedValue === null ? "-" : normalizedValue}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCount?: number) {
   const completed = new Set(
     candidate.results
-      .filter((result) => result.completedAt || result.numericScore !== null)
-      .map((result) => result.id || result.assessment)
+      .filter((r) => r.completedAt || r.numericScore !== null)
+      .map((r) => r.id || r.assessment)
   ).size;
   const total = Math.max(expectedAssessmentCount || 0, candidate.results.length, completed, 1);
-
-  return {
-    completed,
-    total,
-    percent: Math.round((completed / total) * 100),
-  };
-}
-
-function getAssessmentIcon(name: string) {
-  const lowercase = name.toLowerCase();
-  if (lowercase.includes("typing")) {
-    return Keyboard;
-  }
-  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
-    return ClipboardList;
-  }
-  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
-    return BrainCircuit;
-  }
-  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
-    return PhoneCall;
-  }
-  return FileQuestion;
+  return { completed, total, percent: Math.round((completed / total) * 100) };
 }
 
 function normalizeAssessmentText(value?: string | null) {
@@ -532,49 +584,27 @@ function normalizeAssessmentText(value?: string | null) {
 
 function getAssessmentKey(value?: string | null, result?: any) {
   const normalized = normalizeAssessmentText(value);
-
-  if (normalized.includes("prioritization") || normalized === "pja") {
-    return "prioritization";
-  }
-  if (normalized.includes("situationaljudgement") || normalized === "sjt") {
-    return "situational-judgement";
-  }
-  if (normalized.includes("callsimulation")) {
-    return "call-simulation";
-  }
-  if (normalized.includes("typing")) {
-    return "typing";
-  }
-
-  // Resilient guess fallback if name is generic (like "Assessment")
+  if (normalized.includes("prioritization") || normalized === "pja") return "prioritization";
+  if (normalized.includes("situationaljudgement") || normalized === "sjt") return "situational-judgement";
+  if (normalized.includes("callsimulation")) return "call-simulation";
+  if (normalized.includes("typing")) return "typing";
   if (result) {
-    if (typeof result.wpm === 'number' || typeof result.accuracy === 'number') {
-      return "typing";
-    }
+    if (typeof result.wpm === "number" || typeof result.accuracy === "number") return "typing";
     if (result.metrics) {
       const m = result.metrics;
-      if (m.highPriorityAccuracy !== undefined || m.mediumPriorityAccuracy !== undefined || m.lowPriorityAccuracy !== undefined) {
-        return "prioritization";
-      }
-      if (m.decisionBand !== undefined || m.materialRiskFlagCount !== undefined || m.moderateRiskFlagCount !== undefined) {
-        return "situational-judgement";
-      }
+      if (m.highPriorityAccuracy !== undefined) return "prioritization";
+      if (m.decisionBand !== undefined) return "situational-judgement";
     }
-    if (typeof result.durationSeconds === 'number') {
-      return "call-simulation";
-    }
+    if (typeof result.durationSeconds === "number") return "call-simulation";
   }
-
   return "";
 }
 
 function isSameAssessment(expectedName?: string | null, resultName?: string | null) {
   const expectedKey = getAssessmentKey(expectedName);
   const resultKey = getAssessmentKey(resultName);
-
   if (expectedKey && resultKey) return expectedKey === resultKey;
-
   const expected = normalizeAssessmentText(expectedName);
   const result = normalizeAssessmentText(resultName);
-  return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
+  return expected && result ? expected.includes(result) || result.includes(expected) : false;
 }

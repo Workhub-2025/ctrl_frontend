@@ -30,6 +30,7 @@ type CandidateReportProps = {
   candidateId: string;
   campaignId?: string;
   candidateSessionId?: string;
+  embedded?: boolean;
 };
 
 type CandidateReportData = {
@@ -253,7 +254,7 @@ const COMPETENCY_FLOORS: Record<string, number> = {
   C6: 40,
 };
 
-export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId }: CandidateReportProps) {
+export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId, embedded = false }: CandidateReportProps) {
   const [reportData, setReportData] = useState<CandidateReportData | null>(null);
   const [decision, setDecision] = useState<"Move forward" | "Reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -340,16 +341,18 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   if (!reportData) {
     return (
       <div className="max-w-5xl space-y-4">
-        <Button
-          variant="outline"
-          className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
-          asChild
-        >
-          <Link href="/hiring-manager-dashboard/candidates/">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to candidates
-          </Link>
-        </Button>
+        {!embedded && (
+          <Button
+            variant="outline"
+            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:bg-white/[0.05]"
+            asChild
+          >
+            <Link href="/hiring-manager-dashboard/candidates/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to candidates
+            </Link>
+          </Button>
+        )}
         <div className="rounded-lg border border-red-400/20 bg-red-400/10 p-6 text-sm text-red-100">
           {error || "Candidate report could not be found."}
         </div>
@@ -362,85 +365,82 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   return (
     <div className="max-w-7xl space-y-6">
       {/* Premium Header Card */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md p-6 shadow-xl">
-        <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
-        
-        <div className="relative space-y-4">
-          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <Button
-              variant="outline"
-              className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white shrink-0"
-              asChild
-            >
-              <Link href="/hiring-manager-dashboard/candidates/">
-                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-                Back to candidates
-              </Link>
-            </Button>
+      {!embedded && (
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md p-6 shadow-xl">
+          <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+          
+          <div className="relative space-y-4">
+            <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <Button
+                variant="outline"
+                className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white shrink-0"
+                asChild
+              >
+                <Link href="/hiring-manager-dashboard/candidates/">
+                  <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+                  Back to candidates
+                </Link>
+              </Button>
 
-            {/* Centered Candidate Report Badge */}
-            <div className="flex justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2 shrink-0">
-              <Badge className="pointer-events-none rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
-                Candidate Report
-              </Badge>
+              {/* Centered Candidate Report Badge */}
+              <div className="flex justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2 shrink-0">
+                <Badge className="pointer-events-none rounded-md bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
+                  Candidate Report
+                </Badge>
+              </div>
+              
+              {allAssessmentsCompleted && (
+                <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
+                  <Button
+                    type="button"
+                    onClick={() => setDecision("Reject")}
+                    className="h-8.5 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                  >
+                    <ThumbsDown className="mr-1.5 h-3.5 w-3.5" />
+                    Reject
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setDecision("Move forward")}
+                    className="h-8.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-xs font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_15px_rgba(52,211,153,0.15)]"
+                  >
+                    <ThumbsUp className="mr-1.5 h-3.5 w-3.5 text-slate-950" />
+                    Pass
+                  </Button>
+                </div>
+              )}
             </div>
             
-            {allAssessmentsCompleted && (
-              <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
-                <Button
-                  type="button"
-                  onClick={() => setDecision("Reject")}
-                  className="h-8.5 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
-                >
-                  <ThumbsDown className="mr-1.5 h-3.5 w-3.5" />
-                  Reject
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setDecision("Move forward")}
-                  className="h-8.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-xs font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_15px_rgba(52,211,153,0.15)]"
-                >
-                  <ThumbsUp className="mr-1.5 h-3.5 w-3.5 text-slate-950" />
-                  Pass
-                </Button>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex flex-col gap-2.5 pt-1">
-            <div>
-              <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                <span>{candidate.name}</span>
-                <span className="text-slate-600 font-normal text-lg">•</span>
-                <span className="text-sm font-medium text-slate-400">{candidate.email || "No email listed"}</span>
-              </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
-                <span>Campaign: <strong className="text-slate-200">{campaign.name}</strong></span>
-                {candidate.sessionName && (
-                  <>
-                    <span className="text-slate-600">•</span>
-                    <span>Session Date: <strong className="text-slate-200">{candidate.sessionName}</strong></span>
-                  </>
-                )}
-                {campaign.role && (
-                  <>
-                    <span className="text-slate-600">•</span>
-                    <span>Role: <strong className="text-slate-200">{campaign.role}</strong></span>
-                  </>
-                )}
+            <div className="flex flex-col gap-2.5 pt-1">
+              <div>
+                <h1 className="break-words text-2xl font-black tracking-tight text-white sm:text-3xl flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <span>{candidate.name}</span>
+                  <span className="text-slate-600 font-normal text-lg">•</span>
+                  <span className="text-sm font-medium text-slate-400">{candidate.email || "No email listed"}</span>
+                </h1>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+                  <span>Campaign: <strong className="text-slate-200">{campaign.name}</strong></span>
+                  {candidate.sessionName && (
+                    <>
+                      <span className="text-slate-600">•</span>
+                      <span>Session Date: <strong className="text-slate-200">{candidate.sessionName}</strong></span>
+                    </>
+                  )}
+                  {campaign.role && (
+                    <>
+                      <span className="text-slate-600">•</span>
+                      <span>Role: <strong className="text-slate-200">{campaign.role}</strong></span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {!allAssessmentsCompleted && (
-        <p className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3 text-sm leading-6 text-amber-200">
-          This candidate has not completed all assigned assessments yet. Results
-          can be reviewed as they arrive, but final hiring actions are hidden
-          until every selected assessment is complete.
-        </p>
       )}
+
+
+
 
       {decision && (
         <div className={[
@@ -464,68 +464,63 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         </div>
       )}
 
-      {/* Stats Summary Cards Row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardContent className="p-5">
-            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Overall Recommendation
-            </span>
-            <div className="mt-3 flex items-center gap-3">
-              <span className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1 text-sm font-semibold ${displayedRating.badge}`}>
+      {/* Weighted Score Summary */}
+      <div>
+        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
+          <CardContent className="relative p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                Weighted Score
+              </span>
+              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${displayedRating.badge}`}>
                 {displayedRating.label}
               </span>
             </div>
-            <p className="mt-2 text-xs text-slate-400">
-              Based on overall cumulative score from weighted assessments.
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardContent className="p-5">
-            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider flex items-center justify-between">
-              <span>Weighted Score</span>
-              <span className="text-sm font-bold text-white">{overallScore}%</span>
-            </span>
-            <div className="mt-4">
-              <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-sky-400 rounded-full transition-all duration-500"
-                  style={{ width: `${overallScore}%` }}
-                />
+            <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
+              <div className="flex items-end gap-1.5">
+                <span className="text-4xl font-black leading-none text-white tabular-nums">
+                  {overallScore}
+                </span>
+                <span className="text-sm font-bold text-slate-500">/100</span>
+              </div>
+              <div className="flex min-w-0 flex-col items-start gap-1 pb-0.5 sm:items-end">
+                <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                  Completion
+                </span>
+                <div className="flex w-full justify-start gap-1 sm:justify-end">
+                  {rows.map((row, idx) => {
+                    const isDone = row.score !== null;
+                    return (
+                      <div
+                        key={`${row.name}-${idx}`}
+                        title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
+                        className={`h-2.5 w-6 rounded-full transition-all duration-300 ${
+                          isDone
+                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
+                            : "bg-white/10 border border-white/5"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            <p className="mt-3 text-xs text-slate-400">
-              Composite score weighted by custom campaign settings.
-            </p>
-          </CardContent>
-        </Card>
 
-        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardContent className="p-5">
-            <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
-              Assessments completed
-            </span>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-white">{completedRows.length}</span>
-              <span className="text-xs text-slate-500">of {rows.length || 1} completed</span>
-            </div>
-            <div className="mt-3.5 flex gap-1.5">
-              {rows.map((row, idx) => {
-                const isDone = row.score !== null;
-                return (
-                  <div
-                    key={`${row.name}-${idx}`}
-                    title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
-                    className={`h-2 flex-1 rounded-full transition-all duration-300 ${
-                      isDone
-                        ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
-                        : "bg-white/10 border border-white/5"
-                    }`}
-                  />
-                );
-              })}
+            <div className="mt-4">
+              <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
+                  style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-600">
+                <span>0</span>
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -582,21 +577,14 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                     </div>
                   </div>
 
-                  <div className={`grid gap-2 sm:grid-cols-${(isPrioritization || isSJT) ? "2" : "3"} lg:min-w-[470px]`}>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[320px]">
                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                       <p className="text-xs text-slate-500 font-medium">Assessment Score</p>
                       <p className="mt-1 text-lg font-bold text-white">
                         {row.score === null ? "Pending" : `${row.score}%`}
                       </p>
                     </div>
-                    {!(isPrioritization || isSJT) && (
-                      <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
-                        <p className="text-xs text-slate-500 font-medium">Duration</p>
-                        <p className="mt-1 text-lg font-bold text-white">
-                          {formatDuration(row.result?.durationSeconds)}
-                        </p>
-                      </div>
-                    )}
+
                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                       <p className="text-xs text-slate-500 font-medium">Overall Contribution</p>
                       <p className="mt-1 text-lg font-bold text-indigo-400">
