@@ -212,3 +212,4 @@ storybook-static/
 *.local
 .local/
 .history/
+public/assessment-content/CTRL_Master_Assessment_Specification_MVP_v2.0.docx

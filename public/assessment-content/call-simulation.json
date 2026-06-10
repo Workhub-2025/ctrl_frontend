@@ -2,21 +2,21 @@
   "runs": [
     {
       "id": "practice-1",
-      "title": "Practice call 1",
+      "title": "Practice Call",
       "kind": "practice",
-      "audioSrc": "/assets/audio.mp3"
+      "audioSrc": "/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3"
     },
     {
-      "id": "practice-2",
-      "title": "Practice call 2",
-      "kind": "practice",
-      "audioSrc": "/assets/audio.mp3"
-    },
-    {
-      "id": "final",
-      "title": "Final call",
+      "id": "call-1",
+      "title": "Call 1",
       "kind": "final",
-      "audioSrc": "/assets/audio.mp3"
+      "audioSrc": "/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3"
+    },
+    {
+      "id": "call-2",
+      "title": "Call 2",
+      "kind": "final",
+      "audioSrc": "/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3"
     }
   ]
 }

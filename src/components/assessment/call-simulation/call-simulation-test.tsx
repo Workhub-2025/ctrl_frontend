@@ -17,6 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 
 type CallRun = {
@@ -36,58 +43,87 @@ type CallPhase =
   | 'running'
   | 'practice-results'
   | 'practice-complete'
+  | 'final-transition'
   | 'submitting'
   | 'submitted';
 
 type IncidentForm = {
-  incidentType: string;
-  location: string;
   callerName: string;
   callbackNumber: string;
-  peopleInvolved: string;
-  injuriesRisk: string;
-  servicesRequired: string;
+  callerDob: string;
+  callerDoorNo: string;
+  callerStreet: string;
+  callerPostcode: string;
+  incidentCategory: string;
+  callerType: string;
+  responseTime: string;
+  referenceNumber: string;
+  suspectGender: string;
+  suspectEthnicity: string;
+  suspectAge: string;
+  suspectClothing: string;
+  uniqueInformation: string;
+  incidentDoorNo: string;
+  incidentStreet: string;
+  incidentPostcode: string;
   incidentSummary: string;
+  keyInformation1: string;
+  keyInformation2: string;
+  keyInformation3: string;
 };
 
 type RunSnapshot = {
   runIndex: number;
   form: IncidentForm;
+  timestamps: Record<string, number>;
 };
 
 const CONTENT_URL = '/assessment-content/call-simulation.json';
-const FINAL_RUN_INDEX = 2;
 const REVIEW_SECONDS = 60;
 
 const emptyForm: IncidentForm = {
-  incidentType: '',
-  location: '',
   callerName: '',
   callbackNumber: '',
-  peopleInvolved: '',
-  injuriesRisk: '',
-  servicesRequired: '',
+  callerDob: '',
+  callerDoorNo: '',
+  callerStreet: '',
+  callerPostcode: '',
+  incidentCategory: '',
+  callerType: '',
+  responseTime: '',
+  referenceNumber: '',
+  suspectGender: '',
+  suspectEthnicity: '',
+  suspectAge: '',
+  suspectClothing: '',
+  uniqueInformation: '',
+  incidentDoorNo: '',
+  incidentStreet: '',
+  incidentPostcode: '',
   incidentSummary: '',
+  keyInformation1: '',
+  keyInformation2: '',
+  keyInformation3: '',
 };
 
 const fallbackRuns: CallRun[] = [
   {
-    id: 'fallback-practice-1',
-    title: 'Practice call 1',
+    id: 'fallback-practice',
+    title: 'Practice Call',
     kind: 'practice',
-    audioSrc: '/assets/audio.mp3',
+    audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
   },
   {
-    id: 'fallback-practice-2',
-    title: 'Practice call 2',
-    kind: 'practice',
-    audioSrc: '/assets/audio.mp3',
-  },
-  {
-    id: 'fallback-final',
-    title: 'Final call',
+    id: 'fallback-call-1',
+    title: 'Call 1',
     kind: 'final',
-    audioSrc: '/assets/audio.mp3',
+    audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
+  },
+  {
+    id: 'fallback-call-2',
+    title: 'Call 2',
+    kind: 'final',
+    audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
   },
 ];
 
@@ -115,6 +151,9 @@ export default function CallSimulationTest({
   const [runs, setRuns] = useState<CallRun[]>(fallbackRuns);
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [form, setForm] = useState<IncidentForm>(emptyForm);
+  const [timestamps, setTimestamps] = useState<Record<string, number>>({});
+  const timestampsRef = useRef<Record<string, number>>({});
+  const timeoutRefs = useRef<Record<string, NodeJS.Timeout>>({});
   const [snapshots, setSnapshots] = useState<RunSnapshot[]>([]);
   const [hasStartedAudio, setHasStartedAudio] = useState(false);
   const [audioEnded, setAudioEnded] = useState(false);
@@ -133,9 +172,20 @@ export default function CallSimulationTest({
     audioDuration > 0 ? Math.min((audioCurrentTime / audioDuration) * 100, 100) : 0;
   const latestSnapshot = snapshots[snapshots.length - 1];
 
+  const practiceCount = useMemo(() => runs.filter((r) => r.kind === 'practice').length, [runs]);
+  const finalCount = useMemo(() => runs.filter((r) => r.kind === 'final').length, [runs]);
+  const firstFinalRunIndex = useMemo(() => {
+    const index = runs.findIndex((r) => r.kind === 'final');
+    return index !== -1 ? index : 0;
+  }, [runs]);
+
   useEffect(() => {
     formRef.current = form;
   }, [form]);
+
+  useEffect(() => {
+    timestampsRef.current = timestamps;
+  }, [timestamps]);
 
   useEffect(() => {
     runIndexRef.current = currentRunIndex;
@@ -186,12 +236,47 @@ export default function CallSimulationTest({
     setReviewTimeLeft(REVIEW_SECONDS);
   }, [currentRun.audioSrc, currentRunIndex]);
 
+  const trackFieldTimestamp = (fieldName: keyof IncidentForm) => {
+    if (timeoutRefs.current[fieldName]) {
+      clearTimeout(timeoutRefs.current[fieldName]);
+    }
+
+    timeoutRefs.current[fieldName] = setTimeout(() => {
+      const audio = audioRef.current;
+      if (audio && !audio.paused && audio.currentTime > 0) {
+        const time = audio.currentTime;
+        setTimestamps((prev) => {
+          if (prev[fieldName] !== undefined) return prev;
+          return { ...prev, [fieldName]: time };
+        });
+      }
+    }, 300);
+  };
+
+  const handleFieldBlur = (fieldName: keyof IncidentForm) => {
+    if (timeoutRefs.current[fieldName]) {
+      clearTimeout(timeoutRefs.current[fieldName]);
+    }
+    const audio = audioRef.current;
+    if (audio && !audio.paused && audio.currentTime > 0) {
+      const time = audio.currentTime;
+      setTimestamps((prev) => {
+        if (prev[fieldName] !== undefined) return prev;
+        return { ...prev, [fieldName]: time };
+      });
+    }
+  };
+
+  const historyRef = useRef<Array<{ timestamp: number; field: keyof IncidentForm; value: string }>>([]);
+
   const beginRun = useCallback((runIndex: number) => {
     if (!startedAtRef.current) {
       startedAtRef.current = new Date().toISOString();
     }
     setCurrentRunIndex(runIndex);
     setForm(emptyForm);
+    setTimestamps({});
+    historyRef.current = [];
     setReviewTimeLeft(REVIEW_SECONDS);
     setPhase('running');
   }, []);
@@ -213,6 +298,17 @@ export default function CallSimulationTest({
       ...currentForm,
       [field]: value,
     }));
+    trackFieldTimestamp(field);
+
+    const audio = audioRef.current;
+    if (audio) {
+      const time = audio.ended ? audio.duration : audio.currentTime;
+      historyRef.current.push({
+        timestamp: time,
+        field,
+        value,
+      });
+    }
   };
 
   const playAudio = async () => {
@@ -222,6 +318,13 @@ export default function CallSimulationTest({
     await audio.play();
     setHasStartedAudio(true);
     setIsPlaying(true);
+  };
+
+  const skipAudio = () => {
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = audio.duration > 0 ? audio.duration - 0.5 : 0;
+    }
   };
 
   const handleAudioEnded = () => {
@@ -235,23 +338,36 @@ export default function CallSimulationTest({
     const snapshot = {
       runIndex: activeRunIndex,
       form: formRef.current,
+      timestamps: timestampsRef.current,
+      history: historyRef.current,
     };
 
     snapshotsRef.current = [...snapshotsRef.current, snapshot];
     setSnapshots(snapshotsRef.current);
 
-    if (isFinalRunRef.current) {
+    // If this is the last run of the entire test, transition to submitting phase
+    if (activeRunIndex === runs.length - 1) {
       setPhase('submitting');
       return;
     }
 
-    if (activeRunIndex === FINAL_RUN_INDEX - 1) {
+    const current = runs[activeRunIndex] ?? fallbackRuns[activeRunIndex] ?? fallbackRuns[0];
+    const nextRun = runs[activeRunIndex + 1];
+
+    if (current.kind === 'final') {
+      // If the current run was a final run, but not the last run, show transition screen
+      setPhase('final-transition');
+      return;
+    }
+
+    if (nextRun && nextRun.kind === 'final') {
+      // Next is final, but current is practice
       setPhase('practice-complete');
       return;
     }
 
     setPhase('practice-results');
-  }, []);
+  }, [runs]);
 
   useEffect(() => {
     if (phase !== 'running' || !audioEnded) return;
@@ -355,7 +471,7 @@ export default function CallSimulationTest({
             How this test works
           </Badge>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            You will complete two practice calls and one final call.
+            You will complete {practiceCount} practice {practiceCount === 1 ? 'call' : 'calls'} and {finalCount} final {finalCount === 1 ? 'call' : 'calls'}.
           </p>
           <div className="mt-6 grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
@@ -375,10 +491,18 @@ export default function CallSimulationTest({
               <p className="mt-1">Use your judgement. The form will not suggest what the answer should be.</p>
             </div>
           </div>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="mt-8 flex flex-wrap gap-3 items-center">
             <Button size="lg" className="h-12" onClick={() => beginRun(0)}>
               Start practice call
               <Play className="ml-2 h-4 w-4" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-12"
+              onClick={() => beginRun(firstFinalRunIndex)}
+            >
+              Skip practice calls
             </Button>
             <Button
               size="lg"
@@ -433,10 +557,15 @@ export default function CallSimulationTest({
                     Review time {reviewTimeLeft}s
                   </Badge>
                 )}
-                <Button onClick={playAudio} disabled={hasStartedAudio || audioEnded}>
+                 <Button onClick={playAudio} disabled={hasStartedAudio || audioEnded}>
                   <Play className="mr-2 h-4 w-4" />
                   {audioEnded ? 'Audio complete' : hasStartedAudio ? 'Audio playing' : 'Play audio'}
                 </Button>
+                {currentRun.kind === 'practice' && hasStartedAudio && !audioEnded && (
+                  <Button variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20" onClick={skipAudio}>
+                    Skip audio
+                  </Button>
+                )}
               </div>
             </div>
             <Progress value={audioProgress} className="mt-4 h-2" />
@@ -453,97 +582,217 @@ export default function CallSimulationTest({
               <FileText className="hidden h-5 w-5 text-muted-foreground sm:block" />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="incident-type">Incident type</Label>
-                <Input
-                  id="incident-type"
-                  name="ctrl-call-incident-type"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.incidentType}
-                  onChange={(event) => updateForm('incidentType', event.target.value)}
-                />
+            <div className="space-y-6">
+              {/* Section 1: Caller Details */}
+              <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/5 dark:bg-white/[0.01]">
+                <p className="text-sm font-semibold text-primary">Caller Details</p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="caller-name">Caller Name</Label>
+                    <Input
+                      id="caller-name"
+                      name="ctrl-call-caller-name"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.callerName}
+                      onChange={(event) => updateForm('callerName', event.target.value)}
+                      onBlur={() => handleFieldBlur('callerName')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="callback-number">Telephone Number</Label>
+                    <Input
+                      id="callback-number"
+                      name="ctrl-call-callback-number"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.callbackNumber}
+                      onChange={(event) => updateForm('callbackNumber', event.target.value)}
+                      onBlur={() => handleFieldBlur('callbackNumber')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="caller-dob">Date of Birth</Label>
+                    <Input
+                      id="caller-dob"
+                      name="ctrl-call-caller-dob"
+                      placeholder="DD/MM/YYYY"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.callerDob}
+                      onChange={(event) => updateForm('callerDob', event.target.value)}
+                      onBlur={() => handleFieldBlur('callerDob')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="caller-door-no">Location Door No.</Label>
+                    <Input
+                      id="caller-door-no"
+                      name="ctrl-call-caller-door-no"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.callerDoorNo}
+                      onChange={(event) => updateForm('callerDoorNo', event.target.value)}
+                      onBlur={() => handleFieldBlur('callerDoorNo')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="caller-street">Location Street</Label>
+                    <Input
+                      id="caller-street"
+                      name="ctrl-call-caller-street"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.callerStreet}
+                      onChange={(event) => updateForm('callerStreet', event.target.value)}
+                      onBlur={() => handleFieldBlur('callerStreet')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="caller-postcode">Location Postcode</Label>
+                    <Input
+                      id="caller-postcode"
+                      name="ctrl-call-caller-postcode"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.callerPostcode}
+                      onChange={(event) => updateForm('callerPostcode', event.target.value)}
+                      onBlur={() => handleFieldBlur('callerPostcode')}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input
-                  id="location"
-                  name="ctrl-call-location"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.location}
-                  onChange={(event) => updateForm('location', event.target.value)}
-                />
+
+              {/* Section 2: System Log */}
+              <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/5 dark:bg-white/[0.01]">
+                <p className="text-sm font-semibold text-primary">System Information</p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="incident-category">Incident Category</Label>
+                    <Select
+                      value={form.incidentCategory}
+                      onValueChange={(value) => updateForm('incidentCategory', value)}
+                    >
+                      <SelectTrigger id="incident-category" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                        <SelectValue placeholder="Select incident category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Residential Burglary">Residential Burglary</SelectItem>
+                        <SelectItem value="Commercial Burglary">Commercial Burglary</SelectItem>
+                        <SelectItem value="Theft from Vehicle">Theft from Vehicle</SelectItem>
+                        <SelectItem value="Shoplifting">Shoplifting</SelectItem>
+                        <SelectItem value="Assault">Assault</SelectItem>
+                        <SelectItem value="Anti-Social Behaviour">Anti-Social Behaviour</SelectItem>
+                        <SelectItem value="Criminal Damage">Criminal Damage</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="caller-type">Caller Type</Label>
+                    <Select
+                      value={form.callerType}
+                      onValueChange={(value) => updateForm('callerType', value)}
+                    >
+                      <SelectTrigger id="caller-type" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                        <SelectValue placeholder="Select caller type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Victim">Victim</SelectItem>
+                        <SelectItem value="Witness">Witness</SelectItem>
+                        <SelectItem value="Third Party">Third Party</SelectItem>
+                        <SelectItem value="Emergency Services Personnel">Emergency Services Personnel</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="response-time">Response Time / Grade</Label>
+                    <Select
+                      value={form.responseTime}
+                      onValueChange={(value) => updateForm('responseTime', value)}
+                    >
+                      <SelectTrigger id="response-time" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                        <SelectValue placeholder="Select response grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Emergency / immediate response">Emergency / immediate response</SelectItem>
+                        <SelectItem value="Priority / officers within 60 minutes">Priority / officers within 60 minutes</SelectItem>
+                        <SelectItem value="Scheduled / appointment">Scheduled / appointment</SelectItem>
+                        <SelectItem value="Resolution without deployment">Resolution without deployment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reference-number">Reference Number</Label>
+                    <Input
+                      id="reference-number"
+                      name="ctrl-call-reference-number"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.referenceNumber}
+                      onChange={(event) => updateForm('referenceNumber', event.target.value)}
+                      onBlur={() => handleFieldBlur('referenceNumber')}
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="caller-name">Caller name</Label>
-                <Input
-                  id="caller-name"
-                  name="ctrl-call-caller-name"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.callerName}
-                  onChange={(event) => updateForm('callerName', event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="callback-number">Callback number</Label>
-                <Input
-                  id="callback-number"
-                  name="ctrl-call-callback-number"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.callbackNumber}
-                  onChange={(event) => updateForm('callbackNumber', event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="people-involved">People involved</Label>
-                <Textarea
-                  id="people-involved"
-                  name="ctrl-call-people-involved"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.peopleInvolved}
-                  onChange={(event) => updateForm('peopleInvolved', event.target.value)}
-                  className="min-h-24"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="injuries-risk">Injuries / risk</Label>
-                <Textarea
-                  id="injuries-risk"
-                  name="ctrl-call-injuries-risk"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.injuriesRisk}
-                  onChange={(event) => updateForm('injuriesRisk', event.target.value)}
-                  className="min-h-24"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="services-required">Services required</Label>
-                <Input
-                  id="services-required"
-                  name="ctrl-call-services-required"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.servicesRequired}
-                  onChange={(event) => updateForm('servicesRequired', event.target.value)}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="incident-summary">Incident summary</Label>
-                <Textarea
-                  id="incident-summary"
-                  name="ctrl-call-incident-summary"
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  value={form.incidentSummary}
-                  onChange={(event) => updateForm('incidentSummary', event.target.value)}
-                  className="min-h-28"
-                />
+
+
+
+              {/* Section 4: Incident details */}
+              <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/5 dark:bg-white/[0.01]">
+                <p className="text-sm font-semibold text-primary">Incident Location & Details</p>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="incident-door-no">Incident Door No.</Label>
+                    <Input
+                      id="incident-door-no"
+                      name="ctrl-call-incident-door-no"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.incidentDoorNo}
+                      onChange={(event) => updateForm('incidentDoorNo', event.target.value)}
+                      onBlur={() => handleFieldBlur('incidentDoorNo')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="incident-street">Incident Street</Label>
+                    <Input
+                      id="incident-street"
+                      name="ctrl-call-incident-street"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.incidentStreet}
+                      onChange={(event) => updateForm('incidentStreet', event.target.value)}
+                      onBlur={() => handleFieldBlur('incidentStreet')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="incident-postcode">Incident Postcode</Label>
+                    <Input
+                      id="incident-postcode"
+                      name="ctrl-call-incident-postcode"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.incidentPostcode}
+                      onChange={(event) => updateForm('incidentPostcode', event.target.value)}
+                      onBlur={() => handleFieldBlur('incidentPostcode')}
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-3">
+                    <Label htmlFor="incident-summary">Incident Summary</Label>
+                    <Textarea
+                      id="incident-summary"
+                      name="ctrl-call-incident-summary"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.incidentSummary}
+                      onChange={(event) => updateForm('incidentSummary', event.target.value)}
+                      onBlur={() => handleFieldBlur('incidentSummary')}
+                      className="min-h-20"
+                    />
+                  </div>
+
+                </div>
               </div>
             </div>
 
@@ -578,25 +827,39 @@ export default function CallSimulationTest({
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-2">
             <div className="rounded-xl border border-border p-4 dark:border-white/10">
-              <p className="text-sm text-muted-foreground">Incident type</p>
+              <p className="text-sm text-muted-foreground">Incident Category</p>
               <p className="mt-2 text-sm font-medium text-foreground">
-                {latestSnapshot.form.incidentType || 'Not entered'}
+                {latestSnapshot.form.incidentCategory || 'Not entered'}
               </p>
             </div>
             <div className="rounded-xl border border-border p-4 dark:border-white/10">
-              <p className="text-sm text-muted-foreground">Location</p>
+              <p className="text-sm text-muted-foreground">Incident Location</p>
               <p className="mt-2 text-sm font-medium text-foreground">
-                {latestSnapshot.form.location || 'Not entered'}
+                {[
+                  latestSnapshot.form.incidentDoorNo,
+                  latestSnapshot.form.incidentStreet,
+                  latestSnapshot.form.incidentPostcode
+                ].filter(Boolean).join(', ') || 'Not entered'}
               </p>
             </div>
           </div>
-          <Button
-            size="lg"
-            className="mx-auto mt-8 h-12 px-8"
-            onClick={() => beginRun(currentRunIndex + 1)}
-          >
-            Continue to next practice call
-          </Button>
+          <div className="mx-auto mt-8 flex flex-col gap-2 w-full max-w-xs">
+            <Button
+              size="lg"
+              className="h-12 w-full"
+              onClick={() => beginRun(currentRunIndex + 1)}
+            >
+              Continue to next practice call
+            </Button>
+            <Button
+              size="lg"
+              variant="ghost"
+              className="h-12 w-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              onClick={() => setPhase('practice-complete')}
+            >
+              Skip remaining practice
+            </Button>
+          </div>
         </div>
       )}
 
@@ -638,9 +901,54 @@ export default function CallSimulationTest({
           <Button
             size="lg"
             className="mx-auto mt-8 h-12 px-8"
-            onClick={() => beginRun(FINAL_RUN_INDEX)}
+            onClick={() => beginRun(firstFinalRunIndex)}
           >
             Continue to final call
+          </Button>
+        </div>
+      )}
+
+      {phase === 'final-transition' && (
+        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+            <Phone className="h-7 w-7" />
+          </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {currentRun.title} complete
+          </p>
+          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+            The next final call is ready
+          </p>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Take a break before pressing continue. The next final call uses the same
+            rules, and no result screen will be shown after submission.
+          </p>
+          <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <p className="font-medium text-foreground">Listen first</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                The next audio will play once from start to finish.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <p className="font-medium text-foreground">Review window</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                You will have up to 1 minute after the audio to fix your log.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+              <p className="font-medium text-foreground">No prompts</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Use your judgement. The form will not suggest what the answer should be.
+              </p>
+            </div>
+          </div>
+          <Button
+            size="lg"
+            className="mx-auto mt-8 h-12 px-8"
+            onClick={() => beginRun(currentRunIndex + 1)}
+          >
+            Continue to {runs[currentRunIndex + 1]?.title || 'next call'}
           </Button>
         </div>
       )}

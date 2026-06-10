@@ -464,68 +464,6 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         </div>
       )}
 
-      {/* Weighted Score Summary */}
-      <div>
-        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardContent className="relative p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
-                Weighted Score
-              </span>
-              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${displayedRating.badge}`}>
-                {displayedRating.label}
-              </span>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
-              <div className="flex items-end gap-1.5">
-                <span className="text-4xl font-black leading-none text-white tabular-nums">
-                  {overallScore}
-                </span>
-                <span className="text-sm font-bold text-slate-500">/100</span>
-              </div>
-              <div className="flex min-w-0 flex-col items-start gap-1 pb-0.5 sm:items-end">
-                <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
-                  Completion
-                </span>
-                <div className="flex w-full justify-start gap-1 sm:justify-end">
-                  {rows.map((row, idx) => {
-                    const isDone = row.score !== null;
-                    return (
-                      <div
-                        key={`${row.name}-${idx}`}
-                        title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
-                        className={`h-2.5 w-6 rounded-full transition-all duration-300 ${
-                          isDone
-                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
-                            : "bg-white/10 border border-white/5"
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
-                  style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
-                />
-              </div>
-              <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-600">
-                <span>0</span>
-                <span>25</span>
-                <span>50</span>
-                <span>75</span>
-                <span>100</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Assessment Breakdown List */}
       <Card className="rounded-2xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-2xl">
         <CardHeader className="border-b border-white/10 p-5">
@@ -542,10 +480,11 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             const key = getAssessmentKey(row.name);
             const isPrioritization = key === "prioritization";
             const isSJT = key === "situational-judgement";
+            const isCallSimulation = key === "call-simulation";
             const hasBreakdown =
               typingRuns.length > 0 ||
               (row.result?.wpm !== null && row.result?.wpm !== undefined) ||
-              (row.score !== null && (isPrioritization || isSJT) && row.result?.metrics !== null && row.result?.metrics !== undefined);
+              (row.score !== null && (isPrioritization || isSJT || isCallSimulation) && row.result?.metrics !== null && row.result?.metrics !== undefined);
             const breakdownOpen = openBreakdownKey === row.name;
 
             return (
@@ -823,6 +762,167 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                             </div>
                           );
                         })()}
+
+                        {isCallSimulation && row.result?.metrics && (() => {
+                          const callMetrics = row.result.metrics as any;
+                          const sectionLabels: Record<string, string> = {
+                            caller_information: "Caller Information",
+                            system_information: "System Information",
+                            intelligence_information: "Intelligence Information",
+                            incident_information: "Incident Information",
+                          };
+                          
+                          const secKeys = ['caller_information', 'system_information', 'intelligence_information', 'incident_information'];
+                          
+                          return (
+                            <div className="space-y-5">
+                              {/* Summary Stats Cards */}
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Scoring Outcome</p>
+                                  <p className={`mt-1.5 text-2xl font-black ${
+                                    callMetrics.passed ? "text-emerald-400" : "text-rose-400"
+                                  }`}>
+                                    {callMetrics.passed ? "PASSED" : "FAILED"}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Critical Errors</p>
+                                  <p className={`mt-1.5 text-2xl font-black ${callMetrics.criticalErrorsCount > 0 ? "text-rose-400 font-bold" : "text-white"}`}>
+                                    {callMetrics.criticalErrorsCount ?? 0}
+                                  </p>
+                                </div>
+                                <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
+                                  <p className="text-xs text-slate-500 font-medium">Marks Awarded</p>
+                                  <p className="mt-1.5 text-2xl font-black text-white">
+                                    {callMetrics.totalEarnedScore ?? "0"} <span className="text-xs font-semibold text-slate-400">/ {callMetrics.maxScore ?? "5.0"}</span>
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Section Scores Progress bars */}
+                              <div className="space-y-3.5 rounded-lg border border-white/5 bg-white/[0.01] p-4">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                                  Section Performance Breakdown
+                                </p>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                  {secKeys.map((secKey) => {
+                                    const sec = callMetrics.sections?.[secKey] || { score: 0, max: 1.0 };
+                                    const pct = Math.round((sec.score / sec.max) * 100);
+                                    
+                                    return (
+                                      <div key={secKey} className="space-y-1.5">
+                                        <div className="flex justify-between items-center text-xs">
+                                          <span className="text-slate-300 font-medium">{sectionLabels[secKey] || secKey}</span>
+                                          <span className="font-bold text-white">{sec.score} / {sec.max} ({pct}%)</span>
+                                        </div>
+                                        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                                          <div
+                                            className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500"
+                                            style={{ width: `${pct}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Detailed Criteria Table */}
+                              {Array.isArray(callMetrics.criteria) && callMetrics.criteria.length > 0 && (
+                                <div className="space-y-2.5">
+                                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                    Logged Information Details
+                                  </p>
+                                  <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
+                                    <table className="w-full text-left border-collapse text-xs">
+                                      <thead>
+                                        <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                                          <th className="p-3">Criterion</th>
+                                          <th className="p-3">Candidate Log</th>
+                                          <th className="p-3 text-center">Correct</th>
+                                          <th className="p-3 text-center">Timing Window</th>
+                                          <th className="p-3 text-right">Score</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-white/5 text-slate-200 font-medium">
+                                        {callMetrics.criteria.map((crit: any) => {
+                                          let timingColor = "text-slate-400 bg-white/5";
+                                          if (crit.timingBand === "Green") {
+                                            timingColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+                                          } else if (crit.timingBand === "Amber") {
+                                            timingColor = "text-amber-400 bg-amber-500/10 border-amber-500/20";
+                                          } else if (crit.timingBand === "Red") {
+                                            timingColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
+                                          }
+
+                                          return (
+                                            <tr key={crit.key} className="hover:bg-white/[0.02] transition-colors">
+                                              <td className="p-3 text-slate-300">
+                                                <div className="font-bold flex items-center gap-1.5">
+                                                  {crit.displayName}
+                                                  {crit.critical && (
+                                                    <span className="text-[9px] font-black uppercase bg-red-500/20 text-red-400 px-1 py-0.5 rounded border border-red-500/30">
+                                                      CRITICAL
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <div className="text-[10px] text-slate-500 mt-0.5">
+                                                  Section: {sectionLabels[crit.section] || crit.section}
+                                                </div>
+                                              </td>
+                                              <td className="p-3 max-w-[200px] truncate" title={crit.value || "—"}>
+                                                {crit.value || <span className="text-slate-600 italic">Blank</span>}
+                                              </td>
+                                              <td className="p-3 text-center">
+                                                {crit.evidenceFound ? (
+                                                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400 mx-auto" />
+                                                ) : (
+                                                  <span className="text-rose-400 font-black">✗</span>
+                                                )}
+                                              </td>
+                                              <td className="p-3 text-center">
+                                                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${timingColor}`}>
+                                                  {crit.timingBand} {crit.delay !== null && crit.delay !== undefined ? `(${crit.delay > 0 ? '+' : ''}${crit.delay}s)` : ''}
+                                                </span>
+                                              </td>
+                                              <td className="p-3 text-right text-white font-extrabold">
+                                                {crit.score} / {crit.maxScore}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Qualitative Feedback Cards */}
+                              {callMetrics.feedback && (
+                                <div className="space-y-2.5">
+                                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                    Qualitative Feedback
+                                  </p>
+                                  <div className="grid gap-3 sm:grid-cols-3">
+                                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                                      <p className="text-[10px] uppercase font-bold text-slate-500">Information Capture</p>
+                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{callMetrics.feedback.information_capture}</p>
+                                    </div>
+                                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                                      <p className="text-[10px] uppercase font-bold text-slate-500">Timeliness & Dispatch</p>
+                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{callMetrics.feedback.timeliness}</p>
+                                    </div>
+                                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                                      <p className="text-[10px] uppercase font-bold text-slate-500">Operational Understanding</p>
+                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{callMetrics.feedback.incident_understanding}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
@@ -832,6 +932,68 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
           })}
         </CardContent>
       </Card>
+
+      {/* Weighted Score Summary */}
+      <div>
+        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
+          <CardContent className="relative p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                Weighted Score
+              </span>
+              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${displayedRating.badge}`}>
+                {displayedRating.label}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
+              <div className="flex items-end gap-1.5">
+                <span className="text-4xl font-black leading-none text-white tabular-nums">
+                  {overallScore}
+                </span>
+                <span className="text-sm font-bold text-slate-500">/100</span>
+              </div>
+              <div className="flex min-w-0 flex-col items-start gap-1 pb-0.5 sm:items-end">
+                <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                  Completion
+                </span>
+                <div className="flex w-full justify-start gap-1 sm:justify-end">
+                  {rows.map((row, idx) => {
+                    const isDone = row.score !== null;
+                    return (
+                      <div
+                        key={`${row.name}-${idx}`}
+                        title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
+                        className={`h-2.5 w-6 rounded-full transition-all duration-300 ${
+                          isDone
+                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
+                            : "bg-white/10 border border-white/5"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
+                  style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-600">
+                <span>0</span>
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
