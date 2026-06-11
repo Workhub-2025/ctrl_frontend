@@ -3649,9 +3649,34 @@ html.landing-scroll-snap {
   scroll-snap-align: end;
   scroll-snap-stop: always;
 }
-
 @media (max-width: 1023px) {
   .landing-anchor-target {
     scroll-margin-top: 7.5rem;
   }
+}
+
+/* --- Operational Telemetry Style Utilities --- */
+
+.telemetry-grid {
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+html[data-ctrl-theme="soft-cream"] .telemetry-grid,
+html[data-ctrl-theme="light-blue"] .telemetry-grid {
+  background-image: 
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+}
+
+/* Force dyslexic reading font rules on display elements when enabled */
+html[data-ctrl-reading-font="enabled"] .ctrl-landing-page [class*="font-display"],
+html[data-ctrl-reading-font="enabled"] .ctrl-landing-page h1,
+html[data-ctrl-reading-font="enabled"] .ctrl-landing-page h2,
+html[data-ctrl-reading-font="enabled"] .ctrl-landing-page h3,
+html[data-ctrl-reading-font="enabled"] .ctrl-landing-page h4 {
+  font-family: Arial, Verdana, system-ui, sans-serif !important;
+  font-feature-settings: normal;
 }

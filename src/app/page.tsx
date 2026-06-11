@@ -125,10 +125,10 @@ function SectionHeading({
   return (
     <ScrollReveal y={20}>
       <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-2xl"}>
-        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 font-mono">
           {eyebrow}
         </div>
-        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-white text-balance">
+        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-white text-balance font-display">
           {title}
         </h2>
         <p className={cn("mt-6 text-lg leading-relaxed text-slate-400 font-light", centered && "mx-auto")}>
@@ -346,7 +346,7 @@ export default function Home() {
                     <div className="h-12 w-12 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center mb-6">
                       <PhoneCall className="h-5 w-5 text-cyan-400" aria-hidden="true" />
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-medium text-white mb-4 text-balance">See Beyond the Candidate. See the Future Employee.</h3>
+                    <h3 className="text-2xl md:text-3xl font-medium text-white mb-4 text-balance font-display">See Beyond the Candidate. See the Future Employee.</h3>
                     <p className="text-slate-400 font-light leading-relaxed">
                       CTRL's Call Simulation Assessment recreates realistic operational scenarios that require candidates to think, prioritise and respond in real time. The result is deeper behavioural insight and greater confidence in every recruitment decision.
                     </p>
@@ -374,7 +374,7 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-6 relative z-10">
                   <Activity className="h-5 w-5 text-blue-400" aria-hidden="true" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance">Understanding Performance Beyond the Interview</h3>
+                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance font-display">Understanding Performance Beyond the Interview</h3>
                 <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
                   CTRL assesses how candidates process information, adapt to changing circumstances and make decisions under pressure, delivering behavioural insight that traditional recruitment methods often fail to uncover.
                 </p>
@@ -402,7 +402,7 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-full border border-purple-500/20 bg-purple-500/10 flex items-center justify-center mb-6 relative z-10">
                   <ShieldCheck className="h-5 w-5 text-purple-400" aria-hidden="true" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance">Recruit with Evidence. Decide with Confidence.</h3>
+                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance font-display">Recruit with Evidence. Decide with Confidence.</h3>
                 <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
                   CTRL combines objective assessment data with realistic performance insight, helping organisations make fairer, more informed recruitment decisions while reducing risk and increasing confidence in candidate selection.
                 </p>
@@ -455,7 +455,7 @@ export default function Home() {
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
                         <div className="text-xs font-mono text-slate-500 mb-3">{step.step} {"//"}</div>
-                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance">{step.title}</h4>
+                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance font-display">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
@@ -504,7 +504,7 @@ export default function Home() {
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
                         <div className="text-xs font-mono text-cyan-500/60 mb-3">{step.step} {"//"}</div>
-                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance">{step.title}</h4>
+                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance font-display">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
@@ -582,10 +582,10 @@ export default function Home() {
           <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col justify-center px-6 py-32">
              <ScrollReveal>
                 <div className="max-w-3xl mx-auto text-center">
-                  <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-slate-400 mb-8 backdrop-blur-sm">
+                  <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-slate-400 mb-8 backdrop-blur-sm font-mono">
                     Get Started
                   </div>
-                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-6 text-balance">Ready to Transform Your Recruitment Process?</h2>
+                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-6 text-balance font-display">Ready to Transform Your Recruitment Process?</h2>
                   <p className="text-lg md:text-xl leading-relaxed text-slate-400 font-light mb-10 max-w-xl mx-auto">
                     Discover how CTRL helps organisations identify high-potential candidates, reduce recruitment risk and make more confident hiring decisions through realistic assessments and immersive simulation.
                   </p>
