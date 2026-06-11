@@ -107,6 +107,9 @@ export function SecureAssessmentShell({
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-background text-foreground transition-colors duration-300">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+        Skip to main content
+      </a>
       {/* Header */}
       <header className="fixed inset-x-0 top-0 z-30 border-b border-border dark:border-white/5 bg-background/95 backdrop-blur-xl flex h-16 items-center justify-between px-6">
         <div className="flex-1 flex items-center">
@@ -120,22 +123,22 @@ export function SecureAssessmentShell({
       {/* Security Warnings Audit Indicator */}
       {secureModeActive && integrityEvents.length > 0 && (
         <div className="absolute left-1/2 top-14 -translate-x-1/2 rounded-b-lg border-b border-l border-r border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1 shadow-sm">
-          <AlertTriangle className="h-3 w-3" />
+          <AlertTriangle className="h-3 w-3" aria-hidden="true" />
           {integrityEvents.length} Security Violation{integrityEvents.length > 1 ? 's' : ''} Logged
         </div>
       )}
 
         <div className="flex items-center justify-end flex-1 gap-3">
           {showPauseButton && (
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsPaused(true)}>
-              <Pause className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" onClick={() => setIsPaused(true)}>
+              <Pause className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">Pause</span>
             </Button>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Settings className="h-4 w-4" />
+              <Button variant="outline" size="sm" className="gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">
+                <Settings className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Settings</span>
               </Button>
             </DropdownMenuTrigger>
@@ -145,7 +148,7 @@ export function SecureAssessmentShell({
                 disabled={isSubmitting}
                 className="text-red-600 focus:bg-red-50 dark:focus:bg-red-950 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-4 w-4 mr-2" aria-hidden="true" />
                 {isSubmitting ? 'Submitting…' : 'Save and exit'}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -154,7 +157,7 @@ export function SecureAssessmentShell({
       </header>
 
       {/* Main Assessment Content */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden pt-16 pb-12">
+      <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden pt-16 pb-12">
         <div className="mx-auto w-full max-w-[1680px] px-4 py-6 md:px-6">{children}</div>
       </main>
 
@@ -169,11 +172,11 @@ export function SecureAssessmentShell({
 
       {/* Pause Modal Overlay */}
       {isPaused && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 motion-safe:animate-in motion-safe:fade-in duration-200">
           <Card className="w-full max-w-md bg-card shadow-2xl border-border dark:border-white/10 text-center">
             <CardHeader>
             <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${securityViolation ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'}`}>
-              {securityViolation ? <AlertTriangle className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
+              {securityViolation ? <AlertTriangle className="h-8 w-8" aria-hidden="true" /> : <Pause className="h-8 w-8" aria-hidden="true" />}
               </div>
             <CardTitle className="text-2xl">{securityViolation ? "Security Violation Detected" : "Assessment Paused"}</CardTitle>
             <CardDescription>{securityViolation ? "Your activity has been audited and logged." : "Your timer and session have been securely paused."}</CardDescription>
@@ -190,7 +193,7 @@ export function SecureAssessmentShell({
             )}
             </CardContent>
             <CardFooter className="flex justify-center border-t border-border/50 pt-4">
-            <Button size="lg" className="w-full" onClick={() => { setIsPaused(false); setSecurityViolation(null); }}>
+            <Button size="lg" className="w-full focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" onClick={() => { setIsPaused(false); setSecurityViolation(null); }}>
                 Resume Assessment
               </Button>
             </CardFooter>

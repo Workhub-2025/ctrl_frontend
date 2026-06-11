@@ -106,8 +106,8 @@ function RoleDashboardHeader({
         {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full border border-border dark:border-white/10 hover:!bg-muted dark:hover:!bg-white/10 hover:!text-foreground dark:hover:!text-white transition-colors">
-              <User className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="rounded-full border border-border dark:border-white/10 hover:!bg-muted dark:hover:!bg-white/10 hover:!text-foreground dark:hover:!text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">
+              <User className="h-5 w-5" aria-hidden="true" />
               <span className="sr-only">Open account menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -124,17 +124,17 @@ function RoleDashboardHeader({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/profile" className="cursor-pointer">
-                <UserCircle className="mr-2 h-4 w-4" />
+              <Link href="/profile" className="cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">
+                <UserCircle className="mr-2 h-4 w-4" aria-hidden="true" />
                 Profile
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50"
+              className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/50 focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:outline-none"
               onClick={logout}
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -178,6 +178,9 @@ function RoleDashboardFrame({
           "ctrl-portal", accessibilityThemeClassName
         )}
       >
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+          Skip to main content
+        </a>
         <RoleDashboardHeader
           title={title}
           subtitle={subtitle}
@@ -186,7 +189,7 @@ function RoleDashboardFrame({
           updateAccessibilitySettings={updateAccessibilitySettings}
           resetAccessibilitySettings={resetAccessibilitySettings}
         />
-        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
+        <main id="main-content" className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
           <div className={cn("mx-auto w-full", contentWidthClass)}>{children}</div>
         </main>
       </div>
@@ -201,13 +204,16 @@ function RoleDashboardFrame({
           "ctrl-portal", accessibilityThemeClassName
         )}
       >
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+          Skip to main content
+        </a>
       {/* Sidebar Section */}
-      <Sidebar className="border-r border-border dark:border-white/5 bg-white/70 dark:bg-[#02040a]/40 backdrop-blur-md transition-all duration-300">
+      <Sidebar className="border-r border-border dark:border-white/5 bg-white/70 dark:bg-[#02040a]/40 backdrop-blur-md transition-colors duration-300">
         <SidebarHeader className="px-4 pt-4 group-data-[collapsible=icon]:px-2">
           {/* Sidebar Branding */}
           <Link
             href={navItems[0]?.href || "#"}
-            className="flex items-center gap-3 rounded-2xl border border-border dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] px-3 py-3 transition-all hover:bg-slate-100/50 dark:hover:bg-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 shadow-sm"
+            className="flex items-center gap-3 rounded-2xl border border-border dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] px-3 py-3 transition-[border-color,background-color] hover:bg-slate-100/50 dark:hover:bg-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 shadow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
           >
             <img
               src="/assets/newlogo.png"
@@ -231,13 +237,13 @@ function RoleDashboardFrame({
                   asChild
                   isActive={pathname === item.href || pathname === `${item.href}/`}
                   tooltip={item.label}
-                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-all duration-300 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3"
+                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-[background-color,border-color,padding] duration-300 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3"
                 >
                   <Link
                     href={item.href}
-                    className={cn("font-medium")}
+                    className={cn("font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg")}
                   >
-                    <item.icon />
+                    <item.icon aria-hidden="true" />
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>
@@ -246,7 +252,7 @@ function RoleDashboardFrame({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-
+ 
       {/* Main Content Area */}
       <SidebarInset>
         <RoleDashboardHeader
@@ -256,7 +262,7 @@ function RoleDashboardFrame({
           updateAccessibilitySettings={updateAccessibilitySettings}
           resetAccessibilitySettings={resetAccessibilitySettings}
         />
-        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
+        <main id="main-content" className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
           <div className={cn("mx-auto w-full", contentWidthClass)}>{children}</div>
         </main>
       </SidebarInset>

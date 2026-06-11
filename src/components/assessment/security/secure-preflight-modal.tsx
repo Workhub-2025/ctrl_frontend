@@ -18,7 +18,7 @@ function CheckRow({ label, pass, detail }: { label: string; pass: boolean; detai
               : "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400"
           }`}
         >
-          {pass ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
+          {pass ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : <XCircle className="h-3.5 w-3.5" aria-hidden="true" />}
           {pass ? "Pass" : "Blocked"}
         </span>
       </div>
@@ -97,16 +97,16 @@ export function SecurePreflightModal({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <Card className="relative z-[101] w-full max-w-2xl bg-card shadow-2xl border-border dark:border-white/10 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 motion-safe:animate-in motion-safe:fade-in duration-200">
+      <Card className="relative z-[101] w-full max-w-2xl bg-card shadow-2xl border-border dark:border-white/10 motion-safe:animate-in motion-safe:zoom-in-95 duration-200">
         <CardHeader className="flex flex-row items-start justify-between pb-4 border-b border-border/50">
           <div className="space-y-1">
             <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Environment Validation</p>
             <CardTitle className="text-xl">{assessmentName}</CardTitle>
             <CardDescription>Validate execution controls before entering secure mode.</CardDescription>
           </div>
-          <Button variant="ghost" size="icon" className="-mr-2 -mt-2" onClick={onClose} disabled={submitting}>
-            <X className="h-4 w-4 text-muted-foreground" />
+          <Button variant="ghost" size="icon" className="-mr-2 -mt-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" onClick={onClose} disabled={submitting} aria-label="Close modal">
+            <X className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
           </Button>
         </CardHeader>
         
@@ -134,16 +134,16 @@ export function SecurePreflightModal({
               type="checkbox"
               checked={acknowledged}
               onChange={(e) => setAcknowledged(e.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:outline-none"
             />
             <span>I acknowledge assessment controls, including fullscreen enforcement, focus monitoring, and audit logging.</span>
           </label>
         </CardContent>
         
         <CardFooter className="flex justify-end gap-3 border-t border-border/50 pt-4">
-          <Button variant="ghost" onClick={onClose} disabled={submitting}>Cancel</Button>
-          <Button onClick={handleEnterSecureMode} disabled={!canProceed || !acknowledged || submitting}>
-            {submitting ? "Initializing Secure Mode..." : "Enter Secure Mode"}
+          <Button variant="ghost" onClick={onClose} disabled={submitting} className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">Cancel</Button>
+          <Button onClick={handleEnterSecureMode} disabled={!canProceed || !acknowledged || submitting} className="focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">
+            {submitting ? "Initializing Secure Mode…" : "Enter Secure Mode"}
           </Button>
         </CardFooter>
       </Card>

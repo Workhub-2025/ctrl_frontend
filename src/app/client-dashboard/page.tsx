@@ -349,8 +349,8 @@ export default function ClientDashboardPage() {
           ) : null
         }
         action={
-          <Button type="button" variant="outline" className="h-9 border-border hover:!bg-white/10 hover:!text-white dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors" onClick={() => void loadDashboard(true)} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin text-primary" : ""}`} />
+          <Button type="button" variant="outline" className="h-9 border-border hover:!bg-white/10 hover:!text-white dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" onClick={() => void loadDashboard(true)} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin text-primary" : ""}`} aria-hidden="true" />
             Refresh
           </Button>
         }
@@ -362,12 +362,12 @@ export default function ClientDashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-400">Hiring Manager Seats</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-              <Users className="h-4 w-4" />
+              <Users className="h-4 w-4" aria-hidden="true" />
             </div>
           </CardHeader>
           <CardContent className="pt-2">
             <div className="text-3xl font-extrabold text-foreground">
-              {summary ? `${summary.seats.used}/${summary.seats.limit}` : "..."}
+              {summary ? `${summary.seats.used}/${summary.seats.limit}` : "…"}
             </div>
             <Progress value={seatPercent} className="mt-3 h-2 bg-muted dark:bg-white/10" />
             <p className="mt-3 text-xs text-slate-400">
@@ -381,11 +381,11 @@ export default function ClientDashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-400">Available invites</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
-              <KeyRound className="h-4 w-4" />
+              <KeyRound className="h-4 w-4" aria-hidden="true" />
             </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="text-3xl font-extrabold text-foreground">{summary?.availableAccessCodes ?? "..."}</div>
+            <div className="text-3xl font-extrabold text-foreground">{summary?.availableAccessCodes ?? "…"}</div>
             <p className="mt-3 text-xs text-slate-400">Unused hiring-manager invite codes</p>
           </CardContent>
         </Card>
@@ -395,11 +395,11 @@ export default function ClientDashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-semibold tracking-wide uppercase text-slate-400">Campaign Approvals</CardTitle>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-orange-500/20 bg-orange-500/10 text-orange-400">
-              <ClipboardCheck className="h-4 w-4" />
+              <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
             </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="text-3xl font-extrabold text-foreground">{summary?.campaignsPendingApproval ?? "..."}</div>
+            <div className="text-3xl font-extrabold text-foreground">{summary?.campaignsPendingApproval ?? "…"}</div>
             <p className="mt-3 text-xs text-slate-400">Campaigns waiting for your review</p>
           </CardContent>
         </Card>
@@ -421,7 +421,7 @@ export default function ClientDashboardPage() {
         <CardContent className="pt-6">
           {loading && (
             <p className="text-sm text-slate-400 flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin text-primary" /> Loading hiring-manager seats...
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" aria-hidden="true" /> Loading hiring-manager seats…
             </p>
           )}
           {!loading && seatSlots.length === 0 && (
@@ -433,7 +433,7 @@ export default function ClientDashboardPage() {
             {seatSlots.map((seat) => (
               <div
                 key={seat.label}
-                className="relative overflow-hidden rounded-xl border border-border bg-background/50 p-5 shadow-sm transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1220]/50 hover:dark:border-white/30"
+                className="relative overflow-hidden rounded-xl border border-border bg-background/50 p-5 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1220]/50 hover:dark:border-white/30"
               >
                 <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                   <div className="min-w-0 space-y-3">
@@ -484,7 +484,7 @@ export default function ClientDashboardPage() {
                             : "Generate a controlled access code for this seat."}
                         </p>
                         <div className="mt-3 flex items-center gap-2 rounded-xl border border-border bg-muted/20 p-3 text-xs text-slate-400 dark:border-white/5 dark:bg-[#04070d]/40">
-                          <KeyRound className="h-4 w-4 text-primary shrink-0" />
+                          <KeyRound className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
                           <span>Codes expire after 7 days or when refreshed.</span>
                         </div>
                       </div>
@@ -494,7 +494,7 @@ export default function ClientDashboardPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto h-10 border-white/10 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
+                    className="w-full sm:w-auto h-10 border-white/10 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                     onClick={() => {
                       if (seat.type === "occupied") {
                         setSelectedSeat(seat);
@@ -505,11 +505,11 @@ export default function ClientDashboardPage() {
                     disabled={seat.type === "empty" && codeBusy === seat.label}
                   >
                     {seat.type === "occupied" ? (
-                      <UserCheck className="mr-2 h-4 w-4" />
+                      <UserCheck className="mr-2 h-4 w-4" aria-hidden="true" />
                     ) : (
-                      <Eye className="mr-2 h-4 w-4" />
+                      <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
                     )}
-                    {seat.type === "occupied" ? "View details" : codeBusy === seat.label ? "Loading..." : "View Access Code"}
+                    {seat.type === "occupied" ? "View details" : codeBusy === seat.label ? "Loading…" : "View Access Code"}
                   </Button>
                 </div>
               </div>
@@ -536,7 +536,7 @@ export default function ClientDashboardPage() {
         <CardContent className="space-y-4 pt-6">
           {loading && (
             <p className="text-sm text-slate-400 flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin text-primary" /> Loading campaign approvals...
+              <RefreshCw className="h-4 w-4 animate-spin text-primary" aria-hidden="true" /> Loading campaign approvals…
             </p>
           )}
           {!loading && pendingCampaigns.length === 0 && (
@@ -547,7 +547,7 @@ export default function ClientDashboardPage() {
           {pendingCampaigns.map((campaign) => (
             <div
               key={campaign.id}
-              className="rounded-xl border border-border bg-background/50 p-5 shadow-sm transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1220]/50 hover:dark:border-white/30"
+              className="rounded-xl border border-border bg-background/50 p-5 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1220]/50 hover:dark:border-white/30"
             >
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
                 <div className="min-w-0 space-y-3">
@@ -594,7 +594,7 @@ export default function ClientDashboardPage() {
                 <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card/60 p-4 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                      <AlertCircle className="h-4 w-4 text-orange-400" />
+                      <AlertCircle className="h-4 w-4 text-orange-400" aria-hidden="true" />
                       Review required
                     </div>
                     <p className="text-xs leading-relaxed text-slate-400">
@@ -605,18 +605,18 @@ export default function ClientDashboardPage() {
                     <Button
                       disabled={reviewingId === campaign.id}
                       onClick={() => reviewCampaign(campaign.id, "approved")}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                     >
-                      <CheckCircle2 className="h-4 w-4" />
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                       Approve
                     </Button>
                     <Button
                       variant="outline"
                       disabled={reviewingId === campaign.id}
                       onClick={() => reviewCampaign(campaign.id, "rejected")}
-                      className="border-red-500/20 hover:!border-red-500/50 hover:!bg-red-500/10 hover:!text-red-400 text-red-500 gap-2 font-semibold bg-transparent transition-colors"
+                      className="border-red-500/20 hover:!border-red-500/50 hover:!bg-red-500/10 hover:!text-red-400 text-red-500 gap-2 font-semibold bg-transparent transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                     >
-                      <XCircle className="h-4 w-4" />
+                      <XCircle className="h-4 w-4" aria-hidden="true" />
                       Reject
                     </Button>
                   </div>
@@ -653,12 +653,12 @@ export default function ClientDashboardPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full border-white/10 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white gap-2 transition-colors"
+                  className="w-full border-white/10 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white gap-2 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                   onClick={() => void refreshSeatCode(selectedSeat)}
                   disabled={!selectedSeat.accessCode || codeBusy === selectedSeat.label}
                 >
-                  <RefreshCw className={`h-4 w-4 ${codeBusy === selectedSeat.label ? "animate-spin" : ""}`} />
-                  {codeBusy === selectedSeat.label ? "Refreshing..." : "Refresh code"}
+                  <RefreshCw className={`h-4 w-4 ${codeBusy === selectedSeat.label ? "animate-spin" : ""}`} aria-hidden="true" />
+                  {codeBusy === selectedSeat.label ? "Refreshing…" : "Refresh code"}
                 </Button>
               </div>
             </>
@@ -691,7 +691,7 @@ export default function ClientDashboardPage() {
                           <p className="font-bold text-foreground truncate">{campaign.name}</p>
                           <p className="text-xs text-slate-400 truncate">{campaign.jobRole}</p>
                         </div>
-                        <BriefcaseBusiness className="h-4 w-4 text-primary shrink-0" />
+                        <BriefcaseBusiness className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-md text-slate-400 border-border dark:border-white/5">{campaign.campaignStatus}</Badge>
@@ -723,7 +723,7 @@ function HeaderMetric({
     <div className="rounded-xl border border-border bg-background/50 p-3 shadow-inner transition-colors dark:border-white/5 dark:bg-[#0b1220]/40">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-primary" />
+        <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
       </div>
       <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
     </div>
@@ -743,7 +743,7 @@ function MiniPanel({
     <div className="rounded-xl border border-border bg-card/60 p-3 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-primary" />
+        <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
       </div>
       <p className="mt-1 text-lg font-bold text-foreground">{value}</p>
     </div>

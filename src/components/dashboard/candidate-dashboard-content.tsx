@@ -259,7 +259,7 @@ function AssessmentListItem({ item, step }: { item: any; step: number }) {
               : "bg-primary/10 text-primary border-primary/20 shadow-inner"
           }`}
         >
-          {item.isCompleted ? <CheckCircle2 className="h-6 w-6" /> : <item.icon className="h-6 w-6" />}
+          {item.isCompleted ? <CheckCircle2 className="h-6 w-6" aria-hidden="true" /> : <item.icon className="h-6 w-6" aria-hidden="true" />}
         </div>
 
         {/* Content */}
@@ -279,7 +279,7 @@ function AssessmentListItem({ item, step }: { item: any; step: number }) {
                 variant="outline"
                 className="w-full sm:w-auto h-9 text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 pointer-events-none font-semibold rounded-lg"
               >
-                <CheckCircle2 className="mr-2 h-4 w-4" /> Submitted
+                <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" /> Submitted
               </Button>
             ) : !item.isAvailable ? (
               <Button variant="secondary" className="w-full sm:w-auto h-9 rounded-lg" disabled>
@@ -288,9 +288,9 @@ function AssessmentListItem({ item, step }: { item: any; step: number }) {
             ) : (
               <Button
                 onClick={() => setShowPreflight(true)}
-                className="w-full sm:w-auto h-9 gap-2 shadow-md transition-transform hover:scale-[1.02] font-semibold rounded-lg"
+                className="w-full sm:w-auto h-9 gap-2 shadow-md transition-transform hover:scale-[1.02] font-semibold rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
-                <PlayCircle className="h-4 w-4" /> Start Assessment
+                <PlayCircle className="h-4 w-4" aria-hidden="true" /> Start Assessment
               </Button>
             )}
           </div>
@@ -414,9 +414,9 @@ export function CandidateDashboardContent() {
 
   if (isLoading && applications.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-slate-400 animate-pulse">
-        <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" />
-        <p>Loading your assessments...</p>
+      <div className="flex flex-col items-center justify-center p-12 text-slate-400 motion-safe:animate-pulse">
+        <Loader2 className="h-8 w-8 animate-spin mb-4 text-primary" aria-hidden="true" />
+        <p>Loading your assessments…</p>
       </div>
     );
   }
@@ -427,11 +427,11 @@ export function CandidateDashboardContent() {
         <Card className="overflow-hidden border-border bg-card shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md rounded-[2rem]">
           <CardContent className="flex flex-col items-center justify-center p-12 text-center text-slate-400">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-4 shadow-inner border border-primary/20">
-              <Briefcase className="h-8 w-8" />
+              <Briefcase className="h-8 w-8" aria-hidden="true" />
             </div>
             <CardTitle className="text-2xl mb-2 text-foreground font-bold">No assessments linked yet</CardTitle>
             <CardDescription className="max-w-md text-slate-400 text-base leading-relaxed">
-              You haven't linked any assessments yet. Return to the Dashboard to enter an Access Code provided by your Hiring Manager.
+              You haven’t linked any assessments yet. Return to the Dashboard to enter an Access Code provided by your Hiring Manager.
             </CardDescription>
           </CardContent>
         </Card>
@@ -467,8 +467,8 @@ export function CandidateDashboardContent() {
             </span>
           <div className="flex items-center gap-2">
             <Select value={sortBy} onValueChange={(value) => setSortBy(value as AssessmentSortOption)}>
-              <SelectTrigger className="h-9 w-[190px] rounded-xl bg-background dark:bg-[#0b1329]/40 dark:border-white/10 shadow-sm">
-                <ArrowUpDown className="mr-2 h-4 w-4 text-slate-400" />
+              <SelectTrigger aria-label="Sort assessments" className="h-9 w-[190px] rounded-xl bg-background dark:bg-[#0b1329]/40 dark:border-white/10 shadow-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                <ArrowUpDown className="mr-2 h-4 w-4 text-slate-400" aria-hidden="true" />
                 <SelectValue aria-label="Sort assessments" />
               </SelectTrigger>
               <SelectContent align="end">
@@ -486,10 +486,11 @@ export function CandidateDashboardContent() {
               size="icon"
               onClick={() => void loadApplications({ force: true })}
               disabled={isRefreshing}
-              className="h-8 w-8 rounded-full hover:!bg-white/10 hover:!text-white text-slate-400 transition-colors"
+              className="h-8 w-8 rounded-full hover:!bg-white/10 hover:!text-white text-slate-400 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               title="Refresh"
+              aria-label="Refresh assessments"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`} aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -500,10 +501,11 @@ export function CandidateDashboardContent() {
             const isSelected = app.key === selectedApplicationKey;
 
             return (
-              <div
+              <button
                 key={app.key}
+                type="button"
                 onClick={() => setSelectedApplicationKey(app.key)}
-                className={`group cursor-pointer rounded-2xl p-5 border transition-all duration-300 ${
+                className={`w-full text-left group rounded-2xl p-5 border transition-[border-color,background-color,box-shadow] duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                   isSelected
                     ? "border-primary bg-primary/10 shadow-lg dark:bg-primary/15 dark:border-primary ring-1 ring-primary/25"
                     : "border-border bg-card hover:border-slate-400 hover:shadow-md dark:border-white/5 dark:bg-[#0b1329]/30 hover:dark:border-white/30"
@@ -517,7 +519,7 @@ export function CandidateDashboardContent() {
                   <div className="flex items-center gap-1.5 shrink-0 mt-1">
                     <div
                       className={`h-2.5 w-2.5 rounded-full ${
-                        isActive ? "bg-primary animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-muted-foreground"
+                        isActive ? "bg-primary motion-safe:animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-muted-foreground"
                       }`}
                     />
                   </div>
@@ -526,7 +528,7 @@ export function CandidateDashboardContent() {
 
                 <div className="flex items-center justify-between text-xs font-semibold">
                   <span className="text-slate-400 flex items-center gap-1">
-                    <CalendarDays className="h-3.5 w-3.5 text-primary" /> {app.date}
+                    <CalendarDays className="h-3.5 w-3.5 text-primary" aria-hidden="true" /> {app.date}
                   </span>
                   <Badge
                     variant="secondary"
@@ -538,7 +540,7 @@ export function CandidateDashboardContent() {
                   </Badge>
                 </div>
                 <Progress value={app.completionPercent} className={`h-1.5 mt-2.5 ${isSelected ? "bg-primary/20" : ""}`} />
-              </div>
+              </button>
             );
           })}
         </div>
@@ -547,17 +549,17 @@ export function CandidateDashboardContent() {
       {/* RIGHT PANE: ASSESSMENT DETAILS (Detail) */}
       <div className={`flex-1 flex flex-col min-w-0 ${showDetailOnMobile ? "block" : "hidden lg:flex"}`}>
         {currentApplication ? (
-          <div className="flex-1 bg-card border border-border dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col animate-in slide-in-from-right-4 lg:slide-in-from-bottom-4 duration-300">
+          <div className="flex-1 bg-card border border-border dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden flex flex-col motion-safe:animate-in motion-safe:slide-in-from-right-4 lg:motion-safe:slide-in-from-bottom-4 duration-300">
 
             {/* Detail Header */}
             <div className="relative p-6 sm:p-8 border-b border-border dark:border-white/10 dark:bg-[#0b1220]/20 bg-white/[0.02]">
               {/* Mobile Back Button */}
               <Button
                 variant="ghost"
-                className="lg:hidden mb-4 -ml-2 text-slate-400 hover:!text-white hover:!bg-white/10 transition-colors"
+                className="lg:hidden mb-4 -ml-2 text-slate-400 hover:!text-white hover:!bg-white/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                 onClick={() => setSelectedApplicationKey(null)}
               >
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back to list
+                <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" /> Back to list
               </Button>
 
               <div className="flex flex-col gap-3.5 relative z-10">
@@ -574,12 +576,12 @@ export function CandidateDashboardContent() {
                     <span className="font-semibold text-slate-300">{currentApplication.role}</span>
                     <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
                     <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
-                      <MapPin className="h-3.5 w-3.5 text-primary/80 shrink-0" />
+                      <MapPin className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
                       <span>{currentApplication.location}</span>
                     </div>
                     <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
                     <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
-                      <Target className="h-3.5 w-3.5 text-primary/80 shrink-0" />
+                      <Target className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
                       <span>{currentApplication.mode}</span>
                     </div>
                   </div>
@@ -592,7 +594,7 @@ export function CandidateDashboardContent() {
               {/* Status Banner */}
               {(currentApplication.status === "Awaiting Assessment" || currentApplication.status === "In Progress") && (
                 <Alert className="border-primary/20 bg-primary/5 text-primary rounded-2xl p-5 shadow-inner">
-                  <Target className="h-5 w-5 text-primary" />
+                  <Target className="h-5 w-5 text-primary" aria-hidden="true" />
                   <AlertTitle className="text-lg font-bold tracking-tight">Your Tasks</AlertTitle>
                   <AlertDescription className="text-slate-300 mt-1.5 leading-relaxed text-sm">
                     {currentApplication.sessionStartsAt &&
@@ -605,7 +607,7 @@ export function CandidateDashboardContent() {
 
               {currentApplication.status === "Completed" && (
                 <Alert className="border-emerald-500/20 bg-emerald-500/5 text-emerald-400 rounded-2xl p-5 shadow-inner">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                  <CheckCircle2 className="h-5 w-5 text-emerald-400" aria-hidden="true" />
                   <AlertTitle className="font-bold text-lg tracking-tight">Process Complete</AlertTitle>
                   <AlertDescription className="text-slate-300 mt-1.5 leading-relaxed text-sm">
                     Your responses have been securely submitted. You do not need to take further action.
@@ -616,7 +618,7 @@ export function CandidateDashboardContent() {
               {/* Assessments Checklist */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 mb-4">
-                  <ClipboardCheck className="h-5 w-5 text-slate-400" />
+                  <ClipboardCheck className="h-5 w-5 text-slate-400" aria-hidden="true" />
                   Assessment Checklist
                 </h3>
 
@@ -650,11 +652,11 @@ export function CandidateDashboardContent() {
                   <CardContent className="px-5 pb-5">
                     <Button
                       variant="outline"
-                      className="bg-background dark:bg-transparent border-white/10 shadow-sm hover:!bg-white/10 hover:!text-white transition-colors font-semibold rounded-lg h-10"
+                      className="bg-background dark:bg-transparent border-white/10 shadow-sm hover:!bg-white/10 hover:!text-white transition-colors font-semibold rounded-lg h-10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                       asChild
                     >
                       <a href="mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query">
-                        <Mail className="h-4 w-4 mr-2 text-primary" /> Contact Hiring Manager
+                        <Mail className="h-4 w-4 mr-2 text-primary" aria-hidden="true" /> Contact Hiring Manager
                       </a>
                     </Button>
                   </CardContent>
@@ -664,7 +666,7 @@ export function CandidateDashboardContent() {
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-slate-400 bg-muted/20 border-border border rounded-[2rem] border-dashed dark:bg-[#0b1329]/20 dark:border-white/10">
-            <ClipboardCheck className="h-12 w-12 text-primary/30 mb-4" />
+            <ClipboardCheck className="h-12 w-12 text-primary/30 mb-4" aria-hidden="true" />
             <p className="text-lg font-bold text-foreground">Select an assessment session</p>
             <p className="max-w-xs mt-2 text-sm">
               Choose a session from the list to view its details and begin your assessments.

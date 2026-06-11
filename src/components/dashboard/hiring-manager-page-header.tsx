@@ -30,7 +30,7 @@ export function HiringManagerPageHeader({
         {/* Left: icon + text */}
         <div className="flex items-start gap-4 min-w-0">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm mt-0.5">
-            <Icon className="h-4.5 w-4.5" />
+            <Icon className="h-4.5 w-4.5" aria-hidden="true" />
           </div>
           <div className="min-w-0 space-y-1">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">

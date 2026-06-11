@@ -56,16 +56,16 @@ export function AssessmentCard({
       </CardContent>
       <CardFooter>
           {isCompleted ? (
-            <Button variant="secondary" className="h-11 w-full rounded-xl text-green-600 dark:text-green-500 bg-green-500/10 hover:bg-green-500/20" disabled>
-              <CheckCircle2 className="mr-2 h-4 w-4" /> Submitted
+            <Button variant="secondary" className="h-11 w-full rounded-xl text-green-600 dark:text-green-500 bg-green-500/10 hover:bg-green-500/20 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" disabled>
+              <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" /> Submitted
             </Button>
           ) : !isAvailable ? (
             <Button variant="secondary" className="h-11 w-full rounded-xl" disabled>
               {availableFromLabel ? `Opens ${availableFromLabel}` : "Not open yet"}
             </Button>
           ) : (
-            <Button onClick={() => setShowPreflight(true)} className="h-11 w-full rounded-xl">
-              Start Assessment <ArrowRight className="ml-2 h-4 w-4" />
+            <Button onClick={() => setShowPreflight(true)} className="h-11 w-full rounded-xl focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">
+              Start Assessment <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
           )}
         </CardFooter>

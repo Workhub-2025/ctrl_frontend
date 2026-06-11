@@ -153,7 +153,7 @@ export default function CandidateDashboardOverviewPage() {
   });
 
   return (
-    <div className="relative flex flex-col gap-10 animate-in fade-in slide-in-from-bottom-3 duration-500 pb-12">
+    <div className="relative flex flex-col gap-10 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 duration-500 pb-12">
       {/* Decorative background glows */}
       <div className="absolute top-10 right-1/4 -z-10 h-80 w-80 rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/4 -z-10 h-[400px] w-[400px] rounded-full bg-indigo-500/5 blur-[150px] pointer-events-none" />
@@ -165,7 +165,7 @@ export default function CandidateDashboardOverviewPage() {
         {/* Subtle decorative circles */}
         <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[150%] bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
         <div className="absolute bottom-[-20%] left-[-10%] w-[40%] h-[100%] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
-
+ 
         <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto space-y-6">
           <div className="space-y-4">
             <Badge variant="outline" className="border-primary/30 bg-primary/15 text-primary px-3.5 py-1 text-xs font-semibold rounded-lg shadow-sm pointer-events-none">
@@ -181,41 +181,43 @@ export default function CandidateDashboardOverviewPage() {
               Enter the Access Code provided by your Hiring Manager to instantly link a new assessment to your portal.
             </p>
           </div>
-
+ 
           <div className="w-full max-w-md pt-4">
             <form onSubmit={handlePair} className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" aria-hidden="true" />
                 <Input
-                  placeholder="e.g. CTRL-9A2X"
+                  name="accessCode"
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-label="Access Code"
+                  placeholder="e.g. CTRL-9A2X…"
                   className="pl-12 h-14 rounded-xl text-lg font-mono uppercase tracking-widest bg-background border-border focus-visible:ring-primary shadow-inner dark:border-white/10 dark:bg-[#04070d]/50"
                   value={accessCodeInput}
                   onChange={(e) => setAccessCodeInput(e.target.value)}
                 />
               </div>
-              <Button type="submit" className="h-14 rounded-xl px-8 text-base font-semibold shadow-md transition-all hover:scale-[1.02]" disabled={isSubmitting || !accessCodeInput.trim()}>
-                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : "Join Assessment"}
+              <Button type="submit" className="h-14 rounded-xl px-8 text-base font-semibold shadow-md transition-[transform,background-color,border-color] hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" disabled={isSubmitting || !accessCodeInput.trim()}>
+                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : "Join Assessment"}
               </Button>
             </form>
-            {error && <p className="mt-3 text-sm text-red-400 font-medium animate-in slide-in-from-top-2">{error}</p>}
-            {success && <p className="mt-3 text-sm text-green-400 font-medium animate-in slide-in-from-top-2">{success}</p>}
+            {error && <p className="mt-3 text-sm text-red-400 font-medium motion-safe:animate-in motion-safe:slide-in-from-top-2">{error}</p>}
+            {success && <p className="mt-3 text-sm text-green-400 font-medium motion-safe:animate-in motion-safe:slide-in-from-top-2">{success}</p>}
           </div>
         </div>
-      </section>
-
-      {/* 2. TASK-ORIENTED DISPLAY: NEEDS ATTENTION */}
+      </section>      {/* 2. TASK-ORIENTED DISPLAY: NEEDS ATTENTION */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <AlertCircle className="h-6 w-6 text-primary" /> 
+              <AlertCircle className="h-6 w-6 text-primary" aria-hidden="true" /> 
               Needs Attention
             </h2>
             <p className="text-sm text-slate-400">Assessments that are currently active or awaiting your input.</p>
           </div>
           {activeApps.length > 0 && (
-             <Link href="/candidate-dashboard/my-assessments" className="text-sm font-semibold text-primary hover:underline hidden sm:flex items-center gap-1 transition-colors">
-               View all <ArrowRight className="h-4 w-4" />
+             <Link href="/candidate-dashboard/my-assessments" className="text-sm font-semibold text-primary hover:underline hidden sm:flex items-center gap-1 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-md px-1.5 py-0.5">
+               View all <ArrowRight className="h-4 w-4" aria-hidden="true" />
              </Link>
           )}
         </div>
@@ -259,18 +261,18 @@ export default function CandidateDashboardOverviewPage() {
                   <CardContent className="space-y-5">
                     <div className="grid grid-cols-2 gap-3">
                         <div className="flex items-center gap-2 text-sm text-slate-400">
-                           <CalendarDays className="h-4 w-4 shrink-0 text-primary" />
+                           <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                            <span className="truncate">{formatDate(app.sessionStartsAt || app.campaign?.endDate)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-400">
-                           <Target className="h-4 w-4 shrink-0 text-primary" />
+                           <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                            <span className="truncate">{formatMode(app.mode)}</span>
                         </div>
                     </div>
 
                     {app.expiresAt && (
                       <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/15 bg-amber-500/5 px-3 py-2 text-xs text-amber-500 dark:text-amber-400">
-                        <Clock3 className="h-3.5 w-3.5 shrink-0" />
+                        <Clock3 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                         <span className="font-medium">Session expires: {formatDate(app.expiresAt)}</span>
                       </div>
                     )}
@@ -284,7 +286,7 @@ export default function CandidateDashboardOverviewPage() {
                     </div>
 
                     {app.assessments && app.assessments.length > 0 && (
-                      <div className="space-y-2 pt-1 border-t border-border/50 dark:border-white/5">
+                       <div className="space-y-2 pt-1 border-t border-border/50 dark:border-white/5">
                         <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Assessments Included</p>
                         <div className="flex flex-wrap gap-1.5">
                           {app.assessments.slice(0, 3).map((ass) => (
@@ -301,9 +303,9 @@ export default function CandidateDashboardOverviewPage() {
                       </div>
                     )}
 
-                    <Button className="group w-full gap-2 font-semibold shadow-md" asChild>
+                    <Button className="group w-full gap-2 font-semibold shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" asChild>
                       <Link href={assessmentHref}>
-                        Continue Assessment <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                        Continue Assessment <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                       </Link>
                     </Button>
                   </CardContent>
@@ -315,11 +317,11 @@ export default function CandidateDashboardOverviewPage() {
           <div className="relative overflow-hidden rounded-[2rem] border border-dashed border-border dark:border-white/10 bg-gradient-to-b from-white/[0.01] to-transparent p-12 text-center">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary mb-6 shadow-inner">
-              <CheckCircle2 className="h-7 w-7 animate-pulse" />
+              <CheckCircle2 className="h-7 w-7 motion-safe:animate-pulse" aria-hidden="true" />
             </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">You're all caught up!</h3>
+            <h3 className="text-xl font-bold text-foreground mb-2">You’re all caught up!</h3>
             <p className="max-w-sm mx-auto text-sm text-slate-400 leading-relaxed">
-              You don't have any active assessments right now. Enter your access code in the welcome hero above to link your session and begin.
+              You don’t have any active assessments right now. Enter your access code in the welcome hero above to link your session and begin.
             </p>
           </div>
         )}
@@ -334,7 +336,7 @@ export default function CandidateDashboardOverviewPage() {
             <p className="text-sm text-slate-400">Your step-by-step guide to completing the assessment process.</p>
           </div>
           <Badge variant="outline" className="w-fit border-primary/20 bg-primary/15 px-3.5 py-1 text-primary font-semibold rounded-lg shadow-sm pointer-events-none">
-            <Route className="mr-1.5 h-3.5 w-3.5" />
+            <Route className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
             Candidate Journey
           </Badge>
         </div>
@@ -351,7 +353,7 @@ export default function CandidateDashboardOverviewPage() {
               <div className="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-3">
                 <div className="relative shrink-0">
                   <div className="h-[3.5rem] w-[3.5rem] rounded-2xl border border-primary/30 bg-primary/10 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-                    <KeyRound className="h-6 w-6 text-primary" />
+                    <KeyRound className="h-6 w-6 text-primary" aria-hidden="true" />
                   </div>
                   <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center shadow-md">1</span>
                 </div>
@@ -361,7 +363,7 @@ export default function CandidateDashboardOverviewPage() {
                 </div>
               </div>
               {/* Card */}
-              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-primary/20 dark:hover:border-primary/20 group">
+              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 hover:border-primary/20 dark:hover:border-primary/20 group">
                 <div className="hidden lg:block">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">Step 01</p>
                   <h3 className="text-lg font-bold text-foreground">Join Assessment Session</h3>
@@ -371,8 +373,8 @@ export default function CandidateDashboardOverviewPage() {
                 </p>
                 {/* Visual accent */}
                 <div className="rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-white/[0.02] px-4 py-3 flex items-center gap-3">
-                  <div className="font-mono text-base tracking-[0.25em] font-bold text-foreground bg-background dark:bg-[#04070d]/60 border border-border dark:border-white/10 px-3 py-1.5 rounded-lg text-sm">CTRL–9A2X</div>
-                  <ArrowRight className="h-4 w-4 text-primary shrink-0" />
+                  <div className="font-mono text-base tracking-[0.25em] font-bold text-foreground bg-background dark:bg-[#04070d]/60 border border-border dark:border-white/10 px-3 py-1.5 rounded-lg text-xs">CTRL–9A2X</div>
+                  <ArrowRight className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
                   <span className="text-xs text-slate-400 font-medium">Session linked</span>
                 </div>
               </div>
@@ -383,7 +385,7 @@ export default function CandidateDashboardOverviewPage() {
               <div className="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-3">
                 <div className="relative shrink-0">
                   <div className="h-[3.5rem] w-[3.5rem] rounded-2xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.12)]">
-                    <ShieldCheck className="h-6 w-6 text-blue-400" />
+                    <ShieldCheck className="h-6 w-6 text-blue-400" aria-hidden="true" />
                   </div>
                   <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-blue-500 text-white text-[10px] font-black flex items-center justify-center shadow-md">2</span>
                 </div>
@@ -392,7 +394,7 @@ export default function CandidateDashboardOverviewPage() {
                   <h3 className="text-lg font-bold text-foreground">Prepare for Your Mode</h3>
                 </div>
               </div>
-              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-blue-400/20 dark:hover:border-blue-400/20 group">
+              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 hover:border-blue-400/20 dark:hover:border-blue-400/20 group">
                 <div className="hidden lg:block">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">Step 02</p>
                   <h3 className="text-lg font-bold text-foreground">Prepare for Your Mode</h3>
@@ -404,14 +406,14 @@ export default function CandidateDashboardOverviewPage() {
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-[#04070d]/50 p-3.5 space-y-1.5 hover:border-primary/20 transition-colors">
                     <div className="flex items-center gap-1.5">
-                      <Video className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <Video className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
                       <span className="text-xs font-bold text-foreground">Remote</span>
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-400">Quiet space, stable internet, laptop or desktop required.</p>
                   </div>
                   <div className="rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-[#04070d]/50 p-3.5 space-y-1.5 hover:border-primary/20 transition-colors">
                     <div className="flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                      <Building2 className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
                       <span className="text-xs font-bold text-foreground">In-person</span>
                     </div>
                     <p className="text-[11px] leading-relaxed text-slate-400">Attend the venue or supervised session from the hiring team.</p>
@@ -425,7 +427,7 @@ export default function CandidateDashboardOverviewPage() {
               <div className="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-3">
                 <div className="relative shrink-0">
                   <div className="h-[3.5rem] w-[3.5rem] rounded-2xl border border-green-500/30 bg-green-500/10 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.12)]">
-                    <CheckCircle2 className="h-6 w-6 text-green-400" />
+                    <CheckCircle2 className="h-6 w-6 text-green-400" aria-hidden="true" />
                   </div>
                   <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-green-500 text-white text-[10px] font-black flex items-center justify-center shadow-md">3</span>
                 </div>
@@ -434,7 +436,7 @@ export default function CandidateDashboardOverviewPage() {
                   <h3 className="text-lg font-bold text-foreground">Submit & Await Outcome</h3>
                 </div>
               </div>
-              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-all duration-300 hover:border-green-400/20 dark:hover:border-green-400/20 group">
+              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 hover:border-green-400/20 dark:hover:border-green-400/20 group">
                 <div className="hidden lg:block">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-1">Step 03</p>
                   <h3 className="text-lg font-bold text-foreground">Submit & Await Outcome</h3>
@@ -445,7 +447,7 @@ export default function CandidateDashboardOverviewPage() {
                 {/* Visual confirmation state */}
                 <div className="rounded-xl border border-green-500/15 bg-green-500/5 px-4 py-3 flex items-center gap-3">
                   <div className="h-7 w-7 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-green-400">All responses submitted</p>
@@ -464,7 +466,7 @@ export default function CandidateDashboardOverviewPage() {
         <section className="space-y-4 pt-6 border-t border-border dark:border-white/5">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-400" /> Past Assessments
+              <CheckCircle2 className="h-5 w-5 text-green-400" aria-hidden="true" /> Past Assessments
             </h3>
             <span className="text-xs text-slate-400">{completedApps.length} session{completedApps.length !== 1 ? 's' : ''}</span>
           </div>
@@ -476,8 +478,8 @@ export default function CandidateDashboardOverviewPage() {
                   : "/candidate-dashboard/my-assessments";
 
                 return (
-                <Link key={app.documentId || app.candidateCode} href={assessmentHref} className="block group">
-                  <Card className="h-full rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1329]/20 dark:backdrop-blur-sm hover:dark:border-white/30">
+                <Link key={app.documentId || app.candidateCode} href={assessmentHref} className="block group focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-2xl">
+                  <Card className="h-full rounded-2xl border border-border bg-card shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1329]/20 dark:backdrop-blur-sm hover:dark:border-white/30">
                     <CardHeader className="p-4 space-y-2">
                        <CardTitle className="text-base font-bold line-clamp-1 group-hover:text-primary transition-colors">{app.campaign?.name || "Assessment"}</CardTitle>
                        <CardDescription className="text-xs text-slate-400 line-clamp-1">{app.campaign?.jobRole || "Role"}</CardDescription>
