@@ -102,15 +102,15 @@ function isSameAssessment(expectedName?: string | null, resultName?: string | nu
 function normalizeAssessmentText(value?: string | null) {
   return (value ?? "")
     .toLowerCase()
-    .replace(/prioritisation/g, "prioritization")
+    .replace(/prioritization/g, "prioritisation")
     .replace(/[^a-z0-9]/g, "");
 }
 
 function getAssessmentKey(value?: string | null) {
   const normalized = normalizeAssessmentText(value);
 
-  if (normalized.includes("prioritization") || normalized === "pja") {
-    return "prioritization";
+  if (normalized.includes("prioritisation") || normalized === "pja") {
+    return "prioritisation";
   }
   if (normalized.includes("situationaljudgement") || normalized === "sjt") {
     return "situational-judgement";
@@ -478,13 +478,13 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             const typingRuns = getTypingRuns(row.result?.metrics);
             const scoreValue = row.score ?? 0;
             const key = getAssessmentKey(row.name);
-            const isPrioritization = key === "prioritization";
+            const isPrioritisation = key === "prioritisation";
             const isSJT = key === "situational-judgement";
             const isCallSimulation = key === "call-simulation";
             const hasBreakdown =
               typingRuns.length > 0 ||
               (row.result?.wpm !== null && row.result?.wpm !== undefined) ||
-              (row.score !== null && (isPrioritization || isSJT || isCallSimulation) && row.result?.metrics !== null && row.result?.metrics !== undefined);
+              (row.score !== null && (isPrioritisation || isSJT || isCallSimulation) && row.result?.metrics !== null && row.result?.metrics !== undefined);
             const breakdownOpen = openBreakdownKey === row.name;
 
             return (
@@ -646,7 +646,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                           </div>
                         )}
 
-                        {isPrioritization && row.result?.metrics && (() => {
+                        {isPrioritisation && row.result?.metrics && (() => {
                           const pjaMetrics = row.result.metrics as any;
                           return (
                             <div className="space-y-4">
@@ -684,7 +684,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                   </p>
                                 </div>
                                 <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
-                                  <p className="text-xs text-slate-500 font-medium">Critical Misprioritizations</p>
+                                  <p className="text-xs text-slate-500 font-medium">Critical Misprioritisations</p>
                                   <p className={`mt-1.5 text-lg font-bold ${pjaMetrics.criticalMisprioritisationCount > 0 ? "text-rose-400" : "text-white"}`}>
                                     {pjaMetrics.criticalMisprioritisationCount ?? 0}
                                   </p>

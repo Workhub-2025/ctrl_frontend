@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { initSjaSession } from '@/app/actions/assessment-sja.actions';
 
 type ScenarioOption = {
   id: string;
@@ -87,24 +88,37 @@ export default function SituationalJudgementTest({
   useEffect(() => {
     let cancelled = false;
 
-    fetch(CONTENT_URL)
-      .then((response) => {
+    async function loadSession() {
+      try {
+        const sessionData = await initSjaSession(candidateSessionDocumentId);
+        if (cancelled) return;
+        if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
+          setContent({ finalScenarios: sessionData.runs });
+          return;
+        }
+      } catch (err) {
+        console.error('[SituationalJudgementTest] Failed to load SJA session from backend:', err);
+      }
+
+      // Fallback: fetch static JSON
+      try {
+        const response = await fetch(CONTENT_URL);
         if (!response.ok) throw new Error('Unable to load situational judgement content');
-        return response.json() as Promise<SjtContent>;
-      })
-      .then((loadedContent) => {
+        const loadedContent = await response.json() as SjtContent;
         if (!cancelled && loadedContent.finalScenarios?.length) {
           setContent(loadedContent);
         }
-      })
-      .catch(() => {
+      } catch {
         if (!cancelled) setContent(fallbackContent);
-      });
+      }
+    }
+
+    void loadSession();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [candidateSessionDocumentId]);
 
   const startAssessment = useCallback(() => {
     startedAtRef.current = new Date().toISOString();

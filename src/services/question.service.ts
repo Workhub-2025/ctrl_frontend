@@ -10,7 +10,7 @@ export interface FindQuestionsParams extends QueryParamsType {
     type?: 'mcp' | 'text';
 }
 export default class QuestionService {
-    private static readonly COLLECTION = 'questions';
+    private static readonly COLLECTION = 'a-sja-questions';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'QuestionService',
         searchFields: ['question', 'rightAnswer', 'rubric'],

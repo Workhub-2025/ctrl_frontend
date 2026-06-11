@@ -7,7 +7,7 @@ import { IAudioCall, AudioCallFileUpload, isAudioCall, PaginatedResponse, Update
 import BaseServiceHelper, { ServiceConfig } from './base-service.helper';
 
 export default class AudioCallService {
-    private static readonly COLLECTION = 'audio-calls';
+    private static readonly COLLECTION = 'a-audio-calls';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'AudioCallService',
         searchFields: ['title', 'description', 'transcription', 'rubric'],

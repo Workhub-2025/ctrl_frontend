@@ -345,7 +345,7 @@ function normalizeClient(client: RawClient): AdminClientRow {
     plan: seatsAllowed >= 10 ? "Enterprise" : seatsAllowed >= 3 ? "Professional" : "Standard",
     seatsUsed,
     seatsAllowed,
-    enabledAssessments: ["Typing", "SJT", "Prioritization", "Call Simulation"],
+    enabledAssessments: ["Typing", "SJT", "Prioritisation", "Call Simulation"],
     billingStatus:
       status === "Active" ? "Active" : status === "Paused" ? "Paused" : status === "Expired" ? "Expired" : "Pending",
     primaryContact:

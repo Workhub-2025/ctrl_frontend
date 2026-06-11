@@ -4,18 +4,21 @@
       "id": "practice-1",
       "title": "Practice Call",
       "kind": "practice",
+      "scenarioKey": "call_2_burglary_residential",
       "audioSrc": "/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3"
     },
     {
       "id": "call-1",
       "title": "Call 1",
       "kind": "final",
+      "scenarioKey": "call_2_burglary_residential",
       "audioSrc": "/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3"
     },
     {
       "id": "call-2",
       "title": "Call 2",
       "kind": "final",
+      "scenarioKey": "call_2_burglary_residential",
       "audioSrc": "/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3"
     }
   ]

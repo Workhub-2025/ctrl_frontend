@@ -16,7 +16,7 @@ export const completionLabels: Record<string, string> = {
   typing: "Typing Assessment",
   "call-simulation": "Call Simulation",
   "situational-judgement": "Situational Judgement Assessment",
-  prioritization: "Prioritisation Judgement Assessment",
+  prioritisation: "Prioritisation Judgement Assessment",
 };
 
 export const candidateAssessmentItems = [
@@ -52,7 +52,7 @@ export const candidateAssessmentItems = [
     title: "Prioritisation Judgement Assessment",
     description:
       "Rank incident sets from highest to lowest priority to show operational risk judgement.",
-    href: "/assessment/prioritization",
+    href: "/assessment/prioritisation",
     duration: "Untimed",
     status: "Available now",
   },

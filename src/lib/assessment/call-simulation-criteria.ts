@@ -24,19 +24,44 @@ export interface CallSimulationCriterion {
     | 'keyInformation2'
     | 'keyInformation3';
   displayName: string;
-  section: 'caller_information' | 'system_information' | 'intelligence_information' | 'incident_information';
+  section:
+    | 'caller_information'
+    | 'system_information'
+    | 'suspect_information'
+    | 'intelligence_information'
+    | 'incident_information';
   expectedConcept?: string;
   expectedValue?: string;
   acceptedExamples?: string[];
+  /**
+   * For ai_multi_point_extraction: the list of specific facts the AI should look for.
+   * Each point is weighted equally against contentScore.
+   */
+  keyPoints?: string[];
+  /**
+   * For ai_multi_point_extraction: max marks available for finding the key points.
+   * Defaults to 65% of score if not set.
+   */
+  contentScore?: number;
+  /**
+   * For ai_multi_point_extraction: max marks available for narrative quality
+   * (clarity, professional tone, structure). Defaults to 35% of score if not set.
+   */
+  structureScore?: number;
   score: number;
-  ruleType: 'exact_or_readable_match' | 'numeric_match' | 'ai_evidence_extraction';
+  ruleType:
+    | 'exact_or_readable_match'
+    | 'numeric_match'
+    | 'ai_evidence_extraction'
+    | 'ai_multi_point_extraction';
   timeSensitive: boolean;
-  esp: number; // in seconds
+  esp: number; // seconds into audio at which this information is first spoken
   critical?: boolean;
 }
 
 export const CALL_2_BURGLARY_CRITERIA: CallSimulationCriterion[] = [
-  // --- CALLER INFORMATION ---
+
+  // ─── CALLER INFORMATION ──────────────────────────────────────────────────────
   {
     key: 'caller_name',
     field: 'callerName',
@@ -104,7 +129,7 @@ export const CALL_2_BURGLARY_CRITERIA: CallSimulationCriterion[] = [
     esp: 20.22,
   },
 
-  // --- SYSTEM INFORMATION ---
+  // ─── SYSTEM INFORMATION ───────────────────────────────────────────────────────
   {
     key: 'incident_category',
     field: 'incidentCategory',
@@ -152,12 +177,12 @@ export const CALL_2_BURGLARY_CRITERIA: CallSimulationCriterion[] = [
     esp: 190.88,
   },
 
-  // --- INTELLIGENCE INFORMATION ---
+  // ─── SUSPECT INFORMATION (dropdown selects — exact match, time-sensitive) ─────
   {
     key: 'suspect_gender',
     field: 'suspectGender',
     displayName: 'Suspect Gender',
-    section: 'intelligence_information',
+    section: 'suspect_information',
     expectedValue: 'Male',
     score: 0.05,
     ruleType: 'exact_or_readable_match',
@@ -168,7 +193,7 @@ export const CALL_2_BURGLARY_CRITERIA: CallSimulationCriterion[] = [
     key: 'suspect_ethnicity',
     field: 'suspectEthnicity',
     displayName: 'Suspect Ethnicity',
-    section: 'intelligence_information',
+    section: 'suspect_information',
     expectedValue: 'Asian',
     score: 0.05,
     ruleType: 'exact_or_readable_match',
@@ -179,13 +204,15 @@ export const CALL_2_BURGLARY_CRITERIA: CallSimulationCriterion[] = [
     key: 'suspect_age',
     field: 'suspectAge',
     displayName: 'Suspect Age Range',
-    section: 'intelligence_information',
+    section: 'suspect_information',
     expectedValue: '40-50 years',
     score: 0.05,
     ruleType: 'exact_or_readable_match',
     timeSensitive: true,
     esp: 162.50,
   },
+
+  // ─── INTELLIGENCE INFORMATION (AI / free-text — not time-sensitive) ───────────
   {
     key: 'suspect_clothing',
     field: 'suspectClothing',
@@ -195,23 +222,23 @@ export const CALL_2_BURGLARY_CRITERIA: CallSimulationCriterion[] = [
     acceptedExamples: ['green hi-vis', 'green reflective jacket', 'high visibility jacket', 'hi vis jacket'],
     score: 0.05,
     ruleType: 'ai_evidence_extraction',
-    timeSensitive: true,
+    timeSensitive: false,
     esp: 162.50,
   },
   {
     key: 'unique_information',
     field: 'uniqueInformation',
-    displayName: 'Unique Information',
+    displayName: 'Unique / Intel Details',
     section: 'intelligence_information',
     expectedConcept: 'gold necklace stolen',
     acceptedExamples: ['gold necklace', 'necklace from bedroom', 'jewellery taken'],
-    score: 0.50,
+    score: 0.40,
     ruleType: 'ai_evidence_extraction',
-    timeSensitive: true,
+    timeSensitive: false,
     esp: 81.38,
   },
 
-  // --- INCIDENT INFORMATION ---
+  // ─── INCIDENT INFORMATION ─────────────────────────────────────────────────────
   {
     key: 'incident_door_no',
     field: 'incidentDoorNo',
@@ -248,52 +275,28 @@ export const CALL_2_BURGLARY_CRITERIA: CallSimulationCriterion[] = [
     esp: 20.22,
     critical: true,
   },
+
+  // ─── INCIDENT SUMMARY — ai_multi_point_extraction ────────────────────────────
+  // Total: 2.00
+  //   • Content (key points found):  1.30  — 4 points × 0.325 each
+  //   • Structure quality:           0.70  — AI rates wording, clarity, professional tone
   {
     key: 'incident_summary',
     field: 'incidentSummary',
-    displayName: 'Incident Summary',
-    section: 'incident_information',
-    expectedConcept: 'residential burglary with forced entry and property stolen',
-    acceptedExamples: ['house burgled', 'burglary at home', 'home broken into', 'forced window', 'entry via kitchen window', 'gold necklace stolen', 'jewellery taken'],
-    score: 0.70,
-    ruleType: 'ai_evidence_extraction',
-    timeSensitive: true,
+    displayName: 'Incident Summary & Details',
+    section: 'intelligence_information',
+    expectedConcept: 'residential burglary — forced entry, property stolen, suspect seen, absence timings noted',
+    keyPoints: [
+      'Forced entry via rear kitchen window (frame smashed / damaged)',
+      'Gold necklace stolen from bedroom',
+      'Neighbour has CCTV footage that may have captured the suspect',
+      'Caller left home at approximately 07:30 and returned at approximately 17:30',
+    ],
+    contentScore: 1.30,
+    structureScore: 0.70,
+    score: 2.00,
+    ruleType: 'ai_multi_point_extraction',
+    timeSensitive: false,
     esp: 56.20,
-  },
-  {
-    key: 'key_information_1',
-    field: 'keyInformation1',
-    displayName: 'Key Information 1',
-    section: 'incident_information',
-    expectedConcept: 'forced entry via kitchen window',
-    acceptedExamples: ['forced open back kitchen window', 'rear kitchen window damaged', 'entry through kitchen window'],
-    score: 0.40,
-    ruleType: 'ai_evidence_extraction',
-    timeSensitive: true,
-    esp: 69.31,
-  },
-  {
-    key: 'key_information_2',
-    field: 'keyInformation2',
-    displayName: 'Key Information 2',
-    section: 'incident_information',
-    expectedConcept: 'gold necklace stolen',
-    acceptedExamples: ['gold necklace taken', 'necklace stolen', 'jewellery stolen'],
-    score: 0.40,
-    ruleType: 'ai_evidence_extraction',
-    timeSensitive: true,
-    esp: 81.38,
-  },
-  {
-    key: 'key_information_3',
-    field: 'keyInformation3',
-    displayName: 'Key Information 3',
-    section: 'incident_information',
-    expectedConcept: 'CCTV footage available showing suspect',
-    acceptedExamples: ['neighbour has CCTV', 'camera footage', 'footage available', 'recording available'],
-    score: 0.40,
-    ruleType: 'ai_evidence_extraction',
-    timeSensitive: true,
-    esp: 150.38,
   },
 ];

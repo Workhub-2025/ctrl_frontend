@@ -542,7 +542,7 @@ export function HiringManagerCandidatesView() {
                           // 4 different colors for the 4 types
                           let colorClass = "bg-primary";
                           if (key === "typing") colorClass = "bg-indigo-500";
-                          else if (key === "prioritization") colorClass = "bg-sky-500";
+                          else if (key === "prioritisation") colorClass = "bg-sky-500";
                           else if (key === "situational-judgement") colorClass = "bg-violet-500";
                           else if (key === "call-simulation") colorClass = "bg-emerald-500";
 
@@ -553,7 +553,7 @@ export function HiringManagerCandidatesView() {
                               metricsContent = (
                                 <span>{matchedResult.wpm ?? 0} WPM · {Math.round(matchedResult.accuracy ?? 0)}% Acc</span>
                               );
-                            } else if (key === "prioritization" && matchedResult.metrics) {
+                            } else if (key === "prioritisation" && matchedResult.metrics) {
                               const m = matchedResult.metrics as any;
                               metricsContent = (
                                 <span>High: {Math.round(m.highPriorityAccuracy ?? 0)}% · Mid: {Math.round(m.mediumPriorityAccuracy ?? 0)}% · Low: {Math.round(m.lowPriorityAccuracy ?? 0)}%</span>
@@ -619,15 +619,15 @@ export function HiringManagerCandidatesView() {
 function normalizeAssessmentText(value?: string | null) {
   return (value ?? "")
     .toLowerCase()
-    .replace(/prioritisation/g, "prioritization")
+    .replace(/prioritization/g, "prioritisation")
     .replace(/[^a-z0-9]/g, "");
 }
 
 function getAssessmentKey(value?: string | null, result?: any) {
   const normalized = normalizeAssessmentText(value);
 
-  if (normalized.includes("prioritization") || normalized === "pja") {
-    return "prioritization";
+  if (normalized.includes("prioritisation") || normalized === "pja") {
+    return "prioritisation";
   }
   if (normalized.includes("situationaljudgement") || normalized === "sjt") {
     return "situational-judgement";
@@ -647,7 +647,7 @@ function getAssessmentKey(value?: string | null, result?: any) {
     if (result.metrics) {
       const m = result.metrics;
       if (m.highPriorityAccuracy !== undefined || m.mediumPriorityAccuracy !== undefined || m.lowPriorityAccuracy !== undefined) {
-        return "prioritization";
+        return "prioritisation";
       }
       if (m.decisionBand !== undefined || m.materialRiskFlagCount !== undefined || m.moderateRiskFlagCount !== undefined) {
         return "situational-judgement";

@@ -203,7 +203,7 @@ function formatMode(value?: string | null) {
 }
 
 function normaliseSlug(value?: string) {
-  return (value ?? "").toLowerCase().replace(/_/g, "-").replace("prioritisation", "prioritization");
+  return (value ?? "").toLowerCase().replace(/_/g, "-").replace("prioritization", "prioritisation");
 }
 
 function getCandidateAssessmentSlug(item: (typeof candidateAssessmentItems)[number]) {

@@ -1,10 +1,10 @@
 "use client";
 
-import { PrioritizationTest, SecureAssessmentShell } from '@/components/assessment';
+import { PrioritisationTest, SecureAssessmentShell } from '@/components/assessment';
 import { useSecureExit } from '@/hooks/use-secure-exit';
 import { useSearchParams } from 'next/navigation';
 
-export default function PrioritizationPage() {
+export default function PrioritisationPage() {
   const { handleExit } = useSecureExit();
   const searchParams = useSearchParams();
   const candidateSessionDocumentId = searchParams.get('candidateSessionDocumentId');
@@ -19,7 +19,7 @@ export default function PrioritizationPage() {
       showPauseButton={false}
       enableFocusMonitoring={false}
     >
-      <PrioritizationTest candidateSessionDocumentId={candidateSessionDocumentId} />
+      <PrioritisationTest candidateSessionDocumentId={candidateSessionDocumentId} />
     </SecureAssessmentShell>
   );
 }

@@ -53,6 +53,7 @@ type FormHistoryItem = {
 
 type CallSnapshot = {
   runIndex: number;
+  scenarioKey?: string;
   form: IncidentForm;
   timestamps?: Record<string, number>;
   history?: FormHistoryItem[];
@@ -79,9 +80,6 @@ function scoreFormCompletion(form: IncidentForm) {
     "incidentStreet",
     "incidentPostcode",
     "incidentSummary",
-    "keyInformation1",
-    "keyInformation2",
-    "keyInformation3"
   ];
   const completed = fields.filter((field) => String(form[field] ?? "").trim().length > 0).length;
   return Math.round((completed / fields.length) * 100);
@@ -196,10 +194,43 @@ function getFieldValueAtTime(history: FormHistoryItem[], field: string, targetTi
   return changes[changes.length - 1].value.trim();
 }
 
+/**
+ * Resolve the scoring criteria for a snapshot.
+ * 1. If the snapshot carries a scenarioKey, look up the AudioCall in Strapi.
+ * 2. If that AudioCall has a populated `criteria` JSON array, use it.
+ * 3. Otherwise fall back to the hardcoded CALL_2_BURGLARY_CRITERIA.
+ */
+async function resolveCriteria(
+  jwt: string,
+  scenarioKey?: string
+): Promise<typeof CALL_2_BURGLARY_CRITERIA> {
+  if (!scenarioKey) return CALL_2_BURGLARY_CRITERIA;
+
+  try {
+    const strapiClient = getStrapiClient(jwt);
+    const res = await strapiClient.fetch(
+      `/a-audio-calls?filters[scenarioKey][$eq]=${encodeURIComponent(scenarioKey)}&fields=criteria&pagination[limit]=1`
+    );
+    if (!res.ok) return CALL_2_BURGLARY_CRITERIA;
+
+    const body = await res.json();
+    const criteriaJson = body?.data?.[0]?.criteria;
+
+    if (Array.isArray(criteriaJson) && criteriaJson.length > 0) {
+      return criteriaJson as typeof CALL_2_BURGLARY_CRITERIA;
+    }
+  } catch (err) {
+    console.warn('[call-simulation] Could not fetch criteria from Strapi, using hardcoded fallback:', err);
+  }
+
+  return CALL_2_BURGLARY_CRITERIA;
+}
+
 async function gradeSnapshot(
   form: IncidentForm,
   timestamps: Record<string, number> = {},
-  history: FormHistoryItem[] = []
+  history: FormHistoryItem[] = [],
+  criteria: typeof CALL_2_BURGLARY_CRITERIA = CALL_2_BURGLARY_CRITERIA
 ) {
   let totalEarnedScore = 0;
   let criticalErrorsCount = 0;
@@ -210,22 +241,109 @@ async function gradeSnapshot(
 
   const hasApiKey = !!process.env.GEMINI_API_KEY;
 
-  const freeTextFields: string[] = [
-    'suspectGender',
-    'suspectEthnicity',
-    'suspectAge',
-    'suspectClothing',
-    'uniqueInformation',
-    'keyInformation1',
-    'keyInformation2',
-    'keyInformation3',
-    'incidentSummary'
-  ];
+  // ─── Consolidated AI call for all 6 evidence-extraction criteria ─────────
+  // Map: which criteria key reads from which field in the form
+  const AI_FIELD_MAP: Record<string, keyof IncidentForm> = {
+    suspect_clothing: 'suspectClothing',
+    unique_information: 'uniqueInformation',
+    incident_summary: 'incidentSummary',
+    key_information_1: 'incidentSummary',
+    key_information_2: 'incidentSummary',
+    key_information_3: 'incidentSummary',
+  };
 
-  for (const criterion of CALL_2_BURGLARY_CRITERIA) {
-    const isFreeText = freeTextFields.includes(criterion.field);
-    const targetField = isFreeText ? 'incidentSummary' : criterion.field;
-    const candidateValue = String(form[targetField] ?? "").trim();
+  const aiCriteria = criteria.filter(c => c.ruleType === 'ai_evidence_extraction' || c.ruleType === 'ai_multi_point_extraction');
+
+  // Build a map of AI results keyed by criterion key
+  const aiResults: Record<string, { evidenceFound: boolean; interpretedAs: string; readable: boolean; confidence: number }> = {};
+
+  if (aiCriteria.length > 0) {
+    const suspectClothingVal = String(form.suspectClothing ?? '').trim();
+    const uniqueInfoVal = String(form.uniqueInformation ?? '').trim();
+    const incidentSummaryVal = String(form.incidentSummary ?? '').trim();
+
+    if (hasApiKey && (suspectClothingVal || uniqueInfoVal || incidentSummaryVal)) {
+      try {
+        const criteriaLines = aiCriteria.map((c, i) => {
+          const blockName =
+            c.key === 'suspect_clothing' ? 'Suspect Clothing Log' :
+            c.key === 'unique_information' ? 'Unique Intel Log' :
+            'Incident Summary Narrative Log';
+          return `${i + 1}. Criterion: "${c.key}"
+   Expected Concept: "${c.expectedConcept ?? ''}"
+   Accepted Examples: ${JSON.stringify(c.acceptedExamples ?? [])}
+   Candidate Input Block: Use "${blockName}"`;
+        }).join('\n\n');
+
+        const collatedPrompt = `You are an expert evidence extraction assistant for emergency dispatch call logging.
+Evaluate the candidate's log entries against the expected evidence concepts.
+
+Here are the candidate's logged text blocks:
+1. Suspect Clothing Log: "${suspectClothingVal}"
+2. Unique Intel Log: "${uniqueInfoVal}"
+3. Incident Summary Narrative Log: "${incidentSummaryVal}"
+
+We need to evaluate the following ${aiCriteria.length} criteria:
+
+${criteriaLines}
+
+For each criterion:
+- "key": the criterion key string
+- "evidence_found" (boolean): True if the core meaning of the expected concept is present in the specified input block.
+- "candidate_text_interpreted_as" (string): Clean representation of the matching phrase from the candidate's entry.
+- "operationally_readable" (boolean): True if spelling/grammar errors do not obscure the operational meaning.
+- "confidence" (float 0.00-1.00)
+
+Return strictly a JSON object:
+{
+  "results": [
+    { "key": string, "evidence_found": boolean, "candidate_text_interpreted_as": string, "operationally_readable": boolean, "confidence": number },
+    ...
+  ]
+}`;
+
+        const response = await ai.generate({
+          prompt: collatedPrompt,
+          output: {
+            schema: z.object({
+              results: z.array(z.object({
+                key: z.string(),
+                evidence_found: z.boolean(),
+                candidate_text_interpreted_as: z.string(),
+                operationally_readable: z.boolean(),
+                confidence: z.number(),
+              }))
+            })
+          }
+        });
+
+        const out = response.output;
+        if (out?.results) {
+          for (const r of out.results) {
+            aiResults[r.key] = {
+              evidenceFound: r.evidence_found,
+              interpretedAs: r.candidate_text_interpreted_as,
+              readable: r.operationally_readable,
+              confidence: r.confidence,
+            };
+          }
+        }
+      } catch (error) {
+        console.error('[call-simulation] Consolidated AI call failed, using fallbacks:', error);
+        // aiResults will remain empty — fallback handled per-criterion below
+      }
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  for (const criterion of criteria) {
+    // Determine which form field to read the candidate's value from
+    const sourceField: keyof IncidentForm =
+      criterion.ruleType === 'ai_evidence_extraction' && AI_FIELD_MAP[criterion.key]
+        ? AI_FIELD_MAP[criterion.key]
+        : (criterion.field as keyof IncidentForm);
+
+    const candidateValue = String(form[sourceField] ?? '').trim();
     
     if (!candidateValue) {
       if (criterion.critical) {
@@ -235,9 +353,9 @@ async function gradeSnapshot(
         key: criterion.key,
         displayName: criterion.displayName,
         section: criterion.section,
-        value: "",
+        value: '',
         evidenceFound: false,
-        timingBand: "Red",
+        timingBand: 'Red',
         timestamp: null,
         delay: null,
         multiplier: 0.0,
@@ -254,55 +372,18 @@ async function gradeSnapshot(
     let confidence = 1.0;
 
     if (criterion.ruleType === 'exact_or_readable_match') {
-      evidenceFound = checkExactOrReadableMatch(criterion.key, candidateValue, criterion.expectedValue || "");
+      evidenceFound = checkExactOrReadableMatch(criterion.key, candidateValue, criterion.expectedValue || '');
     } else if (criterion.ruleType === 'numeric_match') {
-      evidenceFound = checkNumericMatch(candidateValue, criterion.expectedValue || "");
+      evidenceFound = checkNumericMatch(candidateValue, criterion.expectedValue || '');
     } else if (criterion.ruleType === 'ai_evidence_extraction') {
-      if (hasApiKey) {
-        try {
-          const prompt = `You are an expert evidence extraction assistant for emergency dispatch call logging.
-Evaluate the candidate's log entry against the expected evidence concept.
-
-Expected Concept: "${criterion.expectedConcept}"
-Accepted Examples: ${JSON.stringify(criterion.acceptedExamples)}
-Candidate Entry: "${candidateValue}"
-
-Determine:
-1. "evidence_found" (boolean): True if the core meaning of the expected concept is present in the candidate entry.
-2. "candidate_text_interpreted_as" (string): Clean representation of the matching phrase from the candidate's entry.
-3. "operationally_readable" (boolean): True if spelling/grammar errors do not obscure the operational meaning.
-4. "confidence" (float): Score between 0.00 and 1.00.
-
-Return strictly a JSON object with this format:
-{
-  "evidence_found": boolean,
-  "candidate_text_interpreted_as": string,
-  "operationally_readable": boolean,
-  "confidence": number
-}`;
-          const response = await ai.generate({
-            prompt,
-            output: {
-              schema: z.object({
-                evidence_found: z.boolean(),
-                candidate_text_interpreted_as: z.string(),
-                operationally_readable: z.boolean(),
-                confidence: z.number()
-              })
-            }
-          });
-          const out = response.output;
-          if (out) {
-            evidenceFound = out.evidence_found;
-            candidateTextInterpretedAs = out.candidate_text_interpreted_as;
-            operationallyReadable = out.operationally_readable;
-            confidence = out.confidence;
-          }
-        } catch (error) {
-          console.error(`AI extraction failed for ${criterion.key}, using fallback:`, error);
-          evidenceFound = fallbackMatch(criterion.key, candidateValue);
-        }
+      const aiResult = aiResults[criterion.key];
+      if (aiResult) {
+        evidenceFound = aiResult.evidenceFound;
+        candidateTextInterpretedAs = aiResult.interpretedAs;
+        operationallyReadable = aiResult.readable;
+        confidence = aiResult.confidence;
       } else {
+        // Fallback regex matching if AI call was not made or failed
         evidenceFound = fallbackMatch(criterion.key, candidateValue);
       }
     }
@@ -313,24 +394,24 @@ Return strictly a JSON object with this format:
 
     let timingBand: 'Green' | 'Amber' | 'Red' = 'Green';
     let multiplier = 1.0;
-    let timestamp = timestamps[targetField] ?? null;
+    let timestamp = timestamps[sourceField] ?? null;
     let delay: number | null = null;
 
     if (evidenceFound) {
       if (criterion.timeSensitive) {
-        const valAt4 = getFieldValueAtTime(history, targetField, criterion.esp + 4);
+        const valAt4 = getFieldValueAtTime(history, sourceField, criterion.esp + 4);
         const isIdenticalAt4 = valAt4.toLowerCase() === candidateValue.toLowerCase();
         let correctAt4 = false;
 
         if (isIdenticalAt4) {
           correctAt4 = true;
         } else if (valAt4) {
-          correctAt4 = criterion.ruleType === 'exact_or_readable_match' ? checkExactOrReadableMatch(criterion.key, valAt4, criterion.expectedValue || "") :
-                       criterion.ruleType === 'numeric_match' ? checkNumericMatch(valAt4, criterion.expectedValue || "") :
+          correctAt4 = criterion.ruleType === 'exact_or_readable_match' ? checkExactOrReadableMatch(criterion.key, valAt4, criterion.expectedValue || '') :
+                       criterion.ruleType === 'numeric_match' ? checkNumericMatch(valAt4, criterion.expectedValue || '') :
                        fallbackMatch(criterion.key, valAt4);
         }
 
-        const editsAfter4 = history.filter(h => h.field === targetField && h.timestamp > (criterion.esp + 4));
+        const editsAfter4 = history.filter(h => h.field === sourceField && h.timestamp > (criterion.esp + 4));
         const unchangedAfter4 = editsAfter4.length === 0 || editsAfter4[editsAfter4.length - 1].value.trim() === candidateValue;
 
         if (correctAt4 && unchangedAfter4) {
@@ -339,19 +420,19 @@ Return strictly a JSON object with this format:
           greenCount++;
           delay = 4.0;
         } else {
-          const valAt6 = getFieldValueAtTime(history, targetField, criterion.esp + 6);
+          const valAt6 = getFieldValueAtTime(history, sourceField, criterion.esp + 6);
           const isIdenticalAt6 = valAt6.toLowerCase() === candidateValue.toLowerCase();
           let correctAt6 = false;
 
           if (isIdenticalAt6) {
             correctAt6 = true;
           } else if (valAt6) {
-            correctAt6 = criterion.ruleType === 'exact_or_readable_match' ? checkExactOrReadableMatch(criterion.key, valAt6, criterion.expectedValue || "") :
-                         criterion.ruleType === 'numeric_match' ? checkNumericMatch(valAt6, criterion.expectedValue || "") :
+            correctAt6 = criterion.ruleType === 'exact_or_readable_match' ? checkExactOrReadableMatch(criterion.key, valAt6, criterion.expectedValue || '') :
+                         criterion.ruleType === 'numeric_match' ? checkNumericMatch(valAt6, criterion.expectedValue || '') :
                          fallbackMatch(criterion.key, valAt6);
           }
 
-          const editsAfter6 = history.filter(h => h.field === targetField && h.timestamp > (criterion.esp + 6));
+          const editsAfter6 = history.filter(h => h.field === sourceField && h.timestamp > (criterion.esp + 6));
           const unchangedAfter6 = editsAfter6.length === 0 || editsAfter6[editsAfter6.length - 1].value.trim() === candidateValue;
 
           if (correctAt6 && unchangedAfter6) {
@@ -400,11 +481,21 @@ Return strictly a JSON object with this format:
     });
   }
 
+  // Section max scores:
+  //   caller_information:       1.05
+  //   system_information:       0.90
+  //   suspect_information:      0.15  (gender + ethnicity + age dropdowns)
+  //   intelligence_information: 2.45  (clothing 0.05 + unique_info 0.40 + summary 2.00)
+  //   incident_information:     0.45  (door 0.15 + street 0.15 + postcode 0.15)
+  //   Grand total:              5.00
+  const MAX_SCORE = 5.0;
+
   const sectionScores: Record<string, { score: number; max: number }> = {
-    caller_information: { score: 0, max: 1.05 },
-    system_information: { score: 0, max: 0.90 },
-    intelligence_information: { score: 0, max: 0.70 },
-    incident_information: { score: 0, max: 2.35 },
+    caller_information:       { score: 0, max: 1.05 },
+    system_information:       { score: 0, max: 0.90 },
+    suspect_information:      { score: 0, max: 0.15 },
+    intelligence_information: { score: 0, max: 2.45 },
+    incident_information:     { score: 0, max: 0.45 },
   };
 
   for (const res of criteriaResults) {
@@ -417,7 +508,7 @@ Return strictly a JSON object with this format:
     sectionScores[s].score = parseFloat(sectionScores[s].score.toFixed(2));
   }
 
-  const overallScorePercent = parseFloat(((totalEarnedScore / 5.0) * 100).toFixed(2));
+  const overallScorePercent = parseFloat(((totalEarnedScore / MAX_SCORE) * 100).toFixed(2));
   const passed = overallScorePercent >= 70 && criticalErrorsCount === 0;
 
   let information_capture = "You captured the core details of the caller and incident accurately.";
@@ -435,7 +526,7 @@ Return strictly a JSON object with this format:
   return {
     score: overallScorePercent,
     totalEarnedScore: parseFloat(totalEarnedScore.toFixed(2)),
-    maxScore: 5.0,
+    maxScore: MAX_SCORE,
     criticalErrorsCount,
     passed,
     sections: sectionScores,
@@ -561,7 +652,13 @@ export async function POST(request: Request) {
 
       const gradedFinals = await Promise.all(
         finalSnapshots.map(async (snapshot) => {
-          const metrics = await gradeSnapshot(snapshot.form, snapshot.timestamps || {}, snapshot.history || []);
+          const criteria = await resolveCriteria(session.user.jwt, snapshot.scenarioKey);
+          const metrics = await gradeSnapshot(
+            snapshot.form,
+            snapshot.timestamps || {},
+            snapshot.history || [],
+            criteria
+          );
           return {
             snapshot,
             metrics,

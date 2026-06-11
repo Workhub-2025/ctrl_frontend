@@ -95,7 +95,7 @@ export type HiringManagerAssessment = {
   skills: string[];
   whyItMatters: string;
   videoLabel: string;
-  iconKey: "typing" | "call-simulation" | "situational-judgement" | "prioritization" | "default";
+  iconKey: "typing" | "call-simulation" | "situational-judgement" | "prioritisation" | "default";
   configType: string;
   isActive: boolean;
   passingScore: number | null;
@@ -136,8 +136,8 @@ const configMeta: Record<
       "Shows how candidates reason through role-relevant decisions, not just the answer they choose.",
     videoLabel: "Situational judgement demo",
   },
-  "assessment-config.prioritization": {
-    iconKey: "prioritization",
+  "assessment-config.prioritisation": {
+    iconKey: "prioritisation",
     skills: ["Prioritisation", "Incident triage", "Operational judgement"],
     fallbackSummary:
       "Assess how candidates prioritise operational work and competing incidents.",
@@ -193,7 +193,7 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
   },
   {
     id: 3,
-    slug: "prioritization",
+    slug: "prioritisation",
     displayName: "Prioritisation Judgement Assessment",
     description:
       "Measures risk-aware incident prioritisation using six-incident ranking sets.",
@@ -202,7 +202,7 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
     passingScore: 65,
     maxAttempts: 1,
     config: {
-      __component: "assessment-config.prioritization",
+      __component: "assessment-config.prioritisation",
       roundCount: 15,
       passingScore: 65,
     },
@@ -268,7 +268,7 @@ function inferDurationSeconds(
       return (config.roundCount ?? 1) * (config.timeLimitPerRound ?? 90);
     case "assessment-config.situational-judgement":
       return config.questionCount ? config.questionCount * 60 : null;
-    case "assessment-config.prioritization":
+    case "assessment-config.prioritisation":
       return null;
     case "assessment-config.call-simulation":
       return config.callCount ? config.callCount * 240 : null;

@@ -31,7 +31,7 @@ export interface TextUpdateData {
 }
 
 export default class TextsService {
-    private static readonly COLLECTION = 'typing-texts';
+    private static readonly COLLECTION = 'a-typing-texts';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'TextsService',
         searchFields: ['text'],

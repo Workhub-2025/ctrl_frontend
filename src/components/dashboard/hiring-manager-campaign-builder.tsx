@@ -42,7 +42,7 @@ const iconByKey = {
   typing: TimerReset,
   "call-simulation": Headphones,
   "situational-judgement": SlidersHorizontal,
-  prioritization: BrainCircuit,
+  prioritisation: BrainCircuit,
   default: BrainCircuit,
 } satisfies Record<HiringManagerAssessment["iconKey"], typeof BrainCircuit>;
 

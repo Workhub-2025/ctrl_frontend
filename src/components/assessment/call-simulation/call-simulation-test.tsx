@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
+  ChevronDown,
   FileText,
   Loader2,
   LogOut,
@@ -25,12 +26,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { initCallSimulationSession } from '@/app/actions/assessment-call-simulation.actions';
 
 type CallRun = {
   id: string;
   title: string;
   kind: 'practice' | 'final';
   audioSrc: string;
+  scenarioKey?: string;
 };
 
 type CallContentFile = {
@@ -74,12 +77,24 @@ type IncidentForm = {
 
 type RunSnapshot = {
   runIndex: number;
+  scenarioKey?: string;
   form: IncidentForm;
   timestamps: Record<string, number>;
 };
 
 const CONTENT_URL = '/assessment-content/call-simulation.json';
 const REVIEW_SECONDS = 60;
+
+const REFERENCE_NUMBER_OPTIONS = [
+  '63918',
+  '63981',
+  '36918',
+  '63910',
+  '69318',
+  '63198',
+  '63928',
+  '39618',
+];
 
 const emptyForm: IncidentForm = {
   callerName: '',
@@ -112,18 +127,21 @@ const fallbackRuns: CallRun[] = [
     title: 'Practice Call',
     kind: 'practice',
     audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
+    scenarioKey: 'call_2_burglary_residential',
   },
   {
     id: 'fallback-call-1',
     title: 'Call 1',
     kind: 'final',
     audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
+    scenarioKey: 'call_2_burglary_residential',
   },
   {
     id: 'fallback-call-2',
     title: 'Call 2',
     kind: 'final',
     audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
+    scenarioKey: 'call_2_burglary_residential',
   },
 ];
 
@@ -135,6 +153,75 @@ const formatTime = (seconds: number) => {
     .padStart(2, '0');
   return `${minutes}:${remainingSeconds}`;
 };
+
+// ─── Accordion Section ────────────────────────────────────────────────────────
+
+type SectionId = 'caller' | 'system' | 'suspect' | 'location' | 'incident';
+
+const SECTION_LABELS: Record<SectionId, string> = {
+  caller: '1. Caller Information',
+  system: '2. System Information',
+  suspect: '3. Suspect Information',
+  location: '4. Incident Location',
+  incident: '5. Incident Details',
+};
+
+function AccordionSection({
+  id,
+  openSection,
+  onToggle,
+  children,
+}: {
+  id: SectionId;
+  openSection: SectionId | null;
+  onToggle: (id: SectionId) => void;
+  children: React.ReactNode;
+}) {
+  const isOpen = openSection === id;
+
+  return (
+    <div
+      className={`rounded-xl border transition-all duration-200 ${
+        isOpen
+          ? 'border-primary/40 bg-muted/30 dark:border-primary/30 dark:bg-white/[0.03]'
+          : 'border-border/60 bg-muted/10 dark:border-white/5 dark:bg-white/[0.01]'
+      }`}
+    >
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        onClick={() => onToggle(id)}
+        aria-expanded={isOpen}
+        id={`accordion-header-${id}`}
+      >
+        <span
+          className={`text-sm font-semibold transition-colors ${
+            isOpen ? 'text-primary' : 'text-muted-foreground'
+          }`}
+        >
+          {SECTION_LABELS[id]}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-primary' : ''
+          }`}
+        />
+      </button>
+
+      <div
+        className={`overflow-hidden transition-all duration-200 ${
+          isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+        role="region"
+        aria-labelledby={`accordion-header-${id}`}
+      >
+        <div className="px-4 pb-4 pt-1">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function CallSimulationTest({
   candidateSessionDocumentId,
@@ -163,6 +250,7 @@ export default function CallSimulationTest({
   const [reviewTimeLeft, setReviewTimeLeft] = useState(REVIEW_SECONDS);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isBypassed, setIsBypassed] = useState(false);
+  const [openSection, setOpenSection] = useState<SectionId | null>('caller');
 
   const currentRun = useMemo(() => {
     return runs[currentRunIndex] ?? fallbackRuns[currentRunIndex] ?? fallbackRuns[0];
@@ -178,6 +266,24 @@ export default function CallSimulationTest({
     const index = runs.findIndex((r) => r.kind === 'final');
     return index !== -1 ? index : 0;
   }, [runs]);
+
+  // Human-readable call label: "Practice Simulated Call" / "Simulated Call 1" / "Simulated Call 2" …
+  const currentRunLabel = useMemo(() => {
+    if (currentRun.kind === 'practice') {
+      const practiceRuns = runs.filter((r) => r.kind === 'practice');
+      const posAmongPractice = practiceRuns.findIndex((r) => r.id === currentRun.id) + 1;
+      return practiceCount > 1
+        ? `Practice Simulated Call ${posAmongPractice}`
+        : 'Practice Simulated Call';
+    }
+    const finalRuns = runs.filter((r) => r.kind === 'final');
+    const posAmongFinals = finalRuns.findIndex((r) => r.id === currentRun.id) + 1;
+    return `Simulated Call ${posAmongFinals}`;
+  }, [currentRun, runs, practiceCount]);
+
+  const handleSectionToggle = (id: SectionId) => {
+    setOpenSection((prev) => (prev === id ? null : id));
+  };
 
   useEffect(() => {
     formRef.current = form;
@@ -198,28 +304,37 @@ export default function CallSimulationTest({
   useEffect(() => {
     let cancelled = false;
 
-    fetch(CONTENT_URL)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Unable to load call simulation content');
+    async function loadSession() {
+      try {
+        const sessionData = await initCallSimulationSession(candidateSessionDocumentId);
+        if (cancelled) return;
+        if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
+          setRuns(sessionData.runs);
+          return;
         }
-        return response.json() as Promise<CallContentFile>;
-      })
-      .then((content) => {
+      } catch (err) {
+        console.error('[CallSimulationTest] Failed to load call simulation session:', err);
+      }
+
+      // Fallback: fetch static JSON
+      try {
+        const response = await fetch(CONTENT_URL);
+        if (!response.ok) throw new Error('Unable to load call simulation content');
+        const content = await response.json() as CallContentFile;
         if (!cancelled && Array.isArray(content.runs) && content.runs.length > 0) {
           setRuns(content.runs);
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRuns(fallbackRuns);
-        }
-      });
+      } catch {
+        if (!cancelled) setRuns(fallbackRuns);
+      }
+    }
+
+    void loadSession();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [candidateSessionDocumentId]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -278,6 +393,7 @@ export default function CallSimulationTest({
     setTimestamps({});
     historyRef.current = [];
     setReviewTimeLeft(REVIEW_SECONDS);
+    setOpenSection('caller');
     setPhase('running');
   }, []);
 
@@ -337,6 +453,7 @@ export default function CallSimulationTest({
     const activeRunIndex = runIndexRef.current;
     const snapshot = {
       runIndex: activeRunIndex,
+      scenarioKey: (runs[activeRunIndex] ?? fallbackRuns[activeRunIndex])?.scenarioKey,
       form: formRef.current,
       timestamps: timestampsRef.current,
       history: historyRef.current,
@@ -345,7 +462,6 @@ export default function CallSimulationTest({
     snapshotsRef.current = [...snapshotsRef.current, snapshot];
     setSnapshots(snapshotsRef.current);
 
-    // If this is the last run of the entire test, transition to submitting phase
     if (activeRunIndex === runs.length - 1) {
       setPhase('submitting');
       return;
@@ -355,13 +471,11 @@ export default function CallSimulationTest({
     const nextRun = runs[activeRunIndex + 1];
 
     if (current.kind === 'final') {
-      // If the current run was a final run, but not the last run, show transition screen
       setPhase('final-transition');
       return;
     }
 
     if (nextRun && nextRun.kind === 'final') {
-      // Next is final, but current is practice
       setPhase('practice-complete');
       return;
     }
@@ -535,6 +649,7 @@ export default function CallSimulationTest({
             onEnded={handleAudioEnded}
           />
 
+          {/* Audio Player Card */}
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
@@ -543,7 +658,7 @@ export default function CallSimulationTest({
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    {currentRun.kind === 'final' ? 'Final call' : currentRun.title}
+                    {currentRunLabel}
                   </p>
                   <p className="mt-1 text-sm text-foreground">
                     {formatTime(audioCurrentTime)} / {formatTime(audioDuration)}
@@ -557,12 +672,16 @@ export default function CallSimulationTest({
                     Review time {reviewTimeLeft}s
                   </Badge>
                 )}
-                 <Button onClick={playAudio} disabled={hasStartedAudio || audioEnded}>
+                <Button onClick={playAudio} disabled={hasStartedAudio || audioEnded}>
                   <Play className="mr-2 h-4 w-4" />
                   {audioEnded ? 'Audio complete' : hasStartedAudio ? 'Audio playing' : 'Play audio'}
                 </Button>
                 {currentRun.kind === 'practice' && hasStartedAudio && !audioEnded && (
-                  <Button variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20" onClick={skipAudio}>
+                  <Button
+                    variant="outline"
+                    className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
+                    onClick={skipAudio}
+                  >
                     Skip audio
                   </Button>
                 )}
@@ -571,21 +690,22 @@ export default function CallSimulationTest({
             <Progress value={audioProgress} className="mt-4 h-2" />
           </div>
 
+          {/* Incident Log Card */}
           <div className="mt-5 rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03] sm:p-5">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-base font-semibold text-foreground">Incident log</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Complete the fields from the call audio. Use concise operational notes.
+                  Complete the fields from the call audio. Tap a section to expand it.
                 </p>
               </div>
               <FileText className="hidden h-5 w-5 text-muted-foreground sm:block" />
             </div>
 
-            <div className="space-y-6">
-              {/* Section 1: Caller Details */}
-              <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/5 dark:bg-white/[0.01]">
-                <p className="text-sm font-semibold text-primary">Caller Details</p>
+            <div className="space-y-2">
+
+              {/* ── Section 1: Caller Information ── */}
+              <AccordionSection id="caller" openSection={openSection} onToggle={handleSectionToggle}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="caller-name">Caller Name</Label>
@@ -625,7 +745,7 @@ export default function CallSimulationTest({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="caller-door-no">Location Door No.</Label>
+                    <Label htmlFor="caller-door-no">Caller Door No.</Label>
                     <Input
                       id="caller-door-no"
                       name="ctrl-call-caller-door-no"
@@ -637,7 +757,7 @@ export default function CallSimulationTest({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="caller-street">Location Street</Label>
+                    <Label htmlFor="caller-street">Caller Street</Label>
                     <Input
                       id="caller-street"
                       name="ctrl-call-caller-street"
@@ -649,7 +769,7 @@ export default function CallSimulationTest({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="caller-postcode">Location Postcode</Label>
+                    <Label htmlFor="caller-postcode">Caller Postcode</Label>
                     <Input
                       id="caller-postcode"
                       name="ctrl-call-caller-postcode"
@@ -661,11 +781,10 @@ export default function CallSimulationTest({
                     />
                   </div>
                 </div>
-              </div>
+              </AccordionSection>
 
-              {/* Section 2: System Log */}
-              <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/5 dark:bg-white/[0.01]">
-                <p className="text-sm font-semibold text-primary">System Information</p>
+              {/* ── Section 2: System Information ── */}
+              <AccordionSection id="system" openSection={openSection} onToggle={handleSectionToggle}>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="incident-category">Incident Category</Label>
@@ -723,24 +842,115 @@ export default function CallSimulationTest({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reference-number">Reference Number</Label>
+                    <Select
+                      value={form.referenceNumber}
+                      onValueChange={(value) => updateForm('referenceNumber', value)}
+                    >
+                      <SelectTrigger id="reference-number" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                        <SelectValue placeholder="Select reference number" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REFERENCE_NUMBER_OPTIONS.map((ref) => (
+                          <SelectItem key={ref} value={ref}>
+                            {ref}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </AccordionSection>
+
+              {/* ── Section 3: Suspect Information ── */}
+              <AccordionSection id="suspect" openSection={openSection} onToggle={handleSectionToggle}>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="suspect-gender">Suspect Gender</Label>
+                    <Select
+                      value={form.suspectGender}
+                      onValueChange={(value) => updateForm('suspectGender', value)}
+                    >
+                      <SelectTrigger id="suspect-gender" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Male">Male</SelectItem>
+                        <SelectItem value="Female">Female</SelectItem>
+                        <SelectItem value="Unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="suspect-ethnicity">Suspect Ethnicity</Label>
+                    <Select
+                      value={form.suspectEthnicity}
+                      onValueChange={(value) => updateForm('suspectEthnicity', value)}
+                    >
+                      <SelectTrigger id="suspect-ethnicity" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                        <SelectValue placeholder="Select ethnicity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="White">White</SelectItem>
+                        <SelectItem value="Asian">Asian</SelectItem>
+                        <SelectItem value="Black">Black</SelectItem>
+                        <SelectItem value="Mixed">Mixed</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="suspect-age">Suspect Age Range</Label>
+                    <Select
+                      value={form.suspectAge}
+                      onValueChange={(value) => updateForm('suspectAge', value)}
+                    >
+                      <SelectTrigger id="suspect-age" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                        <SelectValue placeholder="Select age range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Under 18">Under 18</SelectItem>
+                        <SelectItem value="18-25 years">18–25 years</SelectItem>
+                        <SelectItem value="25-35 years">25–35 years</SelectItem>
+                        <SelectItem value="35-40 years">35–40 years</SelectItem>
+                        <SelectItem value="40-50 years">40–50 years</SelectItem>
+                        <SelectItem value="50-60 years">50–60 years</SelectItem>
+                        <SelectItem value="Over 60">Over 60</SelectItem>
+                        <SelectItem value="Unknown">Unknown</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 sm:col-span-3">
+                    <Label htmlFor="suspect-clothing">Suspect Clothing</Label>
                     <Input
-                      id="reference-number"
-                      name="ctrl-call-reference-number"
+                      id="suspect-clothing"
+                      name="ctrl-call-suspect-clothing"
+                      placeholder="Describe clothing worn by suspect"
                       autoComplete="new-password"
                       spellCheck={false}
-                      value={form.referenceNumber}
-                      onChange={(event) => updateForm('referenceNumber', event.target.value)}
-                      onBlur={() => handleFieldBlur('referenceNumber')}
+                      value={form.suspectClothing}
+                      onChange={(event) => updateForm('suspectClothing', event.target.value)}
+                      onBlur={() => handleFieldBlur('suspectClothing')}
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-3">
+                    <Label htmlFor="unique-information">Unique / Intel Details</Label>
+                    <Input
+                      id="unique-information"
+                      name="ctrl-call-unique-information"
+                      placeholder="Any unique identifying details or intel"
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      value={form.uniqueInformation}
+                      onChange={(event) => updateForm('uniqueInformation', event.target.value)}
+                      onBlur={() => handleFieldBlur('uniqueInformation')}
                     />
                   </div>
                 </div>
-              </div>
+              </AccordionSection>
 
-
-
-              {/* Section 4: Incident details */}
-              <div className="space-y-4 rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/5 dark:bg-white/[0.01]">
-                <p className="text-sm font-semibold text-primary">Incident Location & Details</p>
+              {/* ── Section 4: Incident Location ── */}
+              <AccordionSection id="location" openSection={openSection} onToggle={handleSectionToggle}>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
                     <Label htmlFor="incident-door-no">Incident Door No.</Label>
@@ -778,22 +988,30 @@ export default function CallSimulationTest({
                       onBlur={() => handleFieldBlur('incidentPostcode')}
                     />
                   </div>
-                  <div className="space-y-2 sm:col-span-3">
-                    <Label htmlFor="incident-summary">Incident Summary</Label>
-                    <Textarea
-                      id="incident-summary"
-                      name="ctrl-call-incident-summary"
-                      autoComplete="new-password"
-                      spellCheck={false}
-                      value={form.incidentSummary}
-                      onChange={(event) => updateForm('incidentSummary', event.target.value)}
-                      onBlur={() => handleFieldBlur('incidentSummary')}
-                      className="min-h-20"
-                    />
-                  </div>
-
                 </div>
-              </div>
+              </AccordionSection>
+
+              {/* ── Section 5: Incident Details ── */}
+              <AccordionSection id="incident" openSection={openSection} onToggle={handleSectionToggle}>
+                <div className="space-y-2">
+                  <Label htmlFor="incident-summary">Incident Summary &amp; Details</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Summarise what happened, including how entry was gained, property stolen, suspect details, and any witness/CCTV information.
+                  </p>
+                  <Textarea
+                    id="incident-summary"
+                    name="ctrl-call-incident-summary"
+                    autoComplete="new-password"
+                    spellCheck={false}
+                    value={form.incidentSummary}
+                    onChange={(event) => updateForm('incidentSummary', event.target.value)}
+                    onBlur={() => handleFieldBlur('incidentSummary')}
+                    className="min-h-36 resize-none"
+                    placeholder="e.g. Caller reports residential burglary at above address. Suspect entered via rear kitchen window — forced entry. Gold necklace stolen from bedroom. Male suspect, Asian, 40-50 years, green hi-vis jacket. Neighbour's CCTV may have captured suspect."
+                  />
+                </div>
+              </AccordionSection>
+
             </div>
 
             <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
@@ -959,7 +1177,7 @@ export default function CallSimulationTest({
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Final call complete
+            {currentRunLabel} complete
           </p>
           <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Submitting assessment

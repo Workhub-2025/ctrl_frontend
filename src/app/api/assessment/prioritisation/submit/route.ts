@@ -56,7 +56,7 @@ function validatePayload(body: unknown):
 
 export async function POST(request: Request) {
   const correlationId = resolveCorrelationId(request.headers.get("x-correlation-id"));
-  const trace = startServerActionTrace("prioritizationSubmit.post", { correlationId });
+  const trace = startServerActionTrace("prioritisationSubmit.post", { correlationId });
 
   try {
     const session = await getServerSession(authOptions);
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     }
 
     const limiter = await applyRateLimit({
-      key: `prioritization-submit:${session.user.id}:${extractClientIp(request)}`,
+      key: `prioritisation-submit:${session.user.id}:${extractClientIp(request)}`,
       limit: 5,
       windowMs: 30_000,
     });
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     }
 
     const strapiClient = getStrapiClient(session.user.jwt);
-    const created = await strapiClient.fetch("/assessment/prioritization/results", {
+    const created = await strapiClient.fetch("/assessment/prioritisation/results", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -105,7 +105,7 @@ export async function POST(request: Request) {
         completedAt: validation.completedAt,
         candidateSessionDocumentId: validation.candidateSessionDocumentId,
         rawData: {
-          assessmentType: "prioritization",
+          assessmentType: "prioritisation",
           rounds: validation.rounds,
         },
       }),
@@ -136,7 +136,7 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     trace.failure(error);
-    console.error("[prioritization-submit] Unhandled error:", error);
+    console.error("[prioritisation-submit] Unhandled error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred. Please contact support." },
       { status: 500, headers: { "x-correlation-id": correlationId } }

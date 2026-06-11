@@ -402,7 +402,7 @@ export function HiringManagerSessionDetailsDialog({
                                   const key = getAssessmentKey(item.name, item.result);
                                   let colorClass = "bg-primary";
                                   if (key === "typing") colorClass = "bg-indigo-500";
-                                  else if (key === "prioritization") colorClass = "bg-sky-500";
+                                  else if (key === "prioritisation") colorClass = "bg-sky-500";
                                   else if (key === "situational-judgement") colorClass = "bg-violet-500";
                                   else if (key === "call-simulation") colorClass = "bg-emerald-500";
                                   return (
@@ -578,13 +578,13 @@ function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCou
 function normalizeAssessmentText(value?: string | null) {
   return (value ?? "")
     .toLowerCase()
-    .replace(/prioritisation/g, "prioritization")
+    .replace(/prioritization/g, "prioritisation")
     .replace(/[^a-z0-9]/g, "");
 }
 
 function getAssessmentKey(value?: string | null, result?: any) {
   const normalized = normalizeAssessmentText(value);
-  if (normalized.includes("prioritization") || normalized === "pja") return "prioritization";
+  if (normalized.includes("prioritisation") || normalized === "pja") return "prioritisation";
   if (normalized.includes("situationaljudgement") || normalized === "sjt") return "situational-judgement";
   if (normalized.includes("callsimulation")) return "call-simulation";
   if (normalized.includes("typing")) return "typing";
@@ -592,7 +592,7 @@ function getAssessmentKey(value?: string | null, result?: any) {
     if (typeof result.wpm === "number" || typeof result.accuracy === "number") return "typing";
     if (result.metrics) {
       const m = result.metrics;
-      if (m.highPriorityAccuracy !== undefined) return "prioritization";
+      if (m.highPriorityAccuracy !== undefined) return "prioritisation";
       if (m.decisionBand !== undefined) return "situational-judgement";
     }
     if (typeof result.durationSeconds === "number") return "call-simulation";

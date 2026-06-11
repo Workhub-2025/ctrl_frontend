@@ -24,7 +24,7 @@ export default function CandidateReviewPage() {
     { 
       id: 102, name: "Michael Chang", session: "09:00 AM", status: "Ready for review", match: "Medium",
       scores: { typing: "65 WPM", call: "78%", sjt: "14/20" },
-      notes: "Good technical skills, but showed some hesitation in prioritization scenarios."
+      notes: "Good technical skills, but showed some hesitation in prioritisation scenarios."
     },
     { 
       id: 103, name: "Emma Rodriguez", session: "01:00 PM", status: "Ready for review", match: "High",

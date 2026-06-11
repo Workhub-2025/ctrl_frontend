@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { initPjaSession } from '@/app/actions/assessment-pja.actions';
 
 type Incident = {
   id: string;
@@ -35,7 +36,7 @@ type PriorityRound = {
   incidents: Incident[];
 };
 
-type PrioritizationContent = {
+type PrioritisationContent = {
   practiceRounds: PriorityRound[];
   finalRounds: PriorityRound[];
 };
@@ -57,11 +58,11 @@ type RoundSnapshot = {
   order: string[];
 };
 
-const CONTENT_URL = '/assessment-content/prioritization.json';
+const CONTENT_URL = '/assessment-content/prioritisation.json';
 
 type PrioritySlot = string | null;
 
-const fallbackContent: PrioritizationContent = {
+const fallbackContent: PrioritisationContent = {
   practiceRounds: [
     {
       id: 'fallback-practice',
@@ -101,13 +102,13 @@ const fallbackContent: PrioritizationContent = {
   finalRounds: [],
 };
 
-export default function PrioritizationTest({
+export default function PrioritisationTest({
   candidateSessionDocumentId,
 }: {
   candidateSessionDocumentId?: string | null;
 }) {
   const [phase, setPhase] = useState<Phase>('landing');
-  const [content, setContent] = useState<PrioritizationContent>(fallbackContent);
+  const [content, setContent] = useState<PrioritisationContent>(fallbackContent);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [finalIndex, setFinalIndex] = useState(0);
   const [prioritySlots, setPrioritySlots] = useState<PrioritySlot[]>([]);
@@ -144,14 +145,25 @@ export default function PrioritizationTest({
   useEffect(() => {
     let cancelled = false;
 
-    fetch(CONTENT_URL)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Unable to load prioritization content');
+    async function loadSession() {
+      try {
+        const sessionData = await initPjaSession(candidateSessionDocumentId);
+        if (cancelled) return;
+        if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
+          const practiceRounds = sessionData.runs.filter((r) => r.type === 'practice');
+          const finalRounds = sessionData.runs.filter((r) => r.type === 'test');
+          setContent({ practiceRounds, finalRounds });
+          return;
         }
-        return response.json() as Promise<PrioritizationContent>;
-      })
-      .then((loadedContent) => {
+      } catch (err) {
+        console.error('[PrioritisationTest] Failed to load PJA session from backend:', err);
+      }
+
+      // Fallback: fetch static JSON
+      try {
+        const response = await fetch(CONTENT_URL);
+        if (!response.ok) throw new Error('Unable to load prioritisation content');
+        const loadedContent = await response.json() as PrioritisationContent;
         if (
           !cancelled &&
           loadedContent.practiceRounds?.length &&
@@ -159,17 +171,17 @@ export default function PrioritizationTest({
         ) {
           setContent(loadedContent);
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setContent(fallbackContent);
-        }
-      });
+      } catch {
+        if (!cancelled) setContent(fallbackContent);
+      }
+    }
+
+    void loadSession();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [candidateSessionDocumentId]);
 
   const startPractice = useCallback(() => {
     const firstRound = content.practiceRounds[0] ?? fallbackContent.practiceRounds[0];
@@ -383,7 +395,7 @@ export default function PrioritizationTest({
         }));
 
       try {
-        const response = await fetch('/api/assessment/prioritization/submit', {
+        const response = await fetch('/api/assessment/prioritisation/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -397,7 +409,7 @@ export default function PrioritizationTest({
         if (cancelled) return;
 
         if (response.ok || response.status === 409) {
-          notifyAssessmentCompleted('prioritization');
+          notifyAssessmentCompleted('prioritisation');
           setSubmitError(null);
         } else {
           const body = await response.json().catch(() => ({}));
