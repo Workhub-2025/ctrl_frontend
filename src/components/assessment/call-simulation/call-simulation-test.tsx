@@ -389,38 +389,6 @@ export default function CallSimulationTest({
     if (!startedAtRef.current) {
       startedAtRef.current = new Date().toISOString();
     }
-    
-    const targetRun = runs[runIndex] ?? fallbackRuns[runIndex];
-    if (targetRun && (targetRun.id === 'call-2' || targetRun.id === 'fallback-call-2')) {
-      // Find the first final run snapshot to copy its data
-      const firstFinalSnapshot = snapshotsRef.current.find(s => {
-        const r = runs[s.runIndex] ?? fallbackRuns[s.runIndex];
-        return r && r.kind === 'final';
-      });
-      
-      const formToCopy = firstFinalSnapshot ? firstFinalSnapshot.form : emptyForm;
-      const timestampsToCopy = firstFinalSnapshot ? firstFinalSnapshot.timestamps : {};
-      const historyToCopy = firstFinalSnapshot ? (firstFinalSnapshot as any).history || [] : [];
-      
-      const snapshot = {
-        runIndex,
-        scenarioKey: targetRun.scenarioKey,
-        form: formToCopy,
-        timestamps: timestampsToCopy,
-        history: historyToCopy,
-      };
-      
-      snapshotsRef.current = [...snapshotsRef.current, snapshot];
-      setSnapshots(snapshotsRef.current);
-      
-      if (runIndex === runs.length - 1) {
-        setPhase('submitting');
-        return;
-      }
-      setCurrentRunIndex(runIndex + 1);
-      return;
-    }
-
     setCurrentRunIndex(runIndex);
     setForm(emptyForm);
     setTimestamps({});
@@ -428,6 +396,35 @@ export default function CallSimulationTest({
     setReviewTimeLeft(REVIEW_SECONDS);
     setOpenSection('caller');
     setPhase('running');
+  }, []);
+
+  const copyRun1Data = useCallback(() => {
+    // Find Call 1 snapshot
+    const firstFinalSnapshot = snapshotsRef.current.find(s => {
+      const r = runs[s.runIndex] ?? fallbackRuns[s.runIndex];
+      return r && r.kind === 'final';
+    });
+
+    if (firstFinalSnapshot) {
+      // Pause audio if playing
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = audio.duration;
+      }
+      
+      setForm(firstFinalSnapshot.form);
+      formRef.current = firstFinalSnapshot.form;
+      
+      setTimestamps(firstFinalSnapshot.timestamps);
+      timestampsRef.current = firstFinalSnapshot.timestamps;
+      
+      historyRef.current = (firstFinalSnapshot as any).history || [];
+      
+      setHasStartedAudio(true);
+      setAudioEnded(true);
+      setIsPlaying(false);
+    }
   }, [runs]);
 
   const handleBypass = useCallback(() => {
@@ -1055,9 +1052,26 @@ export default function CallSimulationTest({
                   ? `Audio finished. You have ${reviewTimeLeft}s to review or submit now.`
                   : 'Listen to the full audio. You can type while it plays.'}
               </p>
-              <Button onClick={completeRun} disabled={!audioEnded}>
-                {isFinalRun ? 'Submit final call' : 'Complete practice call'}
-              </Button>
+              <div className="flex flex-wrap items-center gap-3">
+                {isFinalRun && (currentRun.id === 'call-2' || currentRun.id === 'fallback-call-2') && (
+                  <div className="flex flex-col items-end gap-1 mr-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 text-xs h-9 px-3"
+                      onClick={copyRun1Data}
+                    >
+                      Copy Run 1 inputs (Dev Only)
+                    </Button>
+                    <span className="text-[10px] text-amber-500 max-w-xs text-right leading-none">
+                      Copies inputs and timing metrics from Call 1 for dev testing.
+                    </span>
+                  </div>
+                )}
+                <Button onClick={completeRun} disabled={!audioEnded}>
+                  {isFinalRun ? 'Submit final call' : 'Complete practice call'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
