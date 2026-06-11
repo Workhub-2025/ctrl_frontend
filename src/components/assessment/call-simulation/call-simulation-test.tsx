@@ -1038,7 +1038,11 @@ export default function CallSimulationTest({
                   : 'Listen to the full audio. You can type while it plays.'}
               </p>
               <div className="flex flex-wrap items-center gap-3">
-                {isFinalRun && (currentRun.id === 'call-2' || currentRun.id === 'fallback-call-2') && (
+                {(() => {
+                  const finalRunsList = runs.filter(r => r.kind === 'final');
+                  const isSecondFinalRun = currentRun.kind === 'final' && finalRunsList.findIndex(r => r.id === currentRun.id || r.title === currentRun.title) === 1;
+                  return isSecondFinalRun;
+                })() && (
                   <div className="flex flex-col items-end gap-1 mr-2">
                     <Button
                       type="button"
