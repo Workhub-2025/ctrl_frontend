@@ -25,6 +25,7 @@ export type HiringManagerAssessmentResult = {
   mistakeCount?: number | null;
   durationSeconds?: number | null;
   metrics?: Record<string, unknown> | null;
+  rawData?: Record<string, any> | null;
 };
 
 export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {

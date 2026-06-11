@@ -701,12 +701,13 @@ export async function POST(request: Request) {
       overallScorePercent = avgScore;
       overallPassed = allPassed;
 
-      calls = gradedFinals.map(({ snapshot }) => ({
+      calls = gradedFinals.map(({ snapshot, metrics }) => ({
         runIndex: snapshot.runIndex,
         durationSeconds: 0,
         fieldAccuracy: scoreFormCompletion(snapshot.form),
         form: snapshot.form,
         timestamps: snapshot.timestamps,
+        metrics,
       }));
 
       practiceCalls = practiceSnapshots.map((snapshot) => ({

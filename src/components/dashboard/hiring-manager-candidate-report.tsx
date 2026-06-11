@@ -260,6 +260,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [openBreakdownKey, setOpenBreakdownKey] = useState<string | null>(null);
+  const [selectedCallRunIndex, setSelectedCallRunIndex] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -764,7 +765,22 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                         })()}
 
                         {isCallSimulation && row.result?.metrics && (() => {
-                          const callMetrics = row.result.metrics as any;
+                          const callsList = row.result?.rawData?.calls || [];
+                          const finalRuns = callsList.filter((c: any) => c.metrics);
+                          
+                          let activeMetrics = row.result.metrics as any;
+                          let activeRunIndex = selectedCallRunIndex;
+                          
+                          if (finalRuns.length > 0) {
+                            if (activeRunIndex === null || !finalRuns.some((f: any) => f.runIndex === activeRunIndex)) {
+                              activeRunIndex = finalRuns[0].runIndex;
+                            }
+                            const matchedRun = finalRuns.find((f: any) => f.runIndex === activeRunIndex);
+                            if (matchedRun?.metrics) {
+                              activeMetrics = matchedRun.metrics;
+                            }
+                          }
+                          
                           const sectionLabels: Record<string, string> = {
                             caller_information: "Caller Information",
                             system_information: "System Information",
@@ -776,26 +792,51 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                           
                           return (
                             <div className="space-y-5">
+                              {/* Run Selector Tabs */}
+                              {finalRuns.length > 1 && (
+                                <div className="flex flex-wrap items-center gap-1.5 border-b border-white/5 pb-3">
+                                  <span className="text-xs font-semibold text-slate-400 mr-2">Select Call:</span>
+                                  {finalRuns.map((run: any, idx: number) => {
+                                    const isSelected = activeRunIndex === run.runIndex;
+                                    return (
+                                      <Button
+                                        key={run.runIndex}
+                                        type="button"
+                                        variant={isSelected ? "default" : "outline"}
+                                        onClick={() => setSelectedCallRunIndex(run.runIndex)}
+                                        className={`h-7 px-3 text-[11px] font-bold rounded-lg transition-all ${
+                                          isSelected
+                                            ? "bg-primary text-white shadow-lg"
+                                            : "text-slate-300 hover:text-white hover:bg-white/5 border-white/10"
+                                        }`}
+                                      >
+                                        Call {idx + 1} {run.metrics?.passed ? " (Pass)" : " (Review)"}
+                                      </Button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
                               {/* Summary Stats Cards */}
                               <div className="grid gap-3 sm:grid-cols-3">
                                 <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
                                   <p className="text-xs text-slate-500 font-medium">Scoring Outcome</p>
                                   <p className={`mt-1.5 text-2xl font-black ${
-                                    callMetrics.passed ? "text-emerald-400" : "text-rose-400"
+                                    activeMetrics.passed ? "text-emerald-400" : "text-rose-400"
                                   }`}>
-                                    {callMetrics.passed ? "PASSED" : "FAILED"}
+                                    {activeMetrics.passed ? "PASSED" : "FAILED"}
                                   </p>
                                 </div>
                                 <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
                                   <p className="text-xs text-slate-500 font-medium">Critical Errors</p>
-                                  <p className={`mt-1.5 text-2xl font-black ${callMetrics.criticalErrorsCount > 0 ? "text-rose-400 font-bold" : "text-white"}`}>
-                                    {callMetrics.criticalErrorsCount ?? 0}
+                                  <p className={`mt-1.5 text-2xl font-black ${activeMetrics.criticalErrorsCount > 0 ? "text-rose-400 font-bold" : "text-white"}`}>
+                                    {activeMetrics.criticalErrorsCount ?? 0}
                                   </p>
                                 </div>
                                 <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
                                   <p className="text-xs text-slate-500 font-medium">Marks Awarded</p>
                                   <p className="mt-1.5 text-2xl font-black text-white">
-                                    {callMetrics.totalEarnedScore ?? "0"} <span className="text-xs font-semibold text-slate-400">/ {callMetrics.maxScore ?? "5.0"}</span>
+                                    {activeMetrics.totalEarnedScore ?? "0"} <span className="text-xs font-semibold text-slate-400">/ {activeMetrics.maxScore ?? "5.0"}</span>
                                   </p>
                                 </div>
                               </div>
@@ -807,7 +848,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                 </p>
                                 <div className="grid gap-4 sm:grid-cols-2">
                                   {secKeys.map((secKey) => {
-                                    const sec = callMetrics.sections?.[secKey] || { score: 0, max: 1.0 };
+                                    const sec = activeMetrics.sections?.[secKey] || { score: 0, max: 1.0 };
                                     const pct = Math.round((sec.score / sec.max) * 100);
                                     
                                     return (
@@ -829,7 +870,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                               </div>
 
                               {/* Detailed Criteria Table */}
-                              {Array.isArray(callMetrics.criteria) && callMetrics.criteria.length > 0 && (
+                              {Array.isArray(activeMetrics.criteria) && activeMetrics.criteria.length > 0 && (
                                 <div className="space-y-2.5">
                                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                                     Logged Information Details
@@ -846,7 +887,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-white/5 text-slate-200 font-medium">
-                                        {callMetrics.criteria.map((crit: any) => {
+                                        {activeMetrics.criteria.map((crit: any) => {
                                           let timingColor = "text-slate-400 bg-white/5";
                                           if (crit.timingBand === "Green") {
                                             timingColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
@@ -899,7 +940,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                               )}
 
                               {/* Qualitative Feedback Cards */}
-                              {callMetrics.feedback && (
+                              {activeMetrics.feedback && (
                                 <div className="space-y-2.5">
                                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                                     Qualitative Feedback
@@ -907,15 +948,15 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                   <div className="grid gap-3 sm:grid-cols-3">
                                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                                       <p className="text-[10px] uppercase font-bold text-slate-500">Information Capture</p>
-                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{callMetrics.feedback.information_capture}</p>
+                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{activeMetrics.feedback.information_capture}</p>
                                     </div>
                                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                                       <p className="text-[10px] uppercase font-bold text-slate-500">Timeliness & Dispatch</p>
-                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{callMetrics.feedback.timeliness}</p>
+                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{activeMetrics.feedback.timeliness}</p>
                                     </div>
                                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                                       <p className="text-[10px] uppercase font-bold text-slate-500">Operational Understanding</p>
-                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{callMetrics.feedback.incident_understanding}</p>
+                                      <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">{activeMetrics.feedback.incident_understanding}</p>
                                     </div>
                                   </div>
                                 </div>
