@@ -691,7 +691,7 @@ export default function CallSimulationTest({
                   <Play className="mr-2 h-4 w-4" aria-hidden="true" />
                   {audioEnded ? 'Audio complete' : hasStartedAudio ? 'Audio playing' : 'Play audio'}
                 </Button>
-                {currentRun.kind === 'practice' && hasStartedAudio && !audioEnded && (
+                {hasStartedAudio && !audioEnded && (
                   <Button
                     variant="outline"
                     className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20"
