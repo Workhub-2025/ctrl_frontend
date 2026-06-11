@@ -81,12 +81,12 @@ function RoleDashboardHeader({
         {hideSidebar && (
           <Link href="#" className="flex items-center gap-2">
             <img src="/icon1.png" className="h-8 w-8 logo-adaptive-filter" alt="CTRL Logo" />
-            <span className="font-semibold tracking-[0.12em] hidden sm:inline-block">CTRL</span>
+            <span className="font-semibold tracking-[0.16em] hidden sm:inline-block font-display">CTRL</span>
           </Link>
         )}
       </div>
       <div className="min-w-0 flex-1 px-3 text-center">
-        <p className="truncate text-sm font-semibold text-foreground">
+        <p className="truncate text-sm font-semibold text-foreground font-display">
           {title}
         </p>
         <p className="hidden truncate text-xs text-muted-foreground/90 md:block">
@@ -208,7 +208,7 @@ function RoleDashboardFrame({
           Skip to main content
         </a>
       {/* Sidebar Section */}
-      <Sidebar className="border-r border-border dark:border-white/5 bg-white/70 dark:bg-[#02040a]/40 backdrop-blur-md transition-colors duration-300">
+      <Sidebar className="border-r border-border dark:border-white/5 bg-sidebar transition-colors duration-200">
         <SidebarHeader className="px-4 pt-4 group-data-[collapsible=icon]:px-2">
           {/* Sidebar Branding */}
           <Link
@@ -221,7 +221,7 @@ function RoleDashboardFrame({
               alt="CTRL Logo"
             />
             <div>
-              <p className="text-sm font-semibold tracking-[0.12em] text-foreground">
+              <p className="text-sm font-semibold tracking-[0.16em] text-foreground font-display">
                 CTRL
               </p>
               <p className="text-xs text-muted-foreground/90">{title}</p>
@@ -237,7 +237,7 @@ function RoleDashboardFrame({
                   asChild
                   isActive={pathname === item.href || pathname === `${item.href}/`}
                   tooltip={item.label}
-                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-[background-color,border-color,padding] duration-300 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3"
+                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-[width,height,padding,background-color,border-color] duration-200 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3"
                 >
                   <Link
                     href={item.href}

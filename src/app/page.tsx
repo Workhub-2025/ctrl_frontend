@@ -11,9 +11,7 @@ import {
   ShieldCheck,
   Crosshair,
   X,
-  Stethoscope,
   BarChart3,
-  Flame,
   Radio,
   CheckCircle2,
 } from "lucide-react";

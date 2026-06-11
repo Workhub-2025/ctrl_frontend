@@ -37,7 +37,7 @@ export function HiringManagerPageHeader({
               {eyebrow}
             </p>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground sm:text-2xl">
+              <h1 className="text-xl font-bold text-foreground sm:text-2xl font-display">
                 {title}
               </h1>
               {badge}
