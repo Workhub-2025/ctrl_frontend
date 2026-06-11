@@ -128,7 +128,7 @@ function SectionHeading({
         <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
           {eyebrow}
         </div>
-        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-white">
+        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-white text-balance">
           {title}
         </h2>
         <p className={cn("mt-6 text-lg leading-relaxed text-slate-400 font-light", centered && "mx-auto")}>
@@ -215,18 +215,21 @@ export default function Home() {
 
   return (
     <div className={cn(bgColor, "ctrl-landing-page selection:bg-white/20 font-sans min-h-screen transition-colors duration-500")}>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-full focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary">
+        Skip to content
+      </a>
       <nav
         ref={navRef}
-        className="fixed top-4 inset-x-0 mx-auto w-full max-w-[1200px] px-4 sm:px-6 z-50 transition-all duration-500"
+        className="fixed top-4 inset-x-0 mx-auto w-full max-w-[1200px] px-4 sm:px-6 z-50 transition-[max-width,padding,top] duration-500"
       >
         <div className={cn(
-          "flex items-center justify-between rounded-full border transition-all duration-500 px-6",
+          "flex items-center justify-between rounded-full border transition-[background-color,border-color,padding,box-shadow] duration-500 px-6",
           scrolled 
             ? "bg-[#0a0a0a]/90 backdrop-blur-md border-white/10 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]" 
             : "bg-transparent border-transparent py-4"
         )}>
           {/* Logo */}
-          <Link href="/" className="flex items-center group relative z-10">
+          <Link href="/" className="flex items-center group relative z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
             <BrandLogo className="w-24 sm:w-28 transition-opacity group-hover:opacity-80" />
           </Link>
 
@@ -236,7 +239,7 @@ export default function Home() {
               <button
                 key={item.href}
                 onClick={() => scrollToAnchor(item.href.slice(1))}
-                className="text-slate-400 hover:text-white transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-white after:scale-x-0 after:transition-transform hover:after:scale-x-100 after:origin-left"
+                className="text-slate-400 hover:text-white transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-white after:scale-x-0 after:transition-transform hover:after:scale-x-100 after:origin-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded px-1.5 py-0.5"
               >
                 {item.label}
               </button>
@@ -250,14 +253,14 @@ export default function Home() {
               updateSettings={updateAccessibilitySettings}
               resetSettings={resetAccessibilitySettings}
             />
-            <Link href="/auth/register?mode=login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-colors px-3 py-1.5 rounded-full hover:bg-white/5">
+            <Link href="/auth/register?mode=login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-[background-color,color] px-3 py-1.5 rounded-full hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
               Log in
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
             </Link>
-            <Button asChild className="group rounded-full bg-white text-black hover:bg-slate-200 h-9 px-5 font-medium transition-all text-sm">
+            <Button asChild className="group rounded-full bg-white text-black hover:bg-slate-200 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-white/50">
               <Link href="/auth/register?mode=register" className="flex items-center gap-1.5">
                 Get Started
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
               </Link>
             </Button>
           </div>
@@ -270,8 +273,9 @@ export default function Home() {
               resetSettings={resetAccessibilitySettings}
             />
             <button
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded-lg p-1"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -304,11 +308,11 @@ export default function Home() {
               </div>
               <hr className="border-white/10 my-1" />
               <div className="flex flex-col gap-3">
-                <Link href="/auth/register?mode=login" className="group w-full flex items-center justify-center gap-2 text-base font-medium text-slate-300 hover:text-white transition-colors py-3 rounded-full hover:bg-white/5">
+                <Link href="/auth/register?mode=login" className="group w-full flex items-center justify-center gap-2 text-base font-medium text-slate-300 hover:text-white transition-[background-color,color] py-3 rounded-full hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
                   Log in
-                  <ArrowRight className="w-4 h-4 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
+                  <ArrowRight className="w-4 h-4 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
                 </Link>
-                <Button asChild className="rounded-full bg-white text-black w-full h-12 text-base font-medium">
+                <Button asChild className="rounded-full bg-white text-black w-full h-12 text-base font-medium focus-visible:ring-2 focus-visible:ring-white/50">
                   <Link href="/auth/register?mode=register">Get Started</Link>
                 </Button>
               </div>
@@ -317,7 +321,7 @@ export default function Home() {
         </AnimatePresence>
       </nav>
 
-      <main className="relative z-10">
+      <main id="main-content" className="relative z-10">
         <LandingHero navHeight={navHeight} bgColor={bgColor} reduceMotion={reduceMotion} />
 
         <div className="relative px-6 py-24 md:py-32 flex flex-col overflow-hidden w-full max-w-[1440px] mx-auto">
@@ -340,9 +344,9 @@ export default function Home() {
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
                   <div className="flex-1">
                     <div className="h-12 w-12 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center mb-6">
-                      <PhoneCall className="h-5 w-5 text-cyan-400" />
+                      <PhoneCall className="h-5 w-5 text-cyan-400" aria-hidden="true" />
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-medium text-white mb-4">See Beyond the Candidate. See the Future Employee.</h3>
+                    <h3 className="text-2xl md:text-3xl font-medium text-white mb-4 text-balance">See Beyond the Candidate. See the Future Employee.</h3>
                     <p className="text-slate-400 font-light leading-relaxed">
                       CTRL's Call Simulation Assessment recreates realistic operational scenarios that require candidates to think, prioritise and respond in real time. The result is deeper behavioural insight and greater confidence in every recruitment decision.
                     </p>
@@ -355,7 +359,7 @@ export default function Home() {
                          <motion.div
                            key={i}
                            className="w-1.5 bg-cyan-500/50 rounded-full"
-                           animate={{ height: ["12px", `${peak}px`, "12px"] }}
+                           animate={reduceMotion ? {} : { height: ["12px", `${peak}px`, "12px"] }}
                            transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.1, ease: "easeInOut" }}
                          />
                        ))}
@@ -368,9 +372,9 @@ export default function Home() {
               <ScrollReveal delay={0.2} className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a0a0a] p-8 group flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="h-12 w-12 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-6 relative z-10">
-                  <Activity className="h-5 w-5 text-blue-400" />
+                  <Activity className="h-5 w-5 text-blue-400" aria-hidden="true" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10">Understanding Performance Beyond the Interview</h3>
+                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance">Understanding Performance Beyond the Interview</h3>
                 <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
                   CTRL assesses how candidates process information, adapt to changing circumstances and make decisions under pressure, delivering behavioural insight that traditional recruitment methods often fail to uncover.
                 </p>
@@ -378,7 +382,15 @@ export default function Home() {
                    {/* Visual Mockup for Chart/Stress */}
                    <div className="w-full flex items-end gap-2 h-full opacity-80">
                      {[40, 65, 45, 80, 55, 90, 75].map((h, i) => (
-                       <motion.div key={i} initial={{ height: "0%" }} whileInView={{ height: `${h}%` }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.2 + i * 0.1 }} className="flex-1 bg-gradient-to-t from-blue-500/10 to-blue-500/30 rounded-t-sm border-t border-blue-500/50" />
+                       <motion.div
+                         key={i}
+                         initial={{ height: "0%" }}
+                         animate={reduceMotion ? { height: `${h}%` } : {}}
+                         whileInView={reduceMotion ? {} : { height: `${h}%` }}
+                         viewport={{ once: true }}
+                         transition={reduceMotion ? { duration: 0 } : { duration: 1, delay: 0.2 + i * 0.1 }}
+                         className="flex-1 bg-gradient-to-t from-blue-500/10 to-blue-500/30 rounded-t-sm border-t border-blue-500/50"
+                       />
                      ))}
                    </div>
                 </div>
@@ -388,9 +400,9 @@ export default function Home() {
               <ScrollReveal delay={0.3} className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a0a0a] p-8 group flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="h-12 w-12 rounded-full border border-purple-500/20 bg-purple-500/10 flex items-center justify-center mb-6 relative z-10">
-                  <ShieldCheck className="h-5 w-5 text-purple-400" />
+                  <ShieldCheck className="h-5 w-5 text-purple-400" aria-hidden="true" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10">Recruit with Evidence. Decide with Confidence.</h3>
+                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance">Recruit with Evidence. Decide with Confidence.</h3>
                 <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
                   CTRL combines objective assessment data with realistic performance insight, helping organisations make fairer, more informed recruitment decisions while reducing risk and increasing confidence in candidate selection.
                 </p>
@@ -401,7 +413,14 @@ export default function Home() {
                        <div key={i} className="flex items-center gap-3">
                          <div className="h-2 w-2 rounded-full bg-purple-500/50" />
                          <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
-                            <motion.div initial={{ width: "0%" }} whileInView={{ width: `${w}%` }} viewport={{ once: true }} transition={{ duration: 1, delay: 0.4 + i * 0.2 }} className="h-full bg-purple-500/40 rounded-full" />
+                             <motion.div
+                               initial={{ width: "0%" }}
+                               animate={reduceMotion ? { width: `${w}%` } : {}}
+                               whileInView={reduceMotion ? {} : { width: `${w}%` }}
+                               viewport={{ once: true }}
+                               transition={reduceMotion ? { duration: 0 } : { duration: 1, delay: 0.4 + i * 0.2 }}
+                               className="h-full bg-purple-500/40 rounded-full"
+                             />
                          </div>
                        </div>
                      ))}
@@ -436,12 +455,12 @@ export default function Home() {
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
                         <div className="text-xs font-mono text-slate-500 mb-3">{step.step} {"//"}</div>
-                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3">{step.title}</h4>
+                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
                     <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-white/20 bg-[#0a0a0a] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
-                      <step.icon className="h-5 w-5 text-white/80" />
+                      <step.icon className="h-5 w-5 text-white/80" aria-hidden="true" />
                     </div>
                     <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
                       <ScrollReveal delay={0.1}>
@@ -485,12 +504,12 @@ export default function Home() {
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
                         <div className="text-xs font-mono text-cyan-500/60 mb-3">{step.step} {"//"}</div>
-                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3">{step.title}</h4>
+                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance">{step.title}</h4>
                         <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
                     <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-cyan-500/30 bg-[#041d24] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
-                      <step.icon className="h-5 w-5 text-cyan-400" />
+                      <step.icon className="h-5 w-5 text-cyan-400" aria-hidden="true" />
                     </div>
                     <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
                       <ScrollReveal delay={0.1}>
@@ -532,7 +551,7 @@ export default function Home() {
                   <div className="h-20 w-20 rounded-full border border-white/10 bg-white/5 flex items-center justify-center backdrop-blur-md transition-transform duration-300 group-hover:scale-110 mb-6 cursor-pointer">
                     <div className="w-0 h-0 border-y-[10px] border-y-transparent border-l-[16px] border-l-white ml-1" />
                   </div>
-                  <h4 className="text-xl font-medium text-white mb-2">Platform Overview Video</h4>
+                  <h4 className="text-xl font-medium text-white mb-2 text-balance">Platform Overview Video</h4>
                   <p className="text-sm text-slate-500 max-w-sm">Replace this container with your video element, iframe, or a slideshow of screenshots.</p>
                 </div>
 
@@ -566,15 +585,17 @@ export default function Home() {
                   <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-slate-400 mb-8 backdrop-blur-sm">
                     Get Started
                   </div>
-                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-6">Ready to Transform Your Recruitment Process?</h2>
+                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-6 text-balance">Ready to Transform Your Recruitment Process?</h2>
                   <p className="text-lg md:text-xl leading-relaxed text-slate-400 font-light mb-10 max-w-xl mx-auto">
                     Discover how CTRL helps organisations identify high-potential candidates, reduce recruitment risk and make more confident hiring decisions through realistic assessments and immersive simulation.
                   </p>
                   <div className="flex flex-col sm:flex-row justify-center gap-4">
-                    <Button asChild className="h-12 md:h-14 rounded-full bg-white px-8 text-black hover:bg-slate-200 transition-all text-sm md:text-base font-medium">
-                      <Link href="/auth/register?mode=register">Get Started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                    <Button asChild className="h-12 md:h-14 rounded-full bg-white px-8 text-black hover:bg-slate-200 transition-colors text-sm md:text-base font-medium focus-visible:ring-2 focus-visible:ring-white/50">
+                      <Link href="/auth/register?mode=register" className="flex items-center justify-center">
+                        Get Started <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                      </Link>
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("capabilities")} className="h-12 md:h-14 rounded-full border border-white/10 bg-transparent px-8 text-slate-300 hover:bg-white/5 hover:text-white transition-all text-sm md:text-base font-medium">
+                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("capabilities")} className="h-12 md:h-14 rounded-full border border-white/10 bg-transparent px-8 text-slate-300 hover:bg-white/5 hover:text-white transition-colors text-sm md:text-base font-medium focus-visible:ring-2 focus-visible:ring-white/20">
                       Explore Platform
                     </Button>
                   </div>
@@ -597,7 +618,13 @@ export default function Home() {
                 <div className="flex flex-col gap-5">
                   <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Explore</h4>
                   {navItems.map(item => (
-                    <button key={item.href} onClick={() => scrollToAnchor(item.href.slice(1))} className="text-left text-slate-400 hover:text-white text-sm transition-colors font-light">{item.label}</button>
+                    <button
+                      key={item.href}
+                      onClick={() => scrollToAnchor(item.href.slice(1))}
+                      className="text-left text-slate-400 hover:text-white text-sm transition-colors font-light focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 rounded px-1"
+                    >
+                      {item.label}
+                    </button>
                   ))}
                 </div>
 
