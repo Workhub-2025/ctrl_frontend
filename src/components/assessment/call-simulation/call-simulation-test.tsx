@@ -389,6 +389,38 @@ export default function CallSimulationTest({
     if (!startedAtRef.current) {
       startedAtRef.current = new Date().toISOString();
     }
+    
+    const targetRun = runs[runIndex] ?? fallbackRuns[runIndex];
+    if (targetRun && (targetRun.id === 'call-2' || targetRun.id === 'fallback-call-2')) {
+      // Find the first final run snapshot to copy its data
+      const firstFinalSnapshot = snapshotsRef.current.find(s => {
+        const r = runs[s.runIndex] ?? fallbackRuns[s.runIndex];
+        return r && r.kind === 'final';
+      });
+      
+      const formToCopy = firstFinalSnapshot ? firstFinalSnapshot.form : emptyForm;
+      const timestampsToCopy = firstFinalSnapshot ? firstFinalSnapshot.timestamps : {};
+      const historyToCopy = firstFinalSnapshot ? (firstFinalSnapshot as any).history || [] : [];
+      
+      const snapshot = {
+        runIndex,
+        scenarioKey: targetRun.scenarioKey,
+        form: formToCopy,
+        timestamps: timestampsToCopy,
+        history: historyToCopy,
+      };
+      
+      snapshotsRef.current = [...snapshotsRef.current, snapshot];
+      setSnapshots(snapshotsRef.current);
+      
+      if (runIndex === runs.length - 1) {
+        setPhase('submitting');
+        return;
+      }
+      setCurrentRunIndex(runIndex + 1);
+      return;
+    }
+
     setCurrentRunIndex(runIndex);
     setForm(emptyForm);
     setTimestamps({});
@@ -396,7 +428,7 @@ export default function CallSimulationTest({
     setReviewTimeLeft(REVIEW_SECONDS);
     setOpenSection('caller');
     setPhase('running');
-  }, []);
+  }, [runs]);
 
   const handleBypass = useCallback(() => {
     if (!startedAtRef.current) {
