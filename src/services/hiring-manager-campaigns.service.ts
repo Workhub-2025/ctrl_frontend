@@ -87,6 +87,7 @@ type RawAssessmentResult = {
   mistakeCount?: number | string | null;
   durationSeconds?: number | string | null;
   metrics?: Record<string, unknown> | null;
+  rawData?: Record<string, any> | null;
   assessment?: RawAssessment;
 };
 
@@ -183,6 +184,7 @@ export type HiringManagerAssessmentResult = {
   mistakeCount?: number | null;
   durationSeconds?: number | null;
   metrics?: Record<string, unknown> | null;
+  rawData?: Record<string, any> | null;
 };
 
 export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
@@ -330,6 +332,7 @@ function normalizeAssessmentResult(
     mistakeCount: numberOrNull(result.mistakeCount),
     durationSeconds: numberOrNull(result.durationSeconds),
     metrics: result.metrics ?? null,
+    rawData: result.rawData ?? null,
   };
 }
 
