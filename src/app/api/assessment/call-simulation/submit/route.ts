@@ -8,7 +8,7 @@ import {
 } from "@/lib/observability/server-observability";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { evaluateCallSimulationFlow } from "@/ai/flows/call-simulation-evaluation";
-import { CALL_2_BURGLARY_CRITERIA } from "@/lib/assessment/call-simulation-criteria";
+import { CALL_2_BURGLARY_CRITERIA, CALL_1_CAR_BREAK_IN_CRITERIA } from "@/lib/assessment/call-simulation-criteria";
 import callSimulationConfig from "../../../../../../public/assessment-content/call-simulation.json";
 
 function isFinalRunIndex(index: number): boolean {
@@ -211,14 +211,15 @@ async function resolveCriteria(
   jwt: string,
   scenarioKey?: string
 ): Promise<typeof CALL_2_BURGLARY_CRITERIA> {
-  if (!scenarioKey) return CALL_2_BURGLARY_CRITERIA;
+  const defaultCriteria = scenarioKey === "call_1_active_car_break_in" ? CALL_1_CAR_BREAK_IN_CRITERIA : CALL_2_BURGLARY_CRITERIA;
+  if (!scenarioKey) return defaultCriteria;
 
   try {
     const strapiClient = getStrapiClient(jwt);
     const res = await strapiClient.fetch(
       `/a-audio-calls?filters[scenarioKey][$eq]=${encodeURIComponent(scenarioKey)}&fields=criteria&pagination[limit]=1`
     );
-    if (!res.ok) return CALL_2_BURGLARY_CRITERIA;
+    if (!res.ok) return defaultCriteria;
 
     const body = await res.json();
     const criteriaJson = body?.data?.[0]?.criteria;
@@ -230,14 +231,15 @@ async function resolveCriteria(
     console.warn('[call-simulation] Could not fetch criteria from Strapi, using hardcoded fallback:', err);
   }
 
-  return CALL_2_BURGLARY_CRITERIA;
+  return defaultCriteria;
 }
 
 function checkMultiPointFallback(point: string, text: string): boolean {
   const p = point.toLowerCase();
   const t = text.toLowerCase();
   
-  if (p.includes('kitchen') || p.includes('window')) {
+  // Burglary Checks (Call 2)
+  if (p.includes('kitchen')) {
     return (t.includes('kitchen') && t.includes('window')) || t.includes('forced') || t.includes('smashed') || t.includes('damaged');
   }
   if (p.includes('necklace') || p.includes('gold')) {
@@ -255,6 +257,21 @@ function checkMultiPointFallback(point: string, text: string): boolean {
   if (p.includes('07:30') || p.includes('17:30')) {
     return t.includes('07:30') || t.includes('17:30') || t.includes('7:30') || t.includes('5:30') || t.includes('07.30') || t.includes('17.30') || t.includes('7.30') || t.includes('5.30') || (t.includes('left') && t.includes('returned'));
   }
+
+  // Car Break-in Checks (Call 1)
+  if (p.includes('motor vehicle') || p.includes('theft from')) {
+    return t.includes('theft') || t.includes('break') || t.includes('stole') || t.includes('steal') || t.includes('going through');
+  }
+  if (p.includes('window smashed') || p.includes('window broken')) {
+    return t.includes('window') || t.includes('glass') || t.includes('smashed') || t.includes('broken') || t.includes('broke');
+  }
+  if (p.includes('toyota') || p.includes('yaris')) {
+    return t.includes('toyota') || t.includes('yaris') || t.includes('silver car') || t.includes('silver vehicle');
+  }
+  if (p.includes('hn28') || p.includes('yjw')) {
+    return t.includes('hn28') || t.includes('yjw') || t.includes('hn28yjw') || t.includes('registration') || t.includes('reg') || t.includes('plate');
+  }
+  
   return false;
 }
 

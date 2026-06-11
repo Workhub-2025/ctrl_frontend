@@ -398,35 +398,6 @@ export default function CallSimulationTest({
     setPhase('running');
   }, []);
 
-  const copyRun1Data = useCallback(() => {
-    // Find Call 1 snapshot
-    const firstFinalSnapshot = snapshotsRef.current.find(s => {
-      const r = runs[s.runIndex] ?? fallbackRuns[s.runIndex];
-      return r && r.kind === 'final';
-    });
-
-    if (firstFinalSnapshot) {
-      // Pause audio if playing
-      const audio = audioRef.current;
-      if (audio) {
-        audio.pause();
-        audio.currentTime = audio.duration;
-      }
-      
-      setForm(firstFinalSnapshot.form);
-      formRef.current = firstFinalSnapshot.form;
-      
-      setTimestamps(firstFinalSnapshot.timestamps);
-      timestampsRef.current = firstFinalSnapshot.timestamps;
-      
-      historyRef.current = (firstFinalSnapshot as any).history || [];
-      
-      setHasStartedAudio(true);
-      setAudioEnded(true);
-      setIsPlaying(false);
-    }
-  }, [runs]);
-
   const handleBypass = useCallback(() => {
     if (!startedAtRef.current) {
       startedAtRef.current = new Date().toISOString();
@@ -1038,25 +1009,6 @@ export default function CallSimulationTest({
                   : 'Listen to the full audio. You can type while it plays.'}
               </p>
               <div className="flex flex-wrap items-center gap-3">
-                {(() => {
-                  const finalRunsList = runs.filter(r => r.kind === 'final');
-                  const isSecondFinalRun = currentRun.kind === 'final' && finalRunsList.findIndex(r => r.id === currentRun.id || r.title === currentRun.title) === 1;
-                  return isSecondFinalRun;
-                })() && (
-                  <div className="flex flex-col items-end gap-1 mr-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 text-xs h-9 px-3"
-                      onClick={copyRun1Data}
-                    >
-                      Copy Run 1 inputs (Dev Only)
-                    </Button>
-                    <span className="text-[10px] text-amber-500 max-w-xs text-right leading-none">
-                      Copies inputs and timing metrics from Call 1 for dev testing.
-                    </span>
-                  </div>
-                )}
                 <Button onClick={completeRun} disabled={!audioEnded}>
                   {isFinalRun ? 'Submit final call' : 'Complete practice call'}
                 </Button>
