@@ -870,74 +870,76 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                               </div>
 
                               {/* Detailed Criteria Table */}
-                              {Array.isArray(activeMetrics.criteria) && activeMetrics.criteria.length > 0 && (
-                                <div className="space-y-2.5">
-                                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                                    Logged Information Details
-                                  </p>
-                                  <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
-                                    <table className="w-full text-left border-collapse text-xs">
-                                      <thead>
-                                        <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                                          <th className="p-3">Criterion</th>
-                                          <th className="p-3">Candidate Log</th>
-                                          <th className="p-3 text-center">Correct</th>
-                                          <th className="p-3 text-center">Timing Window</th>
-                                          <th className="p-3 text-right">Score</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-white/5 text-slate-200 font-medium">
-                                        {activeMetrics.criteria.map((crit: any) => {
-                                          let timingColor = "text-slate-400 bg-white/5";
-                                          if (crit.timingBand === "Green") {
-                                            timingColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-                                          } else if (crit.timingBand === "Amber") {
-                                            timingColor = "text-amber-400 bg-amber-500/10 border-amber-500/20";
-                                          } else if (crit.timingBand === "Red") {
-                                            timingColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
-                                          }
+                              {(() => {
+                                const criteriaList = finalRuns[0]?.metrics?.criteria || activeMetrics.criteria || [];
+                                const getRunScore = (runIndex: number, criterionKey: string) => {
+                                  const run = finalRuns.find((r: any) => r.runIndex === runIndex);
+                                  const crit = run?.metrics?.criteria?.find((c: any) => c.key === criterionKey);
+                                  return crit ? `${crit.score} / ${crit.maxScore}` : '—';
+                                };
 
-                                          return (
-                                            <tr key={crit.key} className="hover:bg-white/[0.02] transition-colors">
-                                              <td className="p-3 text-slate-300">
-                                                <div className="font-bold flex items-center gap-1.5">
-                                                  {crit.displayName}
-                                                  {crit.critical && (
-                                                    <span className="text-[9px] font-black uppercase bg-red-500/20 text-red-400 px-1 py-0.5 rounded border border-red-500/30">
-                                                      CRITICAL
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                <div className="text-[10px] text-slate-500 mt-0.5">
-                                                  Section: {sectionLabels[crit.section] || crit.section}
-                                                </div>
-                                              </td>
-                                              <td className="p-3 max-w-[200px] truncate" title={crit.value || "—"}>
-                                                {crit.value || <span className="text-slate-600 italic">Blank</span>}
-                                              </td>
-                                              <td className="p-3 text-center">
-                                                {crit.evidenceFound ? (
-                                                  <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400 mx-auto" />
+                                if (criteriaList.length === 0) return null;
+
+                                return (
+                                  <div className="space-y-2.5">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                      Logged Information Details
+                                    </p>
+                                    <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
+                                      <table className="w-full text-left border-collapse text-xs">
+                                        <thead>
+                                          <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                                            <th className="p-3">Criterion</th>
+                                            {finalRuns.length > 1 ? (
+                                              <>
+                                                <th className="p-3 text-right">Run 1 Score</th>
+                                                <th className="p-3 text-right">Run 2 Score</th>
+                                              </>
+                                            ) : (
+                                              <th className="p-3 text-right">Score</th>
+                                            )}
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5 text-slate-200 font-medium">
+                                          {criteriaList.map((crit: any) => {
+                                            return (
+                                              <tr key={crit.key} className="hover:bg-white/[0.02] transition-colors">
+                                                <td className="p-3 text-slate-300">
+                                                  <div className="font-bold flex items-center gap-1.5">
+                                                    {crit.displayName}
+                                                    {crit.critical && (
+                                                      <span className="text-[9px] font-black uppercase bg-red-500/20 text-red-400 px-1 py-0.5 rounded border border-red-500/30">
+                                                        CRITICAL
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  <div className="text-[10px] text-slate-500 mt-0.5">
+                                                    Section: {sectionLabels[crit.section] || crit.section}
+                                                  </div>
+                                                </td>
+                                                {finalRuns.length > 1 ? (
+                                                  <>
+                                                    <td className="p-3 text-right text-white font-extrabold">
+                                                      {getRunScore(finalRuns[0].runIndex, crit.key)}
+                                                    </td>
+                                                    <td className="p-3 text-right text-white font-extrabold">
+                                                      {getRunScore(finalRuns[1].runIndex, crit.key)}
+                                                    </td>
+                                                  </>
                                                 ) : (
-                                                  <span className="text-rose-400 font-black">✗</span>
+                                                  <td className="p-3 text-right text-white font-extrabold">
+                                                    {crit.score} / {crit.maxScore}
+                                                  </td>
                                                 )}
-                                              </td>
-                                              <td className="p-3 text-center">
-                                                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold border ${timingColor}`}>
-                                                  {crit.timingBand} {crit.delay !== null && crit.delay !== undefined ? `(${crit.delay > 0 ? '+' : ''}${crit.delay}s)` : ''}
-                                                </span>
-                                              </td>
-                                              <td className="p-3 text-right text-white font-extrabold">
-                                                {crit.score} / {crit.maxScore}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                );
+                              })()}
 
                               {/* Qualitative Feedback Cards */}
                               {activeMetrics.feedback && (
