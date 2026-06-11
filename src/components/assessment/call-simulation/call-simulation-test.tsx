@@ -599,13 +599,6 @@ export default function CallSimulationTest({
             Start Assessment
             <Play className="ml-2 h-4 w-4" aria-hidden="true" />
           </Button>
-          <Button
-            variant="ghost"
-            className="mt-4 text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            onClick={handleBypass}
-          >
-            Bypass uncompleted assessment
-          </Button>
         </div>
       )}
 
@@ -655,14 +648,6 @@ export default function CallSimulationTest({
               onClick={() => setPhase('landing')}
             >
               Back
-            </Button>
-            <Button
-              size="lg"
-              variant="ghost"
-              className="h-12 text-muted-foreground hover:text-foreground hover:bg-muted/50 sm:ml-auto"
-              onClick={handleBypass}
-            >
-              Bypass uncompleted assessment
             </Button>
           </div>
         </div>
