@@ -205,6 +205,7 @@ function AccordionSection({
           className={`h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 ${
             isOpen ? 'rotate-180 text-primary' : ''
           }`}
+          aria-hidden="true"
         />
       </button>
 
@@ -551,7 +552,7 @@ export default function CallSimulationTest({
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Phone className="h-8 w-8" />
+            <Phone className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
             Call Simulation
@@ -567,7 +568,7 @@ export default function CallSimulationTest({
             onClick={() => setPhase('rules')}
           >
             Start Assessment
-            <Play className="ml-2 h-4 w-4" />
+            <Play className="ml-2 h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
@@ -608,7 +609,7 @@ export default function CallSimulationTest({
           <div className="mt-8 flex flex-wrap gap-3 items-center">
             <Button size="lg" className="h-12" onClick={() => beginRun(0)}>
               Start practice call
-              <Play className="ml-2 h-4 w-4" />
+              <Play className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               size="lg"
@@ -654,7 +655,7 @@ export default function CallSimulationTest({
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Volume2 className="h-5 w-5" />
+                  <Volume2 className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -673,7 +674,7 @@ export default function CallSimulationTest({
                   </Badge>
                 )}
                 <Button onClick={playAudio} disabled={hasStartedAudio || audioEnded}>
-                  <Play className="mr-2 h-4 w-4" />
+                  <Play className="mr-2 h-4 w-4" aria-hidden="true" />
                   {audioEnded ? 'Audio complete' : hasStartedAudio ? 'Audio playing' : 'Play audio'}
                 </Button>
                 {currentRun.kind === 'practice' && hasStartedAudio && !audioEnded && (
@@ -699,7 +700,7 @@ export default function CallSimulationTest({
                   Complete the fields from the call audio. Tap a section to expand it.
                 </p>
               </div>
-              <FileText className="hidden h-5 w-5 text-muted-foreground sm:block" />
+              <FileText className="hidden h-5 w-5 text-muted-foreground sm:block" aria-hidden="true" />
             </div>
 
             <div className="space-y-2">
@@ -712,7 +713,7 @@ export default function CallSimulationTest({
                     <Input
                       id="caller-name"
                       name="ctrl-call-caller-name"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.callerName}
                       onChange={(event) => updateForm('callerName', event.target.value)}
@@ -724,7 +725,9 @@ export default function CallSimulationTest({
                     <Input
                       id="callback-number"
                       name="ctrl-call-callback-number"
-                      autoComplete="new-password"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.callbackNumber}
                       onChange={(event) => updateForm('callbackNumber', event.target.value)}
@@ -737,7 +740,7 @@ export default function CallSimulationTest({
                       id="caller-dob"
                       name="ctrl-call-caller-dob"
                       placeholder="DD/MM/YYYY"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.callerDob}
                       onChange={(event) => updateForm('callerDob', event.target.value)}
@@ -749,7 +752,7 @@ export default function CallSimulationTest({
                     <Input
                       id="caller-door-no"
                       name="ctrl-call-caller-door-no"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.callerDoorNo}
                       onChange={(event) => updateForm('callerDoorNo', event.target.value)}
@@ -761,7 +764,7 @@ export default function CallSimulationTest({
                     <Input
                       id="caller-street"
                       name="ctrl-call-caller-street"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.callerStreet}
                       onChange={(event) => updateForm('callerStreet', event.target.value)}
@@ -773,7 +776,7 @@ export default function CallSimulationTest({
                     <Input
                       id="caller-postcode"
                       name="ctrl-call-caller-postcode"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.callerPostcode}
                       onChange={(event) => updateForm('callerPostcode', event.target.value)}
@@ -926,7 +929,7 @@ export default function CallSimulationTest({
                       id="suspect-clothing"
                       name="ctrl-call-suspect-clothing"
                       placeholder="Describe clothing worn by suspect"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.suspectClothing}
                       onChange={(event) => updateForm('suspectClothing', event.target.value)}
@@ -939,7 +942,7 @@ export default function CallSimulationTest({
                       id="unique-information"
                       name="ctrl-call-unique-information"
                       placeholder="Any unique identifying details or intel"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.uniqueInformation}
                       onChange={(event) => updateForm('uniqueInformation', event.target.value)}
@@ -957,7 +960,7 @@ export default function CallSimulationTest({
                     <Input
                       id="incident-door-no"
                       name="ctrl-call-incident-door-no"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.incidentDoorNo}
                       onChange={(event) => updateForm('incidentDoorNo', event.target.value)}
@@ -969,7 +972,7 @@ export default function CallSimulationTest({
                     <Input
                       id="incident-street"
                       name="ctrl-call-incident-street"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.incidentStreet}
                       onChange={(event) => updateForm('incidentStreet', event.target.value)}
@@ -981,7 +984,7 @@ export default function CallSimulationTest({
                     <Input
                       id="incident-postcode"
                       name="ctrl-call-incident-postcode"
-                      autoComplete="new-password"
+                      autoComplete="off"
                       spellCheck={false}
                       value={form.incidentPostcode}
                       onChange={(event) => updateForm('incidentPostcode', event.target.value)}
@@ -1001,13 +1004,13 @@ export default function CallSimulationTest({
                   <Textarea
                     id="incident-summary"
                     name="ctrl-call-incident-summary"
-                    autoComplete="new-password"
+                    autoComplete="off"
                     spellCheck={false}
                     value={form.incidentSummary}
                     onChange={(event) => updateForm('incidentSummary', event.target.value)}
                     onBlur={() => handleFieldBlur('incidentSummary')}
                     className="min-h-36 resize-none"
-                    placeholder="e.g. Caller reports residential burglary at above address. Suspect entered via rear kitchen window — forced entry. Gold necklace stolen from bedroom. Male suspect, Asian, 40-50 years, green hi-vis jacket. Neighbour's CCTV may have captured suspect."
+                    placeholder="e.g. Caller reports residential burglary at above address. Suspect entered via rear kitchen window — forced entry. Gold necklace stolen from bedroom. Male suspect, Asian, 40-50 years, green hi-vis jacket. Neighbour’s CCTV may have captured suspect…"
                   />
                 </div>
               </AccordionSection>
@@ -1031,7 +1034,7 @@ export default function CallSimulationTest({
       {phase === 'practice-results' && latestSnapshot && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-            <CheckCircle2 className="h-7 w-7" />
+            <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Practice call {latestSnapshot.runIndex + 1} complete
@@ -1084,7 +1087,7 @@ export default function CallSimulationTest({
       {phase === 'practice-complete' && latestSnapshot && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <Phone className="h-7 w-7" />
+            <Phone className="h-7 w-7" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Practice calls complete
@@ -1129,7 +1132,7 @@ export default function CallSimulationTest({
       {phase === 'final-transition' && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <Phone className="h-7 w-7" />
+            <Phone className="h-7 w-7" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {currentRun.title} complete
@@ -1174,7 +1177,7 @@ export default function CallSimulationTest({
       {phase === 'submitting' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {currentRunLabel} complete
@@ -1192,7 +1195,7 @@ export default function CallSimulationTest({
       {phase === 'submitted' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className={`mb-6 flex h-16 w-16 items-center justify-center rounded-2xl ${submitError ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
-            <CheckCircle2 className="h-8 w-8" />
+            <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
@@ -1207,7 +1210,7 @@ export default function CallSimulationTest({
             className="mt-8 h-11 px-6"
             onClick={closeAssessment}
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
             Close assessment
           </Button>
         </div>

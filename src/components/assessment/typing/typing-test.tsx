@@ -517,11 +517,11 @@ export default function TypingTest({
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            <ShieldCheck className="h-3.5 w-3.5" />
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
             Secure typing exercise
           </div>
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-            <Keyboard className="h-8 w-8" />
+            <Keyboard className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
             CTRL Typing Assessment
@@ -531,17 +531,17 @@ export default function TypingTest({
           </p>
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <FileText className="mb-2 h-5 w-5 text-primary" />
+              <FileText className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Incident passage</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">A policing incident passage is shown on screen.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <Keyboard className="mb-2 h-5 w-5 text-primary" />
+              <Keyboard className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Typing response box</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Type the passage exactly as displayed.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <Timer className="mb-2 h-5 w-5 text-primary" />
+              <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">{currentDuration} seconds</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">The visible timer ends each exercise automatically.</p>
             </div>
@@ -552,7 +552,7 @@ export default function TypingTest({
             onClick={() => setPhase('rules')}
           >
             Start Assessment
-            <Play className="ml-2 h-4 w-4" />
+            <Play className="ml-2 h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       )}
@@ -576,7 +576,7 @@ export default function TypingTest({
             <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <FileText className="h-5 w-5" />
+                  <FileText className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">What You Will See</h2>
                 <p>You will see a passage based on a reported policing incident, normally around 200 words, along with:</p>
@@ -592,7 +592,7 @@ export default function TypingTest({
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <Keyboard className="h-5 w-5" />
+                  <Keyboard className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">Your Task</h2>
                 <p>Type the passage into the response box exactly as it appears.</p>
@@ -605,7 +605,7 @@ export default function TypingTest({
                 </div>
                 <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                     <p>
                       Do not use copy and paste, unapproved speech-to-text software, abbreviations that are not in the passage, or leave or refresh the assessment page.
                     </p>
@@ -620,7 +620,7 @@ export default function TypingTest({
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {['Typing Speed (Words Per Minute)', 'Typing Accuracy'].map((item) => (
                   <div key={item} className="flex items-center gap-2 rounded-lg bg-muted p-3 text-foreground dark:bg-white/5">
-                    <Target className="h-4 w-4 shrink-0 text-primary" />
+                    <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                     {item}
                   </div>
                 ))}
@@ -631,7 +631,7 @@ export default function TypingTest({
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Timer className="h-5 w-5" />
+                    <Timer className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Practice Exercise</h2>
                 </div>
@@ -641,7 +641,7 @@ export default function TypingTest({
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
-                    <ShieldCheck className="h-5 w-5" />
+                    <ShieldCheck className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Live Assessment</h2>
                 </div>
@@ -672,7 +672,7 @@ export default function TypingTest({
           <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
             <Button size="lg" className="h-12" onClick={() => beginCountdown(0)}>
               Go to practice
-              <Play className="ml-2 h-4 w-4" />
+              <Play className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               size="lg"
@@ -712,7 +712,8 @@ export default function TypingTest({
             ref={captureRef}
             aria-label="Typing capture area"
             className="sr-only"
-            onBlur={() => captureRef.current?.focus()}
+            autoComplete="off"
+            spellCheck={false}
             onKeyDown={handleKeyDown}
             value=""
             readOnly
@@ -745,7 +746,7 @@ export default function TypingTest({
                   className="w-full sm:w-auto"
                   onClick={restartPractice}
                 >
-                  <RotateCcw className="mr-2 h-4 w-4" />
+                  <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
                   Restart practice
                 </Button>
               )}
@@ -826,7 +827,7 @@ export default function TypingTest({
       {phase === 'results' && latestResult && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <Timer className="h-7 w-7" />
+            <Timer className="h-7 w-7" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Practice run complete
@@ -883,7 +884,7 @@ export default function TypingTest({
               className="h-12 px-8"
               onClick={restartPractice}
             >
-              <RotateCcw className="mr-2 h-4 w-4" />
+              <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
               Restart practice
             </Button>
             <Button
@@ -900,7 +901,7 @@ export default function TypingTest({
       {phase === 'assessment-break' && latestResult && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-            <Coffee className="h-7 w-7" />
+            <Coffee className="h-7 w-7" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Assessment run {latestResult.runIndex} complete
@@ -926,7 +927,7 @@ export default function TypingTest({
       {phase === 'submitting' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
           </div>
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Typing assessment complete
@@ -944,7 +945,7 @@ export default function TypingTest({
       {phase === 'submitted' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className={`mb-6 flex h-16 w-16 items-center justify-center rounded-3xl ${submitError ? 'bg-destructive/10 text-destructive' : 'bg-green-500/10 text-green-600 dark:text-green-400'}`}>
-            <CheckCircle2 className="h-8 w-8" />
+            <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
@@ -966,7 +967,7 @@ export default function TypingTest({
             className="mt-8 h-11 px-6"
             onClick={closeAssessment}
           >
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
             Close assessment
           </Button>
         </div>

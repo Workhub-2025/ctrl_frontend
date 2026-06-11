@@ -257,11 +257,11 @@ export default function SituationalJudgementTest({
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            <ShieldCheck className="h-3.5 w-3.5" />
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
             Secure judgement exercise
           </div>
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-            <ClipboardCheck className="h-8 w-8" />
+            <ClipboardCheck className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
             Situational Judgement Assessment
@@ -271,24 +271,24 @@ export default function SituationalJudgementTest({
           </p>
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <Timer className="mb-2 h-5 w-5 text-primary" />
+              <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Three practice scenarios</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Practice questions help you understand the format.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <Target className="mb-2 h-5 w-5 text-primary" />
+              <Target className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Best and worst choice</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Select one most effective and one least effective action.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <ListChecks className="mb-2 h-5 w-5 text-primary" />
+              <ListChecks className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Twenty live scenarios</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Your live judgement decisions are submitted securely.</p>
             </div>
           </div>
           <Button className="mt-8 h-12 px-7" size="lg" onClick={() => setPhase('rules')}>
             Start Assessment
-            <Play className="ml-2 h-4 w-4" />
+            <Play className="ml-2 h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       )}
@@ -312,7 +312,7 @@ export default function SituationalJudgementTest({
             <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <ClipboardCheck className="h-5 w-5" />
+                  <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">What You Will See</h2>
                 <p>Each scenario contains:</p>
@@ -328,7 +328,7 @@ export default function SituationalJudgementTest({
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <ListChecks className="h-5 w-5" />
+                  <ListChecks className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">Your Task</h2>
                 <p>For each scenario, you must:</p>
@@ -344,7 +344,7 @@ export default function SituationalJudgementTest({
                 </div>
                 <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                     <p>
                       You cannot select the same option as both MOST effective and LEAST effective.
                     </p>
@@ -366,7 +366,7 @@ export default function SituationalJudgementTest({
                   'Proportionate decisions',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-2 rounded-lg bg-muted p-3 text-foreground dark:bg-white/5">
-                    <Target className="h-4 w-4 shrink-0 text-primary" />
+                    <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                     {item}
                   </div>
                 ))}
@@ -377,7 +377,7 @@ export default function SituationalJudgementTest({
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Timer className="h-5 w-5" />
+                    <Timer className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Practice Questions</h2>
                 </div>
@@ -387,7 +387,7 @@ export default function SituationalJudgementTest({
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
-                    <ShieldCheck className="h-5 w-5" />
+                    <ShieldCheck className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Live Assessment Questions</h2>
                 </div>
@@ -417,7 +417,7 @@ export default function SituationalJudgementTest({
           <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
             <Button size="lg" className="h-12" onClick={startAssessment}>
               Begin scenarios
-              <Play className="ml-2 h-4 w-4" />
+              <Play className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
             <Button size="lg" variant="outline" className="h-12" onClick={() => setPhase('landing')}>
               Back
@@ -483,7 +483,7 @@ export default function SituationalJudgementTest({
       {phase === 'submitting' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Final scenario complete
@@ -500,7 +500,7 @@ export default function SituationalJudgementTest({
       {phase === 'submitted' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10 text-green-600 dark:text-green-400">
-            <CheckCircle2 className="h-8 w-8" />
+            <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
@@ -511,7 +511,7 @@ export default function SituationalJudgementTest({
               : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments or await further information from the Hiring Manager.'}
           </p>
           <Button variant="outline" className="mt-8 h-11 px-6" onClick={closeAssessment}>
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
             Close assessment
           </Button>
         </div>

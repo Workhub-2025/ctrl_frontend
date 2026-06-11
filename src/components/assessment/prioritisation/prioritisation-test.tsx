@@ -500,8 +500,9 @@ export default function PrioritisationTest({
                 </div>
               ) : (
                 availableIncidents.map((incident) => (
-                  <div
+                  <button
                     key={incident.id}
+                    type="button"
                     draggable
                     onDragStart={(event) => handleDragStart(event, incident.id)}
                     onDragEnd={handleDragEnd}
@@ -511,7 +512,7 @@ export default function PrioritisationTest({
                     onPointerCancel={handleCardPointerUp}
                     onPointerLeave={handleCardPointerUp}
                     className={[
-                      'ctrl-priority-card cursor-grab overflow-hidden rounded-xl border bg-gradient-to-br from-background via-background to-muted/30 p-0 shadow-[0_14px_34px_rgba(2,6,23,0.14)] transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_18px_40px_rgba(2,6,23,0.2)] active:cursor-grabbing dark:from-[#0d1320] dark:via-[#080d18] dark:to-[#050811]',
+                      'w-full text-left ctrl-priority-card cursor-grab overflow-hidden rounded-xl border bg-gradient-to-br from-background via-background to-muted/30 p-0 shadow-[0_14px_34px_rgba(2,6,23,0.14)] transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_18px_40px_rgba(2,6,23,0.2)] active:cursor-grabbing dark:from-[#0d1320] dark:via-[#080d18] dark:to-[#050811] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
                       selectedIncidentId === incident.id
                         ? 'border-primary ring-2 ring-primary/30'
                         : 'border-border dark:border-white/10',
@@ -523,7 +524,7 @@ export default function PrioritisationTest({
                     <div className="flex h-full">
                       <div className="w-1.5 bg-primary/70" />
                       <div className="flex min-w-0 flex-1 items-start gap-3 p-4">
-                        <GripVertical className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <GripVertical className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="secondary">{incident.id}</Badge>
@@ -542,7 +543,7 @@ export default function PrioritisationTest({
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))
               )}
             </div>
@@ -568,70 +569,77 @@ export default function PrioritisationTest({
                   ? activeIncidentMap.get(slotIncidentId)
                   : null;
 
-                return (
-                  <div
-                    key={`${activeRound.id}-slot-${index}`}
-                    onClick={() => handleSlotClick(index)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={(event) => handleDropOnPriority(event, index)}
-                    className={[
-                      'min-h-[118px] rounded-xl border p-3 transition',
-                      incident
-                        ? 'border-border bg-background/70 dark:border-white/10 dark:bg-[#070b13]/80'
-                        : 'border-dashed border-border bg-muted/20 dark:border-white/10 dark:bg-white/[0.02]',
-                      !incident && hasActiveCard ? 'ctrl-priority-slot-glow cursor-copy' : '',
-                      selectedIncidentId && incident?.id !== selectedIncidentId
-                        ? 'hover:border-primary/60 hover:ring-1 hover:ring-primary/20'
-                        : '',
-                    ].join(' ')}
-                  >
-                    {incident ? (
-                      <div
-                        draggable
-                        onDragStart={(event) => handleDragStart(event, incident.id)}
-                        onDragEnd={handleDragEnd}
-                        onClick={(event) => handleRankedCardClick(event, incident.id, index)}
-                        onPointerDown={(event) => handleCardPointerDown(event, incident.id)}
-                        onPointerUp={handleCardPointerUp}
-                        onPointerCancel={handleCardPointerUp}
-                        onPointerLeave={handleCardPointerUp}
-                        className={[
-                          'ctrl-priority-card -m-1 grid cursor-grab gap-3 overflow-hidden rounded-xl bg-gradient-to-br from-background via-background to-muted/30 p-1 active:cursor-grabbing md:grid-cols-[52px_1fr] dark:from-[#0d1320] dark:via-[#080d18] dark:to-[#050811]',
-                          selectedIncidentId === incident.id
-                            ? 'rounded-lg ring-2 ring-primary/30'
-                            : '',
-                          pressedIncidentId === incident.id || draggingIncidentId === incident.id
-                            ? 'ctrl-priority-card-active'
-                            : '',
-                        ].join(' ')}
-                      >
-                        <div className="flex h-full min-h-20 w-12 items-center justify-center rounded-xl bg-primary/10 font-mono text-base font-semibold text-primary">
-                          {index + 1}
-                        </div>
-                        <div className="min-w-0 border-l border-primary/20 pl-3">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="secondary">{incident.id}</Badge>
-                            <p className="font-semibold text-foreground">
-                              {incident.title}
-                            </p>
-                          </div>
-                          <div className="mt-2 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
-                            <p>
-                              <span className="font-medium text-foreground">Time:</span>{' '}
-                              {incident.timeOfIncident}
-                            </p>
-                            <p className="md:col-span-2">
-                              <span className="font-medium text-foreground">Description:</span>{' '}
-                              {incident.description}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
+                if (!incident) {
+                  return (
+                    <button
+                      key={`${activeRound.id}-slot-${index}`}
+                      type="button"
+                      onClick={() => handleSlotClick(index)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => handleDropOnPriority(event, index)}
+                      className={[
+                        'w-full text-left min-h-[118px] rounded-xl border p-3 transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                        'border-dashed border-border bg-muted/20 dark:border-white/10 dark:bg-white/[0.02]',
+                        hasActiveCard ? 'ctrl-priority-slot-glow cursor-copy' : '',
+                        selectedIncidentId ? 'hover:border-primary/60 hover:ring-1 hover:ring-primary/20' : '',
+                      ].join(' ')}
+                    >
                       <div className="flex h-full min-h-[92px] items-center justify-center rounded-lg text-sm text-muted-foreground">
                         Drop priority {index + 1} here
                       </div>
-                    )}
+                    </button>
+                  );
+                }
+
+                return (
+                  <div
+                    key={`${activeRound.id}-slot-${index}`}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={(event) => handleDropOnPriority(event, index)}
+                    className="min-h-[118px] rounded-xl border p-3 border-border bg-background/70 dark:border-white/10 dark:bg-[#070b13]/80"
+                  >
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={(event) => handleDragStart(event, incident.id)}
+                      onDragEnd={handleDragEnd}
+                      onClick={(event) => handleRankedCardClick(event, incident.id, index)}
+                      onPointerDown={(event) => handleCardPointerDown(event, incident.id)}
+                      onPointerUp={handleCardPointerUp}
+                      onPointerCancel={handleCardPointerUp}
+                      onPointerLeave={handleCardPointerUp}
+                      className={[
+                        'w-full text-left ctrl-priority-card -m-1 grid cursor-grab gap-3 overflow-hidden rounded-xl bg-gradient-to-br from-background via-background to-muted/30 p-1 active:cursor-grabbing md:grid-cols-[52px_1fr] dark:from-[#0d1320] dark:via-[#080d18] dark:to-[#050811] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
+                        selectedIncidentId === incident.id
+                          ? 'rounded-lg ring-2 ring-primary/30'
+                          : '',
+                        pressedIncidentId === incident.id || draggingIncidentId === incident.id
+                          ? 'ctrl-priority-card-active'
+                          : '',
+                      ].join(' ')}
+                    >
+                      <div className="flex h-full min-h-20 w-12 items-center justify-center rounded-xl bg-primary/10 font-mono text-base font-semibold text-primary">
+                        {index + 1}
+                      </div>
+                      <div className="min-w-0 border-l border-primary/20 pl-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary">{incident.id}</Badge>
+                          <p className="font-semibold text-foreground">
+                            {incident.title}
+                          </p>
+                        </div>
+                        <div className="mt-2 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                          <p>
+                            <span className="font-medium text-foreground">Time:</span>{' '}
+                            {incident.timeOfIncident}
+                          </p>
+                          <p className="md:col-span-2">
+                            <span className="font-medium text-foreground">Description:</span>{' '}
+                            {incident.description}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
                   </div>
                 );
               })}
@@ -670,11 +678,11 @@ export default function PrioritisationTest({
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            <ShieldCheck className="h-3.5 w-3.5" />
+            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
             Secure judgement exercise
           </div>
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-            <ClipboardList className="h-8 w-8" />
+            <ClipboardList className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="max-w-2xl text-2xl font-semibold leading-tight tracking-normal text-foreground sm:text-3xl">
             Prioritisation Judgement Assessment
@@ -684,24 +692,24 @@ export default function PrioritisationTest({
           </p>
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <Timer className="mb-2 h-5 w-5 text-primary" />
+              <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Three practice rounds</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Get used to the format before scoring begins.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <Target className="mb-2 h-5 w-5 text-primary" />
+              <Target className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Six incidents each</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Rank each queue from highest to lowest priority.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <ListChecks className="mb-2 h-5 w-5 text-primary" />
+              <ListChecks className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Fifteen live rounds</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Your live ranking decisions are submitted securely.</p>
             </div>
           </div>
           <Button className="mt-8 h-12 px-7" size="lg" onClick={() => setPhase('rules')}>
             Read Instructions
-            <Play className="ml-2 h-4 w-4" />
+            <Play className="ml-2 h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       )}
@@ -725,7 +733,7 @@ export default function PrioritisationTest({
             <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <ClipboardList className="h-5 w-5" />
+                  <ClipboardList className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">What You Will See</h2>
                 <p>Each question contains six incident tiles. Each tile contains:</p>
@@ -741,7 +749,7 @@ export default function PrioritisationTest({
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                  <ListChecks className="h-5 w-5" />
+                  <ListChecks className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">Your Task</h2>
                 <p>Review all six incidents and rank them from highest priority to lowest priority.</p>
@@ -762,7 +770,7 @@ export default function PrioritisationTest({
                 </div>
                 <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
                   <div className="flex items-start gap-3">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                     <p>
                       Each incident must have a different ranking. Do not give the same ranking to more than one incident.
                     </p>
@@ -784,7 +792,7 @@ export default function PrioritisationTest({
                   'Risk to the wider public',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-2 rounded-lg bg-muted p-3 text-foreground dark:bg-white/5">
-                    <Target className="h-4 w-4 shrink-0 text-primary" />
+                    <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                     {item}
                   </div>
                 ))}
@@ -795,7 +803,7 @@ export default function PrioritisationTest({
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <Timer className="h-5 w-5" />
+                    <Timer className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Practice Questions</h2>
                 </div>
@@ -805,7 +813,7 @@ export default function PrioritisationTest({
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
-                    <ShieldCheck className="h-5 w-5" />
+                    <ShieldCheck className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Live Assessment Questions</h2>
                 </div>
@@ -836,7 +844,7 @@ export default function PrioritisationTest({
           <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
             <Button size="lg" className="h-12" onClick={startPractice}>
               Start practice block
-              <Play className="ml-2 h-4 w-4" />
+              <Play className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
             <Button
               size="lg"
@@ -856,7 +864,7 @@ export default function PrioritisationTest({
       {phase === 'practice-review' && latestSnapshot && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-            <CheckCircle2 className="h-7 w-7" />
+            <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Practice round {latestSnapshot.roundNumber} complete
@@ -877,7 +885,7 @@ export default function PrioritisationTest({
       {phase === 'practice-complete' && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <ClipboardList className="h-7 w-7" />
+            <ClipboardList className="h-7 w-7" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Practice complete
@@ -918,7 +926,7 @@ export default function PrioritisationTest({
       {phase === 'submitting' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            <Loader2 className="h-8 w-8 animate-spin" />
+            <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Final block complete
@@ -936,7 +944,7 @@ export default function PrioritisationTest({
       {phase === 'submitted' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-500/10 text-green-600 dark:text-green-400">
-            <CheckCircle2 className="h-8 w-8" />
+            <CheckCircle2 className="h-8 w-8" aria-hidden="true" />
           </div>
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
@@ -947,7 +955,7 @@ export default function PrioritisationTest({
               : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments or await further information from the Hiring Manager.'}
           </p>
           <Button variant="outline" className="mt-8 h-11 px-6" onClick={closeAssessment}>
-            <LogOut className="mr-2 h-4 w-4" />
+            <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
             Close assessment
           </Button>
         </div>
