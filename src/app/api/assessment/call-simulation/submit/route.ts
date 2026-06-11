@@ -171,7 +171,7 @@ function fallbackMatch(key: string, text: string): boolean {
   const t = text.toLowerCase();
   if (key === 'suspect_clothing') {
     const hasGreen = t.includes('green');
-    const hasJacket = t.includes('jacket') || t.includes('coat') || t.includes('hi-vis') || t.includes('hi vis') || t.includes('high vis') || t.includes('reflective');
+    const hasJacket = t.includes('jacket') || t.includes('coat') || t.includes('hi-vis') || t.includes('hi vis') || t.includes('high vis') || t.includes('reflective') || t.includes('clothing') || t.includes('wear') || t.includes('bright');
     return hasGreen && hasJacket;
   }
   if (key === 'unique_information' || key === 'key_information_2') {
@@ -383,7 +383,9 @@ async function gradeSnapshot(
       } else {
         // Fallback regex matching if AI call was not made or failed
         evidenceFound = fallbackMatch(criterion.key, candidateValue);
-        explanation = evidenceFound ? 'Found match via fallback matching.' : 'No match found via fallback matching.';
+        explanation = evidenceFound 
+          ? 'Manual Fallback used to mark: Found match via fallback matching.' 
+          : 'Manual Fallback used to mark: No match found via fallback matching.';
       }
     } else if (criterion.ruleType === 'ai_multi_point_extraction') {
       const aiResult = aiResults[criterion.key];
@@ -413,7 +415,7 @@ async function gradeSnapshot(
           });
         });
         evidenceFound = keyPointResults.some(k => k.found);
-        explanation = 'Evaluated key points via fallback keyword matching.';
+        explanation = 'Manual Fallback used to mark: Evaluated key points via fallback keyword matching.';
       }
     }
 

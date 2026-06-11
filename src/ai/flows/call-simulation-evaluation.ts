@@ -36,37 +36,36 @@ const callSimulationPrompt = ai.definePrompt({
   name: 'callSimulationEvaluationPrompt',
   input: {
     schema: z.object({
-      suspectClothing: z.string(),
-      uniqueInformation: z.string(),
-      incidentSummary: z.string(),
+      combinedLog: z.string(),
       criteriaDescription: z.string(),
     }),
   },
   output: { schema: CallSimulationEvaluationOutputSchema },
   prompt: `You are an expert evidence extraction AI evaluating candidate entries logged during an emergency dispatch call simulation.
-Analyze the candidate's logged text entries against the expected scoring criteria.
+Analyze the candidate's combined text logs against the expected scoring criteria.
 
-Here are the candidate's logged text blocks:
-- Suspect Clothing log: "{{{suspectClothing}}}"
-- Unique Information log: "{{{uniqueInformation}}}"
-- Incident Summary log: "{{{incidentSummary}}}"
+Here is the candidate's combined log text:
+"""
+{{{combinedLog}}}
+"""
 
 We need to evaluate the following criteria:
 {{{criteriaDescription}}}
 
 Evaluation Rules:
-1. For ruleType "ai_evidence_extraction":
-   - Look for the Expected Concept or any variations listed under Accepted Examples.
-   - Set "evidenceFound" to true if the core meaning is present in the relevant candidate log (use "Suspect Clothing log" for suspect_clothing and "Unique Information log" for unique_information). Otherwise, set it to false.
-   - Keep the "explanation" very brief.
+1. Every explanation in the output MUST start with "CTRL AI Bot has found: " (e.g., "CTRL AI Bot has found: Green clothing mentioned" or "CTRL AI Bot has found: Missing 2 key points; professional tone").
 
-2. For ruleType "ai_multi_point_extraction" (evaluate against the "Incident Summary log" only):
-   - Look for each key point in the candidate's Incident Summary log.
+2. For ruleType "ai_evidence_extraction":
+   - Look for the Expected Concept or any variations listed under Accepted Examples anywhere in the combined log.
+   - Set "evidenceFound" to true if the core meaning is present. Otherwise, set it to false.
+   - For suspect clothing: Be semantically flexible. If the candidate writes "bright green clothing", "green clothing", "green coat", "bright green", or similar green jacket/hi-vis variations, mark "evidenceFound" as true. Bright green clothing is considered semantically accurate for a green high-visibility jacket.
+   - Keep the explanation starting with "CTRL AI Bot has found: " followed by a brief summary.
+
+3. For ruleType "ai_multi_point_extraction":
+   - Look for each key point anywhere in the combined log.
    - Set "keyPointsFound" to an array of booleans matching the exact order of the provided Key Points list (true if the point or its meaning is present, false otherwise).
-   - Evaluate the narrative quality, clarity, structure, and professional tone of the Incident Summary log. Recommend a "structureScoreMultiplier" between 0.0 (poor, unstructured, unreadable) and 1.0 (excellent, professional, clear).
-   - Keep the "explanation" very brief.
-
-Return the evaluation results for all requested criteria.`,
+   - Evaluate the overall narrative quality, clarity, structure, and professional tone of the candidate's logs. Recommend a "structureScoreMultiplier" between 0.0 (poor, unstructured, unreadable) and 1.0 (excellent, professional, clear).
+   - Keep the explanation starting with "CTRL AI Bot has found: " followed by a brief summary.`,
 });
 
 export const evaluateCallSimulationFlow = ai.defineFlow(
@@ -76,6 +75,9 @@ export const evaluateCallSimulationFlow = ai.defineFlow(
     outputSchema: CallSimulationEvaluationOutputSchema,
   },
   async (input) => {
+    // Combine all candidate text fields into a single block of text for the AI to analyze as one
+    const combinedLog = `[Suspect Clothing]: ${input.suspectClothing}\n[Unique Information]: ${input.uniqueInformation}\n[Incident Summary]: ${input.incidentSummary}`;
+
     // Compile criteria description text in TypeScript to avoid template helper dependencies
     const criteriaDescription = input.criteria
       .map((c, i) => {
@@ -97,9 +99,7 @@ export const evaluateCallSimulationFlow = ai.defineFlow(
       .join('\n\n');
 
     const { output } = await callSimulationPrompt({
-      suspectClothing: input.suspectClothing,
-      uniqueInformation: input.uniqueInformation,
-      incidentSummary: input.incidentSummary,
+      combinedLog,
       criteriaDescription,
     });
 
