@@ -7,8 +7,7 @@ import {
   startServerActionTrace,
 } from "@/lib/observability/server-observability";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { ai } from "@/ai/genkit";
-import { z } from "genkit";
+import { evaluateCallSimulationFlow } from "@/ai/flows/call-simulation-evaluation";
 import { CALL_2_BURGLARY_CRITERIA } from "@/lib/assessment/call-simulation-criteria";
 import callSimulationConfig from "../../../../../../public/assessment-content/call-simulation.json";
 
@@ -226,6 +225,25 @@ async function resolveCriteria(
   return CALL_2_BURGLARY_CRITERIA;
 }
 
+function checkMultiPointFallback(point: string, text: string): boolean {
+  const p = point.toLowerCase();
+  const t = text.toLowerCase();
+  
+  if (p.includes('kitchen') || p.includes('window')) {
+    return (t.includes('kitchen') && t.includes('window')) || t.includes('forced') || t.includes('smashed') || t.includes('damaged');
+  }
+  if (p.includes('necklace') || p.includes('gold')) {
+    return t.includes('necklace') || t.includes('gold') || t.includes('jewel');
+  }
+  if (p.includes('cctv') || p.includes('camera') || p.includes('footage')) {
+    return t.includes('cctv') || t.includes('camera') || t.includes('footage') || t.includes('recording');
+  }
+  if (p.includes('07:30') || p.includes('17:30')) {
+    return t.includes('07') || t.includes('7:30') || t.includes('17') || t.includes('5:30') || t.includes('time') || t.includes('left');
+  }
+  return false;
+}
+
 async function gradeSnapshot(
   form: IncidentForm,
   timestamps: Record<string, number> = {},
@@ -241,7 +259,6 @@ async function gradeSnapshot(
 
   const hasApiKey = !!process.env.GEMINI_API_KEY;
 
-  // ─── Consolidated AI call for all 6 evidence-extraction criteria ─────────
   // Map: which criteria key reads from which field in the form
   const AI_FIELD_MAP: Record<string, keyof IncidentForm> = {
     suspect_clothing: 'suspectClothing',
@@ -255,7 +272,12 @@ async function gradeSnapshot(
   const aiCriteria = criteria.filter(c => c.ruleType === 'ai_evidence_extraction' || c.ruleType === 'ai_multi_point_extraction');
 
   // Build a map of AI results keyed by criterion key
-  const aiResults: Record<string, { evidenceFound: boolean; interpretedAs: string; readable: boolean; confidence: number }> = {};
+  const aiResults: Record<string, {
+    evidenceFound?: boolean;
+    keyPointsFound?: boolean[];
+    structureScoreMultiplier?: number;
+    explanation: string;
+  }> = {};
 
   if (aiCriteria.length > 0) {
     const suspectClothingVal = String(form.suspectClothing ?? '').trim();
@@ -264,82 +286,40 @@ async function gradeSnapshot(
 
     if (hasApiKey && (suspectClothingVal || uniqueInfoVal || incidentSummaryVal)) {
       try {
-        const criteriaLines = aiCriteria.map((c, i) => {
-          const blockName =
-            c.key === 'suspect_clothing' ? 'Suspect Clothing Log' :
-            c.key === 'unique_information' ? 'Unique Intel Log' :
-            'Incident Summary Narrative Log';
-          return `${i + 1}. Criterion: "${c.key}"
-   Expected Concept: "${c.expectedConcept ?? ''}"
-   Accepted Examples: ${JSON.stringify(c.acceptedExamples ?? [])}
-   Candidate Input Block: Use "${blockName}"`;
-        }).join('\n\n');
+        const flowInput = {
+          suspectClothing: suspectClothingVal,
+          uniqueInformation: uniqueInfoVal,
+          incidentSummary: incidentSummaryVal,
+          criteria: aiCriteria.map(c => ({
+            key: c.key,
+            ruleType: c.ruleType as 'ai_evidence_extraction' | 'ai_multi_point_extraction',
+            expectedConcept: c.expectedConcept,
+            acceptedExamples: c.acceptedExamples,
+            keyPoints: c.keyPoints,
+          })),
+        };
 
-        const collatedPrompt = `You are an expert evidence extraction assistant for emergency dispatch call logging.
-Evaluate the candidate's log entries against the expected evidence concepts.
-
-Here are the candidate's logged text blocks:
-1. Suspect Clothing Log: "${suspectClothingVal}"
-2. Unique Intel Log: "${uniqueInfoVal}"
-3. Incident Summary Narrative Log: "${incidentSummaryVal}"
-
-We need to evaluate the following ${aiCriteria.length} criteria:
-
-${criteriaLines}
-
-For each criterion:
-- "key": the criterion key string
-- "evidence_found" (boolean): True if the core meaning of the expected concept is present in the specified input block.
-- "candidate_text_interpreted_as" (string): Clean representation of the matching phrase from the candidate's entry.
-- "operationally_readable" (boolean): True if spelling/grammar errors do not obscure the operational meaning.
-- "confidence" (float 0.00-1.00)
-
-Return strictly a JSON object:
-{
-  "results": [
-    { "key": string, "evidence_found": boolean, "candidate_text_interpreted_as": string, "operationally_readable": boolean, "confidence": number },
-    ...
-  ]
-}`;
-
-        const response = await ai.generate({
-          prompt: collatedPrompt,
-          output: {
-            schema: z.object({
-              results: z.array(z.object({
-                key: z.string(),
-                evidence_found: z.boolean(),
-                candidate_text_interpreted_as: z.string(),
-                operationally_readable: z.boolean(),
-                confidence: z.number(),
-              }))
-            })
-          }
-        });
-
-        const out = response.output;
-        if (out?.results) {
-          for (const r of out.results) {
+        const flowOutput = await evaluateCallSimulationFlow(flowInput);
+        if (flowOutput?.results) {
+          for (const r of flowOutput.results) {
             aiResults[r.key] = {
-              evidenceFound: r.evidence_found,
-              interpretedAs: r.candidate_text_interpreted_as,
-              readable: r.operationally_readable,
-              confidence: r.confidence,
+              evidenceFound: r.evidenceFound,
+              keyPointsFound: r.keyPointsFound,
+              structureScoreMultiplier: r.structureScoreMultiplier,
+              explanation: r.explanation,
             };
           }
         }
       } catch (error) {
-        console.error('[call-simulation] Consolidated AI call failed, using fallbacks:', error);
-        // aiResults will remain empty — fallback handled per-criterion below
+        console.error('[call-simulation] Consolidated AI flow call failed, using fallbacks:', error);
       }
     }
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
   for (const criterion of criteria) {
     // Determine which form field to read the candidate's value from
     const sourceField: keyof IncidentForm =
-      criterion.ruleType === 'ai_evidence_extraction' && AI_FIELD_MAP[criterion.key]
+      (criterion.ruleType === 'ai_evidence_extraction' || criterion.ruleType === 'ai_multi_point_extraction') && AI_FIELD_MAP[criterion.key]
         ? AI_FIELD_MAP[criterion.key]
         : (criterion.field as keyof IncidentForm);
 
@@ -370,6 +350,11 @@ Return strictly a JSON object:
     let candidateTextInterpretedAs = candidateValue;
     let operationallyReadable = true;
     let confidence = 1.0;
+    let explanation = '';
+
+    // Values used for ai_multi_point_extraction:
+    const keyPointResults: any[] = [];
+    let structureScoreMultiplier = 1.0;
 
     if (criterion.ruleType === 'exact_or_readable_match') {
       evidenceFound = checkExactOrReadableMatch(criterion.key, candidateValue, criterion.expectedValue || '');
@@ -378,13 +363,43 @@ Return strictly a JSON object:
     } else if (criterion.ruleType === 'ai_evidence_extraction') {
       const aiResult = aiResults[criterion.key];
       if (aiResult) {
-        evidenceFound = aiResult.evidenceFound;
-        candidateTextInterpretedAs = aiResult.interpretedAs;
-        operationallyReadable = aiResult.readable;
-        confidence = aiResult.confidence;
+        evidenceFound = !!aiResult.evidenceFound;
+        explanation = aiResult.explanation;
+        candidateTextInterpretedAs = aiResult.evidenceFound ? candidateValue : '';
       } else {
         // Fallback regex matching if AI call was not made or failed
         evidenceFound = fallbackMatch(criterion.key, candidateValue);
+        explanation = evidenceFound ? 'Found match via fallback matching.' : 'No match found via fallback matching.';
+      }
+    } else if (criterion.ruleType === 'ai_multi_point_extraction') {
+      const aiResult = aiResults[criterion.key];
+      const points = criterion.keyPoints || [];
+      
+      if (aiResult && Array.isArray(aiResult.keyPointsFound)) {
+        structureScoreMultiplier = aiResult.structureScoreMultiplier ?? 1.0;
+        explanation = aiResult.explanation;
+        
+        points.forEach((p, idx) => {
+          const found = !!aiResult.keyPointsFound?.[idx];
+          keyPointResults.push({
+            point: p,
+            found,
+          });
+        });
+        evidenceFound = aiResult.keyPointsFound.some(Boolean);
+      } else {
+        // Fallback regex matching for multi-point narrative
+        structureScoreMultiplier = 1.0; // Default fallback structure multiplier
+        
+        points.forEach((p) => {
+          const found = checkMultiPointFallback(p, candidateValue);
+          keyPointResults.push({
+            point: p,
+            found,
+          });
+        });
+        evidenceFound = keyPointResults.some(k => k.found);
+        explanation = 'Evaluated key points via fallback keyword matching.';
       }
     }
 
@@ -394,7 +409,7 @@ Return strictly a JSON object:
 
     let timingBand: 'Green' | 'Amber' | 'Red' = 'Green';
     let multiplier = 1.0;
-    let timestamp = timestamps[sourceField] ?? null;
+    const timestamp = timestamps[sourceField] ?? null;
     let delay: number | null = null;
 
     if (evidenceFound) {
@@ -459,7 +474,21 @@ Return strictly a JSON object:
       redCount++;
     }
 
-    const earnedScore = parseFloat((criterion.score * multiplier).toFixed(4));
+    let earnedScore = 0;
+    if (criterion.ruleType === 'ai_multi_point_extraction') {
+      const contentScoreMax = criterion.contentScore ?? (criterion.score * 0.65);
+      const structureScoreMax = criterion.structureScore ?? (criterion.score * 0.35);
+      
+      const totalPoints = keyPointResults.length;
+      const foundPointsCount = keyPointResults.filter(k => k.found).length;
+      
+      const earnedContentScore = totalPoints > 0 ? (foundPointsCount / totalPoints) * contentScoreMax : 0;
+      const earnedStructureScore = structureScoreMultiplier * structureScoreMax;
+      
+      earnedScore = parseFloat((earnedContentScore + earnedStructureScore).toFixed(4));
+    } else {
+      earnedScore = parseFloat((criterion.score * multiplier).toFixed(4));
+    }
     totalEarnedScore += earnedScore;
 
     criteriaResults.push({
@@ -478,6 +507,9 @@ Return strictly a JSON object:
       score: earnedScore,
       maxScore: criterion.score,
       critical: criterion.critical ?? false,
+      explanation,
+      keyPointResults: keyPointResults.length > 0 ? keyPointResults : undefined,
+      structureScoreMultiplier: criterion.ruleType === 'ai_multi_point_extraction' ? structureScoreMultiplier : undefined,
     });
   }
 
