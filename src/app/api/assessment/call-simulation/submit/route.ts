@@ -170,10 +170,18 @@ function checkNumericMatch(value: string, expected: string): boolean {
 function fallbackMatch(key: string, text: string): boolean {
   const t = text.toLowerCase();
   if (key === 'suspect_clothing') {
-    return t.includes('green') || t.includes('hi-vis') || t.includes('hi vis') || t.includes('high vis') || t.includes('reflective') || t.includes('jacket');
+    const hasGreen = t.includes('green');
+    const hasJacket = t.includes('jacket') || t.includes('coat') || t.includes('hi-vis') || t.includes('hi vis') || t.includes('high vis') || t.includes('reflective');
+    return hasGreen && hasJacket;
   }
   if (key === 'unique_information' || key === 'key_information_2') {
-    return t.includes('necklace') || t.includes('gold') || t.includes('stolen') || t.includes('taken') || t.includes('missing');
+    const hasNecklace = t.includes('necklace') || t.includes('chain') || t.includes('necklet');
+    const hasJewellery = t.includes('jewel') || t.includes('jewellery') || t.includes('jewelry');
+    const hasIncorrectItem = t.includes('ring') || t.includes('watch') || t.includes('bracelet') || t.includes('earring');
+    
+    if (hasNecklace) return true;
+    if (hasJewellery && !hasIncorrectItem) return true;
+    return false;
   }
   if (key === 'incident_summary') {
     return t.includes('burgled') || t.includes('burglary') || t.includes('broken') || t.includes('forced') || t.includes('entry');
@@ -233,13 +241,19 @@ function checkMultiPointFallback(point: string, text: string): boolean {
     return (t.includes('kitchen') && t.includes('window')) || t.includes('forced') || t.includes('smashed') || t.includes('damaged');
   }
   if (p.includes('necklace') || p.includes('gold')) {
-    return t.includes('necklace') || t.includes('gold') || t.includes('jewel');
+    const hasNecklace = t.includes('necklace') || t.includes('chain') || t.includes('necklet');
+    const hasJewellery = t.includes('jewel') || t.includes('jewellery') || t.includes('jewelry');
+    const hasIncorrectItem = t.includes('ring') || t.includes('watch') || t.includes('bracelet') || t.includes('earring');
+    
+    if (hasNecklace) return true;
+    if (hasJewellery && !hasIncorrectItem) return true;
+    return false;
   }
   if (p.includes('cctv') || p.includes('camera') || p.includes('footage')) {
     return t.includes('cctv') || t.includes('camera') || t.includes('footage') || t.includes('recording');
   }
   if (p.includes('07:30') || p.includes('17:30')) {
-    return t.includes('07') || t.includes('7:30') || t.includes('17') || t.includes('5:30') || t.includes('time') || t.includes('left');
+    return t.includes('07:30') || t.includes('17:30') || t.includes('7:30') || t.includes('5:30') || t.includes('07.30') || t.includes('17.30') || t.includes('7.30') || t.includes('5.30') || (t.includes('left') && t.includes('returned'));
   }
   return false;
 }
