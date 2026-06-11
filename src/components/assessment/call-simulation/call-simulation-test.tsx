@@ -310,7 +310,13 @@ export default function CallSimulationTest({
         const sessionData = await initCallSimulationSession(candidateSessionDocumentId);
         if (cancelled) return;
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
-          setRuns(sessionData.runs);
+          const sortedRuns = [...sessionData.runs].sort((a, b) => {
+            if (a.kind !== b.kind) {
+              return a.kind === 'practice' ? -1 : 1;
+            }
+            return a.scenarioKey.localeCompare(b.scenarioKey);
+          });
+          setRuns(sortedRuns);
           return;
         }
       } catch (err) {
