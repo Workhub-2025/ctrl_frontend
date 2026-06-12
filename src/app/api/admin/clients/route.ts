@@ -1,9 +1,20 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth/next-auth-options";
+import { isAdminRole } from "@/lib/auth/role-model";
 import { getAdminClients } from "@/services/admin-platform.service";
 
 export async function GET() {
   try {
-    const clients = await getAdminClients();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+    if (!isAdminRole(session.user.role)) {
+      return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+    }
+
+    const clients = await getAdminClients(session.user.jwt);
     return NextResponse.json({ data: clients });
   } catch (error) {
     return NextResponse.json(

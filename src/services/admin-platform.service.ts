@@ -523,23 +523,25 @@ function clientMatchesUser(client: RawClient, user: RawUser) {
   );
 }
 
-async function getRawActiveContract(clientDocumentId?: string) {
+async function getRawActiveContract(clientDocumentId?: string, authToken?: string | null) {
   if (!clientDocumentId) return null;
 
   try {
-    const response = await strapiRequest<StrapiSingleResponse<RawContract>>(
-      `/clients/${encodeURIComponent(clientDocumentId)}/contract`
-    );
+    const path = `/clients/${encodeURIComponent(clientDocumentId)}/contract`;
+    const response = authToken
+      ? await adminStrapiRequest<StrapiSingleResponse<RawContract>>(path, undefined, authToken)
+      : await strapiRequest<StrapiSingleResponse<RawContract>>(path);
     return response.data ?? null;
-  } catch {
-    return null;
+  } catch (error) {
+    if (getStrapiErrorStatus(error) === 404) return null;
+    throw error;
   }
 }
 
-async function getRawClientsWithUsers() {
+async function getRawClientsWithUsers(authToken?: string | null) {
   const [clients, users] = await Promise.all([getRawClients(), getRawUsers()]);
   const activeContracts = await Promise.all(
-    clients.map((client) => getRawActiveContract(client.documentId))
+    clients.map((client) => getRawActiveContract(client.documentId, authToken))
   );
 
   return clients.map((client, index) => {
@@ -568,6 +570,15 @@ async function getRawClientsWithUsers() {
       users: [...directUsers, ...missingRelatedUsers],
     };
   });
+}
+
+async function getRawClientsWithUsersLegacy() {
+  try {
+    return getRawClientsWithUsers();
+  } catch {
+    // Preserve unauthenticated legacy admin routes until all callers pass an admin JWT.
+    return null;
+  }
 }
 
 function formatRole(role?: RawRole): AdminUserRow["role"] {
@@ -663,18 +674,21 @@ export async function getAdminAuditLogs(): Promise<AdminAuditLogRow[]> {
   return (response.data ?? []).map(normalizeAuditLog);
 }
 
-export async function getAdminClients(): Promise<AdminClientRow[]> {
-  const clients = await getRawClientsWithUsers();
+export async function getAdminClients(authToken?: string | null): Promise<AdminClientRow[]> {
+  const clients = await getRawClientsWithUsers(authToken);
   return clients.map(normalizeClient);
 }
 
-export async function getAdminClientEntitlements(): Promise<AdminClientEntitlementRow[]> {
-  const clients = await getRawClientsWithUsers();
+export async function getAdminClientEntitlements(authToken?: string | null): Promise<AdminClientEntitlementRow[]> {
+  const clients = await getRawClientsWithUsers(authToken);
   return clients.map(normalizeClientEntitlement);
 }
 
-export async function getAdminClientDetails(clientDocumentId: string): Promise<AdminClientDetails> {
-  const clients = await getRawClientsWithUsers();
+export async function getAdminClientDetails(
+  clientDocumentId: string,
+  authToken?: string | null
+): Promise<AdminClientDetails> {
+  const clients = await getRawClientsWithUsers(authToken);
   const client = clients.find((item) => item.documentId === clientDocumentId);
   if (!client) {
     throw new AdminStrapiRequestError("Client not found", 404);
@@ -756,8 +770,8 @@ export async function createAdminClient(
   };
 }
 
-export async function getAdminOverview(): Promise<AdminOverview> {
-  const rawClients = await getRawClientsWithUsers();
+export async function getAdminOverview(authToken?: string | null): Promise<AdminOverview> {
+  const rawClients = await getRawClientsWithUsers(authToken);
   const clients = rawClients.map(normalizeClient);
   const now = Date.now();
   const thirtyDays = 30 * 24 * 60 * 60 * 1000;

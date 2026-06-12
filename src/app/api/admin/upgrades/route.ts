@@ -30,7 +30,7 @@ export async function GET() {
   if (!auth.ok) return auth.response;
 
   try {
-    const clients = await getAdminClientEntitlements();
+    const clients = await getAdminClientEntitlements(auth.session.user.jwt);
     return NextResponse.json({ data: clients });
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);
