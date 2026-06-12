@@ -1,14 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -18,9 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreHorizontal, Search, SlidersHorizontal, UserPlus } from "lucide-react";
+import { Search, ShieldCheck, UserCheck, Users, UserX } from "lucide-react";
+import { useAdminResource } from "@/lib/admin-resource-cache";
 
 type UserRole = "CTRL Admin" | "Client Contact" | "Hiring Manager" | "Candidate";
 type UserStatus = "Active" | "Invited" | "Disabled";
@@ -39,8 +31,12 @@ type AdminUsersPayload = {
   users: AdminUser[];
   totals: {
     all: number;
+    ctrlAdmins: number;
+    clientContacts: number;
     hiringManagers: number;
     candidates: number;
+    active: number;
+    invited: number;
     disabled: number;
   };
 };
@@ -53,67 +49,43 @@ const statusClassName: Record<UserStatus, string> = {
 
 export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [payload, setPayload] = useState<AdminUsersPayload>({
+  const fallbackPayload: AdminUsersPayload = {
     users: [],
     totals: {
       all: 0,
+      ctrlAdmins: 0,
+      clientContacts: 0,
       hiringManagers: 0,
       candidates: 0,
+      active: 0,
+      invited: 0,
       disabled: 0,
     },
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch("/api/admin/users", { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Users could not be loaded");
-        return body.data as AdminUsersPayload;
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setPayload({
-            users: Array.isArray(data?.users) ? data.users : [],
-            totals: data?.totals ?? {
-              all: 0,
-              hiringManagers: 0,
-              candidates: 0,
-              disabled: 0,
-            },
-          });
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Users could not be loaded");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  };
+  const [roleFilter, setRoleFilter] = useState<"all" | UserRole | "Disabled">("all");
+  const { data: payload, error, loading } = useAdminResource<AdminUsersPayload>(
+    "admin:users",
+    "/api/admin/users",
+    fallbackPayload
+  );
 
   const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
-    if (!query) return payload.users;
-
-    return payload.users.filter((user) =>
-      [user.name, user.email, user.role, user.client, user.status]
+    return payload.users.filter((user) => {
+      const matchesRole =
+        roleFilter === "all" ||
+        (roleFilter === "Disabled" ? user.status === "Disabled" : user.role === roleFilter);
+      const matchesQuery =
+        !query ||
+        [user.name, user.email, user.role, user.client, user.status]
         .join(" ")
         .toLowerCase()
-        .includes(query)
-    );
-  }, [payload.users, searchTerm]);
+          .includes(query);
+
+      return matchesRole && matchesQuery;
+    });
+  }, [payload.users, roleFilter, searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -130,29 +102,18 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        <Button className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Invite User
-        </Button>
+        <Badge variant="outline" className="w-fit border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-600">
+          Live directory
+        </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Total users</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.all}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Hiring managers</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.hiringManagers}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Candidates</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.candidates}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Disabled</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.disabled}</p>
-        </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <UserMetric icon={Users} label="All users" value={payload.totals.all} />
+        <UserMetric icon={ShieldCheck} label="CTRL admins" value={payload.totals.ctrlAdmins} />
+        <UserMetric icon={UserCheck} label="Clients" value={payload.totals.clientContacts} />
+        <UserMetric icon={Users} label="Hiring managers" value={payload.totals.hiringManagers} />
+        <UserMetric icon={Users} label="Candidates" value={payload.totals.candidates} />
+        <UserMetric icon={UserX} label="Disabled" value={payload.totals.disabled} />
       </div>
 
       {error && (
@@ -172,11 +133,31 @@ export default function AdminUsersPage() {
               onChange={(event) => setSearchTerm(event.target.value)}
             />
           </div>
-
-          <Button variant="outline" className="gap-2">
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["all", "All"],
+              ["Client Contact", "Clients"],
+              ["Hiring Manager", "Hiring managers"],
+              ["Candidate", "Candidates"],
+              ["Disabled", "Disabled"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRoleFilter(value as typeof roleFilter)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  roleFilter === value
+                    ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-600"
+                    : "border-border text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="border-b px-4 py-2 text-xs text-muted-foreground">
+          Showing {filteredUsers.length} of {payload.totals.all} users. Active: {payload.totals.active}. Invited: {payload.totals.invited}.
         </div>
 
         <div className="overflow-x-auto">
@@ -188,20 +169,19 @@ export default function AdminUsersPage() {
                 <TableHead>Client</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last login</TableHead>
-                <TableHead className="w-12 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                     Loading users...
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filteredUsers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                     No users match the current search.
                   </TableCell>
                 </TableRow>
@@ -220,31 +200,32 @@ export default function AdminUsersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.lastLogin}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>User actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>View user</DropdownMenuItem>
-                        <DropdownMenuItem>Edit details</DropdownMenuItem>
-                        <DropdownMenuItem>Reset password</DropdownMenuItem>
-                        <DropdownMenuItem>
-                          {user.status === "Disabled" ? "Reactivate account" : "Disable account"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       </div>
+    </div>
+  );
+}
+
+function UserMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <Icon className="h-4 w-4 text-cyan-600" aria-hidden="true" />
+      </div>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
   );
 }

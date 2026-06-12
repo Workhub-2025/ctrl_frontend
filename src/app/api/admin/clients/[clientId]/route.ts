@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   if (!auth.ok) return auth.response;
 
   try {
-    const client = await getAdminClientDetails(await getClientId(context));
+    const client = await getAdminClientDetails(await getClientId(context), auth.session.user.jwt);
     return NextResponse.json({ data: client });
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);

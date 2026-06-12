@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Download } from "lucide-react";
+import { useAdminResource } from "@/lib/admin-resource-cache";
 
 type AuditLogRow = {
   id: string;
@@ -18,36 +19,11 @@ type AuditLogRow = {
 
 export default function AuditLogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [logs, setLogs] = useState<AuditLogRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch("/api/admin/audit-logs", { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Audit logs could not be loaded");
-        return Array.isArray(body.data) ? body.data as AuditLogRow[] : [];
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setLogs(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Audit logs could not be loaded");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: logs, error, loading } = useAdminResource<AuditLogRow[]>(
+    "admin:audit-logs",
+    "/api/admin/audit-logs",
+    []
+  );
 
   const filteredLogs = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();

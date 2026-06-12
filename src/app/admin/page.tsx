@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -13,17 +13,19 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Building2,
-  TrendingUp,
-  CreditCard,
   AlertTriangle,
   History,
-  Eye,
   ArrowRight,
+  Clock3,
+  FileCheck2,
+  KeyRound,
 } from "lucide-react";
 import Link from "next/link";
+import { useAdminResource } from "@/lib/admin-resource-cache";
 
 type AdminOverviewData = {
   activeClients: number;
+  awaitingClientSignups: number;
   pendingCampaignApprovals: number;
   availableClientCodes: number;
   contractsExpiringSoon: number;
@@ -46,29 +48,22 @@ type AdminOverviewData = {
 };
 
 export default function AdminOverview() {
-  const [overview, setOverview] = useState<AdminOverviewData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { data: overview, error } = useAdminResource<AdminOverviewData>(
+    "admin:overview",
+    "/api/admin/overview",
+    {
+      activeClients: 0,
+      awaitingClientSignups: 0,
+      pendingCampaignApprovals: 0,
+      availableClientCodes: 0,
+      contractsExpiringSoon: 0,
+      seatUsage: [],
+      recentActivity: [],
+      attentionRequired: [],
+    }
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/admin/overview", { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Admin overview could not be loaded");
-        return body.data as AdminOverviewData;
-      })
-      .then((data) => {
-        if (!cancelled) setOverview(data);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Admin overview could not be loaded");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const seatUsage = useMemo(() => overview?.seatUsage ?? [], [overview]);
+  const seatUsage = useMemo(() => overview.seatUsage ?? [], [overview]);
 
   return (
     <div className="space-y-6">
@@ -83,7 +78,6 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      {/* Top Row: Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -91,32 +85,32 @@ export default function AdminOverview() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overview?.activeClients ?? "..."}</div>
-            <p className="text-xs text-muted-foreground">Clients with active contracts</p>
+            <div className="text-2xl font-bold">{overview.activeClients}</div>
+            <p className="text-xs text-muted-foreground">Registered client contacts with active contracts</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Campaign Approvals</CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">Awaiting Signup</CardTitle>
+            <Clock3 className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {overview?.pendingCampaignApprovals ?? "..."}
+            <div className="text-2xl font-bold text-blue-600">
+              {overview.awaitingClientSignups}
             </div>
-            <p className="text-xs text-muted-foreground">Awaiting client review</p>
+            <p className="text-xs text-muted-foreground">Contracted clients without a registered contact</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Client Codes</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Client Invites</CardTitle>
+            <KeyRound className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overview?.availableClientCodes ?? "..."}</div>
-            <p className="text-xs text-muted-foreground">Available admin-issued invites</p>
+            <div className="text-2xl font-bold">{overview.availableClientCodes}</div>
+            <p className="text-xs text-muted-foreground">Active admin-issued signup invites</p>
           </CardContent>
         </Card>
 
@@ -126,7 +120,7 @@ export default function AdminOverview() {
             <AlertTriangle className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{overview?.contractsExpiringSoon ?? "..."}</div>
+            <div className="text-2xl font-bold">{overview.contractsExpiringSoon}</div>
             <p className="text-xs text-muted-foreground">Contracts in next 30 days</p>
           </CardContent>
         </Card>
@@ -139,12 +133,11 @@ export default function AdminOverview() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        {/* Middle Row: Seat Usage */}
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Seat Usage (Top Clients)</CardTitle>
+            <CardTitle>HM seat capacity</CardTitle>
             <CardDescription>
-              Hiring manager seats utilized versus allocated.
+              Active hiring-manager occupants versus contracted reusable seats.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -174,14 +167,13 @@ export default function AdminOverview() {
           </CardContent>
         </Card>
 
-        {/* Middle Row: Recent Activity */}
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Recent Admin Activity</CardTitle>
-            <CardDescription>System actions across the platform.</CardDescription>
+            <CardTitle>Recent client movement</CardTitle>
+            <CardDescription>Latest client records returned by the platform API.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {(overview?.recentActivity ?? []).length ? overview?.recentActivity.map((activity, index) => (
+            {overview.recentActivity.length ? overview.recentActivity.map((activity, index) => (
               <div key={`${activity.id || "activity"}-${index}`}>
                 <div className="flex items-center gap-4">
                   <History className="h-4 w-4 text-muted-foreground" />
@@ -190,7 +182,7 @@ export default function AdminOverview() {
                     <p className="text-xs text-muted-foreground">{activity.detail}</p>
                   </div>
                 </div>
-                {index < (overview?.recentActivity.length ?? 0) - 1 && <Separator className="mt-4" />}
+                {index < overview.recentActivity.length - 1 && <Separator className="mt-4" />}
               </div>
             )) : (
               <p className="text-sm text-muted-foreground">No recent client activity yet.</p>
@@ -199,15 +191,14 @@ export default function AdminOverview() {
         </Card>
       </div>
 
-      {/* Bottom Row: Support / Account Issues */}
       <Card>
         <CardHeader>
-          <CardTitle>Attention Required</CardTitle>
-          <CardDescription>Accounts flagged for review or support issues.</CardDescription>
+          <CardTitle>Operational attention</CardTitle>
+          <CardDescription>Real account states that need a CTRL admin decision.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {(overview?.attentionRequired ?? []).length ? overview?.attentionRequired.map((item, index) => (
+            {overview.attentionRequired.length ? overview.attentionRequired.map((item, index) => (
             <div key={`${item.id || "attention"}-${index}`} className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
@@ -223,7 +214,10 @@ export default function AdminOverview() {
               </Button>
             </div>
             )) : (
-              <p className="text-sm text-muted-foreground">No accounts need attention right now.</p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <FileCheck2 className="h-4 w-4 text-emerald-600" />
+                No real account issues need attention right now.
+              </div>
             )}
           </div>
         </CardContent>

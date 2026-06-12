@@ -79,6 +79,7 @@ type ClientHiringManager = {
   documentId: string;
   name: string;
   email: string;
+  status: "active" | "previous";
   createdAt?: string;
   candidatesOnboarded: number;
   campaigns: Array<{
@@ -149,6 +150,7 @@ export default function ClientDashboardPage() {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [selectedSeat, setSelectedSeat] = useState<SeatSlot | null>(null);
   const [codeBusy, setCodeBusy] = useState<string | null>(null);
+  const [releasingManagerId, setReleasingManagerId] = useState<string | null>(null);
   const [approvalModeBusy, setApprovalModeBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -157,8 +159,18 @@ export default function ClientDashboardPage() {
     [campaigns]
   );
 
+  const activeHiringManagers = useMemo(
+    () => hiringManagers.filter((manager) => manager.status !== "previous"),
+    [hiringManagers]
+  );
+
+  const previousHiringManagers = useMemo(
+    () => hiringManagers.filter((manager) => manager.status === "previous"),
+    [hiringManagers]
+  );
+
   const seatSlots = useMemo<SeatSlot[]>(() => {
-    const occupied = hiringManagers.map((manager, index) => ({
+    const occupied = activeHiringManagers.map((manager, index) => ({
       type: "occupied" as const,
       label: `Seat ${index + 1}`,
       manager,
@@ -171,7 +183,7 @@ export default function ClientDashboardPage() {
     }));
 
     return [...occupied, ...empty];
-  }, [accessCodes, hiringManagers, summary?.seats.limit]);
+  }, [accessCodes, activeHiringManagers, summary?.seats.limit]);
 
   const loadDashboard = async (force = false) => {
     const startTime = Date.now();
@@ -269,6 +281,24 @@ export default function ClientDashboardPage() {
       setError(err instanceof Error ? err.message : "Access code could not be refreshed");
     } finally {
       setCodeBusy(null);
+    }
+  };
+
+  const releaseHiringManager = async (manager: ClientHiringManager) => {
+    setReleasingManagerId(manager.documentId);
+    setError(null);
+    try {
+      await fetch(`/api/client/hiring-managers/${encodeURIComponent(manager.documentId)}/release`, {
+        method: "POST",
+      }).then((response) => readJson(response));
+
+      overviewCache = null;
+      setSelectedSeat(null);
+      await loadDashboard(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Hiring-manager seat could not be released");
+    } finally {
+      setReleasingManagerId(null);
     }
   };
 
@@ -515,6 +545,45 @@ export default function ClientDashboardPage() {
               </div>
             ))}
           </div>
+          {!loading && previousHiringManagers.length > 0 && (
+            <div className="mt-6 border-t border-border/50 pt-5 dark:border-white/5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Previous seat occupants</h3>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Retained for historical campaigns and candidate records only.
+                  </p>
+                </div>
+                <Badge variant="outline" className="rounded-lg border-border bg-card text-slate-400 dark:border-white/10">
+                  {previousHiringManagers.length} previous
+                </Badge>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {previousHiringManagers.map((manager) => (
+                  <button
+                    key={manager.documentId}
+                    type="button"
+                    onClick={() => setSelectedSeat({ type: "occupied", label: "Previous", manager })}
+                    className="rounded-xl border border-border bg-background/40 p-4 text-left transition-colors hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1220]/40 hover:dark:border-white/30"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">{manager.name}</p>
+                        <p className="truncate text-xs text-slate-400">{manager.email}</p>
+                      </div>
+                      <Badge variant="outline" className="rounded-md border-slate-500/20 text-slate-400">
+                        Previous
+                      </Badge>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <MiniPanel label="Campaigns" value={manager.campaigns.length} icon={BriefcaseBusiness} />
+                      <MiniPanel label="Candidates" value={manager.candidatesOnboarded} icon={UserCheck} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -701,6 +770,22 @@ export default function ClientDashboardPage() {
                     </div>
                   ))}
                 </div>
+                {selectedSeat.manager.status !== "previous" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-orange-500/20 text-orange-500 hover:!border-orange-500/50 hover:!bg-orange-500/10 hover:!text-orange-500"
+                    onClick={() => void releaseHiringManager(selectedSeat.manager)}
+                    disabled={releasingManagerId === selectedSeat.manager.documentId}
+                  >
+                    {releasingManagerId === selectedSeat.manager.documentId ? (
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                    ) : (
+                      <XCircle className="mr-2 h-4 w-4" aria-hidden="true" />
+                    )}
+                    {releasingManagerId === selectedSeat.manager.documentId ? "Releasing seat..." : "Release seat"}
+                  </Button>
+                )}
               </div>
             </>
           )}

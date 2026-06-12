@@ -1,8 +1,5 @@
 import "server-only";
 
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-import { getStrapiErrorStatus as getBaseStrapiErrorStatus } from "@/services/hiring-manager-campaigns.service";
-
 const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
 const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
 
@@ -11,15 +8,6 @@ function getStrapiBaseUrl() {
     process.env.STRAPI_API_URL ??
       process.env.NEXT_PUBLIC_STRAPI_API_URL ??
       "http://localhost:1337/api"
-  );
-}
-
-function getAdminApiToken() {
-  return (
-    process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
-    process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
-    process.env.STRAPI_API_TOKEN ||
-    undefined
   );
 }
 
@@ -35,7 +23,7 @@ class AdminStrapiRequestError extends Error {
 
 export function getStrapiErrorStatus(error: unknown) {
   if (error instanceof AdminStrapiRequestError) return error.status;
-  return getBaseStrapiErrorStatus(error);
+  return null;
 }
 
 async function adminStrapiRequest<T>(
@@ -43,12 +31,7 @@ async function adminStrapiRequest<T>(
   init?: RequestInit,
   authToken?: string | null
 ): Promise<T> {
-  const token = authToken || getAdminApiToken() || undefined;
-  if (!token) {
-    throw new Error(
-      "A Strapi API token or authenticated admin session is required for admin client creation"
-    );
-  }
+  if (!authToken) throw new Error("Authenticated admin session is required");
 
   const response = await fetch(
     `${getStrapiBaseUrl()}/${stripLeadingSlashes(path)}`,
@@ -57,7 +40,7 @@ async function adminStrapiRequest<T>(
       ...init,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${authToken}`,
         ...init?.headers,
       },
     }
@@ -75,10 +58,6 @@ async function adminStrapiRequest<T>(
 
 type StrapiListResponse<T> = {
   data?: T[];
-};
-
-type StrapiSingleResponse<T> = {
-  data?: T;
 };
 
 type RawRole = {
@@ -145,6 +124,7 @@ type RawClient = {
     targetRole?: string;
     expiresAt?: string;
     createdAt?: string;
+    updatedAt?: string;
   }>;
   updatedAt?: string;
   features?: Record<string, any> | null;
@@ -153,19 +133,24 @@ type RawClient = {
 export type AdminClientRow = {
   id: string;
   name: string;
-  status: "Active" | "Paused" | "Expired" | "Pending";
+  status: "Active" | "Awaiting signup" | "Paused" | "Expired" | "Needs contract";
   plan: string;
   seatsUsed: number;
   seatsAllowed: number;
   enabledAssessments: string[];
-  billingStatus: "Active" | "Pending" | "Expired" | "Paused";
+  billingStatus: "Active" | "Not configured" | "Expired" | "Paused";
   primaryContact: string;
   lastActivity: string;
   pendingCampaignApprovals: number;
+  hasClientContact: boolean;
+  clientInviteStatus: "none" | "available" | "used" | "expired" | "revoked";
+  clientInviteExpiresAt: string | null;
+  canGenerateClientCode: boolean;
 };
 
 export type AdminOverview = {
   activeClients: number;
+  awaitingClientSignups: number;
   pendingCampaignApprovals: number;
   availableClientCodes: number;
   contractsExpiringSoon: number;
@@ -196,10 +181,26 @@ export type AdminUsersSummary = {
   users: AdminUserRow[];
   totals: {
     all: number;
+    ctrlAdmins: number;
+    clientContacts: number;
     hiringManagers: number;
     candidates: number;
+    active: number;
+    invited: number;
     disabled: number;
   };
+};
+
+export type AdminClientEntitlementRow = AdminClientRow & {
+  activeContract: {
+    documentId: string;
+    status: string;
+    startDate: string | null;
+    endDate: string | null;
+    seatCount: number;
+    notes: string;
+  } | null;
+  features?: Record<string, any> | null;
 };
 
 export type AdminAuditLogRow = {
@@ -312,6 +313,35 @@ function getActiveContract(client: RawClient) {
   return (client.contracts ?? []).find(isActiveContract) ?? client.contracts?.[0] ?? null;
 }
 
+function getLatestAccessCode(
+  codes: RawClient["access_codes"],
+  targetRole: "client" | "hiring_manager" | "candidate"
+) {
+  return [...(codes ?? [])]
+    .filter((code) => code.targetRole === targetRole)
+    .sort((a, b) => {
+      const aTime = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
+      const bTime = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
+      return bTime - aTime;
+    })[0] ?? null;
+}
+
+function roleValue(role?: RawRole) {
+  return (role?.type || role?.name || "").toLowerCase().replace(/[-\s]+/g, "_");
+}
+
+function roleMatches(role: RawRole | undefined, expected: string) {
+  return roleValue(role) === expected;
+}
+
+function userDisplayName(user?: RawUser) {
+  if (!user) return "";
+  return [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+    user.username ||
+    user.email ||
+    "";
+}
+
 function relativeDate(value?: string) {
   if (!value) return "No activity recorded";
   const diffMs = Date.now() - new Date(value).getTime();
@@ -325,20 +355,40 @@ function relativeDate(value?: string) {
 
 function normalizeClient(client: RawClient): AdminClientRow {
   const activeContract = getActiveContract(client);
+  const hasActiveContract = isActiveContract(activeContract ?? undefined);
   const seatsAllowed = activeContract?.seatCount ?? 0;
   const seatsUsed = (client.users ?? []).filter(
-    (user) => !user.blocked && user.role?.type === "hiring_manager"
+    (user) => !user.blocked && roleMatches(user.role, "hiring_manager")
   ).length;
+  const hasClientContact = (client.users ?? []).some(
+    (user) => !user.blocked && (roleMatches(user.role, "client") || roleMatches(user.role, "client_contact"))
+  );
+  const clientContact = (client.users ?? []).find(
+    (user) => !user.blocked && (roleMatches(user.role, "client") || roleMatches(user.role, "client_contact"))
+  );
+  const latestClientInvite = getLatestAccessCode(client.access_codes, "client");
+  const availableClientInvite =
+    latestClientInvite?.status === "available" ? latestClientInvite : null;
   const pendingCampaignApprovals = (client.campaigns ?? []).filter(
     (campaign) => campaign.approvalStatus === "pending"
   ).length;
   const status = client.softLockedAt
     ? "Paused"
-    : isActiveContract(activeContract ?? undefined)
-      ? "Active"
-      : activeContract
+    : !activeContract
+      ? "Needs contract"
+      : !hasActiveContract
         ? "Expired"
-        : "Pending";
+        : hasClientContact
+      ? "Active"
+      : "Awaiting signup";
+  const billingStatus =
+    status === "Paused"
+      ? "Paused"
+      : activeContract && hasActiveContract
+        ? "Active"
+        : activeContract
+          ? "Expired"
+          : "Not configured";
 
   return {
     id: client.documentId ?? String(client.id ?? `client-${client.name ?? "unknown"}`),
@@ -348,14 +398,20 @@ function normalizeClient(client: RawClient): AdminClientRow {
     seatsUsed,
     seatsAllowed,
     enabledAssessments: ["Typing", "SJT", "Prioritisation", "Call Simulation"],
-    billingStatus:
-      status === "Active" ? "Active" : status === "Paused" ? "Paused" : status === "Expired" ? "Expired" : "Pending",
+    billingStatus,
     primaryContact:
       client.primaryContactEmail ||
       client.primaryContactName ||
+      clientContact?.email ||
+      userDisplayName(clientContact) ||
       "No primary contact",
     lastActivity: relativeDate(client.updatedAt),
     pendingCampaignApprovals,
+    hasClientContact,
+    clientInviteStatus:
+      (latestClientInvite?.status as AdminClientRow["clientInviteStatus"] | undefined) ?? "none",
+    clientInviteExpiresAt: latestClientInvite?.expiresAt ?? null,
+    canGenerateClientCode: !hasClientContact && !availableClientInvite && status !== "Paused",
   };
 }
 
@@ -410,16 +466,73 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
   };
 }
 
-async function getRawClients() {
-  const response = await strapiRequest<StrapiListResponse<RawClient>>(
-    "/clients?populate[contracts]=true&populate[users][populate][role]=true&populate[campaigns]=true&populate[access_codes]=true&sort=updatedAt:desc&pagination[pageSize]=100"
+function normalizeClientEntitlement(client: RawClient): AdminClientEntitlementRow {
+  const row = normalizeClient(client);
+  const activeContract = getActiveContract(client);
+
+  return {
+    ...row,
+    activeContract: activeContract
+      ? {
+          documentId: activeContract.documentId ?? "",
+          status: activeContract.status ?? "unknown",
+          startDate: activeContract.startDate ?? null,
+          endDate: activeContract.endDate ?? null,
+          seatCount: activeContract.seatCount ?? 0,
+          notes: activeContract.notes ?? "",
+        }
+      : null,
+    features: client.features ?? null,
+  };
+}
+
+async function getRawClients(authToken?: string | null) {
+  const response = await adminStrapiRequest<StrapiListResponse<RawClient>>(
+    "/admin/clients",
+    undefined,
+    authToken
   );
 
   return response.data ?? [];
 }
 
+function clientMatchesUser(client: RawClient, user: RawUser) {
+  if (!user.client) return false;
+  return Boolean(
+    (client.documentId && user.client.documentId === client.documentId) ||
+      (client.name && user.client.name === client.name)
+  );
+}
+
+async function getRawClientsWithUsers(authToken?: string | null) {
+  const clients = await getRawClients(authToken);
+  let users: RawUser[] = [];
+
+  try {
+    users = await getRawUsers(authToken);
+  } catch {
+    users = [];
+  }
+
+  return clients.map((client) => {
+    const directUsers = client.users ?? [];
+    const directUserIds = new Set(
+      directUsers.map((user) => user.documentId ?? user.email ?? user.id)
+    );
+    const relatedUsers = users.filter((user) => clientMatchesUser(client, user));
+    const missingRelatedUsers = relatedUsers.filter(
+      (user) => !directUserIds.has(user.documentId ?? user.email ?? user.id)
+    );
+
+    return {
+      ...client,
+      users: [...directUsers, ...missingRelatedUsers],
+    };
+  });
+}
+
 function formatRole(role?: RawRole): AdminUserRow["role"] {
-  const value = (role?.type || role?.name || "").toLowerCase().replace(/[-\s]+/g, "_");
+  const value = roleValue(role);
   if (value === "administrator" || value === "admin" || value === "ctrl_admin") {
     return "CTRL Admin";
   }
@@ -443,9 +556,11 @@ function normalizeUser(user: RawUser): AdminUserRow {
   };
 }
 
-async function getRawUsers() {
-  const response = await strapiRequest<StrapiListResponse<RawUser>>(
-    "/users?populate[role]=true&populate[client]=true&sort=updatedAt:desc&pagination[pageSize]=250"
+async function getRawUsers(authToken?: string | null) {
+  const response = await adminStrapiRequest<StrapiListResponse<RawUser>>(
+    "/admin/users",
+    undefined,
+    authToken
   );
 
   return response.data ?? [];
@@ -495,24 +610,34 @@ function normalizeAuditLog(log: RawAuditLog): AdminAuditLogRow {
   };
 }
 
-export async function getAdminAuditLogs(): Promise<AdminAuditLogRow[]> {
-  const response = await strapiRequest<StrapiListResponse<RawAuditLog>>(
-    "/audit-logs?sort=occurredAt:desc&pagination[pageSize]=100"
+export async function getAdminAuditLogs(
+  authToken?: string | null
+): Promise<AdminAuditLogRow[]> {
+  const response = await adminStrapiRequest<StrapiListResponse<RawAuditLog>>(
+    "/admin/audit-logs",
+    undefined,
+    authToken
   );
 
   return (response.data ?? []).map(normalizeAuditLog);
 }
 
-export async function getAdminClients(): Promise<AdminClientRow[]> {
-  const clients = await getRawClients();
+export async function getAdminClients(authToken?: string | null): Promise<AdminClientRow[]> {
+  const clients = await getRawClientsWithUsers(authToken);
   return clients.map(normalizeClient);
 }
 
-export async function getAdminClientDetails(clientDocumentId: string): Promise<AdminClientDetails> {
-  const response = await strapiRequest<StrapiListResponse<RawClient>>(
-    `/clients?filters[documentId][$eq]=${encodeURIComponent(clientDocumentId)}&populate[contracts]=true&populate[users][populate][role]=true&populate[campaigns]=true&populate[access_codes]=true&pagination[pageSize]=1`
-  );
-  const client = response.data?.[0];
+export async function getAdminClientEntitlements(authToken?: string | null): Promise<AdminClientEntitlementRow[]> {
+  const clients = await getRawClientsWithUsers(authToken);
+  return clients.map(normalizeClientEntitlement);
+}
+
+export async function getAdminClientDetails(
+  clientDocumentId: string,
+  authToken?: string | null
+): Promise<AdminClientDetails> {
+  const clients = await getRawClientsWithUsers(authToken);
+  const client = clients.find((item) => item.documentId === clientDocumentId);
   if (!client) {
     throw new AdminStrapiRequestError("Client not found", 404);
   }
@@ -581,7 +706,11 @@ export async function createAdminClient(
       users: createdClient?.users ?? [],
       campaigns: createdClient?.campaigns ?? [],
       access_codes: response.data?.accessCode
-        ? [{ status: response.data.accessCode.status, targetRole: response.data.accessCode.targetRole }]
+        ? [{
+            status: response.data.accessCode.status,
+            targetRole: response.data.accessCode.targetRole,
+            expiresAt: response.data.accessCode.expiresAt,
+          }]
         : createdClient?.access_codes ?? [],
     }),
     contract: response.data?.contract,
@@ -589,8 +718,8 @@ export async function createAdminClient(
   };
 }
 
-export async function getAdminOverview(): Promise<AdminOverview> {
-  const rawClients = await getRawClients();
+export async function getAdminOverview(authToken?: string | null): Promise<AdminOverview> {
+  const rawClients = await getRawClientsWithUsers(authToken);
   const clients = rawClients.map(normalizeClient);
   const now = Date.now();
   const thirtyDays = 30 * 24 * 60 * 60 * 1000;
@@ -621,7 +750,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   );
 
   return {
-    activeClients: clients.filter((client) => client.status === "Active").length,
+    activeClients: rawClients.filter((client) => isActiveContract(getActiveContract(client) ?? undefined)).length,
+    awaitingClientSignups: clients.filter((client) => client.status === "Awaiting signup").length,
     pendingCampaignApprovals,
     availableClientCodes,
     contractsExpiringSoon,
@@ -652,16 +782,22 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   };
 }
 
-export async function getAdminUsers(): Promise<AdminUsersSummary> {
-  const rawUsers = await getRawUsers();
+export async function getAdminUsers(
+  authToken?: string | null
+): Promise<AdminUsersSummary> {
+  const rawUsers = await getRawUsers(authToken);
   const users = rawUsers.map(normalizeUser);
 
   return {
     users,
     totals: {
       all: users.length,
+      ctrlAdmins: users.filter((user) => user.role === "CTRL Admin").length,
+      clientContacts: users.filter((user) => user.role === "Client Contact").length,
       hiringManagers: users.filter((user) => user.role === "Hiring Manager").length,
       candidates: users.filter((user) => user.role === "Candidate").length,
+      active: users.filter((user) => user.status === "Active").length,
+      invited: users.filter((user) => user.status === "Invited").length,
       disabled: users.filter((user) => user.status === "Disabled").length,
     },
   };
@@ -669,7 +805,13 @@ export async function getAdminUsers(): Promise<AdminUsersSummary> {
 
 export async function updateAdminClient(
   clientDocumentId: string,
-  data: { features?: Record<string, any> | null },
+  data: {
+    features?: Record<string, any> | null;
+    contract?: {
+      seatCount?: number;
+      notes?: string | null;
+    };
+  },
   authToken?: string | null
 ): Promise<any> {
   const response = await adminStrapiRequest<{ data?: RawClient }>(

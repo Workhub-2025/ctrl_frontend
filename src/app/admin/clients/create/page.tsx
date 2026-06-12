@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { invalidateAdminResource } from "@/lib/admin-resource-cache";
 
 type CreatedClientResponse = {
   client?: {
@@ -120,6 +121,9 @@ export default function CreateClientPage() {
       }
 
       setCreated(body.data ?? null);
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Client could not be created");
     } finally {

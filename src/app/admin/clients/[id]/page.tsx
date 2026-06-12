@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -11,9 +11,9 @@ import {
   Mail,
   Phone,
   Trash2,
-  Globe,
-  Keyboard,
-  BrainCircuit,
+  CheckCircle2,
+  Clock3,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -31,14 +31,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
+import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 
 type ClientDetails = {
   id: string;
   name: string;
   legalName: string;
   status: string;
-  plan: string;
   seatsUsed: number;
   seatsAllowed: number;
   billingStatus: string;
@@ -49,10 +48,13 @@ type ClientDetails = {
   timeZone: string;
   campaignApprovalMode: "auto_approve" | "require_approval";
   onboardingCompleted: boolean;
-  features?: Record<string, any> | null;
   createdAt: string | null;
   updatedAt: string | null;
   pendingCampaignApprovals: number;
+  hasClientContact: boolean;
+  clientInviteStatus: "none" | "available" | "used" | "expired" | "revoked";
+  clientInviteExpiresAt: string | null;
+  canGenerateClientCode: boolean;
   activeContract: {
     status: string;
     startDate: string | null;
@@ -82,6 +84,7 @@ function statusClass(status: string) {
     case "approved":
       return "border-emerald-500/20 bg-emerald-500/10 text-emerald-600";
     case "pending":
+    case "awaiting signup":
       return "border-blue-500/20 bg-blue-500/10 text-blue-600";
     case "paused":
     case "rejected":
@@ -89,6 +92,8 @@ function statusClass(status: string) {
     case "expired":
     case "disabled":
       return "border-red-500/20 bg-red-500/10 text-red-600";
+    case "needs contract":
+      return "border-slate-500/20 bg-slate-500/10 text-slate-600";
     default:
       return "border-muted-foreground/20 text-muted-foreground";
   }
@@ -99,103 +104,32 @@ export default function ClientDetailPage() {
   const params = useParams<{ id: string }>();
   const clientId = params.id;
   const [activeTab, setActiveTab] = useState("summary");
-  const [client, setClient] = useState<ClientDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: client,
+    error: loadError,
+    loading,
+    mutate: mutateClient,
+  } = useAdminResource<ClientDetails | null>(
+    `admin:client:${clientId}`,
+    `/api/admin/clients/${encodeURIComponent(clientId)}`,
+    null
+  );
+  const [actionError, setActionError] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [features, setFeatures] = useState<Record<string, boolean>>({});
-  const [savingFeatures, setSavingFeatures] = useState(false);
-  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   const canDelete = useMemo(
     () => Boolean(client?.name && confirmName === client.name),
     [client?.name, confirmName]
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch(`/api/admin/clients/${encodeURIComponent(clientId)}`, { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Client could not be loaded");
-        return body.data as ClientDetails;
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setClient(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Client could not be loaded");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [clientId]);
-
-  useEffect(() => {
-    if (client) {
-      setFeatures({
-        extremePja: client.features?.extremePja === true,
-        advancedPja: client.features?.advancedPja === true,
-        typingIntermediate: client.features?.typingIntermediate === true,
-        typingAdvanced: client.features?.typingAdvanced === true,
-        deliveryRemote: client.features?.deliveryRemote === true,
-        deliveryHybrid: client.features?.deliveryHybrid === true,
-      });
-    }
-  }, [client]);
-
-  const toggleFeature = (key: string) => {
-    setFeatures((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  const saveFeatures = async () => {
-    setSavingFeatures(true);
-    setSavedMessage(null);
-    setError(null);
-    try {
-      const response = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          features: {
-            extremePja: features.extremePja,
-            advancedPja: features.advancedPja,
-            typingIntermediate: features.typingIntermediate,
-            typingAdvanced: features.typingAdvanced,
-            deliveryRemote: features.deliveryRemote,
-            deliveryHybrid: features.deliveryHybrid,
-          },
-        }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || "Features could not be updated");
-      setClient((prev) => prev ? { ...prev, features: body.data?.features ?? body.data?.data?.features ?? features } : null);
-      setSavedMessage("Client features updated successfully");
-      setTimeout(() => setSavedMessage(null), 3000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Features could not be updated");
-    } finally {
-      setSavingFeatures(false);
-    }
-  };
+  const error = actionError || loadError;
 
   const generateClientCode = async () => {
     setGeneratingCode(true);
-    setError(null);
+    setActionError(null);
     try {
       const response = await fetch("/api/admin/access-codes/client", {
         method: "POST",
@@ -208,8 +142,22 @@ export default function ClientDetailPage() {
         code: body.data?.code ?? "",
         expiresAt: body.data?.expiresAt ?? "",
       });
+      mutateClient(
+        client
+          ? {
+            ...client,
+            status: client.status === "Active" ? client.status : "Awaiting signup",
+            clientInviteStatus: "available",
+            clientInviteExpiresAt: body.data?.expiresAt ?? null,
+            canGenerateClientCode: false,
+          }
+          : client
+      );
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Client access code could not be generated");
+      setActionError(err instanceof Error ? err.message : "Client access code could not be generated");
     } finally {
       setGeneratingCode(false);
     }
@@ -218,7 +166,7 @@ export default function ClientDetailPage() {
   const deleteClient = async () => {
     if (!client || !canDelete) return;
     setDeleting(true);
-    setError(null);
+    setActionError(null);
     try {
       const response = await fetch(`/api/admin/clients/${encodeURIComponent(client.id)}`, {
         method: "DELETE",
@@ -227,10 +175,12 @@ export default function ClientDetailPage() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "Client could not be deleted");
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
       router.push("/admin/clients");
-      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Client could not be deleted");
+      setActionError(err instanceof Error ? err.message : "Client could not be deleted");
       setDeleting(false);
       setDeleteOpen(false);
     }
@@ -312,14 +262,17 @@ export default function ClientDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={generateClientCode} disabled={generatingCode}>
-            {generatingCode ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <KeyRound className="mr-2 h-4 w-4" />
-            )}
-            Generate Client Code
+          <Button asChild variant="outline">
+            <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              Review entitlements
+            </Link>
           </Button>
+          <ClientInviteAction
+            client={client}
+            generatingCode={generatingCode}
+            onGenerate={generateClientCode}
+          />
           <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="border-red-500/30 text-red-600 hover:text-red-700">
@@ -362,13 +315,13 @@ export default function ClientDetailPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0">
-          {["summary", "contract", "users", "campaigns", "access", "features"].map((tab) => (
+          {["summary", "contract", "users", "campaigns", "access"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
               className="rounded-none border-b-2 border-transparent px-3 py-3 capitalize data-[state=active]:border-cyan-500 data-[state=active]:shadow-none"
             >
-              {tab === "access" ? "Access Codes" : tab === "features" ? "Features" : tab}
+              {tab === "access" ? "Access codes" : tab}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -377,13 +330,11 @@ export default function ClientDetailPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Current plan</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Contract state</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{client.plan}</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Renews {formatDate(client.activeContract?.endDate)}
-                </p>
+                <div className="text-2xl font-semibold">{client.billingStatus}</div>
+                <p className="mt-1 text-xs text-muted-foreground">Derived from the active contract</p>
               </CardContent>
             </Card>
             <Card>
@@ -392,7 +343,7 @@ export default function ClientDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold">{client.seatsUsed} / {client.seatsAllowed}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Active users against contract seats</p>
+                <p className="mt-1 text-xs text-muted-foreground">Active HM occupants against reusable seats</p>
               </CardContent>
             </Card>
             <Card>
@@ -408,11 +359,60 @@ export default function ClientDetailPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Billing status</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Contract end</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{client.billingStatus}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Based on active contract state</p>
+                <div className="text-2xl font-semibold">{formatDate(client.activeContract?.endDate)}</div>
+                <p className="mt-1 text-xs text-muted-foreground">Stored on the active contract</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <Card>
+              <CardHeader>
+                <CardTitle>Onboarding path</CardTitle>
+                <CardDescription>What has to be true before the client can run their own workspace.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <FlowStep
+                    complete={Boolean(client.activeContract)}
+                    title="Contract"
+                    detail={client.activeContract ? `${client.activeContract.seatCount} HM seats` : "Create a contract"}
+                  />
+                  <FlowStep
+                    complete={client.clientInviteStatus === "available" || client.hasClientContact}
+                    title="Client invite"
+                    detail={client.hasClientContact ? "Used" : client.clientInviteStatus === "available" ? "Pending signup" : "No active invite"}
+                  />
+                  <FlowStep
+                    complete={client.hasClientContact}
+                    title="Client contact"
+                    detail={client.hasClientContact ? "Active user linked" : "Waiting for registration"}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Seat ownership</CardTitle>
+                <CardDescription>Admin controls capacity. The client controls who occupies each HM seat.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <span className="text-sm text-muted-foreground">Occupied seats</span>
+                  <span className="text-sm font-semibold">{client.seatsUsed}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <span className="text-sm text-muted-foreground">Reusable capacity</span>
+                  <span className="text-sm font-semibold">{client.seatsAllowed}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <span className="text-sm text-muted-foreground">Available seats</span>
+                  <span className="text-sm font-semibold">{Math.max(0, client.seatsAllowed - client.seatsUsed)}</span>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -435,9 +435,17 @@ export default function ClientDetailPage() {
 
         <TabsContent value="contract" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Contract</CardTitle>
-              <CardDescription>Seat allocation and contract dates.</CardDescription>
+            <CardHeader className="gap-4 md:flex md:flex-row md:items-start md:justify-between">
+              <div>
+                <CardTitle>Contract</CardTitle>
+                <CardDescription>Seat allocation and contract dates.</CardDescription>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Review entitlements
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Detail label="Status" value={client.activeContract?.status ?? "No active contract"} />
@@ -453,17 +461,47 @@ export default function ClientDetailPage() {
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
-          <SimpleList
-            title="Users"
-            description="Client contacts and hiring managers attached to this client."
-            empty="No users are attached to this client."
-            rows={client.users.map((user) => ({
-              id: user.id,
-              primary: user.name,
-              secondary: user.email,
-              badge: user.role,
-            }))}
-          />
+          <div className="space-y-4">
+            <SimpleList
+              title="Client contacts"
+              description="Client-side account contacts. Admin only issues or replaces the client signup invite."
+              empty="No client contacts are attached to this client."
+              rows={client.users
+                .filter((user) => user.role === "Client Contact")
+                .map((user) => ({
+                  id: user.id,
+                  primary: user.name,
+                  secondary: user.email,
+                  badge: user.status,
+                }))}
+            />
+            <SimpleList
+              title="Hiring-manager seat occupants"
+              description="Current HM occupants are controlled by the client and count against contract capacity."
+              empty="No active hiring-manager occupants are attached to this client."
+              rows={client.users
+                .filter((user) => user.role === "Hiring Manager" && user.status !== "Disabled")
+                .map((user) => ({
+                  id: user.id,
+                  primary: user.name,
+                  secondary: user.email,
+                  badge: user.status,
+                }))}
+            />
+            <SimpleList
+              title="Previous hiring-manager records"
+              description="Disabled HM users are retained as history and no longer occupy a seat."
+              empty="No previous hiring-manager records are attached to this client."
+              rows={client.users
+                .filter((user) => user.role === "Hiring Manager" && user.status === "Disabled")
+                .map((user) => ({
+                  id: user.id,
+                  primary: user.name,
+                  secondary: user.email,
+                  badge: "Previous",
+                }))}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="campaigns" className="mt-6">
@@ -494,138 +532,70 @@ export default function ClientDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="features" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Feature Management</CardTitle>
-              <CardDescription>
-                Configure advanced features and assessment permissions for this client.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {savedMessage && (
-                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
-                  {savedMessage}
-                </div>
-              )}
-              
-              <div className="space-y-6">
-                {/* Section 1: Campaign Delivery Modes */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <Globe className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Campaign Delivery Modes</h3>
-                  </div>
-                  <div className="space-y-4 divide-y divide-border/40">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Remote Delivery Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Remote delivery mode lock. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.deliveryRemote ?? false}
-                        onCheckedChange={() => toggleFeature("deliveryRemote")}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Hybrid Delivery Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Hybrid delivery mode option. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.deliveryHybrid ?? false}
-                        onCheckedChange={() => toggleFeature("deliveryHybrid")}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 2: PJA Scoring Modes */}
-                <div className="space-y-3 pt-4">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <BrainCircuit className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prioritisation (PJA) Scoring Modes</h3>
-                  </div>
-                  <div className="space-y-4 divide-y divide-border/40">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">PJA Extreme Scoring Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Extreme scoring model (rank distance multipliers with critical misprioritisation penalties). Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.extremePja ?? false}
-                        onCheckedChange={() => toggleFeature("extremePja")}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">PJA Advanced Scoring Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Advanced scoring model (pure rank distance multipliers). Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.advancedPja ?? false}
-                        onCheckedChange={() => toggleFeature("advancedPja")}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Typing Test Difficulties */}
-                <div className="space-y-3 pt-4">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <Keyboard className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Typing Test Difficulty Settings</h3>
-                  </div>
-                  <div className="space-y-4 divide-y divide-border/40">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Typing Intermediate Difficulty</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to select the Intermediate typing difficulty level. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.typingIntermediate ?? false}
-                        onCheckedChange={() => toggleFeature("typingIntermediate")}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Typing Advanced Difficulty</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to select the Advanced typing difficulty level. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.typingAdvanced ?? false}
-                        onCheckedChange={() => toggleFeature("typingAdvanced")}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4">
-                <Button onClick={saveFeatures} disabled={savingFeatures}>
-                  {savingFeatures && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Feature Settings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function ClientInviteAction({
+  client,
+  generatingCode,
+  onGenerate,
+}: {
+  client: ClientDetails;
+  generatingCode: boolean;
+  onGenerate: () => void;
+}) {
+  if (client.hasClientContact) {
+    return (
+      <Badge variant="outline" className="h-10 gap-2 border-emerald-500/20 bg-emerald-500/10 px-3 text-emerald-600">
+        <CheckCircle2 className="h-4 w-4" />
+        Client contact active
+      </Badge>
+    );
+  }
+
+  if (client.clientInviteStatus === "available") {
+    return (
+      <Badge variant="outline" className="h-10 gap-2 border-blue-500/20 bg-blue-500/10 px-3 text-blue-600">
+        <Clock3 className="h-4 w-4" />
+        Client invite pending
+      </Badge>
+    );
+  }
+
+  return (
+    <Button variant="outline" onClick={onGenerate} disabled={!client.canGenerateClientCode || generatingCode}>
+      {generatingCode ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <KeyRound className="mr-2 h-4 w-4" />
+      )}
+      Generate client invite
+    </Button>
+  );
+}
+
+function FlowStep({
+  complete,
+  title,
+  detail,
+}: {
+  complete: boolean;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-md border p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium">{title}</p>
+        {complete ? (
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+        ) : (
+          <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+        )}
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
 }
