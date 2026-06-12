@@ -355,6 +355,14 @@ function roleMatches(role: RawRole | undefined, expected: string) {
   return roleValue(role) === expected;
 }
 
+function userDisplayName(user?: RawUser) {
+  if (!user) return "";
+  return [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+    user.username ||
+    user.email ||
+    "";
+}
+
 function relativeDate(value?: string) {
   if (!value) return "No activity recorded";
   const diffMs = Date.now() - new Date(value).getTime();
@@ -374,6 +382,9 @@ function normalizeClient(client: RawClient): AdminClientRow {
     (user) => !user.blocked && roleMatches(user.role, "hiring_manager")
   ).length;
   const hasClientContact = (client.users ?? []).some(
+    (user) => !user.blocked && (roleMatches(user.role, "client") || roleMatches(user.role, "client_contact"))
+  );
+  const clientContact = (client.users ?? []).find(
     (user) => !user.blocked && (roleMatches(user.role, "client") || roleMatches(user.role, "client_contact"))
   );
   const latestClientInvite = getLatestAccessCode(client.access_codes, "client");
@@ -412,6 +423,8 @@ function normalizeClient(client: RawClient): AdminClientRow {
     primaryContact:
       client.primaryContactEmail ||
       client.primaryContactName ||
+      clientContact?.email ||
+      userDisplayName(clientContact) ||
       "No primary contact",
     lastActivity: relativeDate(client.updatedAt),
     pendingCampaignApprovals,

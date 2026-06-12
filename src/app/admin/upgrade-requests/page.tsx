@@ -180,6 +180,18 @@ export default function UpgradeRequestsPage() {
     }));
   };
 
+  const stageCurrentSetup = (client: EntitlementClient) => {
+    setDrafts((current) => ({
+      ...current,
+      [client.id]: {
+        ...current[client.id],
+        seatCount: initialSeatCount(client),
+        notes: current[client.id]?.notes ||
+          `Generated from current client setup: ${client.seatsUsed} active HM occupant${client.seatsUsed === 1 ? "" : "s"}.`,
+      },
+    }));
+  };
+
   const saveClient = async () => {
     if (!selectedClient || !selectedDraft) return;
 
@@ -324,6 +336,23 @@ export default function UpgradeRequestsPage() {
                   <MiniStat label="Active features" value={activeFeatures.length} />
                   <MiniStat label="Contract" value={selectedClient.activeContract?.status ?? "None"} />
                 </div>
+                {!selectedClient.activeContract && (
+                  <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3 text-sm">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <p className="text-muted-foreground">
+                        No active contract is attached. Generate a draft allocation from the current active HM seats.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => stageCurrentSetup(selectedClient)}
+                      >
+                        Use current setup
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)]">
