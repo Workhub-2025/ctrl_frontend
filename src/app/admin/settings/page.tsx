@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowUpRight, Building2, KeyRound, Settings, ShieldCheck, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAdminResource } from "@/lib/admin-resource-cache";
 
 type Overview = {
   activeClients: number;
@@ -26,39 +26,32 @@ type UsersPayload = {
 };
 
 export default function AdminSettingsPage() {
-  const [overview, setOverview] = useState<Overview | null>(null);
-  const [users, setUsers] = useState<UsersPayload["totals"] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      fetch("/api/admin/overview", { cache: "no-store" }).then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Overview could not be loaded");
-        return body.data as Overview;
-      }),
-      fetch("/api/admin/users", { cache: "no-store" }).then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Users could not be loaded");
-        return body.data as UsersPayload;
-      }),
-    ])
-      .then(([overviewData, usersData]) => {
-        if (!cancelled) {
-          setOverview(overviewData);
-          setUsers(usersData.totals);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Settings could not be loaded");
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: overview, error: overviewError } = useAdminResource<Overview>(
+    "admin:overview",
+    "/api/admin/overview",
+    {
+      activeClients: 0,
+      awaitingClientSignups: 0,
+      availableClientCodes: 0,
+      contractsExpiringSoon: 0,
+    }
+  );
+  const { data: usersPayload, error: usersError } = useAdminResource<UsersPayload>(
+    "admin:users",
+    "/api/admin/users",
+    {
+      totals: {
+        all: 0,
+        ctrlAdmins: 0,
+        clientContacts: 0,
+        hiringManagers: 0,
+        candidates: 0,
+        disabled: 0,
+      },
+    }
+  );
+  const users = usersPayload.totals;
+  const error = overviewError || usersError;
 
   return (
     <div className="space-y-6">
@@ -84,10 +77,10 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatusCard icon={Building2} label="Active contracts" value={overview?.activeClients ?? "..."} />
-        <StatusCard icon={KeyRound} label="Client invites" value={overview?.availableClientCodes ?? "..."} />
-        <StatusCard icon={Users} label="All users" value={users?.all ?? "..."} />
-        <StatusCard icon={ShieldCheck} label="CTRL admins" value={users?.ctrlAdmins ?? "..."} />
+        <StatusCard icon={Building2} label="Active contracts" value={overview.activeClients} />
+        <StatusCard icon={KeyRound} label="Client invites" value={overview.availableClientCodes} />
+        <StatusCard icon={Users} label="All users" value={users.all} />
+        <StatusCard icon={ShieldCheck} label="CTRL admins" value={users.ctrlAdmins} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

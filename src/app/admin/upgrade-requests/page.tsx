@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, ArrowUpRight, CheckCircle2, Loader2, Minus, Plus, Search, Users } from "lucide-react";
+import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 
 type EntitlementClient = {
   id: string;
@@ -50,49 +51,41 @@ function seatSummary(client: EntitlementClient) {
 }
 
 export default function UpgradeRequestsPage() {
-  const [clients, setClients] = useState<EntitlementClient[]>([]);
   const [drafts, setDrafts] = useState<DraftState>({});
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
-
-  const loadEntitlements = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/admin/upgrades", { cache: "no-store" });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || "Entitlements could not be loaded");
-      const data = Array.isArray(body.data) ? (body.data as EntitlementClient[]) : [];
-      setClients(data);
-      setSelectedClientId((current) => current ?? data[0]?.id ?? null);
-      setDrafts(
-        Object.fromEntries(
-          data.map((client) => [
-            client.id,
-            {
-              seatCount: initialSeatCount(client),
-              features: Object.fromEntries(
-                FEATURES.map((feature) => [feature.key, client.features?.[feature.key] === true])
-              ) as Record<string, boolean>,
-              notes: client.activeContract?.notes ?? "",
-            },
-          ])
-        )
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Entitlements could not be loaded");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    data: clients,
+    error: loadError,
+    loading,
+    refetch: refetchEntitlements,
+  } = useAdminResource<EntitlementClient[]>(
+    "admin:upgrades",
+    "/api/admin/upgrades",
+    []
+  );
+  const error = actionError || loadError;
 
   useEffect(() => {
-    void loadEntitlements();
-  }, []);
+    setSelectedClientId((current) => current ?? clients[0]?.id ?? null);
+    setDrafts(
+      Object.fromEntries(
+        clients.map((client) => [
+          client.id,
+          {
+            seatCount: initialSeatCount(client),
+            features: Object.fromEntries(
+              FEATURES.map((feature) => [feature.key, client.features?.[feature.key] === true])
+            ) as Record<string, boolean>,
+            notes: client.activeContract?.notes ?? "",
+          },
+        ])
+      )
+    );
+  }, [clients]);
 
   const filteredClients = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -197,16 +190,16 @@ export default function UpgradeRequestsPage() {
 
     const seatCount = Number(selectedDraft.seatCount);
     if (!Number.isInteger(seatCount) || seatCount < 1) {
-      setError("Seat count must be at least 1");
+      setActionError("Seat count must be at least 1");
       return;
     }
     if (seatCount < selectedClient.seatsUsed) {
-      setError(`Seat count cannot be lower than ${selectedClient.seatsUsed} active HM occupants`);
+      setActionError(`Seat count cannot be lower than ${selectedClient.seatsUsed} active HM occupants`);
       return;
     }
 
     setSavingId(selectedClient.id);
-    setError(null);
+    setActionError(null);
     setSavedMessage(null);
     try {
       const response = await fetch("/api/admin/upgrades", {
@@ -224,9 +217,11 @@ export default function UpgradeRequestsPage() {
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "Entitlements could not be updated");
       setSavedMessage(`${selectedClient.name} entitlements approved`);
-      await loadEntitlements();
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:clients");
+      await refetchEntitlements();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Entitlements could not be updated");
+      setActionError(err instanceof Error ? err.message : "Entitlements could not be updated");
     } finally {
       setSavingId(null);
     }

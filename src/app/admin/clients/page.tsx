@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -31,6 +31,10 @@ import {
   Search,
 } from "lucide-react";
 import Link from "next/link";
+import {
+  invalidateAdminResource,
+  useAdminResource,
+} from "@/lib/admin-resource-cache";
 
 type AdminClientRow = {
   id: string;
@@ -52,41 +56,24 @@ type AdminClientRow = {
 
 export default function ClientsListPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [clients, setClients] = useState<AdminClientRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<{
     clientName: string;
     code: string;
     expiresAt: string;
   } | null>(null);
   const [generatingClientId, setGeneratingClientId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch("/api/admin/clients", { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Clients could not be loaded");
-        return Array.isArray(body.data) ? body.data as AdminClientRow[] : [];
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setClients(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Clients could not be loaded");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const {
+    data: clients,
+    error: loadError,
+    loading,
+    mutate: mutateClients,
+  } = useAdminResource<AdminClientRow[]>(
+    "admin:clients",
+    "/api/admin/clients",
+    []
+  );
+  const error = actionError || loadError;
 
   const filteredClients = useMemo(
     () =>
@@ -135,7 +122,7 @@ export default function ClientsListPage() {
 
   const generateClientCode = async (client: AdminClientRow) => {
     setGeneratingClientId(client.id);
-    setError(null);
+    setActionError(null);
     try {
       const response = await fetch("/api/admin/access-codes/client", {
         method: "POST",
@@ -149,21 +136,22 @@ export default function ClientsListPage() {
         code: body.data?.code ?? "",
         expiresAt: body.data?.expiresAt ?? "",
       });
-      setClients((current) =>
-        current.map((item) =>
+      const updatedClients = clients.map((item) =>
           item.id === client.id
             ? {
                 ...item,
-                status: item.status === "Active" ? item.status : "Awaiting signup",
-                clientInviteStatus: "available",
+                status: item.status === "Active" ? item.status : "Awaiting signup" as const,
+                clientInviteStatus: "available" as const,
                 clientInviteExpiresAt: body.data?.expiresAt ?? null,
                 canGenerateClientCode: false,
               }
             : item
-        )
       );
+      mutateClients(updatedClients);
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Client access code could not be generated");
+      setActionError(err instanceof Error ? err.message : "Client access code could not be generated");
     } finally {
       setGeneratingClientId(null);
     }

@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 
 type ClientDetails = {
   id: string;
@@ -124,9 +125,17 @@ export default function ClientDetailPage() {
   const params = useParams<{ id: string }>();
   const clientId = params.id;
   const [activeTab, setActiveTab] = useState("summary");
-  const [client, setClient] = useState<ClientDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: client,
+    error: loadError,
+    loading,
+    mutate: mutateClient,
+  } = useAdminResource<ClientDetails | null>(
+    `admin:client:${clientId}`,
+    `/api/admin/clients/${encodeURIComponent(clientId)}`,
+    null
+  );
+  const [actionError, setActionError] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -140,32 +149,7 @@ export default function ClientDetailPage() {
     () => Boolean(client?.name && confirmName === client.name),
     [client?.name, confirmName]
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch(`/api/admin/clients/${encodeURIComponent(clientId)}`, { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Client could not be loaded");
-        return body.data as ClientDetails;
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setClient(data);
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Client could not be loaded");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [clientId]);
+  const error = actionError || loadError;
 
   useEffect(() => {
     if (client) {
@@ -190,7 +174,7 @@ export default function ClientDetailPage() {
   const saveFeatures = async () => {
     setSavingFeatures(true);
     setSavedMessage(null);
-    setError(null);
+    setActionError(null);
     try {
       const response = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
         method: "PUT",
@@ -208,11 +192,13 @@ export default function ClientDetailPage() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "Features could not be updated");
-      setClient((prev) => prev ? { ...prev, features: body.data?.features ?? body.data?.data?.features ?? features } : null);
+      mutateClient(client ? { ...client, features: body.data?.features ?? body.data?.data?.features ?? features } : null);
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:upgrades");
       setSavedMessage("Client features updated successfully");
       setTimeout(() => setSavedMessage(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Features could not be updated");
+      setActionError(err instanceof Error ? err.message : "Features could not be updated");
     } finally {
       setSavingFeatures(false);
     }
@@ -220,7 +206,7 @@ export default function ClientDetailPage() {
 
   const generateClientCode = async () => {
     setGeneratingCode(true);
-    setError(null);
+    setActionError(null);
     try {
       const response = await fetch("/api/admin/access-codes/client", {
         method: "POST",
@@ -233,19 +219,22 @@ export default function ClientDetailPage() {
         code: body.data?.code ?? "",
         expiresAt: body.data?.expiresAt ?? "",
       });
-      setClient((prev) =>
-        prev
+      mutateClient(
+        client
           ? {
-              ...prev,
-              status: prev.status === "Active" ? prev.status : "Awaiting signup",
-              clientInviteStatus: "available",
-              clientInviteExpiresAt: body.data?.expiresAt ?? null,
-              canGenerateClientCode: false,
-            }
-          : prev
+            ...client,
+            status: client.status === "Active" ? client.status : "Awaiting signup",
+            clientInviteStatus: "available",
+            clientInviteExpiresAt: body.data?.expiresAt ?? null,
+            canGenerateClientCode: false,
+          }
+          : client
       );
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Client access code could not be generated");
+      setActionError(err instanceof Error ? err.message : "Client access code could not be generated");
     } finally {
       setGeneratingCode(false);
     }
@@ -254,7 +243,7 @@ export default function ClientDetailPage() {
   const deleteClient = async () => {
     if (!client || !canDelete) return;
     setDeleting(true);
-    setError(null);
+    setActionError(null);
     try {
       const response = await fetch(`/api/admin/clients/${encodeURIComponent(client.id)}`, {
         method: "DELETE",
@@ -263,10 +252,12 @@ export default function ClientDetailPage() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "Client could not be deleted");
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
       router.push("/admin/clients");
-      router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Client could not be deleted");
+      setActionError(err instanceof Error ? err.message : "Client could not be deleted");
       setDeleting(false);
       setDeleteOpen(false);
     }

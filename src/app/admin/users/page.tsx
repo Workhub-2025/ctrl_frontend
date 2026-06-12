@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, ShieldCheck, UserCheck, Users, UserX } from "lucide-react";
+import { useAdminResource } from "@/lib/admin-resource-cache";
 
 type UserRole = "CTRL Admin" | "Client Contact" | "Hiring Manager" | "Candidate";
 type UserStatus = "Active" | "Invited" | "Disabled";
@@ -48,7 +49,7 @@ const statusClassName: Record<UserStatus, string> = {
 
 export default function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [payload, setPayload] = useState<AdminUsersPayload>({
+  const fallbackPayload: AdminUsersPayload = {
     users: [],
     totals: {
       all: 0,
@@ -60,51 +61,13 @@ export default function AdminUsersPage() {
       invited: 0,
       disabled: 0,
     },
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  };
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole | "Disabled">("all");
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch("/api/admin/users", { cache: "no-store" })
-      .then(async (response) => {
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || "Users could not be loaded");
-        return body.data as AdminUsersPayload;
-      })
-      .then((data) => {
-        if (!cancelled) {
-          setPayload({
-            users: Array.isArray(data?.users) ? data.users : [],
-            totals: data?.totals ?? {
-              all: 0,
-              ctrlAdmins: 0,
-              clientContacts: 0,
-              hiringManagers: 0,
-              candidates: 0,
-              active: 0,
-              invited: 0,
-              disabled: 0,
-            },
-          });
-          setError(null);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Users could not be loaded");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { data: payload, error, loading } = useAdminResource<AdminUsersPayload>(
+    "admin:users",
+    "/api/admin/users",
+    fallbackPayload
+  );
 
   const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
