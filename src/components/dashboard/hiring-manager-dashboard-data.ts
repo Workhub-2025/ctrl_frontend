@@ -43,7 +43,7 @@ export type HiringManagerSession = {
   campaign: string;
   type: "In-person" | "Remote";
   premiumLocked?: boolean;
-  status: "Scheduled" | "Ready to issue" | "Live" | "Closed";
+  status: "Scheduled" | "Upcoming" | "Live" | "Closed";
   date: string;
   location: string;
   candidateCount: number;
@@ -198,7 +198,7 @@ export const hiringManagerSessions: HiringManagerSession[] = [
     id: "SES-91A",
     campaign: "MetCC Spring Intake",
     type: "In-person",
-    status: "Ready to issue",
+    status: "Upcoming",
     date: "22 May 2026 · 09:30",
     location: "CTRL London",
     candidateCount: 12,
@@ -333,9 +333,10 @@ export function getStatusTone(
     case "Completed":
     case "Live":
       return "shrink-0 whitespace-nowrap rounded-md border-emerald-400/20 bg-emerald-400/10 text-xs text-emerald-300 hover:bg-emerald-400/10";
+    case "Upcoming":
+      return "shrink-0 whitespace-nowrap rounded-md border-purple-400/20 bg-purple-400/10 text-xs text-purple-300 hover:bg-purple-400/10";
     case "In progress":
     case "Configured":
-    case "Ready to issue":
     case "Scheduled":
       return "shrink-0 whitespace-nowrap rounded-md border-blue-400/20 bg-blue-400/10 text-xs text-blue-300 hover:bg-blue-400/10";
     case "Draft":

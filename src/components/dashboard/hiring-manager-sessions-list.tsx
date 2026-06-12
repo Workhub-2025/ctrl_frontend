@@ -318,7 +318,7 @@ export function HiringManagerSessionsList() {
       const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
       const isLive = session.status === "Live" && (!startsAtTime || now >= startsAtTime);
       const isClosed = session.status === "Closed" || session.status === "Cancelled";
-      const isUpcoming = (session.status === "Ready to issue" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
+      const isUpcoming = (session.status === "Upcoming" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
 
       if (isLive) live++;
       else if (isUpcoming) upcoming++;
@@ -333,7 +333,7 @@ export function HiringManagerSessionsList() {
       const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
       const isLive = session.status === "Live" && (!startsAtTime || now >= startsAtTime);
       const isClosed = session.status === "Closed" || session.status === "Cancelled";
-      const isUpcoming = (session.status === "Ready to issue" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
+      const isUpcoming = (session.status === "Upcoming" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
 
       if (currentTab === "live") return isLive;
       if (currentTab === "upcoming") return isUpcoming;
@@ -801,81 +801,67 @@ export function HiringManagerSessionsList() {
           filteredSessions.map((session) => (
             <Card
               key={session.id}
-              className="group rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/45 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300"
+              className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 transition-all duration-300"
             >
-              <CardContent className="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-                <div className="min-w-0 space-y-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge className={[
-                        "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
-                        getStatusTone(session.status)
-                      ].join(" ")}>
-                        {session.status}
-                      </Badge>
-                      <Badge className="rounded-md border-white/10 bg-white/[0.03] text-[10px] text-slate-300 font-semibold hover:bg-white/[0.03]">
-                        {session.type}
-                      </Badge>
-                    </div>
-
-                    <div className="text-[10px] font-bold text-slate-300 bg-white/[0.02] border border-white/10 px-2.5 py-1 rounded flex items-center gap-1.5 shadow-sm">
-                      <Users className="h-3.5 w-3.5 text-primary" />
-                      <span>{session.candidateCount} of {session.candidateLimit} Candidates</span>
-                    </div>
+              <CardContent className="p-5 space-y-4">
+                {/* Header row: Badges on left, Candidates count with progress bar on right */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={[
+                      "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
+                      getStatusTone(session.status)
+                    ].join(" ")}>
+                      {session.status}
+                    </Badge>
+                    <Badge className="rounded-md border-white/10 bg-white/[0.03] text-[10px] text-slate-300 font-semibold hover:bg-white/[0.03]">
+                      {session.type}
+                    </Badge>
                   </div>
-                  <div>
-                    <h2 className="break-words text-base font-bold leading-snug text-white">
-                      {session.campaign}
-                    </h2>
-                    <p className="mt-1.5 break-words text-xs leading-5 text-slate-400 font-medium">
-                      {session.date} · {session.location}
-                    </p>
+                  
+                  {/* Candidates joined status with pill indicator */}
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1.5 rounded-lg border border-indigo-500/15 bg-indigo-500/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-300/90 shadow-sm">
+                      <Users className="h-3.5 w-3.5 text-indigo-400" />
+                      <span>{session.candidateCount} of {session.candidateLimit} Joined</span>
+                    </span>
+                    {session.candidateLimit > 0 && (
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 rounded-full bg-white/5 overflow-hidden border border-white/5">
+                          <div 
+                            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500">
+                          {Math.round((session.candidateCount / session.candidateLimit) * 100)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-[#0b1329]/25 p-4 shadow-sm backdrop-blur-sm">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Session Access Code
-                  </p>
-                  <div className="mt-2.5 rounded-lg border border-white/15 bg-black/45 p-3">
-                    <p className="text-[9px] font-semibold uppercase text-indigo-400 tracking-wider">
-                      {session.accessMode}
-                    </p>
-                    <p className="mt-1 break-all font-mono text-sm font-bold text-white tracking-wider">
-                      {session.accessValue}
+                {/* Details and Actions Row */}
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  {/* Campaign Name & Details */}
+                  <div className="space-y-1">
+                    <h2 className="break-words text-base font-bold leading-snug text-white">
+                      {session.campaign}
+                    </h2>
+                    <p className="break-words text-xs leading-5 text-slate-400 font-medium">
+                      {session.date} · {session.location}
                     </p>
                   </div>
-                  <div className="mt-3.5 flex flex-col gap-2">
-                    {session.status === "Ready to issue" && (
-                      <div className="w-full">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={updatingSessionId === session.id || (session.startsAt ? new Date(session.startsAt).getTime() > Date.now() : false)}
-                          onClick={() => handleUpdateSessionStatus(session.id, "live")}
-                          className="w-full h-8 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white disabled:opacity-40 transition-all duration-300 cursor-pointer"
-                        >
-                          {updatingSessionId === session.id ? "Activating..." : "Activate Session"}
-                        </Button>
-                        {session.startsAt && new Date(session.startsAt).getTime() > Date.now() && (
-                          <p className="text-[10px] text-center text-slate-400 mt-1.5">
-                            Activates after session start time
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    {session.status === "Live" && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={updatingSessionId === session.id}
-                        onClick={() => handleUpdateSessionStatus(session.id, "closed")}
-                        className="w-full h-8 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-all duration-300 cursor-pointer"
-                      >
-                        {updatingSessionId === session.id ? "Closing..." : "Close Session"}
-                      </Button>
-                    )}
-                    <div className="flex gap-2">
+
+                  {/* Access code and Action Buttons inline */}
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5">
+                      <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">CODE</span>
+                      <span className="font-mono text-xs font-bold text-white tracking-widest bg-black/45 px-2 py-0.5 rounded border border-white/5">
+                        {session.accessValue}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <Button
                         type="button"
                         size="sm"
@@ -884,12 +870,12 @@ export function HiringManagerSessionsList() {
                           setCopiedSessionId(session.id);
                           setTimeout(() => setCopiedSessionId(null), 2000);
                         }}
-                        className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 flex-1 transition-all duration-300"
+                        className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 transition-all duration-300"
                       >
                         {copiedSessionId === session.id ? (
                           <>
-                            <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400 animate-in zoom-in-50 duration-200" />
-                            <span className="text-emerald-400 animate-in fade-in duration-200">Copied!</span>
+                            <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
+                            <span className="text-emerald-400">Copied!</span>
                           </>
                         ) : (
                           <>
@@ -898,12 +884,13 @@ export function HiringManagerSessionsList() {
                           </>
                         )}
                       </Button>
+
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedSession(session)}
-                        className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white px-3 transition-colors"
+                        className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:bg-white/10 hover:text-white px-3 transition-colors"
                       >
                         <Eye className="mr-1.5 h-3.5 w-3.5" />
                         View details
