@@ -142,9 +142,9 @@ export default function ClientDetailPage() {
   useEffect(() => {
     if (client) {
       setFeatures({
-        extremePja: client.features?.extremePja !== false,
+        extremePja: client.features?.extremePja === true,
         advancedPja: client.features?.advancedPja === true,
-        typingIntermediate: client.features?.typingIntermediate !== false,
+        typingIntermediate: client.features?.typingIntermediate === true,
         typingAdvanced: client.features?.typingAdvanced === true,
         deliveryRemote: client.features?.deliveryRemote === true,
         deliveryHybrid: client.features?.deliveryHybrid === true,
@@ -511,11 +511,11 @@ export default function ClientDetailPage() {
                   <div className="space-y-0.5">
                     <Label className="text-sm font-semibold">PJA Extreme Scoring Mode</Label>
                     <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to use the Extreme scoring model (rank distance multipliers with critical misprioritisation penalties). Enabled by default.
+                      Allows campaigns to use the Extreme scoring model (rank distance multipliers with critical misprioritisation penalties). Disabled by default.
                     </p>
                   </div>
                   <Switch
-                    checked={features.extremePja ?? true}
+                    checked={features.extremePja ?? false}
                     onCheckedChange={() => toggleFeature("extremePja")}
                   />
                 </div>
@@ -537,11 +537,11 @@ export default function ClientDetailPage() {
                   <div className="space-y-0.5">
                     <Label className="text-sm font-semibold">Typing Intermediate Difficulty</Label>
                     <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to select the Intermediate typing difficulty level. Enabled by default.
+                      Allows campaigns to select the Intermediate typing difficulty level. Disabled by default.
                     </p>
                   </div>
                   <Switch
-                    checked={features.typingIntermediate ?? true}
+                    checked={features.typingIntermediate ?? false}
                     onCheckedChange={() => toggleFeature("typingIntermediate")}
                   />
                 </div>

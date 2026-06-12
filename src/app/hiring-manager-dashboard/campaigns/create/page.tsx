@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function CreateHiringManagerCampaignPage() {
   const { assessments, error } = await getHiringManagerAssessments();
 
-  let allowExtremePja = true;
+  let allowExtremePja = false;
   let allowAdvancedPja = false;
-  let allowTypingIntermediate = true;
+  let allowTypingIntermediate = false;
   let allowTypingAdvanced = false;
   let allowRemoteDelivery = false;
   let allowHybridDelivery = false;
@@ -24,9 +24,9 @@ export default async function CreateHiringManagerCampaignPage() {
     if (meResponse.ok) {
       const userData = await meResponse.json();
       const features = userData?.client?.features ?? {};
-      allowExtremePja = features.extremePja !== false;
+      allowExtremePja = features.extremePja === true;
       allowAdvancedPja = features.advancedPja === true;
-      allowTypingIntermediate = features.typingIntermediate !== false;
+      allowTypingIntermediate = features.typingIntermediate === true;
       allowTypingAdvanced = features.typingAdvanced === true;
       allowRemoteDelivery = features.deliveryRemote === true;
       allowHybridDelivery = features.deliveryHybrid === true;
