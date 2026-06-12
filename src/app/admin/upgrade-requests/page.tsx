@@ -38,6 +38,17 @@ const FEATURES = [
 
 type DraftState = Record<string, { seatCount: string; features: Record<string, boolean>; notes: string }>;
 
+function initialSeatCount(client: EntitlementClient) {
+  return String(Math.max(1, client.activeContract?.seatCount ?? client.seatsAllowed, client.seatsUsed));
+}
+
+function seatSummary(client: EntitlementClient) {
+  if (!client.activeContract) {
+    return `${client.seatsUsed} active / no allocation`;
+  }
+  return `${client.seatsUsed}/${client.seatsAllowed}`;
+}
+
 export default function UpgradeRequestsPage() {
   const [clients, setClients] = useState<EntitlementClient[]>([]);
   const [drafts, setDrafts] = useState<DraftState>({});
@@ -63,7 +74,7 @@ export default function UpgradeRequestsPage() {
           data.map((client) => [
             client.id,
             {
-              seatCount: String(client.activeContract?.seatCount ?? client.seatsAllowed ?? 0),
+              seatCount: initialSeatCount(client),
               features: Object.fromEntries(
                 FEATURES.map((feature) => [feature.key, client.features?.[feature.key] === true])
               ) as Record<string, boolean>,
@@ -115,7 +126,9 @@ export default function UpgradeRequestsPage() {
     const nextSeats = Number(selectedDraft.seatCount);
     const currentSeats = selectedClient.activeContract?.seatCount ?? selectedClient.seatsAllowed;
 
-    if (Number.isFinite(nextSeats) && nextSeats !== currentSeats) {
+    if (!selectedClient.activeContract && Number.isFinite(nextSeats)) {
+      changes.push(`Create active contract with ${nextSeats} HM seats`);
+    } else if (Number.isFinite(nextSeats) && nextSeats !== currentSeats) {
       changes.push(`HM seats: ${currentSeats} -> ${nextSeats}`);
     }
 
@@ -280,7 +293,7 @@ export default function UpgradeRequestsPage() {
                       <p className="truncate text-xs text-muted-foreground">{client.primaryContact}</p>
                     </div>
                     <Badge variant="outline" className="shrink-0">
-                      {client.seatsUsed}/{client.seatsAllowed}
+                      {seatSummary(client)}
                     </Badge>
                   </div>
                 </button>
@@ -307,7 +320,7 @@ export default function UpgradeRequestsPage() {
                   <Badge variant="outline">{selectedClient.status}</Badge>
                 </div>
                 <div className="grid gap-3 md:grid-cols-3">
-                  <MiniStat label="Current HM seats" value={`${selectedClient.seatsUsed}/${selectedClient.seatsAllowed}`} />
+                  <MiniStat label="Current HM seats" value={seatSummary(selectedClient)} />
                   <MiniStat label="Active features" value={activeFeatures.length} />
                   <MiniStat label="Contract" value={selectedClient.activeContract?.status ?? "None"} />
                 </div>
@@ -325,7 +338,6 @@ export default function UpgradeRequestsPage() {
                         className="pl-9"
                         value={selectedDraft.seatCount}
                         onChange={(event) => updateSeatDraft(selectedClient.id, event.target.value)}
-                        disabled={!selectedClient.activeContract}
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -392,10 +404,7 @@ export default function UpgradeRequestsPage() {
                   </div>
                 )}
                 <div className="flex justify-end">
-                  <Button
-                    onClick={saveClient}
-                    disabled={pendingChanges.length === 0 || savingId === selectedClient.id || !selectedClient.activeContract}
-                  >
+                  <Button onClick={saveClient} disabled={pendingChanges.length === 0 || savingId === selectedClient.id}>
                     {savingId === selectedClient.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Approve changes
                   </Button>
