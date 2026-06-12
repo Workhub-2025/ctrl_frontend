@@ -502,6 +502,34 @@ async function getRawClients() {
   return response.data ?? [];
 }
 
+function clientMatchesUser(client: RawClient, user: RawUser) {
+  if (!user.client) return false;
+  return Boolean(
+    (client.documentId && user.client.documentId === client.documentId) ||
+      (client.name && user.client.name === client.name)
+  );
+}
+
+async function getRawClientsWithUsers() {
+  const [clients, users] = await Promise.all([getRawClients(), getRawUsers()]);
+
+  return clients.map((client) => {
+    const directUsers = client.users ?? [];
+    const directUserIds = new Set(
+      directUsers.map((user) => user.documentId ?? user.email ?? user.id)
+    );
+    const relatedUsers = users.filter((user) => clientMatchesUser(client, user));
+    const missingRelatedUsers = relatedUsers.filter(
+      (user) => !directUserIds.has(user.documentId ?? user.email ?? user.id)
+    );
+
+    return {
+      ...client,
+      users: [...directUsers, ...missingRelatedUsers],
+    };
+  });
+}
+
 function formatRole(role?: RawRole): AdminUserRow["role"] {
   const value = roleValue(role);
   if (value === "administrator" || value === "admin" || value === "ctrl_admin") {
@@ -596,20 +624,18 @@ export async function getAdminAuditLogs(): Promise<AdminAuditLogRow[]> {
 }
 
 export async function getAdminClients(): Promise<AdminClientRow[]> {
-  const clients = await getRawClients();
+  const clients = await getRawClientsWithUsers();
   return clients.map(normalizeClient);
 }
 
 export async function getAdminClientEntitlements(): Promise<AdminClientEntitlementRow[]> {
-  const clients = await getRawClients();
+  const clients = await getRawClientsWithUsers();
   return clients.map(normalizeClientEntitlement);
 }
 
 export async function getAdminClientDetails(clientDocumentId: string): Promise<AdminClientDetails> {
-  const response = await strapiRequest<StrapiListResponse<RawClient>>(
-    `/clients?filters[documentId][$eq]=${encodeURIComponent(clientDocumentId)}&populate[contracts]=true&populate[users][populate][role]=true&populate[campaigns]=true&populate[access_codes]=true&pagination[pageSize]=1`
-  );
-  const client = response.data?.[0];
+  const clients = await getRawClientsWithUsers();
+  const client = clients.find((item) => item.documentId === clientDocumentId);
   if (!client) {
     throw new AdminStrapiRequestError("Client not found", 404);
   }
@@ -691,7 +717,7 @@ export async function createAdminClient(
 }
 
 export async function getAdminOverview(): Promise<AdminOverview> {
-  const rawClients = await getRawClients();
+  const rawClients = await getRawClientsWithUsers();
   const clients = rawClients.map(normalizeClient);
   const now = Date.now();
   const thirtyDays = 30 * 24 * 60 * 60 * 1000;
