@@ -523,10 +523,26 @@ function clientMatchesUser(client: RawClient, user: RawUser) {
   );
 }
 
+async function getRawActiveContract(clientDocumentId?: string) {
+  if (!clientDocumentId) return null;
+
+  try {
+    const response = await strapiRequest<StrapiSingleResponse<RawContract>>(
+      `/clients/${encodeURIComponent(clientDocumentId)}/contract`
+    );
+    return response.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function getRawClientsWithUsers() {
   const [clients, users] = await Promise.all([getRawClients(), getRawUsers()]);
+  const activeContracts = await Promise.all(
+    clients.map((client) => getRawActiveContract(client.documentId))
+  );
 
-  return clients.map((client) => {
+  return clients.map((client, index) => {
     const directUsers = client.users ?? [];
     const directUserIds = new Set(
       directUsers.map((user) => user.documentId ?? user.email ?? user.id)
@@ -535,9 +551,20 @@ async function getRawClientsWithUsers() {
     const missingRelatedUsers = relatedUsers.filter(
       (user) => !directUserIds.has(user.documentId ?? user.email ?? user.id)
     );
+    const activeContract = activeContracts[index];
+    const existingContracts = client.contracts ?? [];
+    const contracts = activeContract
+      ? [
+          activeContract,
+          ...existingContracts.filter(
+            (contract) => contract.documentId !== activeContract.documentId
+          ),
+        ]
+      : existingContracts;
 
     return {
       ...client,
+      contracts,
       users: [...directUsers, ...missingRelatedUsers],
     };
   });
