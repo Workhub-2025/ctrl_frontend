@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -11,11 +11,9 @@ import {
   Mail,
   Phone,
   Trash2,
-  Globe,
-  Keyboard,
-  BrainCircuit,
   CheckCircle2,
   Clock3,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -33,7 +31,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 
 type ClientDetails = {
@@ -41,7 +38,6 @@ type ClientDetails = {
   name: string;
   legalName: string;
   status: string;
-  plan: string;
   seatsUsed: number;
   seatsAllowed: number;
   billingStatus: string;
@@ -52,7 +48,6 @@ type ClientDetails = {
   timeZone: string;
   campaignApprovalMode: "auto_approve" | "require_approval";
   onboardingCompleted: boolean;
-  features?: Record<string, any> | null;
   createdAt: string | null;
   updatedAt: string | null;
   pendingCampaignApprovals: number;
@@ -104,22 +99,6 @@ function statusClass(status: string) {
   }
 }
 
-function inviteLabel(status: ClientDetails["clientInviteStatus"]) {
-  switch (status) {
-    case "available":
-      return "Pending signup";
-    case "used":
-      return "Used";
-    case "expired":
-      return "Expired";
-    case "revoked":
-      return "Revoked";
-    case "none":
-    default:
-      return "No active invite";
-  }
-}
-
 export default function ClientDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -141,68 +120,12 @@ export default function ClientDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [features, setFeatures] = useState<Record<string, boolean>>({});
-  const [savingFeatures, setSavingFeatures] = useState(false);
-  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   const canDelete = useMemo(
     () => Boolean(client?.name && confirmName === client.name),
     [client?.name, confirmName]
   );
   const error = actionError || loadError;
-
-  useEffect(() => {
-    if (client) {
-      setFeatures({
-        extremePja: client.features?.extremePja === true,
-        advancedPja: client.features?.advancedPja === true,
-        typingIntermediate: client.features?.typingIntermediate === true,
-        typingAdvanced: client.features?.typingAdvanced === true,
-        deliveryRemote: client.features?.deliveryRemote === true,
-        deliveryHybrid: client.features?.deliveryHybrid === true,
-      });
-    }
-  }, [client]);
-
-  const toggleFeature = (key: string) => {
-    setFeatures((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  const saveFeatures = async () => {
-    setSavingFeatures(true);
-    setSavedMessage(null);
-    setActionError(null);
-    try {
-      const response = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          features: {
-            extremePja: features.extremePja,
-            advancedPja: features.advancedPja,
-            typingIntermediate: features.typingIntermediate,
-            typingAdvanced: features.typingAdvanced,
-            deliveryRemote: features.deliveryRemote,
-            deliveryHybrid: features.deliveryHybrid,
-          },
-        }),
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(body.error || "Features could not be updated");
-      mutateClient(client ? { ...client, features: body.data?.features ?? body.data?.data?.features ?? features } : null);
-      invalidateAdminResource("admin:clients");
-      invalidateAdminResource("admin:upgrades");
-      setSavedMessage("Client features updated successfully");
-      setTimeout(() => setSavedMessage(null), 3000);
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Features could not be updated");
-    } finally {
-      setSavingFeatures(false);
-    }
-  };
 
   const generateClientCode = async () => {
     setGeneratingCode(true);
@@ -339,6 +262,12 @@ export default function ClientDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              Review entitlements
+            </Link>
+          </Button>
           <ClientInviteAction
             client={client}
             generatingCode={generatingCode}
@@ -386,13 +315,13 @@ export default function ClientDetailPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0">
-          {["summary", "contract", "users", "campaigns", "access", "features"].map((tab) => (
+          {["summary", "contract", "users", "campaigns", "access"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
               className="rounded-none border-b-2 border-transparent px-3 py-3 capitalize data-[state=active]:border-cyan-500 data-[state=active]:shadow-none"
             >
-              {tab === "access" ? "Access Codes" : tab === "features" ? "Features" : tab}
+              {tab === "access" ? "Access codes" : tab}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -401,13 +330,11 @@ export default function ClientDetailPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Current plan</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Contract state</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{client.plan}</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Renews {formatDate(client.activeContract?.endDate)}
-                </p>
+                <div className="text-2xl font-semibold">{client.billingStatus}</div>
+                <p className="mt-1 text-xs text-muted-foreground">Derived from the active contract</p>
               </CardContent>
             </Card>
             <Card>
@@ -432,19 +359,11 @@ export default function ClientDetailPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Contract state</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Contract end</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{client.billingStatus}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Derived from the active contract</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Client invite</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <InviteSummary client={client} />
+                <div className="text-2xl font-semibold">{formatDate(client.activeContract?.endDate)}</div>
+                <p className="mt-1 text-xs text-muted-foreground">Stored on the active contract</p>
               </CardContent>
             </Card>
           </div>
@@ -516,9 +435,17 @@ export default function ClientDetailPage() {
 
         <TabsContent value="contract" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Contract</CardTitle>
-              <CardDescription>Seat allocation and contract dates.</CardDescription>
+            <CardHeader className="gap-4 md:flex md:flex-row md:items-start md:justify-between">
+              <div>
+                <CardTitle>Contract</CardTitle>
+                <CardDescription>Seat allocation and contract dates.</CardDescription>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Review entitlements
+                </Link>
+              </Button>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Detail label="Status" value={client.activeContract?.status ?? "No active contract"} />
@@ -605,137 +532,6 @@ export default function ClientDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="features" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Feature Management</CardTitle>
-              <CardDescription>
-                Configure advanced features and assessment permissions for this client.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {savedMessage && (
-                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
-                  {savedMessage}
-                </div>
-              )}
-              
-              <div className="space-y-6">
-                {/* Section 1: Campaign Delivery Modes */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <Globe className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Campaign Delivery Modes</h3>
-                  </div>
-                  <div className="space-y-4 divide-y divide-border/40">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Remote Delivery Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Remote delivery mode lock. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.deliveryRemote ?? false}
-                        onCheckedChange={() => toggleFeature("deliveryRemote")}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Hybrid Delivery Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Hybrid delivery mode option. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.deliveryHybrid ?? false}
-                        onCheckedChange={() => toggleFeature("deliveryHybrid")}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 2: PJA Scoring Modes */}
-                <div className="space-y-3 pt-4">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <BrainCircuit className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prioritisation (PJA) Scoring Modes</h3>
-                  </div>
-                  <div className="space-y-4 divide-y divide-border/40">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">PJA Extreme Scoring Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Extreme scoring model (rank distance multipliers with critical misprioritisation penalties). Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.extremePja ?? false}
-                        onCheckedChange={() => toggleFeature("extremePja")}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">PJA Advanced Scoring Mode</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to use the Advanced scoring model (pure rank distance multipliers). Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.advancedPja ?? false}
-                        onCheckedChange={() => toggleFeature("advancedPja")}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Typing Test Difficulties */}
-                <div className="space-y-3 pt-4">
-                  <div className="flex items-center gap-2 border-b border-border pb-2">
-                    <Keyboard className="h-4 w-4 text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Typing Test Difficulty Settings</h3>
-                  </div>
-                  <div className="space-y-4 divide-y divide-border/40">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Typing Intermediate Difficulty</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to select the Intermediate typing difficulty level. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.typingIntermediate ?? false}
-                        onCheckedChange={() => toggleFeature("typingIntermediate")}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5">
-                      <div className="space-y-0.5">
-                        <Label className="text-sm font-semibold">Typing Advanced Difficulty</Label>
-                        <p className="text-xs text-muted-foreground max-w-xl">
-                          Allows campaigns to select the Advanced typing difficulty level. Disabled by default.
-                        </p>
-                      </div>
-                      <Switch
-                        checked={features.typingAdvanced ?? false}
-                        onCheckedChange={() => toggleFeature("typingAdvanced")}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4">
-                <Button onClick={saveFeatures} disabled={savingFeatures}>
-                  {savingFeatures && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Feature Settings
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );
@@ -777,31 +573,6 @@ function ClientInviteAction({
       )}
       Generate client invite
     </Button>
-  );
-}
-
-function InviteSummary({ client }: { client: ClientDetails }) {
-  if (client.hasClientContact) {
-    return (
-      <>
-        <div className="flex items-center gap-2 text-2xl font-semibold text-emerald-600">
-          <CheckCircle2 className="h-5 w-5" />
-          Used
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">Client user has registered</p>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <div className="text-2xl font-semibold">{inviteLabel(client.clientInviteStatus)}</div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {client.clientInviteExpiresAt
-          ? `Expires ${formatDate(client.clientInviteExpiresAt)}`
-          : "Generate an invite once contract details are ready"}
-      </p>
-    </>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +52,8 @@ function seatSummary(client: EntitlementClient) {
 }
 
 export default function UpgradeRequestsPage() {
+  const searchParams = useSearchParams();
+  const requestedClientId = searchParams.get("client");
   const [drafts, setDrafts] = useState<DraftState>({});
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,7 +73,12 @@ export default function UpgradeRequestsPage() {
   const error = actionError || loadError;
 
   useEffect(() => {
-    setSelectedClientId((current) => current ?? clients[0]?.id ?? null);
+    setSelectedClientId((current) => {
+      if (requestedClientId && clients.some((client) => client.id === requestedClientId)) {
+        return requestedClientId;
+      }
+      return current ?? clients[0]?.id ?? null;
+    });
     setDrafts(
       Object.fromEntries(
         clients.map((client) => [
@@ -85,7 +93,7 @@ export default function UpgradeRequestsPage() {
         ])
       )
     );
-  }, [clients]);
+  }, [clients, requestedClientId]);
 
   const filteredClients = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();

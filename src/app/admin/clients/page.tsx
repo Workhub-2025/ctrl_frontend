@@ -302,7 +302,12 @@ export default function ClientsListPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/clients/${client.id}`}>View Details</Link>
+                        <Link href={`/admin/clients/${client.id}`}>Open client</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+                          Review entitlements
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={!client.canGenerateClientCode || generatingClientId === client.id}
@@ -310,8 +315,6 @@ export default function ClientsListPage() {
                       >
                         {client.canGenerateClientCode ? "Generate client invite" : "Client invite handled"}
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Adjust seat capacity</DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">Pause Account</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
