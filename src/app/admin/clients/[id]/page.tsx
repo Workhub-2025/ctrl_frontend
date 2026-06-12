@@ -11,6 +11,9 @@ import {
   Mail,
   Phone,
   Trash2,
+  Globe,
+  Keyboard,
+  BrainCircuit,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -506,83 +509,110 @@ export default function ClientDetailPage() {
                 </div>
               )}
               
-              <div className="space-y-4 divide-y">
-                <div className="flex items-center justify-between py-4">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-semibold">PJA Extreme Scoring Mode</Label>
-                    <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to use the Extreme scoring model (rank distance multipliers with critical misprioritisation penalties). Disabled by default.
-                    </p>
+              <div className="space-y-6">
+                {/* Section 1: Campaign Delivery Modes */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 border-b border-border pb-2">
+                    <Globe className="h-4 w-4 text-primary" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Campaign Delivery Modes</h3>
                   </div>
-                  <Switch
-                    checked={features.extremePja ?? false}
-                    onCheckedChange={() => toggleFeature("extremePja")}
-                  />
+                  <div className="space-y-4 divide-y divide-border/40">
+                    <div className="flex items-center justify-between py-2.5">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-semibold">Remote Delivery Mode</Label>
+                        <p className="text-xs text-muted-foreground max-w-xl">
+                          Allows campaigns to use the Remote delivery mode lock. Disabled by default.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={features.deliveryRemote ?? false}
+                        onCheckedChange={() => toggleFeature("deliveryRemote")}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2.5">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-semibold">Hybrid Delivery Mode</Label>
+                        <p className="text-xs text-muted-foreground max-w-xl">
+                          Allows campaigns to use the Hybrid delivery mode option. Disabled by default.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={features.deliveryHybrid ?? false}
+                        onCheckedChange={() => toggleFeature("deliveryHybrid")}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between py-4">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-semibold">PJA Advanced Scoring Mode</Label>
-                    <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to use the Advanced scoring model (pure rank distance multipliers). Disabled by default.
-                    </p>
+                {/* Section 2: PJA Scoring Modes */}
+                <div className="space-y-3 pt-4">
+                  <div className="flex items-center gap-2 border-b border-border pb-2">
+                    <BrainCircuit className="h-4 w-4 text-primary" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Prioritisation (PJA) Scoring Modes</h3>
                   </div>
-                  <Switch
-                    checked={features.advancedPja ?? false}
-                    onCheckedChange={() => toggleFeature("advancedPja")}
-                  />
+                  <div className="space-y-4 divide-y divide-border/40">
+                    <div className="flex items-center justify-between py-2.5">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-semibold">PJA Extreme Scoring Mode</Label>
+                        <p className="text-xs text-muted-foreground max-w-xl">
+                          Allows campaigns to use the Extreme scoring model (rank distance multipliers with critical misprioritisation penalties). Disabled by default.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={features.extremePja ?? false}
+                        onCheckedChange={() => toggleFeature("extremePja")}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2.5">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-semibold">PJA Advanced Scoring Mode</Label>
+                        <p className="text-xs text-muted-foreground max-w-xl">
+                          Allows campaigns to use the Advanced scoring model (pure rank distance multipliers). Disabled by default.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={features.advancedPja ?? false}
+                        onCheckedChange={() => toggleFeature("advancedPja")}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between py-4">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-semibold">Typing Intermediate Difficulty</Label>
-                    <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to select the Intermediate typing difficulty level. Disabled by default.
-                    </p>
+                {/* Section 3: Typing Test Difficulties */}
+                <div className="space-y-3 pt-4">
+                  <div className="flex items-center gap-2 border-b border-border pb-2">
+                    <Keyboard className="h-4 w-4 text-primary" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Typing Test Difficulty Settings</h3>
                   </div>
-                  <Switch
-                    checked={features.typingIntermediate ?? false}
-                    onCheckedChange={() => toggleFeature("typingIntermediate")}
-                  />
-                </div>
+                  <div className="space-y-4 divide-y divide-border/40">
+                    <div className="flex items-center justify-between py-2.5">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-semibold">Typing Intermediate Difficulty</Label>
+                        <p className="text-xs text-muted-foreground max-w-xl">
+                          Allows campaigns to select the Intermediate typing difficulty level. Disabled by default.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={features.typingIntermediate ?? false}
+                        onCheckedChange={() => toggleFeature("typingIntermediate")}
+                      />
+                    </div>
 
-                <div className="flex items-center justify-between py-4">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-semibold">Typing Advanced Difficulty</Label>
-                    <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to select the Advanced typing difficulty level. Disabled by default.
-                    </p>
+                    <div className="flex items-center justify-between pt-2.5">
+                      <div className="space-y-0.5">
+                        <Label className="text-sm font-semibold">Typing Advanced Difficulty</Label>
+                        <p className="text-xs text-muted-foreground max-w-xl">
+                          Allows campaigns to select the Advanced typing difficulty level. Disabled by default.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={features.typingAdvanced ?? false}
+                        onCheckedChange={() => toggleFeature("typingAdvanced")}
+                      />
+                    </div>
                   </div>
-                  <Switch
-                    checked={features.typingAdvanced ?? false}
-                    onCheckedChange={() => toggleFeature("typingAdvanced")}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-4">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-semibold">Remote Delivery Mode</Label>
-                    <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to use the Remote delivery mode lock. Disabled by default.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={features.deliveryRemote ?? false}
-                    onCheckedChange={() => toggleFeature("deliveryRemote")}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-4">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm font-semibold">Hybrid Delivery Mode</Label>
-                    <p className="text-xs text-muted-foreground max-w-xl">
-                      Allows campaigns to use the Hybrid delivery mode option. Disabled by default.
-                    </p>
-                  </div>
-                  <Switch
-                    checked={features.deliveryHybrid ?? false}
-                    onCheckedChange={() => toggleFeature("deliveryHybrid")}
-                  />
                 </div>
               </div>
 
