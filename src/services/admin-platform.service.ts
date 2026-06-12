@@ -347,6 +347,14 @@ function getLatestAccessCode(
     })[0] ?? null;
 }
 
+function roleValue(role?: RawRole) {
+  return (role?.type || role?.name || "").toLowerCase().replace(/[-\s]+/g, "_");
+}
+
+function roleMatches(role: RawRole | undefined, expected: string) {
+  return roleValue(role) === expected;
+}
+
 function relativeDate(value?: string) {
   if (!value) return "No activity recorded";
   const diffMs = Date.now() - new Date(value).getTime();
@@ -360,12 +368,13 @@ function relativeDate(value?: string) {
 
 function normalizeClient(client: RawClient): AdminClientRow {
   const activeContract = getActiveContract(client);
+  const hasActiveContract = isActiveContract(activeContract ?? undefined);
   const seatsAllowed = activeContract?.seatCount ?? 0;
   const seatsUsed = (client.users ?? []).filter(
-    (user) => !user.blocked && user.role?.type === "hiring_manager"
+    (user) => !user.blocked && roleMatches(user.role, "hiring_manager")
   ).length;
   const hasClientContact = (client.users ?? []).some(
-    (user) => !user.blocked && user.role?.type === "client"
+    (user) => !user.blocked && (roleMatches(user.role, "client") || roleMatches(user.role, "client_contact"))
   );
   const latestClientInvite = getLatestAccessCode(client.access_codes, "client");
   const availableClientInvite =
@@ -377,7 +386,7 @@ function normalizeClient(client: RawClient): AdminClientRow {
     ? "Paused"
     : !activeContract
       ? "Needs contract"
-      : !isActiveContract(activeContract)
+      : !hasActiveContract
         ? "Expired"
         : hasClientContact
       ? "Active"
@@ -385,7 +394,7 @@ function normalizeClient(client: RawClient): AdminClientRow {
   const billingStatus =
     status === "Paused"
       ? "Paused"
-      : activeContract && isActiveContract(activeContract)
+      : activeContract && hasActiveContract
         ? "Active"
         : activeContract
           ? "Expired"
@@ -494,7 +503,7 @@ async function getRawClients() {
 }
 
 function formatRole(role?: RawRole): AdminUserRow["role"] {
-  const value = (role?.type || role?.name || "").toLowerCase().replace(/[-\s]+/g, "_");
+  const value = roleValue(role);
   if (value === "administrator" || value === "admin" || value === "ctrl_admin") {
     return "CTRL Admin";
   }
@@ -713,7 +722,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   );
 
   return {
-    activeClients: clients.filter((client) => client.status === "Active").length,
+    activeClients: rawClients.filter((client) => isActiveContract(getActiveContract(client) ?? undefined)).length,
     awaitingClientSignups: clients.filter((client) => client.status === "Awaiting signup").length,
     pendingCampaignApprovals,
     availableClientCodes,

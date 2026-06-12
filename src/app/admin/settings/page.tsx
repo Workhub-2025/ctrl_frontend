@@ -84,7 +84,7 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatusCard icon={Building2} label="Active clients" value={overview?.activeClients ?? "..."} />
+        <StatusCard icon={Building2} label="Active contracts" value={overview?.activeClients ?? "..."} />
         <StatusCard icon={KeyRound} label="Client invites" value={overview?.availableClientCodes ?? "..."} />
         <StatusCard icon={Users} label="All users" value={users?.all ?? "..."} />
         <StatusCard icon={ShieldCheck} label="CTRL admins" value={users?.ctrlAdmins ?? "..."} />
