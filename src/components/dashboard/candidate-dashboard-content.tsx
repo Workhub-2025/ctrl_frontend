@@ -28,7 +28,9 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  Clock,
   Loader2,
+  Lock,
   Mail,
   MapPin,
   PlayCircle,
@@ -265,62 +267,173 @@ function getAssessmentItemsForApplication(application: CandidateApplication) {
   });
 }
 
-// New Assessment List Item for the unified Checklist pattern
-function AssessmentListItem({ item, step }: { item: any; step: number }) {
-  const [showPreflight, setShowPreflight] = useState(false);
+// Interactive countdown timer helper for soft-locked, in-person sessions
+function SoftLockTimer({ sessionStartsAt }: { sessionStartsAt?: string | null }) {
+  const [timeLeft, setTimeLeft] = useState<string>("");
+
+  useEffect(() => {
+    if (!sessionStartsAt) return;
+    const target = new Date(sessionStartsAt).getTime();
+    if (Number.isNaN(target)) return;
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const diff = target - now;
+      if (diff <= 0) {
+        setTimeLeft("past");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      const parts = [];
+      if (hours > 0) parts.push(`${hours}h`);
+      if (minutes > 0 || hours > 0) parts.push(`${minutes}m`);
+      parts.push(`${seconds}s`);
+
+      setTimeLeft(parts.join(" "));
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [sessionStartsAt]);
+
+  if (!sessionStartsAt) {
+    return (
+      <>
+        This session requires your assessor to unlock it. Please wait for the hiring manager to unlock your session.
+      </>
+    );
+  }
+
+  if (timeLeft === "past" || new Date(sessionStartsAt).getTime() <= Date.now()) {
+    return (
+      <>
+        Assessor unlock required (scheduled start was <span className="font-semibold text-amber-400">{formatDateTime(sessionStartsAt)}</span> - waiting for hiring manager).
+      </>
+    );
+  }
 
   return (
     <>
-      <div
-        className={`relative flex items-start gap-4 p-5 rounded-2xl border transition-colors duration-300 ${
-          item.isCompleted
-            ? "bg-muted/20 border-border dark:bg-[#0b1329]/20 dark:border-white/5 opacity-80"
-            : "bg-card border-border shadow-md hover:shadow-lg hover:border-primary/40 dark:bg-[#0b1329]/40 dark:border-white/10"
-        }`}
-      >
+      Session is scheduled to start at <span className="font-semibold text-primary">{formatDateTime(sessionStartsAt)}</span>.<br />
+      Unlocks in <span className="font-bold text-amber-400">{timeLeft || "calculating..."}</span>. Please wait for the scheduled session time.
+    </>
+  );
+}
 
-        {/* Step Indicator / Icon */}
-        <div
-          className={`flex shrink-0 h-12 w-12 items-center justify-center rounded-xl border ${
-            item.isCompleted
-              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-              : "bg-primary/10 text-primary border-primary/20 shadow-inner"
-          }`}
-        >
-          {item.isCompleted ? <CheckCircle2 className="h-6 w-6" aria-hidden="true" /> : <item.icon className="h-6 w-6" aria-hidden="true" />}
+// Redesigned Gamified Journey Map Node List Item
+function AssessmentListItem({ item, step, totalSteps }: { item: any; step: number; totalSteps: number }) {
+  const [showPreflight, setShowPreflight] = useState(false);
+
+  const isCompleted = item.isCompleted;
+  const isLocked = item.isLocked;
+  const isAvailable = item.isAvailable;
+  const isActive = !isCompleted && isAvailable;
+
+  return (
+    <>
+      <div className="relative flex gap-6 group">
+        {/* Timeline Connecting Line Segment */}
+        {step < totalSteps && (
+          <div
+            className={`absolute left-6 top-12 bottom-0 w-[2px] -ml-[1px] z-0 hidden sm:block ${
+              isCompleted
+                ? "bg-gradient-to-b from-emerald-500 to-primary/40"
+                : isActive
+                ? "bg-gradient-to-b from-primary/40 to-border/40 border-dashed border-l"
+                : "bg-border dark:bg-white/10"
+            }`}
+          />
+        )}
+
+        {/* Node Circle Badge */}
+        <div className="relative z-10 shrink-0 hidden sm:block">
+          <div
+            className={`flex h-12 w-12 items-center justify-center rounded-xl border transition-all duration-300 ${
+              isCompleted
+                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                : isActive
+                ? "bg-primary/10 text-primary border-primary/40 shadow-[0_0_20px_rgba(59,130,246,0.3)] ring-2 ring-primary/10"
+                : "bg-muted/40 text-slate-500 border-border dark:bg-[#0b1329]/10 dark:border-white/5 opacity-60"
+            }`}
+          >
+            {isCompleted ? (
+              <CheckCircle2 className="h-6 w-6" aria-hidden="true" />
+            ) : isLocked ? (
+              <Lock className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <item.icon className="h-6 w-6" aria-hidden="true" />
+            )}
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 pt-1">
-          <div className="flex flex-wrap gap-2 items-center justify-between mb-1">
-            <h4 className="font-bold text-foreground text-lg tracking-tight">{item.title}</h4>
-            <Badge variant="outline" className="text-xs uppercase tracking-wider font-semibold rounded-md border border-white/5 bg-white/[0.04] text-slate-400 px-2 py-0.5 pointer-events-none">
-              Assessment {step}
+        {/* Card Component Panel */}
+        <div
+          className={`flex-1 min-w-0 p-5 rounded-2xl border transition-all duration-300 ${
+            isCompleted
+              ? "bg-muted/15 border-border/60 dark:bg-[#0b1329]/15 dark:border-white/5 opacity-80"
+              : isActive
+              ? "bg-card border-primary/50 shadow-[0_0_25px_rgba(59,130,246,0.08)] hover:shadow-[0_0_30px_rgba(59,130,246,0.12)] dark:bg-[#0b1329]/50 dark:border-primary/40 ring-1 ring-primary/10"
+              : "bg-muted/5 border-border dark:bg-[#0b1329]/5 dark:border-white/5 opacity-65 grayscale-[20%]"
+          }`}
+        >
+          <div className="flex flex-wrap gap-2 items-center justify-between mb-1.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <h4 className="font-bold text-foreground text-lg tracking-tight truncate">
+                {item.title}
+              </h4>
+              {isActive && (
+                <span className="flex items-center gap-1 bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase shrink-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Active Now
+                </span>
+              )}
+            </div>
+            <Badge
+              variant="outline"
+              className={`text-xs uppercase tracking-wider font-semibold rounded-md border px-2 py-0.5 pointer-events-none ${
+                isCompleted
+                  ? "border-emerald-500/10 bg-emerald-500/5 text-emerald-400"
+                  : isActive
+                  ? "border-primary/15 bg-primary/5 text-primary"
+                  : "border-white/5 bg-white/[0.04] text-slate-400"
+              }`}
+            >
+              Step {step}
             </Badge>
           </div>
-          <p className="text-sm text-slate-400 mb-4 line-clamp-2">{item.description}</p>
+          <p className="text-sm text-slate-400 mb-4 line-clamp-2 leading-relaxed">
+            {item.description}
+          </p>
 
           {/* Action Button */}
-          <div>
-            {item.isCompleted ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {isCompleted ? (
               <Button
                 variant="outline"
-                className="w-full sm:w-auto h-9 text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 pointer-events-none font-semibold rounded-lg"
+                className="h-9 text-emerald-400 border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 pointer-events-none font-semibold rounded-lg"
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" /> Submitted
               </Button>
-            ) : !item.isAvailable ? (
-              <Button variant="secondary" className="w-full sm:w-auto h-9 rounded-lg" disabled>
-                {item.isLocked
-                  ? "Assessor Unlock Required"
-                  : item.availableFromLabel
+            ) : isLocked ? (
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-500/5 border border-slate-500/10 px-3 py-2 rounded-lg">
+                <Lock className="h-3.5 w-3.5" />
+                <span>
+                  {item.isLocked
+                    ? "Assessor Unlock Required"
+                    : item.availableFromLabel
                     ? `Opens ${item.availableFromLabel}`
-                    : "Not open yet"}
-              </Button>
+                    : "Locked"}
+                </span>
+              </div>
             ) : (
               <Button
                 onClick={() => setShowPreflight(true)}
-                className="w-full sm:w-auto h-9 gap-2 shadow-md transition-transform hover:scale-[1.02] font-semibold rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                className="h-9 gap-2 shadow-md transition-transform hover:scale-[1.02] font-semibold rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
               >
                 <PlayCircle className="h-4 w-4" aria-hidden="true" /> Start Assessment
               </Button>
@@ -633,7 +746,7 @@ export function CandidateDashboardContent() {
                   <Target className="h-5 w-5 text-amber-500 animate-pulse" aria-hidden="true" />
                   <AlertTitle className="text-lg font-bold tracking-tight">Assessor Unlock Required</AlertTitle>
                   <AlertDescription className="text-slate-300 mt-1.5 leading-relaxed text-sm">
-                    This in-person session requires the hiring manager to unlock candidate assessments. Please wait for your assessor to unlock your session.
+                    <SoftLockTimer sessionStartsAt={currentApplication.sessionStartsAt} />
                   </AlertDescription>
                 </Alert>
               )}
@@ -652,17 +765,18 @@ export function CandidateDashboardContent() {
               <div className="space-y-4">
                 <h3 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2 mb-4">
                   <ClipboardCheck className="h-5 w-5 text-slate-400" aria-hidden="true" />
-                  Assessment Checklist
+                  Assessment Journey Map
                 </h3>
 
                 {currentAssessmentItems.length > 0 ? (
                   <div className="grid gap-3 relative">
-                     {/* Vertical connecting line for visual journey effect */}
-                     <div className="absolute left-11 top-10 bottom-10 w-[2px] bg-border dark:bg-white/10 hidden sm:block z-0" />
-
                      {currentAssessmentItems.map((item, index) => (
                        <div key={item.title} className="relative z-10">
-                         <AssessmentListItem item={item} step={index + 1} />
+                         <AssessmentListItem
+                           item={item}
+                           step={index + 1}
+                           totalSteps={currentAssessmentItems.length}
+                         />
                        </div>
                      ))}
                   </div>

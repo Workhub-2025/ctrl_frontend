@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,6 +38,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
@@ -362,7 +363,7 @@ export function HiringManagerSessionsList() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-bold text-white">Active Sessions</h2>
+            <h2 className="text-lg font-bold text-foreground">Active Sessions</h2>
             <Badge variant="secondary" className="rounded-full border-none bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
               {sessions.length}
             </Badge>
@@ -375,7 +376,7 @@ export function HiringManagerSessionsList() {
             variant="outline"
             onClick={() => loadSessions(true)}
             disabled={isRefreshing}
-            className="h-10 border-white/10 bg-transparent hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors text-slate-300"
+            className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:text-slate-300 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -434,7 +435,7 @@ export function HiringManagerSessionsList() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-[#080c16]/55 p-4.5 text-center shadow-sm">
+              <div className="rounded-xl border border-white/10 bg-[#080c16]/55 p-[18px] text-center shadow-sm">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                   Access Code
                 </p>
@@ -514,7 +515,7 @@ export function HiringManagerSessionsList() {
                     disabled={campaigns.length === 0}
                   >
                     <SelectTrigger className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors">
-                      <SelectValue placeholder={campaigns.length === 0 ? "No approved campaigns available" : "Select a campaign..."} />
+	                      <SelectValue placeholder={campaigns.length === 0 ? "No approved campaigns available" : "Select a campaign…"} />
                     </SelectTrigger>
                     <SelectContent>
                       {campaigns.map((campaign) => (
@@ -734,7 +735,7 @@ export function HiringManagerSessionsList() {
                     disabled={isCreating || campaigns.length === 0}
                     className="flex-1 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 hover:opacity-95 shadow-[0_4px_20px_rgba(99,102,241,0.15)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isCreating ? "Creating..." : "Create Session"}
+	                    {isCreating ? "Creating…" : "Create Session"}
                   </Button>
                 </div>
               </div>
@@ -750,7 +751,7 @@ export function HiringManagerSessionsList() {
       )}
 
       <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as any)} className="w-full">
-        <TabsList className="border border-white/10 bg-white/[0.02] p-1 h-10 rounded-xl mb-4">
+        <TabsList className="mb-4 h-10 rounded-xl border border-border bg-muted/40 p-1 dark:border-white/10 dark:bg-white/[0.02]">
           <TabsTrigger value="all" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
             All
             <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
@@ -792,18 +793,24 @@ export function HiringManagerSessionsList() {
 
       <div className="space-y-4">
         {filteredSessions.length === 0 ? (
-          <Card className="rounded-[1.25rem] border border-dashed border-white/10 bg-[#080c16]/50 shadow-none">
-            <CardContent className="p-6 text-sm leading-6 text-slate-400">
+          <DashboardInfoCard accent="muted" interactive={false} className="border-dashed shadow-none">
+            <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
               No sessions found in this category.
             </CardContent>
-          </Card>
+          </DashboardInfoCard>
         ) : (
           filteredSessions.map((session) => (
-            <Card
+            <DashboardInfoCard
               key={session.id}
-              className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 transition-all duration-300"
+              accent={
+                session.status === "Live"
+                  ? "success"
+                  : session.status === "Closed" || session.status === "Cancelled"
+                    ? "muted"
+                    : "session"
+              }
             >
-              <CardContent className="p-5 space-y-4">
+              <CardContent className="space-y-4 p-5 pl-7">
                 {/* Header row: Badges on left, Candidates count with progress bar on right */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3.5">
                   <div className="flex flex-wrap items-center gap-2">
@@ -813,26 +820,26 @@ export function HiringManagerSessionsList() {
                     ].join(" ")}>
                       {session.status}
                     </Badge>
-                    <Badge className="rounded-md border-white/10 bg-white/[0.03] text-[10px] text-slate-300 font-semibold hover:bg-white/[0.03]">
+                    <Badge className="rounded-md border-border/55 bg-muted/40 text-[10px] font-semibold text-muted-foreground hover:bg-muted/40 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.03]">
                       {session.type}
                     </Badge>
                   </div>
                   
                   {/* Candidates joined status with pill indicator */}
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 rounded-lg border border-indigo-500/15 bg-indigo-500/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-300/90 shadow-sm">
+                    <span className="flex items-center gap-1.5 rounded-lg border border-indigo-500/15 bg-indigo-500/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-500 shadow-sm dark:text-indigo-300/90">
                       <Users className="h-3.5 w-3.5 text-indigo-400" />
                       <span>{session.candidateCount} of {session.candidateLimit} Joined</span>
                     </span>
                     {session.candidateLimit > 0 && (
                       <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-16 rounded-full bg-white/5 overflow-hidden border border-white/5">
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full border border-border/50 bg-muted dark:border-white/5 dark:bg-white/5">
                           <div 
                             className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
                             style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
                           />
                         </div>
-                        <span className="text-[10px] font-bold text-slate-500">
+                        <span className="text-[10px] font-bold text-muted-foreground">
                           {Math.round((session.candidateCount / session.candidateLimit) * 100)}%
                         </span>
                       </div>
@@ -844,19 +851,19 @@ export function HiringManagerSessionsList() {
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   {/* Campaign Name & Details */}
                   <div className="space-y-1">
-                    <h2 className="break-words text-base font-bold leading-snug text-white">
+                    <h2 className="break-words text-base font-bold leading-snug text-foreground">
                       {session.campaign}
                     </h2>
-                    <p className="break-words text-xs leading-5 text-slate-400 font-medium">
+                    <p className="break-words text-xs font-medium leading-5 text-muted-foreground">
                       {session.date} · {session.location}
                     </p>
                   </div>
 
                   {/* Access code and Action Buttons inline */}
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
-                    <div className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5">
-                      <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">CODE</span>
-                      <span className="font-mono text-xs font-bold text-white tracking-widest bg-black/45 px-2 py-0.5 rounded border border-white/5">
+                    <div className="flex items-center gap-2 rounded-lg border border-border/55 bg-background/60 px-3 py-1.5 dark:border-white/10 dark:bg-black/30">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">CODE</span>
+                      <span className="rounded border border-border/50 bg-muted/70 px-2 py-0.5 font-mono text-xs font-bold tracking-widest text-foreground dark:border-white/5 dark:bg-black/45 dark:text-white">
                         {session.accessValue}
                       </span>
                     </div>
@@ -870,7 +877,7 @@ export function HiringManagerSessionsList() {
                           setCopiedSessionId(session.id);
                           setTimeout(() => setCopiedSessionId(null), 2000);
                         }}
-                        className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 transition-all duration-300"
+                        className="h-8 rounded-lg border border-border bg-background/70 px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
                       >
                         {copiedSessionId === session.id ? (
                           <>
@@ -890,7 +897,7 @@ export function HiringManagerSessionsList() {
                         variant="outline"
                         size="sm"
                         onClick={() => setSelectedSession(session)}
-                        className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:bg-white/10 hover:text-white px-3 transition-colors"
+                        className="h-8 rounded-lg border-border bg-transparent px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
                       >
                         <Eye className="mr-1.5 h-3.5 w-3.5" />
                         View details
@@ -899,7 +906,7 @@ export function HiringManagerSessionsList() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </DashboardInfoCard>
           ))
         )}
       </div>

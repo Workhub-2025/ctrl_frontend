@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { HiringManagerOverview } from "@/components/dashboard/hiring-manager-overview";
 
 export default function HiringManagerDashboardPage() {
-  redirect("/hiring-manager-dashboard/campaigns/");
+  return <HiringManagerOverview />;
 }

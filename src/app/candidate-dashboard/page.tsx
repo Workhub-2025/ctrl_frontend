@@ -5,10 +5,14 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/auth.store";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import {
+  DashboardInfoCard,
+  dashboardInfoPillClassName,
+} from "@/components/dashboard/dashboard-info-card";
 import {
   KeyRound,
   Loader2,
@@ -154,17 +158,9 @@ export default function CandidateDashboardOverviewPage() {
 
   return (
     <div className="relative flex flex-col gap-10 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 duration-500 pb-12">
-      {/* Decorative background glows */}
-      <div className="absolute top-10 right-1/4 -z-10 h-80 w-80 rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/4 -z-10 h-[400px] w-[400px] rounded-full bg-indigo-500/5 blur-[150px] pointer-events-none" />
-      
       {/* 1. HERO SECTION - JOIN A SESSION */}
       <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md p-8 sm:p-12 lg:p-16">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent pointer-events-none" />
-        
-        {/* Subtle decorative circles */}
-        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[150%] bg-primary/5 blur-[100px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[40%] h-[100%] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
  
         <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto space-y-6">
           <div className="space-y-4">
@@ -224,12 +220,12 @@ export default function CandidateDashboardOverviewPage() {
 
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-             {[1, 2, 3].map(i => (
-                <Card key={i} className="border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#0b1329]/40 opacity-50 animate-pulse">
-                  <CardHeader className="h-24 bg-muted/50 rounded-t-xl" />
-                  <CardContent className="h-32" />
-                </Card>
-             ))}
+	             {[1, 2, 3].map(i => (
+	                <DashboardInfoCard key={i} accent="muted" interactive={false} className="opacity-50 animate-pulse">
+	                  <CardHeader className="h-24 bg-muted/50 rounded-t-xl" />
+	                  <CardContent className="h-32" />
+	                </DashboardInfoCard>
+	             ))}
           </div>
         ) : activeApps.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -243,30 +239,27 @@ export default function CandidateDashboardOverviewPage() {
                 : "/candidate-dashboard/my-assessments";
 
               return (
-                <Card key={app.documentId || app.candidateCode} className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-lg dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md dark:shadow-2xl">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-primary to-blue-500" />
-                  <div className="absolute -right-8 -top-8 h-20 w-20 rounded-full bg-primary/5 blur-xl pointer-events-none" />
-                  
-                  <CardHeader className="pb-4">
-                    <div className="flex justify-between items-start gap-2">
-                        <div className="min-w-0">
-                          <CardTitle className="text-xl font-bold line-clamp-1">{app.campaign?.name || "Assessment"}</CardTitle>
-                          <CardDescription className="text-sm mt-1 text-slate-400 truncate">{app.campaign?.jobRole || "Role"}</CardDescription>
-                        </div>
+	                <DashboardInfoCard key={app.documentId || app.candidateCode} accent="primary">
+	                  <CardHeader className="pb-4 pl-6">
+	                    <div className="flex justify-between items-start gap-2">
+	                        <div className="min-w-0">
+	                          <CardTitle className="text-xl font-bold line-clamp-1">{app.campaign?.name || "Assessment"}</CardTitle>
+	                          <CardDescription className="text-sm mt-1 text-muted-foreground truncate">{app.campaign?.jobRole || "Role"}</CardDescription>
+	                        </div>
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0 px-2.5 py-0.5 font-semibold rounded-lg pointer-events-none">
                            {mapPortalStatus(app)}
                         </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-5">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="flex items-center gap-2 text-sm text-slate-400">
-                           <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                           <span className="truncate">{formatDate(app.sessionStartsAt || app.campaign?.endDate)}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-slate-400">
-                           <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                           <span className="truncate">{formatMode(app.mode)}</span>
+	                    </div>
+	                  </CardHeader>
+	                  <CardContent className="space-y-5 pl-6">
+	                    <div className="grid grid-cols-2 gap-3">
+	                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+	                           <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+	                           <span className="truncate">{formatDate(app.sessionStartsAt || app.campaign?.endDate)}</span>
+	                        </div>
+	                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+	                           <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+	                           <span className="truncate">{formatMode(app.mode)}</span>
                         </div>
                     </div>
 
@@ -278,27 +271,27 @@ export default function CandidateDashboardOverviewPage() {
                     )}
                     
                     <div className="space-y-2 bg-muted/30 p-3.5 rounded-xl dark:bg-white/[0.02] shadow-inner border border-white/5">
-                        <div className="flex justify-between text-xs font-semibold text-slate-400">
-                           <span>Progress</span>
-                           <span>{completed} / {total} Completed</span>
-                        </div>
+	                        <div className="flex justify-between text-xs font-semibold text-muted-foreground">
+	                           <span>Progress</span>
+	                           <span>{completed} / {total} Completed</span>
+	                        </div>
                         <Progress value={percent} className="h-1.5 bg-muted dark:bg-white/10" />
                     </div>
 
                     {app.assessments && app.assessments.length > 0 && (
                        <div className="space-y-2 pt-1 border-t border-border/50 dark:border-white/5">
-                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Assessments Included</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {app.assessments.slice(0, 3).map((ass) => (
-                            <Badge key={ass.name || ass.slug} variant="outline" className="text-xs font-normal border-slate-200 bg-slate-50 dark:border-white/5 dark:bg-white/[0.02] text-slate-500 dark:text-slate-300 rounded-md px-2 py-0.5">
-                              {ass.name || ass.slug}
-                            </Badge>
-                          ))}
-                          {app.assessments.length > 3 && (
-                            <Badge variant="outline" className="text-xs font-normal border-slate-200 bg-slate-50 dark:border-white/5 dark:bg-white/[0.02] text-slate-500 dark:text-slate-400 rounded-md px-2 py-0.5">
-                              +{app.assessments.length - 3} more
-                            </Badge>
-                          )}
+	                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assessments Included</p>
+	                        <div className="flex flex-wrap gap-1.5">
+	                          {app.assessments.slice(0, 3).map((ass) => (
+	                            <span key={ass.name || ass.slug} className={dashboardInfoPillClassName}>
+	                              {ass.name || ass.slug}
+	                            </span>
+	                          ))}
+	                          {app.assessments.length > 3 && (
+	                            <span className={dashboardInfoPillClassName}>
+	                              +{app.assessments.length - 3} more
+	                            </span>
+	                          )}
                         </div>
                       </div>
                     )}
@@ -307,9 +300,9 @@ export default function CandidateDashboardOverviewPage() {
                       <Link href={assessmentHref}>
                         Continue Assessment <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                       </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+	                    </Button>
+	                  </CardContent>
+	                </DashboardInfoCard>
               )
             })}
           </div>
@@ -477,16 +470,16 @@ export default function CandidateDashboardOverviewPage() {
                   ? `/candidate-dashboard/my-assessments?session=${encodeURIComponent(applicationKey)}`
                   : "/candidate-dashboard/my-assessments";
 
-                return (
-                <Link key={app.documentId || app.candidateCode} href={assessmentHref} className="block group focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-2xl">
-                  <Card className="h-full rounded-2xl border border-border bg-card shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-slate-400 dark:border-white/10 dark:bg-[#0b1329]/20 dark:backdrop-blur-sm hover:dark:border-white/30">
-                    <CardHeader className="p-4 space-y-2">
-                       <CardTitle className="text-base font-bold line-clamp-1 group-hover:text-primary transition-colors">{app.campaign?.name || "Assessment"}</CardTitle>
-                       <CardDescription className="text-xs text-slate-400 line-clamp-1">{app.campaign?.jobRole || "Role"}</CardDescription>
-                       <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-md text-slate-400 border-border dark:border-white/5">{mapPortalStatus(app)}</Badge>
-                    </CardHeader>
-                  </Card>
-                </Link>
+	                return (
+	                <Link key={app.documentId || app.candidateCode} href={assessmentHref} className="block group focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-2xl">
+	                  <DashboardInfoCard accent="muted" className="h-full">
+	                    <CardHeader className="p-4 pl-6 space-y-2">
+	                       <CardTitle className="text-base font-bold line-clamp-1 group-hover:text-primary transition-colors">{app.campaign?.name || "Assessment"}</CardTitle>
+	                       <CardDescription className="text-xs text-muted-foreground line-clamp-1">{app.campaign?.jobRole || "Role"}</CardDescription>
+	                       <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-md text-slate-400 border-border dark:border-white/5">{mapPortalStatus(app)}</Badge>
+	                    </CardHeader>
+	                  </DashboardInfoCard>
+	                </Link>
                 );
              })}
           </div>

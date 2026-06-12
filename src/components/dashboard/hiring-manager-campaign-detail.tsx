@@ -21,6 +21,8 @@ import {
   Briefcase
 } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { cn } from "@/lib/utils";
 import {
   CandidateResultsDialog,
   HiringManagerSessionDetailsDialog,
@@ -167,60 +169,60 @@ export function HiringManagerCampaignDetailView({
 
   return (
     <div className="max-w-7xl space-y-6">
-      <section className="flex flex-col gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
-          <Button
-            variant="outline"
-            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
-            asChild
-          >
-            <Link href="/hiring-manager-dashboard/campaigns/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Link>
-          </Button>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge className={getStatusTone(campaign.status)}>{campaign.status}</Badge>
-            <Badge className="rounded-md border-white/10 bg-white/[0.03] text-xs text-slate-300 hover:bg-white/[0.03]">
-              {campaign.deliveryMode}
-            </Badge>
-          </div>
-          <div>
-            <h1 className="break-words text-xl font-semibold leading-7 text-white sm:text-2xl">
-              {campaign.name}
-            </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              {campaign.role} · {campaign.location}
-            </p>
-          </div>
-          {error && (
-            <p className="rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs leading-5 text-red-100">
+      <div className="flex items-center justify-between gap-4">
+        <Button
+          variant="outline"
+          className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+          asChild
+        >
+          <Link href="/hiring-manager-dashboard/campaigns/">
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+            Back to campaigns
+          </Link>
+        </Button>
+      </div>
+
+      <HiringManagerPageHeader
+        eyebrow={`Campaign Workspace // ${campaign.deliveryMode}`}
+        title={campaign.name}
+        description={`${campaign.role} · ${campaign.location}`}
+        icon={Briefcase}
+        badge={
+          <Badge className={cn("pointer-events-none rounded-md px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider border-none", getStatusTone(campaign.status))}>
+            {campaign.status}
+          </Badge>
+        }
+        notice={
+          error ? (
+            <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-200">
               {error}
             </p>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="outline"
-            onClick={() => loadCampaign(true)}
-            disabled={isRefreshing}
-            className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </Button>
-          <Button
-            type="button"
-            disabled={isDeleting}
-            onClick={deleteCampaign}
-            className="h-9 rounded-md bg-red-500 px-3 text-sm font-medium text-white hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? "Deleting..." : "Delete campaign"}
-          </Button>
-        </div>
-      </section>
+          ) : null
+        }
+        action={
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadCampaign(true)}
+              disabled={isRefreshing}
+              className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+            >
+              <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isRefreshing && "animate-spin text-primary")} />
+              Refresh
+            </Button>
+            <Button
+              type="button"
+              onClick={deleteCampaign}
+              disabled={isDeleting}
+              className="h-9 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              {isDeleting ? "Deleting..." : "Delete Campaign"}
+            </Button>
+          </div>
+        }
+      />
 
       <div className="w-full">
         <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 backdrop-blur-md hover:border-primary/45 transition-colors duration-300">
@@ -238,13 +240,13 @@ export function HiringManagerCampaignDetailView({
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardHeader className="border-b border-white/10 p-4">
+        <Card className="rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+          <CardHeader className="border-b border-border/40 dark:border-white/5 p-4">
             <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <ClipboardList className="h-4 w-4 text-primary" /> Assessment stack
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2.5 p-4">
+          <CardContent className="flex flex-wrap gap-2 p-4">
             {campaign.assessmentStack.length === 0 ? (
               <p className="text-xs text-slate-500 italic">No assessments linked.</p>
             ) : (
@@ -253,7 +255,7 @@ export function HiringManagerCampaignDetailView({
                 return (
                   <span
                     key={assessment}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-slate-200"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border/55 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-slate-200 dark:border-white/5 dark:bg-white/[0.02]"
                   >
                     <Icon className="h-3.5 w-3.5 text-primary" />
                     {assessment}
@@ -264,8 +266,8 @@ export function HiringManagerCampaignDetailView({
           </CardContent>
         </Card>
 
-        <Card className="rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardHeader className="border-b border-white/10 p-4">
+        <Card className="rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+          <CardHeader className="border-b border-border/40 dark:border-white/5 p-4">
             <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <Calendar className="h-4 w-4 text-primary" /> Campaign Timeline
             </CardTitle>

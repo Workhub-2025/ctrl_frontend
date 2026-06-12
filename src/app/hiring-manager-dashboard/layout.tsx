@@ -4,6 +4,7 @@ import {
   BookOpenCheck,
   FolderKanban,
   Headset,
+  LayoutDashboard,
   Layers3,
   Users,
 } from "lucide-react";
@@ -19,6 +20,11 @@ export default function HiringManagerDashboardLayout({
       title="Hiring Manager Portal"
       subtitle="Campaign operations, candidate completion, and report-ready review"
       navItems={[
+        {
+          href: "/hiring-manager-dashboard/",
+          label: "Overview",
+          icon: LayoutDashboard,
+        },
         {
           href: "/hiring-manager-dashboard/campaigns/",
           label: "Campaigns",

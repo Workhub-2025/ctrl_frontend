@@ -1,11 +1,12 @@
 "use client";
-
+ 
 import Link from "next/link";
 import { ArrowUpRight, Building2, KeyRound, Settings, ShieldCheck, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAdminResource } from "@/lib/admin-resource-cache";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
 type Overview = {
   activeClients: number;
@@ -55,26 +56,24 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-500/80">
-            Settings
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Admin configuration</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Real platform controls are split between client records, entitlements, and user access.
-          </p>
-        </div>
-        <Badge variant="outline" className="w-fit border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-600">
-          Live-backed only
-        </Badge>
-      </div>
-
-      {error && (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
+      <HiringManagerPageHeader
+        eyebrow="Settings"
+        title="Admin configuration"
+        description="Real platform controls are split between client records, entitlements, and user access."
+        icon={Settings}
+        notice={
+          error ? (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          ) : null
+        }
+        action={
+          <Badge variant="outline" className="w-fit border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-400 font-semibold rounded-lg shadow-sm pointer-events-none">
+            Live-backed only
+          </Badge>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatusCard icon={Building2} label="Active contracts" value={overview.activeClients} />
@@ -104,17 +103,17 @@ export default function AdminSettingsPage() {
         />
       </div>
 
-      <Card>
+      <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
         <CardHeader>
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-md bg-cyan-500/10 text-cyan-600">
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-400 shadow-sm">
             <Settings className="h-5 w-5" />
           </div>
-          <CardTitle>Global settings</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-base font-bold text-white">Global settings</CardTitle>
+          <CardDescription className="text-slate-400">
             No live global settings endpoint exists yet, so this page does not show fake toggles.
           </CardDescription>
         </CardHeader>
-        <CardContent className="text-sm text-muted-foreground">
+        <CardContent className="text-sm leading-relaxed text-slate-400">
           The settings shown above are routed to existing live-backed admin surfaces. Add global controls here once the backend has a source of truth for them.
         </CardContent>
       </Card>
@@ -132,13 +131,16 @@ function StatusCard({
   value: string | number;
 }) {
   return (
-    <Card>
+    <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+      <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
       <CardContent className="p-4">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{label}</p>
-          <Icon className="h-4 w-4 text-cyan-600" />
+          <p className="text-xs font-semibold tracking-wide uppercase text-slate-400">{label}</p>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-400">
+            <Icon className="h-4 w-4" />
+          </div>
         </div>
-        <p className="mt-2 text-2xl font-semibold">{value}</p>
+        <p className="mt-2 text-2xl font-extrabold text-foreground">{value}</p>
       </CardContent>
     </Card>
   );
@@ -156,13 +158,14 @@ function AdminSurface({
   action: string;
 }) {
   return (
-    <Card>
+    <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+      <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-base font-bold text-white">{title}</CardTitle>
+        <CardDescription className="text-slate-400">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Button asChild variant="outline" className="gap-2">
+        <Button asChild variant="outline" className="gap-2 border-white/10 hover:bg-white/10 text-slate-200">
           <Link href={href}>
             {action}
             <ArrowUpRight className="h-4 w-4" />
@@ -172,3 +175,4 @@ function AdminSurface({
     </Card>
   );
 }
+

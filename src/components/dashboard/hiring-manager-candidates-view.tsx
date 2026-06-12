@@ -484,8 +484,8 @@ export function HiringManagerCandidatesView() {
                       </div>
 
                       {/* Tooltip with weighted score breakdown */}
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-xl border border-white/10 bg-slate-950/95 backdrop-blur-md text-sm text-slate-200 hidden group-hover:block z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
-                        <p className="font-bold text-white mb-2">Weighted Score Breakdown</p>
+                      <div className="ctrl-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-xl border backdrop-blur-md text-sm hidden group-hover:block z-50 pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
+                        <p className="ctrl-tooltip-title font-bold mb-2">Weighted Score Breakdown</p>
                         <div className="space-y-1.5">
                           {candidate.assessmentStack.map((name) => {
                             const weight = candidate.weights[name] ?? 0;
@@ -497,21 +497,21 @@ export function HiringManagerCandidatesView() {
                             return (
                               <div key={name} className="flex justify-between items-center text-xs">
                                 <div className="flex flex-col min-w-0">
-                                  <span className="text-slate-300 font-medium truncate">{name}</span>
-                                  <span className="text-[0.625rem] text-slate-500 font-semibold">Weight: {weight}%</span>
+                                  <span className="ctrl-tooltip-muted font-medium truncate">{name}</span>
+                                  <span className="ctrl-tooltip-subtle text-[0.625rem] font-semibold">Weight: {weight}%</span>
                                 </div>
                                 <div className="text-right pl-2 shrink-0">
-                                  <span className="font-semibold text-slate-400">{isCompleted ? `${score}%` : "Pending"}</span>
+                                  <span className="ctrl-tooltip-muted font-semibold">{isCompleted ? `${score}%` : "Pending"}</span>
                                   {isCompleted && (
-                                    <span className="text-[0.625rem] text-indigo-400 font-bold ml-1.5">(+{contribution}%)</span>
+                                    <span className="ctrl-tooltip-accent text-[0.625rem] font-bold ml-1.5">(+{contribution}%)</span>
                                   )}
                                 </div>
                               </div>
                             );
                           })}
-                          <div className="border-t border-white/10 pt-1.5 mt-1.5 flex justify-between items-center text-xs font-bold text-white">
+                          <div className="ctrl-tooltip-divider border-t pt-1.5 mt-1.5 flex justify-between items-center text-xs font-bold">
                             <span>Total Weighted Score</span>
-                            <span className="text-indigo-400">{candidate.overallScore}%</span>
+                            <span className="ctrl-tooltip-accent">{candidate.overallScore}%</span>
                           </div>
                         </div>
                       </div>
@@ -581,22 +581,22 @@ export function HiringManagerCandidatesView() {
                                 style={{ width: `${isCompleted ? scoreValue : 0}%` }}
                               />
                                               {/* Tooltip */}
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl border border-white/10 bg-slate-950/95 backdrop-blur-md text-sm text-slate-200 hidden group-hover:block z-50 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
-                                <p className="font-bold text-white mb-1">{stackName}</p>
+                              <div className="ctrl-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl border backdrop-blur-md text-sm hidden group-hover:block z-50 pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
+                                <p className="ctrl-tooltip-title font-bold mb-1">{stackName}</p>
                                 {isCompleted && matchedResult ? (
                                   <div className="space-y-1">
                                     <div className="flex justify-between items-center text-xs">
-                                      <span className="text-slate-400 font-medium">Assessment Score</span>
-                                      <span className="font-extrabold text-white">{scoreValue}%</span>
+                                      <span className="ctrl-tooltip-muted font-medium">Assessment Score</span>
+                                      <span className="ctrl-tooltip-title font-extrabold">{scoreValue}%</span>
                                     </div>
                                     {metricsContent && (
-                                      <div className="border-t border-white/5 pt-1 mt-1 text-xs text-slate-400 font-semibold">
+                                      <div className="ctrl-tooltip-divider border-t pt-1 mt-1 text-xs font-semibold">
                                         {metricsContent}
                                       </div>
                                     )}
                                   </div>
                                 ) : (
-                                  <p className="text-amber-400 italic text-xs">Awaiting completion (Pending)</p>
+                                  <p className="ctrl-tooltip-warning italic text-xs">Awaiting completion (Pending)</p>
                                 )}
                               </div>
                             </div>

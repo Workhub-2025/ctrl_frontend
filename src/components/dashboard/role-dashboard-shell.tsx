@@ -169,6 +169,7 @@ function RoleDashboardFrame({
       : contentWidth === "wide"
         ? "max-w-[1800px]"
         : "max-w-7xl";
+  const activePath = pathname.replace(/\/+$/, "") || "/";
 
   if (hideSidebar) {
     return (
@@ -208,42 +209,42 @@ function RoleDashboardFrame({
           Skip to main content
         </a>
       {/* Sidebar Section */}
-      <Sidebar className="border-r border-border dark:border-white/5 bg-sidebar transition-colors duration-200">
-        <SidebarHeader className="px-4 pt-4 group-data-[collapsible=icon]:px-2">
-          {/* Sidebar Branding */}
+      <Sidebar className="border-r border-border/60 dark:border-white/5 bg-slate-50/90 dark:bg-[#03060f]/75 backdrop-blur-xl transition-all duration-300">
+        <SidebarHeader className="px-4 pt-5 pb-3 group-data-[collapsible=icon]:px-2">
+          {/* Sidebar Branding (Borderless & clean) */}
           <Link
             href={navItems[0]?.href || "#"}
-            className="flex items-center gap-3 rounded-2xl border border-border dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] px-3 py-3 transition-[border-color,background-color] hover:bg-slate-100/50 dark:hover:bg-white/[0.04] hover:border-slate-300 dark:hover:border-white/10 shadow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            className="flex items-center gap-3 px-2 py-1.5 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
           >
             <img
               src="/assets/newlogo.png"
-              className="h-10 w-10 object-contain object-center mix-blend-screen scale-125 pointer-events-none hue-rotate-[60deg]"
+              className="h-9 w-9 object-contain object-center scale-125 pointer-events-none hue-rotate-[60deg] transition-transform duration-300 hover:rotate-6 logo-adaptive-filter"
               alt="CTRL Logo"
             />
             <div>
-              <p className="text-sm font-semibold tracking-[0.16em] text-foreground font-display">
+              <p className="text-sm font-semibold tracking-[0.18em] text-foreground font-display">
                 CTRL
               </p>
-              <p className="text-xs text-muted-foreground/90">{title}</p>
+              <p className="text-[10px] text-muted-foreground/80 font-medium tracking-wide uppercase">{title.replace(" Portal", "")}</p>
             </div>
           </Link>
         </SidebarHeader>
-        <SidebarContent className="px-4 pb-4 group-data-[collapsible=icon]:px-2">
-          <SidebarMenu>
+        <SidebarContent className="px-3 pb-4 group-data-[collapsible=icon]:px-2">
+          <SidebarMenu className="space-y-1">
             {/* Sidebar Navigation Links */}
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href || pathname === `${item.href}/`}
+                  isActive={activePath === (item.href.replace(/\/+$/, "") || "/")}
                   tooltip={item.label}
-                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-muted dark:hover:bg-white/5 transition-[width,height,padding,background-color,border-color] duration-200 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3"
+                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all duration-200 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3.5"
                 >
                   <Link
                     href={item.href}
-                    className={cn("font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg")}
+                    className={cn("font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg text-sm flex items-center gap-3 py-2")}
                   >
-                    <item.icon aria-hidden="true" />
+                    <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
                     <span>{item.label}</span>
                   </Link>
                 </SidebarMenuButton>

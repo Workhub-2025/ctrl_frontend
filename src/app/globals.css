@@ -164,54 +164,388 @@
   }
 }
 
-/* Accessibility overrides for hardcoded dark backgrounds under Black theme */
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#0a0a0a]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#050505]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#020202]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#080808]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#04070d]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#080c16]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#08101d]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#050b14]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#0b1329]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#0b1220]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#02040a]"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="bg-[#000a1f]"]:not(.ctrl-accessibility-menu *) {
+/* Black theme normalization for hardcoded dark surfaces. */
+html[data-ctrl-theme="black"] .ctrl-portal :where(
+  [class~="bg-[#000a1f]"],
+  [class~="bg-[#020202]"],
+  [class~="bg-[#02040a]"],
+  [class~="bg-[#02040a]/60"],
+  [class~="bg-[#03060f]/75"],
+  [class~="bg-[#04070d]/50"],
+  [class~="bg-[#04070d]/60"],
+  [class~="bg-[#050505]"],
+  [class~="bg-[#050b14]"],
+  [class~="bg-[#080808]"],
+  [class~="bg-[#080808]/95"],
+  [class~="bg-[#080c16]"],
+  [class~="bg-[#080c16]/30"],
+  [class~="bg-[#080c16]/50"],
+  [class~="bg-[#080c16]/55"],
+  [class~="bg-[#080c16]/65"],
+  [class~="bg-[#080c16]/95"],
+  [class~="bg-[#08101d]"],
+  [class~="bg-[#0a0a0a]"],
+  [class~="bg-[#0a0a0a]/90"],
+  [class~="bg-[#0a0a0a]/95"],
+  [class~="bg-[#0a0f1d]"],
+  [class~="bg-[#0b1220]"],
+  [class~="bg-[#0b1220]/20"],
+  [class~="bg-[#0b1220]/25"],
+  [class~="bg-[#0b1220]/30"],
+  [class~="bg-[#0b1220]/40"],
+  [class~="bg-[#0b1220]/50"],
+  [class~="bg-[#0b1329]"],
+  [class~="bg-[#0b1329]/5"],
+  [class~="bg-[#0b1329]/10"],
+  [class~="bg-[#0b1329]/15"],
+  [class~="bg-[#0b1329]/20"],
+  [class~="bg-[#0b1329]/25"],
+  [class~="bg-[#0b1329]/30"],
+  [class~="bg-[#0b1329]/35"],
+  [class~="bg-[#0b1329]/40"],
+  [class~="bg-[#0b1329]/45"],
+  [class~="bg-[#0b1329]/50"],
+  [class~="bg-[#0b1329]/95"]
+):not(.ctrl-accessibility-menu *) {
   background-color: rgb(12 12 12 / 0.8) !important;
 }
 
-/* Accessibility overrides for borders under Black theme */
-html[data-ctrl-theme="black"] .ctrl-portal [class*="border-white"]:not(.ctrl-accessibility-menu *),
-html[data-ctrl-theme="black"] .ctrl-portal [class*="border-slate-"]:not(.ctrl-accessibility-menu *) {
+html[data-ctrl-theme="black"] .ctrl-portal :where(
+  [class~="border-white"],
+  [class~="border-white/5"],
+  [class~="border-white/10"],
+  [class~="border-white/15"],
+  [class~="border-white/20"],
+  [class~="border-white/30"],
+  [class~="border-white/[0.08]"],
+  [class~="border-slate-600"],
+  [class~="border-slate-600/40"],
+  [class~="border-slate-700/30"],
+  [class~="border-slate-800"]
+):not(.ctrl-accessibility-menu *) {
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* Accessibility overrides for semantic text colors in portals under light themes */
-html[data-ctrl-theme="soft-cream"] .ctrl-portal [class*="text-indigo-"],
-html[data-ctrl-theme="light-blue"] .ctrl-portal [class*="text-indigo-"] {
+/* Portal light-theme normalization.
+   Use exact class-token selectors so hover:/dark: variants are not applied at rest. */
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-indigo-300"], [class~="text-indigo-400"], [class~="text-indigo-500"], [class~="text-indigo-600"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-indigo-300"], [class~="text-indigo-400"], [class~="text-indigo-500"], [class~="text-indigo-600"]) {
   color: rgb(67 56 202) !important;
 }
-html[data-ctrl-theme="soft-cream"] .ctrl-portal [class*="text-sky-"],
-html[data-ctrl-theme="light-blue"] .ctrl-portal [class*="text-sky-"],
-html[data-ctrl-theme="soft-cream"] .ctrl-portal [class*="text-blue-"],
-html[data-ctrl-theme="light-blue"] .ctrl-portal [class*="text-blue-"] {
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-sky-300"], [class~="text-sky-400"], [class~="text-sky-500"], [class~="text-blue-300"], [class~="text-blue-400"], [class~="text-blue-500"], [class~="text-blue-600"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-sky-300"], [class~="text-sky-400"], [class~="text-sky-500"], [class~="text-blue-300"], [class~="text-blue-400"], [class~="text-blue-500"], [class~="text-blue-600"]) {
   color: rgb(29 78 216) !important;
 }
-html[data-ctrl-theme="soft-cream"] .ctrl-portal [class*="text-violet-"],
-html[data-ctrl-theme="light-blue"] .ctrl-portal [class*="text-violet-"] {
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-violet-300"], [class~="text-violet-400"], [class~="text-violet-500"], [class~="text-violet-600"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-violet-300"], [class~="text-violet-400"], [class~="text-violet-500"], [class~="text-violet-600"]) {
   color: rgb(109 40 217) !important;
 }
-html[data-ctrl-theme="soft-cream"] .ctrl-portal [class*="text-emerald-"],
-html[data-ctrl-theme="light-blue"] .ctrl-portal [class*="text-emerald-"] {
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-emerald-300"], [class~="text-emerald-400"], [class~="text-emerald-500"], [class~="text-emerald-600"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-emerald-300"], [class~="text-emerald-400"], [class~="text-emerald-500"], [class~="text-emerald-600"]) {
   color: rgb(4 120 87) !important;
 }
-html[data-ctrl-theme="soft-cream"] .ctrl-portal [class*="text-amber-"],
-html[data-ctrl-theme="light-blue"] .ctrl-portal [class*="text-amber-"] {
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-amber-300"], [class~="text-amber-400"], [class~="text-amber-500"], [class~="text-amber-600"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-amber-300"], [class~="text-amber-400"], [class~="text-amber-500"], [class~="text-amber-600"]) {
   color: rgb(180 83 9) !important;
 }
-html[data-ctrl-theme="soft-cream"] .ctrl-portal [class*="text-purple-"],
-html[data-ctrl-theme="light-blue"] .ctrl-portal [class*="text-purple-"] {
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-purple-300"], [class~="text-purple-400"], [class~="text-purple-500"], [class~="text-purple-600"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-purple-300"], [class~="text-purple-400"], [class~="text-purple-500"], [class~="text-purple-600"]) {
   color: rgb(126 34 206) !important;
+}
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-red-300"], [class~="text-red-400"], [class~="text-red-500"], [class~="text-red-600"], [class~="text-rose-300"], [class~="text-rose-400"], [class~="text-rose-500"], [class~="text-rose-600"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-red-300"], [class~="text-red-400"], [class~="text-red-500"], [class~="text-red-600"], [class~="text-rose-300"], [class~="text-rose-400"], [class~="text-rose-500"], [class~="text-rose-600"]) {
+  color: rgb(185 28 28) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"], [class~="text-gray-100"], [class~="text-gray-200"], [class~="text-gray-300"], [class~="text-zinc-100"], [class~="text-zinc-200"], [class~="text-zinc-300"]):not(.ctrl-accessibility-menu *):not([class~="bg-primary"]):not([class~="bg-destructive"]):not([class~="bg-emerald-600"]):not([class~="bg-red-600"]):not([class~="bg-blue-500"]):not([class~="bg-indigo-500"]):not([class~="bg-gradient-to-r"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"], [class~="text-gray-100"], [class~="text-gray-200"], [class~="text-gray-300"], [class~="text-zinc-100"], [class~="text-zinc-200"], [class~="text-zinc-300"]):not(.ctrl-accessibility-menu *):not([class~="bg-primary"]):not([class~="bg-destructive"]):not([class~="bg-emerald-600"]):not([class~="bg-red-600"]):not([class~="bg-blue-500"]):not([class~="bg-indigo-500"]):not([class~="bg-gradient-to-r"]) {
+  color: hsl(var(--foreground)) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="text-slate-400"], [class~="text-slate-500"], [class~="text-gray-400"], [class~="text-gray-500"], [class~="text-zinc-400"], [class~="text-zinc-500"]):not(.ctrl-accessibility-menu *),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="text-slate-400"], [class~="text-slate-500"], [class~="text-gray-400"], [class~="text-gray-500"], [class~="text-zinc-400"], [class~="text-zinc-500"]):not(.ctrl-accessibility-menu *) {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where(
+  [class~="border-white"],
+  [class~="border-white/5"],
+  [class~="border-white/10"],
+  [class~="border-white/15"],
+  [class~="border-white/20"],
+  [class~="border-white/30"],
+  [class~="border-white/[0.08]"],
+  [class~="border-slate-600"],
+  [class~="border-slate-600/40"],
+  [class~="border-slate-700/30"],
+  [class~="border-slate-800"],
+  [class~="border-zinc-800"]
+):not(.ctrl-accessibility-menu *),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where(
+  [class~="border-white"],
+  [class~="border-white/5"],
+  [class~="border-white/10"],
+  [class~="border-white/15"],
+  [class~="border-white/20"],
+  [class~="border-white/30"],
+  [class~="border-white/[0.08]"],
+  [class~="border-slate-600"],
+  [class~="border-slate-600/40"],
+  [class~="border-slate-700/30"],
+  [class~="border-slate-800"],
+  [class~="border-zinc-800"]
+):not(.ctrl-accessibility-menu *) {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where(
+  [class~="bg-[#000a1f]"],
+  [class~="bg-[#020202]"],
+  [class~="bg-[#02040a]"],
+  [class~="bg-[#02040a]/60"],
+  [class~="bg-[#03060f]/75"],
+  [class~="bg-[#04070d]/40"],
+  [class~="bg-[#04070d]/50"],
+  [class~="bg-[#04070d]/60"],
+  [class~="bg-[#050505]"],
+  [class~="bg-[#050b14]"],
+  [class~="bg-[#080808]"],
+  [class~="bg-[#080808]/95"],
+  [class~="bg-[#080c16]"],
+  [class~="bg-[#080c16]/30"],
+  [class~="bg-[#080c16]/50"],
+  [class~="bg-[#080c16]/55"],
+  [class~="bg-[#080c16]/65"],
+  [class~="bg-[#080c16]/95"],
+  [class~="bg-[#08101d]"],
+  [class~="bg-[#0a0a0a]"],
+  [class~="bg-[#0a0a0a]/90"],
+  [class~="bg-[#0a0a0a]/95"],
+  [class~="bg-[#0a0f1d]"],
+  [class~="bg-[#0b1220]"],
+  [class~="bg-[#0b1220]/20"],
+  [class~="bg-[#0b1220]/25"],
+  [class~="bg-[#0b1220]/30"],
+  [class~="bg-[#0b1220]/40"],
+  [class~="bg-[#0b1220]/50"],
+  [class~="bg-[#0b1329]"],
+  [class~="bg-[#0b1329]/5"],
+  [class~="bg-[#0b1329]/10"],
+  [class~="bg-[#0b1329]/15"],
+  [class~="bg-[#0b1329]/20"],
+  [class~="bg-[#0b1329]/25"],
+  [class~="bg-[#0b1329]/30"],
+  [class~="bg-[#0b1329]/35"],
+  [class~="bg-[#0b1329]/40"],
+  [class~="bg-[#0b1329]/45"],
+  [class~="bg-[#0b1329]/50"],
+  [class~="bg-[#0b1329]/95"],
+  [class~="bg-black/10"],
+  [class~="bg-black/20"],
+  [class~="bg-black/30"],
+  [class~="bg-black/45"],
+  [class~="from-[#0b1329]/40"],
+  [class~="from-[#0e172e]"],
+  [class~="from-[#0e172e]/80"],
+  [class~="from-[#0e172e]/85"],
+  [class~="to-[#080c16]/25"],
+  [class~="to-[#080c16]/30"],
+  [class~="to-[#080c16]/90"],
+  [class~="to-[#080c16]/95"],
+  [class~="to-[#0b1329]/50"],
+  [class~="to-[#0b1329]/60"]
+):not(.ctrl-accessibility-menu *),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where(
+  [class~="bg-[#000a1f]"],
+  [class~="bg-[#020202]"],
+  [class~="bg-[#02040a]"],
+  [class~="bg-[#02040a]/60"],
+  [class~="bg-[#03060f]/75"],
+  [class~="bg-[#04070d]/40"],
+  [class~="bg-[#04070d]/50"],
+  [class~="bg-[#04070d]/60"],
+  [class~="bg-[#050505]"],
+  [class~="bg-[#050b14]"],
+  [class~="bg-[#080808]"],
+  [class~="bg-[#080808]/95"],
+  [class~="bg-[#080c16]"],
+  [class~="bg-[#080c16]/30"],
+  [class~="bg-[#080c16]/50"],
+  [class~="bg-[#080c16]/55"],
+  [class~="bg-[#080c16]/65"],
+  [class~="bg-[#080c16]/95"],
+  [class~="bg-[#08101d]"],
+  [class~="bg-[#0a0a0a]"],
+  [class~="bg-[#0a0a0a]/90"],
+  [class~="bg-[#0a0a0a]/95"],
+  [class~="bg-[#0a0f1d]"],
+  [class~="bg-[#0b1220]"],
+  [class~="bg-[#0b1220]/20"],
+  [class~="bg-[#0b1220]/25"],
+  [class~="bg-[#0b1220]/30"],
+  [class~="bg-[#0b1220]/40"],
+  [class~="bg-[#0b1220]/50"],
+  [class~="bg-[#0b1329]"],
+  [class~="bg-[#0b1329]/5"],
+  [class~="bg-[#0b1329]/10"],
+  [class~="bg-[#0b1329]/15"],
+  [class~="bg-[#0b1329]/20"],
+  [class~="bg-[#0b1329]/25"],
+  [class~="bg-[#0b1329]/30"],
+  [class~="bg-[#0b1329]/35"],
+  [class~="bg-[#0b1329]/40"],
+  [class~="bg-[#0b1329]/45"],
+  [class~="bg-[#0b1329]/50"],
+  [class~="bg-[#0b1329]/95"],
+  [class~="bg-black/10"],
+  [class~="bg-black/20"],
+  [class~="bg-black/30"],
+  [class~="bg-black/45"],
+  [class~="from-[#0b1329]/40"],
+  [class~="from-[#0e172e]"],
+  [class~="from-[#0e172e]/80"],
+  [class~="from-[#0e172e]/85"],
+  [class~="to-[#080c16]/25"],
+  [class~="to-[#080c16]/30"],
+  [class~="to-[#080c16]/90"],
+  [class~="to-[#080c16]/95"],
+  [class~="to-[#0b1329]/50"],
+  [class~="to-[#0b1329]/60"]
+):not(.ctrl-accessibility-menu *) {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  background-image: none !important;
+  color: hsl(var(--foreground)) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] [role="dialog"] :where(
+  [class~="bg-[#080c16]/50"],
+  [class~="bg-[#080c16]/55"],
+  [class~="bg-[#0a0f1d]"],
+  [class~="bg-[#0b1220]"],
+  [class~="bg-[#0b1220]/25"],
+  [class~="bg-[#0b1220]/40"],
+  [class~="bg-[#0b1329]/25"],
+  [class~="bg-[#0b1329]/40"],
+  [class~="bg-[#0b1329]/45"],
+  [class~="from-[#0b1329]/40"],
+  [class~="from-[#0e172e]"],
+  [class~="from-[#0e172e]/80"],
+  [class~="from-[#0e172e]/85"],
+  [class~="to-[#080c16]/30"],
+  [class~="to-[#080c16]/95"],
+  [class~="to-[#0b1329]/50"]
+),
+html[data-ctrl-theme="light-blue"] [role="dialog"] :where(
+  [class~="bg-[#080c16]/50"],
+  [class~="bg-[#080c16]/55"],
+  [class~="bg-[#0a0f1d]"],
+  [class~="bg-[#0b1220]"],
+  [class~="bg-[#0b1220]/25"],
+  [class~="bg-[#0b1220]/40"],
+  [class~="bg-[#0b1329]/25"],
+  [class~="bg-[#0b1329]/40"],
+  [class~="bg-[#0b1329]/45"],
+  [class~="from-[#0b1329]/40"],
+  [class~="from-[#0e172e]"],
+  [class~="from-[#0e172e]/80"],
+  [class~="from-[#0e172e]/85"],
+  [class~="to-[#080c16]/30"],
+  [class~="to-[#080c16]/95"],
+  [class~="to-[#0b1329]/50"]
+) {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+  background-image: none !important;
+  color: hsl(var(--foreground)) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Accessibility overrides for headings under light themes */
+html[data-ctrl-theme="soft-cream"] .ctrl-portal h1,
+html[data-ctrl-theme="soft-cream"] .ctrl-portal h2,
+html[data-ctrl-theme="soft-cream"] .ctrl-portal h3,
+html[data-ctrl-theme="soft-cream"] .ctrl-portal h4,
+html[data-ctrl-theme="light-blue"] .ctrl-portal h1,
+html[data-ctrl-theme="light-blue"] .ctrl-portal h2,
+html[data-ctrl-theme="light-blue"] .ctrl-portal h3,
+html[data-ctrl-theme="light-blue"] .ctrl-portal h4 {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Accessibility overrides for tabs list bar under light themes */
+html[data-ctrl-theme="soft-cream"] .ctrl-portal [role="tablist"],
+html[data-ctrl-theme="light-blue"] .ctrl-portal [role="tablist"] {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal [role="tablist"] [data-state="inactive"],
+html[data-ctrl-theme="light-blue"] .ctrl-portal [role="tablist"] [data-state="inactive"] {
+  color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Outline/ghost/secondary controls in light portal themes. */
+html[data-ctrl-theme="soft-cream"] .ctrl-portal button:where([class~="bg-transparent"], [class~="border-white/10"], [class~="border-white/15"]):not(.ctrl-accessibility-menu *),
+html[data-ctrl-theme="light-blue"] .ctrl-portal button:where([class~="bg-transparent"], [class~="border-white/10"], [class~="border-white/15"]):not(.ctrl-accessibility-menu *) {
+  color: hsl(var(--foreground)) !important;
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal button:where([class~="bg-transparent"], [class~="border-white/10"], [class~="border-white/15"]):not(.ctrl-accessibility-menu *):hover,
+html[data-ctrl-theme="light-blue"] .ctrl-portal button:where([class~="bg-transparent"], [class~="border-white/10"], [class~="border-white/15"]):not(.ctrl-accessibility-menu *):hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal .badge:not([class~="bg-primary"]):not([class~="bg-destructive"]):not([class~="bg-indigo-500"]):not([class~="bg-emerald-500"]):not([class~="bg-red-500"]):not([class~="bg-green-500"]):not([class~="bg-blue-500"]):not([class~="bg-orange-500/10"]):not([class~="bg-cyan-500/10"]),
+html[data-ctrl-theme="light-blue"] .ctrl-portal .badge:not([class~="bg-primary"]):not([class~="bg-destructive"]):not([class~="bg-indigo-500"]):not([class~="bg-emerald-500"]):not([class~="bg-red-500"]):not([class~="bg-green-500"]):not([class~="bg-blue-500"]):not([class~="bg-orange-500/10"]):not([class~="bg-cyan-500/10"]) {
+  color: hsl(var(--foreground)) !important;
+  background-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-portal :where([class~="bg-card"], [class~="bg-card/40"], [class~="bg-card/45"], [class~="bg-card/55"], [class~="bg-card/60"], [class~="bg-background/30"], [class~="bg-background/40"], [class~="bg-background/50"], [class~="bg-muted/30"], [class~="bg-muted/40"]) :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"]):not(.ctrl-tooltip *),
+html[data-ctrl-theme="light-blue"] .ctrl-portal :where([class~="bg-card"], [class~="bg-card/40"], [class~="bg-card/45"], [class~="bg-card/55"], [class~="bg-card/60"], [class~="bg-background/30"], [class~="bg-background/40"], [class~="bg-background/50"], [class~="bg-muted/30"], [class~="bg-muted/40"]) :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"]):not(.ctrl-tooltip *) {
+  color: hsl(var(--foreground)) !important;
+}
+
+.ctrl-tooltip {
+  background-color: rgb(15 23 42 / 0.96) !important;
+  border-color: rgb(255 255 255 / 0.14) !important;
+  color: rgb(241 245 249) !important;
+  box-shadow: 0 16px 40px rgb(2 6 23 / 0.42) !important;
+}
+
+.ctrl-tooltip::before {
+  border-top-color: rgb(15 23 42 / 0.96) !important;
+}
+
+.ctrl-tooltip-title,
+.ctrl-tooltip :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"]) {
+  color: rgb(255 255 255) !important;
+}
+
+.ctrl-tooltip-muted,
+.ctrl-tooltip :where([class~="text-slate-300"], [class~="text-slate-400"]) {
+  color: rgb(203 213 225) !important;
+}
+
+.ctrl-tooltip-subtle,
+.ctrl-tooltip :where([class~="text-slate-500"], [class~="text-gray-500"]) {
+  color: rgb(148 163 184) !important;
+}
+
+.ctrl-tooltip-accent,
+.ctrl-tooltip :where([class~="text-indigo-400"], [class~="text-blue-400"]) {
+  color: rgb(129 140 248) !important;
+}
+
+.ctrl-tooltip-warning,
+.ctrl-tooltip :where([class~="text-amber-400"]) {
+  color: rgb(251 191 36) !important;
+}
+
+.ctrl-tooltip-divider {
+  border-color: rgb(255 255 255 / 0.12) !important;
 }
 
 html[data-ctrl-theme="soft-cream"] .ctrl-landing-page .bg-white.text-black,
@@ -251,6 +585,23 @@ html[data-ctrl-motion="reduced"] .ctrl-landing-page *::after {
 
 html[data-ctrl-reading-font="enabled"] .ctrl-portal {
   font-family: Arial, Verdana, system-ui, sans-serif;
+}
+
+html[data-ctrl-dyslexia-font="enabled"] .ctrl-portal,
+html[data-ctrl-dyslexia-font="enabled"] .ctrl-landing-page,
+html[data-ctrl-dyslexia-font="enabled"] body,
+html[data-ctrl-dyslexia-font="enabled"] * {
+  font-family: "Comic Sans MS", "Comic Neue", cursive, sans-serif !important;
+}
+
+html[data-ctrl-grayscale="enabled"] {
+  filter: grayscale(100%) !important;
+}
+
+html[data-ctrl-focus="enhanced"] :focus-visible {
+  outline: 3px solid hsl(var(--primary)) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 6px hsl(var(--primary) / 0.3) !important;
 }
 
 html[data-ctrl-line-spacing="comfortable"] .ctrl-portal p,
@@ -1843,14 +2194,25 @@ img[src="/icon1.png"] {
 
 /* Filtros adaptativos para logo en modo oscuro - páginas auth */
 .logo-adaptive-filter {
-  filter: none;
-  transition: filter 0.3s ease;
+  transition: all 0.3s ease;
 }
 
-[data-theme="dark"] .logo-adaptive-filter,
+/* Dark/black theme logos */
+html[data-ctrl-theme="dark-blue"] .logo-adaptive-filter,
+html[data-ctrl-theme="black"] .logo-adaptive-filter,
 .dark .logo-adaptive-filter,
-html[data-theme="dark"] .logo-adaptive-filter {
+[data-theme="dark"] .logo-adaptive-filter {
+  mix-blend-mode: screen !important;
   filter: brightness(1.7) contrast(1.5) saturate(1.2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3)) !important;
+}
+
+/* Light/cream theme logos */
+html[data-ctrl-theme="soft-cream"] .logo-adaptive-filter,
+html[data-ctrl-theme="light-blue"] .logo-adaptive-filter,
+.light .logo-adaptive-filter,
+[data-theme="light"] .logo-adaptive-filter {
+  mix-blend-mode: multiply !important;
+  filter: invert(0.85) brightness(0.6) contrast(1.5) saturate(1.5) !important;
 }
 @keyframes ctrl-priority-wiggle {
   0%,

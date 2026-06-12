@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, ArrowUpRight, CheckCircle2, Loader2, Minus, Plus, Search, Users } from "lucide-react";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
 type EntitlementClient = {
   id: string;
@@ -236,78 +237,75 @@ export default function UpgradeRequestsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-500/80">
-            Upgrades
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Entitlement review</h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Stage seat and feature changes, then approve them after a quick review.
-          </p>
-        </div>
-        <Button asChild variant="outline" className="gap-2">
-          <Link href="/admin/clients">
-            Client list
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
+    <div className="max-w-7xl space-y-6">
+      <HiringManagerPageHeader
+        eyebrow="Upgrades"
+        title="Entitlement Review"
+        description="Stage seat and feature changes, then approve them after a quick review."
+        icon={ArrowUpRight}
+        action={
+          <Button asChild variant="outline" className="rounded-xl px-4 gap-2">
+            <Link href="/admin/clients">
+              Client list
+              <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
+          </Button>
+        }
+      />
 
       {error && (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
       {savedMessage && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
           {savedMessage}
         </div>
       )}
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Clients</CardTitle>
-            <CardDescription>Select a client to stage entitlement changes.</CardDescription>
+        <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
+            <CardTitle className="text-base font-bold text-foreground font-display">Clients</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground/95">Select a client to stage changes.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4 p-4">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search clients"
-                className="pl-9"
+                className="pl-9 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
             </div>
 
             {loading && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 Loading clients...
               </div>
             )}
 
-            <div className="max-h-[640px] space-y-2 overflow-y-auto pr-1">
+            <div className="max-h-[640px] space-y-2.5 overflow-y-auto pr-1">
               {!loading && filteredClients.map((client) => (
                 <button
                   key={client.id}
                   type="button"
                   onClick={() => setSelectedClientId(client.id)}
-                  className={`w-full rounded-md border p-3 text-left transition-colors ${
+                  className={`w-full rounded-xl border p-3.5 text-left transition-all duration-200 ${
                     selectedClient?.id === client.id
-                      ? "border-cyan-500/40 bg-cyan-500/10"
-                      : "border-border hover:bg-muted"
+                      ? "bg-primary/10 border-primary/20 text-primary shadow-sm"
+                      : "border-border/60 dark:border-white/5 text-muted-foreground hover:bg-slate-100/50 dark:hover:bg-white/[0.02]"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{client.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{client.primaryContact}</p>
+                      <p className="truncate text-sm font-semibold text-foreground">{client.name}</p>
+                      <p className="truncate text-xs text-muted-foreground/85 mt-0.5">{client.primaryContact}</p>
                     </div>
-                    <Badge variant="outline" className="shrink-0">
+                    <Badge variant="outline" className={`shrink-0 rounded-lg text-[10px] px-2 py-0.5 ${selectedClient?.id === client.id ? "border-primary/30 text-primary bg-primary/5" : "text-muted-foreground"}`}>
                       {seatSummary(client)}
                     </Badge>
                   </div>
@@ -318,31 +316,31 @@ export default function UpgradeRequestsPage() {
         </Card>
 
         {!selectedClient || !selectedDraft ? (
-          <Card>
+          <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden flex items-center justify-center p-12">
             <CardContent className="py-12 text-center text-sm text-muted-foreground">
               Select a client to review entitlements.
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
-            <Card>
-              <CardHeader className="space-y-3">
+            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
+              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10 space-y-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <CardTitle>{selectedClient.name}</CardTitle>
-                    <CardDescription>{selectedClient.primaryContact}</CardDescription>
+                    <CardTitle className="text-lg font-bold text-foreground font-display">{selectedClient.name}</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">{selectedClient.primaryContact}</CardDescription>
                   </div>
-                  <Badge variant="outline">{selectedClient.status}</Badge>
+                  <Badge variant="outline" className="rounded-lg font-semibold px-2 py-0.5 border-primary/25 text-primary bg-primary/5">{selectedClient.status}</Badge>
                 </div>
-                <div className="grid gap-3 md:grid-cols-3">
+                <div className="grid gap-3 grid-cols-3 pt-1">
                   <MiniStat label="Current HM seats" value={seatSummary(selectedClient)} />
                   <MiniStat label="Active features" value={activeFeatures.length} />
                   <MiniStat label="Contract" value={selectedClient.activeContract?.status ?? "None"} />
                 </div>
                 {!selectedClient.activeContract && (
-                  <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 p-3 text-sm">
+                  <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4 text-xs mt-2">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <p className="text-muted-foreground">
+                      <p className="text-muted-foreground/90 leading-relaxed">
                         No active contract is attached. Generate a draft allocation from the current active HM seats.
                       </p>
                       <Button
@@ -350,6 +348,7 @@ export default function UpgradeRequestsPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => stageCurrentSetup(selectedClient)}
+                        className="rounded-lg text-xs font-semibold shrink-0"
                       >
                         Use current setup
                       </Button>
@@ -357,39 +356,40 @@ export default function UpgradeRequestsPage() {
                   </div>
                 )}
               </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)]">
+              <CardContent className="space-y-6 p-6">
+                <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)]">
                   <div className="space-y-2">
-                    <Label htmlFor="hmSeatCount">HM seats</Label>
+                    <Label htmlFor="hmSeatCount" className="text-xs font-bold text-slate-400 uppercase tracking-wider">HM seats</Label>
                     <div className="relative">
                       <Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         id="hmSeatCount"
                         type="number"
                         min={Math.max(1, selectedClient.seatsUsed)}
-                        className="pl-9"
+                        className="pl-9 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
                         value={selectedDraft.seatCount}
                         onChange={(event) => updateSeatDraft(selectedClient.id, event.target.value)}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Cannot go below {selectedClient.seatsUsed} active HM occupants.
+                    <p className="text-[10px] text-muted-foreground/80">
+                      Cannot go below {selectedClient.seatsUsed} active occupants.
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="entitlementNotes">Review note</Label>
+                    <Label htmlFor="entitlementNotes" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Review note</Label>
                     <Input
                       id="entitlementNotes"
                       value={selectedDraft.notes}
                       onChange={(event) => updateNotesDraft(selectedClient.id, event.target.value)}
                       placeholder="Approval reference, payment note, or commercial context"
+                      className="rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
                     />
                   </div>
                 </div>
 
-                <div className="grid gap-4 lg:grid-cols-2">
+                <div className="grid gap-5 lg:grid-cols-2 pt-2">
                   <FeatureList
-                    title="Available"
+                    title="Available Features"
                     description="Not currently active for this client."
                     empty="All features are active."
                     features={availableFeatures}
@@ -398,7 +398,7 @@ export default function UpgradeRequestsPage() {
                     onAction={(featureKey) => setFeatureState(selectedClient.id, featureKey, true)}
                   />
                   <FeatureList
-                    title="Active"
+                    title="Active Features"
                     description="Enabled for this client."
                     empty="No optional features are active."
                     features={activeFeatures}
@@ -410,34 +410,38 @@ export default function UpgradeRequestsPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
+            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
+              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <CardTitle>Final review</CardTitle>
-                    <CardDescription>Approve these staged changes after a quick glance.</CardDescription>
+                    <CardTitle className="text-base font-bold text-foreground font-display">Final review</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">Approve staged entitlement overrides.</CardDescription>
                   </div>
-                  <Badge variant="outline">{pendingChanges.length} change{pendingChanges.length === 1 ? "" : "s"}</Badge>
+                  <Badge variant="outline" className="rounded-lg font-semibold border-primary/20 bg-primary/10 text-primary px-2.5 py-0.5">{pendingChanges.length} change{pendingChanges.length === 1 ? "" : "s"}</Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-6">
                 {pendingChanges.length === 0 ? (
-                  <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                  <p className="rounded-xl border border-dashed border-border/60 p-5 text-center text-xs text-muted-foreground/75 bg-slate-100/5 dark:bg-black/5">
                     No staged changes yet.
                   </p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {pendingChanges.map((change) => (
-                      <div key={change} className="flex items-center gap-3 rounded-md border p-3 text-sm">
-                        <CheckCircle2 className="h-4 w-4 text-cyan-600" />
-                        {change}
+                      <div key={change} className="flex items-center gap-3 rounded-xl border border-border/60 dark:border-white/5 p-4 text-xs font-medium text-foreground bg-slate-100/10 dark:bg-black/5">
+                        <CheckCircle2 className="h-[18px] w-[18px] text-emerald-500 shrink-0" />
+                        <span>{change}</span>
                       </div>
                     ))}
                   </div>
                 )}
-                <div className="flex justify-end">
-                  <Button onClick={saveClient} disabled={pendingChanges.length === 0 || savingId === selectedClient.id}>
-                    {savingId === selectedClient.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <div className="flex justify-end pt-2">
+                  <Button 
+                    onClick={saveClient} 
+                    disabled={pendingChanges.length === 0 || savingId === selectedClient.id}
+                    className="bg-primary hover:bg-primary/95 text-primary-foreground shadow-md shadow-primary/20 rounded-xl px-5 flex items-center gap-2 font-semibold h-10"
+                  >
+                    {savingId === selectedClient.id && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
                     Approve changes
                   </Button>
                 </div>
@@ -468,25 +472,24 @@ function FeatureList({
   onAction: (featureKey: string) => void;
 }) {
   return (
-    <div className="rounded-md border">
-      <div className="border-b p-4">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+    <div className="rounded-xl border border-border/60 dark:border-white/5 overflow-hidden bg-slate-100/5 dark:bg-black/5">
+      <div className="border-b border-border/40 dark:border-white/5 p-4 bg-slate-100/20 dark:bg-black/10">
+        <h2 className="text-sm font-bold text-foreground">{title}</h2>
+        <p className="mt-1 text-xs text-muted-foreground/80">{description}</p>
       </div>
-      <div className="space-y-2 p-3">
+      <div className="space-y-2 p-4">
         {features.length === 0 ? (
-          <p className="p-2 text-sm text-muted-foreground">{empty}</p>
+          <p className="p-2 text-xs text-muted-foreground/75 italic">{empty}</p>
         ) : (
           features.map((feature) => (
-            <div key={feature.key} className="flex items-center justify-between gap-3 rounded-md border bg-card p-3">
+            <div key={feature.key} className="flex items-center justify-between gap-3 rounded-xl border border-border/60 dark:border-white/5 bg-slate-50/50 dark:bg-[#0b1329]/30 p-3.5 hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-colors">
               <div>
-                <p className="text-sm font-medium">{feature.label}</p>
-                <p className="text-xs text-muted-foreground">{feature.group}</p>
+                <p className="text-sm font-semibold text-foreground">{feature.label}</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">{feature.group}</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => onAction(feature.key)} className="gap-2">
+              <Button size="sm" variant="outline" onClick={() => onAction(feature.key)} className="rounded-lg h-8 gap-1.5 text-xs font-semibold">
                 {actionIcon === "plus" ? <Plus className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
                 {actionLabel}
-                {actionIcon === "plus" && <ArrowRight className="h-3.5 w-3.5" />}
               </Button>
             </div>
           ))
@@ -498,9 +501,9 @@ function FeatureList({
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-md border bg-muted/20 p-3">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+    <div className="rounded-xl border border-border/60 dark:border-white/5 bg-slate-100/30 dark:bg-black/10 p-3.5 transition-all duration-300 hover:scale-[1.01]">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+      <p className="mt-1.5 text-lg font-extrabold text-foreground font-display">{value}</p>
     </div>
   );
 }

@@ -774,7 +774,7 @@ export function HiringManagerCampaignBuilder({
               className="h-10 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 shadow-[0_4px_20px_rgba(99,102,241,0.15)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Save className="mr-2 h-4 w-4" />
-              {isSaving ? "Creating..." : "Create campaign"}
+              {isSaving ? "Creating…" : "Create campaign"}
             </Button>
 
             {savedMessage && (

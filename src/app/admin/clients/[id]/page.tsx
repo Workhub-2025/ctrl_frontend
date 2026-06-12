@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
 type ClientDetails = {
   id: string;
@@ -213,113 +214,94 @@ export default function ClientDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Button asChild variant="ghost" className="gap-2 px-0">
-        <Link href="/admin/clients">
-          <ArrowLeft className="h-4 w-4" />
-          Back to clients
-        </Link>
-      </Button>
-
-      {error && (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
-      )}
-      {generatedCode && (
-        <div className="rounded-md border border-cyan-500/30 bg-cyan-500/5 px-4 py-3 text-sm">
-          <p className="font-medium">Client access code for {client.name}</p>
-          <p className="mt-2 break-all font-mono text-base font-semibold">{generatedCode.code}</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Expires {generatedCode.expiresAt ? new Date(generatedCode.expiresAt).toLocaleString("en-GB") : "soon"}.
-            This code is shown once.
-          </p>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-500/10">
-            <Building2 className="h-6 w-6 text-cyan-500" />
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-3xl font-semibold tracking-tight">{client.name}</h1>
-              <Badge variant="outline" className={statusClass(client.status)}>
-                {client.status}
-              </Badge>
+      <HiringManagerPageHeader
+        eyebrow="Client Details"
+        title={client.name}
+        description={`Legal name: ${client.legalName || "Not set"}`}
+        icon={Building2}
+        notice={
+          error ? (
+            <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-400">
+              {error}
             </div>
-            <div className="mt-2 flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Mail className="h-3.5 w-3.5" />
-                {client.primaryContactEmail}
-              </span>
-              <span className="flex items-center gap-1">
-                <Phone className="h-3.5 w-3.5" />
-                {client.primaryContactPhone}
-              </span>
+          ) : generatedCode ? (
+            <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 px-4 py-3 text-sm">
+              <p className="font-semibold text-cyan-400">Client access code generated</p>
+              <p className="mt-2 break-all font-mono text-base font-black text-white">{generatedCode.code}</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Expires {generatedCode.expiresAt ? new Date(generatedCode.expiresAt).toLocaleString("en-GB") : "soon"}.
+                This code is shown once.
+              </p>
             </div>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Review entitlements
-            </Link>
-          </Button>
-          <ClientInviteAction
-            client={client}
-            generatingCode={generatingCode}
-            onGenerate={generateClientCode}
-          />
-          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="border-red-500/30 text-red-600 hover:text-red-700">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Client
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete {client.name}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This permanently deletes the client, contract, and unused access codes. Clients with users or campaigns attached cannot be deleted.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-2">
-                <Label htmlFor="confirmClientName">Type the client name to confirm</Label>
-                <Input
-                  id="confirmClientName"
-                  value={confirmName}
-                  onChange={(event) => setConfirmName(event.target.value)}
-                  placeholder={client.name}
-                />
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={deleteClient}
-                  disabled={!canDelete || deleting}
-                >
-                  {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Delete client
+          ) : null
+        }
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="outline" className="h-9 border-white/10 hover:bg-white/10 text-slate-200">
+              <Link href="/admin/clients">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to clients
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-9 border-white/10 hover:bg-white/10 text-slate-200">
+              <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                Review entitlements
+              </Link>
+            </Button>
+            <ClientInviteAction
+              client={client}
+              generatingCode={generatingCode}
+              onGenerate={generateClientCode}
+            />
+            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="h-9 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Client
                 </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {client.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently deletes the client, contract, and unused access codes. Clients with users or campaigns attached cannot be deleted.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmClientName">Type the client name to confirm</Label>
+                  <Input
+                    id="confirmClientName"
+                    value={confirmName}
+                    onChange={(event) => setConfirmName(event.target.value)}
+                    placeholder={client.name}
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={deleteClient}
+                    disabled={!canDelete || deleting}
+                  >
+                    {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Delete client
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        }
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0">
+        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b border-white/5 bg-transparent p-0">
           {["summary", "contract", "users", "campaigns", "access"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
-              className="rounded-none border-b-2 border-transparent px-3 py-3 capitalize data-[state=active]:border-cyan-500 data-[state=active]:shadow-none"
+              className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white capitalize data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:shadow-none transition-all"
             >
               {tab === "access" ? "Access codes" : tab}
             </TabsTrigger>
@@ -328,51 +310,59 @@ export default function ClientDetailPage() {
 
         <TabsContent value="summary" className="mt-6 space-y-6">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Card>
+            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Contract state</CardTitle>
+                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Contract state</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{client.billingStatus}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Derived from the active contract</p>
+                <div className="text-2xl font-extrabold text-foreground">{client.billingStatus}</div>
+                <p className="mt-1.5 text-xs text-slate-400">Derived from the active contract</p>
               </CardContent>
             </Card>
-            <Card>
+
+            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Hiring manager seats</CardTitle>
+                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Hiring manager seats</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{client.seatsUsed} / {client.seatsAllowed}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Active HM occupants against reusable seats</p>
+                <div className="text-2xl font-extrabold text-foreground">{client.seatsUsed} / {client.seatsAllowed}</div>
+                <p className="mt-1.5 text-xs text-slate-400">Active HM occupants against reusable seats</p>
               </CardContent>
             </Card>
-            <Card>
+
+            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Pending approvals</CardTitle>
+                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Pending approvals</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{client.pendingCampaignApprovals}</div>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <div className="text-2xl font-extrabold text-foreground">{client.pendingCampaignApprovals}</div>
+                <p className="mt-1.5 text-xs text-slate-400">
                   {client.campaignApprovalMode === "require_approval" ? "Client approval required" : "Auto-approved"}
                 </p>
               </CardContent>
             </Card>
-            <Card>
+
+            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Contract end</CardTitle>
+                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Contract end</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-semibold">{formatDate(client.activeContract?.endDate)}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Stored on the active contract</p>
+                <div className="text-2xl font-extrabold text-foreground">{formatDate(client.activeContract?.endDate)}</div>
+                <p className="mt-1.5 text-xs text-slate-400">Stored on the active contract</p>
               </CardContent>
             </Card>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <Card>
+            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
               <CardHeader>
-                <CardTitle>Onboarding path</CardTitle>
-                <CardDescription>What has to be true before the client can run their own workspace.</CardDescription>
+                <CardTitle className="text-base font-bold text-white">Onboarding path</CardTitle>
+                <CardDescription className="text-slate-400">What has to be true before the client can run their own workspace.</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-3 md:grid-cols-3">
@@ -395,32 +385,33 @@ export default function ClientDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
               <CardHeader>
-                <CardTitle>Seat ownership</CardTitle>
-                <CardDescription>Admin controls capacity. The client controls who occupies each HM seat.</CardDescription>
+                <CardTitle className="text-base font-bold text-white">Seat ownership</CardTitle>
+                <CardDescription className="text-slate-400">Admin controls capacity. The client controls who occupies each HM seat.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center justify-between rounded-md border p-3">
-                  <span className="text-sm text-muted-foreground">Occupied seats</span>
-                  <span className="text-sm font-semibold">{client.seatsUsed}</span>
+                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-3">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Occupied seats</span>
+                  <span className="text-sm font-bold text-white">{client.seatsUsed}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-md border p-3">
-                  <span className="text-sm text-muted-foreground">Reusable capacity</span>
-                  <span className="text-sm font-semibold">{client.seatsAllowed}</span>
+                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-3">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Reusable capacity</span>
+                  <span className="text-sm font-bold text-white">{client.seatsAllowed}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-md border p-3">
-                  <span className="text-sm text-muted-foreground">Available seats</span>
-                  <span className="text-sm font-semibold">{Math.max(0, client.seatsAllowed - client.seatsUsed)}</span>
+                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-3">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Available seats</span>
+                  <span className="text-sm font-bold text-white">{Math.max(0, client.seatsAllowed - client.seatsUsed)}</span>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          <Card>
+          <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
             <CardHeader>
-              <CardTitle>Client Details</CardTitle>
-              <CardDescription>Live organisation, contact, and workflow data from Strapi.</CardDescription>
+              <CardTitle className="text-base font-bold text-white">Client Details</CardTitle>
+              <CardDescription className="text-slate-400">Live organisation, contact, and workflow data from Strapi.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <Detail label="Legal name" value={client.legalName} />
@@ -434,13 +425,13 @@ export default function ClientDetailPage() {
         </TabsContent>
 
         <TabsContent value="contract" className="mt-6">
-          <Card>
+          <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
             <CardHeader className="gap-4 md:flex md:flex-row md:items-start md:justify-between">
               <div>
-                <CardTitle>Contract</CardTitle>
-                <CardDescription>Seat allocation and contract dates.</CardDescription>
+                <CardTitle className="text-base font-bold text-white">Contract</CardTitle>
+                <CardDescription className="text-slate-400">Seat allocation and contract dates.</CardDescription>
               </div>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="h-[34px] border-white/10 hover:bg-white/10 text-slate-200">
                 <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Review entitlements
@@ -452,9 +443,9 @@ export default function ClientDetailPage() {
               <Detail label="Start date" value={formatDate(client.activeContract?.startDate)} />
               <Detail label="End date" value={formatDate(client.activeContract?.endDate)} />
               <Detail label="Seats" value={String(client.activeContract?.seatCount ?? 0)} />
-              <div className="rounded-md border p-4 md:col-span-2 xl:col-span-4">
-                <p className="text-sm text-muted-foreground">Notes</p>
-                <p className="mt-2 text-sm">{client.activeContract?.notes || "No notes recorded"}</p>
+              <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4 md:col-span-2 xl:col-span-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Notes</p>
+                <p className="mt-2 text-sm text-slate-300 leading-relaxed">{client.activeContract?.notes || "No notes recorded"}</p>
               </div>
             </CardContent>
           </Card>
@@ -586,25 +577,27 @@ function FlowStep({
   detail: string;
 }) {
   return (
-    <div className="rounded-md border p-4">
+    <div className="rounded-xl border border-white/10 bg-[#080c16]/30 p-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium">{title}</p>
+        <p className="text-sm font-bold text-white">{title}</p>
         {complete ? (
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+          <CheckCircle2 className="h-[18px] w-[18px] text-emerald-400" aria-hidden="true" />
         ) : (
-          <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <Clock3 className="h-[18px] w-[18px] text-slate-500" aria-hidden="true" />
         )}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{detail}</p>
+      <p className="mt-2 text-xs text-slate-400 leading-relaxed">{detail}</p>
     </div>
   );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border p-4">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-2 break-words text-sm font-medium">{value}</p>
+    <div className="rounded-xl border border-white/10 bg-[#080c16]/30 p-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500/50" />
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-2 break-words text-sm font-bold text-white">{value}</p>
     </div>
   );
 }
@@ -621,22 +614,22 @@ function SimpleList({
   rows: Array<{ id: string; primary: string; secondary: string; badge: string }>;
 }) {
   return (
-    <Card>
+    <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-base font-bold text-white">{title}</CardTitle>
+        <CardDescription className="text-slate-400">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{empty}</p>
+          <p className="text-sm italic text-slate-500">{empty}</p>
         ) : (
           rows.map((row) => (
-            <div key={row.id} className="flex items-center justify-between gap-4 rounded-md border p-3">
+            <div key={row.id} className="flex items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.01] p-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{row.primary}</p>
-                <p className="truncate text-xs text-muted-foreground">{row.secondary}</p>
+                <p className="truncate text-sm font-bold text-white">{row.primary}</p>
+                <p className="truncate text-xs text-slate-400">{row.secondary}</p>
               </div>
-              <Badge variant="outline" className={statusClass(row.badge)}>
+              <Badge variant="outline" className={`${statusClass(row.badge)} pointer-events-none rounded-md px-2 py-0.5 font-semibold text-xs`}>
                 {row.badge}
               </Badge>
             </div>

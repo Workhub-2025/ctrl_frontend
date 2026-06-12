@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Download } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
 type AuditLogRow = {
   id: string;
@@ -38,69 +39,86 @@ export default function AuditLogsPage() {
   }, [logs, searchTerm]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h3 className="text-2xl font-bold tracking-tight">Audit Logs</h3>
-          <p className="text-sm text-muted-foreground">System-wide ledger of administrative actions.</p>
-        </div>
-        <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export Logs</Button>
-      </div>
+    <div className="max-w-7xl space-y-6">
+      <HiringManagerPageHeader
+        eyebrow="Audit logs"
+        title="Audit Logs"
+        description="System-wide ledger of administrative actions."
+        icon={Search}
+        action={
+          <Button variant="outline" className="rounded-xl px-4">
+            <Download className="mr-2 h-4 w-4" /> Export Logs
+          </Button>
+        }
+      />
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center space-x-2.5">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search logs by actor or event..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search logs by actor or event..."
+            className="pl-9 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <Button variant="outline" className="border-dashed"><Filter className="mr-2 h-4 w-4"/> Date Range</Button>
-        <Button variant="outline" className="border-dashed"><Filter className="mr-2 h-4 w-4"/> Event Type</Button>
+        <Button variant="outline" className="border-dashed rounded-xl px-4">
+          <Filter className="mr-2 h-4 w-4 text-muted-foreground" /> Date Range
+        </Button>
+        <Button variant="outline" className="border-dashed rounded-xl px-4">
+          <Filter className="mr-2 h-4 w-4 text-muted-foreground" /> Event Type
+        </Button>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
 
-      <div className="rounded-md border bg-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Timestamp</TableHead>
-              <TableHead>Actor</TableHead>
-              <TableHead>Event Type</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead>Details</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading && (
-              <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                  Loading audit logs...
-                </TableCell>
+      <div className="rounded-2xl border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-slate-100/30 dark:bg-black/10">
+              <TableRow className="border-b border-border/40 dark:border-white/5">
+                <TableHead className="font-semibold text-foreground">Timestamp</TableHead>
+                <TableHead className="font-semibold text-foreground">Actor</TableHead>
+                <TableHead className="font-semibold text-foreground">Event Type</TableHead>
+                <TableHead className="font-semibold text-foreground">Client</TableHead>
+                <TableHead className="font-semibold text-foreground">Details</TableHead>
               </TableRow>
-            )}
-            {!loading && filteredLogs.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                  No audit logs match the current search.
-                </TableCell>
-              </TableRow>
-            )}
-            {!loading && filteredLogs.map((log, index) => (
-              <TableRow key={`${log.id || "audit-log"}-${index}`}>
-                <TableCell className="text-sm text-muted-foreground whitespace-nowrap">{log.timestamp}</TableCell>
-                <TableCell className="font-medium">{log.actor}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{log.event}</Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{log.client}</TableCell>
-                <TableCell className="text-sm">{log.details}</TableCell>
-              </TableRow>
-            )) }
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    Loading audit logs...
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && filteredLogs.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                    No audit logs match the current search.
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && filteredLogs.map((log, index) => (
+                <TableRow key={`${log.id || "audit-log"}-${index}`} className="border-b border-border/40 dark:border-white/5 hover:bg-slate-100/10 dark:hover:bg-white/[0.02] transition-colors">
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{log.timestamp}</TableCell>
+                  <TableCell className="font-semibold text-foreground">{log.actor}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="rounded-lg font-semibold bg-slate-100 dark:bg-white/10 text-foreground border-none px-2.5 py-0.5">
+                      {log.event}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{log.client}</TableCell>
+                  <TableCell className="text-xs leading-relaxed max-w-md break-words">{log.details}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

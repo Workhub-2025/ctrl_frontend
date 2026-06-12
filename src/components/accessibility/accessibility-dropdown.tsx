@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Settings, X } from "lucide-react";
+import { CheckCircle2, Settings, X, Volume2, Ruler, Type, Eye, Contrast, Link2, Activity, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -22,19 +22,19 @@ const themeOptions: {
 ];
 
 const dropdownThemeClassName: Record<AccessibilitySettings["theme"], string> = {
-  "dark-blue": "bg-[#0b1329] border-white/10 text-white",
-  black: "bg-[#080808] border-white/15 text-white",
-  "soft-cream": "bg-white border-slate-200 text-slate-900",
-  "light-blue": "bg-white border-slate-200 text-slate-900",
+  "dark-blue": "bg-[#0b1329]/95 border-white/10 text-white backdrop-blur-xl shadow-[0_32px_96px_rgba(0,0,0,0.7)]",
+  black: "bg-[#080808]/95 border-white/15 text-white backdrop-blur-xl shadow-[0_32px_96px_rgba(0,0,0,0.8)]",
+  "soft-cream": "bg-white/95 border-slate-200 text-slate-900 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.15)]",
+  "light-blue": "bg-white/95 border-slate-200 text-slate-900 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.15)]",
 };
 
 function segmentedClassName(isActive: boolean, isLight: boolean) {
   return cn(
-    "rounded-md px-3 py-1.5 text-sm transition-all border",
+    "rounded-lg px-2.5 py-1.5 text-xs transition-all border flex-1 text-center font-medium",
     isActive
       ? (isLight
-          ? "bg-slate-900 border-slate-900 text-white shadow-sm font-medium"
-          : "bg-white/15 border-white text-white shadow-sm font-medium")
+          ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+          : "bg-white/15 border-white text-white shadow-sm")
       : (isLight
           ? "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-800"
           : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200")
@@ -80,9 +80,9 @@ export function AccessibilityDropdown({
     options: { label: string; value: string }[];
     onChange: (value: string) => void;
   }) => (
-    <div>
-      <h4 className={cn("mb-2 text-sm font-medium", isLight ? "text-slate-900" : "text-white")}>{label}</h4>
-      <div className="flex flex-wrap gap-1.5">
+    <div className="space-y-1.5">
+      <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>{label}</h4>
+      <div className="flex gap-1 bg-muted/30 dark:bg-white/[0.02] p-1 rounded-xl border border-border/40 dark:border-white/5">
         {options.map((option) => (
           <button
             key={String(option.value)}
@@ -102,27 +102,39 @@ export function AccessibilityDropdown({
     description: toggleDescription,
     checked,
     onChange,
+    icon: ToggleIcon,
   }: {
     label: string;
     description: string;
     checked: boolean;
     onChange: (checked: boolean) => void;
+    icon: any;
   }) => (
     <button
       type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        "flex w-full items-center justify-between gap-4 rounded-lg px-2 py-2 text-left transition-colors",
-        isLight ? "hover:bg-slate-100" : "hover:bg-white/5"
+        "flex w-full items-center justify-between gap-3 rounded-xl border border-border/40 dark:border-white/5 bg-muted/20 dark:bg-white/[0.02] p-3 text-left transition-all hover:scale-[1.01] hover:border-slate-300 dark:hover:border-white/20",
+        isLight ? "hover:bg-slate-50" : "hover:bg-white/[0.03]"
       )}
     >
-      <span>
-        <span className={cn("block text-sm font-medium", isLight ? "text-slate-900" : "text-white")}>{label}</span>
-        <span className={cn("block text-xs leading-relaxed", isLight ? "text-slate-500" : "text-slate-400")}>{toggleDescription}</span>
-      </span>
+      <div className="flex items-start gap-3 min-w-0">
+        <div className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
+          checked
+            ? "border-primary/20 bg-primary/10 text-primary shadow-sm"
+            : (isLight ? "border-slate-200 bg-slate-100 text-slate-400" : "border-white/10 bg-white/5 text-slate-400")
+        )}>
+          <ToggleIcon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <span className={cn("block text-xs font-semibold tracking-wide", isLight ? "text-slate-800" : "text-slate-200")}>{label}</span>
+          <span className={cn("block text-[10px] leading-relaxed mt-0.5", isLight ? "text-slate-500" : "text-slate-400")}>{toggleDescription}</span>
+        </div>
+      </div>
       <span
         className={cn(
-          "flex h-6 w-10 shrink-0 items-center rounded-full border p-0.5 transition-colors",
+          "flex h-5 w-8 shrink-0 items-center rounded-full border p-0.5 transition-colors",
           checked
             ? (isLight ? "border-slate-900 bg-slate-900 text-white" : "border-white bg-white/20 text-white")
             : (isLight ? "border-slate-300 bg-slate-100 text-slate-400" : "border-transparent bg-white/10 text-slate-400")
@@ -130,8 +142,8 @@ export function AccessibilityDropdown({
       >
         <span
           className={cn(
-            "h-4 w-4 rounded-full bg-current transition-transform",
-            checked && "translate-x-4",
+            "h-3.5 w-3.5 rounded-full bg-current transition-transform",
+            checked && "translate-x-3",
             !checked && (isLight ? "bg-slate-400" : "bg-white")
           )}
         />
@@ -145,10 +157,10 @@ export function AccessibilityDropdown({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "rounded-full p-2 transition-colors",
+          "rounded-full p-2 transition-all hover:scale-[1.04] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none",
           isLight
-            ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-            : "text-slate-400 hover:bg-white/5 hover:text-white"
+            ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-slate-200"
+            : "text-slate-400 hover:bg-white/5 hover:text-white border border-white/10"
         )}
         aria-label="Accessibility settings"
         aria-expanded={isOpen}
@@ -164,20 +176,21 @@ export function AccessibilityDropdown({
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              "absolute right-0 top-[calc(100%+8px)] max-h-[min(78svh,720px)] w-[min(92vw,360px)] origin-top-right overflow-y-auto rounded-2xl border p-5 shadow-2xl transition-colors duration-300",
+              "absolute right-0 top-[calc(100%+8px)] max-h-[min(78svh,720px)] w-[min(94vw,370px)] origin-top-right overflow-y-auto rounded-2xl border p-5 transition-colors duration-300",
               dropdownThemeClassName[settings.theme]
             )}
           >
-            <div className="mb-4 flex items-start justify-between gap-4">
+            {/* Header */}
+            <div className="mb-4 flex items-start justify-between gap-4 border-b border-border/40 dark:border-white/5 pb-3">
               <div>
-                <h3 className={cn("text-sm font-semibold", isLight ? "text-slate-900" : "text-white")}>Accessibility Settings</h3>
-                <p className={cn("mt-1 text-xs leading-relaxed", isLight ? "text-slate-500" : "text-slate-400")}>{description}</p>
+                <h3 className={cn("text-sm font-bold tracking-tight", isLight ? "text-slate-900" : "text-white")}>Accessibility Control Center</h3>
+                <p className={cn("mt-0.5 text-xs text-muted-foreground/80")}>{description}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
                 className={cn(
-                  "rounded-full p-1 transition-colors",
+                  "rounded-full p-1.5 transition-colors",
                   isLight ? "text-slate-400 hover:bg-slate-100 hover:text-slate-800" : "text-slate-500 hover:bg-white/5 hover:text-white"
                 )}
                 aria-label="Close accessibility settings"
@@ -186,9 +199,10 @@ export function AccessibilityDropdown({
               </button>
             </div>
 
-            <div className="space-y-5">
-              <div>
-                <h4 className={cn("mb-2 text-sm font-medium", isLight ? "text-slate-900" : "text-white")}>Theme</h4>
+            <div className="space-y-4">
+              {/* Theme Grid */}
+              <div className="space-y-1.5">
+                <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>Color Theme</h4>
                 <div className="grid grid-cols-2 gap-2">
                   {themeOptions.map((option) => {
                     const isActive = settings.theme === option.value;
@@ -199,11 +213,11 @@ export function AccessibilityDropdown({
                         type="button"
                         onClick={() => updateSettings({ theme: option.value })}
                         className={cn(
-                          "flex items-center gap-2 rounded-lg border px-2.5 py-2 text-sm transition-all",
+                          "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs transition-all hover:scale-[1.01]",
                           isActive
                             ? (isLight
-                                ? "border-slate-900 bg-slate-50 text-slate-900 font-medium shadow-sm"
-                                : "border-white bg-white/10 text-white font-medium shadow-sm")
+                                ? "border-slate-950 bg-slate-100 text-slate-950 font-semibold shadow-sm"
+                                : "border-white bg-white/10 text-white font-semibold shadow-sm")
                             : (isLight
                                 ? "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
                                 : "border-white/10 text-slate-400 hover:border-white/30 hover:bg-white/5 hover:text-slate-200")
@@ -211,21 +225,22 @@ export function AccessibilityDropdown({
                       >
                         <span
                           className={cn(
-                            "h-5 w-5 rounded-full border shadow-inner",
+                            "h-4 w-4 rounded-full border shadow-inner",
                             isActive ? (isLight ? "border-slate-900" : "border-white") : "border-transparent",
                             option.swatch
                           )}
                         />
                         <span className="min-w-0 flex-1 text-left">{option.label}</span>
-                        {isActive && <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                        {isActive && <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />}
                       </button>
                     );
                   })}
                 </div>
               </div>
 
+              {/* Text Sizing */}
               {renderOptionGroup({
-                label: "Text size",
+                label: "Text Size",
                 value: settings.textSize,
                 options: [
                   { label: "Default", value: "default" },
@@ -235,8 +250,9 @@ export function AccessibilityDropdown({
                 onChange: (value) => updateSettings({ textSize: value as AccessibilitySettings["textSize"] }),
               })}
 
+              {/* Line Spacing */}
               {renderOptionGroup({
-                label: "Line spacing",
+                label: "Line Spacing",
                 value: settings.lineSpacing,
                 options: [
                   { label: "Default", value: "default" },
@@ -246,68 +262,94 @@ export function AccessibilityDropdown({
                 onChange: (value) => updateSettings({ lineSpacing: value as AccessibilitySettings["lineSpacing"] }),
               })}
 
-              {renderOptionGroup({
-                label: "Contrast",
-                value: settings.contrast,
-                options: [
-                  { label: "Default", value: "default" },
-                  { label: "High", value: "high" },
-                ],
-                onChange: (value) => updateSettings({ contrast: value as AccessibilitySettings["contrast"] }),
-              })}
+              {/* Advanced Assistive Controls */}
+              <div className="space-y-2.5">
+                <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>Cognitive & Focus Aids</h4>
+                
+                {renderToggle({
+                  label: "Dyslexia Font",
+                  description: "Asymmetric letter shapes for readability.",
+                  checked: settings.dyslexiaFont,
+                  onChange: (checked) => updateSettings({ dyslexiaFont: checked }),
+                  icon: Type,
+                })}
 
-              {renderOptionGroup({
-                label: "Motion",
-                value: settings.motion,
-                options: [
-                  { label: "Full", value: "full" },
-                  { label: "Reduced", value: "reduced" },
-                ],
-                onChange: (value) => updateSettings({ motion: value as AccessibilitySettings["motion"] }),
-              })}
+                {renderToggle({
+                  label: "Reading Guide Ruler",
+                  description: "Line highlighter overlay tracking mouse.",
+                  checked: settings.focusRuler,
+                  onChange: (checked) => updateSettings({ focusRuler: checked }),
+                  icon: Ruler,
+                })}
 
-              {renderOptionGroup({
-                label: "Colour saturation",
-                value: settings.saturation,
-                options: [
-                  { label: "Default", value: "default" },
-                  { label: "Reduced", value: "reduced" },
-                ],
-                onChange: (value) => updateSettings({ saturation: value as AccessibilitySettings["saturation"] }),
-              })}
+                {renderToggle({
+                  label: "Hover Speech Reader",
+                  description: "Hovering over text reads it out loud.",
+                  checked: settings.hoverReader,
+                  onChange: (checked) => updateSettings({ hoverReader: checked }),
+                  icon: Volume2,
+                })}
+
+                {renderToggle({
+                  label: "Enhanced Focus Outlines",
+                  description: "High-contrast keyboard focus rings.",
+                  checked: settings.enhancedFocus,
+                  onChange: (checked) => updateSettings({ enhancedFocus: checked }),
+                  icon: Eye,
+                })}
+              </div>
+
+              {/* Display & Motion Controls */}
+              <div className="space-y-2.5">
+                <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>Display & Saturation</h4>
+
+                {renderToggle({
+                  label: "Monochromatic Grayscale",
+                  description: "Render view in complete grayscale.",
+                  checked: settings.grayscale,
+                  onChange: (checked) => updateSettings({ grayscale: checked }),
+                  icon: Eye,
+                })}
+
+                {renderToggle({
+                  label: "High Contrast Outlines",
+                  description: "Boost borders and text contrast ratios.",
+                  checked: settings.contrast === "high",
+                  onChange: (checked) => updateSettings({ contrast: checked ? "high" : "default" }),
+                  icon: Contrast,
+                })}
+
+                {renderToggle({
+                  label: "Reduced Motion",
+                  description: "Enforce zero layouts transitions/motion.",
+                  checked: settings.motion === "reduced",
+                  onChange: (checked) => updateSettings({ motion: checked ? "reduced" : "full" }),
+                  icon: Activity,
+                })}
+
+                {renderToggle({
+                  label: "Underline Text Links",
+                  description: "Always force underscores below links.",
+                  checked: settings.underlineLinks,
+                  onChange: (checked) => updateSettings({ underlineLinks: checked }),
+                  icon: Link2,
+                })}
+              </div>
 
               <div className={cn("h-px", isLight ? "bg-slate-200" : "bg-white/10")} />
-
-              {renderToggle({
-                label: "Enhanced focus",
-                description: "Stronger outlines for keyboard navigation.",
-                checked: settings.enhancedFocus,
-                onChange: (checked) => updateSettings({ enhancedFocus: checked }),
-              })}
-              {renderToggle({
-                label: "Reading font",
-                description: "Use a simpler system font for page text.",
-                checked: settings.readingFont,
-                onChange: (checked) => updateSettings({ readingFont: checked }),
-              })}
-              {renderToggle({
-                label: "Underline links",
-                description: "Always underline text links.",
-                checked: settings.underlineLinks,
-                onChange: (checked) => updateSettings({ underlineLinks: checked }),
-              })}
 
               <Button
                 type="button"
                 variant="outline"
                 className={cn(
-                  "w-full bg-transparent font-medium",
+                  "w-full bg-transparent font-semibold gap-2 rounded-xl h-10 hover:border-red-500/20 hover:text-red-500 transition-colors",
                   isLight
-                    ? "border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
-                    : "border-white/10 text-slate-300 hover:bg-white/5 hover:text-white"
+                    ? "border-slate-200 text-slate-600 hover:bg-red-50/50"
+                    : "border-white/10 text-slate-300 hover:bg-red-500/5"
                 )}
                 onClick={resetSettings}
               >
+                <RefreshCw className="h-3.5 w-3.5" />
                 Reset settings
               </Button>
             </div>

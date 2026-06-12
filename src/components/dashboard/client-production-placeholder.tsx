@@ -26,21 +26,22 @@ export function ClientProductionPlaceholder({
         icon={icon}
       />
 
-      <Card className="rounded-[1.25rem] border border-border bg-card shadow-sm dark:border-white/5 dark:bg-[#080c16]/70 dark:shadow-none">
-        <CardHeader className="space-y-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/15 bg-primary/10 text-primary shadow-sm">
-            <Clock3 className="h-5 w-5" />
+      <Card className="relative overflow-hidden rounded-xl border border-border bg-card dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md shadow-lg p-5">
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary to-indigo-500" />
+        <CardHeader className="space-y-3 p-0">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
+            <Clock3 className="h-[18px] w-[18px]" />
           </div>
-          <div className="space-y-2">
-            <Badge className="w-fit rounded-md border-orange-500/20 bg-orange-500/10 text-orange-600 hover:bg-orange-500/10">
-              In Production
+          <div className="space-y-1.5">
+            <Badge className="w-fit rounded-md border-amber-500/20 bg-amber-500/10 text-amber-400 hover:bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+              Roadmap Feature
             </Badge>
-            <CardTitle className="text-xl text-foreground">This page is being prepared</CardTitle>
+            <CardTitle className="text-xl font-bold text-foreground">This area is currently under construction</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            This section is part of the client portal roadmap and will be available later.
+        <CardContent className="p-0 pt-4">
+          <p className="max-w-2xl text-sm leading-relaxed text-slate-400">
+            This module is part of the upcoming platform release. Real-time updates, additional data telemetry, and user management features will be automatically deployed when the production release is live.
           </p>
         </CardContent>
       </Card>

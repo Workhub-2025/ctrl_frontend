@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, ShieldCheck, UserCheck, Users, UserX } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
 type UserRole = "CTRL Admin" | "Client Contact" | "Hiring Manager" | "Candidate";
 type UserStatus = "Active" | "Invited" | "Disabled";
@@ -88,47 +90,41 @@ export default function AdminUsersPage() {
   }, [payload.users, roleFilter, searchTerm]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-cyan-500/80">
-            User Administration
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-            Users
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            Search, review, and support CTRL admins, client contacts, hiring managers, and candidates.
-          </p>
-        </div>
-
-        <Badge variant="outline" className="w-fit border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-600">
-          Live directory
-        </Badge>
-      </div>
+    <div className="max-w-7xl space-y-6">
+      <HiringManagerPageHeader
+        eyebrow="User Administration"
+        title="Users"
+        description="Search, review, and support CTRL admins, client contacts, hiring managers, and candidates."
+        icon={Users}
+        badge={
+          <Badge variant="outline" className="border-cyan-500/25 bg-cyan-500/10 text-cyan-400 font-semibold rounded-lg px-2.5 py-0.5 pointer-events-none">
+            Live directory
+          </Badge>
+        }
+      />
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-        <UserMetric icon={Users} label="All users" value={payload.totals.all} />
-        <UserMetric icon={ShieldCheck} label="CTRL admins" value={payload.totals.ctrlAdmins} />
-        <UserMetric icon={UserCheck} label="Clients" value={payload.totals.clientContacts} />
-        <UserMetric icon={Users} label="Hiring managers" value={payload.totals.hiringManagers} />
-        <UserMetric icon={Users} label="Candidates" value={payload.totals.candidates} />
-        <UserMetric icon={UserX} label="Disabled" value={payload.totals.disabled} />
+        <UserMetric icon={Users} label="All users" value={payload.totals.all} color="primary" />
+        <UserMetric icon={ShieldCheck} label="CTRL admins" value={payload.totals.ctrlAdmins} color="red" />
+        <UserMetric icon={UserCheck} label="Clients" value={payload.totals.clientContacts} color="cyan" />
+        <UserMetric icon={Users} label="Hiring managers" value={payload.totals.hiringManagers} color="indigo" />
+        <UserMetric icon={Users} label="Candidates" value={payload.totals.candidates} color="emerald" />
+        <UserMetric icon={UserX} label="Disabled" value={payload.totals.disabled} color="amber" />
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
           {error}
         </div>
       )}
 
-      <div className="rounded-lg border bg-card">
-        <div className="flex flex-col gap-3 border-b p-4 md:flex-row md:items-center md:justify-between">
+      <div className="rounded-2xl border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg overflow-hidden">
+        <div className="flex flex-col gap-3 border-b border-border/40 dark:border-white/5 p-4 md:flex-row md:items-center md:justify-between bg-slate-100/10 dark:bg-black/5">
           <div className="relative w-full md:max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search users by name, email, client, or role"
-              className="pl-9"
+              className="pl-9 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
             />
@@ -145,10 +141,10 @@ export default function AdminUsersPage() {
                 key={value}
                 type="button"
                 onClick={() => setRoleFilter(value as typeof roleFilter)}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
                   roleFilter === value
-                    ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-600"
-                    : "border-border text-muted-foreground hover:bg-muted"
+                    ? "bg-primary/10 border-primary/20 text-primary shadow-sm"
+                    : "border-border/60 dark:border-white/5 text-muted-foreground hover:bg-slate-100 dark:hover:bg-white/5"
                 }`}
               >
                 {label}
@@ -156,19 +152,19 @@ export default function AdminUsersPage() {
             ))}
           </div>
         </div>
-        <div className="border-b px-4 py-2 text-xs text-muted-foreground">
+        <div className="border-b border-border/40 dark:border-white/5 px-4 py-2.5 text-xs text-muted-foreground bg-slate-100/5 dark:bg-black/2">
           Showing {filteredUsers.length} of {payload.totals.all} users. Active: {payload.totals.active}. Invited: {payload.totals.invited}.
         </div>
 
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last login</TableHead>
+            <TableHeader className="bg-slate-100/30 dark:bg-black/10">
+              <TableRow className="border-b border-border/40 dark:border-white/5">
+                <TableHead className="font-semibold text-foreground">User</TableHead>
+                <TableHead className="font-semibold text-foreground">Role</TableHead>
+                <TableHead className="font-semibold text-foreground">Client</TableHead>
+                <TableHead className="font-semibold text-foreground">Status</TableHead>
+                <TableHead className="font-semibold text-foreground">Last login</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -187,19 +183,19 @@ export default function AdminUsersPage() {
                 </TableRow>
               )}
               {!loading && filteredUsers.map((user, index) => (
-                <TableRow key={`${user.id || user.email || "user"}-${index}`}>
+                <TableRow key={`${user.id || user.email || "user"}-${index}`} className="border-b border-border/40 dark:border-white/5 hover:bg-slate-100/10 dark:hover:bg-white/[0.02] transition-colors">
                   <TableCell>
-                    <div className="font-medium text-foreground">{user.name}</div>
-                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    <div className="font-semibold text-foreground">{user.name}</div>
+                    <div className="text-xs text-muted-foreground/80 mt-0.5">{user.email}</div>
                   </TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  <TableCell>{user.client}</TableCell>
+                  <TableCell className="text-sm font-medium">{user.role}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{user.client}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusClassName[user.status] ?? statusClassName.Active}>
+                    <Badge variant="outline" className={`rounded-lg font-semibold border px-2 py-0.5 ${statusClassName[user.status] ?? statusClassName.Active}`}>
                       {user.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{user.lastLogin}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{user.lastLogin}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -214,18 +210,41 @@ function UserMetric({
   icon: Icon,
   label,
   value,
+  color = "primary",
 }: {
   icon: typeof Users;
   label: string;
   value: number;
+  color?: "primary" | "cyan" | "indigo" | "emerald" | "amber" | "red";
 }) {
+  const colorGradients = {
+    primary: "from-primary to-indigo-500 hover:border-primary/30",
+    cyan: "from-cyan-500 to-blue-400 hover:border-cyan-500/30",
+    indigo: "from-indigo-500 to-purple-400 hover:border-indigo-500/30",
+    emerald: "from-emerald-500 to-teal-400 hover:border-emerald-500/30",
+    amber: "from-amber-500 to-yellow-400 hover:border-amber-500/30",
+    red: "from-red-500 to-pink-500 hover:border-red-500/30",
+  };
+
+  const iconColors = {
+    primary: "text-primary",
+    cyan: "text-cyan-400",
+    indigo: "text-indigo-400",
+    emerald: "text-emerald-400",
+    amber: "text-amber-400",
+    red: "text-red-400",
+  };
+
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 text-cyan-600" aria-hidden="true" />
-      </div>
-      <p className="mt-2 text-2xl font-semibold">{value}</p>
-    </div>
+    <Card className="relative overflow-hidden rounded-xl border border-border bg-card dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md shadow-lg transition-all duration-300 hover:scale-[1.01]">
+      <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${colorGradients[color]}`} />
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4">
+        <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</CardTitle>
+        <Icon className={`h-[18px] w-[18px] ${iconColors[color]}`} aria-hidden="true" />
+      </CardHeader>
+      <CardContent className="px-4 pb-4 pt-1">
+        <p className="text-3xl font-black text-foreground">{value}</p>
+      </CardContent>
+    </Card>
   );
 }

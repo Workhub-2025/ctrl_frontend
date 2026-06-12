@@ -28,6 +28,7 @@ interface EqualityMonitoringFormProps {
   onSkipAll?: () => void;
   isLoading?: boolean;
   isOptional?: boolean;
+  inline?: boolean;
 }
 
 export default function EqualityMonitoringForm({
@@ -36,6 +37,7 @@ export default function EqualityMonitoringForm({
   onSkipAll,
   isLoading = false,
   isOptional = false,
+  inline = false,
 }: EqualityMonitoringFormProps) {
   // --- Form State Management ---
   const [formData, setFormData] = useState<EqualityMonitoringData>({});
@@ -68,22 +70,24 @@ export default function EqualityMonitoringForm({
 
   // --- Progress Indicator ---
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex items-center justify-between mb-8 max-w-md mx-auto w-full">
       {Array.from({ length: totalSteps }, (_, i) => (
-        <div key={i} className="flex items-center">
+        <div key={i} className="flex items-center flex-1 last:flex-none">
           <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              i + 1 <= currentStep
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+              i + 1 < currentStep
+                ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                : i + 1 === currentStep
+                ? "bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-md shadow-primary/20"
+                : "bg-muted text-muted-foreground border border-border/60"
             }`}
           >
             {i + 1}
           </div>
           {i < totalSteps - 1 && (
             <div
-              className={`h-1 w-12 mx-2 ${
-                i + 1 < currentStep ? "bg-primary" : "bg-muted"
+              className={`h-[2px] flex-1 mx-2 rounded-full transition-all duration-500 ${
+                i + 1 < currentStep ? "bg-emerald-500" : "bg-muted"
               }`}
             />
           )}
@@ -104,7 +108,7 @@ export default function EqualityMonitoringForm({
               value={formData.age_range || ""}
               onValueChange={(value) => handleInputChange("age_range", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your age range (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -159,6 +163,7 @@ export default function EqualityMonitoringForm({
                 onChange={(e) =>
                   handleInputChange("gender_other", e.target.value)
                 }
+                className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
               />
             )}
           </div>
@@ -212,6 +217,7 @@ export default function EqualityMonitoringForm({
                 onChange={(e) =>
                   handleInputChange("sexual_orientation_other", e.target.value)
                 }
+                className="rounded-xl border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
               />
             )}
           </div>
@@ -232,7 +238,7 @@ export default function EqualityMonitoringForm({
               value={formData.ethnicity || ""}
               onValueChange={(value) => handleInputChange("ethnicity", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your ethnic group (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -277,7 +283,7 @@ export default function EqualityMonitoringForm({
               value={formData.religion || ""}
               onValueChange={(value) => handleInputChange("religion", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your religion or belief (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -304,7 +310,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("marital_status", value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your marital status (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -402,6 +408,7 @@ export default function EqualityMonitoringForm({
                   handleInputChange("disability_details", e.target.value)
                 }
                 rows={4}
+                className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary resize-none"
               />
             </div>
           )}
@@ -424,7 +431,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("education_level", value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your highest qualification (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -460,7 +467,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("employment_status", value)
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your employment status (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -525,6 +532,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("additional_information", e.target.value)
               }
               rows={3}
+              className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary resize-none"
             />
           </div>
         </div>
@@ -532,77 +540,64 @@ export default function EqualityMonitoringForm({
     </div>
   );
 
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
-        {/* Form Header & Description */}
-        <CardHeader>
-          <FormPageHeader
-            icon={Heart}
-            color="green"
-            title={isOptional
-              ? "Complete Your Equality Monitoring (Optional)"
-              : "Equality and Diversity Monitoring"}
-            description={isOptional
-              ? "Help us ensure our services are fair and accessible. This information is anonymous and completely optional - you can skip and complete it later in your profile settings."
-              : "This information helps us ensure our services are accessible and fair to everyone. All questions are optional and your responses are anonymous."}
-          />
-        </CardHeader>
+  const content = (
+    <div className="space-y-6">
+      {renderStepIndicator()}
 
-        <CardContent className="space-y-6">
-          {renderStepIndicator()}
-
-          <div className="rounded-lg border border-border/70 bg-muted/40 p-4">
-            <div className="flex items-start gap-3">
-              <Users className="mt-0.5 h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium font-semibold tracking-tight text-2xl font-headline mb-2">
-                  Why do we collect this information?
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  This data helps us monitor equality, identify barriers, and
-                  improve our services. Your individual responses remain
-                  confidential and are used only for statistical analysis.
-                </p>
-              </div>
-            </div>
+      <div className="rounded-xl border border-primary/20 dark:border-primary/10 bg-primary/5 dark:bg-primary/5 p-4 shadow-inner">
+        <div className="flex items-start gap-3">
+          <Users className="mt-0.5 h-5 w-5 text-primary animate-pulse" />
+          <div>
+            <p className="text-sm font-semibold tracking-tight text-foreground mb-1">
+              Why do we collect this information?
+            </p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This data helps us monitor equality, identify barriers, and
+              improve our services. Your individual responses remain
+              confidential and are used only for statistical analysis.
+            </p>
           </div>
+        </div>
+      </div>
 
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
+      {currentStep === 1 && renderStep1()}
+      {currentStep === 2 && renderStep2()}
+      {currentStep === 3 && renderStep3()}
+      {currentStep === 4 && renderStep4()}
 
-          <Separator />
+      <Separator className="my-6" />
 
-          {/* Form Navigation Controls */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            {currentStep > 1 && (
-              <Button
-                onClick={handlePrevious}
-                variant="outline"
-                disabled={isLoading}
-                size="lg"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-            )}
+      {/* Form Navigation Controls */}
+      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+        {currentStep > 1 && (
+          <Button
+            onClick={handlePrevious}
+            variant="outline"
+            disabled={isLoading}
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Previous
+          </Button>
+        )}
 
-            <div className="flex-1" />
+        <div className="flex-1" />
 
-            {currentStep < totalSteps ? (
-              <Button onClick={handleNext} disabled={isLoading} size="lg">
-                Next
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            ) : (
-              <Button onClick={handleComplete} disabled={isLoading} size="lg">
-                {isLoading ? "Saving..." : "Complete Registration"}
-              </Button>
-            )}
-          </div>
+        {currentStep < totalSteps ? (
+          <Button onClick={handleNext} disabled={isLoading} size="lg" className="w-full sm:w-auto">
+            Next
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button onClick={handleComplete} disabled={isLoading} size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-primary-foreground shadow-md shadow-primary/20">
+            {isLoading ? "Saving..." : inline ? "Save Changes" : "Complete Registration"}
+          </Button>
+        )}
+      </div>
 
+      {!inline && (
+        <>
           <div className="text-center pt-4">
             {isOptional && onSkipAll ? (
               <div className="flex flex-col sm:flex-row gap-2 justify-center">
@@ -610,7 +605,7 @@ export default function EqualityMonitoringForm({
                   onClick={onSkip}
                   variant="ghost"
                   disabled={isLoading}
-                  className="text-muted-foreground"
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   Skip this form
                 </Button>
@@ -627,7 +622,7 @@ export default function EqualityMonitoringForm({
                 onClick={onSkip}
                 variant="ghost"
                 disabled={isLoading}
-                className="text-muted-foreground"
+                className="text-muted-foreground hover:text-foreground"
               >
                 Skip this form and continue to dashboard
               </Button>
@@ -639,6 +634,34 @@ export default function EqualityMonitoringForm({
               ? "You can complete this form later in your profile settings."
               : "All questions are optional. You can skip any question or the entire form."}
           </p>
+        </>
+      )}
+    </div>
+  );
+
+  if (inline) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <Card className="w-full max-w-2xl border border-border/80 dark:border-white/10 bg-background/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden">
+        {/* Form Header & Description */}
+        <CardHeader className="pt-8 pb-6 border-b border-border/40 dark:border-white/5 bg-slate-50/50 dark:bg-black/20">
+          <FormPageHeader
+            icon={Heart}
+            color="green"
+            title={isOptional
+              ? "Complete Your Equality Monitoring (Optional)"
+              : "Equality and Diversity Monitoring"}
+            description={isOptional
+              ? "Help us ensure our services are fair and accessible. This information is anonymous and completely optional - you can skip and complete it later in your profile settings."
+              : "This information helps us ensure our services are accessible and fair to everyone. All questions are optional and your responses are anonymous."}
+          />
+        </CardHeader>
+
+        <CardContent className="p-6 sm:p-8">
+          {content}
         </CardContent>
       </Card>
     </div>

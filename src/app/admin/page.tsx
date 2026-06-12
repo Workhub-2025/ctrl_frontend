@@ -19,9 +19,13 @@ import {
   Clock3,
   FileCheck2,
   KeyRound,
+  LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
 import { useAdminResource } from "@/lib/admin-resource-cache";
+import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
+import { cn } from "@/lib/utils";
 
 type AdminOverviewData = {
   activeClients: number;
@@ -66,162 +70,173 @@ export default function AdminOverview() {
   const seatUsage = useMemo(() => overview.seatUsage ?? [], [overview]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-responsive-3xl font-bold font-headline title-adaptive">
-            Overview
-          </h3>
-          <p className="text-adaptive-secondary text-responsive-base leading-relaxed">
-            High-level metrics and operations for the CTRL platform.
-          </p>
-        </div>
-      </div>
+    <div className="max-w-7xl space-y-6">
+      <HiringManagerPageHeader
+        eyebrow="Platform Operations"
+        title="Overview"
+        description="High-level metrics, seat allocations, audit logs, and account diagnostics for the CTRL platform."
+        icon={LayoutDashboard}
+      />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Clients</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Metric 1: Active Clients */}
+        <DashboardInfoCard accent="primary">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active Clients</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+              <Building2 className="h-[18px] w-[18px]" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview.activeClients}</div>
-            <p className="text-xs text-muted-foreground">Registered client contacts with active contracts</p>
+          <CardContent className="pl-6">
+            <div className="text-3xl font-black text-foreground mt-1">{overview.activeClients}</div>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Registered client contacts with active contracts</p>
           </CardContent>
-        </Card>
+        </DashboardInfoCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Awaiting Signup</CardTitle>
-            <Clock3 className="h-4 w-4 text-blue-500" />
+        {/* Metric 2: Awaiting Signup */}
+        <DashboardInfoCard accent="session">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Awaiting Signup</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-500/10 text-sky-500">
+              <Clock3 className="h-[18px] w-[18px]" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+          <CardContent className="pl-6">
+            <div className="text-3xl font-black text-foreground mt-1">
               {overview.awaitingClientSignups}
             </div>
-            <p className="text-xs text-muted-foreground">Contracted clients without a registered contact</p>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Contracted clients without a registered contact</p>
           </CardContent>
-        </Card>
+        </DashboardInfoCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Client Invites</CardTitle>
-            <KeyRound className="h-4 w-4 text-muted-foreground" />
+        {/* Metric 3: Client Invites */}
+        <DashboardInfoCard accent="campaign">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client Invites</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-500">
+              <KeyRound className="h-[18px] w-[18px]" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview.availableClientCodes}</div>
-            <p className="text-xs text-muted-foreground">Active admin-issued signup invites</p>
+          <CardContent className="pl-6">
+            <div className="text-3xl font-black text-foreground mt-1">{overview.availableClientCodes}</div>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Active admin-issued signup invites</p>
           </CardContent>
-        </Card>
+        </DashboardInfoCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+        {/* Metric 4: Expiring Soon */}
+        <DashboardInfoCard accent="warning">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Expiring Soon</CardTitle>
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500">
+              <AlertTriangle className="h-[18px] w-[18px]" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{overview.contractsExpiringSoon}</div>
-            <p className="text-xs text-muted-foreground">Contracts in next 30 days</p>
+          <CardContent className="pl-6">
+            <div className="text-3xl font-black text-foreground mt-1">{overview.contractsExpiringSoon}</div>
+            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Contracts expiring in the next 30 days</p>
           </CardContent>
-        </Card>
+        </DashboardInfoCard>
       </div>
 
       {error && (
-        <Card className="border-red-500/30">
-          <CardContent className="py-4 text-sm text-red-600">{error}</CardContent>
+        <Card className="border-red-500/30 bg-red-500/5 text-red-400 rounded-xl">
+          <CardContent className="py-4 text-sm font-semibold">{error}</CardContent>
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
-          <CardHeader>
-            <CardTitle>HM seat capacity</CardTitle>
-            <CardDescription>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        {/* HM Seat Capacity Card */}
+        <DashboardInfoCard accent="primary" interactive={false} className="lg:col-span-4">
+          <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
+            <CardTitle className="text-base font-bold text-foreground">HM Seat Capacity</CardTitle>
+            <CardDescription className="text-slate-400 text-xs mt-0.5">
               Active hiring-manager occupants versus contracted reusable seats.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-5">
             {seatUsage.length ? seatUsage.map((client, index) => {
               const percent = client.seatsAllowed
                 ? Math.min(100, Math.round((client.seatsUsed / client.seatsAllowed) * 100))
                 : 0;
               return (
                 <div key={`${client.id || "seat-client"}-${index}`} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{client.name}</span>
-                    <span className="text-muted-foreground">
-                      {client.seatsUsed}/{client.seatsAllowed} Seats
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-300">{client.name}</span>
+                    <span className="text-slate-400 font-semibold">
+                      {client.seatsUsed} / {client.seatsAllowed} Seats
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-muted dark:bg-white/10 rounded-full overflow-hidden">
                     <div
-                      className={percent >= 100 ? "h-full bg-orange-500" : "h-full bg-cyan-600"}
+                      className={cn("h-full rounded-full transition-all duration-300", percent >= 100 ? "bg-amber-500" : "bg-primary")}
                       style={{ width: `${percent}%` }}
                     />
                   </div>
                 </div>
               );
             }) : (
-              <p className="text-sm text-muted-foreground">No seat usage data available yet.</p>
+              <p className="text-xs text-slate-400">No seat usage data available yet.</p>
             )}
           </CardContent>
-        </Card>
+        </DashboardInfoCard>
 
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Recent client movement</CardTitle>
-            <CardDescription>Latest client records returned by the platform API.</CardDescription>
+        {/* Recent Client Movement Card */}
+        <DashboardInfoCard accent="campaign" interactive={false} className="lg:col-span-3">
+          <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
+            <CardTitle className="text-base font-bold text-foreground">Recent Client Movement</CardTitle>
+            <CardDescription className="text-slate-400 text-xs mt-0.5">Latest client records returned by the platform API.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-5">
             {overview.recentActivity.length ? overview.recentActivity.map((activity, index) => (
               <div key={`${activity.id || "activity"}-${index}`}>
                 <div className="flex items-center gap-4">
-                  <History className="h-4 w-4 text-muted-foreground" />
+                  <History className="h-[18px] w-[18px] text-slate-400" />
                   <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">{activity.title}</p>
-                    <p className="text-xs text-muted-foreground">{activity.detail}</p>
+                    <p className="text-sm font-bold leading-none text-foreground">{activity.title}</p>
+                    <p className="text-xs text-slate-400">{activity.detail}</p>
                   </div>
                 </div>
-                {index < overview.recentActivity.length - 1 && <Separator className="mt-4" />}
+                {index < overview.recentActivity.length - 1 && <Separator className="mt-4 border-white/5" />}
               </div>
             )) : (
-              <p className="text-sm text-muted-foreground">No recent client activity yet.</p>
+              <p className="text-xs text-slate-400">No recent client activity yet.</p>
             )}
           </CardContent>
-        </Card>
+        </DashboardInfoCard>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Operational attention</CardTitle>
-          <CardDescription>Real account states that need a CTRL admin decision.</CardDescription>
+      {/* Operational Attention Card */}
+      <DashboardInfoCard accent="warning" interactive={false}>
+        <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
+          <CardTitle className="text-base font-bold text-foreground">Operational Attention</CardTitle>
+          <CardDescription className="text-slate-400 text-xs mt-0.5">Real account states that need a CTRL admin decision.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-5">
           <div className="space-y-4">
             {overview.attentionRequired.length ? overview.attentionRequired.map((item, index) => (
-            <div key={`${item.id || "attention"}-${index}`} className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.detail}</p>
+              <div key={`${item.id || "attention"}-${index}`} className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <AlertTriangle className="h-5 w-5 text-red-400" />
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{item.title}</p>
+                    <p className="text-xs text-slate-400">{item.detail}</p>
+                  </div>
                 </div>
+                <Button variant="outline" size="sm" asChild className="h-8 rounded-lg border-white/15 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white">
+                  <Link href="/admin/clients">
+                    Review <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                  </Link>
+                </Button>
               </div>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/admin/clients">
-                  Review <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
             )) : (
-              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <FileCheck2 className="h-4 w-4 text-emerald-600" />
+              <div className="flex items-center gap-3 text-xs text-slate-400">
+                <FileCheck2 className="h-[18px] w-[18px] text-emerald-400" />
                 No real account issues need attention right now.
               </div>
             )}
           </div>
         </CardContent>
-      </Card>
+      </DashboardInfoCard>
     </div>
   );
 }

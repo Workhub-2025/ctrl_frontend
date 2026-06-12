@@ -18,7 +18,13 @@ import {
   BrainCircuit,
   PhoneCall,
   FileQuestion,
-  ShieldCheck
+  ShieldCheck,
+  Play,
+  Pause,
+  RotateCcw,
+  Volume2,
+  User,
+  Phone
 } from "lucide-react";
 import {
   HiringManagerPortalClientService,
@@ -254,6 +260,220 @@ const COMPETENCY_FLOORS: Record<string, number> = {
   C6: 40,
 };
 
+const CALL_TRANSCRIPT_DATA = [
+  { speaker: "OPERATOR", text: "Hello, this is the police. What is your emergency?", time: "0:00", sec: 0 },
+  { speaker: "CALLER", text: "I've just seen someone break into a car outside my flat. They've smashed the window, and they're going through it now.", time: "0:02", sec: 2, highlights: ["break into a car", "smashed the window"] },
+  { speaker: "OPERATOR", text: "Okay, I'm creating a report for a theft from motor vehicle in progress and will get police on the way as soon as I have confirmed some information with you.", time: "0:08", sec: 8, highlights: ["theft from motor vehicle in progress"] },
+  { speaker: "OPERATOR", text: "What is the exact location of the vehicle?", time: "0:15", sec: 15 },
+  { speaker: "CALLER", text: "It's outside 18 Camden Grove, postcode S E 1 5, 3 X B.", time: "0:17", sec: 17, highlights: ["18 Camden Grove", "SE15 3XB"] },
+  { speaker: "OPERATOR", text: "Got it, 18 Camden Grove, SE, 1, 5, 3, XB. And is the suspect still there?", time: "0:21", sec: 21 },
+  { speaker: "CALLER", text: "Yes, he's still there. He's leaning inside the car now.", time: "0:27", sec: 27 },
+  { speaker: "OPERATOR", text: "Okay, I’m going to take a description of the suspect from you now. Can you tell me what he looks like please?", time: "0:30", sec: 30 },
+  { speaker: "CALLER", text: "Yes. He's a white male, about 30 years old, wearing a black jacket and grey jogging bottoms.", time: "0:35", sec: 35, highlights: ["white male", "30 years old", "black jacket", "grey jogging bottoms"] },
+  { speaker: "OPERATOR", text: "Is anyone else with him?", time: "0:43", sec: 43 },
+  { speaker: "CALLER", text: "No, I can’t see anyone with him.", time: "0:45", sec: 45 },
+  { speaker: "OPERATOR", text: "Have you seen any weapons?", time: "0:47", sec: 47 },
+  { speaker: "CALLER", text: "It looks like he's used a hammer to smash the window.", time: "0:49", sec: 49, highlights: ["hammer"] },
+  { speaker: "OPERATOR", text: "Officers are on the way. They will be there within 15 minutes on our emergency response. Do you know who owns the vehicle?", time: "0:55", sec: 55, highlights: ["15 minutes", "emergency response"] },
+  { speaker: "CALLER", text: "No, I don't. It's a silver Toyota Yaris, but I don't know whose it is.", time: "1:03", sec: 63, highlights: ["silver Toyota Yaris"] },
+  { speaker: "OPERATOR", text: "Can you give me the vehicle registration number?", time: "1:07", sec: 67 },
+  { speaker: "CALLER", text: "Yeah, I can. It's H N, 2 8, Y J, W. That's H, N, two, eight, Y, J W.", time: "1:10", sec: 70, highlights: ["HN28 YJW"] },
+  { speaker: "OPERATOR", text: "Thanks. And what's your name?", time: "1:19", sec: 79 },
+  { speaker: "CALLER", text: "My name is Jessie Peres.", time: "1:21", sec: 81, highlights: ["Jessie Peres"] },
+  { speaker: "OPERATOR", text: "Thank you, Jessie. Can you spell your name, please?", time: "1:23", sec: 83 },
+  { speaker: "CALLER", text: "Yes. It's J E S S I E. And my surname is P E R E S.", time: "1:25", sec: 85, highlights: ["J E S S I E", "P E R E S"] },
+  { speaker: "OPERATOR", text: "And what is your date of birth Jessie?", time: "1:33", sec: 93 },
+  { speaker: "CALLER", text: "It's 14th February 1991.", time: "1:35", sec: 95, highlights: ["14th February 1991"] },
+  { speaker: "OPERATOR", text: "Thanks. Can I get your telephone number, Jessie?", time: "1:41", sec: 101 },
+  { speaker: "CALLER", text: "Yes. It's 0, 7, 7, 0, 0, 9, 3, 8, 2, 1, 6,.", time: "1:44", sec: 104, highlights: ["07700938216"] },
+  { speaker: "OPERATOR", text: "Thank you. And are you calling from the scene or somewhere else?", time: "1:51", sec: 111 },
+  { speaker: "CALLER", text: "My name is Jessie Peres.", time: "1:53", sec: 113, highlights: ["16 Camden Grove", "SE15 3XB"] },
+  { speaker: "OPERATOR", text: "Okay, so that's number 16 Camden Grove, S, E, 1, 5, 3, X, B,. I’m going to give you an incident reference number, do you have something to write it down with?", time: "2:00", sec: 120 },
+  { speaker: "CALLER", text: "Yes, go ahead.", time: "2:05", sec: 125 },
+  { speaker: "OPERATOR", text: "Your incident reference number is 4, 6, 1, 9, 5. Please stay inside, keep yourself safe, and call us back if anything changes.", time: "2:06", sec: 126, highlights: ["46195"] },
+];
+
+function CallTranscriptPlayer() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1.0);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      setCurrentTime((t) => {
+        if (t >= 126) {
+          setIsPlaying(false);
+          return 126;
+        }
+        return t + 1;
+      });
+    }, 1000 / playbackRate);
+    return () => clearInterval(interval);
+  }, [isPlaying, playbackRate]);
+
+  const formatTime = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const rem = secs % 60;
+    return `${mins}:${rem < 10 ? "0" : ""}${rem}`;
+  };
+
+  const activeTurnIndex = [...CALL_TRANSCRIPT_DATA]
+    .reverse()
+    .find((turn) => currentTime >= turn.sec)
+    ? CALL_TRANSCRIPT_DATA.indexOf(
+        [...CALL_TRANSCRIPT_DATA]
+          .reverse()
+          .find((turn) => currentTime >= turn.sec)!
+      )
+    : 0;
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCurrentTime(Number(e.target.value));
+  };
+
+  const highlightText = (text: string, highlights?: string[]) => {
+    if (!highlights || highlights.length === 0) return text;
+    let parts: React.ReactNode[] = [text];
+    
+    highlights.forEach((hl) => {
+      const newParts: React.ReactNode[] = [];
+      parts.forEach((part) => {
+        if (typeof part === "string") {
+          const index = part.toLowerCase().indexOf(hl.toLowerCase());
+          if (index !== -1) {
+            newParts.push(part.substring(0, index));
+            newParts.push(
+              <span
+                key={hl + index}
+                className="bg-cyan-500/20 text-cyan-200 border-b border-dashed border-cyan-400 font-semibold px-0.5 rounded"
+                title="AI Evaluated Key Point"
+              >
+                {part.substring(index, index + hl.length)}
+              </span>
+            );
+            newParts.push(part.substring(index + hl.length));
+          } else {
+            newParts.push(part);
+          }
+        } else {
+          newParts.push(part);
+        }
+      });
+      parts = newParts;
+    });
+    
+    return parts;
+  };
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/40 overflow-hidden space-y-4">
+      {/* Player HUD Control Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/[0.02] border-b border-white/5 p-4">
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsPlaying(!isPlaying)}
+            className="h-9 w-9 rounded-full bg-primary/10 text-primary hover:bg-primary/20"
+          >
+            {isPlaying ? <Pause className="h-[18px] w-[18px]" /> : <Play className="h-[18px] w-[18px]" />}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => { setCurrentTime(0); setIsPlaying(false); }}
+            className="h-8 w-8 rounded-full text-slate-400 hover:text-white"
+            title="Reset"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <div className="text-xs font-mono text-slate-300">
+            <span>{formatTime(currentTime)}</span>
+            <span className="text-slate-600 px-1">/</span>
+            <span>2:06</span>
+          </div>
+        </div>
+
+        {/* Timeline Progress Slider */}
+        <div className="flex-1 w-full px-2">
+          <input
+            type="range"
+            min="0"
+            max="126"
+            value={currentTime}
+            onChange={handleSeek}
+            className="w-full h-1.5 rounded-lg bg-white/10 accent-primary cursor-pointer hover:bg-white/20 transition-all"
+          />
+        </div>
+
+        {/* Speed & Volume details */}
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-lg border border-white/5 overflow-hidden">
+            {[1.0, 1.5, 2.0].map((rate) => (
+              <button
+                key={rate}
+                type="button"
+                onClick={() => setPlaybackRate(rate)}
+                className={`px-2 py-1 text-[10px] font-bold ${
+                  playbackRate === rate
+                    ? "bg-primary text-white"
+                    : "text-slate-400 hover:text-white bg-transparent"
+                }`}
+              >
+                {rate}x
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <Volume2 className="h-4 w-4" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Simulated</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Transcript Chat Display bubbles */}
+      <div className="p-4 max-h-[360px] overflow-y-auto space-y-3 custom-scrollbar scroll-smooth">
+        {CALL_TRANSCRIPT_DATA.map((turn, idx) => {
+          const isOperator = turn.speaker === "OPERATOR";
+          const isActive = idx === activeTurnIndex;
+          
+          return (
+            <button
+              key={turn.sec + idx}
+              type="button"
+              onClick={() => setCurrentTime(turn.sec)}
+              className={`w-full flex text-left transition-all duration-300 rounded-xl p-1 focus:outline-none ${
+                isOperator ? "justify-start" : "justify-end"
+              }`}
+            >
+              <div
+                className={`max-w-[85%] rounded-2xl p-3.5 text-xs transition-all duration-300 border ${
+                  isActive
+                    ? "bg-primary/10 border-primary shadow-[0_0_15px_rgba(99,102,241,0.1)] scale-[1.01]"
+                    : isOperator
+                    ? "bg-slate-800/40 border-slate-700/30 text-slate-300 hover:border-slate-600/40"
+                    : "bg-[#0b1329]/50 border-white/5 text-slate-100 hover:border-white/10"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-wider text-slate-500 mb-1">
+                  {isOperator ? <User className="h-3 w-3 text-sky-400" /> : <Phone className="h-3 w-3 text-indigo-400" />}
+                  <span>{turn.speaker}</span>
+                  <span className="text-slate-700 font-normal">•</span>
+                  <span className="font-mono text-slate-400">{turn.time}</span>
+                </div>
+                <p className="leading-relaxed">{highlightText(turn.text, turn.highlights)}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId, embedded = false }: CandidateReportProps) {
   const [reportData, setReportData] = useState<CandidateReportData | null>(null);
   const [decision, setDecision] = useState<"Move forward" | "Reject" | null>(null);
@@ -395,7 +615,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                   <Button
                     type="button"
                     onClick={() => setDecision("Reject")}
-                    className="h-8.5 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                    className="h-[34px] rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
                   >
                     <ThumbsDown className="mr-1.5 h-3.5 w-3.5" />
                     Reject
@@ -403,7 +623,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                   <Button
                     type="button"
                     onClick={() => setDecision("Move forward")}
-                    className="h-8.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-xs font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_15px_rgba(52,211,153,0.15)]"
+                    className="h-[34px] rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-xs font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_15px_rgba(52,211,153,0.15)]"
                   >
                     <ThumbsUp className="mr-1.5 h-3.5 w-3.5 text-slate-950" />
                     Pass
@@ -465,62 +685,67 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         </div>
       )}
 
-      {/* Weighted Score Summary */}
+      {/* Weighted Score Summary & Radar Chart */}
       <div>
         <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardContent className="relative p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
-                Weighted Score
-              </span>
-              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${displayedRating.badge}`}>
-                {displayedRating.label}
-              </span>
-            </div>
+          <CardContent className="relative p-6">
+            <div className="flex flex-col justify-between space-y-5">
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                    Weighted Score
+                  </span>
+                  <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${displayedRating.badge}`}>
+                    {displayedRating.label}
+                  </span>
+                </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
-              <div className="flex items-end gap-1.5">
-                <span className="text-4xl font-black leading-none text-white tabular-nums">
-                  {overallScore}
-                </span>
-                <span className="text-sm font-bold text-slate-500">/100</span>
-              </div>
-              <div className="flex min-w-0 flex-col items-start gap-1 pb-0.5 sm:items-end">
-                <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
-                  Completion
-                </span>
-                <div className="flex w-full justify-start gap-1 sm:justify-end">
-                  {rows.map((row, idx) => {
-                    const isDone = row.score !== null;
-                    return (
-                      <div
-                        key={`${row.name}-${idx}`}
-                        title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
-                        className={`h-2.5 w-6 rounded-full transition-all duration-300 ${
-                          isDone
-                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
-                            : "bg-white/10 border border-white/5"
-                        }`}
-                      />
-                    );
-                  })}
+                <div className="mt-4 flex items-end gap-1.5">
+                  <span className="text-5xl font-black leading-none text-white tabular-nums">
+                    {overallScore}
+                  </span>
+                  <span className="text-sm font-bold text-slate-500">/100</span>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-4">
-              <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
-                  style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
-                />
-              </div>
-              <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-600">
-                <span>0</span>
-                <span>25</span>
-                <span>50</span>
-                <span>75</span>
-                <span>100</span>
+              <div>
+                <div className="flex min-w-0 flex-col items-start gap-1.5 pb-0.5">
+                  <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                    Completion Status
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {rows.map((row, idx) => {
+                      const isDone = row.score !== null;
+                      return (
+                        <div
+                          key={`${row.name}-${idx}`}
+                          title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
+                          className={`h-2.5 w-7 rounded-full transition-all duration-300 ${
+                            isDone
+                              ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)] animate-in fade-in duration-300"
+                              : "bg-white/10 border border-white/5"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
+                      style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-600">
+                    <span>0</span>
+                    <span>25</span>
+                    <span>50</span>
+                    <span>75</span>
+                    <span>100</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -616,9 +841,9 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                     <p className="text-xs text-slate-500 font-medium">Result status</p>
                     <div className="mt-2 flex items-center gap-2 text-sm text-slate-200 font-semibold">
                       {row.score !== null ? (
-                        <CheckCircle2 className="h-4.5 w-4.5 text-emerald-400" />
+                        <CheckCircle2 className="h-[18px] w-[18px] text-emerald-400" />
                       ) : (
-                        <Clock3 className="h-4.5 w-4.5 text-amber-400 animate-pulse" />
+                        <Clock3 className="h-[18px] w-[18px] text-amber-400 animate-pulse" />
                       )}
                       {row.score !== null ? "Submitted & Verified" : "Awaiting candidate"}
                     </div>
@@ -1025,6 +1250,14 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                   </div>
                                 </div>
                               )}
+
+                              {/* Audio Player & Transcription Sync Console */}
+                              <div className="space-y-2.5 pt-2">
+                                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                                  Call Audio Recording & Transcription
+                                </p>
+                                <CallTranscriptPlayer />
+                              </div>
                             </div>
                           );
                         })()}
