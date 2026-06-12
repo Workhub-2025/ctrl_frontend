@@ -29,8 +29,12 @@ import {
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
 
-type CampaignBuilderProps = {
+interface CampaignBuilderProps {
   assessments: HiringManagerAssessment[];
+  allowExtremePja?: boolean;
+  allowAdvancedPja?: boolean;
+  allowTypingIntermediate?: boolean;
+  allowTypingAdvanced?: boolean;
 };
 
 type CreateCampaignResponse = {
@@ -57,6 +61,7 @@ type CampaignDraft = {
   assessmentSlugs: string[];
   assessmentWeights: Record<string, number>;
   typingDifficulty: "Base" | "Intermediate" | "Advanced";
+  prioritisationScoringMode: "Basic" | "Advanced" | "Extreme";
 };
 
 const emptyDraft: CampaignDraft = {
@@ -70,6 +75,7 @@ const emptyDraft: CampaignDraft = {
   assessmentSlugs: [],
   assessmentWeights: {},
   typingDifficulty: "Base",
+  prioritisationScoringMode: "Basic",
 };
 
 function formatTotalDuration(seconds: number): string {
@@ -105,6 +111,10 @@ function buildEqualWeights(slugs: string[]) {
 
 export function HiringManagerCampaignBuilder({
   assessments,
+  allowExtremePja = true,
+  allowAdvancedPja = false,
+  allowTypingIntermediate = true,
+  allowTypingAdvanced = false,
 }: CampaignBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -317,6 +327,13 @@ export function HiringManagerCampaignBuilder({
                     durationSeconds: 60,
                     practiceRuns: 1,
                     assessmentRuns: 3,
+                  },
+                }
+              : {}),
+            ...(selectedAssessments.find((a) => a.slug === "prioritisation")
+              ? {
+                  prioritisation: {
+                    scoringMode: draft.prioritisationScoringMode,
                   },
                 }
               : {}),
@@ -591,19 +608,57 @@ export function HiringManagerCampaignBuilder({
                           </Label>
                           <div className="mt-2 grid gap-1.5">
                             {(["Base", "Intermediate", "Advanced"] as const).map((level) => {
+                              const isIntermediate = level === "Intermediate";
+                              const isAdvanced = level === "Advanced";
+                              const isDisabled = (isIntermediate && !allowTypingIntermediate) || (isAdvanced && !allowTypingAdvanced);
                               const isActive = draft.typingDifficulty === level;
                               return (
                                 <button
                                   key={level}
                                   type="button"
-                                  onClick={() => updateDraft("typingDifficulty", level)}
+                                  disabled={isDisabled}
+                                  onClick={() => !isDisabled && updateDraft("typingDifficulty", level)}
                                   className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
-                                    isActive
+                                    isDisabled
+                                      ? "border-white/5 bg-white/[0.01] text-slate-600 cursor-not-allowed"
+                                      : isActive
                                       ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
                                       : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
                                   }`}
                                 >
-                                  {level}
+                                  {level} {isDisabled && "🔒"}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {assessment.slug === "prioritisation" && (
+                        <div className="mt-3 space-y-2">
+                          <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                            Scoring Mode
+                          </Label>
+                          <div className="mt-2 grid gap-1.5">
+                            {(["Basic", "Advanced", "Extreme"] as const).map((mode) => {
+                              const isAdvanced = mode === "Advanced";
+                              const isExtreme = mode === "Extreme";
+                              const isDisabled = (isAdvanced && !allowAdvancedPja) || (isExtreme && !allowExtremePja);
+                              const isActive = draft.prioritisationScoringMode === mode;
+                              return (
+                                <button
+                                  key={mode}
+                                  type="button"
+                                  disabled={isDisabled}
+                                  onClick={() => !isDisabled && updateDraft("prioritisationScoringMode", mode)}
+                                  className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
+                                    isDisabled
+                                      ? "border-white/5 bg-white/[0.01] text-slate-600 cursor-not-allowed"
+                                      : isActive
+                                      ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                                      : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
+                                  }`}
+                                >
+                                  {mode} {isDisabled && "🔒"}
                                 </button>
                               );
                             })}

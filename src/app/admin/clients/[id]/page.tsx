@@ -28,6 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 
 type ClientDetails = {
   id: string;
@@ -45,6 +46,7 @@ type ClientDetails = {
   timeZone: string;
   campaignApprovalMode: "auto_approve" | "require_approval";
   onboardingCompleted: boolean;
+  features?: Record<string, any> | null;
   createdAt: string | null;
   updatedAt: string | null;
   pendingCampaignApprovals: number;
@@ -102,6 +104,9 @@ export default function ClientDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [features, setFeatures] = useState<Record<string, boolean>>({});
+  const [savingFeatures, setSavingFeatures] = useState(false);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
 
   const canDelete = useMemo(
     () => Boolean(client?.name && confirmName === client.name),
@@ -133,6 +138,53 @@ export default function ClientDetailPage() {
       cancelled = true;
     };
   }, [clientId]);
+
+  useEffect(() => {
+    if (client) {
+      setFeatures({
+        extremePja: client.features?.extremePja !== false,
+        advancedPja: client.features?.advancedPja === true,
+        typingIntermediate: client.features?.typingIntermediate !== false,
+        typingAdvanced: client.features?.typingAdvanced === true,
+      });
+    }
+  }, [client]);
+
+  const toggleFeature = (key: string) => {
+    setFeatures((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const saveFeatures = async () => {
+    setSavingFeatures(true);
+    setSavedMessage(null);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          features: {
+            extremePja: features.extremePja,
+            advancedPja: features.advancedPja,
+            typingIntermediate: features.typingIntermediate,
+            typingAdvanced: features.typingAdvanced,
+          },
+        }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Features could not be updated");
+      setClient((prev) => prev ? { ...prev, features: body.data?.features ?? body.data?.data?.features ?? features } : null);
+      setSavedMessage("Client features updated successfully");
+      setTimeout(() => setSavedMessage(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Features could not be updated");
+    } finally {
+      setSavingFeatures(false);
+    }
+  };
 
   const generateClientCode = async () => {
     setGeneratingCode(true);
@@ -303,13 +355,13 @@ export default function ClientDetailPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent p-0">
-          {["summary", "contract", "users", "campaigns", "access"].map((tab) => (
+          {["summary", "contract", "users", "campaigns", "access", "features"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
               className="rounded-none border-b-2 border-transparent px-3 py-3 capitalize data-[state=active]:border-cyan-500 data-[state=active]:shadow-none"
             >
-              {tab === "access" ? "Access Codes" : tab}
+              {tab === "access" ? "Access Codes" : tab === "features" ? "Features" : tab}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -433,6 +485,85 @@ export default function ClientDetailPage() {
               badge: code.status,
             }))}
           />
+        </TabsContent>
+
+        <TabsContent value="features" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Feature Management</CardTitle>
+              <CardDescription>
+                Configure advanced features and assessment permissions for this client.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {savedMessage && (
+                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
+                  {savedMessage}
+                </div>
+              )}
+              
+              <div className="space-y-4 divide-y">
+                <div className="flex items-center justify-between py-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold">PJA Extreme Scoring Mode</Label>
+                    <p className="text-xs text-muted-foreground max-w-xl">
+                      Allows campaigns to use the Extreme scoring model (rank distance multipliers with critical misprioritisation penalties). Enabled by default.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={features.extremePja ?? true}
+                    onCheckedChange={() => toggleFeature("extremePja")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold">PJA Advanced Scoring Mode</Label>
+                    <p className="text-xs text-muted-foreground max-w-xl">
+                      Allows campaigns to use the Advanced scoring model (pure rank distance multipliers). Disabled by default.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={features.advancedPja ?? false}
+                    onCheckedChange={() => toggleFeature("advancedPja")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold">Typing Intermediate Difficulty</Label>
+                    <p className="text-xs text-muted-foreground max-w-xl">
+                      Allows campaigns to select the Intermediate typing difficulty level. Enabled by default.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={features.typingIntermediate ?? true}
+                    onCheckedChange={() => toggleFeature("typingIntermediate")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold">Typing Advanced Difficulty</Label>
+                    <p className="text-xs text-muted-foreground max-w-xl">
+                      Allows campaigns to select the Advanced typing difficulty level. Disabled by default.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={features.typingAdvanced ?? false}
+                    onCheckedChange={() => toggleFeature("typingAdvanced")}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <Button onClick={saveFeatures} disabled={savingFeatures}>
+                  {savingFeatures && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Feature Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

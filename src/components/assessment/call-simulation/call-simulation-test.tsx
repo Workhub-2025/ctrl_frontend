@@ -915,29 +915,16 @@ export default function CallSimulationTest({
                     </Select>
                   </div>
                   <div className="space-y-2 sm:col-span-3">
-                    <Label htmlFor="suspect-clothing">Suspect Clothing</Label>
+                    <Label htmlFor="suspect-clothing">Suspect Clothing & Key Details</Label>
                     <Input
                       id="suspect-clothing"
                       name="ctrl-call-suspect-clothing"
-                      placeholder="Describe clothing worn by suspect"
+                      placeholder="Describe clothing worn by suspect and other key details"
                       autoComplete="off"
                       spellCheck={false}
                       value={form.suspectClothing}
                       onChange={(event) => updateForm('suspectClothing', event.target.value)}
                       onBlur={() => handleFieldBlur('suspectClothing')}
-                    />
-                  </div>
-                  <div className="space-y-2 sm:col-span-3">
-                    <Label htmlFor="unique-information">Unique / Intel Details</Label>
-                    <Input
-                      id="unique-information"
-                      name="ctrl-call-unique-information"
-                      placeholder="Any unique identifying details or intel"
-                      autoComplete="off"
-                      spellCheck={false}
-                      value={form.uniqueInformation}
-                      onChange={(event) => updateForm('uniqueInformation', event.target.value)}
-                      onBlur={() => handleFieldBlur('uniqueInformation')}
                     />
                   </div>
                 </div>

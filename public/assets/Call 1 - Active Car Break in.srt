@@ -1,296 +1,271 @@
 1
-00:00:00,000 --> 00:00:03,762
+00:00:00,000 --> 00:00:03,622
 Hello, this is the police. What is your
 emergency?
 
 2
-00:00:03,762 --> 00:00:04,962
-<break time="1.2s"/>
-
-3
-00:00:04,962 --> 00:00:09,225
+00:00:03,622 --> 00:00:07,465
 I've just seen someone break into a car
 outside my flat. They've smashed the
 
-4
-00:00:09,225 --> 00:00:11,556
+3
+00:00:07,465 --> 00:00:09,566
 window, and they're going through it now.
 
-5
-00:00:11,556 --> 00:00:12,756
-<break time="1.2s"/>
-
-6
-00:00:12,756 --> 00:00:17,752
+4
+00:00:09,566 --> 00:00:14,254
 Okay, I'm creating a report for a theft
 from motor vehicle in progress and will
 
-7
-00:00:17,752 --> 00:00:22,555
+5
+00:00:14,254 --> 00:00:18,761
 get police on the way as soon as I have
 confirmed some information with you.
 
-8
-00:00:22,555 --> 00:00:24,555
-<break time="2.0s"/>
+6
+00:00:18,761 --> 00:00:19,761
+<break time="1s"/>
 
-9
-00:00:24,555 --> 00:00:27,527
+7
+00:00:19,761 --> 00:00:22,222
 What is the exact location of the
 vehicle?
 
-10
-00:00:27,527 --> 00:00:28,527
-<break time="1.0s"/>
-
-11
-00:00:28,527 --> 00:00:34,611
+8
+00:00:22,222 --> 00:00:28,306
 It's outside 18 Camden Grove, postcode
 SE15, 3XB.
 
-12
-00:00:34,611 --> 00:00:36,111
+9
+00:00:28,306 --> 00:00:29,806
 <break time="1.5s"/>
 
-13
-00:00:36,111 --> 00:00:44,006
-Got it, 18 Camden Grove, SE15, 3XB. And
-is the suspect still there?
+10
+00:00:29,806 --> 00:00:35,611
+Got it, 18 Camden Grove, SE15, 3XB.
 
-14
-00:00:44,006 --> 00:00:46,006
-<break time="2.0s"/>
+11
+00:00:35,611 --> 00:00:37,794
+Is the suspect still there.
 
-15
-00:00:46,006 --> 00:00:49,210
+12
+00:00:37,794 --> 00:00:40,998
 Yes, he's still there. He's leaning
 inside the car now.
 
-16
-00:00:49,210 --> 00:00:50,410
-<break time="1.2s"/>
+13
+00:00:40,998 --> 00:00:42,998
+<break time="2.0s"/>
 
-17
-00:00:50,410 --> 00:00:55,683
+14
+00:00:42,998 --> 00:00:46,620
 Okay, I’m going to take a description of
-the suspect from you now. Can you tell me
+the suspect from you.
 
-18
-00:00:55,683 --> 00:00:57,376
-what he looks like please?
+15
+00:00:46,620 --> 00:00:49,778
+Can you tell me what he's wearing and
+what he looks like.
 
-19
-00:00:57,376 --> 00:00:58,376
-<break time="1.0s"/>
-
-20
-00:00:58,376 --> 00:01:04,027
+16
+00:00:49,778 --> 00:00:55,429
 Yes. He's a white male, about 30 years
 old, wearing a black jacket and grey
 
-21
-00:01:04,027 --> 00:01:05,249
+17
+00:00:55,429 --> 00:00:56,651
 jogging bottoms.
 
-22
-00:01:05,249 --> 00:01:08,249
-<break time="3.0s"/>
-
-23
-00:01:08,249 --> 00:01:10,339
-Is anyone else with him?
-
-24
-00:01:10,339 --> 00:01:11,339
-<break time="1.0s"/>
-
-25
-00:01:11,339 --> 00:01:13,150
-No, I can’t see anyone with him.
-
-26
-00:01:13,150 --> 00:01:14,350
+18
+00:00:56,651 --> 00:00:57,851
 <break time="1.2s"/>
 
-27
-00:01:14,350 --> 00:01:16,626
-Have you seen any weapons?
+19
+00:00:57,851 --> 00:00:59,569
+Is anyone else with him.
 
-28
-00:01:16,626 --> 00:01:17,626
-<break time="1.0s"/>
+20
+00:00:59,569 --> 00:01:01,566
+No, I can’t see anyone with him.
 
-29
-00:01:17,626 --> 00:01:21,248
+21
+00:01:01,566 --> 00:01:03,284
+Have you seen any weapons.
+
+22
+00:01:03,284 --> 00:01:05,699
 It looks like he's used a hammer to smash
 the window.
 
-30
-00:01:21,248 --> 00:01:24,248
-<break time="3.0s"/>
+23
+00:01:05,699 --> 00:01:06,899
+<break time="1.2s"/>
 
-31
-00:01:24,248 --> 00:01:29,477
-Officers are on the way. They will be
-there within 15 minutes on our emergency
+24
+00:01:06,899 --> 00:01:08,710
+Officers are on the way.
 
-32
-00:01:29,477 --> 00:01:32,329
-response. Do you know who owns the
-vehicle?
+25
+00:01:08,710 --> 00:01:12,379
+They'll be there within 15 minutes on our
+emergency response.
 
-33
-00:01:32,329 --> 00:01:33,829
+26
+00:01:12,379 --> 00:01:13,879
 <break time="1.5s"/>
 
-34
-00:01:33,829 --> 00:01:38,334
+27
+00:01:13,879 --> 00:01:16,201
+Do you know who owns the vehicle.
+
+28
+00:01:16,201 --> 00:01:20,706
 No, I don't. It's a silver Toyota Yaris,
 but I don't know whose it is.
 
-35
-00:01:38,334 --> 00:01:39,534
+29
+00:01:20,706 --> 00:01:21,906
 <break time="1.2s"/>
 
-36
-00:01:39,534 --> 00:01:42,228
+30
+00:01:21,906 --> 00:01:24,460
 Can you give me the vehicle registration
-number?
+number.
+
+31
+00:01:24,460 --> 00:01:24,960
+<break time="0.5s"/>
+
+32
+00:01:24,960 --> 00:01:29,836
+Yeah, I can. It's H N, 2 8, Y J, W.
+
+33
+00:01:29,836 --> 00:01:30,336
+<break time="0.5s"/>
+
+34
+00:01:30,336 --> 00:01:33,122
+That's H, N, two, eight, Y, J W.
+
+35
+00:01:33,122 --> 00:01:34,622
+<break time="1.5s"/>
+
+36
+00:01:34,622 --> 00:01:36,572
+And what's your name.
 
 37
-00:01:42,228 --> 00:01:43,228
+00:01:36,572 --> 00:01:37,572
 <break time="1.0s"/>
 
 38
-00:01:43,228 --> 00:01:51,680
-Yeah, I can. It's H N, 2 8, Y J, W.
-That's H, N, two, eight, Y, J W.
-
-39
-00:01:51,680 --> 00:01:54,680
-<break time="3.0s"/>
-
-40
-00:01:54,680 --> 00:01:57,281
-Thanks. And what's your name?
-
-41
-00:01:57,281 --> 00:01:58,281
-<break time="1.0s"/>
-
-42
-00:01:58,281 --> 00:01:59,767
+00:01:37,572 --> 00:01:39,151
 My name is Jessie Peres.
 
+39
+00:01:39,151 --> 00:01:41,937
+Spelt, J, E, S, S, I, E.
+
+40
+00:01:41,937 --> 00:01:42,076
+<break time="0.3s/>
+
+41
+00:01:42,076 --> 00:01:44,816
+P, E, R, E, S.
+
+42
+00:01:44,816 --> 00:01:46,906
+And what is your date of birth.
+
 43
-00:01:59,767 --> 00:02:00,967
-<break time="1.2s"/>
+00:01:46,906 --> 00:01:47,406
+<break time="0.5s"/>
 
 44
-00:02:00,967 --> 00:02:03,986
-Thank you, Jessie. Can you spell your
-name, please?
-
-45
-00:02:03,986 --> 00:02:04,986
-<break time="1.0s"/>
-
-46
-00:02:04,986 --> 00:02:11,673
-Yes. It's J E S S I E. And my surname is
-P E R E S.
-
-47
-00:02:11,673 --> 00:02:14,673
-<break time="3.0s"/>
-
-48
-00:02:14,673 --> 00:02:16,856
-And what is your date of birth Jessie?
-
-49
-00:02:16,856 --> 00:02:17,856
-<break time="1.0s"/>
-
-50
-00:02:17,856 --> 00:02:20,782
+00:01:47,406 --> 00:01:50,332
 It's 14th February 1991.
 
+45
+00:01:50,332 --> 00:01:51,832
+<break time="1.5s"/>
+
+46
+00:01:51,832 --> 00:01:52,900
+Thanks Jessie.
+
+47
+00:01:52,900 --> 00:01:55,222
+Can I get your telephone number.
+
+48
+00:01:55,222 --> 00:01:55,722
+<break time="0.5s"/>
+
+49
+00:01:55,722 --> 00:02:05,521
+Yes. It's 077, 009, 382, 16. Once again,
+077, 009, 382, 16.
+
+50
+00:02:05,521 --> 00:02:07,021
+<break time="1.5s"/>
+
 51
-00:02:20,782 --> 00:02:23,782
-<break time="3.0s"/>
+00:02:07,021 --> 00:02:09,854
+And are you calling from the scene or
+somewhere else.
 
 52
-00:02:23,782 --> 00:02:26,754
-Thanks. Can I get your telephone number,
-Jessie?
+00:02:09,854 --> 00:02:16,448
+I'm calling from my flat, which is at 16
+Camden Grove, postcode SE15 3XB.
 
 53
-00:02:26,754 --> 00:02:27,754
-<break time="1.0s"/>
+00:02:16,448 --> 00:02:17,948
+<break time="1.5s"/>
 
 54
-00:02:27,754 --> 00:02:34,070
-Yes. It's 077, 009, 382, 16,.
+00:02:17,948 --> 00:02:24,496
+Okay, got it 16 Camden Grove, SE15, 3XB.
 
 55
-00:02:34,070 --> 00:02:37,070
-<break time="3.0s"/>
+00:02:24,496 --> 00:02:28,088
+I’m going to give you an incident
+reference number, do you have something
 
 56
-00:02:37,070 --> 00:02:40,646
-Thank you. And are you calling from the
-scene or somewhere else?
+00:02:28,088 --> 00:02:29,186
+to write it down with.
 
 57
-00:02:40,646 --> 00:02:41,646
+00:02:29,186 --> 00:02:30,186
 <break time="1.0s"/>
 
 58
-00:02:41,646 --> 00:02:48,473
-I'm calling from my flat, which is number
-16 Camden Grove, postcode SE15 3XB.
-
-59
-00:02:48,473 --> 00:02:51,473
-<break time="3.0s"/>
-
-60
-00:02:51,473 --> 00:02:57,358
-Okay, so that's number 16 Camden Grove,
-SE15, 3XB,. I’m going to give you an
-
-61
-00:02:57,358 --> 00:03:02,851
-incident reference number, do you have
-something to write it down with?
-
-62
-00:03:02,851 --> 00:03:04,351
-<break time="1.5s"/>
-
-63
-00:03:04,351 --> 00:03:05,651
+00:02:30,186 --> 00:02:31,161
 Yes, go ahead.
 
-64
-00:03:05,651 --> 00:03:06,651
-<break time="1.0s"/>
-
-65
-00:03:06,651 --> 00:03:12,818
+59
+00:02:31,161 --> 00:02:34,923
 Your incident reference number is 46195.
-Please stay inside, keep yourself safe,
 
-66
-00:03:12,818 --> 00:03:15,707
+60
+00:02:34,923 --> 00:02:35,223
+<break time="0.3s"/>
+
+61
+00:02:35,223 --> 00:02:40,610
+Please stay inside, keep yourself safe,
 and call us back if anything changes.
 
-67
-00:03:15,707 --> 00:03:16,707
-<break time="1.0s"/>
+62
+00:02:40,610 --> 00:02:41,110
+<break time="0.5s"/>
 
-68
-00:03:16,707 --> 00:03:17,914
+63
+00:02:41,110 --> 00:02:42,317
 Okay, Thank you.
 

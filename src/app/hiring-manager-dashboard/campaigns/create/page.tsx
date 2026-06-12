@@ -10,6 +10,27 @@ export const dynamic = "force-dynamic";
 export default async function CreateHiringManagerCampaignPage() {
   const { assessments, error } = await getHiringManagerAssessments();
 
+  let allowExtremePja = true;
+  let allowAdvancedPja = false;
+  let allowTypingIntermediate = true;
+  let allowTypingAdvanced = false;
+
+  try {
+    const { getServerStrapiClient } = await import("@/lib/strapi");
+    const strapiClient = await getServerStrapiClient();
+    const meResponse = await strapiClient.fetch("/users/me?populate=client");
+    if (meResponse.ok) {
+      const userData = await meResponse.json();
+      const features = userData?.client?.features ?? {};
+      allowExtremePja = features.extremePja !== false;
+      allowAdvancedPja = features.advancedPja === true;
+      allowTypingIntermediate = features.typingIntermediate !== false;
+      allowTypingAdvanced = features.typingAdvanced === true;
+    }
+  } catch (err) {
+    console.error("[CreateHiringManagerCampaignPage] Failed to fetch client features", err);
+  }
+
   return (
     <div className="max-w-7xl space-y-6">
       <HiringManagerPageHeader
@@ -34,7 +55,13 @@ export default async function CreateHiringManagerCampaignPage() {
         }
       />
 
-      <HiringManagerCampaignBuilder assessments={assessments} />
+      <HiringManagerCampaignBuilder
+        assessments={assessments}
+        allowExtremePja={allowExtremePja}
+        allowAdvancedPja={allowAdvancedPja}
+        allowTypingIntermediate={allowTypingIntermediate}
+        allowTypingAdvanced={allowTypingAdvanced}
+      />
     </div>
   );
 }
