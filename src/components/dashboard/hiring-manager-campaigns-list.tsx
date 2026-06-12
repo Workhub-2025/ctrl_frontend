@@ -132,7 +132,7 @@ export function HiringManagerCampaignsList() {
     }
   };
 
-  const handleUpdateSessionStatus = async (sessionId: string, status: "live" | "closed") => {
+  const handleUpdateSessionStatus = async (sessionId: string, status: "closed") => {
     setUpdatingSessionId(sessionId);
     try {
       const success = await HiringManagerPortalClientService.updateSessionStatus(sessionId, status);
@@ -163,11 +163,7 @@ export function HiringManagerCampaignsList() {
         return false;
       }
       
-      const isExplicitlyLive = session.status === "Live";
-      const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
-      const isPastStart = startsAtTime > 0 && now >= startsAtTime;
-      
-      return isExplicitlyLive || (session.status === "Upcoming" && isPastStart);
+      return session.status === "Live";
     });
   }, [sessions]);
 
@@ -210,10 +206,6 @@ export function HiringManagerCampaignsList() {
           ) : (
             <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
               {activeSessions.map((session) => {
-                const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
-                const isPastStart = startsAtTime > 0 && Date.now() >= startsAtTime;
-                const isPendingActivation = session.status === "Upcoming" && isPastStart;
-
                 return (
                   <div
                     key={session.id}
@@ -223,9 +215,9 @@ export function HiringManagerCampaignsList() {
                       <div className="flex items-center justify-between gap-2">
                         <Badge className={[
                           "rounded-md border-none text-[9px] font-bold px-1.5 py-0.5",
-                          isPendingActivation ? "bg-amber-500/10 text-amber-400" : "bg-emerald-500/10 text-emerald-400"
+                          "bg-emerald-500/10 text-emerald-400"
                         ].join(" ")}>
-                          {isPendingActivation ? "Pending Activation" : "Live"}
+                          Live
                         </Badge>
                         <span className="text-[10px] text-slate-500 font-medium truncate max-w-[120px]">{session.date}</span>
                       </div>
@@ -270,27 +262,15 @@ export function HiringManagerCampaignsList() {
                       </div>
 
                       <div className="flex gap-2">
-                        {isPendingActivation ? (
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={updatingSessionId === session.id}
-                            onClick={() => handleUpdateSessionStatus(session.id, "live")}
-                            className="flex-1 h-7 rounded-lg text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 transition-all cursor-pointer"
-                          >
-                            {updatingSessionId === session.id ? "Activating..." : "Activate"}
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={updatingSessionId === session.id}
-                            onClick={() => handleUpdateSessionStatus(session.id, "closed")}
-                            className="flex-1 h-7 rounded-lg text-[10px] font-bold bg-red-950/20 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-50 transition-all cursor-pointer"
-                          >
-                            {updatingSessionId === session.id ? "Closing..." : "Close"}
-                          </Button>
-                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={updatingSessionId === session.id}
+                          onClick={() => handleUpdateSessionStatus(session.id, "closed")}
+                          className="flex-1 h-7 rounded-lg text-[10px] font-bold bg-red-950/20 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                        >
+                          {updatingSessionId === session.id ? "Closing..." : "Close"}
+                        </Button>
                         <Button
                           type="button"
                           variant="outline"

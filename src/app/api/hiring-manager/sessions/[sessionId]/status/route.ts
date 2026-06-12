@@ -46,32 +46,10 @@ export async function POST(
 
   try {
     const body = await request.json();
-    const { status } = body as { status?: "live" | "closed" };
+    const { status } = body as { status?: "closed" };
 
-    if (status !== "live" && status !== "closed") {
+    if (status !== "closed") {
       return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
-    }
-
-    // First fetch the session to verify startsAt date is in the past if activating to 'live'
-    if (status === "live") {
-      const fetchRes = await fetch(
-        `${getStrapiBaseUrl()}/assessment-sessions/${encodeURIComponent(id)}?populate=campaign`,
-        {
-          headers: {
-            Authorization: `Bearer ${session.user.jwt}`,
-          },
-        }
-      );
-      if (fetchRes.ok) {
-        const detail = await fetchRes.json();
-        const startsAt = detail?.data?.startsAt ?? detail?.data?.campaign?.startDate;
-        if (startsAt && new Date(startsAt).getTime() > Date.now()) {
-          return NextResponse.json(
-            { error: "Cannot activate session before its scheduled start time" },
-            { status: 400 }
-          );
-        }
-      }
     }
 
     const strapiRes = await fetch(

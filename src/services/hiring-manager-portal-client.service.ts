@@ -354,7 +354,7 @@ export class HiringManagerPortalClientService {
 
   static async updateSessionStatus(
     sessionId: string,
-    status: "live" | "closed"
+    status: "closed"
   ): Promise<boolean> {
     try {
       const response = await fetch(`/api/hiring-manager/sessions/${sessionId}/status`, {
