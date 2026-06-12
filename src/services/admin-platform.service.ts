@@ -73,6 +73,19 @@ async function adminStrapiRequest<T>(
   return body as T;
 }
 
+async function adminReadStrapiRequest<T>(
+  path: string,
+  authToken?: string | null
+): Promise<T> {
+  if (getAdminApiToken()) {
+    return adminStrapiRequest<T>(path);
+  }
+  if (authToken) {
+    return adminStrapiRequest<T>(path, undefined, authToken);
+  }
+  return strapiRequest<T>(path);
+}
+
 type StrapiListResponse<T> = {
   data?: T[];
 };
@@ -507,9 +520,10 @@ function normalizeClientEntitlement(client: RawClient): AdminClientEntitlementRo
   };
 }
 
-async function getRawClients() {
-  const response = await strapiRequest<StrapiListResponse<RawClient>>(
-    "/clients?populate[contracts]=true&populate[users][populate][role]=true&populate[campaigns]=true&populate[access_codes]=true&sort=updatedAt:desc&pagination[pageSize]=100"
+async function getRawClients(authToken?: string | null) {
+  const response = await adminReadStrapiRequest<StrapiListResponse<RawClient>>(
+    "/clients?populate[contracts]=true&populate[users][populate][role]=true&populate[campaigns]=true&populate[access_codes]=true&sort=updatedAt:desc&pagination[pageSize]=100",
+    authToken
   );
 
   return response.data ?? [];
@@ -528,11 +542,10 @@ async function getRawActiveContract(clientDocumentId?: string, authToken?: strin
 
   try {
     const path = `/clients/${encodeURIComponent(clientDocumentId)}/contract`;
-    const response = getAdminApiToken()
-      ? await adminStrapiRequest<StrapiSingleResponse<RawContract>>(path)
-      : authToken
-        ? await adminStrapiRequest<StrapiSingleResponse<RawContract>>(path, undefined, authToken)
-        : await strapiRequest<StrapiSingleResponse<RawContract>>(path);
+    const response = await adminReadStrapiRequest<StrapiSingleResponse<RawContract>>(
+      path,
+      authToken
+    );
     return response.data ?? null;
   } catch (error) {
     if (getStrapiErrorStatus(error) === 404) return null;
@@ -541,7 +554,15 @@ async function getRawActiveContract(clientDocumentId?: string, authToken?: strin
 }
 
 async function getRawClientsWithUsers(authToken?: string | null) {
-  const [clients, users] = await Promise.all([getRawClients(), getRawUsers()]);
+  const clients = await getRawClients(authToken);
+  let users: RawUser[] = [];
+
+  try {
+    users = await getRawUsers(authToken);
+  } catch {
+    users = [];
+  }
+
   const activeContracts = await Promise.all(
     clients.map((client) => getRawActiveContract(client.documentId, authToken))
   );
@@ -574,15 +595,6 @@ async function getRawClientsWithUsers(authToken?: string | null) {
   });
 }
 
-async function getRawClientsWithUsersLegacy() {
-  try {
-    return getRawClientsWithUsers();
-  } catch {
-    // Preserve unauthenticated legacy admin routes until all callers pass an admin JWT.
-    return null;
-  }
-}
-
 function formatRole(role?: RawRole): AdminUserRow["role"] {
   const value = roleValue(role);
   if (value === "administrator" || value === "admin" || value === "ctrl_admin") {
@@ -608,13 +620,14 @@ function normalizeUser(user: RawUser): AdminUserRow {
   };
 }
 
-async function getRawUsers() {
+async function getRawUsers(authToken?: string | null) {
   const users: RawUser[] = [];
   const pageSize = 100;
 
   for (let page = 1; page < 100; page += 1) {
-    const response = await strapiRequest<StrapiListResponse<RawUser>>(
-      `/users?populate[role]=true&populate[client]=true&sort=updatedAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
+    const response = await adminReadStrapiRequest<StrapiListResponse<RawUser>>(
+      `/users?populate[role]=true&populate[client]=true&sort=updatedAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`,
+      authToken
     );
     const pageUsers = response.data ?? [];
     users.push(...pageUsers);
@@ -668,9 +681,12 @@ function normalizeAuditLog(log: RawAuditLog): AdminAuditLogRow {
   };
 }
 
-export async function getAdminAuditLogs(): Promise<AdminAuditLogRow[]> {
-  const response = await strapiRequest<StrapiListResponse<RawAuditLog>>(
-    "/audit-logs?sort=occurredAt:desc&pagination[pageSize]=100"
+export async function getAdminAuditLogs(
+  authToken?: string | null
+): Promise<AdminAuditLogRow[]> {
+  const response = await adminReadStrapiRequest<StrapiListResponse<RawAuditLog>>(
+    "/audit-logs?sort=occurredAt:desc&pagination[pageSize]=100",
+    authToken
   );
 
   return (response.data ?? []).map(normalizeAuditLog);
@@ -836,8 +852,10 @@ export async function getAdminOverview(authToken?: string | null): Promise<Admin
   };
 }
 
-export async function getAdminUsers(): Promise<AdminUsersSummary> {
-  const rawUsers = await getRawUsers();
+export async function getAdminUsers(
+  authToken?: string | null
+): Promise<AdminUsersSummary> {
+  const rawUsers = await getRawUsers(authToken);
   const users = rawUsers.map(normalizeUser);
 
   return {
