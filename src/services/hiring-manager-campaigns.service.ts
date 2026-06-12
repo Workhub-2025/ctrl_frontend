@@ -118,7 +118,7 @@ type RawAssessmentSession = {
   name?: string;
   sessionCode?: string;
   candidateLimit?: number;
-  sessionStatus?: "ready" | "live" | "closed" | "cancelled";
+  sessionStatus?: "ready" | "closed" | "cancelled";
   startsAt?: string | null;
   location?: string | null;
   mode?: "in_person" | "remote" | null;
@@ -343,7 +343,6 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
   const status = (() => {
     if (session.sessionStatus === "closed") return "Closed";
     if (session.sessionStatus === "cancelled") return "Cancelled";
-    if (session.sessionStatus === "live") return "Live";
 
     const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
     const isPastStart = startsAtTime > 0 && Date.now() >= startsAtTime;

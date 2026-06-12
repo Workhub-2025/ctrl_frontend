@@ -293,7 +293,7 @@ export function HiringManagerSessionsList() {
     }
   };
 
-  const handleUpdateSessionStatus = async (sessionId: string, status: "live" | "closed") => {
+  const handleUpdateSessionStatus = async (sessionId: string, status: "closed") => {
     setUpdatingSessionId(sessionId);
     try {
       const success = await HiringManagerPortalClientService.updateSessionStatus(sessionId, status);

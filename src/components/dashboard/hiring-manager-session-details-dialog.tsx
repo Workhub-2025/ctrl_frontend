@@ -67,7 +67,7 @@ type HiringManagerSessionDetailsDialogProps = {
   assessmentStack?: string[];
   onUnlockCandidate?: (candidateSessionId: string) => void;
   unlockingCandidateId?: string | null;
-  onUpdateSessionStatus?: (sessionId: string, status: "live" | "closed") => void;
+  onUpdateSessionStatus?: (sessionId: string, status: "closed") => void;
   updatingSessionId?: string | null;
 };
 
