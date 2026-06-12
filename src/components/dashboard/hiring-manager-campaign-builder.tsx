@@ -35,7 +35,9 @@ interface CampaignBuilderProps {
   allowAdvancedPja?: boolean;
   allowTypingIntermediate?: boolean;
   allowTypingAdvanced?: boolean;
-};
+  allowRemoteDelivery?: boolean;
+  allowHybridDelivery?: boolean;
+}
 
 type CreateCampaignResponse = {
   data?: unknown;
@@ -54,7 +56,7 @@ type CampaignDraft = {
   campaignName: string;
   roleTitle: string;
   location: string;
-  deliveryMode: "in-person" | "remote";
+  deliveryMode: "in_person" | "remote" | "hybrid";
   candidateVolume: string;
   startDate: string;
   notes: string;
@@ -68,7 +70,7 @@ const emptyDraft: CampaignDraft = {
   campaignName: "",
   roleTitle: "",
   location: "",
-  deliveryMode: "in-person",
+  deliveryMode: "in_person",
   candidateVolume: "100",
   startDate: "",
   notes: "",
@@ -115,6 +117,8 @@ export function HiringManagerCampaignBuilder({
   allowAdvancedPja = false,
   allowTypingIntermediate = true,
   allowTypingAdvanced = false,
+  allowRemoteDelivery = false,
+  allowHybridDelivery = false,
 }: CampaignBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -308,7 +312,9 @@ export function HiringManagerCampaignBuilder({
           assessmentMode:
             draft.deliveryMode === "remote"
               ? "remote"
-              : "in_person",
+              : draft.deliveryMode === "hybrid"
+                ? "hybrid"
+                : "in_person",
           assessmentDocumentIds: selectedAssessments
             .map((assessment) => assessment.documentId)
             .filter(Boolean),
@@ -365,7 +371,7 @@ export function HiringManagerCampaignBuilder({
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="space-y-5">
+      <div className="space-y-5 xl:sticky xl:top-24 self-start max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
         <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/50 backdrop-blur-md shadow-xl">
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">Campaign details</CardTitle>
@@ -527,36 +533,39 @@ export function HiringManagerCampaignBuilder({
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">Campaign review</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 p-5">
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <CardContent className="space-y-4 p-5">            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
               <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                 Delivery mode
               </p>
               <div className="mt-3 grid gap-2">
-                {(["in-person", "remote"] as const).map((mode) => {
-                  const locked = mode !== "in-person";
+                {(["in_person", "remote", "hybrid"] as const).map((mode) => {
+                  const isRemote = mode === "remote";
+                  const isHybrid = mode === "hybrid";
+                  const locked = (isRemote && !allowRemoteDelivery) || (isHybrid && !allowHybridDelivery);
+                  
                   return (
-                    <button
-                      key={mode}
-                      type="button"
-                      disabled={locked}
-                      onClick={() => updateDraft("deliveryMode", mode)}
-                      className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                        draft.deliveryMode === mode
-                          ? "border-primary/40 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                          : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
-                      } ${locked ? "cursor-not-allowed opacity-50" : ""}`}
-                    >
-                      {mode.replace("-", " ")}
-                      {locked && <Lock className="h-3.5 w-3.5 text-amber-400" />}
-                    </button>
+                     <button
+                       key={mode}
+                       type="button"
+                       disabled={locked}
+                       onClick={() => updateDraft("deliveryMode", mode)}
+                       className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                         draft.deliveryMode === mode
+                           ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                           : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
+                       } ${locked ? "cursor-not-allowed opacity-50" : ""}`}
+                     >
+                       {mode.replace("_", " ").replace("-", " ")}
+                       {locked && <Lock className="h-3.5 w-3.5 text-amber-400" />}
+                     </button>
                   );
                 })}
               </div>
-              <p className="mt-3 text-[10px] leading-relaxed text-amber-300/80">
-                Remote is visible for planning, but locked until paid
-                permissions are enabled.
-              </p>
+              {(!allowRemoteDelivery || !allowHybridDelivery) && (
+                <p className="mt-3 text-[10px] leading-relaxed text-amber-300/80">
+                  Remote and Hybrid options require client feature activation by an administrator.
+                </p>
+              )}
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">

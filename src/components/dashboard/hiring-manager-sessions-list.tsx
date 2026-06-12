@@ -37,6 +37,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
@@ -70,6 +71,10 @@ export function HiringManagerSessionsList() {
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<HiringManagerSessionListItem | null>(null);
   const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
+
+  const [currentTab, setCurrentTab] = useState<"all" | "live" | "upcoming" | "closed">("all");
+  const [updatingSessionId, setUpdatingSessionId] = useState<string | null>(null);
+  const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createdSession, setCreatedSession] = useState<HiringManagerSessionListItem | null>(null);
@@ -219,6 +224,7 @@ export function HiringManagerSessionsList() {
         candidateLimit,
         startsAt: draft.startsAt ? new Date(draft.startsAt).toISOString() : null,
         location: finalLocation,
+        mode: locationType === "Remote" ? "remote" : "in_person",
       });
 
       if (created) {
@@ -270,6 +276,71 @@ export function HiringManagerSessionsList() {
       setRemovingCandidateId(null);
     }
   };
+
+  const handleUnlockCandidate = async (candidateSessionId: string) => {
+    setUnlockingCandidateId(candidateSessionId);
+    try {
+      const success = await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
+      if (success) {
+        await loadSessions(true);
+      } else {
+        alert("Failed to unlock candidate session.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUnlockingCandidateId(null);
+    }
+  };
+
+  const handleUpdateSessionStatus = async (sessionId: string, status: "live" | "closed") => {
+    setUpdatingSessionId(sessionId);
+    try {
+      const success = await HiringManagerPortalClientService.updateSessionStatus(sessionId, status);
+      if (success) {
+        await loadSessions(true);
+      } else {
+        alert(`Failed to update session status to ${status}`);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUpdatingSessionId(null);
+    }
+  };
+
+  const { liveCount, upcomingCount, closedCount } = useMemo(() => {
+    const now = Date.now();
+    let live = 0;
+    let upcoming = 0;
+    let closed = 0;
+    for (const session of sessions) {
+      const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
+      const isLive = session.status === "Live" && (!startsAtTime || now >= startsAtTime);
+      const isClosed = session.status === "Closed" || session.status === "Cancelled";
+      const isUpcoming = (session.status === "Ready to issue" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
+
+      if (isLive) live++;
+      else if (isUpcoming) upcoming++;
+      else if (isClosed) closed++;
+    }
+    return { liveCount: live, upcomingCount: upcoming, closedCount: closed };
+  }, [sessions]);
+
+  const filteredSessions = useMemo(() => {
+    const now = Date.now();
+    return sessions.filter((session) => {
+      const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
+      const isLive = session.status === "Live" && (!startsAtTime || now >= startsAtTime);
+      const isClosed = session.status === "Closed" || session.status === "Cancelled";
+      const isUpcoming = (session.status === "Ready to issue" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
+
+      if (currentTab === "live") return isLive;
+      if (currentTab === "upcoming") return isUpcoming;
+      if (currentTab === "closed") return isClosed;
+      return true;
+    });
+  }, [sessions, currentTab]);
 
   const stepperLimit = Number.parseInt(draft.candidateLimit, 10) || 12;
 
@@ -678,15 +749,56 @@ export function HiringManagerSessionsList() {
         </p>
       )}
 
+      <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as any)} className="w-full">
+        <TabsList className="border border-white/10 bg-white/[0.02] p-1 h-10 rounded-xl mb-4">
+          <TabsTrigger value="all" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
+            All
+            <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
+              {sessions.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="live" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
+            Live
+            {liveCount > 0 ? (
+              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-emerald-500/20 text-emerald-400 px-1.5 py-0 animate-pulse">
+                {liveCount}
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
+                0
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="upcoming" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
+            Upcoming
+            {upcomingCount > 0 ? (
+              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-indigo-500/20 text-indigo-400 px-1.5 py-0">
+                {upcomingCount}
+              </Badge>
+            ) : (
+              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
+                0
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="closed" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
+            Closed
+            <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
+              {closedCount}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <div className="space-y-4">
-        {sessions.length === 0 ? (
+        {filteredSessions.length === 0 ? (
           <Card className="rounded-[1.25rem] border border-dashed border-white/10 bg-[#080c16]/50 shadow-none">
             <CardContent className="p-6 text-sm leading-6 text-slate-400">
-              No sessions have been created yet. Create a session to generate a candidate access code.
+              No sessions found in this category.
             </CardContent>
           </Card>
         ) : (
-          sessions.map((session) => (
+          filteredSessions.map((session) => (
             <Card
               key={session.id}
               className="group rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:border-primary/45 dark:bg-[#0b1329]/45 hover:shadow-[0_8px_30px_rgba(99,102,241,0.08)] transition-all duration-300"
@@ -733,39 +845,70 @@ export function HiringManagerSessionsList() {
                       {session.accessValue}
                     </p>
                   </div>
-                  <div className="mt-3.5 flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => {
-                        void navigator.clipboard?.writeText(session.accessValue);
-                        setCopiedSessionId(session.id);
-                        setTimeout(() => setCopiedSessionId(null), 2000);
-                      }}
-                      className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 flex-1 transition-all duration-300"
-                    >
-                      {copiedSessionId === session.id ? (
-                        <>
-                          <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400 animate-in zoom-in-50 duration-200" />
-                          <span className="text-emerald-400 animate-in fade-in duration-200">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="mr-1.5 h-3.5 w-3.5" />
-                          Copy code
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedSession(session)}
-                      className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white px-3 transition-colors"
-                    >
-                      <Eye className="mr-1.5 h-3.5 w-3.5" />
-                      View details
-                    </Button>
+                  <div className="mt-3.5 flex flex-col gap-2">
+                    {session.status === "Ready to issue" && (
+                      <div className="w-full">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={updatingSessionId === session.id || (session.startsAt ? new Date(session.startsAt).getTime() > Date.now() : false)}
+                          onClick={() => handleUpdateSessionStatus(session.id, "live")}
+                          className="w-full h-8 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white disabled:opacity-40 transition-all duration-300 cursor-pointer"
+                        >
+                          {updatingSessionId === session.id ? "Activating..." : "Activate Session"}
+                        </Button>
+                        {session.startsAt && new Date(session.startsAt).getTime() > Date.now() && (
+                          <p className="text-[10px] text-center text-slate-400 mt-1.5">
+                            Activates after session start time
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {session.status === "Live" && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={updatingSessionId === session.id}
+                        onClick={() => handleUpdateSessionStatus(session.id, "closed")}
+                        className="w-full h-8 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-all duration-300 cursor-pointer"
+                      >
+                        {updatingSessionId === session.id ? "Closing..." : "Close Session"}
+                      </Button>
+                    )}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          void navigator.clipboard?.writeText(session.accessValue);
+                          setCopiedSessionId(session.id);
+                          setTimeout(() => setCopiedSessionId(null), 2000);
+                        }}
+                        className="h-8 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 px-3 flex-1 transition-all duration-300"
+                      >
+                        {copiedSessionId === session.id ? (
+                          <>
+                            <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400 animate-in zoom-in-50 duration-200" />
+                            <span className="text-emerald-400 animate-in fade-in duration-200">Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="mr-1.5 h-3.5 w-3.5" />
+                            Copy code
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedSession(session)}
+                        className="h-8 rounded-lg text-xs font-semibold border-white/10 bg-transparent text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white px-3 transition-colors"
+                      >
+                        <Eye className="mr-1.5 h-3.5 w-3.5" />
+                        View details
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -791,6 +934,10 @@ export function HiringManagerSessionsList() {
             : undefined
         }
         assessmentStack={selectedCampaignDetail?.assessmentStack}
+        onUnlockCandidate={handleUnlockCandidate}
+        unlockingCandidateId={unlockingCandidateId}
+        onUpdateSessionStatus={handleUpdateSessionStatus}
+        updatingSessionId={updatingSessionId}
       />
     </div>
   );

@@ -14,6 +14,8 @@ export default async function CreateHiringManagerCampaignPage() {
   let allowAdvancedPja = false;
   let allowTypingIntermediate = true;
   let allowTypingAdvanced = false;
+  let allowRemoteDelivery = false;
+  let allowHybridDelivery = false;
 
   try {
     const { getServerStrapiClient } = await import("@/lib/strapi");
@@ -26,6 +28,8 @@ export default async function CreateHiringManagerCampaignPage() {
       allowAdvancedPja = features.advancedPja === true;
       allowTypingIntermediate = features.typingIntermediate !== false;
       allowTypingAdvanced = features.typingAdvanced === true;
+      allowRemoteDelivery = features.deliveryRemote === true;
+      allowHybridDelivery = features.deliveryHybrid === true;
     }
   } catch (err) {
     console.error("[CreateHiringManagerCampaignPage] Failed to fetch client features", err);
@@ -61,6 +65,8 @@ export default async function CreateHiringManagerCampaignPage() {
         allowAdvancedPja={allowAdvancedPja}
         allowTypingIntermediate={allowTypingIntermediate}
         allowTypingAdvanced={allowTypingAdvanced}
+        allowRemoteDelivery={allowRemoteDelivery}
+        allowHybridDelivery={allowHybridDelivery}
       />
     </div>
   );

@@ -465,6 +465,68 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         </div>
       )}
 
+      {/* Weighted Score Summary */}
+      <div>
+        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
+          <CardContent className="relative p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                Weighted Score
+              </span>
+              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${displayedRating.badge}`}>
+                {displayedRating.label}
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
+              <div className="flex items-end gap-1.5">
+                <span className="text-4xl font-black leading-none text-white tabular-nums">
+                  {overallScore}
+                </span>
+                <span className="text-sm font-bold text-slate-500">/100</span>
+              </div>
+              <div className="flex min-w-0 flex-col items-start gap-1 pb-0.5 sm:items-end">
+                <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                  Completion
+                </span>
+                <div className="flex w-full justify-start gap-1 sm:justify-end">
+                  {rows.map((row, idx) => {
+                    const isDone = row.score !== null;
+                    return (
+                      <div
+                        key={`${row.name}-${idx}`}
+                        title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
+                        className={`h-2.5 w-6 rounded-full transition-all duration-300 ${
+                          isDone
+                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
+                            : "bg-white/10 border border-white/5"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
+                  style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
+                />
+              </div>
+              <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-600">
+                <span>0</span>
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Assessment Breakdown List */}
       <Card className="rounded-2xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-2xl">
         <CardHeader className="border-b border-white/10 p-5">
@@ -976,67 +1038,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         </CardContent>
       </Card>
 
-      {/* Weighted Score Summary */}
-      <div>
-        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
-          <CardContent className="relative p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
-                Weighted Score
-              </span>
-              <span className={`rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${displayedRating.badge}`}>
-                {displayedRating.label}
-              </span>
-            </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-[auto_1fr] sm:items-end">
-              <div className="flex items-end gap-1.5">
-                <span className="text-4xl font-black leading-none text-white tabular-nums">
-                  {overallScore}
-                </span>
-                <span className="text-sm font-bold text-slate-500">/100</span>
-              </div>
-              <div className="flex min-w-0 flex-col items-start gap-1 pb-0.5 sm:items-end">
-                <span className="text-xs uppercase text-slate-500 font-semibold tracking-wider">
-                  Completion
-                </span>
-                <div className="flex w-full justify-start gap-1 sm:justify-end">
-                  {rows.map((row, idx) => {
-                    const isDone = row.score !== null;
-                    return (
-                      <div
-                        key={`${row.name}-${idx}`}
-                        title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
-                        className={`h-2.5 w-6 rounded-full transition-all duration-300 ${
-                          isDone
-                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.3)]"
-                            : "bg-white/10 border border-white/5"
-                        }`}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
-                  style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
-                />
-              </div>
-              <div className="mt-1.5 flex justify-between text-[10px] font-semibold text-slate-600">
-                <span>0</span>
-                <span>25</span>
-                <span>50</span>
-                <span>75</span>
-                <span>100</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

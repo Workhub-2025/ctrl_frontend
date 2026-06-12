@@ -146,6 +146,8 @@ export default function ClientDetailPage() {
         advancedPja: client.features?.advancedPja === true,
         typingIntermediate: client.features?.typingIntermediate !== false,
         typingAdvanced: client.features?.typingAdvanced === true,
+        deliveryRemote: client.features?.deliveryRemote === true,
+        deliveryHybrid: client.features?.deliveryHybrid === true,
       });
     }
   }, [client]);
@@ -171,6 +173,8 @@ export default function ClientDetailPage() {
             advancedPja: features.advancedPja,
             typingIntermediate: features.typingIntermediate,
             typingAdvanced: features.typingAdvanced,
+            deliveryRemote: features.deliveryRemote,
+            deliveryHybrid: features.deliveryHybrid,
           },
         }),
       });
@@ -552,6 +556,32 @@ export default function ClientDetailPage() {
                   <Switch
                     checked={features.typingAdvanced ?? false}
                     onCheckedChange={() => toggleFeature("typingAdvanced")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold">Remote Delivery Mode</Label>
+                    <p className="text-xs text-muted-foreground max-w-xl">
+                      Allows campaigns to use the Remote delivery mode lock. Disabled by default.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={features.deliveryRemote ?? false}
+                    onCheckedChange={() => toggleFeature("deliveryRemote")}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-4">
+                  <div className="space-y-0.5">
+                    <Label className="text-sm font-semibold">Hybrid Delivery Mode</Label>
+                    <p className="text-xs text-muted-foreground max-w-xl">
+                      Allows campaigns to use the Hybrid delivery mode option. Disabled by default.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={features.deliveryHybrid ?? false}
+                    onCheckedChange={() => toggleFeature("deliveryHybrid")}
                   />
                 </div>
               </div>

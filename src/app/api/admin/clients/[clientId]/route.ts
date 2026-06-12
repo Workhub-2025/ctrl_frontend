@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { isAdminRole } from "@/lib/auth/role-model";
@@ -9,7 +10,7 @@ import {
 } from "@/services/admin-platform.service";
 
 type RouteContext = {
-  params: Promise<{ clientId: string }>;
+  params: Promise<any>;
 };
 
 async function requireAdmin() {
@@ -34,7 +35,7 @@ async function getClientId(context: RouteContext) {
   return params.clientId;
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
@@ -50,7 +51,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
@@ -75,7 +76,7 @@ export async function DELETE(request: Request, context: RouteContext) {
   }
 }
 
-export async function PUT(request: Request, context: RouteContext) {
+export async function PUT(request: NextRequest, context: RouteContext) {
     const auth = await requireAdmin();
     if (!auth.ok) return auth.response;
 
