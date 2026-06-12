@@ -528,9 +528,11 @@ async function getRawActiveContract(clientDocumentId?: string, authToken?: strin
 
   try {
     const path = `/clients/${encodeURIComponent(clientDocumentId)}/contract`;
-    const response = authToken
-      ? await adminStrapiRequest<StrapiSingleResponse<RawContract>>(path, undefined, authToken)
-      : await strapiRequest<StrapiSingleResponse<RawContract>>(path);
+    const response = getAdminApiToken()
+      ? await adminStrapiRequest<StrapiSingleResponse<RawContract>>(path)
+      : authToken
+        ? await adminStrapiRequest<StrapiSingleResponse<RawContract>>(path, undefined, authToken)
+        : await strapiRequest<StrapiSingleResponse<RawContract>>(path);
     return response.data ?? null;
   } catch (error) {
     if (getStrapiErrorStatus(error) === 404) return null;
