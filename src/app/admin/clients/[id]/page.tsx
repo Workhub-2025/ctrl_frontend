@@ -14,6 +14,8 @@ import {
   Globe,
   Keyboard,
   BrainCircuit,
+  CheckCircle2,
+  Clock3,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -53,6 +55,10 @@ type ClientDetails = {
   createdAt: string | null;
   updatedAt: string | null;
   pendingCampaignApprovals: number;
+  hasClientContact: boolean;
+  clientInviteStatus: "none" | "available" | "used" | "expired" | "revoked";
+  clientInviteExpiresAt: string | null;
+  canGenerateClientCode: boolean;
   activeContract: {
     status: string;
     startDate: string | null;
@@ -82,6 +88,7 @@ function statusClass(status: string) {
     case "approved":
       return "border-emerald-500/20 bg-emerald-500/10 text-emerald-600";
     case "pending":
+    case "awaiting signup":
       return "border-blue-500/20 bg-blue-500/10 text-blue-600";
     case "paused":
     case "rejected":
@@ -89,8 +96,26 @@ function statusClass(status: string) {
     case "expired":
     case "disabled":
       return "border-red-500/20 bg-red-500/10 text-red-600";
+    case "needs contract":
+      return "border-slate-500/20 bg-slate-500/10 text-slate-600";
     default:
       return "border-muted-foreground/20 text-muted-foreground";
+  }
+}
+
+function inviteLabel(status: ClientDetails["clientInviteStatus"]) {
+  switch (status) {
+    case "available":
+      return "Pending signup";
+    case "used":
+      return "Used";
+    case "expired":
+      return "Expired";
+    case "revoked":
+      return "Revoked";
+    case "none":
+    default:
+      return "No active invite";
   }
 }
 
@@ -208,6 +233,17 @@ export default function ClientDetailPage() {
         code: body.data?.code ?? "",
         expiresAt: body.data?.expiresAt ?? "",
       });
+      setClient((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: prev.status === "Active" ? prev.status : "Awaiting signup",
+              clientInviteStatus: "available",
+              clientInviteExpiresAt: body.data?.expiresAt ?? null,
+              canGenerateClientCode: false,
+            }
+          : prev
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Client access code could not be generated");
     } finally {
@@ -312,14 +348,11 @@ export default function ClientDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={generateClientCode} disabled={generatingCode}>
-            {generatingCode ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <KeyRound className="mr-2 h-4 w-4" />
-            )}
-            Generate Client Code
-          </Button>
+          <ClientInviteAction
+            client={client}
+            generatingCode={generatingCode}
+            onGenerate={generateClientCode}
+          />
           <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="border-red-500/30 text-red-600 hover:text-red-700">
@@ -392,7 +425,7 @@ export default function ClientDetailPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold">{client.seatsUsed} / {client.seatsAllowed}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Active users against contract seats</p>
+                <p className="mt-1 text-xs text-muted-foreground">Active HM occupants against reusable seats</p>
               </CardContent>
             </Card>
             <Card>
@@ -408,11 +441,68 @@ export default function ClientDetailPage() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Billing status</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Contract state</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-semibold">{client.billingStatus}</div>
-                <p className="mt-1 text-xs text-muted-foreground">Based on active contract state</p>
+                <p className="mt-1 text-xs text-muted-foreground">Derived from the active contract</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Client invite</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <InviteSummary client={client} />
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <Card>
+              <CardHeader>
+                <CardTitle>Onboarding path</CardTitle>
+                <CardDescription>What has to be true before the client can run their own workspace.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <FlowStep
+                    complete={Boolean(client.activeContract)}
+                    title="Contract"
+                    detail={client.activeContract ? `${client.activeContract.seatCount} HM seats` : "Create a contract"}
+                  />
+                  <FlowStep
+                    complete={client.clientInviteStatus === "available" || client.hasClientContact}
+                    title="Client invite"
+                    detail={client.hasClientContact ? "Used" : client.clientInviteStatus === "available" ? "Pending signup" : "No active invite"}
+                  />
+                  <FlowStep
+                    complete={client.hasClientContact}
+                    title="Client contact"
+                    detail={client.hasClientContact ? "Active user linked" : "Waiting for registration"}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Seat ownership</CardTitle>
+                <CardDescription>Admin controls capacity. The client controls who occupies each HM seat.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <span className="text-sm text-muted-foreground">Occupied seats</span>
+                  <span className="text-sm font-semibold">{client.seatsUsed}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <span className="text-sm text-muted-foreground">Reusable capacity</span>
+                  <span className="text-sm font-semibold">{client.seatsAllowed}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-md border p-3">
+                  <span className="text-sm text-muted-foreground">Available seats</span>
+                  <span className="text-sm font-semibold">{Math.max(0, client.seatsAllowed - client.seatsUsed)}</span>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -453,17 +543,47 @@ export default function ClientDetailPage() {
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
-          <SimpleList
-            title="Users"
-            description="Client contacts and hiring managers attached to this client."
-            empty="No users are attached to this client."
-            rows={client.users.map((user) => ({
-              id: user.id,
-              primary: user.name,
-              secondary: user.email,
-              badge: user.role,
-            }))}
-          />
+          <div className="space-y-4">
+            <SimpleList
+              title="Client contacts"
+              description="Client-side account contacts. Admin only issues or replaces the client signup invite."
+              empty="No client contacts are attached to this client."
+              rows={client.users
+                .filter((user) => user.role === "Client Contact")
+                .map((user) => ({
+                  id: user.id,
+                  primary: user.name,
+                  secondary: user.email,
+                  badge: user.status,
+                }))}
+            />
+            <SimpleList
+              title="Hiring-manager seat occupants"
+              description="Current HM occupants are controlled by the client and count against contract capacity."
+              empty="No active hiring-manager occupants are attached to this client."
+              rows={client.users
+                .filter((user) => user.role === "Hiring Manager" && user.status !== "Disabled")
+                .map((user) => ({
+                  id: user.id,
+                  primary: user.name,
+                  secondary: user.email,
+                  badge: user.status,
+                }))}
+            />
+            <SimpleList
+              title="Previous hiring-manager records"
+              description="Disabled HM users are retained as history and no longer occupy a seat."
+              empty="No previous hiring-manager records are attached to this client."
+              rows={client.users
+                .filter((user) => user.role === "Hiring Manager" && user.status === "Disabled")
+                .map((user) => ({
+                  id: user.id,
+                  primary: user.name,
+                  secondary: user.email,
+                  badge: "Previous",
+                }))}
+            />
+          </div>
         </TabsContent>
 
         <TabsContent value="campaigns" className="mt-6">
@@ -626,6 +746,94 @@ export default function ClientDetailPage() {
           </Card>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function ClientInviteAction({
+  client,
+  generatingCode,
+  onGenerate,
+}: {
+  client: ClientDetails;
+  generatingCode: boolean;
+  onGenerate: () => void;
+}) {
+  if (client.hasClientContact) {
+    return (
+      <Badge variant="outline" className="h-10 gap-2 border-emerald-500/20 bg-emerald-500/10 px-3 text-emerald-600">
+        <CheckCircle2 className="h-4 w-4" />
+        Client contact active
+      </Badge>
+    );
+  }
+
+  if (client.clientInviteStatus === "available") {
+    return (
+      <Badge variant="outline" className="h-10 gap-2 border-blue-500/20 bg-blue-500/10 px-3 text-blue-600">
+        <Clock3 className="h-4 w-4" />
+        Client invite pending
+      </Badge>
+    );
+  }
+
+  return (
+    <Button variant="outline" onClick={onGenerate} disabled={!client.canGenerateClientCode || generatingCode}>
+      {generatingCode ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <KeyRound className="mr-2 h-4 w-4" />
+      )}
+      Generate client invite
+    </Button>
+  );
+}
+
+function InviteSummary({ client }: { client: ClientDetails }) {
+  if (client.hasClientContact) {
+    return (
+      <>
+        <div className="flex items-center gap-2 text-2xl font-semibold text-emerald-600">
+          <CheckCircle2 className="h-5 w-5" />
+          Used
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">Client user has registered</p>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="text-2xl font-semibold">{inviteLabel(client.clientInviteStatus)}</div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {client.clientInviteExpiresAt
+          ? `Expires ${formatDate(client.clientInviteExpiresAt)}`
+          : "Generate an invite once contract details are ready"}
+      </p>
+    </>
+  );
+}
+
+function FlowStep({
+  complete,
+  title,
+  detail,
+}: {
+  complete: boolean;
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-md border p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium">{title}</p>
+        {complete ? (
+          <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+        ) : (
+          <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+        )}
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">{detail}</p>
     </div>
   );
 }

@@ -79,6 +79,7 @@ export type ClientHiringManagerSeat = {
   documentId: string;
   name: string;
   email: string;
+  status: "active" | "previous";
   createdAt?: string;
   candidatesOnboarded: number;
   campaigns: Array<{
@@ -286,6 +287,7 @@ export async function getClientHiringManagers(clientDocumentId: string) {
     lastName?: string | null;
     username?: string | null;
     email?: string | null;
+    status?: "active" | "previous";
     createdAt?: string;
     candidatesOnboarded?: number;
     campaigns?: Array<{
@@ -305,6 +307,7 @@ export async function getClientHiringManagers(clientDocumentId: string) {
       documentId: manager.documentId ?? manager.email ?? "hiring-manager",
       name: name || manager.username || manager.email || "Hiring manager",
       email: manager.email || "No email recorded",
+      status: manager.status ?? "active",
       createdAt: manager.createdAt,
       candidatesOnboarded: manager.candidatesOnboarded ?? 0,
       campaigns: (manager.campaigns ?? []).map((campaign) => ({
@@ -317,4 +320,19 @@ export async function getClientHiringManagers(clientDocumentId: string) {
       })),
     } satisfies ClientHiringManagerSeat;
   });
+}
+
+export async function releaseClientHiringManagerSeat(
+  clientDocumentId: string,
+  managerDocumentId: string
+) {
+  const response = await strapiRequest<StrapiSingleResponse<{
+    documentId?: string;
+    blocked?: boolean;
+  }>>(
+    `/clients/${encodeURIComponent(clientDocumentId)}/hiring-managers/${encodeURIComponent(managerDocumentId)}/release`,
+    { method: "POST" }
+  );
+
+  return response.data;
 }

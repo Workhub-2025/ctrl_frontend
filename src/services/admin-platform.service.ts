@@ -145,6 +145,7 @@ type RawClient = {
     targetRole?: string;
     expiresAt?: string;
     createdAt?: string;
+    updatedAt?: string;
   }>;
   updatedAt?: string;
   features?: Record<string, any> | null;
@@ -153,19 +154,24 @@ type RawClient = {
 export type AdminClientRow = {
   id: string;
   name: string;
-  status: "Active" | "Paused" | "Expired" | "Pending";
+  status: "Active" | "Awaiting signup" | "Paused" | "Expired" | "Needs contract";
   plan: string;
   seatsUsed: number;
   seatsAllowed: number;
   enabledAssessments: string[];
-  billingStatus: "Active" | "Pending" | "Expired" | "Paused";
+  billingStatus: "Active" | "Not configured" | "Expired" | "Paused";
   primaryContact: string;
   lastActivity: string;
   pendingCampaignApprovals: number;
+  hasClientContact: boolean;
+  clientInviteStatus: "none" | "available" | "used" | "expired" | "revoked";
+  clientInviteExpiresAt: string | null;
+  canGenerateClientCode: boolean;
 };
 
 export type AdminOverview = {
   activeClients: number;
+  awaitingClientSignups: number;
   pendingCampaignApprovals: number;
   availableClientCodes: number;
   contractsExpiringSoon: number;
@@ -312,6 +318,19 @@ function getActiveContract(client: RawClient) {
   return (client.contracts ?? []).find(isActiveContract) ?? client.contracts?.[0] ?? null;
 }
 
+function getLatestAccessCode(
+  codes: RawClient["access_codes"],
+  targetRole: "client" | "hiring_manager" | "candidate"
+) {
+  return [...(codes ?? [])]
+    .filter((code) => code.targetRole === targetRole)
+    .sort((a, b) => {
+      const aTime = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
+      const bTime = new Date(b.updatedAt ?? b.createdAt ?? 0).getTime();
+      return bTime - aTime;
+    })[0] ?? null;
+}
+
 function relativeDate(value?: string) {
   if (!value) return "No activity recorded";
   const diffMs = Date.now() - new Date(value).getTime();
@@ -329,16 +348,32 @@ function normalizeClient(client: RawClient): AdminClientRow {
   const seatsUsed = (client.users ?? []).filter(
     (user) => !user.blocked && user.role?.type === "hiring_manager"
   ).length;
+  const hasClientContact = (client.users ?? []).some(
+    (user) => !user.blocked && user.role?.type === "client"
+  );
+  const latestClientInvite = getLatestAccessCode(client.access_codes, "client");
+  const availableClientInvite =
+    latestClientInvite?.status === "available" ? latestClientInvite : null;
   const pendingCampaignApprovals = (client.campaigns ?? []).filter(
     (campaign) => campaign.approvalStatus === "pending"
   ).length;
   const status = client.softLockedAt
     ? "Paused"
-    : isActiveContract(activeContract ?? undefined)
-      ? "Active"
-      : activeContract
+    : !activeContract
+      ? "Needs contract"
+      : !isActiveContract(activeContract)
         ? "Expired"
-        : "Pending";
+        : hasClientContact
+      ? "Active"
+      : "Awaiting signup";
+  const billingStatus =
+    status === "Paused"
+      ? "Paused"
+      : activeContract && isActiveContract(activeContract)
+        ? "Active"
+        : activeContract
+          ? "Expired"
+          : "Not configured";
 
   return {
     id: client.documentId ?? String(client.id ?? `client-${client.name ?? "unknown"}`),
@@ -348,14 +383,18 @@ function normalizeClient(client: RawClient): AdminClientRow {
     seatsUsed,
     seatsAllowed,
     enabledAssessments: ["Typing", "SJT", "Prioritisation", "Call Simulation"],
-    billingStatus:
-      status === "Active" ? "Active" : status === "Paused" ? "Paused" : status === "Expired" ? "Expired" : "Pending",
+    billingStatus,
     primaryContact:
       client.primaryContactEmail ||
       client.primaryContactName ||
       "No primary contact",
     lastActivity: relativeDate(client.updatedAt),
     pendingCampaignApprovals,
+    hasClientContact,
+    clientInviteStatus:
+      (latestClientInvite?.status as AdminClientRow["clientInviteStatus"] | undefined) ?? "none",
+    clientInviteExpiresAt: latestClientInvite?.expiresAt ?? null,
+    canGenerateClientCode: !hasClientContact && !availableClientInvite && status !== "Paused",
   };
 }
 
@@ -581,7 +620,11 @@ export async function createAdminClient(
       users: createdClient?.users ?? [],
       campaigns: createdClient?.campaigns ?? [],
       access_codes: response.data?.accessCode
-        ? [{ status: response.data.accessCode.status, targetRole: response.data.accessCode.targetRole }]
+        ? [{
+            status: response.data.accessCode.status,
+            targetRole: response.data.accessCode.targetRole,
+            expiresAt: response.data.accessCode.expiresAt,
+          }]
         : createdClient?.access_codes ?? [],
     }),
     contract: response.data?.contract,
@@ -622,6 +665,7 @@ export async function getAdminOverview(): Promise<AdminOverview> {
 
   return {
     activeClients: clients.filter((client) => client.status === "Active").length,
+    awaitingClientSignups: clients.filter((client) => client.status === "Awaiting signup").length,
     pendingCampaignApprovals,
     availableClientCodes,
     contractsExpiringSoon,

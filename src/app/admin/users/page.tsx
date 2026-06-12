@@ -2,14 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Table,
   TableBody,
   TableCell,
@@ -18,9 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreHorizontal, Search, SlidersHorizontal, UserPlus } from "lucide-react";
+import { Search } from "lucide-react";
 
 type UserRole = "CTRL Admin" | "Client Contact" | "Hiring Manager" | "Candidate";
 type UserStatus = "Active" | "Invited" | "Disabled";
@@ -130,10 +121,9 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        <Button className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Invite User
-        </Button>
+        <Badge variant="outline" className="w-fit border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-cyan-600">
+          Live directory
+        </Badge>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -172,11 +162,6 @@ export default function AdminUsersPage() {
               onChange={(event) => setSearchTerm(event.target.value)}
             />
           </div>
-
-          <Button variant="outline" className="gap-2">
-            <SlidersHorizontal className="h-4 w-4" />
-            Filters
-          </Button>
         </div>
 
         <div className="overflow-x-auto">
@@ -188,20 +173,19 @@ export default function AdminUsersPage() {
                 <TableHead>Client</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last login</TableHead>
-                <TableHead className="w-12 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                     Loading users...
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filteredUsers.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                     No users match the current search.
                   </TableCell>
                 </TableRow>
@@ -220,25 +204,6 @@ export default function AdminUsersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{user.lastLogin}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>User actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>View user</DropdownMenuItem>
-                        <DropdownMenuItem>Edit details</DropdownMenuItem>
-                        <DropdownMenuItem>Reset password</DropdownMenuItem>
-                        <DropdownMenuItem>
-                          {user.status === "Disabled" ? "Reactivate account" : "Disable account"}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

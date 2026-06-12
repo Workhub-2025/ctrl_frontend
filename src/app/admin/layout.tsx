@@ -27,11 +27,8 @@ import {
   LogOut,
   UserCircle,
   LayoutDashboard,
-  TrendingUp,
-  CreditCard,
   Users,
   History,
-  Settings,
   Building2,
   PlusCircle,
 } from "lucide-react";
@@ -166,26 +163,6 @@ export default function AdminLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Upgrade Requests">
-                  <Link href="/admin/upgrade-requests">
-                    <TrendingUp />
-                    <span className="font-medium text-foreground">
-                      Upgrade Requests
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Billing">
-                  <Link href="/admin/billing">
-                    <CreditCard />
-                    <span className="font-medium text-foreground">
-                      Billing
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Users">
                   <Link href="/admin/users">
                     <Users />
@@ -201,16 +178,6 @@ export default function AdminLayout({
                     <History />
                     <span className="font-medium text-foreground">
                       Audit Logs
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Settings">
-                  <Link href="/admin/settings">
-                    <Settings />
-                    <span className="font-medium text-foreground">
-                      Settings
                     </span>
                   </Link>
                 </SidebarMenuButton>

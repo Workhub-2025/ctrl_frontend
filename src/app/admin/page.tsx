@@ -13,17 +13,18 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Building2,
-  TrendingUp,
-  CreditCard,
   AlertTriangle,
   History,
-  Eye,
   ArrowRight,
+  Clock3,
+  FileCheck2,
+  KeyRound,
 } from "lucide-react";
 import Link from "next/link";
 
 type AdminOverviewData = {
   activeClients: number;
+  awaitingClientSignups: number;
   pendingCampaignApprovals: number;
   availableClientCodes: number;
   contractsExpiringSoon: number;
@@ -83,7 +84,6 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      {/* Top Row: Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -92,31 +92,31 @@ export default function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overview?.activeClients ?? "..."}</div>
-            <p className="text-xs text-muted-foreground">Clients with active contracts</p>
+            <p className="text-xs text-muted-foreground">Registered client contacts with active contracts</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Campaign Approvals</CardTitle>
-            <TrendingUp className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">Awaiting Signup</CardTitle>
+            <Clock3 className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {overview?.pendingCampaignApprovals ?? "..."}
+            <div className="text-2xl font-bold text-blue-600">
+              {overview?.awaitingClientSignups ?? "..."}
             </div>
-            <p className="text-xs text-muted-foreground">Awaiting client review</p>
+            <p className="text-xs text-muted-foreground">Contracted clients without a registered contact</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Client Codes</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Client Invites</CardTitle>
+            <KeyRound className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overview?.availableClientCodes ?? "..."}</div>
-            <p className="text-xs text-muted-foreground">Available admin-issued invites</p>
+            <p className="text-xs text-muted-foreground">Active admin-issued signup invites</p>
           </CardContent>
         </Card>
 
@@ -139,12 +139,11 @@ export default function AdminOverview() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        {/* Middle Row: Seat Usage */}
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Seat Usage (Top Clients)</CardTitle>
+            <CardTitle>HM seat capacity</CardTitle>
             <CardDescription>
-              Hiring manager seats utilized versus allocated.
+              Active hiring-manager occupants versus contracted reusable seats.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -174,11 +173,10 @@ export default function AdminOverview() {
           </CardContent>
         </Card>
 
-        {/* Middle Row: Recent Activity */}
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Recent Admin Activity</CardTitle>
-            <CardDescription>System actions across the platform.</CardDescription>
+            <CardTitle>Recent client movement</CardTitle>
+            <CardDescription>Latest client records returned by the platform API.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {(overview?.recentActivity ?? []).length ? overview?.recentActivity.map((activity, index) => (
@@ -199,11 +197,10 @@ export default function AdminOverview() {
         </Card>
       </div>
 
-      {/* Bottom Row: Support / Account Issues */}
       <Card>
         <CardHeader>
-          <CardTitle>Attention Required</CardTitle>
-          <CardDescription>Accounts flagged for review or support issues.</CardDescription>
+          <CardTitle>Operational attention</CardTitle>
+          <CardDescription>Real account states that need a CTRL admin decision.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -223,7 +220,10 @@ export default function AdminOverview() {
               </Button>
             </div>
             )) : (
-              <p className="text-sm text-muted-foreground">No accounts need attention right now.</p>
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <FileCheck2 className="h-4 w-4 text-emerald-600" />
+                No real account issues need attention right now.
+              </div>
             )}
           </div>
         </CardContent>
