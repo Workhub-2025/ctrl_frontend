@@ -1,8 +1,5 @@
 import "server-only";
 
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-import { getStrapiErrorStatus as getBaseStrapiErrorStatus } from "@/services/hiring-manager-campaigns.service";
-
 const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
 const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
 
@@ -11,15 +8,6 @@ function getStrapiBaseUrl() {
     process.env.STRAPI_API_URL ??
       process.env.NEXT_PUBLIC_STRAPI_API_URL ??
       "http://localhost:1337/api"
-  );
-}
-
-function getAdminApiToken() {
-  return (
-    process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
-    process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
-    process.env.STRAPI_API_TOKEN ||
-    undefined
   );
 }
 
@@ -35,7 +23,7 @@ class AdminStrapiRequestError extends Error {
 
 export function getStrapiErrorStatus(error: unknown) {
   if (error instanceof AdminStrapiRequestError) return error.status;
-  return getBaseStrapiErrorStatus(error);
+  return null;
 }
 
 async function adminStrapiRequest<T>(
@@ -43,12 +31,7 @@ async function adminStrapiRequest<T>(
   init?: RequestInit,
   authToken?: string | null
 ): Promise<T> {
-  const token = authToken || getAdminApiToken() || undefined;
-  if (!token) {
-    throw new Error(
-      "A Strapi API token or authenticated admin session is required for admin client creation"
-    );
-  }
+  if (!authToken) throw new Error("Authenticated admin session is required");
 
   const response = await fetch(
     `${getStrapiBaseUrl()}/${stripLeadingSlashes(path)}`,
@@ -57,7 +40,7 @@ async function adminStrapiRequest<T>(
       ...init,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${authToken}`,
         ...init?.headers,
       },
     }
@@ -71,19 +54,6 @@ async function adminStrapiRequest<T>(
   }
 
   return body as T;
-}
-
-async function adminReadStrapiRequest<T>(
-  path: string,
-  authToken?: string | null
-): Promise<T> {
-  if (getAdminApiToken()) {
-    return adminStrapiRequest<T>(path);
-  }
-  if (authToken) {
-    return adminStrapiRequest<T>(path, undefined, authToken);
-  }
-  return strapiRequest<T>(path);
 }
 
 type StrapiListResponse<T> = {
@@ -517,13 +487,11 @@ function normalizeClientEntitlement(client: RawClient): AdminClientEntitlementRo
 }
 
 async function getRawClients(authToken?: string | null) {
-  const response = authToken
-    ? await adminStrapiRequest<StrapiListResponse<RawClient>>(
-        "/admin/clients",
-        undefined,
-        authToken
-      )
-    : await adminReadStrapiRequest<StrapiListResponse<RawClient>>("/admin/clients");
+  const response = await adminStrapiRequest<StrapiListResponse<RawClient>>(
+    "/admin/clients",
+    undefined,
+    authToken
+  );
 
   return response.data ?? [];
 }
@@ -589,17 +557,13 @@ function normalizeUser(user: RawUser): AdminUserRow {
 }
 
 async function getRawUsers(authToken?: string | null) {
-  const users: RawUser[] = [];
-  const response = authToken
-    ? await adminStrapiRequest<StrapiListResponse<RawUser>>(
-        "/admin/users",
-        undefined,
-        authToken
-      )
-    : await adminReadStrapiRequest<StrapiListResponse<RawUser>>("/admin/users");
-  users.push(...(response.data ?? []));
+  const response = await adminStrapiRequest<StrapiListResponse<RawUser>>(
+    "/admin/users",
+    undefined,
+    authToken
+  );
 
-  return users;
+  return response.data ?? [];
 }
 
 function formatTimestamp(value?: string) {
@@ -649,13 +613,11 @@ function normalizeAuditLog(log: RawAuditLog): AdminAuditLogRow {
 export async function getAdminAuditLogs(
   authToken?: string | null
 ): Promise<AdminAuditLogRow[]> {
-  const response = authToken
-    ? await adminStrapiRequest<StrapiListResponse<RawAuditLog>>(
-        "/admin/audit-logs",
-        undefined,
-        authToken
-      )
-    : await adminReadStrapiRequest<StrapiListResponse<RawAuditLog>>("/admin/audit-logs");
+  const response = await adminStrapiRequest<StrapiListResponse<RawAuditLog>>(
+    "/admin/audit-logs",
+    undefined,
+    authToken
+  );
 
   return (response.data ?? []).map(normalizeAuditLog);
 }
