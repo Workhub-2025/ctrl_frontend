@@ -7,7 +7,7 @@ import { removeCandidateFromAssessmentSession } from "@/services/hiring-manager-
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ sessionId: string; candidateSessionId: string }> }
+  context: { params: Promise<any> }
 ) {
   const session = await getServerSession(authOptions);
   const limiter = await applyRateLimit({

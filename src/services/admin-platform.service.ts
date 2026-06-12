@@ -147,6 +147,7 @@ type RawClient = {
     createdAt?: string;
   }>;
   updatedAt?: string;
+  features?: Record<string, any> | null;
 };
 
 export type AdminClientRow = {
@@ -277,6 +278,7 @@ export type AdminClientDetails = AdminClientRow & {
     expiresAt: string | null;
     createdAt: string | null;
   }>;
+  features?: Record<string, any> | null;
 };
 
 export type AdminClientAccessCodeResult = {
@@ -404,6 +406,7 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
       expiresAt: code.expiresAt ?? null,
       createdAt: code.createdAt ?? null,
     })),
+    features: client.features ?? null,
   };
 }
 
@@ -662,4 +665,20 @@ export async function getAdminUsers(): Promise<AdminUsersSummary> {
       disabled: users.filter((user) => user.status === "Disabled").length,
     },
   };
+}
+
+export async function updateAdminClient(
+  clientDocumentId: string,
+  data: { features?: Record<string, any> | null },
+  authToken?: string | null
+): Promise<any> {
+  const response = await adminStrapiRequest<{ data?: RawClient }>(
+    `/admin/clients/${encodeURIComponent(clientDocumentId)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+    authToken
+  );
+  return response.data;
 }

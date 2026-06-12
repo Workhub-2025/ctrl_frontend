@@ -29,9 +29,15 @@ import {
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
 
-type CampaignBuilderProps = {
+interface CampaignBuilderProps {
   assessments: HiringManagerAssessment[];
-};
+  allowExtremePja?: boolean;
+  allowAdvancedPja?: boolean;
+  allowTypingIntermediate?: boolean;
+  allowTypingAdvanced?: boolean;
+  allowRemoteDelivery?: boolean;
+  allowHybridDelivery?: boolean;
+}
 
 type CreateCampaignResponse = {
   data?: unknown;
@@ -50,26 +56,28 @@ type CampaignDraft = {
   campaignName: string;
   roleTitle: string;
   location: string;
-  deliveryMode: "in-person" | "remote";
+  deliveryMode: "in_person" | "remote" | "hybrid";
   candidateVolume: string;
   startDate: string;
   notes: string;
   assessmentSlugs: string[];
   assessmentWeights: Record<string, number>;
   typingDifficulty: "Base" | "Intermediate" | "Advanced";
+  prioritisationScoringMode: "Basic" | "Advanced" | "Extreme";
 };
 
 const emptyDraft: CampaignDraft = {
   campaignName: "",
   roleTitle: "",
   location: "",
-  deliveryMode: "in-person",
+  deliveryMode: "in_person",
   candidateVolume: "100",
   startDate: "",
   notes: "",
   assessmentSlugs: [],
   assessmentWeights: {},
   typingDifficulty: "Base",
+  prioritisationScoringMode: "Basic",
 };
 
 function formatTotalDuration(seconds: number): string {
@@ -105,6 +113,12 @@ function buildEqualWeights(slugs: string[]) {
 
 export function HiringManagerCampaignBuilder({
   assessments,
+  allowExtremePja = true,
+  allowAdvancedPja = false,
+  allowTypingIntermediate = true,
+  allowTypingAdvanced = false,
+  allowRemoteDelivery = false,
+  allowHybridDelivery = false,
 }: CampaignBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -298,7 +312,9 @@ export function HiringManagerCampaignBuilder({
           assessmentMode:
             draft.deliveryMode === "remote"
               ? "remote"
-              : "in_person",
+              : draft.deliveryMode === "hybrid"
+                ? "hybrid"
+                : "in_person",
           assessmentDocumentIds: selectedAssessments
             .map((assessment) => assessment.documentId)
             .filter(Boolean),
@@ -317,6 +333,13 @@ export function HiringManagerCampaignBuilder({
                     durationSeconds: 60,
                     practiceRuns: 1,
                     assessmentRuns: 3,
+                  },
+                }
+              : {}),
+            ...(selectedAssessments.find((a) => a.slug === "prioritisation")
+              ? {
+                  prioritisation: {
+                    scoringMode: draft.prioritisationScoringMode,
                   },
                 }
               : {}),
@@ -348,7 +371,7 @@ export function HiringManagerCampaignBuilder({
 
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="space-y-5">
+      <div className="space-y-5 xl:sticky xl:top-24 self-start max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
         <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/50 backdrop-blur-md shadow-xl">
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">Campaign details</CardTitle>
@@ -510,36 +533,39 @@ export function HiringManagerCampaignBuilder({
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">Campaign review</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 p-5">
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <CardContent className="space-y-4 p-5">            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
               <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                 Delivery mode
               </p>
               <div className="mt-3 grid gap-2">
-                {(["in-person", "remote"] as const).map((mode) => {
-                  const locked = mode !== "in-person";
+                {(["in_person", "remote", "hybrid"] as const).map((mode) => {
+                  const isRemote = mode === "remote";
+                  const isHybrid = mode === "hybrid";
+                  const locked = (isRemote && !allowRemoteDelivery) || (isHybrid && !allowHybridDelivery);
+                  
                   return (
-                    <button
-                      key={mode}
-                      type="button"
-                      disabled={locked}
-                      onClick={() => updateDraft("deliveryMode", mode)}
-                      className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                        draft.deliveryMode === mode
-                          ? "border-primary/40 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                          : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
-                      } ${locked ? "cursor-not-allowed opacity-50" : ""}`}
-                    >
-                      {mode.replace("-", " ")}
-                      {locked && <Lock className="h-3.5 w-3.5 text-amber-400" />}
-                    </button>
+                     <button
+                       key={mode}
+                       type="button"
+                       disabled={locked}
+                       onClick={() => updateDraft("deliveryMode", mode)}
+                       className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                         draft.deliveryMode === mode
+                           ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                           : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
+                       } ${locked ? "cursor-not-allowed opacity-50" : ""}`}
+                     >
+                       {mode.replace("_", " ").replace("-", " ")}
+                       {locked && <Lock className="h-3.5 w-3.5 text-amber-400" />}
+                     </button>
                   );
                 })}
               </div>
-              <p className="mt-3 text-[10px] leading-relaxed text-amber-300/80">
-                Remote is visible for planning, but locked until paid
-                permissions are enabled.
-              </p>
+              {(!allowRemoteDelivery || !allowHybridDelivery) && (
+                <p className="mt-3 text-[10px] leading-relaxed text-amber-300/80">
+                  Remote and Hybrid options require client feature activation by an administrator.
+                </p>
+              )}
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -591,19 +617,57 @@ export function HiringManagerCampaignBuilder({
                           </Label>
                           <div className="mt-2 grid gap-1.5">
                             {(["Base", "Intermediate", "Advanced"] as const).map((level) => {
+                              const isIntermediate = level === "Intermediate";
+                              const isAdvanced = level === "Advanced";
+                              const isDisabled = (isIntermediate && !allowTypingIntermediate) || (isAdvanced && !allowTypingAdvanced);
                               const isActive = draft.typingDifficulty === level;
                               return (
                                 <button
                                   key={level}
                                   type="button"
-                                  onClick={() => updateDraft("typingDifficulty", level)}
+                                  disabled={isDisabled}
+                                  onClick={() => !isDisabled && updateDraft("typingDifficulty", level)}
                                   className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
-                                    isActive
+                                    isDisabled
+                                      ? "border-white/5 bg-white/[0.01] text-slate-600 cursor-not-allowed"
+                                      : isActive
                                       ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
                                       : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
                                   }`}
                                 >
-                                  {level}
+                                  {level} {isDisabled && "🔒"}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {assessment.slug === "prioritisation" && (
+                        <div className="mt-3 space-y-2">
+                          <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                            Scoring Mode
+                          </Label>
+                          <div className="mt-2 grid gap-1.5">
+                            {(["Basic", "Advanced", "Extreme"] as const).map((mode) => {
+                              const isAdvanced = mode === "Advanced";
+                              const isExtreme = mode === "Extreme";
+                              const isDisabled = (isAdvanced && !allowAdvancedPja) || (isExtreme && !allowExtremePja);
+                              const isActive = draft.prioritisationScoringMode === mode;
+                              return (
+                                <button
+                                  key={mode}
+                                  type="button"
+                                  disabled={isDisabled}
+                                  onClick={() => !isDisabled && updateDraft("prioritisationScoringMode", mode)}
+                                  className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
+                                    isDisabled
+                                      ? "border-white/5 bg-white/[0.01] text-slate-600 cursor-not-allowed"
+                                      : isActive
+                                      ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                                      : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
+                                  }`}
+                                >
+                                  {mode} {isDisabled && "🔒"}
                                 </button>
                               );
                             })}

@@ -26,7 +26,7 @@ async function enforceRateLimit(request: NextRequest, action: "get" | "delete") 
 
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ campaignId: string }> }
+  context: { params: Promise<any> }
 ) {
   const limited = await enforceRateLimit(request, "get");
   if (limited) return limited;
@@ -43,7 +43,7 @@ export async function GET(
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ campaignId: string }> }
+  context: { params: Promise<any> }
 ) {
   const limited = await enforceRateLimit(request, "delete");
   if (limited) return limited;

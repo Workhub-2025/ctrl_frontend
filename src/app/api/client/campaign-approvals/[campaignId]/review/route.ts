@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { reviewClientCampaign } from "@/services/client-portal.service";
 
 export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ campaignId: string }> }
+  request: NextRequest,
+  context: { params: Promise<any> }
 ) {
   try {
-    const { campaignId } = await params;
+    const { campaignId } = await context.params;
     const body = await request.json().catch(() => ({}));
     if (!["approved", "rejected"].includes(body?.decision)) {
       return NextResponse.json(

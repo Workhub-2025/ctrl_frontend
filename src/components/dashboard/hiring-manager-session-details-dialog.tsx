@@ -65,6 +65,10 @@ type HiringManagerSessionDetailsDialogProps = {
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
   getResultsHref?: (candidate: SessionCandidate, session: HiringManagerSessionListItem) => string;
   assessmentStack?: string[];
+  onUnlockCandidate?: (candidateSessionId: string) => void;
+  unlockingCandidateId?: string | null;
+  onUpdateSessionStatus?: (sessionId: string, status: "live" | "closed") => void;
+  updatingSessionId?: string | null;
 };
 
 export function HiringManagerSessionDetailsDialog({
@@ -79,6 +83,10 @@ export function HiringManagerSessionDetailsDialog({
   onKickCandidate,
   getResultsHref,
   assessmentStack,
+  onUnlockCandidate,
+  unlockingCandidateId,
+  onUpdateSessionStatus,
+  updatingSessionId,
 }: HiringManagerSessionDetailsDialogProps) {
   const [copiedCode, setCopiedCode] = useState(false);
   const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(null);
@@ -135,20 +143,53 @@ export function HiringManagerSessionDetailsDialog({
               {/* Header */}
               <DialogHeader className="border-b border-white/5 pb-4 relative z-10 text-left pr-12 flex flex-col gap-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <DialogTitle className="text-xl font-bold text-white leading-snug">
-                    {campaignName || session.campaign}
-                  </DialogTitle>
-                  <Badge className={[
-                    "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
-                    getStatusTone(session.status)
-                  ].join(" ")}>
-                    {session.status}
-                  </Badge>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <DialogTitle className="text-xl font-bold text-white leading-snug">
+                      {campaignName || session.campaign}
+                    </DialogTitle>
+                    <Badge className={[
+                      "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
+                      getStatusTone(session.status)
+                    ].join(" ")}>
+                      {session.status}
+                    </Badge>
+                  </div>
+                  
+                  {/* Session Status Actions in Dialog */}
+                  <div className="flex items-center gap-2">
+                    {session.status === "Ready to issue" && onUpdateSessionStatus && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={updatingSessionId === session.id || (session.startsAt ? new Date(session.startsAt).getTime() > Date.now() : false)}
+                        onClick={() => onUpdateSessionStatus(session.id, "live")}
+                        className="h-8 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white disabled:opacity-40 transition-all duration-300 cursor-pointer"
+                      >
+                        {updatingSessionId === session.id ? "Activating..." : "Activate Session"}
+                      </Button>
+                    )}
+                    {session.status === "Live" && onUpdateSessionStatus && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={updatingSessionId === session.id}
+                        onClick={() => onUpdateSessionStatus(session.id, "closed")}
+                        className="h-8 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-all duration-300 cursor-pointer"
+                      >
+                        {updatingSessionId === session.id ? "Closing..." : "Close Session"}
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5 font-medium">
                   <CalendarClock className="h-3.5 w-3.5 text-slate-500" />
                   <span>{session.date}</span>
+                  {session.startsAt && new Date(session.startsAt).getTime() > Date.now() && session.status === "Ready to issue" && (
+                    <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-1.5 py-0.5 rounded ml-1 animate-pulse">
+                      Scheduled
+                    </span>
+                  )}
                   <span className="text-slate-600">·</span>
                   <MapPin className="h-3.5 w-3.5 text-slate-500" />
                   <span className="truncate max-w-[220px]">{session.location}</span>
@@ -297,13 +338,21 @@ export function HiringManagerSessionDetailsDialog({
                                   <h4 className="text-sm font-bold text-white tracking-tight leading-snug">{candidate.name}</h4>
                                   <Badge className={[
                                     "pointer-events-none rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
-                                    progress.completed >= progress.total
-                                      ? "bg-emerald-500/10 text-emerald-400"
-                                      : progress.completed > 0
-                                        ? "bg-orange-500/10 text-orange-400"
-                                        : "bg-slate-500/10 text-slate-400"
+                                    candidate.status === "locked"
+                                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/10"
+                                      : progress.completed >= progress.total
+                                        ? "bg-emerald-500/10 text-emerald-400"
+                                        : progress.completed > 0
+                                          ? "bg-orange-500/10 text-orange-400"
+                                          : "bg-slate-500/10 text-slate-400"
                                   ].join(" ")}>
-                                    {progress.completed >= progress.total ? "Completed" : progress.completed > 0 ? "In Progress" : "Not Started"}
+                                    {candidate.status === "locked"
+                                      ? "Locked"
+                                      : progress.completed >= progress.total
+                                        ? "Completed"
+                                        : progress.completed > 0
+                                          ? "In Progress"
+                                          : "Not Started"}
                                   </Badge>
                                 </div>
                                 <p className="text-xs text-slate-400 mt-0.5 break-all font-medium">{candidate.email || "No email provided"}</p>
@@ -352,7 +401,7 @@ export function HiringManagerSessionDetailsDialog({
                                 View results
                               </Button>
 
-                              {onKickCandidate && (
+                              {(onKickCandidate || (candidate.status === "locked" && onUnlockCandidate)) && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
@@ -364,14 +413,26 @@ export function HiringManagerSessionDetailsDialog({
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="border-white/10 bg-slate-900 text-slate-200">
-                                    <DropdownMenuItem
-                                      disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
-                                      onClick={() => onKickCandidate(session.id, candidate.id)}
-                                      className="flex items-center gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-300 cursor-pointer"
-                                    >
-                                      <UserMinus className="h-4 w-4" />
-                                      {removingCandidateId === candidate.id ? "Removing…" : "Remove candidate"}
-                                    </DropdownMenuItem>
+                                    {candidate.status === "locked" && onUnlockCandidate && (
+                                      <DropdownMenuItem
+                                        disabled={unlockingCandidateId === candidate.id || (session.startsAt ? new Date(session.startsAt).getTime() > Date.now() : false)}
+                                        onClick={() => onUnlockCandidate(candidate.id)}
+                                        className="flex items-center gap-2 text-emerald-400 focus:bg-emerald-500/10 focus:text-emerald-300 cursor-pointer font-bold"
+                                      >
+                                        <Check className="h-4 w-4" />
+                                        {unlockingCandidateId === candidate.id ? "Unlocking…" : "Unlock candidate"}
+                                      </DropdownMenuItem>
+                                    )}
+                                    {onKickCandidate && (
+                                      <DropdownMenuItem
+                                        disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
+                                        onClick={() => onKickCandidate(session.id, candidate.id)}
+                                        className="flex items-center gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-300 cursor-pointer"
+                                      >
+                                        <UserMinus className="h-4 w-4" />
+                                        {removingCandidateId === candidate.id ? "Removing…" : "Remove candidate"}
+                                      </DropdownMenuItem>
+                                    )}
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}

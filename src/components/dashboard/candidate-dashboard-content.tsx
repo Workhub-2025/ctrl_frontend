@@ -222,16 +222,21 @@ function getAssessmentItemsForApplication(application: CandidateApplication) {
         normaliseSlug(item.title) === normaliseSlug(assessment.name)
     );
 
+    const isLocked = assessment.status === "locked";
+
     return {
       icon: matchedItem?.icon ?? ClipboardCheck,
       title: assessment.name ?? matchedItem?.title ?? "Assessment",
       description:
-        assessment.status === "not_open"
-          ? `Opens ${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : ""}.`
-          : matchedItem?.description ?? "Complete this assigned assessment.",
+        isLocked
+          ? "Waiting for assessor to unlock your session."
+          : assessment.status === "not_open"
+            ? `Opens ${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : ""}.`
+            : matchedItem?.description ?? "Complete this assigned assessment.",
       href: `${matchedItem?.href ?? `/assessment/${slug}`}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
       isCompleted: assessment.status === "completed",
-      isAvailable: assessment.isAvailable !== false && assessment.status !== "not_open",
+      isAvailable: assessment.isAvailable !== false && assessment.status !== "not_open" && !isLocked,
+      isLocked,
       availableFromLabel: formatDateTime(assessment.availableFrom),
     };
   });
@@ -283,7 +288,11 @@ function AssessmentListItem({ item, step }: { item: any; step: number }) {
               </Button>
             ) : !item.isAvailable ? (
               <Button variant="secondary" className="w-full sm:w-auto h-9 rounded-lg" disabled>
-                {item.availableFromLabel ? `Opens ${item.availableFromLabel}` : "Not open yet"}
+                {item.isLocked
+                  ? "Assessor Unlock Required"
+                  : item.availableFromLabel
+                    ? `Opens ${item.availableFromLabel}`
+                    : "Not open yet"}
               </Button>
             ) : (
               <Button
@@ -601,6 +610,16 @@ export function CandidateDashboardContent() {
                     new Date(currentApplication.sessionStartsAt).getTime() > Date.now()
                       ? `Your assigned assessments will open on ${formatDateTime(currentApplication.sessionStartsAt)}.`
                       : "Work through the assessments below. Submit each one to progress."}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {currentApplication.status === "Soft Locked" && (
+                <Alert className="border-amber-500/20 bg-amber-500/5 text-amber-500 rounded-2xl p-5 shadow-inner">
+                  <Target className="h-5 w-5 text-amber-500 animate-pulse" aria-hidden="true" />
+                  <AlertTitle className="text-lg font-bold tracking-tight">Assessor Unlock Required</AlertTitle>
+                  <AlertDescription className="text-slate-300 mt-1.5 leading-relaxed text-sm">
+                    This in-person session requires the hiring manager to unlock candidate assessments. Please wait for your assessor to unlock your session.
                   </AlertDescription>
                 </Alert>
               )}

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { isAdminRole } from "@/lib/auth/role-model";
@@ -9,7 +10,7 @@ import {
 } from "@/services/admin-platform.service";
 
 type RouteContext = {
-  params: Promise<{ clientId: string }>;
+  params: Promise<any>;
 };
 
 async function requireAdmin() {
@@ -34,7 +35,7 @@ async function getClientId(context: RouteContext) {
   return params.clientId;
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: NextRequest, context: RouteContext) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
@@ -50,7 +51,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 }
 
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
@@ -73,4 +74,30 @@ export async function DELETE(request: Request, context: RouteContext) {
       { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 }
     );
   }
+}
+
+export async function PUT(request: NextRequest, context: RouteContext) {
+    const auth = await requireAdmin();
+    if (!auth.ok) return auth.response;
+
+    try {
+        const body = await request.json().catch(() => ({}));
+        if (!body || typeof body !== "object") {
+            return NextResponse.json({ error: "Request body must be an object" }, { status: 400 });
+        }
+
+        const { updateAdminClient } = await import("@/services/admin-platform.service");
+        const updated = await updateAdminClient(
+            await getClientId(context),
+            body,
+            auth.session.user.jwt
+        );
+        return NextResponse.json({ data: updated });
+    } catch (error) {
+        const upstreamStatus = getStrapiErrorStatus(error);
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : "Client could not be updated" },
+            { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 }
+        );
+    }
 }

@@ -53,6 +53,7 @@ export type HiringManagerSessionListItem = {
   type: "In-person" | "Remote";
   status: "Ready to issue" | "Live" | "Closed" | "Cancelled";
   date: string;
+  startsAt?: string | null;
   location: string;
   candidateCount: number;
   candidateLimit: number;
@@ -94,12 +95,13 @@ type OverviewResponse = {
   error?: string;
 };
 
-type SessionCreateInput = {
+export type SessionCreateInput = {
   campaignDocumentId: string;
   name: string;
   candidateLimit: number;
   startsAt?: string | null;
   location?: string | null;
+  mode?: "in_person" | "remote" | null;
 };
 
 type SessionCreateResponse = {
@@ -330,5 +332,42 @@ export class HiringManagerPortalClientService {
     });
     await readJson<{ data?: unknown; error?: string }>(response);
     this.invalidate();
+  }
+
+  static async unlockCandidate(candidateSessionId: string): Promise<boolean> {
+    try {
+      const response = await fetch(
+        `/api/hiring-manager/candidate-sessions/${candidateSessionId}/unlock`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      await readJson<{ data?: unknown; error?: string }>(response);
+      this.invalidate();
+      return true;
+    } catch (err) {
+      console.error("[unlockCandidate] Failed to unlock candidate", err);
+      return false;
+    }
+  }
+
+  static async updateSessionStatus(
+    sessionId: string,
+    status: "live" | "closed"
+  ): Promise<boolean> {
+    try {
+      const response = await fetch(`/api/hiring-manager/sessions/${sessionId}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      await readJson<{ data?: unknown; error?: string }>(response);
+      this.invalidate();
+      return true;
+    } catch (err) {
+      console.error("[updateSessionStatus] Failed to update session status", err);
+      return false;
+    }
   }
 }

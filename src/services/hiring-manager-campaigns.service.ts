@@ -121,6 +121,7 @@ type RawAssessmentSession = {
   sessionStatus?: "ready" | "live" | "closed" | "cancelled";
   startsAt?: string | null;
   location?: string | null;
+  mode?: "in_person" | "remote" | null;
   campaign?: RawCampaign;
   candidate_sessions?: RawCandidateSession[];
 };
@@ -212,6 +213,7 @@ export type HiringManagerSessionListItem = {
   type: "In-person" | "Remote";
   status: "Ready to issue" | "Live" | "Closed" | "Cancelled";
   date: string;
+  startsAt?: string | null;
   location: string;
   candidateCount: number;
   candidateLimit: number;
@@ -237,6 +239,7 @@ export type HiringManagerAssessmentSessionCreateInput = {
   candidateLimit: number;
   startsAt?: string | null;
   location?: string | null;
+  mode?: "in_person" | "remote" | null;
 };
 
 function formatStatus(status?: RawCampaign["campaignStatus"]): HiringManagerCampaignListItem["status"] {
@@ -358,9 +361,10 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
     id: session.documentId ?? String(session.id ?? session.sessionCode ?? "session"),
     documentId: session.documentId,
     campaign: session.campaign?.name ?? "Untitled campaign",
-    type: formatMode(session.campaign?.assessmentMode ?? "in_person") as "In-person" | "Remote",
+    type: (session.mode === "remote" ? "Remote" : "In-person") as "In-person" | "Remote",
     status,
     date: formatDate(session.startsAt ?? session.campaign?.startDate),
+    startsAt: session.startsAt ?? session.campaign?.startDate ?? null,
     location: session.location || session.campaign?.location || "Location to confirm",
     candidateCount: candidates.length,
     candidateLimit: session.candidateLimit ?? 0,
@@ -593,6 +597,7 @@ export async function createHiringManagerAssessmentSession(
         candidateLimit: input.candidateLimit,
         startsAt: input.startsAt,
         location: input.location,
+        mode: input.mode,
       }),
     }
   );
