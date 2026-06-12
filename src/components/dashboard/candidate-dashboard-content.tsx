@@ -75,11 +75,8 @@ type CandidateApplication = {
 type AssessmentSortOption =
   | "attention"
   | "due_closest"
-  | "progress_low"
-  | "progress_high"
-  | "name_az"
-  | "status"
-  | "newest";
+  | "newest"
+  | "name_az";
 
 const statusClassNames: Record<CandidateApplicationStatus, string> = {
   "Awaiting Assessment":
@@ -97,18 +94,44 @@ const statusClassNames: Record<CandidateApplicationStatus, string> = {
 };
 
 const statusSortRank: Record<CandidateApplicationStatus, number> = {
-  "Awaiting Assessment": 0,
-  "In Progress": 1,
+  "In Progress": 0,
+  "Awaiting Assessment": 1,
   "Soft Locked": 2,
   Completed: 3,
   Progressed: 4,
   Unsuccessful: 5,
 };
 
-function getSortTimestamp(value?: string | null, fallback = Number.POSITIVE_INFINITY) {
-  if (!value) return fallback;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? fallback : date.getTime();
+function getAttentionRank(application: CandidateApplication) {
+  const hasAvailableAssessment = application.assessments.some(
+    (assessment) =>
+      assessment.status !== "completed" &&
+      assessment.status !== "not_open" &&
+      assessment.status !== "locked" &&
+      assessment.isAvailable !== false
+  );
+
+  if (hasAvailableAssessment) return 0;
+  if (application.status === "In Progress") return 1;
+  if (application.assessments.some((assessment) => assessment.status === "not_open")) return 2;
+  if (application.status === "Soft Locked" || application.assessments.some((assessment) => assessment.status === "locked")) return 3;
+  if (application.status === "Completed") return 4;
+
+  return statusSortRank[application.status];
+}
+
+function compareDates(a?: string | null, b?: string | null, ascending = true) {
+  if (!a && !b) return 0;
+  if (!a) return ascending ? 1 : -1;
+  if (!b) return ascending ? -1 : 1;
+  const timeA = new Date(a).getTime();
+  const timeB = new Date(b).getTime();
+  const validA = !Number.isNaN(timeA);
+  const validB = !Number.isNaN(timeB);
+  if (!validA && !validB) return 0;
+  if (!validA) return ascending ? 1 : -1;
+  if (!validB) return ascending ? -1 : 1;
+  return ascending ? timeA - timeB : timeB - timeA;
 }
 
 function compareText(left: string, right: string) {
@@ -386,22 +409,16 @@ export function CandidateDashboardContent() {
     sorted.sort((a, b) => {
       switch (sortBy) {
         case "due_closest":
-          return getSortTimestamp(a.dueAt) - getSortTimestamp(b.dueAt) || compareText(a.campaign, b.campaign);
-        case "progress_low":
-          return a.completionPercent - b.completionPercent || compareText(a.campaign, b.campaign);
-        case "progress_high":
-          return b.completionPercent - a.completionPercent || compareText(a.campaign, b.campaign);
+          return compareDates(a.dueAt, b.dueAt, true) || compareText(a.campaign, b.campaign);
+        case "newest":
+          return compareDates(a.linkedAt, b.linkedAt, false) || compareText(a.campaign, b.campaign);
         case "name_az":
           return compareText(a.campaign, b.campaign);
-        case "status":
-          return statusSortRank[a.status] - statusSortRank[b.status] || compareText(a.campaign, b.campaign);
-        case "newest":
-          return getSortTimestamp(b.linkedAt, 0) - getSortTimestamp(a.linkedAt, 0) || compareText(a.campaign, b.campaign);
         case "attention":
         default:
           return (
-            statusSortRank[a.status] - statusSortRank[b.status] ||
-            getSortTimestamp(a.dueAt) - getSortTimestamp(b.dueAt) ||
+            getAttentionRank(a) - getAttentionRank(b) ||
+            compareDates(a.dueAt, b.dueAt, true) ||
             compareText(a.campaign, b.campaign)
           );
       }
@@ -481,13 +498,10 @@ export function CandidateDashboardContent() {
                 <SelectValue aria-label="Sort assessments" />
               </SelectTrigger>
               <SelectContent align="end">
-                <SelectItem value="attention">Needs attention</SelectItem>
-                <SelectItem value="due_closest">Due closest</SelectItem>
-                <SelectItem value="progress_low">Progress: lowest</SelectItem>
-                <SelectItem value="progress_high">Progress: highest</SelectItem>
-                <SelectItem value="name_az">Assessment A-Z</SelectItem>
-                <SelectItem value="status">Status</SelectItem>
-                <SelectItem value="newest">Newest linked</SelectItem>
+                <SelectItem value="attention">Action required</SelectItem>
+                <SelectItem value="due_closest">Due date</SelectItem>
+                <SelectItem value="newest">Recently added</SelectItem>
+                <SelectItem value="name_az">Alphabetical (A-Z)</SelectItem>
               </SelectContent>
             </Select>
             <Button
