@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowRight,
   RefreshCw,
@@ -18,11 +18,22 @@ import {
   CalendarDays,
   Layers3,
   Plus,
+  Check,
+  Copy,
+  Eye,
+  Play,
+  Building,
+  Globe,
+  KeyRound,
+  AlertCircle,
 } from "lucide-react";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignListItem,
+  type HiringManagerSessionListItem,
+  type HiringManagerCampaignDetail,
 } from "@/services/hiring-manager-portal-client.service";
 
 function formatLastRefresh(value: number | null) {
@@ -36,25 +47,43 @@ function formatLastRefresh(value: number | null) {
 
 export function HiringManagerCampaignsList() {
   const [campaigns, setCampaigns] = useState<HiringManagerCampaignListItem[]>([]);
+  const [sessions, setSessions] = useState<HiringManagerSessionListItem[]>([]);
+  const [campaignDetails, setCampaignDetails] = useState<HiringManagerCampaignDetail[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(
-    HiringManagerPortalClientService.getCampaignsLastRefresh()
+    HiringManagerPortalClientService.getSessionsLastRefresh()
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // States for the details drawer & actions
+  const [selectedSession, setSelectedSession] = useState<HiringManagerSessionListItem | null>(null);
+  const [updatingSessionId, setUpdatingSessionId] = useState<string | null>(null);
+  const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
+  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
+  const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
 
   const loadCampaigns = async (force = false) => {
     const startTime = Date.now();
     setIsRefreshing(true);
     setError(null);
     try {
-      const data = await HiringManagerPortalClientService.getCampaigns({ force });
-      setCampaigns(data);
-      setLastRefreshAt(HiringManagerPortalClientService.getCampaignsLastRefresh());
+      const overview = await HiringManagerPortalClientService.getOverview({ force });
+      setCampaigns(overview.campaigns);
+      setSessions(overview.sessions);
+      setCampaignDetails(overview.campaignDetails);
+
+      setSelectedSession((current) =>
+        current
+          ? overview.sessions.find((session) => session.id === current.id) ?? null
+          : null
+      );
+
+      setLastRefreshAt(HiringManagerPortalClientService.getSessionsLastRefresh());
     } catch (loadError) {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Campaigns could not be loaded."
+          : "Campaigns and sessions could not be loaded."
       );
     } finally {
       if (force) {
@@ -68,6 +97,80 @@ export function HiringManagerCampaignsList() {
     }
   };
 
+  const removeCandidate = async (sessionId: string, candidateSessionId: string) => {
+    const reason = window.prompt("Enter the reason for removing this candidate from the session.");
+    if (!reason?.trim()) return;
+
+    setRemovingCandidateId(candidateSessionId);
+    try {
+      await HiringManagerPortalClientService.removeCandidateFromSession({
+        sessionId,
+        candidateSessionId,
+        reason: reason.trim(),
+      });
+      await loadCampaigns(true);
+    } catch (removeError) {
+      alert(removeError instanceof Error ? removeError.message : "Candidate could not be removed.");
+    } finally {
+      setRemovingCandidateId(null);
+    }
+  };
+
+  const handleUnlockCandidate = async (candidateSessionId: string) => {
+    setUnlockingCandidateId(candidateSessionId);
+    try {
+      const success = await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
+      if (success) {
+        await loadCampaigns(true);
+      } else {
+        alert("Failed to unlock candidate session.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUnlockingCandidateId(null);
+    }
+  };
+
+  const handleUpdateSessionStatus = async (sessionId: string, status: "live" | "closed") => {
+    setUpdatingSessionId(sessionId);
+    try {
+      const success = await HiringManagerPortalClientService.updateSessionStatus(sessionId, status);
+      if (success) {
+        await loadCampaigns(true);
+      } else {
+        alert(`Failed to update session status to ${status}`);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUpdatingSessionId(null);
+    }
+  };
+
+  const selectedCampaignDetail = useMemo(() => {
+    if (!selectedSession) return null;
+    return campaignDetails.find((campaign) =>
+      campaign.assessmentSessions.some((session) => session.id === selectedSession.id)
+      || campaign.name === selectedSession.campaign
+    ) ?? null;
+  }, [campaignDetails, selectedSession]);
+
+  const activeSessions = useMemo(() => {
+    const now = Date.now();
+    return sessions.filter((session) => {
+      if (session.status === "Closed" || session.status === "Cancelled") {
+        return false;
+      }
+      
+      const isExplicitlyLive = session.status === "Live";
+      const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
+      const isPastStart = startsAtTime > 0 && now >= startsAtTime;
+      
+      return isExplicitlyLive || (session.status === "Upcoming" && isPastStart);
+    });
+  }, [sessions]);
+
   useEffect(() => {
     void loadCampaigns(false);
   }, []);
@@ -79,6 +182,135 @@ export function HiringManagerCampaignsList() {
 
   return (
     <div className="space-y-5">
+      {/* Live Sessions Console */}
+      <Card className="rounded-[1.25rem] border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#080c16]/90 shadow-[0_8px_30px_rgb(0,0,0,0.2)] dark:bg-[#0b1329]/45 backdrop-blur-md relative overflow-hidden">
+        {/* Glow Effects */}
+        <div className="pointer-events-none absolute -left-16 -top-16 h-32 w-32 rounded-full bg-emerald-500/10 blur-2xl" />
+        <div className="pointer-events-none absolute -right-16 -bottom-16 h-32 w-32 rounded-full bg-indigo-500/10 blur-2xl" />
+        
+        <CardHeader className="pb-3 flex flex-row items-center justify-between border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${activeSessions.length > 0 ? "bg-emerald-400" : "bg-slate-500"}`}></span>
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${activeSessions.length > 0 ? "bg-emerald-500" : "bg-slate-600"}`}></span>
+            </span>
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-300">Live & Active Sessions</CardTitle>
+          </div>
+          <Badge variant="outline" className="border-white/15 bg-white/[0.02] text-xs font-semibold text-slate-400">
+            {activeSessions.length} Active
+          </Badge>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {activeSessions.length === 0 ? (
+            <div className="py-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-1">
+              <CalendarDays className="h-6 w-6 text-slate-600 mb-1" />
+              <p className="font-semibold text-slate-300">No active sessions right now</p>
+              <p className="text-[11px] text-slate-500 max-w-[280px]">Sessions scheduled for today will appear here automatically when their start time arrives.</p>
+            </div>
+          ) : (
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+              {activeSessions.map((session) => {
+                const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
+                const isPastStart = startsAtTime > 0 && Date.now() >= startsAtTime;
+                const isPendingActivation = session.status === "Upcoming" && isPastStart;
+
+                return (
+                  <div
+                    key={session.id}
+                    className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/65 p-4 flex flex-col justify-between gap-3 shadow-inner hover:border-white/20 transition-all duration-300"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge className={[
+                          "rounded-md border-none text-[9px] font-bold px-1.5 py-0.5",
+                          isPendingActivation ? "bg-amber-500/10 text-amber-400" : "bg-emerald-500/10 text-emerald-400"
+                        ].join(" ")}>
+                          {isPendingActivation ? "Pending Activation" : "Live"}
+                        </Badge>
+                        <span className="text-[10px] text-slate-500 font-medium truncate max-w-[120px]">{session.date}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white line-clamp-1">{session.campaign}</h4>
+                      
+                      <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                        {session.type === "Remote" ? (
+                          <Globe className="h-3.5 w-3.5 text-indigo-400" />
+                        ) : (
+                          <Building className="h-3.5 w-3.5 text-slate-500" />
+                        )}
+                        <span className="text-[11px] font-medium truncate max-w-[180px]">{session.location}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
+                        <Users className="h-3.5 w-3.5 text-slate-500" />
+                        <span>{session.candidateCount} of {session.candidateLimit} Joined</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+                      <div className="flex items-center justify-between gap-2 rounded bg-black/30 px-2 py-1 border border-white/5">
+                        <span className="text-[9px] font-bold uppercase text-slate-500 tracking-wider">CODE</span>
+                        <span className="font-mono text-[11px] font-bold text-white tracking-widest">
+                          {session.accessValue}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void navigator.clipboard?.writeText(session.accessValue);
+                            setCopiedSessionId(session.id);
+                            setTimeout(() => setCopiedSessionId(null), 2000);
+                          }}
+                          className="text-slate-400 hover:text-white transition-colors"
+                        >
+                          {copiedSessionId === session.id ? (
+                            <Check className="h-3 w-3 text-emerald-400" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </button>
+                      </div>
+
+                      <div className="flex gap-2">
+                        {isPendingActivation ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={updatingSessionId === session.id}
+                            onClick={() => handleUpdateSessionStatus(session.id, "live")}
+                            className="flex-1 h-7 rounded-lg text-[10px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-50 transition-all cursor-pointer"
+                          >
+                            {updatingSessionId === session.id ? "Activating..." : "Activate"}
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={updatingSessionId === session.id}
+                            onClick={() => handleUpdateSessionStatus(session.id, "closed")}
+                            className="flex-1 h-7 rounded-lg text-[10px] font-bold bg-red-950/20 text-red-400 border border-red-500/20 hover:bg-red-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                          >
+                            {updatingSessionId === session.id ? "Closing..." : "Close"}
+                          </Button>
+                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedSession(session)}
+                          className="h-7 rounded-lg text-[10px] font-bold border-white/10 bg-transparent text-slate-200 hover:bg-white/10 hover:text-white px-2.5 transition-colors cursor-pointer"
+                        >
+                          <Eye className="mr-1 h-3 w-3" />
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Active Campaigns Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4">
         <div>
@@ -215,6 +447,29 @@ export function HiringManagerCampaignsList() {
           ))
         )}
       </div>
+
+      <HiringManagerSessionDetailsDialog
+        session={selectedSession}
+        open={Boolean(selectedSession)}
+        onOpenChange={(open) => !open && setSelectedSession(null)}
+        campaignName={selectedCampaignDetail?.name}
+        campaignRole={selectedCampaignDetail?.role}
+        campaignId={selectedCampaignDetail?.id}
+        expectedAssessmentCount={selectedCampaignDetail?.assessmentStack.length}
+        removingCandidateId={removingCandidateId}
+        onKickCandidate={removeCandidate}
+        getResultsHref={
+          selectedCampaignDetail
+            ? (candidate) =>
+                `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${selectedCampaignDetail.id}&candidateSessionId=${candidate.id}`
+            : undefined
+        }
+        assessmentStack={selectedCampaignDetail?.assessmentStack}
+        onUnlockCandidate={handleUnlockCandidate}
+        unlockingCandidateId={unlockingCandidateId}
+        onUpdateSessionStatus={handleUpdateSessionStatus}
+        updatingSessionId={updatingSessionId}
+      />
     </div>
   );
 }
