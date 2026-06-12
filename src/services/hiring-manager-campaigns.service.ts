@@ -211,7 +211,7 @@ export type HiringManagerSessionListItem = {
   documentId?: string;
   campaign: string;
   type: "In-person" | "Remote";
-  status: "Ready to issue" | "Live" | "Closed" | "Cancelled";
+  status: "Upcoming" | "Live" | "Closed" | "Cancelled";
   date: string;
   startsAt?: string | null;
   location: string;
@@ -341,17 +341,13 @@ function normalizeAssessmentResult(
 
 function normalizeAssessmentSession(session: RawAssessmentSession): HiringManagerSessionListItem {
   const status = (() => {
-    switch (session.sessionStatus) {
-      case "live":
-        return "Live";
-      case "closed":
-        return "Closed";
-      case "cancelled":
-        return "Cancelled";
-      case "ready":
-      default:
-        return "Ready to issue";
-    }
+    if (session.sessionStatus === "closed") return "Closed";
+    if (session.sessionStatus === "cancelled") return "Cancelled";
+    if (session.sessionStatus === "live") return "Live";
+
+    const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
+    const isPastStart = startsAtTime > 0 && Date.now() >= startsAtTime;
+    return isPastStart ? "Live" : "Upcoming";
   })();
   const candidates = (session.candidate_sessions ?? []).filter(
     (candidateSession) => candidateSession.sessionStatus !== "expired" && !candidateSession.removedAt

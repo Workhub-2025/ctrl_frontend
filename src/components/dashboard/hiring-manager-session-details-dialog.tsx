@@ -158,17 +158,6 @@ export function HiringManagerSessionDetailsDialog({
                   
                   {/* Session Status Actions in Dialog */}
                   <div className="flex items-center gap-2">
-                    {session.status === "Ready to issue" && onUpdateSessionStatus && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={updatingSessionId === session.id || (session.startsAt ? new Date(session.startsAt).getTime() > Date.now() : false)}
-                        onClick={() => onUpdateSessionStatus(session.id, "live")}
-                        className="h-8 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white disabled:opacity-40 transition-all duration-300 cursor-pointer"
-                      >
-                        {updatingSessionId === session.id ? "Activating..." : "Activate Session"}
-                      </Button>
-                    )}
                     {session.status === "Live" && onUpdateSessionStatus && (
                       <Button
                         type="button"
@@ -185,7 +174,7 @@ export function HiringManagerSessionDetailsDialog({
                 <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5 font-medium">
                   <CalendarClock className="h-3.5 w-3.5 text-slate-500" />
                   <span>{session.date}</span>
-                  {session.startsAt && new Date(session.startsAt).getTime() > Date.now() && session.status === "Ready to issue" && (
+                  {session.startsAt && new Date(session.startsAt).getTime() > Date.now() && session.status === "Upcoming" && (
                     <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-1.5 py-0.5 rounded ml-1 animate-pulse">
                       Scheduled
                     </span>

@@ -318,7 +318,7 @@ export function HiringManagerSessionsList() {
       const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
       const isLive = session.status === "Live" && (!startsAtTime || now >= startsAtTime);
       const isClosed = session.status === "Closed" || session.status === "Cancelled";
-      const isUpcoming = (session.status === "Ready to issue" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
+      const isUpcoming = (session.status === "Upcoming" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
 
       if (isLive) live++;
       else if (isUpcoming) upcoming++;
@@ -333,7 +333,7 @@ export function HiringManagerSessionsList() {
       const startsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
       const isLive = session.status === "Live" && (!startsAtTime || now >= startsAtTime);
       const isClosed = session.status === "Closed" || session.status === "Cancelled";
-      const isUpcoming = (session.status === "Ready to issue" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
+      const isUpcoming = (session.status === "Upcoming" || (startsAtTime > 0 && now < startsAtTime)) && !isClosed;
 
       if (currentTab === "live") return isLive;
       if (currentTab === "upcoming") return isUpcoming;
@@ -846,24 +846,6 @@ export function HiringManagerSessionsList() {
                     </p>
                   </div>
                   <div className="mt-3.5 flex flex-col gap-2">
-                    {session.status === "Ready to issue" && (
-                      <div className="w-full">
-                        <Button
-                          type="button"
-                          size="sm"
-                          disabled={updatingSessionId === session.id || (session.startsAt ? new Date(session.startsAt).getTime() > Date.now() : false)}
-                          onClick={() => handleUpdateSessionStatus(session.id, "live")}
-                          className="w-full h-8 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 hover:opacity-95 text-white disabled:opacity-40 transition-all duration-300 cursor-pointer"
-                        >
-                          {updatingSessionId === session.id ? "Activating..." : "Activate Session"}
-                        </Button>
-                        {session.startsAt && new Date(session.startsAt).getTime() > Date.now() && (
-                          <p className="text-[10px] text-center text-slate-400 mt-1.5">
-                            Activates after session start time
-                          </p>
-                        )}
-                      </div>
-                    )}
                     {session.status === "Live" && (
                       <Button
                         type="button"

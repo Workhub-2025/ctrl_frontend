@@ -51,7 +51,7 @@ export type HiringManagerSessionListItem = {
   documentId?: string;
   campaign: string;
   type: "In-person" | "Remote";
-  status: "Ready to issue" | "Live" | "Closed" | "Cancelled";
+  status: "Upcoming" | "Live" | "Closed" | "Cancelled";
   date: string;
   startsAt?: string | null;
   location: string;
