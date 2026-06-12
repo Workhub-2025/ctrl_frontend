@@ -27,6 +27,8 @@ import {
   LogOut,
   UserCircle,
   LayoutDashboard,
+  ArrowUpRight,
+  Settings,
   Users,
   History,
   Building2,
@@ -173,11 +175,31 @@ export default function AdminLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Upgrades">
+                  <Link href="/admin/upgrade-requests">
+                    <ArrowUpRight />
+                    <span className="font-medium text-foreground">
+                      Upgrades
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Audit Logs">
                   <Link href="/admin/audit-logs">
                     <History />
                     <span className="font-medium text-foreground">
                       Audit Logs
+                    </span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Settings">
+                  <Link href="/admin/settings">
+                    <Settings />
+                    <span className="font-medium text-foreground">
+                      Settings
                     </span>
                   </Link>
                 </SidebarMenuButton>

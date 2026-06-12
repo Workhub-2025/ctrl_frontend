@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ShieldCheck, UserCheck, Users, UserX } from "lucide-react";
 
 type UserRole = "CTRL Admin" | "Client Contact" | "Hiring Manager" | "Candidate";
 type UserStatus = "Active" | "Invited" | "Disabled";
@@ -30,8 +30,12 @@ type AdminUsersPayload = {
   users: AdminUser[];
   totals: {
     all: number;
+    ctrlAdmins: number;
+    clientContacts: number;
     hiringManagers: number;
     candidates: number;
+    active: number;
+    invited: number;
     disabled: number;
   };
 };
@@ -48,13 +52,18 @@ export default function AdminUsersPage() {
     users: [],
     totals: {
       all: 0,
+      ctrlAdmins: 0,
+      clientContacts: 0,
       hiringManagers: 0,
       candidates: 0,
+      active: 0,
+      invited: 0,
       disabled: 0,
     },
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<"all" | UserRole | "Disabled">("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -71,8 +80,12 @@ export default function AdminUsersPage() {
             users: Array.isArray(data?.users) ? data.users : [],
             totals: data?.totals ?? {
               all: 0,
+              ctrlAdmins: 0,
+              clientContacts: 0,
               hiringManagers: 0,
               candidates: 0,
+              active: 0,
+              invited: 0,
               disabled: 0,
             },
           });
@@ -96,15 +109,20 @@ export default function AdminUsersPage() {
   const filteredUsers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
 
-    if (!query) return payload.users;
-
-    return payload.users.filter((user) =>
-      [user.name, user.email, user.role, user.client, user.status]
+    return payload.users.filter((user) => {
+      const matchesRole =
+        roleFilter === "all" ||
+        (roleFilter === "Disabled" ? user.status === "Disabled" : user.role === roleFilter);
+      const matchesQuery =
+        !query ||
+        [user.name, user.email, user.role, user.client, user.status]
         .join(" ")
         .toLowerCase()
-        .includes(query)
-    );
-  }, [payload.users, searchTerm]);
+          .includes(query);
+
+      return matchesRole && matchesQuery;
+    });
+  }, [payload.users, roleFilter, searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -126,23 +144,13 @@ export default function AdminUsersPage() {
         </Badge>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Total users</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.all}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Hiring managers</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.hiringManagers}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Candidates</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.candidates}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Disabled</p>
-          <p className="mt-2 text-2xl font-semibold">{payload.totals.disabled}</p>
-        </div>
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <UserMetric icon={Users} label="All users" value={payload.totals.all} />
+        <UserMetric icon={ShieldCheck} label="CTRL admins" value={payload.totals.ctrlAdmins} />
+        <UserMetric icon={UserCheck} label="Clients" value={payload.totals.clientContacts} />
+        <UserMetric icon={Users} label="Hiring managers" value={payload.totals.hiringManagers} />
+        <UserMetric icon={Users} label="Candidates" value={payload.totals.candidates} />
+        <UserMetric icon={UserX} label="Disabled" value={payload.totals.disabled} />
       </div>
 
       {error && (
@@ -162,6 +170,31 @@ export default function AdminUsersPage() {
               onChange={(event) => setSearchTerm(event.target.value)}
             />
           </div>
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["all", "All"],
+              ["Client Contact", "Clients"],
+              ["Hiring Manager", "Hiring managers"],
+              ["Candidate", "Candidates"],
+              ["Disabled", "Disabled"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRoleFilter(value as typeof roleFilter)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                  roleFilter === value
+                    ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-600"
+                    : "border-border text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="border-b px-4 py-2 text-xs text-muted-foreground">
+          Showing {filteredUsers.length} of {payload.totals.all} users. Active: {payload.totals.active}. Invited: {payload.totals.invited}.
         </div>
 
         <div className="overflow-x-auto">
@@ -210,6 +243,26 @@ export default function AdminUsersPage() {
           </Table>
         </div>
       </div>
+    </div>
+  );
+}
+
+function UserMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <Icon className="h-4 w-4 text-cyan-600" aria-hidden="true" />
+      </div>
+      <p className="mt-2 text-2xl font-semibold">{value}</p>
     </div>
   );
 }

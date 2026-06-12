@@ -202,10 +202,26 @@ export type AdminUsersSummary = {
   users: AdminUserRow[];
   totals: {
     all: number;
+    ctrlAdmins: number;
+    clientContacts: number;
     hiringManagers: number;
     candidates: number;
+    active: number;
+    invited: number;
     disabled: number;
   };
+};
+
+export type AdminClientEntitlementRow = AdminClientRow & {
+  activeContract: {
+    documentId: string;
+    status: string;
+    startDate: string | null;
+    endDate: string | null;
+    seatCount: number;
+    notes: string;
+  } | null;
+  features?: Record<string, any> | null;
 };
 
 export type AdminAuditLogRow = {
@@ -449,6 +465,26 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
   };
 }
 
+function normalizeClientEntitlement(client: RawClient): AdminClientEntitlementRow {
+  const row = normalizeClient(client);
+  const activeContract = getActiveContract(client);
+
+  return {
+    ...row,
+    activeContract: activeContract
+      ? {
+          documentId: activeContract.documentId ?? "",
+          status: activeContract.status ?? "unknown",
+          startDate: activeContract.startDate ?? null,
+          endDate: activeContract.endDate ?? null,
+          seatCount: activeContract.seatCount ?? 0,
+          notes: activeContract.notes ?? "",
+        }
+      : null,
+    features: client.features ?? null,
+  };
+}
+
 async function getRawClients() {
   const response = await strapiRequest<StrapiListResponse<RawClient>>(
     "/clients?populate[contracts]=true&populate[users][populate][role]=true&populate[campaigns]=true&populate[access_codes]=true&sort=updatedAt:desc&pagination[pageSize]=100"
@@ -483,11 +519,19 @@ function normalizeUser(user: RawUser): AdminUserRow {
 }
 
 async function getRawUsers() {
-  const response = await strapiRequest<StrapiListResponse<RawUser>>(
-    "/users?populate[role]=true&populate[client]=true&sort=updatedAt:desc&pagination[pageSize]=250"
-  );
+  const users: RawUser[] = [];
+  const pageSize = 100;
 
-  return response.data ?? [];
+  for (let page = 1; page < 100; page += 1) {
+    const response = await strapiRequest<StrapiListResponse<RawUser>>(
+      `/users?populate[role]=true&populate[client]=true&sort=updatedAt:desc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`
+    );
+    const pageUsers = response.data ?? [];
+    users.push(...pageUsers);
+    if (pageUsers.length < pageSize) break;
+  }
+
+  return users;
 }
 
 function formatTimestamp(value?: string) {
@@ -545,6 +589,11 @@ export async function getAdminAuditLogs(): Promise<AdminAuditLogRow[]> {
 export async function getAdminClients(): Promise<AdminClientRow[]> {
   const clients = await getRawClients();
   return clients.map(normalizeClient);
+}
+
+export async function getAdminClientEntitlements(): Promise<AdminClientEntitlementRow[]> {
+  const clients = await getRawClients();
+  return clients.map(normalizeClientEntitlement);
 }
 
 export async function getAdminClientDetails(clientDocumentId: string): Promise<AdminClientDetails> {
@@ -704,8 +753,12 @@ export async function getAdminUsers(): Promise<AdminUsersSummary> {
     users,
     totals: {
       all: users.length,
+      ctrlAdmins: users.filter((user) => user.role === "CTRL Admin").length,
+      clientContacts: users.filter((user) => user.role === "Client Contact").length,
       hiringManagers: users.filter((user) => user.role === "Hiring Manager").length,
       candidates: users.filter((user) => user.role === "Candidate").length,
+      active: users.filter((user) => user.status === "Active").length,
+      invited: users.filter((user) => user.status === "Invited").length,
       disabled: users.filter((user) => user.status === "Disabled").length,
     },
   };
@@ -713,7 +766,13 @@ export async function getAdminUsers(): Promise<AdminUsersSummary> {
 
 export async function updateAdminClient(
   clientDocumentId: string,
-  data: { features?: Record<string, any> | null },
+  data: {
+    features?: Record<string, any> | null;
+    contract?: {
+      seatCount?: number;
+      notes?: string | null;
+    };
+  },
   authToken?: string | null
 ): Promise<any> {
   const response = await adminStrapiRequest<{ data?: RawClient }>(
