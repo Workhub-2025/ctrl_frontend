@@ -166,13 +166,6 @@ npm run typecheck
 npm run lint
 ```
 
-### AI flows (Genkit)
-
-```bash
-# Start Genkit developer UI alongside the app
-npm run genkit:dev
-```
-
 ---
 
 ## 🏭 Deployment

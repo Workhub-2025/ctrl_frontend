@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,52 +14,11 @@ import { CheckCircle, PartyPopper } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { RoleDashboardShell } from '@/components/dashboard/role-dashboard-shell';
-import { HybridAssessmentSummary } from '@/types';
-import {
-  getHybridAssessmentSummaryFromSession,
-  isHybridSummaryPersisted,
-  markHybridSummaryPersisted
-} from '@/lib/assessment/hybrid-assessment-session';
-import { HybridAssessmentService } from '@/services';
 
 // Component that uses useSearchParams
 function ResultsContent() {
     const searchParams = useSearchParams();
     const test = searchParams.get('test');
-    const [hybridSummary, setHybridSummary] = useState<HybridAssessmentSummary | null>(null);
-    const [persistState, setPersistState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
-
-    useEffect(() => {
-      const summary = getHybridAssessmentSummaryFromSession();
-      setHybridSummary(summary);
-    }, []);
-
-    useEffect(() => {
-      if (!hybridSummary) return;
-      if (hybridSummary.outcomes.length < 3) return;
-      if (isHybridSummaryPersisted()) {
-        setPersistState('saved');
-        return;
-      }
-
-      let cancelled = false;
-      setPersistState('saving');
-
-      HybridAssessmentService.persistSummary(hybridSummary)
-        .then(() => {
-          if (cancelled) return;
-          markHybridSummaryPersisted();
-          setPersistState('saved');
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setPersistState('failed');
-        });
-
-      return () => {
-        cancelled = true;
-      };
-    }, [hybridSummary]);
 
     const getTestName = () => {
         switch(test) {
@@ -69,22 +28,6 @@ function ResultsContent() {
             default: return 'Assessment';
         }
     }
-
-    const getStatusCopy = () => {
-      if (persistState === 'saving') {
-        return 'Your assessment has been submitted and is being prepared for review.';
-      }
-
-      if (persistState === 'failed') {
-        return 'Your assessment has been submitted. The hiring team will review your responses shortly.';
-      }
-
-      if (persistState === 'saved') {
-        return 'Your assessment has been submitted to the hiring team for review.';
-      }
-
-      return 'Your assessment has been submitted successfully.';
-    };
 
   return (
     <RoleDashboardShell
@@ -129,7 +72,7 @@ function ResultsContent() {
                 </span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                {getStatusCopy()}
+                Your assessment has been submitted successfully.
               </p>
               <p className="text-xs text-slate-400 leading-relaxed border-t border-white/5 pt-3">
                 The hiring team will review your results and contact you directly if they wish to progress your application.
