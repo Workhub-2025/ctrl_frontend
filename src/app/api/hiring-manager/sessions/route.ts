@@ -68,6 +68,9 @@ export async function POST(request: NextRequest) {
     if (!Number.isInteger(body.candidateLimit) || body.candidateLimit < 1) {
       return NextResponse.json({ error: "candidateLimit must be at least 1" }, { status: 400 });
     }
+    if (body.mode && !["in_person", "remote"].includes(body.mode)) {
+      return NextResponse.json({ error: "mode must be either 'in_person' or 'remote'" }, { status: 400 });
+    }
 
     const created = await createHiringManagerAssessmentSession({
       campaignDocumentId: body.campaignDocumentId,
@@ -75,6 +78,7 @@ export async function POST(request: NextRequest) {
       candidateLimit: body.candidateLimit,
       startsAt: body.startsAt,
       location: body.location,
+      mode: body.mode,
     });
 
     return NextResponse.json({ data: created }, { status: 201 });
