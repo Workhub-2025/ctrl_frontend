@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -6,12 +8,19 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
+import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { ArrowLeft, FileText, Scale } from "lucide-react";
 import Link from "next/link";
 import { FormPageHeader } from "@/components/auth/form-page-header";
 
 export default function TermsConditionsPage() {
+  const {
+    settings: accessibilitySettings,
+    updateSettings: updateAccessibilitySettings,
+    resetSettings: resetAccessibilitySettings,
+  } = useAccessibilitySettings();
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="mx-auto max-w-4xl">
@@ -27,7 +36,11 @@ export default function TermsConditionsPage() {
                 Back to Home
               </Link>
             </Button>
-            <ThemeToggle />
+            <AccessibilityDropdown
+              settings={accessibilitySettings}
+              updateSettings={updateAccessibilitySettings}
+              resetSettings={resetAccessibilitySettings}
+            />
           </div>
 
           <Card>

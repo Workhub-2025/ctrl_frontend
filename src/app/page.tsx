@@ -123,13 +123,13 @@ function SectionHeading({
   return (
     <ScrollReveal y={20}>
       <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-2xl"}>
-        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 font-mono">
+        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 font-mono">
           {eyebrow}
         </div>
-        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-white text-balance font-display">
+        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-slate-900 dark:text-white text-balance font-display">
           {title}
         </h2>
-        <p className={cn("mt-6 text-lg leading-relaxed text-slate-400 font-light", centered && "mx-auto")}>
+        <p className={cn("mt-6 text-lg leading-relaxed text-slate-600 dark:text-slate-400 font-light", centered && "mx-auto")}>
           {body}
         </p>
       </div>
@@ -223,11 +223,11 @@ export default function Home() {
         <div className={cn(
           "flex items-center justify-between rounded-full border transition-[background-color,border-color,padding,box-shadow] duration-500 px-6",
           scrolled 
-            ? "bg-[#0a0a0a]/90 backdrop-blur-md border-white/10 py-3 shadow-[0_8px_30px_rgb(0,0,0,0.12)]" 
+            ? "bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md border-slate-200 dark:border-white/10 py-3 shadow-md dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)]" 
             : "bg-transparent border-transparent py-4"
         )}>
           {/* Logo */}
-          <Link href="/" className="flex items-center group relative z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
+          <Link href="/" className="flex items-center group relative z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
             <BrandLogo className="w-24 sm:w-28 transition-opacity group-hover:opacity-80" />
           </Link>
 
@@ -237,7 +237,7 @@ export default function Home() {
               <button
                 key={item.href}
                 onClick={() => scrollToAnchor(item.href.slice(1))}
-                className="text-slate-400 hover:text-white transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-white after:scale-x-0 after:transition-transform hover:after:scale-x-100 after:origin-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded px-1.5 py-0.5"
+                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-slate-900 dark:after:bg-white after:scale-x-0 after:transition-transform hover:after:scale-x-100 after:origin-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20 rounded px-1.5 py-0.5"
               >
                 {item.label}
               </button>
@@ -251,11 +251,11 @@ export default function Home() {
               updateSettings={updateAccessibilitySettings}
               resetSettings={resetAccessibilitySettings}
             />
-            <Link href="/auth/register?mode=login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-300 hover:text-white transition-[background-color,color] px-3 py-1.5 rounded-full hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
+            <Link href="/auth/register?mode=login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
               Log in
               <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
             </Link>
-            <Button asChild className="group rounded-full bg-white text-black hover:bg-slate-200 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-white/50">
+            <Button asChild className="group rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
               <Link href="/auth/register?mode=register" className="flex items-center gap-1.5">
                 Get Started
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
@@ -271,7 +271,7 @@ export default function Home() {
               resetSettings={resetAccessibilitySettings}
             />
             <button
-              className="text-slate-400 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded-lg p-1"
+              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20 rounded-lg p-1"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle mobile menu"
             >
@@ -288,7 +288,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-[calc(100%+16px)] left-4 right-4 sm:left-6 sm:right-6 bg-[#0a0a0a]/95 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 flex flex-col gap-6 lg:hidden shadow-2xl origin-top"
+              className="absolute top-[calc(100%+16px)] left-4 right-4 sm:left-6 sm:right-6 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col gap-6 lg:hidden shadow-xl dark:shadow-2xl origin-top"
             >
               <div className="flex flex-col gap-4">
                 {navItems.map((item) => (
@@ -298,19 +298,19 @@ export default function Home() {
                       scrollToAnchor(item.href.slice(1));
                       setIsMobileMenuOpen(false);
                     }}
-                    className="text-left text-lg font-medium text-slate-300 hover:text-white transition-colors"
+                    className="text-left text-lg font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     {item.label}
                   </button>
                 ))}
               </div>
-              <hr className="border-white/10 my-1" />
+              <hr className="border-slate-200 dark:border-white/10 my-1" />
               <div className="flex flex-col gap-3">
-                <Link href="/auth/register?mode=login" className="group w-full flex items-center justify-center gap-2 text-base font-medium text-slate-300 hover:text-white transition-[background-color,color] py-3 rounded-full hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20">
+                <Link href="/auth/register?mode=login" className="group w-full flex items-center justify-center gap-2 text-base font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] py-3 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
                   Log in
                   <ArrowRight className="w-4 h-4 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
                 </Link>
-                <Button asChild className="rounded-full bg-white text-black w-full h-12 text-base font-medium focus-visible:ring-2 focus-visible:ring-white/50">
+                <Button asChild className="rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 w-full h-12 text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
                   <Link href="/auth/register?mode=register">Get Started</Link>
                 </Button>
               </div>
@@ -337,19 +337,19 @@ export default function Home() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
               {/* Card 1 - Full Width */}
-              <ScrollReveal delay={0.1} className="md:col-span-2 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a0a0a] p-8 md:p-12 group">
+              <ScrollReveal delay={0.1} className="md:col-span-2 relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 md:p-12 group">
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
                   <div className="flex-1">
                     <div className="h-12 w-12 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center mb-6">
-                      <PhoneCall className="h-5 w-5 text-cyan-400" aria-hidden="true" />
+                      <PhoneCall className="h-5 w-5 text-cyan-500 dark:text-cyan-400" aria-hidden="true" />
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-medium text-white mb-4 text-balance font-display">See Beyond the Candidate. See the Future Employee.</h3>
-                    <p className="text-slate-400 font-light leading-relaxed">
+                    <h3 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-4 text-balance font-display">See Beyond the Candidate. See the Future Employee.</h3>
+                    <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
                       CTRL's Call Simulation Assessment recreates realistic operational scenarios that require candidates to think, prioritise and respond in real time. The result is deeper behavioural insight and greater confidence in every recruitment decision.
                     </p>
                   </div>
-                  <div className="flex-1 w-full relative aspect-[4/3] md:aspect-auto md:h-64 rounded-2xl border border-white/5 bg-[#050505] overflow-hidden flex items-center justify-center shadow-inner">
+                  <div className="flex-1 w-full relative aspect-[4/3] md:aspect-auto md:h-64 rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden flex items-center justify-center shadow-inner">
                      <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_0%,rgba(16,185,129,0.05)_50%,transparent_100%)] opacity-50" />
                      {/* Visual Mockup for Audio/Call */}
                      <div className="flex items-center gap-1.5 relative z-10">
@@ -367,16 +367,16 @@ export default function Home() {
               </ScrollReveal>
 
               {/* Card 2 */}
-              <ScrollReveal delay={0.2} className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a0a0a] p-8 group flex flex-col">
+              <ScrollReveal delay={0.2} className="relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="h-12 w-12 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center mb-6 relative z-10">
-                  <Activity className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                  <Activity className="h-5 w-5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance font-display">Understanding Performance Beyond the Interview</h3>
-                <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
+                <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Understanding Performance Beyond the Interview</h3>
+                <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
                   CTRL assesses how candidates process information, adapt to changing circumstances and make decisions under pressure, delivering behavioural insight that traditional recruitment methods often fail to uncover.
                 </p>
-                <div className="w-full h-32 rounded-xl border border-white/5 bg-[#050505] overflow-hidden relative flex items-end p-4">
+                <div className="w-full h-32 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative flex items-end p-4">
                    {/* Visual Mockup for Chart/Stress */}
                    <div className="w-full flex items-end gap-2 h-full opacity-80">
                      {[40, 65, 45, 80, 55, 90, 75].map((h, i) => (
@@ -395,22 +395,22 @@ export default function Home() {
               </ScrollReveal>
 
               {/* Card 3 */}
-              <ScrollReveal delay={0.3} className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0a0a0a] p-8 group flex flex-col">
+              <ScrollReveal delay={0.3} className="relative overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="h-12 w-12 rounded-full border border-purple-500/20 bg-purple-500/10 flex items-center justify-center mb-6 relative z-10">
-                  <ShieldCheck className="h-5 w-5 text-purple-400" aria-hidden="true" />
+                  <ShieldCheck className="h-5 w-5 text-purple-500 dark:text-purple-400" aria-hidden="true" />
                 </div>
-                <h3 className="text-xl font-medium text-white mb-3 relative z-10 text-balance font-display">Recruit with Evidence. Decide with Confidence.</h3>
-                <p className="text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
+                <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Recruit with Evidence. Decide with Confidence.</h3>
+                <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
                   CTRL combines objective assessment data with realistic performance insight, helping organisations make fairer, more informed recruitment decisions while reducing risk and increasing confidence in candidate selection.
                 </p>
-                <div className="w-full h-32 rounded-xl border border-white/5 bg-[#050505] overflow-hidden relative flex items-center justify-center p-6">
+                <div className="w-full h-32 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative flex items-center justify-center p-6">
                    {/* Visual Mockup for Shield/Data */}
                    <div className="w-full space-y-3">
                      {[85, 70, 95].map((w, i) => (
                        <div key={i} className="flex items-center gap-3">
                          <div className="h-2 w-2 rounded-full bg-purple-500/50" />
-                         <div className="flex-1 h-2 rounded-full bg-white/5 overflow-hidden">
+                         <div className="flex-1 h-2 rounded-full bg-slate-200 dark:bg-white/5 overflow-hidden">
                              <motion.div
                                initial={{ width: "0%" }}
                                animate={reduceMotion ? { width: `${w}%` } : {}}
@@ -441,9 +441,9 @@ export default function Home() {
                />
             </div>
             <div className="relative max-w-5xl mx-auto py-8">
-              <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-white/5 md:-translate-x-1/2" />
+              <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-slate-200 dark:bg-white/5 md:-translate-x-1/2" />
               <motion.div 
-                 className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-white to-white md:-translate-x-1/2 shadow-[0_0_15px_rgba(255,255,255,0.8)]"
+                 className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-slate-400 dark:via-white to-slate-400 dark:to-white md:-translate-x-1/2 shadow-[0_0_15px_rgba(148,163,184,0.3)] dark:shadow-[0_0_15px_rgba(255,255,255,0.8)]"
                  style={{ height: hiringHeight, transformOrigin: "top" }} 
               />
               
@@ -452,20 +452,20 @@ export default function Home() {
                   <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
-                        <div className="text-xs font-mono text-slate-500 mb-3">{step.step} {"//"}</div>
-                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance font-display">{step.title}</h4>
-                        <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
+                        <div className="text-xs font-mono text-slate-500 dark:text-slate-400 mb-3">{step.step} {"//"}</div>
+                        <h4 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-3 text-balance font-display">{step.title}</h4>
+                        <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
-                    <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-white/20 bg-[#0a0a0a] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
-                      <step.icon className="h-5 w-5 text-white/80" aria-hidden="true" />
+                    <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-slate-200 dark:border-white/20 bg-white dark:bg-[#0a0a0a] flex items-center justify-center z-20 shadow-sm dark:shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
+                      <step.icon className="h-5 w-5 text-slate-800 dark:text-white/80" aria-hidden="true" />
                     </div>
                     <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
                       <ScrollReveal delay={0.1}>
-                        <div className="w-full aspect-video rounded-xl border border-white/10 bg-white/5 flex flex-col items-center justify-center text-slate-500 text-sm overflow-hidden relative group">
-                           <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
-                           <div className="h-10 w-10 rounded-full border border-white/10 bg-white/5 flex items-center justify-center mb-3">
-                             <div className="w-0 h-0 border-y-[6px] border-y-transparent border-l-[10px] border-l-white/50 ml-1" />
+                        <div className="w-full aspect-video rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 text-sm overflow-hidden relative group">
+                           <div className="absolute inset-0 bg-gradient-to-tr from-slate-500/[0.02] dark:from-white/[0.02] to-transparent pointer-events-none" />
+                           <div className="h-10 w-10 rounded-full border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-3">
+                             <div className="w-0 h-0 border-y-[6px] border-y-transparent border-l-[10px] border-l-slate-400 dark:border-l-white/50 ml-1" />
                            </div>
                            <span>Media Placeholder</span>
                         </div>
@@ -490,9 +490,9 @@ export default function Home() {
                />
             </div>
             <div className="relative max-w-5xl mx-auto py-8">
-              <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-white/5 md:-translate-x-1/2" />
+              <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-slate-200 dark:bg-white/5 md:-translate-x-1/2" />
               <motion.div 
-                 className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-cyan-500 to-cyan-400 md:-translate-x-1/2 shadow-[0_0_15px_rgba(6,182,212,0.6)]"
+                 className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-cyan-500 to-cyan-400 md:-translate-x-1/2 shadow-[0_0_15px_rgba(6,182,212,0.3)] dark:shadow-[0_0_15px_rgba(6,182,212,0.6)]"
                  style={{ height: candidateHeight, transformOrigin: "top" }} 
               />
               
@@ -501,20 +501,20 @@ export default function Home() {
                   <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
                     <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
                       <ScrollReveal>
-                        <div className="text-xs font-mono text-cyan-500/60 mb-3">{step.step} {"//"}</div>
-                        <h4 className="text-2xl md:text-3xl font-medium text-white mb-3 text-balance font-display">{step.title}</h4>
-                        <p className="text-lg text-slate-400 font-light leading-relaxed">{step.text}</p>
+                        <div className="text-xs font-mono text-cyan-600 dark:text-cyan-500/60 mb-3">{step.step} {"//"}</div>
+                        <h4 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-3 text-balance font-display">{step.title}</h4>
+                        <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">{step.text}</p>
                       </ScrollReveal>
                     </div>
-                    <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-cyan-500/30 bg-[#041d24] flex items-center justify-center z-20 shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
-                      <step.icon className="h-5 w-5 text-cyan-400" aria-hidden="true" />
+                    <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-[#041d24] flex items-center justify-center z-20 shadow-sm dark:shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
+                      <step.icon className="h-5 w-5 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
                     </div>
                     <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
                       <ScrollReveal delay={0.1}>
-                        <div className="w-full aspect-video rounded-xl border border-white/10 bg-white/5 flex flex-col items-center justify-center text-slate-500 text-sm overflow-hidden relative group">
+                        <div className="w-full aspect-video rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 text-sm overflow-hidden relative group">
                            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/[0.02] to-transparent pointer-events-none" />
-                           <div className="h-10 w-10 rounded-full border border-cyan-500/20 bg-cyan-500/5 flex items-center justify-center mb-3">
-                             <div className="w-0 h-0 border-y-[6px] border-y-transparent border-l-[10px] border-l-cyan-500/50 ml-1" />
+                           <div className="h-10 w-10 rounded-full border border-cyan-300 dark:border-cyan-500/20 bg-cyan-100 dark:bg-cyan-500/5 flex items-center justify-center mb-3">
+                             <div className="w-0 h-0 border-y-[6px] border-y-transparent border-l-[10px] border-l-cyan-600 dark:border-l-cyan-500/50 ml-1" />
                            </div>
                            <span>Media Placeholder</span>
                         </div>
@@ -540,25 +540,25 @@ export default function Home() {
             </div>
             
             <ScrollReveal delay={0.2}>
-              <div className="relative mx-auto max-w-5xl aspect-video rounded-[2rem] border border-white/10 bg-[#080808] overflow-hidden shadow-2xl group flex items-center justify-center">
+              <div className="relative mx-auto max-w-5xl aspect-video rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#080808]/90 backdrop-blur-md shadow-lg dark:shadow-2xl group flex items-center justify-center">
                 {/* Subtle background glow */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-slate-500/[0.01] dark:from-white/[0.02] to-transparent pointer-events-none" />
 
                 {/* Placeholder Content - Replace with your <video> or Carousel component */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                  <div className="h-20 w-20 rounded-full border border-white/10 bg-white/5 flex items-center justify-center backdrop-blur-md transition-transform duration-300 group-hover:scale-110 mb-6 cursor-pointer">
-                    <div className="w-0 h-0 border-y-[10px] border-y-transparent border-l-[16px] border-l-white ml-1" />
+                  <div className="h-20 w-20 rounded-full border border-slate-300 dark:border-white/10 bg-slate-100 dark:bg-white/5 flex items-center justify-center backdrop-blur-md transition-transform duration-300 group-hover:scale-110 mb-6 cursor-pointer">
+                    <div className="w-0 h-0 border-y-[10px] border-y-transparent border-l-[16px] border-l-slate-800 dark:border-l-white ml-1" />
                   </div>
-                  <h4 className="text-xl font-medium text-white mb-2 text-balance">Platform Overview Video</h4>
-                  <p className="text-sm text-slate-500 max-w-sm">Replace this container with your video element, iframe, or a slideshow of screenshots.</p>
+                  <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2 text-balance">Platform Overview Video</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">Replace this container with your video element, iframe, or a slideshow of screenshots.</p>
                 </div>
 
                 {/* Optional Mockup Window Bar for aesthetics */}
-                <div className="absolute top-0 inset-x-0 h-12 border-b border-white/5 bg-[#0a0a0a] flex items-center px-6">
+                <div className="absolute top-0 inset-x-0 h-12 border-b border-slate-200/50 dark:border-white/5 bg-slate-50 dark:bg-[#0a0a0a] flex items-center px-6">
                   <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-white/10" />
-                    <div className="w-3 h-3 rounded-full bg-white/10" />
-                    <div className="w-3 h-3 rounded-full bg-white/10" />
+                    <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-white/10" />
+                    <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-white/10" />
+                    <div className="w-3 h-3 rounded-full bg-slate-300 dark:bg-white/10" />
                   </div>
                 </div>
               </div>
@@ -568,32 +568,32 @@ export default function Home() {
         </div>
 
         {/* Contact Section */}
-        <section id="contact" className="relative min-h-[70svh] overflow-hidden border-t border-white/5 flex flex-col justify-center">
+        <section id="contact" className="relative min-h-[70svh] overflow-hidden border-t border-slate-200 dark:border-white/5 flex flex-col justify-center">
           <div className="absolute inset-0 pointer-events-none">
              {/* Animated Data Streams Background */}
              <AnimatedBackground disabled={reduceMotion} />
              
              {/* Soft fade to blend with the footer below */}
-             <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t footer-blend-fade pointer-events-none z-10" />
+             <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-slate-50 dark:from-[#020202] to-transparent pointer-events-none z-10" />
           </div>
 
           <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col justify-center px-6 py-32">
              <ScrollReveal>
                 <div className="max-w-3xl mx-auto text-center">
-                  <div className="inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-slate-400 mb-8 backdrop-blur-sm font-mono">
+                  <div className="inline-flex items-center rounded-full border border-slate-200 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.02] px-4 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-400 mb-8 backdrop-blur-sm font-mono">
                     Get Started
                   </div>
-                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-white mb-6 text-balance font-display">Ready to Transform Your Recruitment Process?</h2>
-                  <p className="text-lg md:text-xl leading-relaxed text-slate-400 font-light mb-10 max-w-xl mx-auto">
+                  <h2 className="text-4xl md:text-6xl font-medium tracking-tight text-slate-900 dark:text-white mb-6 text-balance font-display">Ready to Transform Your Recruitment Process?</h2>
+                  <p className="text-lg md:text-xl leading-relaxed text-slate-600 dark:text-slate-400 font-light mb-10 max-w-xl mx-auto">
                     Discover how CTRL helps organisations identify high-potential candidates, reduce recruitment risk and make more confident hiring decisions through realistic assessments and immersive simulation.
                   </p>
                   <div className="flex flex-col sm:flex-row justify-center gap-4">
-                    <Button asChild className="h-12 md:h-14 rounded-full bg-white px-8 text-black hover:bg-slate-200 transition-colors text-sm md:text-base font-medium focus-visible:ring-2 focus-visible:ring-white/50">
+                    <Button asChild className="h-12 md:h-14 rounded-full bg-slate-900 dark:bg-white px-8 text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors text-sm md:text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
                       <Link href="/auth/register?mode=register" className="flex items-center justify-center">
                         Get Started <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                       </Link>
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("capabilities")} className="h-12 md:h-14 rounded-full border border-white/10 bg-transparent px-8 text-slate-300 hover:bg-white/5 hover:text-white transition-colors text-sm md:text-base font-medium focus-visible:ring-2 focus-visible:ring-white/20">
+                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("capabilities")} className="h-12 md:h-14 rounded-full border border-slate-200 dark:border-white/10 bg-transparent px-8 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors text-sm md:text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
                       Explore Platform
                     </Button>
                   </div>
@@ -602,24 +602,24 @@ export default function Home() {
           </div>
         </section>
 
-        <footer className="border-t border-white/5 bg-[#020202] pt-24 pb-12 relative z-20">
+        <footer className="border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#020202] pt-24 pb-12 relative z-20">
           <ScrollReveal y={20}>
             <div className="mx-auto max-w-[1440px] px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
                 <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
                   <BrandLogo layout="stacked" className="self-start" />
-                  <p className="text-slate-500 text-sm leading-relaxed font-light mt-2">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light mt-2">
                     Empowering teams to make objective, data-driven hiring decisions with confidence and speed.
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-5">
-                  <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Explore</h4>
+                  <h4 className="text-slate-900 dark:text-white font-medium text-xs tracking-[0.2em] uppercase">Explore</h4>
                   {navItems.map(item => (
                     <button
                       key={item.href}
                       onClick={() => scrollToAnchor(item.href.slice(1))}
-                      className="text-left text-slate-400 hover:text-white text-sm transition-colors font-light focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 rounded px-1"
+                      className="text-left text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-sm transition-colors font-light focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20 rounded px-1"
                     >
                       {item.label}
                     </button>
@@ -627,17 +627,17 @@ export default function Home() {
                 </div>
 
                 <div className="flex flex-col gap-5">
-                  <h4 className="text-white font-medium text-xs tracking-[0.2em] uppercase">Access</h4>
-                  <Link href="/auth/register?mode=register" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Get Started</Link>
-                  <Link href="/privacy-policy" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Privacy Policy</Link>
-                  <Link href="/terms-conditions" className="text-slate-400 hover:text-white text-sm transition-colors font-light">Terms</Link>
+                  <h4 className="text-slate-900 dark:text-white font-medium text-xs tracking-[0.2em] uppercase">Access</h4>
+                  <Link href="/auth/register?mode=register" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-sm transition-colors font-light">Get Started</Link>
+                  <Link href="/privacy-policy" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-sm transition-colors font-light">Privacy Policy</Link>
+                  <Link href="/terms-conditions" className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-sm transition-colors font-light">Terms</Link>
                 </div>
               </div>
 
-              <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
-                <p className="text-sm text-slate-500 font-light">© {new Date().getFullYear()} <CtrlText className="h-[0.8em]" /> Recruitment. All rights reserved.</p>
-                <div className="flex items-center gap-2 text-sm text-slate-500 font-light">
-                  <span className="h-2 w-2 rounded-full bg-slate-600" />
+              <div className="pt-8 border-t border-slate-200 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-light">© {new Date().getFullYear()} <CtrlText className="h-[0.8em]" /> Recruitment. All rights reserved.</p>
+                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-light">
+                  <span className="h-2 w-2 rounded-full bg-slate-400 dark:bg-slate-600" />
                   Built for high-stakes recruitment
                 </div>
               </div>

@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,11 +10,18 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
+import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { ArrowLeft, Shield, Lock, Eye, Database, Clock } from "lucide-react";
 import Link from "next/link";
 
 export default function PrivacyPolicyPage() {
+  const {
+    settings: accessibilitySettings,
+    updateSettings: updateAccessibilitySettings,
+    resetSettings: resetAccessibilitySettings,
+  } = useAccessibilitySettings();
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="mx-auto max-w-4xl">
@@ -28,12 +37,16 @@ export default function PrivacyPolicyPage() {
                 Back to Home
               </Link>
             </Button>
-            <ThemeToggle />
+            <AccessibilityDropdown
+              settings={accessibilitySettings}
+              updateSettings={updateAccessibilitySettings}
+              resetSettings={resetAccessibilitySettings}
+            />
           </div>
 
           <Card>
             <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-950/30 text-green-600 dark:text-green-400">
                 <Shield className="h-8 w-8" />
               </div>
               <CardTitle className="text-3xl font-headline">
@@ -325,7 +338,7 @@ export default function PrivacyPolicyPage() {
                         2 years for security and analytics purposes
                       </p>
 
-                      <div className="bg-blue-50 p-4 rounded-lg mt-4">
+                      <div className="bg-blue-50 dark:bg-blue-950/20 text-slate-800 dark:text-slate-300 p-4 rounded-lg mt-4">
                         <p className="text-sm">
                           <strong>Note:</strong> You can request earlier
                           deletion of your data in certain circumstances.
@@ -415,7 +428,7 @@ export default function PrivacyPolicyPage() {
                         </li>
                       </ul>
 
-                      <div className="bg-green-50 p-4 rounded-lg mt-4">
+                      <div className="bg-green-50 dark:bg-green-950/20 text-slate-800 dark:text-slate-300 p-4 rounded-lg mt-4">
                         <p className="text-sm">
                           <strong>To exercise your rights:</strong> Contact us
                           at privacy@emergencyassessment.co.uk with your

@@ -5,9 +5,9 @@ import { type LucideIcon } from "lucide-react";
 type ColorVariant = "blue" | "green" | "amber";
 
 const colorVariants: Record<ColorVariant, string> = {
-  blue: "bg-blue-100 text-blue-600",
-  green: "bg-green-100 text-green-600",
-  amber: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
+  blue: "bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400",
+  green: "bg-green-100 dark:bg-green-950/30 text-green-600 dark:text-green-400",
+  amber: "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400",
 };
 
 interface FormPageHeaderProps {
