@@ -47,6 +47,14 @@ type SjtResponse = {
 };
 
 const CONTENT_URL = '/assessment-content/situational-judgement.json';
+const SJT_DURATION_SECONDS = 20 * 60;
+
+const formatTimer = (seconds: number) => {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, '0');
+  const remainingSeconds = (safeSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
+};
 
 const fallbackContent: SjtContent = {
   finalScenarios: [
@@ -78,11 +86,14 @@ export default function SituationalJudgementTest({
   const [worstOptionId, setWorstOptionId] = useState<string | null>(null);
   const [responses, setResponses] = useState<SjtResponse[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState(SJT_DURATION_SECONDS);
   const startedAtRef = useRef<string | null>(null);
 
   const scenarios = content.finalScenarios;
   const activeScenario = scenarios[scenarioIndex] ?? scenarios[0] ?? fallbackContent.finalScenarios[0];
   const progress = scenarios.length > 0 ? ((scenarioIndex + 1) / scenarios.length) * 100 : 0;
+  const timerProgress = ((SJT_DURATION_SECONDS - timeRemaining) / SJT_DURATION_SECONDS) * 100;
+  const timerTone = timeRemaining <= 300 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
   const canSubmitScenario = Boolean(bestOptionId && worstOptionId && bestOptionId !== worstOptionId);
 
   useEffect(() => {
@@ -127,6 +138,7 @@ export default function SituationalJudgementTest({
     setWorstOptionId(null);
     setResponses([]);
     setSubmitError(null);
+    setTimeRemaining(SJT_DURATION_SECONDS);
     setPhase('scenario');
   }, []);
 
@@ -156,6 +168,18 @@ export default function SituationalJudgementTest({
 
     setScenarioIndex((currentIndex) => currentIndex + 1);
   };
+
+  useEffect(() => {
+    if (phase !== 'scenario') return;
+
+    if (timeRemaining <= 0) return;
+
+    const timerId = window.setTimeout(() => {
+      setTimeRemaining((currentValue) => Math.max(currentValue - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timerId);
+  }, [phase, timeRemaining]);
 
   useEffect(() => {
     if (phase !== 'submitting') return;
@@ -252,7 +276,7 @@ export default function SituationalJudgementTest({
       icon={ClipboardCheck}
       title="Situational Judgement Assessment"
       eyebrow="CTRL assessment"
-      status={phase === 'scenario' ? `Scenario ${scenarioIndex + 1}/${scenarios.length}` : 'Best and worst judgement'}
+      status={phase === 'scenario' ? `${formatTimer(timeRemaining)} remaining` : 'Best and worst judgement'}
     >
       {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
@@ -272,8 +296,8 @@ export default function SituationalJudgementTest({
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground">Three practice scenarios</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">Practice questions help you understand the format.</p>
+              <p className="text-sm font-semibold text-foreground">20 minutes</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">A visual time bar stays on screen during the live scenarios.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <Target className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
@@ -381,7 +405,7 @@ export default function SituationalJudgementTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Practice Questions</h2>
                 </div>
-                <p>The assessment contains 3 practice questions. They are not scored and do not affect your final result.</p>
+                <p>The assessment opens with practice guidance so you can understand the best-and-worst format before the live questions. Practice is not scored and does not affect your final result.</p>
               </div>
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
@@ -391,7 +415,7 @@ export default function SituationalJudgementTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Live Assessment Questions</h2>
                 </div>
-                <p>The live assessment contains 20 scored scenarios. Each scenario contains one situation and four possible actions.</p>
+                <p>The live assessment contains 20 scored scenarios and has a 20-minute time limit. The time bar begins when you start the scenarios and remains visible throughout.</p>
               </div>
             </div>
 
@@ -399,15 +423,16 @@ export default function SituationalJudgementTest({
               <h2 className="mb-3 text-lg font-semibold text-foreground">Step-by-Step Instructions</h2>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {[
+                  'Start the live assessment when you are ready for the 20-minute timer',
                   'Read the situation carefully',
-                  'Read all four actions',
+                  'Read all four actions before choosing',
                   'Choose the MOST effective action',
                   'Choose the LEAST effective action',
-                  'Check your selections',
-                  'Submit your answer',
+                  'Check that you have selected two different actions',
+                  'Submit your answer and move to the next scenario',
                 ].map((step, index) => (
                   <div key={step} className="rounded-lg bg-muted p-3 dark:bg-white/5">
-                    <span className="font-semibold text-foreground">Step {index + 1}:</span> {step}
+                    <span className="font-semibold text-foreground">{index + 1}.</span> {step}
                   </div>
                 ))}
               </div>
@@ -428,6 +453,23 @@ export default function SituationalJudgementTest({
 
       {phase === 'scenario' && (
         <div className="mx-auto flex min-h-[560px] w-full max-w-[1180px] flex-col justify-center py-6">
+          <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  20-minute assessment timer
+                </p>
+                <p className={`mt-1 text-2xl font-semibold tabular-nums ${timerTone}`}>
+                  {formatTimer(timeRemaining)}
+                </p>
+              </div>
+              <Badge variant="outline" className={timeRemaining <= 300 ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300' : undefined}>
+                {timeRemaining <= 300 ? 'Final 5 minutes' : 'Time-sensitive'}
+              </Badge>
+            </div>
+            <Progress value={timerProgress} className="mt-4 h-2.5" />
+          </div>
+
           <div className="mb-6 rounded-xl border border-border bg-card p-5 text-sm text-foreground shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <h3 className="mb-2 font-semibold text-base">Candidate Task Screen Instruction</h3>
             <p>Read the situation below.</p>

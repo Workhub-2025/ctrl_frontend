@@ -135,6 +135,7 @@ export async function POST(request: Request) {
         rawData: {
           assessmentType: "call-simulation",
           snapshots: validation.snapshots,
+          calls: validation.snapshots,
           isBypass: validation.isBypass,
         },
       }),

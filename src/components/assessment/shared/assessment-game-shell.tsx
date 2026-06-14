@@ -20,8 +20,8 @@ export function AssessmentGameShell({
   children,
 }: AssessmentGameShellProps) {
   return (
-    <section className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-[1560px] items-stretch justify-center px-2 py-4 sm:px-4">
-      <div className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-black/5 dark:border-white/10 dark:bg-[#070b13] dark:shadow-black/20">
+    <section className="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-[1840px] items-stretch justify-center px-2 py-4 sm:px-4 xl:px-6">
+      <div className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xl shadow-black/10 dark:border-white/10 dark:bg-[#070b13] dark:shadow-black/30">
         <div className="flex flex-col gap-3 border-b border-border bg-muted/25 px-5 py-4 dark:border-white/10 dark:bg-white/[0.025] sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -45,7 +45,7 @@ export function AssessmentGameShell({
             </Badge>
           )}
         </div>
-        <div className="flex flex-1 bg-background px-4 py-5 dark:bg-[#050811] sm:px-6 sm:py-6">
+        <div className="flex flex-1 bg-[linear-gradient(135deg,hsl(var(--background))_0%,hsl(var(--muted))_100%)] px-4 py-5 dark:bg-[linear-gradient(135deg,#050811_0%,#0b1220_100%)] sm:px-6 sm:py-6 xl:px-8">
           {children}
         </div>
       </div>

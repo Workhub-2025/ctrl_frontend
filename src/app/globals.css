@@ -157,6 +157,22 @@
     text-rendering: optimizeLegibility;
   }
 
+  html[data-ctrl-text-size="large"] {
+    font-size: 18px;
+  }
+
+  html[data-ctrl-text-size="extra-large"] {
+    font-size: 20px;
+  }
+
+  html[data-ctrl-line-spacing="comfortable"] .ctrl-portal {
+    line-height: 1.65;
+  }
+
+  html[data-ctrl-line-spacing="spacious"] .ctrl-portal {
+    line-height: 1.85;
+  }
+
   *::-webkit-scrollbar {
     display: none;
     width: 0;

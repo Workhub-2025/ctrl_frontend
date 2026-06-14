@@ -635,7 +635,7 @@ export default function TypingTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Practice Exercise</h2>
                 </div>
-                <p>There is one practice exercise. It is not scored and does not affect your final result.</p>
+                <p>There is one practice exercise first. Use it to get familiar with the typing screen, timer and response box. Your practice result is not scored and is not included in your final result.</p>
               </div>
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
@@ -645,24 +645,25 @@ export default function TypingTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Live Assessment</h2>
                 </div>
-                <p>The live assessment contains {liveExerciseLabel}. Each exercise lasts {currentDuration} seconds. A timer will be visible throughout and the exercise will automatically end when time expires.</p>
+                <p>After practice, you will move into the live assessment. It contains {liveExerciseLabel}. Each exercise lasts {currentDuration} seconds, is scored, and automatically ends when the timer reaches zero.</p>
               </div>
             </div>
 
             <div>
-              <h2 className="mb-3 text-lg font-semibold text-foreground">Step-by-Step Instructions</h2>
+              <h2 className="mb-3 text-lg font-semibold text-foreground">Numbered Assessment Instructions</h2>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {[
-                  'Read the passage carefully',
+                  'Complete the unscored practice exercise first',
+                  'Read the passage carefully before you start typing',
                   'Place your cursor in the response box',
-                  'Begin typing when ready',
-                  'Type the text as accurately as possible',
+                  'Begin typing when you are ready to start the timer',
+                  'Type the text exactly as shown, including punctuation and spacing',
                   'Correct any mistakes if you notice them',
-                  'Continue typing until the timer ends',
-                  'Review your work if time remains',
+                  'Continue typing until the timer reaches zero',
+                  'After practice, continue to the scored live exercises',
                 ].map((step, index) => (
                   <div key={step} className="rounded-lg bg-muted p-3 dark:bg-white/5">
-                    <span className="font-semibold text-foreground">Step {index + 1}:</span> {step}
+                    <span className="font-semibold text-foreground">{index + 1}.</span> {step}
                   </div>
                 ))}
               </div>

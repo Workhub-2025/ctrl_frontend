@@ -62,6 +62,12 @@ type TypingRunMetric = {
   duration?: number;
 };
 
+type CallSimulationRun = {
+  runIndex: number;
+  form?: Record<string, unknown>;
+  metrics?: Record<string, any>;
+};
+
 function buildEqualWeights(assessmentStack: string[]) {
   if (assessmentStack.length === 0) return {};
   const baseWeight = Math.floor(100 / assessmentStack.length);
@@ -205,6 +211,21 @@ function formatCompletion(value?: string | null) {
 function getTypingRuns(metrics?: Record<string, unknown> | null) {
   const runs = metrics?.assessmentRuns;
   return Array.isArray(runs) ? (runs as TypingRunMetric[]) : [];
+}
+
+function getCallSimulationRuns(result?: HiringManagerAssessmentResult | null) {
+  const rawCalls = result?.rawData?.calls;
+  const rawSnapshots = result?.rawData?.snapshots;
+  const metricCalls = result?.metrics?.calls;
+  const runs = Array.isArray(metricCalls)
+      ? metricCalls
+      : Array.isArray(rawCalls)
+        ? rawCalls
+        : Array.isArray(rawSnapshots)
+          ? rawSnapshots
+          : [];
+
+  return runs as CallSimulationRun[];
 }
 
 function formatDuration(seconds?: number | null) {
@@ -1052,17 +1073,17 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                         })()}
 
                         {isCallSimulation && row.result?.metrics && (() => {
-                          const callsList = row.result?.rawData?.calls || [];
-                          const finalRuns = callsList.filter((c: any) => c.metrics);
+                          const callsList = getCallSimulationRuns(row.result);
+                          const finalRuns = callsList.filter((c) => c.metrics);
                           
                           let activeMetrics = row.result.metrics as any;
                           let activeRunIndex = selectedCallRunIndex;
                           
                           if (finalRuns.length > 0) {
-                            if (activeRunIndex === null || !finalRuns.some((f: any) => f.runIndex === activeRunIndex)) {
+                            if (activeRunIndex === null || !finalRuns.some((f) => f.runIndex === activeRunIndex)) {
                               activeRunIndex = finalRuns[0].runIndex;
                             }
-                            const matchedRun = finalRuns.find((f: any) => f.runIndex === activeRunIndex);
+                            const matchedRun = finalRuns.find((f) => f.runIndex === activeRunIndex);
                             if (matchedRun?.metrics) {
                               activeMetrics = matchedRun.metrics;
                             }
@@ -1083,7 +1104,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                               {finalRuns.length > 1 && (
                                 <div className="flex flex-wrap items-center gap-1.5 border-b border-white/5 pb-3">
                                   <span className="text-xs font-semibold text-slate-400 mr-2">Select Call:</span>
-                                  {finalRuns.map((run: any, idx: number) => {
+                                  {finalRuns.map((run, idx: number) => {
                                     const isSelected = activeRunIndex === run.runIndex;
                                     return (
                                       <Button
@@ -1158,9 +1179,9 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
                               {/* Detailed Criteria Table */}
                               {(() => {
-                                const criteriaList = finalRuns[0]?.metrics?.criteria || activeMetrics.criteria || [];
+                                const criteriaList = activeMetrics.criteria || finalRuns[0]?.metrics?.criteria || [];
                                 const getRunScore = (runIndex: number, criterionKey: string) => {
-                                  const run = finalRuns.find((r: any) => r.runIndex === runIndex);
+                                  const run = finalRuns.find((r) => r.runIndex === runIndex);
                                   const crit = run?.metrics?.criteria?.find((c: any) => c.key === criterionKey);
                                   return crit ? `${crit.score} / ${crit.maxScore}` : '—';
                                 };
@@ -1202,6 +1223,43 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                                   </div>
                                                   <div className="text-[10px] text-slate-500 mt-0.5">
                                                     Section: {sectionLabels[crit.section] || crit.section}
+                                                  </div>
+                                                  
+                                                  <div className="mt-2.5 flex flex-col gap-1 text-[11px] bg-white/[0.02] border border-white/5 rounded-lg p-2 max-w-md">
+                                                    <div className="flex justify-between items-center gap-2">
+                                                      <span className="text-slate-500">Logged Value:</span>
+                                                      <span className="text-white font-semibold truncate max-w-[280px]">
+                                                        {crit.value || <span className="text-slate-600 italic">None</span>}
+                                                      </span>
+                                                    </div>
+                                                    {crit.valueAt4 !== undefined && crit.valueAt4 !== null && (
+                                                      <div className="flex justify-between items-center gap-2 border-t border-white/5 pt-1 mt-1">
+                                                        <span className="text-slate-500">At 4s Checkpoint:</span>
+                                                        <span className="text-slate-300 font-medium truncate max-w-[280px]">
+                                                          {crit.valueAt4}
+                                                        </span>
+                                                      </div>
+                                                    )}
+                                                    {crit.valueAt6 !== undefined && crit.valueAt6 !== null && (
+                                                      <div className="flex justify-between items-center gap-2">
+                                                        <span className="text-slate-500">At 6s Checkpoint:</span>
+                                                        <span className="text-slate-300 font-medium truncate max-w-[280px]">
+                                                          {crit.valueAt6}
+                                                        </span>
+                                                      </div>
+                                                    )}
+                                                    {crit.timingBand && (
+                                                      <div className="flex justify-between items-center gap-2 border-t border-white/5 pt-1 mt-1">
+                                                        <span className="text-slate-500">Timing Speed:</span>
+                                                        <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded ${
+                                                          crit.timingBand === "Green" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" :
+                                                          crit.timingBand === "Amber" ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
+                                                          "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                                                        }`}>
+                                                          {crit.timingBand}
+                                                        </span>
+                                                      </div>
+                                                    )}
                                                   </div>
                                                 </td>
                                                 {finalRuns.length > 1 ? (
