@@ -8,16 +8,18 @@ import {
   ListChecks,
   Loader2,
   LogOut,
+  MousePointer,
   Play,
   ShieldCheck,
   Target,
   Timer,
 } from 'lucide-react';
-import { AssessmentGameShell } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { cn } from '@/lib/utils';
 import { initSjaSession } from '@/app/actions/assessment-sja.actions';
 
 type ScenarioOption = {
@@ -38,6 +40,117 @@ type SjtContent = {
   finalScenarios: Scenario[];
 };
 
+function SJTAnimationPreview() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep((prev) => (prev + 1) % 6);
+    }, 1500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const mostEffective = step >= 2 ? 'A' : null;
+  const leastEffective = step >= 4 ? 'D' : null;
+
+  let cursorTop = '10%';
+  let cursorLeft = '80%';
+  let cursorActive = false;
+
+  if (step === 1) {
+    cursorTop = '32%';
+    cursorLeft = '45%';
+  } else if (step === 2) {
+    cursorTop = '32%';
+    cursorLeft = '45%';
+    cursorActive = true;
+  } else if (step === 3) {
+    cursorTop = '82%';
+    cursorLeft = '50%';
+  } else if (step === 4) {
+    cursorTop = '82%';
+    cursorLeft = '50%';
+    cursorActive = true;
+  } else if (step === 5) {
+    cursorTop = '50%';
+    cursorLeft = '90%';
+  }
+
+  return (
+    <div className="relative w-full rounded-xl border border-border bg-muted/40 p-4 shadow-inner dark:bg-black/20 overflow-hidden min-h-[300px]">
+      <div className="mb-3 flex items-center justify-between border-b border-border/50 pb-2 text-xs text-muted-foreground">
+        <div className="flex gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Selection Demo</span>
+      </div>
+
+      <div className="space-y-3">
+        <div className="rounded bg-background p-2.5 text-xs text-foreground border border-border/50 dark:bg-zinc-900/60 select-none">
+          <span className="font-bold text-primary block mb-1">Scenario Excerpt:</span>
+          A caller reports a package was delayed.
+        </div>
+
+        <div className="space-y-2">
+          {/* Option A */}
+          <div className={cn(
+            "relative flex items-center justify-between rounded border p-2.5 text-xs transition-all duration-300 select-none",
+            mostEffective === 'A'
+              ? "border-green-500 bg-green-500/10 text-foreground dark:bg-green-500/5 font-semibold"
+              : "border-border/50 bg-background/50 dark:bg-zinc-900/40"
+          )}>
+            <span>A. Apologise immediately & arrange refund.</span>
+            {mostEffective === 'A' && (
+              <Badge className="bg-green-600 hover:bg-green-600 text-[8px] uppercase px-1.5 py-0">Most Effective</Badge>
+            )}
+          </div>
+
+          {/* Option B */}
+          <div className="relative flex items-center justify-between rounded border border-border/50 bg-background/50 p-2.5 text-xs dark:bg-zinc-900/40 select-none">
+            <span>B. Explain delay was due to weather.</span>
+          </div>
+
+          {/* Option C */}
+          <div className="relative flex items-center justify-between rounded border border-border/50 bg-background/50 p-2.5 text-xs dark:bg-zinc-900/40 select-none">
+            <span>C. Tell the caller to track online.</span>
+          </div>
+
+          {/* Option D */}
+          <div className={cn(
+            "relative flex items-center justify-between rounded border p-2.5 text-xs transition-all duration-300 select-none",
+            leastEffective === 'D'
+              ? "border-red-500 bg-red-500/10 text-foreground dark:bg-red-500/5 font-semibold"
+              : "border-border/50 bg-background/50 dark:bg-zinc-900/40"
+          )}>
+            <span>D. Ignore the query entirely.</span>
+            {leastEffective === 'D' && (
+              <Badge className="bg-red-600 hover:bg-red-600 text-[8px] uppercase px-1.5 py-0">Least Effective</Badge>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Virtual Cursor */}
+      <div 
+        className="absolute z-10 transition-all duration-700 ease-in-out pointer-events-none"
+        style={{ top: cursorTop, left: cursorLeft }}
+      >
+        <div className="relative">
+          <MousePointer className={cn(
+            "h-5 w-5 text-foreground drop-shadow-md transition-transform duration-150",
+            cursorActive ? "scale-75" : "scale-100"
+          )} />
+          {cursorActive && (
+            <span className="absolute left-0 top-0 h-4 w-4 animate-ping rounded-full bg-primary/40" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type AssessmentSessionConfig = {
   version?: string;
   difficulty?: string;
@@ -51,7 +164,6 @@ type SjtResponse = {
   worstOptionId: string;
 };
 
-const CONTENT_URL = '/assessment-content/situational-judgement.json';
 const SJT_DURATION_SECONDS = 20 * 60;
 
 const formatTimer = (seconds: number) => {
@@ -62,7 +174,8 @@ const formatTimer = (seconds: number) => {
 };
 
 const fallbackContent: SjtContent = {
-  finalScenarios: [
+  version: '1.0.0',
+  sjaRounds: [
     {
       id: 'S1',
       title: 'Emotional overload',
@@ -86,6 +199,8 @@ export default function SituationalJudgementTest({
 }) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [content, setContent] = useState<SjtContent>(fallbackContent);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [bestOptionId, setBestOptionId] = useState<string | null>(null);
   const [worstOptionId, setWorstOptionId] = useState<string | null>(null);
@@ -95,8 +210,16 @@ export default function SituationalJudgementTest({
   const startedAtRef = useRef<string | null>(null);
   const sessionConfigRef = useRef<AssessmentSessionConfig>({});
 
-  const scenarios = content.finalScenarios;
-  const activeScenario = scenarios[scenarioIndex] ?? scenarios[0] ?? fallbackContent.finalScenarios[0];
+  const practiceScenarios = useMemo(() => {
+    return content.sjaRounds.filter((s: any) => s.type === 'practice');
+  }, [content.sjaRounds]);
+
+  const finalScenarios = useMemo(() => {
+    return content.sjaRounds.filter((s: any) => s.type === 'test' || s.type === 'final' || !s.type);
+  }, [content.sjaRounds]);
+
+  const scenarios = finalScenarios;
+  const activeScenario = scenarios[scenarioIndex] ?? scenarios[0] ?? fallbackContent.sjaRounds[0];
   const progress = scenarios.length > 0 ? ((scenarioIndex + 1) / scenarios.length) * 100 : 0;
   const timerProgress = ((SJT_DURATION_SECONDS - timeRemaining) / SJT_DURATION_SECONDS) * 100;
   const timerTone = timeRemaining <= 300 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
@@ -107,27 +230,24 @@ export default function SituationalJudgementTest({
 
     async function loadSession() {
       try {
+        setLoading(true);
+        setError(null);
         const sessionData = await initSjaSession(candidateSessionDocumentId);
         if (cancelled) return;
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
-          setContent({ finalScenarios: sessionData.runs });
+          setContent({ version: sessionData.config?.version || '1.0.0', sjaRounds: sessionData.runs });
           sessionConfigRef.current = sessionData.config ?? {};
+          setLoading(false);
           return;
+        } else {
+          throw new Error('No assessment runs returned from the session initialization.');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('[SituationalJudgementTest] Failed to load SJA session from backend:', err);
-      }
-
-      // Fallback: fetch static JSON
-      try {
-        const response = await fetch(CONTENT_URL);
-        if (!response.ok) throw new Error('Unable to load situational judgement content');
-        const loadedContent = await response.json() as SjtContent;
-        if (!cancelled && loadedContent.finalScenarios?.length) {
-          setContent(loadedContent);
+        if (!cancelled) {
+          setError(err.message || 'Failed to initialize session. Please check your network connection.');
+          setLoading(false);
         }
-      } catch {
-        if (!cancelled) setContent(fallbackContent);
       }
     }
 
@@ -280,6 +400,34 @@ export default function SituationalJudgementTest({
     );
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 font-medium">Loading assessment...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center p-4 text-center bg-background text-foreground">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-xl font-bold">Failed to load assessment</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6 h-10 px-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // Resolve current stepper phase
+  const stepperStep = 
+    phase === 'landing' || phase === 'rules'
+      ? 'welcome'
+      : 'live';
+
   return (
     <AssessmentGameShell
       icon={ClipboardCheck}
@@ -287,7 +435,14 @@ export default function SituationalJudgementTest({
       eyebrow="CTRL assessment"
       status={phase === 'scenario' ? `${formatTimer(timeRemaining)} remaining` : 'Best and worst judgement'}
     >
-      {phase === 'landing' && (
+      <div className="flex flex-col w-full">
+        {/* Visual Stepper Progress */}
+        {phase !== 'scenario' && phase !== 'submitting' && phase !== 'submitted' && (
+          <div className="mb-6 w-full">
+            <AssessmentFlowStepper currentStep={stepperStep} hasPractice={false} />
+          </div>
+        )}
+        {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -327,7 +482,7 @@ export default function SituationalJudgementTest({
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-5xl flex-col justify-center py-10">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center py-6">
           <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
@@ -342,7 +497,7 @@ export default function SituationalJudgementTest({
               </p>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
@@ -364,25 +519,36 @@ export default function SituationalJudgementTest({
                   <ListChecks className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">Your Task</h2>
-                <p>For each scenario, you must:</p>
+                <p>For each scenario, you must select:</p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-lg border border-border bg-background p-4 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                  <div className="rounded-lg border border-border bg-background p-3 text-center dark:border-white/10 dark:bg-white/[0.02]">
                     <p className="text-sm font-semibold text-foreground">MOST effective</p>
                     <p className="mt-1 text-xs text-muted-foreground">The strongest response.</p>
                   </div>
-                  <div className="rounded-lg border border-border bg-background p-4 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                  <div className="rounded-lg border border-border bg-background p-3 text-center dark:border-white/10 dark:bg-white/[0.02]">
                     <p className="text-sm font-semibold text-foreground">LEAST effective</p>
                     <p className="mt-1 text-xs text-muted-foreground">The weakest response.</p>
                   </div>
                 </div>
-                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
+                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <p>
+                    <p className="text-xs">
                       You cannot select the same option as both MOST effective and LEAST effective.
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+                <div>
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
+                    <ListChecks className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h2 className="mb-3 text-lg font-semibold text-foreground">Interactive Demo</h2>
+                  <p className="mb-4">Select one option as Most Effective and a different option as Least Effective.</p>
+                </div>
+                <SJTAnimationPreview />
               </div>
             </div>
 
@@ -461,7 +627,7 @@ export default function SituationalJudgementTest({
       )}
 
       {phase === 'scenario' && (
-        <div className="mx-auto flex min-h-[560px] w-full max-w-[1180px] flex-col justify-center py-6">
+        <div className="mx-auto flex min-h-[560px] w-full flex-col justify-center py-6">
           <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -567,6 +733,7 @@ export default function SituationalJudgementTest({
           </Button>
         </div>
       )}
+      </div>
     </AssessmentGameShell>
   );
 }

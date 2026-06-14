@@ -2,16 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   CheckCircle2,
   ChevronDown,
   FileText,
   Loader2,
   LogOut,
+  MousePointer,
   Phone,
   Play,
   Volume2,
+  Timer,
 } from 'lucide-react';
-import { AssessmentGameShell } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { initCallSimulationSession } from '@/app/actions/assessment-call-simulation.actions';
+import { cn } from '@/lib/utils';
 
 type CallRun = {
   id: string;
@@ -37,8 +41,112 @@ type CallRun = {
 };
 
 type CallContentFile = {
-  runs: CallRun[];
+  version: string;
+  scaRounds: CallRun[];
 };
+
+function CallSimulationAnimationPreview() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep((prev) => (prev + 1) % 8);
+    }, 1500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const isAudioPlaying = step >= 1 && step <= 6;
+  
+  let callerName = "";
+  if (step === 1) callerName = "Sarah J";
+  else if (step >= 2) callerName = "Sarah Jenkins";
+
+  let callerPhone = "";
+  if (step === 3) callerPhone = "0770";
+  else if (step >= 4) callerPhone = "07700 900077";
+
+  let notes = "";
+  if (step === 5) notes = "Caller reports a";
+  else if (step >= 6) notes = "Caller reports a minor burglary.";
+
+  return (
+    <div className="relative w-full rounded-xl border border-border bg-muted/40 p-4 shadow-inner dark:bg-black/20 overflow-hidden min-h-[300px] flex flex-col justify-between">
+      <div className="mb-2 flex items-center justify-between border-b border-border/50 pb-2 text-xs text-muted-foreground">
+        <div className="flex gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Call Simulation Demo</span>
+      </div>
+
+      <div className="space-y-4">
+        {/* Visualizer card */}
+        <div className="rounded-lg border border-border bg-background p-2.5 flex items-center justify-between dark:bg-zinc-900/60 select-none">
+          <div className="flex items-center gap-2">
+            <Volume2 className={cn("h-4 w-4 text-primary", isAudioPlaying && "animate-bounce")} />
+            <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-foreground">
+              {isAudioPlaying ? "Audio Playing" : step === 7 ? "Audio Ended" : "Ready"}
+            </span>
+          </div>
+          {/* Waves */}
+          <div className="flex gap-1 items-end h-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <span 
+                key={i} 
+                className={cn(
+                  "w-1 bg-primary rounded-full transition-all duration-300",
+                  isAudioPlaying ? "animate-pulse" : "h-1"
+                )}
+                style={{ 
+                  height: isAudioPlaying ? `${[12, 16, 8, 14, 10][i - 1]}px` : '4px',
+                  animationDelay: `${i * 150}ms`
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Input fields */}
+        <div className="space-y-2 text-xs">
+          <div>
+            <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground block mb-1">Caller Name:</span>
+            <div className="relative rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 min-h-[28px] flex items-center select-none">
+              <span className="text-foreground">{callerName}</span>
+              {step === 1 && <span className="w-1 h-3.5 bg-primary animate-pulse ml-0.5" />}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground block mb-1">Caller Phone:</span>
+            <div className="relative rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 min-h-[28px] flex items-center select-none">
+              <span className="text-foreground">{callerPhone}</span>
+              {step === 3 && <span className="w-1 h-3.5 bg-primary animate-pulse ml-0.5" />}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground block mb-1">Notes:</span>
+            <div className="relative rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 min-h-[44px] flex items-start select-none">
+              <span className="text-foreground leading-normal">{notes}</span>
+              {step === 5 && <span className="w-1 h-3.5 bg-primary animate-pulse ml-0.5 mt-0.5" />}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer message */}
+      <div className="mt-2 text-center">
+        <Badge variant="outline" className={cn(
+          "text-[9px] uppercase px-1.5 py-0 border-border/50 bg-background/50",
+          step === 7 && "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300 animate-pulse"
+        )}>
+          {step === 7 ? "Saved Successfully" : "Listen & Log Concurrently"}
+        </Badge>
+      </div>
+    </div>
+  );
+}
 
 type AssessmentSessionConfig = {
   version?: string;
@@ -243,6 +351,8 @@ export default function CallSimulationTest({
   const sessionConfigRef = useRef<AssessmentSessionConfig>({});
   const [phase, setPhase] = useState<CallPhase>('landing');
   const [runs, setRuns] = useState<CallRun[]>(fallbackRuns);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [form, setForm] = useState<IncidentForm>(emptyForm);
   const [timestamps, setTimestamps] = useState<Record<string, number>>({});
@@ -313,6 +423,8 @@ export default function CallSimulationTest({
 
     async function loadSession() {
       try {
+        setLoading(true);
+        setError(null);
         const sessionData = await initCallSimulationSession(candidateSessionDocumentId);
         if (cancelled) return;
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
@@ -324,22 +436,17 @@ export default function CallSimulationTest({
           });
           setRuns(sortedRuns);
           sessionConfigRef.current = sessionData.config ?? {};
+          setLoading(false);
           return;
+        } else {
+          throw new Error('No assessment runs returned from the session initialization.');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('[CallSimulationTest] Failed to load call simulation session:', err);
-      }
-
-      // Fallback: fetch static JSON
-      try {
-        const response = await fetch(CONTENT_URL);
-        if (!response.ok) throw new Error('Unable to load call simulation content');
-        const content = await response.json() as CallContentFile;
-        if (!cancelled && Array.isArray(content.runs) && content.runs.length > 0) {
-          setRuns(content.runs);
+        if (!cancelled) {
+          setError(err.message || 'Failed to initialize session. Please check your network connection.');
+          setLoading(false);
         }
-      } catch {
-        if (!cancelled) setRuns(fallbackRuns);
       }
     }
 
@@ -557,6 +664,38 @@ export default function CallSimulationTest({
     };
   }, [candidateSessionDocumentId, phase, isBypassed]);
 
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 font-medium">Loading assessment...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center p-4 text-center bg-background text-foreground">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-xl font-bold">Failed to load assessment</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6 h-10 px-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // Resolve current stepper phase
+  const stepperStep = 
+    phase === 'landing' || phase === 'rules'
+      ? 'welcome'
+      : (phase === 'running' && currentRun.kind === 'practice') || phase === 'practice-results'
+        ? 'practice'
+        : phase === 'practice-complete' || phase === 'final-transition'
+          ? 'review'
+          : 'live';
+
   return (
     <AssessmentGameShell
       icon={Phone}
@@ -564,7 +703,14 @@ export default function CallSimulationTest({
       eyebrow="CTRL assessment"
       status={phase === 'running' ? currentRun.title : 'Audio incident log'}
     >
-      {phase === 'landing' && (
+      <div className="flex flex-col w-full">
+        {/* Visual Stepper Progress */}
+        {phase !== 'running' && phase !== 'submitting' && phase !== 'submitted' && (
+          <div className="mb-6 w-full">
+            <AssessmentFlowStepper currentStep={stepperStep} />
+          </div>
+        )}
+        {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <Phone className="h-8 w-8" aria-hidden="true" />
@@ -589,29 +735,44 @@ export default function CallSimulationTest({
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center">
           <Badge className="mb-5 w-fit" variant="secondary">
             How this test works
           </Badge>
-          <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            You will complete {practiceCount} practice {practiceCount === 1 ? 'call' : 'calls'} and {finalCount} final {finalCount === 1 ? 'call' : 'calls'}.
-          </p>
-          <div className="mt-6 grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">One full listen</p>
-              <p className="mt-1">Press play when ready. The audio plays once without pause or replay.</p>
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] mt-6">
+            <div className="space-y-4">
+              <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+                You will complete {practiceCount} practice {practiceCount === 1 ? 'call' : 'calls'} and {finalCount} final {finalCount === 1 ? 'call' : 'calls'}.
+              </p>
+              <div className="grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
+                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                  <p className="font-medium text-foreground">One full listen</p>
+                  <p className="mt-1">Press play when ready. The audio plays once without pause or replay.</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                  <p className="font-medium text-foreground">Type while listening</p>
+                  <p className="mt-1">You may complete the incident log while the call is playing.</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                  <p className="font-medium text-foreground">Review window</p>
+                  <p className="mt-1">After the audio ends, you have up to 1 minute to fix or finish your notes.</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                  <p className="font-medium text-foreground">No prompts</p>
+                  <p className="mt-1">Use your judgement. The form will not suggest what the answer should be.</p>
+                </div>
+              </div>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Type while listening</p>
-              <p className="mt-1">You may complete the incident log while the call is playing.</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Review window</p>
-              <p className="mt-1">After the audio ends, you have up to 1 minute to fix or finish your notes.</p>
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">No prompts</p>
-              <p className="mt-1">Use your judgement. The form will not suggest what the answer should be.</p>
+
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+              <div>
+                <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
+                  Walkthrough Preview
+                </Badge>
+                <h3 className="mb-3 text-lg font-semibold text-foreground">Listen & Record</h3>
+                <p className="mb-4 text-sm text-muted-foreground">Watch how input fields can be filled out concurrently while listening to the caller audio.</p>
+              </div>
+              <CallSimulationAnimationPreview />
             </div>
           </div>
           <div className="mt-8 flex flex-wrap gap-3 items-center">
@@ -640,7 +801,7 @@ export default function CallSimulationTest({
       )}
 
       {phase === 'running' && (
-        <div className="mx-auto flex min-h-[560px] w-full max-w-5xl flex-col justify-center">
+        <div className="mx-auto flex min-h-[560px] w-full flex-col justify-center">
           <audio
             ref={audioRef}
             preload="metadata"
@@ -1021,7 +1182,7 @@ export default function CallSimulationTest({
       )}
 
       {phase === 'practice-results' && latestSnapshot && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
             <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
           </div>
@@ -1074,19 +1235,18 @@ export default function CallSimulationTest({
       )}
 
       {phase === 'practice-complete' && latestSnapshot && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <Phone className="h-7 w-7" aria-hidden="true" />
+            <Timer className="h-7 w-7" aria-hidden="true" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Practice calls complete
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400 font-bold">
+            Practice Runs Complete
           </p>
-          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            The final call is next
+          <p className="mt-3 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+            Prepare for Scored Live Assessment
           </p>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Take a break before pressing continue. The final call uses the same
-            rules, but no result screen will be shown after submission.
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground border border-amber-500/20 bg-amber-500/5 p-4 rounded-xl shadow-sm">
+            <span className="font-bold text-amber-600 dark:text-amber-400 block mb-1">WARNING:</span> You are about to start the live scored emergency call simulation. This run is timed and graded. Ensure you are ready before clicking Continue.
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
@@ -1119,7 +1279,7 @@ export default function CallSimulationTest({
       )}
 
       {phase === 'final-transition' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
             <Phone className="h-7 w-7" aria-hidden="true" />
           </div>
@@ -1204,6 +1364,7 @@ export default function CallSimulationTest({
           </Button>
         </div>
       )}
+      </div>
     </AssessmentGameShell>
   );
 }

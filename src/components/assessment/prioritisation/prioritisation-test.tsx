@@ -10,16 +10,18 @@ import {
   ListChecks,
   Loader2,
   LogOut,
+  MousePointer,
   Play,
   ShieldCheck,
   Target,
   Timer,
 } from 'lucide-react';
-import { AssessmentGameShell } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { cn } from '@/lib/utils';
 import { initPjaSession } from '@/app/actions/assessment-pja.actions';
 
 type Incident = {
@@ -40,6 +42,168 @@ type PrioritisationContent = {
   practiceRounds: PriorityRound[];
   finalRounds: PriorityRound[];
 };
+
+function PrioritisationAnimationPreview() {
+  const [step, setStep] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setStep((prev) => (prev + 1) % 10);
+    }, 1500);
+    return () => clearInterval(timer);
+  }, []);
+
+  const card1InBank = step < 4;
+  const card2InBank = step < 8;
+
+  const slot1Content = step >= 4 ? "A. Armed Robbery" : null;
+  const slot2Content = step >= 8 ? "B. Noise Complaint" : null;
+
+  const isCard1Selected = step === 2 || step === 3;
+  const isCard2Selected = step === 6 || step === 7;
+
+  let cursorTop = '10%';
+  let cursorLeft = '80%';
+  let cursorActive = false;
+
+  if (step === 1) {
+    cursorTop = '28%';
+    cursorLeft = '30%';
+  } else if (step === 2) {
+    cursorTop = '28%';
+    cursorLeft = '30%';
+    cursorActive = true;
+  } else if (step === 3) {
+    cursorTop = '70%';
+    cursorLeft = '30%';
+  } else if (step === 4) {
+    cursorTop = '70%';
+    cursorLeft = '30%';
+    cursorActive = true;
+  } else if (step === 5) {
+    cursorTop = '28%';
+    cursorLeft = '70%';
+  } else if (step === 6) {
+    cursorTop = '28%';
+    cursorLeft = '70%';
+    cursorActive = true;
+  } else if (step === 7) {
+    cursorTop = '70%';
+    cursorLeft = '70%';
+  } else if (step === 8) {
+    cursorTop = '70%';
+    cursorLeft = '70%';
+    cursorActive = true;
+  } else if (step === 9) {
+    cursorTop = '50%';
+    cursorLeft = '90%';
+  }
+
+  return (
+    <div className="relative w-full rounded-xl border border-border bg-muted/40 p-4 shadow-inner dark:bg-black/20 overflow-hidden min-h-[300px] flex flex-col justify-between">
+      <div className="mb-2 flex items-center justify-between border-b border-border/50 pb-2 text-xs text-muted-foreground">
+        <div className="flex gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Sorting Demo</span>
+      </div>
+
+      <div className="space-y-4">
+        {/* Incident Bank Box */}
+        <div>
+          <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-primary block mb-1">Incident Bank:</span>
+          <div className="grid grid-cols-2 gap-2 bg-background/50 rounded-lg p-2 border border-border/40 min-h-[75px]">
+            {card1InBank ? (
+              <div className={cn(
+                "rounded border p-2 text-[10px] bg-background flex items-center gap-1.5 select-none transition-all duration-300",
+                isCard1Selected ? "border-primary ring-1 ring-primary/30" : "border-border/60"
+              )}>
+                <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
+                <span className="truncate font-medium text-foreground">A. Armed Robbery</span>
+              </div>
+            ) : (
+              <div className="rounded border border-dashed border-border/30 bg-muted/10 flex items-center justify-center text-[9px] text-muted-foreground/45 select-none">
+                Placed
+              </div>
+            )}
+
+            {card2InBank ? (
+              <div className={cn(
+                "rounded border p-2 text-[10px] bg-background flex items-center gap-1.5 select-none transition-all duration-300",
+                isCard2Selected ? "border-primary ring-1 ring-primary/30" : "border-border/60"
+              )}>
+                <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
+                <span className="truncate font-medium text-foreground">B. Noise Complaint</span>
+              </div>
+            ) : (
+              <div className="rounded border border-dashed border-border/30 bg-muted/10 flex items-center justify-center text-[9px] text-muted-foreground/45 select-none">
+                Placed
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Priority List Box */}
+        <div>
+          <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 block mb-1">Priority List:</span>
+          <div className="grid grid-cols-2 gap-2">
+            {/* Slot 1 */}
+            <div className={cn(
+              "rounded border p-2 text-[10px] min-h-[50px] flex flex-col justify-center transition-all duration-300 select-none",
+              slot1Content 
+                ? "border-green-500/50 bg-green-500/5 text-foreground font-semibold" 
+                : "border-dashed border-border bg-background/30 text-muted-foreground/50 items-center justify-center text-[9px]"
+            )}>
+              {slot1Content ? (
+                <div className="flex items-center gap-1">
+                  <Badge className="bg-green-600 hover:bg-green-600 px-1 py-0 text-[8px] h-3.5 shrink-0">Rank 1</Badge>
+                  <span className="truncate font-medium">{slot1Content}</span>
+                </div>
+              ) : (
+                "Place Rank 1"
+              )}
+            </div>
+
+            {/* Slot 2 */}
+            <div className={cn(
+              "rounded border p-2 text-[10px] min-h-[50px] flex flex-col justify-center transition-all duration-300 select-none",
+              slot2Content 
+                ? "border-green-500/50 bg-green-500/5 text-foreground font-semibold" 
+                : "border-dashed border-border bg-background/30 text-muted-foreground/50 items-center justify-center text-[9px]"
+            )}>
+              {slot2Content ? (
+                <div className="flex items-center gap-1">
+                  <Badge className="bg-green-600 hover:bg-green-600 px-1 py-0 text-[8px] h-3.5 shrink-0">Rank 2</Badge>
+                  <span className="truncate font-medium">{slot2Content}</span>
+                </div>
+              ) : (
+                "Place Rank 2"
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Virtual Cursor */}
+      <div 
+        className="absolute z-10 transition-all duration-700 ease-in-out pointer-events-none"
+        style={{ top: cursorTop, left: cursorLeft }}
+      >
+        <div className="relative">
+          <MousePointer className={cn(
+            "h-5 w-5 text-foreground drop-shadow-md transition-transform duration-150",
+            cursorActive ? "scale-75" : "scale-100"
+          )} />
+          {cursorActive && (
+            <span className="absolute left-0 top-0 h-4 w-4 animate-ping rounded-full bg-primary/40" />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type AssessmentSessionConfig = {
   version?: string;
@@ -63,12 +227,11 @@ type RoundSnapshot = {
   order: string[];
 };
 
-const CONTENT_URL = '/assessment-content/prioritisation.json';
-
 type PrioritySlot = string | null;
 
 const fallbackContent: PrioritisationContent = {
-  practiceRounds: [
+  version: '1.0.0',
+  pjaRounds: [
     {
       id: 'fallback-practice',
       title: 'Practice round',
@@ -104,7 +267,6 @@ const fallbackContent: PrioritisationContent = {
       ],
     },
   ],
-  finalRounds: [],
 };
 
 export default function PrioritisationTest({
@@ -114,6 +276,8 @@ export default function PrioritisationTest({
 }) {
   const [phase, setPhase] = useState<Phase>('landing');
   const [content, setContent] = useState<PrioritisationContent>(fallbackContent);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [finalIndex, setFinalIndex] = useState(0);
   const [prioritySlots, setPrioritySlots] = useState<PrioritySlot[]>([]);
@@ -125,14 +289,22 @@ export default function PrioritisationTest({
   const startedAtRef = useRef<string | null>(null);
   const sessionConfigRef = useRef<AssessmentSessionConfig>({});
 
+  const practiceRounds = useMemo(() => {
+    return content.pjaRounds.filter((r: any) => r.type === 'practice');
+  }, [content.pjaRounds]);
+
+  const finalRounds = useMemo(() => {
+    return content.pjaRounds.filter((r: any) => r.type === 'test' || r.type === 'final' || !r.type);
+  }, [content.pjaRounds]);
+
   const activeMode: 'practice' | 'final' =
     phase === 'final-round' || phase === 'submitting' || phase === 'submitted'
       ? 'final'
       : 'practice';
   const activeRounds =
-    activeMode === 'practice' ? content.practiceRounds : content.finalRounds;
+    activeMode === 'practice' ? practiceRounds : finalRounds;
   const activeIndex = activeMode === 'practice' ? practiceIndex : finalIndex;
-  const activeRound = activeRounds[activeIndex] ?? activeRounds[0] ?? fallbackContent.practiceRounds[0];
+  const activeRound = activeRounds[activeIndex] ?? activeRounds[0] ?? fallbackContent.pjaRounds[0];
   const activeIncidentMap = useMemo(() => {
     return new Map(activeRound.incidents.map((incident) => [incident.id, incident]));
   }, [activeRound.incidents]);
@@ -144,8 +316,8 @@ export default function PrioritisationTest({
   );
   const latestSnapshot = snapshots[snapshots.length - 1];
   const finalProgress =
-    content.finalRounds.length > 0
-      ? ((finalIndex + 1) / content.finalRounds.length) * 100
+    finalRounds.length > 0
+      ? ((finalIndex + 1) / finalRounds.length) * 100
       : 0;
 
   useEffect(() => {
@@ -153,33 +325,24 @@ export default function PrioritisationTest({
 
     async function loadSession() {
       try {
+        setLoading(true);
+        setError(null);
         const sessionData = await initPjaSession(candidateSessionDocumentId);
         if (cancelled) return;
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
-          const practiceRounds = sessionData.runs.filter((r) => r.type === 'practice');
-          const finalRounds = sessionData.runs.filter((r) => r.type === 'test');
-          setContent({ practiceRounds, finalRounds });
+          setContent({ version: sessionData.config?.version || '1.0.0', pjaRounds: sessionData.runs });
           sessionConfigRef.current = sessionData.config ?? {};
+          setLoading(false);
           return;
+        } else {
+          throw new Error('No assessment runs returned from the session initialization.');
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('[PrioritisationTest] Failed to load PJA session from backend:', err);
-      }
-
-      // Fallback: fetch static JSON
-      try {
-        const response = await fetch(CONTENT_URL);
-        if (!response.ok) throw new Error('Unable to load prioritisation content');
-        const loadedContent = await response.json() as PrioritisationContent;
-        if (
-          !cancelled &&
-          loadedContent.practiceRounds?.length &&
-          loadedContent.finalRounds?.length
-        ) {
-          setContent(loadedContent);
+        if (!cancelled) {
+          setError(err.message || 'Failed to initialize session. Please check your network connection.');
+          setLoading(false);
         }
-      } catch {
-        if (!cancelled) setContent(fallbackContent);
       }
     }
 
@@ -191,7 +354,7 @@ export default function PrioritisationTest({
   }, [candidateSessionDocumentId]);
 
   const startPractice = useCallback(() => {
-    const firstRound = content.practiceRounds[0] ?? fallbackContent.practiceRounds[0];
+    const firstRound = practiceRounds[0] ?? fallbackContent.pjaRounds[0];
     startedAtRef.current = new Date().toISOString();
     setPracticeIndex(0);
     setFinalIndex(0);
@@ -202,10 +365,10 @@ export default function PrioritisationTest({
     setPressedIncidentId(null);
     setDraggingIncidentId(null);
     setPhase('practice-round');
-  }, [content.practiceRounds]);
+  }, [practiceRounds]);
 
   const startFinal = useCallback(() => {
-    const firstRound = content.finalRounds[0];
+    const firstRound = finalRounds[0];
     if (!firstRound) return;
 
     setFinalIndex(0);
@@ -214,7 +377,7 @@ export default function PrioritisationTest({
     setPressedIncidentId(null);
     setDraggingIncidentId(null);
     setPhase('final-round');
-  }, [content.finalRounds]);
+  }, [finalRounds]);
 
   const closeAssessment = useCallback(() => {
     closeAssessmentWindow();
@@ -344,7 +507,7 @@ export default function PrioritisationTest({
     };
     setSnapshots((currentSnapshots) => [...currentSnapshots, snapshot]);
 
-    if (practiceIndex >= content.practiceRounds.length - 1) {
+    if (practiceIndex >= practiceRounds.length - 1) {
       setPhase('practice-complete');
       return;
     }
@@ -354,7 +517,7 @@ export default function PrioritisationTest({
 
   const continuePractice = () => {
     const nextIndex = practiceIndex + 1;
-    const nextRound = content.practiceRounds[nextIndex];
+    const nextRound = practiceRounds[nextIndex];
     if (!nextRound) return;
 
     setPracticeIndex(nextIndex);
@@ -374,13 +537,13 @@ export default function PrioritisationTest({
     };
     setSnapshots((currentSnapshots) => [...currentSnapshots, snapshot]);
 
-    if (finalIndex >= content.finalRounds.length - 1) {
+    if (finalIndex >= finalRounds.length - 1) {
       setPhase('submitting');
       return;
     }
 
     const nextIndex = finalIndex + 1;
-    const nextRound = content.finalRounds[nextIndex];
+    const nextRound = finalRounds[nextIndex];
     setFinalIndex(nextIndex);
     setPrioritySlots(Array(nextRound.incidents.length).fill(null));
     setSelectedIncidentId(null);
@@ -444,12 +607,12 @@ export default function PrioritisationTest({
   const renderRound = (mode: 'practice' | 'final') => {
     const isFinal = mode === 'final';
     const roundNumber = isFinal ? finalIndex + 1 : practiceIndex + 1;
-    const totalRounds = isFinal ? content.finalRounds.length : content.practiceRounds.length;
+    const totalRounds = isFinal ? finalRounds.length : practiceRounds.length;
     const hasActiveCard = Boolean(selectedIncidentId || draggingIncidentId);
     const placedCount = placedIncidentIds.length;
 
     return (
-      <div className="mx-auto flex min-h-[560px] w-full max-w-[1480px] flex-col justify-center">
+      <div className="mx-auto flex min-h-[560px] w-full flex-col justify-center">
         <div className="rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -671,6 +834,38 @@ export default function PrioritisationTest({
     );
   };
 
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 font-medium">Loading assessment...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center p-4 text-center bg-background text-foreground">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-xl font-bold">Failed to load assessment</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6 h-10 px-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // Resolve current stepper phase
+  const stepperStep = 
+    phase === 'landing' || phase === 'rules'
+      ? 'welcome'
+      : phase === 'practice-round'
+        ? 'practice'
+        : phase === 'practice-review' || phase === 'practice-complete'
+          ? 'review'
+          : 'live';
+
   return (
     <AssessmentGameShell
       icon={ClipboardList}
@@ -678,13 +873,20 @@ export default function PrioritisationTest({
       eyebrow="CTRL assessment"
       status={
         phase === 'final-round'
-          ? `Final round ${finalIndex + 1}/${content.finalRounds.length}`
+          ? `Final round ${finalIndex + 1}/${finalRounds.length}`
           : phase === 'practice-round'
-            ? `Practice round ${practiceIndex + 1}/3`
+            ? `Practice round ${practiceIndex + 1}/${practiceRounds.length}`
             : 'Incident queue'
       }
     >
-      {phase === 'landing' && (
+      <div className="flex flex-col w-full">
+        {/* Visual Stepper Progress */}
+        {phase !== 'practice-round' && phase !== 'final-round' && phase !== 'submitting' && phase !== 'submitted' && (
+          <div className="mb-6 w-full">
+            <AssessmentFlowStepper currentStep={stepperStep} />
+          </div>
+        )}
+        {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -724,7 +926,7 @@ export default function PrioritisationTest({
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-5xl flex-col justify-center py-10">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center py-6">
           <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
@@ -739,7 +941,7 @@ export default function PrioritisationTest({
               </p>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <ClipboardList className="h-5 w-5" aria-hidden="true" />
@@ -771,20 +973,31 @@ export default function PrioritisationTest({
                     ['5', 'Fifth'],
                     ['6', 'Lowest'],
                   ].map(([rank, label]) => (
-                    <div key={rank} className="rounded-lg border border-border bg-background p-3 text-center dark:border-white/10 dark:bg-white/[0.02]">
-                      <p className="text-lg font-semibold text-foreground">{rank}</p>
-                      <p className="text-xs text-muted-foreground">{label}</p>
+                    <div key={rank} className="rounded-lg border border-border bg-background p-2.5 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                      <p className="text-sm font-semibold text-foreground">{rank}</p>
+                      <p className="text-[10px] text-muted-foreground">{label}</p>
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
+                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <p>
+                    <p className="text-xs">
                       Each incident must have a different ranking. Do not give the same ranking to more than one incident.
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+                <div>
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
+                    <ClipboardList className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h2 className="mb-3 text-lg font-semibold text-foreground">Interactive Demo</h2>
+                  <p className="mb-4">Select or drag incidents from the Bank into the corresponding Priority ranks.</p>
+                </div>
+                <PrioritisationAnimationPreview />
               </div>
             </div>
 
@@ -871,17 +1084,17 @@ export default function PrioritisationTest({
       {phase === 'final-round' && renderRound('final')}
 
       {phase === 'practice-review' && latestSnapshot && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
             <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground text-center">
             Practice round {latestSnapshot.roundNumber} complete
           </p>
-          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl text-center">
             Next practice round
           </p>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground text-center">
             The next round will show a new queue of incidents. Keep placing the
             most urgent incident at the top.
           </p>
@@ -894,17 +1107,16 @@ export default function PrioritisationTest({
       {phase === 'practice-complete' && (
         <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-            <ClipboardList className="h-7 w-7" aria-hidden="true" />
+            <Timer className="h-7 w-7" aria-hidden="true" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Practice complete
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400 font-bold">
+            Practice Round Complete
           </p>
-          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            Final submission block next
+          <p className="mt-3 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+            Prepare for Scored Live Assessment
           </p>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Take a break before pressing continue. The final block contains 15
-            rounds with 6 incidents per round, and no results are shown at the end.
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground border border-amber-500/20 bg-amber-500/5 p-4 rounded-xl shadow-sm">
+            <span className="font-bold text-amber-600 dark:text-amber-400 block mb-1">WARNING:</span> You are about to start the live scored prioritisation assessment rounds. These rounds are timed and will count towards your final result. Ensure you are ready before clicking Continue.
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
@@ -969,6 +1181,7 @@ export default function PrioritisationTest({
           </Button>
         </div>
       )}
+      </div>
     </AssessmentGameShell>
   );
 }

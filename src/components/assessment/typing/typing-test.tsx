@@ -18,13 +18,127 @@ import {
   Target,
   Timer,
 } from 'lucide-react';
-import { AssessmentGameShell } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AssessmentProgressService } from '@/services/assessment-progress.service';
 import type { TypingTestProgress } from '@/types/assessments-progress.types';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { cn } from '@/lib/utils';
+
+const typingSequence = [
+  { text: "", errorIndex: -1 },
+  { text: "T", errorIndex: -1 },
+  { text: "Th", errorIndex: -1 },
+  { text: "The", errorIndex: -1 },
+  { text: "The ", errorIndex: -1 },
+  { text: "The c", errorIndex: -1 },
+  { text: "The ca", errorIndex: -1 },
+  { text: "The cal", errorIndex: -1 },
+  { text: "The call", errorIndex: -1 },
+  { text: "The calle", errorIndex: -1 },
+  { text: "The caller", errorIndex: -1 },
+  { text: "The caller ", errorIndex: -1 },
+  { text: "The caller r", errorIndex: -1 },
+  { text: "The caller re", errorIndex: -1 },
+  { text: "The caller rep", errorIndex: -1 },
+  { text: "The caller repo", errorIndex: -1 },
+  { text: "The caller repor", errorIndex: -1 },
+  { text: "The caller report", errorIndex: -1 },
+  { text: "The caller reporte", errorIndex: -1 },
+  { text: "The caller reported", errorIndex: -1 },
+  { text: "The caller reported ", errorIndex: -1 },
+  { text: "The caller reported a", errorIndex: -1 },
+  { text: "The caller reported a ", errorIndex: -1 },
+  { text: "The caller reported a v", errorIndex: -1 },
+  { text: "The caller reported a ve", errorIndex: -1 },
+  { text: "The caller reported a veh", errorIndex: -1 },
+  { text: "The caller reported a vehi", errorIndex: -1 },
+  { text: "The caller reported a vehic", errorIndex: -1 },
+  { text: "The caller reported a vehicx", errorIndex: 28 }, // Error types x
+  { text: "The caller reported a vehicxy", errorIndex: 28 }, // Error types y
+  { text: "The caller reported a vehicx", errorIndex: 28 }, // Backspace 1
+  { text: "The caller reported a vehic", errorIndex: -1 }, // Backspace 2 (Corrected!)
+  { text: "The caller reported a vehicl", errorIndex: -1 },
+  { text: "The caller reported a vehicle", errorIndex: -1 },
+  { text: "The caller reported a vehicle ", errorIndex: -1 },
+  { text: "The caller reported a vehicle c", errorIndex: -1 },
+  { text: "The caller reported a vehicle co", errorIndex: -1 },
+  { text: "The caller reported a vehicle col", errorIndex: -1 },
+  { text: "The caller reported a vehicle coll", errorIndex: -1 },
+  { text: "The caller reported a vehicle colli", errorIndex: -1 },
+  { text: "The caller reported a vehicle collis", errorIndex: -1 },
+  { text: "The caller reported a vehicle collisi", errorIndex: -1 },
+  { text: "The caller reported a vehicle collisio", errorIndex: -1 },
+  { text: "The caller reported a vehicle collision", errorIndex: -1 },
+  { text: "The caller reported a vehicle collision.", errorIndex: -1, isComplete: true },
+];
+
+function TypingAnimationPreview() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % typingSequence.length);
+    }, 200);
+    return () => clearInterval(timer);
+  }, []);
+
+  const current = typingSequence[index];
+  const targetText = "The caller reported a vehicle collision.";
+  
+  return (
+    <div className="w-full rounded-xl border border-border bg-muted/40 p-4 font-mono shadow-inner dark:bg-black/20">
+      <div className="mb-3 flex items-center justify-between border-b border-border/50 pb-2 text-xs text-muted-foreground">
+        <div className="flex gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Typing Walkthrough</span>
+      </div>
+      
+      <div className="space-y-3 text-xs leading-relaxed">
+        <div>
+          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-primary block mb-1">Text to Type:</span>
+          <div className="rounded bg-background p-2.5 text-foreground border border-border/50 dark:bg-zinc-900/60 select-none">
+            {targetText}
+          </div>
+        </div>
+        
+        <div>
+          <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-blue-500 dark:text-blue-400 block mb-1">Your Typing Input:</span>
+          <div className="relative rounded bg-background p-2.5 text-foreground border border-border/50 min-h-[3rem] dark:bg-zinc-900/80 select-none">
+            {targetText.split("").map((char, charIdx) => {
+              let className = "text-muted-foreground/30";
+              if (charIdx < current.text.length) {
+                if (current.errorIndex !== -1 && charIdx >= current.errorIndex) {
+                  className = "text-red-500 bg-red-500/10 font-bold underline decoration-wavy";
+                } else {
+                  className = "text-green-600 dark:text-green-400 font-medium";
+                }
+              }
+              return (
+                <span key={charIdx} className={cn(className, "transition-colors duration-75")}>
+                  {current.text[charIdx] || char}
+                </span>
+              );
+            })}
+            <span className="w-1.5 h-4 bg-primary inline-block absolute animate-pulse ml-0.5 top-[13px]" />
+            
+            {current.isComplete && (
+              <span className="absolute right-2 top-2 inline-flex items-center text-[9px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wider animate-bounce bg-green-500/10 px-1.5 py-0.5 rounded border border-green-500/20">
+                Corrected!
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 /**
  * Props for the TypingTest component.
@@ -36,7 +150,8 @@ interface TypingTestProps {
 }
 
 type TypingContentFile = {
-  runs: Array<{
+  version: string;
+  taRounds: Array<{
     id: string;
     text: string;
     type?: 'practice' | 'test';
@@ -64,7 +179,7 @@ type RunResult = {
   accuracy: number;
 };
 
-const fallbackRuns: TypingContentFile['runs'] = [
+const fallbackRuns: TypingContentFile['taRounds'] = [
   {
     id: 'fallback-practice-base',
     type: 'practice',
@@ -181,9 +296,22 @@ export default function TypingTest({
   const assessmentIdRef = useRef(assessmentId);
 
   const [phase, setPhase] = useState<TestPhase>('landing');
-  const [runs, setRuns] = useState<TypingContentFile['runs']>(
-    storeRuns.length > 0 ? storeRuns : fallbackRuns
-  );
+  const [runs, setRuns] = useState<TypingContentFile['taRounds']>(storeRuns);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (storeRuns.length === 0) {
+        setError("Failed to load typing runs from backend.");
+      } else {
+        setRuns(storeRuns);
+      }
+      setLoading(false);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [storeRuns]);
+
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [timeLeft, setTimeLeft] = useState<number>(config.timeLimitPerRound);
@@ -194,7 +322,7 @@ export default function TypingTest({
   const captureRef = useRef<HTMLTextAreaElement | null>(null);
   const typedCharactersRef = useRef<string[]>([]);
   const runIndexRef = useRef(0);
-  const currentTextRef = useRef(fallbackRuns[0].text);
+  const currentTextRef = useRef(runs[0]?.text ?? '');
   const finishRunRef = useRef<() => void>(() => {});
   const startedAtRef = useRef<string | null>(null);
   // Ref used by the periodic auto-save interval (avoids stale closure over results state)
@@ -206,7 +334,7 @@ export default function TypingTest({
   useEffect(() => { assessmentIdRef.current = assessmentId; }, [assessmentId]);
 
   const currentText = useMemo(() => {
-    return runs[currentRunIndex]?.text ?? fallbackRuns[0].text;
+    return runs[currentRunIndex]?.text ?? '';
   }, [currentRunIndex, runs]);
 
   // Run index 0 is practice. Live assessment runs are 1..roundCount.
@@ -290,8 +418,8 @@ export default function TypingTest({
       }
       setCurrentRunIndex(runIndex);
       resetTypedState(runIndex);
-      setCountdown(3);
-      setPhase('countdown');
+      setCountdown(0);
+      setPhase('running');
     },
     [resetTypedState]
   );
@@ -352,6 +480,16 @@ export default function TypingTest({
 
     return () => window.clearTimeout(timerId);
   }, [countdown, phase]);
+
+  // Automatically focus the typing input field when the running phase starts
+  useEffect(() => {
+    if (phase === 'running') {
+      const timer = setTimeout(() => {
+        captureRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'running' || !runStarted) return;
@@ -508,6 +646,40 @@ export default function TypingTest({
     })),
   ].slice(0, 3);
 
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 font-medium">Loading assessment...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center p-4 text-center bg-background text-foreground">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-xl font-bold">Failed to load assessment</h2>
+        <p className="mt-2 text-sm text-muted-foreground max-w-md">{error}</p>
+        <Button onClick={() => window.location.reload()} className="mt-6 h-10 px-4">
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  // Resolve current stepper phase
+  const stepperStep = 
+    phase === 'landing' || phase === 'rules'
+      ? 'welcome'
+      : phase === 'countdown' && isPracticeRun
+        ? 'practice'
+        : phase === 'running' && isPracticeRun
+          ? 'practice'
+          : phase === 'results'
+            ? 'review'
+            : 'live';
+
   return (
     <AssessmentGameShell
       icon={Keyboard}
@@ -515,7 +687,14 @@ export default function TypingTest({
       eyebrow="CTRL assessment"
       status={phase === 'running' ? (runStarted ? `${timeLeft}s remaining` : 'Start typing') : runLabel}
     >
-      {phase === 'landing' && (
+      <div className="flex flex-col w-full">
+        {/* Visual Stepper Progress */}
+        {phase !== 'countdown' && phase !== 'running' && phase !== 'submitting' && phase !== 'submitted' && (
+          <div className="mb-6 w-full">
+            <AssessmentFlowStepper currentStep={stepperStep} />
+          </div>
+        )}
+        {phase === 'landing' && (
         <div className="flex min-h-[520px] w-full flex-col items-center justify-center text-center">
           <div className="mb-5 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
             <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
@@ -559,7 +738,7 @@ export default function TypingTest({
       )}
 
       {phase === 'rules' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-5xl flex-col justify-center py-10">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center py-6">
           <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
               <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
@@ -574,7 +753,7 @@ export default function TypingTest({
               </p>
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-[1fr_1.1fr]">
+            <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <FileText className="h-5 w-5" aria-hidden="true" />
@@ -607,11 +786,22 @@ export default function TypingTest({
                 <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                    <p>
-                      Do not use copy and paste, unapproved speech-to-text software, abbreviations that are not in the passage, or leave or refresh the assessment page.
+                    <p className="text-xs">
+                      Do not use copy and paste, speech-to-text software, abbreviations, or leave/refresh the page.
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+                <div>
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
+                    <Keyboard className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h2 className="mb-3 text-lg font-semibold text-foreground">Interactive Demo</h2>
+                  <p className="mb-4">Watch how errors are highlighted. Backspace to correct them before continuing.</p>
+                </div>
+                <TypingAnimationPreview />
               </div>
             </div>
 
@@ -709,7 +899,7 @@ export default function TypingTest({
       )}
 
       {phase === 'running' && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-5xl flex-col justify-center">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center">
           <textarea
             ref={captureRef}
             aria-label="Typing capture area"
@@ -827,19 +1017,18 @@ export default function TypingTest({
       )}
 
       {phase === 'results' && latestResult && (
-        <div className="mx-auto flex min-h-[520px] w-full max-w-3xl flex-col justify-center text-center">
+        <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center text-center">
           <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
             <Timer className="h-7 w-7" aria-hidden="true" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Practice run complete
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-600 dark:text-amber-400 font-bold">
+            Practice Run Complete
           </p>
-          <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
-            That is the end of the test typing
+          <p className="mt-3 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+            Prepare for Scored Live Assessment
           </p>
-          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Take a break before pressing continue. When you are ready, the next
-            screen will wait for your first keypress before the timer starts.
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground border border-amber-500/20 bg-amber-500/5 p-4 rounded-xl shadow-sm">
+            <span className="font-bold text-amber-600 dark:text-amber-400 block mb-1">WARNING:</span> You are about to start the live scored assessment rounds. These exercises will determine your final typing speed and accuracy score. Take a break if needed, and click below when you are ready to begin.
           </p>
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-border p-4 dark:border-white/10">
@@ -974,6 +1163,7 @@ export default function TypingTest({
           </Button>
         </div>
       )}
+      </div>
     </AssessmentGameShell>
   );
 }
