@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, ArrowUpRight, CheckCircle2, Loader2, Minus, Plus, Search, Users } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowUpRight, CheckCircle2, Loader2, Minus, Plus, Search, Users } from "lucide-react";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 
@@ -19,7 +26,7 @@ type EntitlementClient = {
   seatsUsed: number;
   seatsAllowed: number;
   primaryContact: string;
-  features?: Record<string, boolean> | null;
+  features?: Record<string, any> | null;
   activeContract: {
     documentId: string;
     status: string;
@@ -33,14 +40,43 @@ type EntitlementClient = {
 const FEATURES = [
   { key: "deliveryRemote", label: "Remote delivery", group: "Delivery" },
   { key: "deliveryHybrid", label: "Hybrid delivery", group: "Delivery" },
-  { key: "assessmentVersion150", label: "Assessment data v1.5.0", group: "Assessment versions" },
   { key: "advancedPja", label: "Advanced PJA scoring", group: "Prioritisation" },
   { key: "extremePja", label: "Extreme PJA scoring", group: "Prioritisation" },
   { key: "typingIntermediate", label: "Intermediate typing", group: "Typing" },
   { key: "typingAdvanced", label: "Advanced typing", group: "Typing" },
 ] as const;
 
-type DraftState = Record<string, { seatCount: string; features: Record<string, boolean>; notes: string }>;
+const ASSESSMENT_VERSION_ENTITLEMENTS = [
+  {
+    key: "situational-judgement",
+    label: "SJA",
+    description: "Situational judgement content",
+  },
+  {
+    key: "typing",
+    label: "TA",
+    description: "Typing assessment content",
+  },
+  {
+    key: "prioritisation",
+    label: "PJA",
+    description: "Prioritisation assessment content",
+  },
+  {
+    key: "call-simulation",
+    label: "SCA",
+    description: "Simulated call assessment content",
+  },
+] as const;
+
+type AssessmentVersionKey = (typeof ASSESSMENT_VERSION_ENTITLEMENTS)[number]["key"];
+type AssessmentVersionOption = {
+  version: string;
+  title: string;
+  description: string | null;
+};
+type AssessmentVersionOptionsBySlug = Partial<Record<AssessmentVersionKey, AssessmentVersionOption[]>>;
+type DraftState = Record<string, { seatCount: string; features: Record<string, any>; notes: string }>;
 
 function initialSeatCount(client: EntitlementClient) {
   return String(Math.max(1, client.activeContract?.seatCount ?? client.seatsAllowed, client.seatsUsed));
@@ -51,6 +87,38 @@ function seatSummary(client: EntitlementClient) {
     return `${client.seatsUsed} active / no allocation`;
   }
   return `${client.seatsUsed}/${client.seatsAllowed}`;
+}
+
+function getAssessmentVersionAccess(features?: Record<string, any> | null) {
+  const access = features?.assessmentVersionAccess;
+  return access && typeof access === "object" && !Array.isArray(access)
+    ? access as Partial<Record<AssessmentVersionKey, string>>
+    : {};
+}
+
+function getAssessmentMaxVersion(features: Record<string, any> | null | undefined, assessmentKey: AssessmentVersionKey) {
+  const access = getAssessmentVersionAccess(features);
+  if (typeof access[assessmentKey] === "string" && access[assessmentKey]) {
+    return access[assessmentKey] as string;
+  }
+  if (features?.assessmentVersion150 === true) {
+    return "1.5.0";
+  }
+  return "1.0.0";
+}
+
+function setAssessmentMaxVersionInFeatures(
+  features: Record<string, any>,
+  assessmentKey: AssessmentVersionKey,
+  version: string
+) {
+  return {
+    ...features,
+    assessmentVersionAccess: {
+      ...getAssessmentVersionAccess(features),
+      [assessmentKey]: version,
+    },
+  };
 }
 
 export default function UpgradeRequestsPage() {
@@ -72,7 +140,15 @@ export default function UpgradeRequestsPage() {
     "/api/admin/upgrades",
     []
   );
-  const error = actionError || loadError;
+  const {
+    data: versionOptions,
+    error: versionOptionsError,
+  } = useAdminResource<AssessmentVersionOptionsBySlug>(
+    "admin:assessment-versions",
+    "/api/admin/assessment-versions",
+    {}
+  );
+  const error = actionError || loadError || versionOptionsError;
 
   useEffect(() => {
     setSelectedClientId((current) => {
@@ -87,9 +163,12 @@ export default function UpgradeRequestsPage() {
           client.id,
           {
             seatCount: initialSeatCount(client),
-            features: Object.fromEntries(
-              FEATURES.map((feature) => [feature.key, client.features?.[feature.key] === true])
-            ) as Record<string, boolean>,
+            features: {
+              ...(client.features ?? {}),
+              ...Object.fromEntries(
+                FEATURES.map((feature) => [feature.key, client.features?.[feature.key] === true])
+              ),
+            },
             notes: client.activeContract?.notes ?? "",
           },
         ])
@@ -143,6 +222,14 @@ export default function UpgradeRequestsPage() {
       }
     }
 
+    for (const assessment of ASSESSMENT_VERSION_ENTITLEMENTS) {
+      const before = getAssessmentMaxVersion(selectedClient.features, assessment.key);
+      const after = getAssessmentMaxVersion(selectedDraft.features, assessment.key);
+      if (before !== after) {
+        changes.push(`${assessment.label} versions: up to v${before} -> up to v${after}`);
+      }
+    }
+
     if ((selectedDraft.notes ?? "") !== (selectedClient.activeContract?.notes ?? "")) {
       changes.push("Update entitlement notes");
     }
@@ -159,6 +246,24 @@ export default function UpgradeRequestsPage() {
           ...current[clientId]?.features,
           [featureKey]: enabled,
         },
+      },
+    }));
+  };
+
+  const setAssessmentVersionState = (
+    clientId: string,
+    assessmentKey: AssessmentVersionKey,
+    version: string
+  ) => {
+    setDrafts((current) => ({
+      ...current,
+      [clientId]: {
+        ...current[clientId],
+        features: setAssessmentMaxVersionInFeatures(
+          current[clientId]?.features ?? {},
+          assessmentKey,
+          version
+        ),
       },
     }));
   };
@@ -408,6 +513,14 @@ export default function UpgradeRequestsPage() {
                     onAction={(featureKey) => setFeatureState(selectedClient.id, featureKey, false)}
                   />
                 </div>
+
+                <AssessmentVersionAccessPanel
+                  features={selectedDraft.features}
+                  versionOptions={versionOptions}
+                  onChange={(assessmentKey, version) =>
+                    setAssessmentVersionState(selectedClient.id, assessmentKey, version)
+                  }
+                />
               </CardContent>
             </Card>
 
@@ -450,6 +563,83 @@ export default function UpgradeRequestsPage() {
             </Card>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function AssessmentVersionAccessPanel({
+  features,
+  versionOptions,
+  onChange,
+}: {
+  features: Record<string, any>;
+  versionOptions: AssessmentVersionOptionsBySlug;
+  onChange: (assessmentKey: AssessmentVersionKey, version: string) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border/60 dark:border-white/5 overflow-hidden bg-slate-100/5 dark:bg-black/5">
+      <div className="border-b border-border/40 dark:border-white/5 p-4 bg-slate-100/20 dark:bg-black/10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-foreground">Assessment versions</h2>
+            <p className="mt-1 text-xs text-muted-foreground/80">
+              Set the newest content version this client can use.
+            </p>
+          </div>
+          <Badge variant="outline" className="rounded-lg border-primary/20 bg-primary/10 text-primary text-[10px] font-semibold">
+            Max version access
+          </Badge>
+        </div>
+      </div>
+      <div className="grid gap-3 p-4 md:grid-cols-2">
+        {ASSESSMENT_VERSION_ENTITLEMENTS.map((assessment) => {
+          const selectedVersion = getAssessmentMaxVersion(features, assessment.key);
+          const availableVersions = versionOptions[assessment.key] ?? [];
+          const versionValues = availableVersions.map((option) => option.version);
+          const options = versionValues.includes(selectedVersion)
+            ? availableVersions
+            : [
+                ...availableVersions,
+                {
+                  version: selectedVersion,
+                  title: `v${selectedVersion}`,
+                  description: "Current saved access",
+                },
+              ].sort((a, b) => compareVersionStrings(a.version, b.version));
+
+          return (
+            <div
+              key={assessment.key}
+              className="rounded-xl border border-border/60 dark:border-white/5 bg-slate-50/50 dark:bg-[#0b1329]/30 p-3.5"
+            >
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{assessment.label}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground/80">{assessment.description}</p>
+                </div>
+                <Badge variant="outline" className="shrink-0 rounded-lg text-[10px] font-semibold text-muted-foreground">
+                  up to v{selectedVersion}
+                </Badge>
+              </div>
+              <Select
+                value={selectedVersion}
+                onValueChange={(version) => onChange(assessment.key, version)}
+              >
+                <SelectTrigger className="h-9 rounded-lg border-border/70 dark:border-white/10 bg-background/80 dark:bg-black/20 text-xs focus:ring-primary">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {options.map((option) => (
+                    <SelectItem key={option.version} value={option.version}>
+                      Up to v{option.version}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -498,6 +688,19 @@ function FeatureList({
       </div>
     </div>
   );
+}
+
+function compareVersionStrings(a: string, b: string) {
+  const left = a.split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const right = b.split(".").map((part) => Number.parseInt(part, 10) || 0);
+  const length = Math.max(left.length, right.length, 3);
+
+  for (let index = 0; index < length; index += 1) {
+    const diff = (left[index] ?? 0) - (right[index] ?? 0);
+    if (diff !== 0) return diff;
+  }
+
+  return 0;
 }
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {

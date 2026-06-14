@@ -65,6 +65,22 @@ type RawRole = {
   name?: string;
 };
 
+type RawAssessmentVersion = {
+  version?: string;
+  title?: string;
+  description?: string | null;
+};
+
+type AssessmentVersionsResponse = {
+  data?: RawAssessmentVersion[];
+};
+
+export type AdminAssessmentVersionOption = {
+  version: string;
+  title: string;
+  description: string | null;
+};
+
 type RawUser = {
   id?: number;
   documentId?: string;
@@ -823,4 +839,32 @@ export async function updateAdminClient(
     authToken
   );
   return response.data;
+}
+
+export async function getAdminAssessmentVersions(
+  assessmentSlugs: string[],
+  authToken?: string | null
+): Promise<Record<string, AdminAssessmentVersionOption[]>> {
+  const entries = await Promise.all(
+    assessmentSlugs.map(async (slug) => {
+      const response = await adminStrapiRequest<AssessmentVersionsResponse>(
+        `/assessment/${encodeURIComponent(slug)}/versions`,
+        undefined,
+        authToken
+      );
+
+      return [
+        slug,
+        (response.data ?? [])
+          .filter((version) => typeof version.version === "string" && version.version)
+          .map((version) => ({
+            version: version.version as string,
+            title: version.title || `v${version.version}`,
+            description: version.description ?? null,
+          })),
+      ] as const;
+    })
+  );
+
+  return Object.fromEntries(entries);
 }

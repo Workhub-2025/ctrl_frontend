@@ -911,8 +911,8 @@ export default function TypingTest({
             readOnly
           />
 
-          <div className="mb-5 rounded-xl border border-border bg-card p-4 text-sm leading-6 text-muted-foreground shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-            Type the passage below into the response box as accurately and efficiently as possible. Pay close attention to spelling, punctuation, capital letters and spacing. Continue typing until the timer reaches zero.
+          <div className="mb-5 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            Type the passage exactly as shown. Correct mistakes if you spot them.
           </div>
 
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1062,9 +1062,9 @@ export default function TypingTest({
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
-              <p className="font-medium text-foreground">Assessment block</p>
+              <p className="font-medium text-foreground">Live runs</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                {finalRunIndex} {currentDuration}-second runs follow. Final scores are not shown.
+                {finalRunIndex} timed runs follow. Scores are submitted at the end.
               </p>
             </div>
           </div>

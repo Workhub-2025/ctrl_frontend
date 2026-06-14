@@ -111,7 +111,7 @@ function CallSimulationAnimationPreview() {
         <div className="space-y-2 text-xs">
           <div>
             <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground block mb-1">Caller Name:</span>
-            <div className="relative rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 min-h-[28px] flex items-center select-none">
+            <div className="relative h-8 rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 flex items-center select-none">
               <span className="text-foreground">{callerName}</span>
               {step === 1 && <span className="w-1 h-3.5 bg-primary animate-pulse ml-0.5" />}
             </div>
@@ -119,7 +119,7 @@ function CallSimulationAnimationPreview() {
 
           <div>
             <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground block mb-1">Caller Phone:</span>
-            <div className="relative rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 min-h-[28px] flex items-center select-none">
+            <div className="relative h-8 rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 flex items-center select-none">
               <span className="text-foreground">{callerPhone}</span>
               {step === 3 && <span className="w-1 h-3.5 bg-primary animate-pulse ml-0.5" />}
             </div>
@@ -127,7 +127,7 @@ function CallSimulationAnimationPreview() {
 
           <div>
             <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-muted-foreground block mb-1">Notes:</span>
-            <div className="relative rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 min-h-[44px] flex items-start select-none">
+            <div className="relative h-12 rounded bg-background p-2 border border-border/50 dark:bg-zinc-900/80 flex items-start select-none">
               <span className="text-foreground leading-normal">{notes}</span>
               {step === 5 && <span className="w-1 h-3.5 bg-primary animate-pulse ml-0.5 mt-0.5" />}
             </div>
@@ -138,7 +138,7 @@ function CallSimulationAnimationPreview() {
       {/* Footer message */}
       <div className="mt-2 text-center">
         <Badge variant="outline" className={cn(
-          "text-[9px] uppercase px-1.5 py-0 border-border/50 bg-background/50",
+          "w-40 justify-center text-[9px] uppercase px-1.5 py-0 border-border/50 bg-background/50",
           step === 7 && "border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-300 animate-pulse"
         )}>
           {step === 7 ? "Saved Successfully" : "Listen & Log Concurrently"}
@@ -857,9 +857,7 @@ export default function CallSimulationTest({
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-base font-semibold text-foreground">Incident log</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Complete the fields from the call audio. Tap a section to expand it.
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Listen once. Fill the form as you go.</p>
               </div>
               <FileText className="hidden h-5 w-5 text-muted-foreground sm:block" aria-hidden="true" />
             </div>
@@ -1168,8 +1166,8 @@ export default function CallSimulationTest({
             <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
                 {audioEnded
-                  ? `Audio finished. You have ${reviewTimeLeft}s to review or submit now.`
-                  : 'Listen to the full audio. You can type while it plays.'}
+                  ? `Review or submit: ${reviewTimeLeft}s left.`
+                  : 'Audio plays once. You can type while listening.'}
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 <Button onClick={completeRun} disabled={!audioEnded}>

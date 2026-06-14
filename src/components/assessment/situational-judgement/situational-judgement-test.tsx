@@ -36,8 +36,8 @@ type Scenario = {
 };
 
 type SjtContent = {
-  practiceScenarios?: Scenario[];
-  finalScenarios: Scenario[];
+  version?: string;
+  sjaRounds: Scenario[];
 };
 
 function SJTAnimationPreview() {
@@ -58,18 +58,18 @@ function SJTAnimationPreview() {
   let cursorActive = false;
 
   if (step === 1) {
-    cursorTop = '32%';
-    cursorLeft = '45%';
+    cursorTop = '48%';
+    cursorLeft = '83%';
   } else if (step === 2) {
-    cursorTop = '32%';
-    cursorLeft = '45%';
+    cursorTop = '48%';
+    cursorLeft = '83%';
     cursorActive = true;
   } else if (step === 3) {
-    cursorTop = '82%';
-    cursorLeft = '50%';
+    cursorTop = '83%';
+    cursorLeft = '83%';
   } else if (step === 4) {
-    cursorTop = '82%';
-    cursorLeft = '50%';
+    cursorTop = '83%';
+    cursorLeft = '83%';
     cursorActive = true;
   } else if (step === 5) {
     cursorTop = '50%';
@@ -96,45 +96,45 @@ function SJTAnimationPreview() {
         <div className="space-y-2">
           {/* Option A */}
           <div className={cn(
-            "relative flex items-center justify-between rounded border p-2.5 text-xs transition-all duration-300 select-none",
+            "relative flex min-h-10 items-center justify-between gap-2 rounded border p-2.5 text-xs transition-all duration-300 select-none",
             mostEffective === 'A'
               ? "border-green-500 bg-green-500/10 text-foreground dark:bg-green-500/5 font-semibold"
               : "border-border/50 bg-background/50 dark:bg-zinc-900/40"
           )}>
-            <span>A. Apologise immediately & arrange refund.</span>
-            {mostEffective === 'A' && (
-              <Badge className="bg-green-600 hover:bg-green-600 text-[8px] uppercase px-1.5 py-0">Most Effective</Badge>
-            )}
+            <span className="truncate">A. Apologise immediately & arrange refund.</span>
+            <Badge className={cn("shrink-0 bg-green-600 hover:bg-green-600 text-[8px] uppercase px-1.5 py-0", mostEffective !== 'A' && "invisible")}>
+              Most Effective
+            </Badge>
           </div>
 
           {/* Option B */}
-          <div className="relative flex items-center justify-between rounded border border-border/50 bg-background/50 p-2.5 text-xs dark:bg-zinc-900/40 select-none">
-            <span>B. Explain delay was due to weather.</span>
+          <div className="relative flex min-h-10 items-center justify-between gap-2 rounded border border-border/50 bg-background/50 p-2.5 text-xs dark:bg-zinc-900/40 select-none">
+            <span className="truncate">B. Explain delay was due to weather.</span>
           </div>
 
           {/* Option C */}
-          <div className="relative flex items-center justify-between rounded border border-border/50 bg-background/50 p-2.5 text-xs dark:bg-zinc-900/40 select-none">
-            <span>C. Tell the caller to track online.</span>
+          <div className="relative flex min-h-10 items-center justify-between gap-2 rounded border border-border/50 bg-background/50 p-2.5 text-xs dark:bg-zinc-900/40 select-none">
+            <span className="truncate">C. Tell the caller to track online.</span>
           </div>
 
           {/* Option D */}
           <div className={cn(
-            "relative flex items-center justify-between rounded border p-2.5 text-xs transition-all duration-300 select-none",
+            "relative flex min-h-10 items-center justify-between gap-2 rounded border p-2.5 text-xs transition-all duration-300 select-none",
             leastEffective === 'D'
               ? "border-red-500 bg-red-500/10 text-foreground dark:bg-red-500/5 font-semibold"
               : "border-border/50 bg-background/50 dark:bg-zinc-900/40"
           )}>
-            <span>D. Ignore the query entirely.</span>
-            {leastEffective === 'D' && (
-              <Badge className="bg-red-600 hover:bg-red-600 text-[8px] uppercase px-1.5 py-0">Least Effective</Badge>
-            )}
+            <span className="truncate">D. Ignore the query entirely.</span>
+            <Badge className={cn("shrink-0 bg-red-600 hover:bg-red-600 text-[8px] uppercase px-1.5 py-0", leastEffective !== 'D' && "invisible")}>
+              Least Effective
+            </Badge>
           </div>
         </div>
       </div>
 
       {/* Virtual Cursor */}
       <div 
-        className="absolute z-10 transition-all duration-700 ease-in-out pointer-events-none"
+        className="absolute z-10 -translate-x-1 -translate-y-1 transition-all duration-700 ease-in-out pointer-events-none"
         style={{ top: cursorTop, left: cursorLeft }}
       >
         <div className="relative">
@@ -645,18 +645,9 @@ export default function SituationalJudgementTest({
             <Progress value={timerProgress} className="mt-4 h-2.5" />
           </div>
 
-          <div className="mb-6 rounded-xl border border-border bg-card p-5 text-sm text-foreground shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
-            <h3 className="mb-2 font-semibold text-base">Candidate Task Screen Instruction</h3>
-            <p>Read the situation below.</p>
-            <p>Review all four actions carefully.</p>
-            <p className="mt-3 font-medium">Select:</p>
-            <ul className="mt-1 list-disc pl-5 space-y-1">
-              <li><strong>MOST Effective</strong> – the action you believe would be the most effective response.</li>
-              <li><strong>LEAST Effective</strong> – the action you believe would be the least effective response.</li>
-            </ul>
-            <p className="mt-3">You must select one MOST effective action and one LEAST effective action.</p>
-            <p>You cannot select the same action twice.</p>
-            <p className="mt-3 text-muted-foreground">Use your own judgement and consider professionalism, communication, empathy, responsibility, integrity and decision-making when making your choices.</p>
+          <div className="mb-6 rounded-xl border border-border bg-card p-4 text-sm shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <p className="font-semibold text-foreground">Pick one MOST effective and one LEAST effective action.</p>
+            <p className="mt-1 text-muted-foreground">They must be two different options.</p>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">

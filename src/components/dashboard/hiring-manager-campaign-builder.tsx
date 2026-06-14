@@ -37,7 +37,6 @@ interface CampaignBuilderProps {
   allowTypingAdvanced?: boolean;
   allowRemoteDelivery?: boolean;
   allowHybridDelivery?: boolean;
-  allowedAssessmentVersions?: string[];
 }
 
 type CreateCampaignResponse = {
@@ -84,10 +83,12 @@ const emptyDraft: CampaignDraft = {
 };
 
 const DEFAULT_ASSESSMENT_VERSION = "1.0.0";
-const ASSESSMENT_VERSION_LABELS: Record<string, string> = {
-  "1.0.0": "v1.0.0",
-  "1.5.0": "v1.5.0",
-};
+
+function getVersionOptions(assessment: HiringManagerAssessment) {
+  return assessment.availableVersions.length > 0
+    ? assessment.availableVersions
+    : [{ version: DEFAULT_ASSESSMENT_VERSION, title: `v${DEFAULT_ASSESSMENT_VERSION}`, description: null }];
+}
 
 function removeRecordKey<T>(record: Record<string, T>, key: string) {
   const next = { ...record };
@@ -134,7 +135,6 @@ export function HiringManagerCampaignBuilder({
   allowTypingAdvanced = false,
   allowRemoteDelivery = false,
   allowHybridDelivery = false,
-  allowedAssessmentVersions = [DEFAULT_ASSESSMENT_VERSION],
 }: CampaignBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -689,9 +689,9 @@ export function HiringManagerCampaignBuilder({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {allowedAssessmentVersions.map((version) => (
-                              <SelectItem key={version} value={version}>
-                                {ASSESSMENT_VERSION_LABELS[version] ?? `v${version}`}
+                            {getVersionOptions(assessment).map((version) => (
+                              <SelectItem key={version.version} value={version.version}>
+                                {version.title || `v${version.version}`}
                               </SelectItem>
                             ))}
                           </SelectContent>

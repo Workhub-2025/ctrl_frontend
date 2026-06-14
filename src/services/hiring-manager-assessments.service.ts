@@ -84,6 +84,12 @@ type AssessmentConfig = {
   evaluationRubric?: string | null;
 };
 
+export type AssessmentVersionOption = {
+  version: string;
+  title: string;
+  description: string | null;
+};
+
 export type HiringManagerAssessment = {
   id: string;
   documentId?: string;
@@ -100,6 +106,7 @@ export type HiringManagerAssessment = {
   isActive: boolean;
   passingScore: number | null;
   maxAttempts: number | null;
+  availableVersions: AssessmentVersionOption[];
 };
 
 const configMeta: Record<
@@ -306,7 +313,23 @@ function normalizeAssessment(item: unknown): HiringManagerAssessment | null {
     isActive: assessment.isActive ?? true,
     passingScore: assessment.passingScore ?? null,
     maxAttempts: assessment.maxAttempts ?? null,
+    availableVersions: [{ version: "1.0.0", title: "v1.0.0", description: null }],
   };
+}
+
+async function getAssessmentVersions(slug: string): Promise<AssessmentVersionOption[]> {
+  const response = await fetchStrapi<{ data?: AssessmentVersionOption[] }>(
+    `/assessment/${encodeURIComponent(slug)}/versions`
+  );
+
+  const versions = (response.data ?? []).filter(
+    (version): version is AssessmentVersionOption =>
+      Boolean(version?.version && version?.title)
+  );
+
+  return versions.length > 0
+    ? versions
+    : [{ version: "1.0.0", title: "v1.0.0", description: null }];
 }
 
 export async function getHiringManagerAssessments(): Promise<{
@@ -317,9 +340,26 @@ export async function getHiringManagerAssessments(): Promise<{
     const response = await fetchStrapi<StrapiAssessmentResponse>(
       "/assessments?populate[config][populate]=*&filters[isActive][$eq]=true&sort[0]=order:asc&sort[1]=displayName:asc"
     );
-    const assessments = (response.data ?? [])
+    const normalizedAssessments = (response.data ?? [])
       .map(normalizeAssessment)
       .filter((assessment): assessment is HiringManagerAssessment => Boolean(assessment));
+
+    const assessments = await Promise.all(
+      normalizedAssessments.map(async (assessment) => {
+        try {
+          return {
+            ...assessment,
+            availableVersions: await getAssessmentVersions(assessment.slug),
+          };
+        } catch (error) {
+          console.warn(
+            `[getHiringManagerAssessments] Failed to load versions for ${assessment.slug}`,
+            error
+          );
+          return assessment;
+        }
+      })
+    );
 
     if (assessments.length > 0) {
       return { assessments, error: null };

@@ -35,12 +35,13 @@ type Incident = {
 type PriorityRound = {
   id: string;
   title: string;
+  type?: 'practice' | 'test' | 'final';
   incidents: Incident[];
 };
 
 type PrioritisationContent = {
-  practiceRounds: PriorityRound[];
-  finalRounds: PriorityRound[];
+  version?: string;
+  pjaRounds: PriorityRound[];
 };
 
 function PrioritisationAnimationPreview() {
@@ -67,32 +68,32 @@ function PrioritisationAnimationPreview() {
   let cursorActive = false;
 
   if (step === 1) {
-    cursorTop = '28%';
-    cursorLeft = '30%';
+    cursorTop = '33%';
+    cursorLeft = '13%';
   } else if (step === 2) {
-    cursorTop = '28%';
-    cursorLeft = '30%';
+    cursorTop = '33%';
+    cursorLeft = '13%';
     cursorActive = true;
   } else if (step === 3) {
-    cursorTop = '70%';
-    cursorLeft = '30%';
+    cursorTop = '74%';
+    cursorLeft = '13%';
   } else if (step === 4) {
-    cursorTop = '70%';
-    cursorLeft = '30%';
+    cursorTop = '74%';
+    cursorLeft = '13%';
     cursorActive = true;
   } else if (step === 5) {
-    cursorTop = '28%';
-    cursorLeft = '70%';
+    cursorTop = '33%';
+    cursorLeft = '57%';
   } else if (step === 6) {
-    cursorTop = '28%';
-    cursorLeft = '70%';
+    cursorTop = '33%';
+    cursorLeft = '57%';
     cursorActive = true;
   } else if (step === 7) {
-    cursorTop = '70%';
-    cursorLeft = '70%';
+    cursorTop = '74%';
+    cursorLeft = '57%';
   } else if (step === 8) {
-    cursorTop = '70%';
-    cursorLeft = '70%';
+    cursorTop = '74%';
+    cursorLeft = '57%';
     cursorActive = true;
   } else if (step === 9) {
     cursorTop = '50%';
@@ -117,28 +118,28 @@ function PrioritisationAnimationPreview() {
           <div className="grid grid-cols-2 gap-2 bg-background/50 rounded-lg p-2 border border-border/40 min-h-[75px]">
             {card1InBank ? (
               <div className={cn(
-                "rounded border p-2 text-[10px] bg-background flex items-center gap-1.5 select-none transition-all duration-300",
+                "h-10 rounded border p-2 text-[10px] bg-background flex items-center gap-1.5 select-none transition-all duration-300",
                 isCard1Selected ? "border-primary ring-1 ring-primary/30" : "border-border/60"
               )}>
                 <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                 <span className="truncate font-medium text-foreground">A. Armed Robbery</span>
               </div>
             ) : (
-              <div className="rounded border border-dashed border-border/30 bg-muted/10 flex items-center justify-center text-[9px] text-muted-foreground/45 select-none">
+              <div className="h-10 rounded border border-dashed border-border/30 bg-muted/10 flex items-center justify-center text-[9px] text-muted-foreground/45 select-none">
                 Placed
               </div>
             )}
 
             {card2InBank ? (
               <div className={cn(
-                "rounded border p-2 text-[10px] bg-background flex items-center gap-1.5 select-none transition-all duration-300",
+                "h-10 rounded border p-2 text-[10px] bg-background flex items-center gap-1.5 select-none transition-all duration-300",
                 isCard2Selected ? "border-primary ring-1 ring-primary/30" : "border-border/60"
               )}>
                 <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                 <span className="truncate font-medium text-foreground">B. Noise Complaint</span>
               </div>
             ) : (
-              <div className="rounded border border-dashed border-border/30 bg-muted/10 flex items-center justify-center text-[9px] text-muted-foreground/45 select-none">
+              <div className="h-10 rounded border border-dashed border-border/30 bg-muted/10 flex items-center justify-center text-[9px] text-muted-foreground/45 select-none">
                 Placed
               </div>
             )}
@@ -151,7 +152,7 @@ function PrioritisationAnimationPreview() {
           <div className="grid grid-cols-2 gap-2">
             {/* Slot 1 */}
             <div className={cn(
-              "rounded border p-2 text-[10px] min-h-[50px] flex flex-col justify-center transition-all duration-300 select-none",
+              "h-[50px] rounded border p-2 text-[10px] flex flex-col justify-center transition-all duration-300 select-none",
               slot1Content 
                 ? "border-green-500/50 bg-green-500/5 text-foreground font-semibold" 
                 : "border-dashed border-border bg-background/30 text-muted-foreground/50 items-center justify-center text-[9px]"
@@ -168,7 +169,7 @@ function PrioritisationAnimationPreview() {
 
             {/* Slot 2 */}
             <div className={cn(
-              "rounded border p-2 text-[10px] min-h-[50px] flex flex-col justify-center transition-all duration-300 select-none",
+              "h-[50px] rounded border p-2 text-[10px] flex flex-col justify-center transition-all duration-300 select-none",
               slot2Content 
                 ? "border-green-500/50 bg-green-500/5 text-foreground font-semibold" 
                 : "border-dashed border-border bg-background/30 text-muted-foreground/50 items-center justify-center text-[9px]"
@@ -188,7 +189,7 @@ function PrioritisationAnimationPreview() {
 
       {/* Virtual Cursor */}
       <div 
-        className="absolute z-10 transition-all duration-700 ease-in-out pointer-events-none"
+        className="absolute z-10 -translate-x-1 -translate-y-1 transition-all duration-700 ease-in-out pointer-events-none"
         style={{ top: cursorTop, left: cursorLeft }}
       >
         <div className="relative">
@@ -622,19 +623,8 @@ export default function PrioritisationTest({
               <p className="mt-1 text-xl font-semibold text-foreground">
                 {activeRound.title}
               </p>
-              <div className="mt-2 max-w-2xl space-y-4 text-sm leading-6 text-muted-foreground">
-                <p>Review the six incidents below.</p>
-                <div>
-                  <p>Rank them from 1 to 6, with:</p>
-                  <ul className="ml-4 list-disc space-y-1 mt-1">
-                    <li>1 = Highest priority</li>
-                    <li>6 = Lowest priority</li>
-                  </ul>
-                </div>
-                <p>Each incident must have a different ranking.</p>
-                <p>
-                  Consider urgency, seriousness, vulnerability, immediacy, public safety and potential risk when deciding your order.
-                </p>
+              <div className="mt-2 max-w-2xl text-sm font-medium text-muted-foreground">
+                Rank every incident. 1 is highest priority; 6 is lowest priority.
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -658,9 +648,7 @@ export default function PrioritisationTest({
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">Incident bank</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Review the full incident details before placing a card.
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">Drag or tap incidents into the list.</p>
               </div>
               <Badge variant="outline">{availableIncidents.length} left</Badge>
             </div>
@@ -725,9 +713,7 @@ export default function PrioritisationTest({
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">Priority list</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Position 1 is the highest priority.
-                </p>
+                <p className="mt-1 text-sm text-muted-foreground">1 is highest priority.</p>
               </div>
               <Badge variant="outline">
                 {placedCount}/{activeRound.incidents.length} placed

@@ -14,6 +14,7 @@ export type IntegrityEventType =
   | "copy_attempt"
   | "paste_attempt"
   | "context_menu_attempt"
+  | "fullscreen_exit"
   | "heartbeat";
 
 interface IntegrityEventPayload {
