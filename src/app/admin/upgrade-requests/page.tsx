@@ -43,7 +43,7 @@ const FEATURES = [
   { key: "advancedPja", label: "Advanced PJA scoring", group: "Prioritisation" },
   { key: "extremePja", label: "Extreme PJA scoring", group: "Prioritisation" },
   { key: "typingIntermediate", label: "Intermediate typing", group: "Typing" },
-  { key: "typingAdvanced", label: "Advanced typing", group: "Typing" },
+  { key: "typingExtreme", label: "Extreme typing", group: "Typing" },
 ] as const;
 
 const ASSESSMENT_VERSION_ENTITLEMENTS = [

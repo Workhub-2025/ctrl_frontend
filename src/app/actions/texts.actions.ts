@@ -169,7 +169,7 @@ export const createTypingText = async (data: {
     title?: string;
     text: string;
     type: 'practice' | 'test';
-    difficulty: 'Base' | 'Intermediate' | 'Advanced';
+    difficulty: 'Base' | 'Intermediate' | 'Extreme';
     assessmentVersion?: string;
     isActive?: boolean;
 }): Promise<{ success: boolean; data?: ITypingText; error?: string }> => {
@@ -232,7 +232,7 @@ export const updateTypingText = async (
         title?: string;
         text?: string;
         type?: 'practice' | 'test';
-        difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+        difficulty?: 'Base' | 'Intermediate' | 'Extreme';
         assessmentVersion?: string;
         isActive?: boolean;
     }

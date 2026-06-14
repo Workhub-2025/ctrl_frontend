@@ -13,7 +13,7 @@ export default async function CreateHiringManagerCampaignPage() {
   let allowExtremePja = false;
   let allowAdvancedPja = false;
   let allowTypingIntermediate = false;
-  let allowTypingAdvanced = false;
+  let allowTypingExtreme = false;
   let allowRemoteDelivery = false;
   let allowHybridDelivery = false;
 
@@ -27,7 +27,7 @@ export default async function CreateHiringManagerCampaignPage() {
       allowExtremePja = features.extremePja === true;
       allowAdvancedPja = features.advancedPja === true;
       allowTypingIntermediate = features.typingIntermediate === true;
-      allowTypingAdvanced = features.typingAdvanced === true;
+      allowTypingExtreme = features.typingExtreme === true || features.typingAdvanced === true;
       allowRemoteDelivery = features.deliveryRemote === true;
       allowHybridDelivery = features.deliveryHybrid === true;
     }
@@ -64,7 +64,7 @@ export default async function CreateHiringManagerCampaignPage() {
         allowExtremePja={allowExtremePja}
         allowAdvancedPja={allowAdvancedPja}
         allowTypingIntermediate={allowTypingIntermediate}
-        allowTypingAdvanced={allowTypingAdvanced}
+        allowTypingExtreme={allowTypingExtreme}
         allowRemoteDelivery={allowRemoteDelivery}
         allowHybridDelivery={allowHybridDelivery}
       />

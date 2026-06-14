@@ -34,7 +34,7 @@ interface CampaignBuilderProps {
   allowExtremePja?: boolean;
   allowAdvancedPja?: boolean;
   allowTypingIntermediate?: boolean;
-  allowTypingAdvanced?: boolean;
+  allowTypingExtreme?: boolean;
   allowRemoteDelivery?: boolean;
   allowHybridDelivery?: boolean;
 }
@@ -63,7 +63,7 @@ type CampaignDraft = {
   assessmentSlugs: string[];
   assessmentWeights: Record<string, number>;
   assessmentVersions: Record<string, string>;
-  typingDifficulty: "Base" | "Intermediate" | "Advanced";
+  typingDifficulty: "Base" | "Intermediate" | "Extreme";
   prioritisationScoringMode: "Basic" | "Advanced" | "Extreme";
 };
 
@@ -132,7 +132,7 @@ export function HiringManagerCampaignBuilder({
   allowExtremePja = true,
   allowAdvancedPja = false,
   allowTypingIntermediate = true,
-  allowTypingAdvanced = false,
+  allowTypingExtreme = false,
   allowRemoteDelivery = false,
   allowHybridDelivery = false,
 }: CampaignBuilderProps) {
@@ -643,10 +643,10 @@ export function HiringManagerCampaignBuilder({
                             Typing level
                           </Label>
                           <div className="mt-2 grid gap-1.5">
-                            {(["Base", "Intermediate", "Advanced"] as const).map((level) => {
+                            {(["Base", "Intermediate", "Extreme"] as const).map((level) => {
                               const isIntermediate = level === "Intermediate";
-                              const isAdvanced = level === "Advanced";
-                              const isDisabled = (isIntermediate && !allowTypingIntermediate) || (isAdvanced && !allowTypingAdvanced);
+                              const isExtreme = level === "Extreme";
+                              const isDisabled = (isIntermediate && !allowTypingIntermediate) || (isExtreme && !allowTypingExtreme);
                               const isActive = draft.typingDifficulty === level;
                               return (
                                 <button

@@ -9,7 +9,7 @@ export const TypingTextSchema = z.object({
     assessmentVersion: z.string().optional(),
     isActive: z.boolean().optional(),
     type: z.enum(["practice", "test"]).optional(),
-    difficulty: z.enum(["Base", "Intermediate", "Advanced"]).optional(),
+    difficulty: z.enum(["Base", "Intermediate", "Extreme"]).optional(),
     text: z.string().optional()
 })
 

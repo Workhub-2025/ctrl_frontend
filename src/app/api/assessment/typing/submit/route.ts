@@ -30,7 +30,7 @@ interface TypingSubmitPayload {
     completedAt: string;
     assessmentId?: string | null;
     candidateSessionDocumentId?: string | null;
-    difficulty?: "Base" | "Intermediate" | "Advanced";
+    difficulty?: "Base" | "Intermediate" | "Extreme";
     assessmentVersion?: string;
 }
 

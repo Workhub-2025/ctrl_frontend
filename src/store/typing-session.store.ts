@@ -10,7 +10,7 @@ export type TypingRun = {
     difficulty?: TypingDifficulty;
 };
 
-export type TypingDifficulty = 'Base' | 'Intermediate' | 'Advanced';
+export type TypingDifficulty = 'Base' | 'Intermediate' | 'Extreme';
 
 export type TypingConfig = {
     roundCount: number;

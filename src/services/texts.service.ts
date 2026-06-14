@@ -13,7 +13,7 @@ export interface FindTextsParams {
     search?: string;
     assessmentVersion?: string;
     type?: 'practice' | 'test';
-    difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+    difficulty?: 'Base' | 'Intermediate' | 'Extreme';
     isActive?: boolean;
     filters?: any;
     sort?: string | string[];
@@ -23,7 +23,7 @@ export interface FindTextsParams {
 export interface CreateTextData {
     text: string;
     type: 'practice' | 'test';
-    difficulty: 'Base' | 'Intermediate' | 'Advanced';
+    difficulty: 'Base' | 'Intermediate' | 'Extreme';
     title?: string;
     assessmentVersion?: string;
     isActive?: boolean;
@@ -32,7 +32,7 @@ export interface CreateTextData {
 export interface TextUpdateData {
     text?: string;
     type?: 'practice' | 'test';
-    difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+    difficulty?: 'Base' | 'Intermediate' | 'Extreme';
     title?: string;
     assessmentVersion?: string;
     isActive?: boolean;
