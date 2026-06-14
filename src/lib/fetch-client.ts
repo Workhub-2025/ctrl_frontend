@@ -144,12 +144,36 @@ export const fetchClient = async (
             headerRecord['x-ctrl-tenant'] = tenant;
         }
 
+        // Determine default cache/revalidate values for GET requests
+        let nextOptions = (options as any).next || undefined;
+        let cacheOption = options.cache || undefined;
+
+        if (method === 'get') {
+            const isStaticResource =
+                url.includes('/a-typing-text') ||
+                url.includes('/a-sja-question') ||
+                url.includes('/a-pja-question') ||
+                url.includes('/a-audio-call') ||
+                url.includes('/texts') ||
+                url.includes('/question');
+
+            if (isStaticResource) {
+                // Cache static test content for 5 minutes by default
+                nextOptions = { revalidate: 300, ...nextOptions };
+            } else if (url.includes('/candidate-sessions/me')) {
+                // Cache active candidate applications for 15 seconds to deduplicate page transitions
+                nextOptions = { revalidate: 15, ...nextOptions };
+            }
+        }
+
         // Prepare fetch options
         const fetchOptions: RequestInit = {
             ...options,
             method: method.toUpperCase(),
             headers,
             credentials: 'include', // Enable credentials for CSRF cookies
+            ...(cacheOption ? { cache: cacheOption } : {}),
+            ...(nextOptions ? { next: nextOptions } as any : {}),
         };
 
         // Make request with timeout
