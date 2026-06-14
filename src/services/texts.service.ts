@@ -11,8 +11,10 @@ export interface FindTextsParams {
     page?: number;
     pageSize?: number;
     search?: string;
+    assessmentVersion?: string;
     type?: 'practice' | 'test';
     difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+    isActive?: boolean;
     filters?: any;
     sort?: string | string[];
     populate?: any;
@@ -22,12 +24,18 @@ export interface CreateTextData {
     text: string;
     type: 'practice' | 'test';
     difficulty: 'Base' | 'Intermediate' | 'Advanced';
+    title?: string;
+    assessmentVersion?: string;
+    isActive?: boolean;
 }
 
 export interface TextUpdateData {
     text?: string;
     type?: 'practice' | 'test';
     difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+    title?: string;
+    assessmentVersion?: string;
+    isActive?: boolean;
 }
 
 export default class TextsService {
@@ -47,7 +55,29 @@ export default class TextsService {
             'fetching texts',
             async () => {
                 const client = await getServerStrapiClient();
-                const queryParams = BaseServiceHelper.toStrapiQueryParams(params, this.SERVICE_CONFIG);
+                const {
+                    assessmentVersion,
+                    search,
+                    type,
+                    difficulty,
+                    isActive,
+                    filters,
+                    ...rest
+                } = params;
+                const searchFilters = search
+                    ? BaseServiceHelper.buildSearchFilters(search, this.SERVICE_CONFIG.searchFields || [])
+                    : {};
+                const queryParams = BaseServiceHelper.toStrapiQueryParams({
+                    ...rest,
+                    filters: {
+                        ...searchFilters,
+                        ...filters,
+                        ...(assessmentVersion ? { assessmentVersion: { $eq: assessmentVersion } } : {}),
+                        ...(type ? { type: { $eq: type } } : {}),
+                        ...(difficulty ? { difficulty: { $eq: difficulty } } : {}),
+                        ...(isActive !== undefined ? { isActive: { $eq: isActive } } : {}),
+                    },
+                }, this.SERVICE_CONFIG);
                 return client.collection(this.COLLECTION).find(queryParams) as unknown as Promise<PaginatedResponse<ITypingText>>;
             }
         );

@@ -16,6 +16,7 @@ export default async function CreateHiringManagerCampaignPage() {
   let allowTypingAdvanced = false;
   let allowRemoteDelivery = false;
   let allowHybridDelivery = false;
+  let allowedAssessmentVersions = ["1.0.0"];
 
   try {
     const { getServerStrapiClient } = await import("@/lib/strapi");
@@ -30,6 +31,10 @@ export default async function CreateHiringManagerCampaignPage() {
       allowTypingAdvanced = features.typingAdvanced === true;
       allowRemoteDelivery = features.deliveryRemote === true;
       allowHybridDelivery = features.deliveryHybrid === true;
+      allowedAssessmentVersions = [
+        "1.0.0",
+        ...(features.assessmentVersion150 === true ? ["1.5.0"] : []),
+      ];
     }
   } catch (err) {
     console.error("[CreateHiringManagerCampaignPage] Failed to fetch client features", err);
@@ -67,6 +72,7 @@ export default async function CreateHiringManagerCampaignPage() {
         allowTypingAdvanced={allowTypingAdvanced}
         allowRemoteDelivery={allowRemoteDelivery}
         allowHybridDelivery={allowHybridDelivery}
+        allowedAssessmentVersions={allowedAssessmentVersions}
       />
     </div>
   );

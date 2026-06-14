@@ -62,6 +62,7 @@ type CampaignApproval = {
   candidateCount: number;
   sessions: number;
   assessmentStack: string[];
+  assessmentSettings?: Record<string, unknown> | null;
   createdBy: string;
   createdAt?: string;
 };
@@ -103,6 +104,27 @@ type ClientOverviewData = {
   accessCodes: ClientAccessCode[];
   hiringManagers: ClientHiringManager[];
 };
+
+function getAssessmentSettingSummary(settings?: Record<string, unknown> | null) {
+  if (!settings || typeof settings !== "object") return [];
+
+  return Object.entries(settings)
+    .filter(([key, value]) => key !== "weights" && value && typeof value === "object")
+    .map(([key, value]) => {
+      const config = value as { version?: unknown; difficulty?: unknown; scoringMode?: unknown };
+      const title = key
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+      return {
+        key,
+        label: `${title}: v${String(config.version ?? "1.0.0")}`,
+        detail: [
+          config.difficulty ? String(config.difficulty) : null,
+          config.scoringMode ? `${String(config.scoringMode)} scoring` : null,
+        ].filter(Boolean).join(" · "),
+      };
+    });
+}
 
 const OVERVIEW_CACHE_TTL_MS = 30_000;
 let overviewCache: { data: ClientOverviewData; timestamp: number } | null = null;
@@ -708,6 +730,19 @@ export function ClientDashboardContent() {
                         ))
                       )}
                     </div>
+                    {getAssessmentSettingSummary(campaign.assessmentSettings).length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {getAssessmentSettingSummary(campaign.assessmentSettings).map((item) => (
+                          <span
+                            key={item.key}
+                            className="rounded-lg border border-primary/15 bg-primary/5 px-2.5 py-1 text-[10px] font-semibold text-primary"
+                            title={item.detail || undefined}
+                          >
+                            {item.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

@@ -33,10 +33,17 @@ export const AudioCallSchema = z.object({
 
     // Audio Call specific fields from schema
     title: z.string().optional().nullable(),
+    assessmentVersion: z.string().optional(),
+    difficulty: z.enum(["Base", "Intermediate", "Advanced"]).optional(),
+    isActive: z.boolean().optional(),
+    type: z.enum(["practice", "final"]).optional(),
     description: z.string().optional().nullable(),
     transcription: z.string().optional().nullable(),
     file: AudioFileSchema.optional().nullable(),
     rubric: z.string().optional().nullable(),
+    scenarioKey: z.string().optional().nullable(),
+    audioUrl: z.string().optional().nullable(),
+    criteria: z.any().optional().nullable(),
 });
 
 // TypeScript interface inferred from schema
@@ -45,28 +52,49 @@ export type IAudioCall = z.infer<typeof AudioCallSchema>;
 // Type for creating new audio calls
 export interface CreateAudioCallData {
     title?: string;
+    assessmentVersion?: string;
+    difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+    isActive?: boolean;
+    type?: 'practice' | 'final';
     description?: string;
     transcription?: string;
     file?: File | string; // File object for upload or file ID/URL
     rubric?: string;
+    scenarioKey?: string;
+    audioUrl?: string;
+    criteria?: unknown;
 }
 
 // Type for updating audio calls
 export interface UpdateAudioCallData {
     title?: string;
+    assessmentVersion?: string;
+    difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+    isActive?: boolean;
+    type?: 'practice' | 'final';
     description?: string;
     transcription?: string;
     file?: File | string; // File object for upload or file ID/URL
     rubric?: string;
+    scenarioKey?: string;
+    audioUrl?: string;
+    criteria?: unknown;
 }
 
 // Type for audio call file upload
 export interface AudioCallFileUpload {
     file: File;
     title?: string;
+    assessmentVersion?: string;
+    difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+    isActive?: boolean;
+    type?: 'practice' | 'final';
     description?: string;
     transcription?: string;
     rubric?: string;
+    scenarioKey?: string;
+    audioUrl?: string;
+    criteria?: unknown;
 }
 
 // Type guard to check if an object is an audio call
@@ -87,10 +115,17 @@ export const validateAudioCall = (data: unknown): IAudioCall => {
 export const validateCreateAudioCallData = (data: unknown): CreateAudioCallData => {
     const createSchema = z.object({
         title: z.string().optional(),
+        assessmentVersion: z.string().optional(),
+        difficulty: z.enum(["Base", "Intermediate", "Advanced"]).optional(),
+        isActive: z.boolean().optional(),
+        type: z.enum(["practice", "final"]).optional(),
         description: z.string().optional(),
         transcription: z.string().optional(),
         file: z.union([z.instanceof(File), z.string()]).optional(),
         rubric: z.string().optional(),
+        scenarioKey: z.string().optional(),
+        audioUrl: z.string().optional(),
+        criteria: z.any().optional(),
     });
 
     return createSchema.parse(data);
@@ -99,10 +134,17 @@ export const validateCreateAudioCallData = (data: unknown): CreateAudioCallData 
 export const validateUpdateAudioCallData = (data: unknown): UpdateAudioCallData => {
     const updateSchema = z.object({
         title: z.string().optional(),
+        assessmentVersion: z.string().optional(),
+        difficulty: z.enum(["Base", "Intermediate", "Advanced"]).optional(),
+        isActive: z.boolean().optional(),
+        type: z.enum(["practice", "final"]).optional(),
         description: z.string().optional(),
         transcription: z.string().optional(),
         file: z.union([z.instanceof(File), z.string()]).optional(),
         rubric: z.string().optional(),
+        scenarioKey: z.string().optional(),
+        audioUrl: z.string().optional(),
+        criteria: z.any().optional(),
     });
 
     return updateSchema.parse(data);

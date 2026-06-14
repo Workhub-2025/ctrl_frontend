@@ -31,6 +31,7 @@ interface TypingSubmitPayload {
     assessmentId?: string | null;
     candidateSessionDocumentId?: string | null;
     difficulty?: "Base" | "Intermediate" | "Advanced";
+    assessmentVersion?: string;
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -142,6 +143,7 @@ export async function POST(request: Request) {
             completedAt,
             candidateSessionDocumentId,
             difficulty,
+            assessmentVersion,
         } = validation.data;
 
         // 4. Persist through the same assessment submission endpoint used by the
@@ -162,6 +164,7 @@ export async function POST(request: Request) {
                 rawData: {
                     assessmentType: "typing",
                     difficulty,
+                    assessmentVersion,
                     rounds: assessmentRuns.map((r) => ({
                         runIndex: r.runIndex,
                         wpm: r.wpm,

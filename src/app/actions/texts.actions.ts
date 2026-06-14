@@ -166,9 +166,12 @@ export const createTextAction = async (textData: CreateTextData): Promise<Action
  * Legacy function to maintain backward compatibility
  */
 export const createTypingText = async (data: {
+    title?: string;
     text: string;
     type: 'practice' | 'test';
     difficulty: 'Base' | 'Intermediate' | 'Advanced';
+    assessmentVersion?: string;
+    isActive?: boolean;
 }): Promise<{ success: boolean; data?: ITypingText; error?: string }> => {
     const result = await createTextAction(data);
     return result;
@@ -226,9 +229,12 @@ export const updateTextAction = async (
 export const updateTypingText = async (
     id: string,
     data: {
+        title?: string;
         text?: string;
         type?: 'practice' | 'test';
         difficulty?: 'Base' | 'Intermediate' | 'Advanced';
+        assessmentVersion?: string;
+        isActive?: boolean;
     }
 ): Promise<{ success: boolean; data?: ITypingText; error?: string }> => {
     const result = await updateTextAction(id, data);

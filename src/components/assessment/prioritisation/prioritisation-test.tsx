@@ -41,6 +41,11 @@ type PrioritisationContent = {
   finalRounds: PriorityRound[];
 };
 
+type AssessmentSessionConfig = {
+  version?: string;
+  difficulty?: string;
+};
+
 type Phase =
   | 'landing'
   | 'rules'
@@ -118,6 +123,7 @@ export default function PrioritisationTest({
   const [draggingIncidentId, setDraggingIncidentId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const startedAtRef = useRef<string | null>(null);
+  const sessionConfigRef = useRef<AssessmentSessionConfig>({});
 
   const activeMode: 'practice' | 'final' =
     phase === 'final-round' || phase === 'submitting' || phase === 'submitted'
@@ -153,6 +159,7 @@ export default function PrioritisationTest({
           const practiceRounds = sessionData.runs.filter((r) => r.type === 'practice');
           const finalRounds = sessionData.runs.filter((r) => r.type === 'test');
           setContent({ practiceRounds, finalRounds });
+          sessionConfigRef.current = sessionData.config ?? {};
           return;
         }
       } catch (err) {
@@ -403,6 +410,8 @@ export default function PrioritisationTest({
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
             candidateSessionDocumentId,
+            assessmentVersion: sessionConfigRef.current.version,
+            difficulty: sessionConfigRef.current.difficulty,
           }),
         });
 

@@ -17,7 +17,8 @@ export type SjaSessionData = {
     runs: SjaRun[];
     config?: {
         questionCount: number;
-        category: string;
+        version?: string;
+        difficulty?: string;
     };
 };
 

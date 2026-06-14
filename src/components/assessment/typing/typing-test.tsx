@@ -414,6 +414,7 @@ export default function TypingTest({
             assessmentId: assessmentIdRef.current,
             candidateSessionDocumentId,
             difficulty: configRef.current.difficulty,
+            assessmentVersion: configRef.current.version,
           }),
         });
 

@@ -38,6 +38,11 @@ type SjtContent = {
   finalScenarios: Scenario[];
 };
 
+type AssessmentSessionConfig = {
+  version?: string;
+  difficulty?: string;
+};
+
 type Phase = 'landing' | 'rules' | 'scenario' | 'submitting' | 'submitted';
 
 type SjtResponse = {
@@ -88,6 +93,7 @@ export default function SituationalJudgementTest({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(SJT_DURATION_SECONDS);
   const startedAtRef = useRef<string | null>(null);
+  const sessionConfigRef = useRef<AssessmentSessionConfig>({});
 
   const scenarios = content.finalScenarios;
   const activeScenario = scenarios[scenarioIndex] ?? scenarios[0] ?? fallbackContent.finalScenarios[0];
@@ -105,6 +111,7 @@ export default function SituationalJudgementTest({
         if (cancelled) return;
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
           setContent({ finalScenarios: sessionData.runs });
+          sessionConfigRef.current = sessionData.config ?? {};
           return;
         }
       } catch (err) {
@@ -196,6 +203,8 @@ export default function SituationalJudgementTest({
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
             candidateSessionDocumentId,
+            assessmentVersion: sessionConfigRef.current.version,
+            difficulty: sessionConfigRef.current.difficulty,
           }),
         });
 

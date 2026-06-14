@@ -14,7 +14,7 @@ type PrioritisationRound = {
 };
 
 function validatePayload(body: unknown):
-  | { valid: true; rounds: PrioritisationRound[]; startedAt: string; completedAt: string; candidateSessionDocumentId?: string | null }
+  | { valid: true; rounds: PrioritisationRound[]; startedAt: string; completedAt: string; candidateSessionDocumentId?: string | null; assessmentVersion?: string; difficulty?: string }
   | { valid: false; error: string } {
   if (!body || typeof body !== "object") {
     return { valid: false, error: "Request body must be a JSON object" };
@@ -51,6 +51,8 @@ function validatePayload(body: unknown):
       typeof value.candidateSessionDocumentId === "string"
         ? value.candidateSessionDocumentId
         : null,
+    assessmentVersion: typeof value.assessmentVersion === "string" ? value.assessmentVersion : undefined,
+    difficulty: typeof value.difficulty === "string" ? value.difficulty : undefined,
   };
 }
 
@@ -106,6 +108,8 @@ export async function POST(request: Request) {
         candidateSessionDocumentId: validation.candidateSessionDocumentId,
         rawData: {
           assessmentType: "prioritisation",
+          assessmentVersion: validation.assessmentVersion,
+          difficulty: validation.difficulty,
           rounds: validation.rounds,
         },
       }),

@@ -10,7 +10,7 @@ export default class AudioCallService {
     private static readonly COLLECTION = 'a-audio-calls';
     private static readonly SERVICE_CONFIG: ServiceConfig = {
         serviceName: 'AudioCallService',
-        searchFields: ['title', 'description', 'transcription', 'rubric'],
+        searchFields: ['title', 'description', 'transcription', 'rubric', 'scenarioKey'],
         defaultSort: 'createdAt:desc'
     };
 
@@ -73,9 +73,16 @@ export default class AudioCallService {
                 const entryData = Object.fromEntries(
                     Object.entries({
                         title: audioCallData.title,
+                        assessmentVersion: audioCallData.assessmentVersion ?? '1.0.0',
+                        difficulty: audioCallData.difficulty ?? 'Base',
+                        isActive: audioCallData.isActive ?? true,
+                        type: audioCallData.type ?? 'final',
                         description: audioCallData.description ?? '',
                         transcription: audioCallData.transcription,
                         rubric: audioCallData.rubric,
+                        scenarioKey: audioCallData.scenarioKey,
+                        audioUrl: audioCallData.audioUrl,
+                        criteria: audioCallData.criteria,
                         file: uploadedFileId,
                     }).filter(([, v]) => v !== undefined)
                 );
@@ -125,9 +132,16 @@ export default class AudioCallService {
                 const updateData = Object.fromEntries(
                     Object.entries({
                         title: audioCallData.title,
+                        assessmentVersion: audioCallData.assessmentVersion,
+                        difficulty: audioCallData.difficulty,
+                        isActive: audioCallData.isActive,
+                        type: audioCallData.type,
                         description: audioCallData.description ?? '',
                         transcription: audioCallData.transcription,
                         rubric: audioCallData.rubric,
+                        scenarioKey: audioCallData.scenarioKey,
+                        audioUrl: audioCallData.audioUrl,
+                        criteria: audioCallData.criteria,
                         file: uploadedFiles[0].id,
                     }).filter(([, v]) => v !== undefined)
                 );

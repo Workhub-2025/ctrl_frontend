@@ -26,7 +26,8 @@ export type PjaSessionData = {
     runs: PjaRound[];
     config?: {
         roundCount: number;
-        category: string;
+        version?: string;
+        difficulty?: string;
     };
 };
 

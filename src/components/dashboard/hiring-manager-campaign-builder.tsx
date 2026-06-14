@@ -37,6 +37,7 @@ interface CampaignBuilderProps {
   allowTypingAdvanced?: boolean;
   allowRemoteDelivery?: boolean;
   allowHybridDelivery?: boolean;
+  allowedAssessmentVersions?: string[];
 }
 
 type CreateCampaignResponse = {
@@ -62,6 +63,7 @@ type CampaignDraft = {
   notes: string;
   assessmentSlugs: string[];
   assessmentWeights: Record<string, number>;
+  assessmentVersions: Record<string, string>;
   typingDifficulty: "Base" | "Intermediate" | "Advanced";
   prioritisationScoringMode: "Basic" | "Advanced" | "Extreme";
 };
@@ -76,9 +78,22 @@ const emptyDraft: CampaignDraft = {
   notes: "",
   assessmentSlugs: [],
   assessmentWeights: {},
+  assessmentVersions: {},
   typingDifficulty: "Base",
   prioritisationScoringMode: "Basic",
 };
+
+const DEFAULT_ASSESSMENT_VERSION = "1.0.0";
+const ASSESSMENT_VERSION_LABELS: Record<string, string> = {
+  "1.0.0": "v1.0.0",
+  "1.5.0": "v1.5.0",
+};
+
+function removeRecordKey<T>(record: Record<string, T>, key: string) {
+  const next = { ...record };
+  delete next[key];
+  return next;
+}
 
 function formatTotalDuration(seconds: number): string {
   if (!seconds) {
@@ -119,6 +134,7 @@ export function HiringManagerCampaignBuilder({
   allowTypingAdvanced = false,
   allowRemoteDelivery = false,
   allowHybridDelivery = false,
+  allowedAssessmentVersions = [DEFAULT_ASSESSMENT_VERSION],
 }: CampaignBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -139,9 +155,6 @@ export function HiringManagerCampaignBuilder({
   const totalDurationSeconds = selectedAssessments.reduce(
     (total, assessment) => total + (assessment.durationSeconds ?? 0),
     0
-  );
-  const typingAssessment = selectedAssessments.find(
-    (assessment) => assessment.slug === "typing"
   );
   const assessmentWeightTotal = selectedAssessments.reduce(
     (total, assessment) => total + (draft.assessmentWeights[assessment.slug] ?? 0),
@@ -199,6 +212,12 @@ export function HiringManagerCampaignBuilder({
         ...current,
         assessmentSlugs,
         assessmentWeights: buildEqualWeights(assessmentSlugs),
+        assessmentVersions: exists
+          ? removeRecordKey(current.assessmentVersions, slug)
+          : {
+              ...current.assessmentVersions,
+              [slug]: DEFAULT_ASSESSMENT_VERSION,
+            },
       };
     });
     setSavedMessage(null);
@@ -298,6 +317,30 @@ export function HiringManagerCampaignBuilder({
 
     setIsSaving(true);
     try {
+      const perAssessmentSettings = selectedAssessments.reduce<Record<string, Record<string, unknown>>>(
+        (settings, assessment) => {
+          const version = draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION;
+          settings[assessment.slug] = {
+            version,
+            difficulty: assessment.slug === "typing" ? draft.typingDifficulty : "Base",
+            ...(assessment.slug === "typing"
+              ? {
+                  durationSeconds: 60,
+                  practiceRuns: 1,
+                  assessmentRuns: 3,
+                }
+              : {}),
+            ...(assessment.slug === "prioritisation"
+              ? {
+                  scoringMode: draft.prioritisationScoringMode,
+                }
+              : {}),
+          };
+          return settings;
+        },
+        {}
+      );
+
       const response = await fetch("/api/hiring-manager/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -326,23 +369,7 @@ export function HiringManagerCampaignBuilder({
               },
               {}
             ),
-            ...(typingAssessment
-              ? {
-                  typing: {
-                    difficulty: draft.typingDifficulty,
-                    durationSeconds: 60,
-                    practiceRuns: 1,
-                    assessmentRuns: 3,
-                  },
-                }
-              : {}),
-            ...(selectedAssessments.find((a) => a.slug === "prioritisation")
-              ? {
-                  prioritisation: {
-                    scoringMode: draft.prioritisationScoringMode,
-                  },
-                }
-              : {}),
+            ...perAssessmentSettings,
           },
         }),
       });
@@ -642,6 +669,34 @@ export function HiringManagerCampaignBuilder({
                           </div>
                         </div>
                       )}
+                      <div className="mt-3 space-y-2">
+                        <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                          Data version
+                        </Label>
+                        <Select
+                          value={draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION}
+                          onValueChange={(value) =>
+                            setDraft((current) => ({
+                              ...current,
+                              assessmentVersions: {
+                                ...current.assessmentVersions,
+                                [assessment.slug]: value,
+                              },
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="h-9 rounded-xl border-white/10 bg-white/[0.02] text-xs text-slate-100 focus:ring-2 focus:ring-primary">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allowedAssessmentVersions.map((version) => (
+                              <SelectItem key={version} value={version}>
+                                {ASSESSMENT_VERSION_LABELS[version] ?? `v${version}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       {assessment.slug === "prioritisation" && (
                         <div className="mt-3 space-y-2">
                           <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">

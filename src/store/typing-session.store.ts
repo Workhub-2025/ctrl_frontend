@@ -18,6 +18,7 @@ export type TypingConfig = {
     minWpm: number;
     minAccuracy: number;
     difficulty: TypingDifficulty;
+    version: string;
 };
 
 export type TypingSessionData = {
@@ -37,6 +38,7 @@ export const DEFAULT_TYPING_CONFIG: TypingConfig = {
     minWpm: 32,
     minAccuracy: 90,
     difficulty: 'Base',
+    version: '1.0.0',
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────

@@ -62,6 +62,7 @@ export async function initTypingSession(candidateSessionDocumentId?: string | nu
             config: {
                 ...body.config,
                 difficulty: body.config.difficulty ?? DEFAULT_TYPING_CONFIG.difficulty,
+                version: body.config.version ?? DEFAULT_TYPING_CONFIG.version,
             },
         };
     } catch (err) {

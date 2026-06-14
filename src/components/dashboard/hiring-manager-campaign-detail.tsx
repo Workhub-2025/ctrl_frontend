@@ -39,6 +39,26 @@ type HiringManagerCampaignDetailProps = {
   campaignId: string;
 };
 
+function getAssessmentVersionSummary(settings?: Record<string, unknown> | null) {
+  if (!settings || typeof settings !== "object") return [];
+
+  return Object.entries(settings)
+    .filter(([key, value]) => key !== "weights" && value && typeof value === "object")
+    .map(([key, value]) => {
+      const config = value as { version?: unknown; difficulty?: unknown; scoringMode?: unknown };
+      const label = key.replace(/-/g, " ");
+      const detail = [
+        config.difficulty ? String(config.difficulty) : null,
+        config.scoringMode ? `${String(config.scoringMode)} scoring` : null,
+      ].filter(Boolean).join(" · ");
+      return {
+        key,
+        label: `${label} v${String(config.version ?? "1.0.0")}`,
+        detail,
+      };
+    });
+}
+
 export function HiringManagerCampaignDetailView({
   campaignId,
 }: HiringManagerCampaignDetailProps) {
@@ -263,6 +283,15 @@ export function HiringManagerCampaignDetailView({
                 );
               })
             )}
+            {getAssessmentVersionSummary(campaign.assessmentSettings).map((item) => (
+              <span
+                key={item.key}
+                className="inline-flex items-center rounded-lg border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-semibold capitalize text-primary"
+                title={item.detail || undefined}
+              >
+                {item.label}
+              </span>
+            ))}
           </CardContent>
         </Card>
 

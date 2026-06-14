@@ -16,8 +16,9 @@ export type CallSimulationSessionData = {
     assessmentId: string | null;
     runs: CallSimulationRun[];
     config?: {
-        category: string;
         callCount: number;
+        version?: string;
+        difficulty?: string;
     };
 };
 

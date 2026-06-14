@@ -35,6 +35,7 @@ type RawCampaign = {
   approvalStatus?: "pending" | "approved" | "rejected";
   assessmentMode?: "in_person" | "remote" | "hybrid";
   vacancyCount?: number | null;
+  assessmentSettings?: Record<string, unknown> | null;
   createdAt?: string;
   approvalNote?: string | null;
   assessments?: RawAssessment[];
@@ -162,6 +163,7 @@ function normalizeCampaign(campaign: RawCampaign): ClientCampaignApprovalItem {
     candidateCount: campaign.vacancyCount ?? candidateSessions.length,
     sessions: assessmentSessions.length,
     assessmentStack,
+    assessmentSettings: campaign.assessmentSettings ?? null,
     nextMilestone:
       campaign.approvalStatus === "pending"
         ? "Approve before sessions can be created"

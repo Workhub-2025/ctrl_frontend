@@ -35,6 +35,20 @@ function formatLastRefresh(value: number | null) {
   }).format(new Date(value));
 }
 
+function getAssessmentVersionSummary(settings?: Record<string, unknown> | null) {
+  if (!settings || typeof settings !== "object") return [];
+
+  return Object.entries(settings)
+    .filter(([key, value]) => key !== "weights" && value && typeof value === "object")
+    .map(([key, value]) => {
+      const config = value as { version?: unknown };
+      return {
+        key,
+        label: `${key.replace(/-/g, " ")} v${String(config.version ?? "1.0.0")}`,
+      };
+    });
+}
+
 export function HiringManagerCampaignsList() {
   const [campaigns, setCampaigns] = useState<HiringManagerCampaignListItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -191,6 +205,18 @@ export function HiringManagerCampaignsList() {
                       );
                     })}
                   </div>
+                  {getAssessmentVersionSummary(campaign.assessmentSettings).length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {getAssessmentVersionSummary(campaign.assessmentSettings).map((item) => (
+                        <span
+                          key={item.key}
+                          className="rounded-md border border-primary/15 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold capitalize text-primary"
+                        >
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-2">

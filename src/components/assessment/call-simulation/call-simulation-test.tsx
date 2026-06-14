@@ -40,6 +40,11 @@ type CallContentFile = {
   runs: CallRun[];
 };
 
+type AssessmentSessionConfig = {
+  version?: string;
+  difficulty?: string;
+};
+
 type CallPhase =
   | 'landing'
   | 'rules'
@@ -235,6 +240,7 @@ export default function CallSimulationTest({
   const isFinalRunRef = useRef(false);
   const startedAtRef = useRef<string | null>(null);
   const snapshotsRef = useRef<RunSnapshot[]>([]);
+  const sessionConfigRef = useRef<AssessmentSessionConfig>({});
   const [phase, setPhase] = useState<CallPhase>('landing');
   const [runs, setRuns] = useState<CallRun[]>(fallbackRuns);
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
@@ -317,6 +323,7 @@ export default function CallSimulationTest({
             return a.scenarioKey.localeCompare(b.scenarioKey);
           });
           setRuns(sortedRuns);
+          sessionConfigRef.current = sessionData.config ?? {};
           return;
         }
       } catch (err) {
@@ -521,6 +528,8 @@ export default function CallSimulationTest({
             completedAt: new Date().toISOString(),
             candidateSessionDocumentId,
             isBypass: isBypassed,
+            assessmentVersion: sessionConfigRef.current.version,
+            difficulty: sessionConfigRef.current.difficulty,
           }),
         });
 

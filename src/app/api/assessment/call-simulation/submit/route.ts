@@ -52,6 +52,8 @@ function validatePayload(body: unknown):
       completedAt: string;
       candidateSessionDocumentId?: string | null;
       isBypass?: boolean;
+      assessmentVersion?: string;
+      difficulty?: string;
     }
   | { valid: false; error: string } {
   if (!body || typeof body !== "object") {
@@ -79,6 +81,8 @@ function validatePayload(body: unknown):
         ? value.candidateSessionDocumentId
         : null,
     isBypass,
+    assessmentVersion: typeof value.assessmentVersion === "string" ? value.assessmentVersion : undefined,
+    difficulty: typeof value.difficulty === "string" ? value.difficulty : undefined,
   };
 }
 
@@ -134,6 +138,8 @@ export async function POST(request: Request) {
         candidateSessionDocumentId: validation.candidateSessionDocumentId,
         rawData: {
           assessmentType: "call-simulation",
+          assessmentVersion: validation.assessmentVersion,
+          difficulty: validation.difficulty,
           snapshots: validation.snapshots,
           calls: validation.snapshots,
           isBypass: validation.isBypass,
