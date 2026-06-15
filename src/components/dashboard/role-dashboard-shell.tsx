@@ -57,10 +57,12 @@ function RoleDashboardHeader({
   title,
   subtitle,
   hideSidebar,
+  homeHref = "#",
   accessibilitySettings,
   updateAccessibilitySettings,
   resetAccessibilitySettings,
 }: Pick<RoleDashboardShellProps, "title" | "subtitle" | "hideSidebar"> & {
+  homeHref?: string;
   accessibilitySettings: AccessibilitySettings;
   updateAccessibilitySettings: (patch: Partial<AccessibilitySettings>) => void;
   resetAccessibilitySettings: () => void;
@@ -73,14 +75,25 @@ function RoleDashboardHeader({
       : user?.name || `${(user as any)?.firstName || ""} ${(user as any)?.lastName || ""}`.trim() || "CTRL User";
   const displayEmail = userProfile?.email || user?.email;
 
+  const initials = displayName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <header className="sticky top-0 z-20 flex h-16 min-w-0 items-center justify-between border-b border-border/80 bg-background/80 px-4 backdrop-blur-md transition-all duration-300 dark:border-white/5 dark:bg-[#02040a]/60 sm:px-6 lg:px-8 shadow-sm">
       {/* Sidebar Trigger & Title */}
       <div className="flex items-center gap-3 text-foreground">
         {!hideSidebar && <SidebarTrigger />}
         {hideSidebar && (
-          <Link href="#" className="flex items-center gap-2">
-            <img src="/icon1.png" className="h-8 w-8 logo-adaptive-filter" alt="CTRL Logo" />
+          <Link href={homeHref} className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg">
+            <img
+              src="/assets/newlogo.png"
+              className="h-8 w-8 object-contain object-center scale-125 pointer-events-none hue-rotate-[60deg] logo-adaptive-filter"
+              alt="CTRL Logo"
+            />
             <span className="font-semibold tracking-[0.16em] hidden sm:inline-block font-display">CTRL</span>
           </Link>
         )}
@@ -106,9 +119,13 @@ function RoleDashboardHeader({
         {/* User Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full border border-border dark:border-white/10 hover:!bg-muted dark:hover:!bg-white/10 hover:!text-foreground dark:hover:!text-white transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">
-              <User className="h-5 w-5" aria-hidden="true" />
-              <span className="sr-only">Open account menu</span>
+            <Button variant="ghost" className="h-9 gap-2 px-2.5 rounded-xl border border-border dark:border-white/10 hover:!bg-muted dark:hover:!bg-white/10 hover:!text-foreground dark:hover:!text-white transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none shadow-sm">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary text-[10px] font-black font-display leading-none">
+                {initials}
+              </div>
+              <span className="text-xs font-semibold tracking-wide hidden sm:inline-block">
+                {displayName.split(" ")[0]}
+              </span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -186,6 +203,7 @@ function RoleDashboardFrame({
           title={title}
           subtitle={subtitle}
           hideSidebar={true}
+          homeHref={navItems[0]?.href || "#"}
           accessibilitySettings={accessibilitySettings}
           updateAccessibilitySettings={updateAccessibilitySettings}
           resetAccessibilitySettings={resetAccessibilitySettings}
@@ -208,65 +226,66 @@ function RoleDashboardFrame({
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
           Skip to main content
         </a>
-      {/* Sidebar Section */}
-      <Sidebar className="border-r border-border/60 dark:border-white/5 bg-slate-50/90 dark:bg-[#03060f]/75 backdrop-blur-xl transition-all duration-300">
-        <SidebarHeader className="px-4 pt-5 pb-3 group-data-[collapsible=icon]:px-2">
-          {/* Sidebar Branding (Borderless & clean) */}
-          <Link
-            href={navItems[0]?.href || "#"}
-            className="flex items-center gap-3 px-2 py-1.5 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-          >
-            <img
-              src="/assets/newlogo.png"
-              className="h-9 w-9 object-contain object-center scale-125 pointer-events-none hue-rotate-[60deg] transition-transform duration-300 hover:rotate-6 logo-adaptive-filter"
-              alt="CTRL Logo"
-            />
-            <div>
-              <p className="text-sm font-semibold tracking-[0.18em] text-foreground font-display">
-                CTRL
-              </p>
-              <p className="text-[10px] text-muted-foreground/80 font-medium tracking-wide uppercase">{title.replace(" Portal", "")}</p>
-            </div>
-          </Link>
-        </SidebarHeader>
-        <SidebarContent className="px-3 pb-4 group-data-[collapsible=icon]:px-2">
-          <SidebarMenu className="space-y-1">
-            {/* Sidebar Navigation Links */}
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={activePath === (item.href.replace(/\/+$/, "") || "/")}
-                  tooltip={item.label}
-                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all duration-200 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3.5"
-                >
-                  <Link
-                    href={item.href}
-                    className={cn("font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg text-sm flex items-center gap-3 py-2")}
+        {/* Sidebar Section */}
+        <Sidebar className="border-r border-border/60 dark:border-white/5 bg-slate-50/90 dark:bg-[#03060f]/75 backdrop-blur-xl transition-all duration-300">
+          <SidebarHeader className="px-4 pt-5 pb-3 group-data-[collapsible=icon]:px-2">
+            {/* Sidebar Branding (Borderless & clean) */}
+            <Link
+              href={navItems[0]?.href || "#"}
+              className="flex items-center gap-3 px-2 py-1.5 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            >
+              <img
+                src="/assets/newlogo.png"
+                className="h-9 w-9 object-contain object-center scale-125 pointer-events-none hue-rotate-[60deg] transition-transform duration-300 hover:rotate-6 logo-adaptive-filter"
+                alt="CTRL Logo"
+              />
+              <div>
+                <p className="text-sm font-semibold tracking-[0.18em] text-foreground font-display">
+                  CTRL
+                </p>
+                <p className="text-[10px] text-muted-foreground/80 font-medium tracking-wide uppercase">{title.replace(" Portal", "")}</p>
+              </div>
+            </Link>
+          </SidebarHeader>
+          <SidebarContent className="px-3 pb-4 group-data-[collapsible=icon]:px-2">
+            <SidebarMenu className="space-y-1">
+              {/* Sidebar Navigation Links */}
+              {navItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={activePath === (item.href.replace(/\/+$/, "") || "/")}
+                    tooltip={item.label}
+                    className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all duration-200 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3.5"
                   >
-                    <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarContent>
-      </Sidebar>
- 
-      {/* Main Content Area */}
-      <SidebarInset>
-        <RoleDashboardHeader
-          title={title}
-          subtitle={subtitle}
-          accessibilitySettings={accessibilitySettings}
-          updateAccessibilitySettings={updateAccessibilitySettings}
-          resetAccessibilitySettings={resetAccessibilitySettings}
-        />
-        <main id="main-content" className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
-          <div className={cn("mx-auto w-full", contentWidthClass)}>{children}</div>
-        </main>
-      </SidebarInset>
+                    <Link
+                      href={item.href}
+                      className={cn("font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg text-sm flex items-center gap-3 py-2")}
+                    >
+                      <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+        </Sidebar>
+
+        {/* Main Content Area */}
+        <SidebarInset>
+          <RoleDashboardHeader
+            title={title}
+            subtitle={subtitle}
+            homeHref={navItems[0]?.href || "#"}
+            accessibilitySettings={accessibilitySettings}
+            updateAccessibilitySettings={updateAccessibilitySettings}
+            resetAccessibilitySettings={resetAccessibilitySettings}
+          />
+          <main id="main-content" className="min-w-0 flex-1 p-3 sm:p-4 md:p-5">
+            <div className={cn("mx-auto w-full", contentWidthClass)}>{children}</div>
+          </main>
+        </SidebarInset>
       </div>
     </SidebarProvider>
   );

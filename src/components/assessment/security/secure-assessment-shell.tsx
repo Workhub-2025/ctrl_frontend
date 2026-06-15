@@ -245,7 +245,11 @@ export function SecureAssessmentShell({
         </div>
 
         <div className="flex justify-center flex-1">
-          <img src="/icon1.png" alt="CTRL Logo" className="h-8 w-8 logo-adaptive-filter" />
+          <img
+            src="/assets/newlogo.png"
+            alt="CTRL Logo"
+            className="h-8 w-8 object-contain scale-125 hue-rotate-[60deg] logo-adaptive-filter pointer-events-none"
+          />
         </div>
 
         {/* Security Warnings Count Indicator */}

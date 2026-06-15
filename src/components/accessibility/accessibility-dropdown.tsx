@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2, Settings, X, Volume2, Ruler, Type, Eye, Contrast, Link2, Activity, RefreshCw } from "lucide-react";
+import { CheckCircle2, Settings, X, Volume2, Ruler, Type, Eye, Contrast, Link2, Activity, RefreshCw, Accessibility, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -15,11 +15,11 @@ const themeOptions: {
   value: AccessibilitySettings["theme"];
   swatch: string;
 }[] = [
-  { label: "Dark blue", value: "dark-blue", swatch: "bg-[#02040a] border border-white/10" },
-  { label: "Black", value: "black", swatch: "bg-black border border-white/10" },
-  { label: "Soft cream", value: "soft-cream", swatch: "bg-[#fdfaf2] border border-black/10" },
-  { label: "Light blue", value: "light-blue", swatch: "bg-[#eaf6ff] border border-black/10" },
-];
+    { label: "Dark blue", value: "dark-blue", swatch: "bg-[#02040a] border border-white/10" },
+    { label: "Black", value: "black", swatch: "bg-black border border-white/10" },
+    { label: "Soft cream", value: "soft-cream", swatch: "bg-[#fdfaf2] border border-black/10" },
+    { label: "Light blue", value: "light-blue", swatch: "bg-[#eaf6ff] border border-black/10" },
+  ];
 
 const dropdownThemeClassName: Record<AccessibilitySettings["theme"], string> = {
   "dark-blue": "bg-[#0b1329]/95 border-white/10 text-white backdrop-blur-xl shadow-[0_32px_96px_rgba(0,0,0,0.7)]",
@@ -33,11 +33,11 @@ function segmentedClassName(isActive: boolean, isLight: boolean) {
     "rounded-lg px-2.5 py-1.5 text-xs transition-all border flex-1 text-center font-medium",
     isActive
       ? (isLight
-          ? "bg-slate-900 border-slate-900 text-white shadow-sm"
-          : "bg-white/15 border-white text-white shadow-sm")
+        ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+        : "bg-white/15 border-white text-white shadow-sm")
       : (isLight
-          ? "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-800"
-          : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200")
+        ? "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+        : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200")
   );
 }
 
@@ -56,7 +56,7 @@ export function AccessibilityDropdown({
 }: AccessibilityDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   const isLight = settings.theme === "soft-cream" || settings.theme === "light-blue";
 
   useEffect(() => {
@@ -165,7 +165,7 @@ export function AccessibilityDropdown({
         aria-label="Accessibility settings"
         aria-expanded={isOpen}
       >
-        <Settings className="h-5 w-5" />
+        <LifeBuoy className="h-5 w-5" />
       </button>
 
       <AnimatePresence>
@@ -216,11 +216,11 @@ export function AccessibilityDropdown({
                           "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs transition-all hover:scale-[1.01]",
                           isActive
                             ? (isLight
-                                ? "border-slate-950 bg-slate-100 text-slate-950 font-semibold shadow-sm"
-                                : "border-white bg-white/10 text-white font-semibold shadow-sm")
+                              ? "border-slate-950 bg-slate-100 text-slate-950 font-semibold shadow-sm"
+                              : "border-white bg-white/10 text-white font-semibold shadow-sm")
                             : (isLight
-                                ? "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
-                                : "border-white/10 text-slate-400 hover:border-white/30 hover:bg-white/5 hover:text-slate-200")
+                              ? "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                              : "border-white/10 text-slate-400 hover:border-white/30 hover:bg-white/5 hover:text-slate-200")
                         )}
                       >
                         <span
@@ -265,7 +265,7 @@ export function AccessibilityDropdown({
               {/* Advanced Assistive Controls */}
               <div className="space-y-2.5">
                 <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>Cognitive & Focus Aids</h4>
-                
+
                 {renderToggle({
                   label: "Dyslexia Font",
                   description: "Asymmetric letter shapes for readability.",
