@@ -302,15 +302,21 @@ export default function TypingTest({
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      if (phase === 'submitting' || phase === 'submitted') {
+        setLoading(false);
+        return;
+      }
+
       if (storeRuns.length === 0) {
         setError("Failed to load typing runs from backend.");
       } else {
         setRuns(storeRuns);
+        setError(null);
       }
       setLoading(false);
     }, 100);
     return () => clearTimeout(timer);
-  }, [storeRuns]);
+  }, [phase, storeRuns]);
 
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [countdown, setCountdown] = useState(3);
@@ -398,12 +404,14 @@ export default function TypingTest({
     );
   }, [candidateSessionDocumentId, enableAutoSave, results]);
 
-  // Clear saved progress and store session once the assessment is fully submitted
+  // Clear saved progress once the assessment is fully submitted. Keep the
+  // hydrated typing session in memory until the user closes the confirmation
+  // screen, otherwise the loader effect can replace the submitted screen with
+  // a false "Failed to load assessment" error.
   useEffect(() => {
     if (phase !== 'submitted') return;
     void AssessmentProgressService.clearProgress('typing', candidateSessionDocumentId);
-    clearSession();
-  }, [candidateSessionDocumentId, phase, clearSession]);
+  }, [candidateSessionDocumentId, phase]);
 
   const resetTypedState = useCallback((_runIndex: number) => {
     setTypedCharacters([]);
@@ -449,8 +457,9 @@ export default function TypingTest({
   }, [finishRun]);
 
   const closeAssessment = useCallback(() => {
+    clearSession();
     closeAssessmentWindow();
-  }, []);
+  }, [clearSession]);
 
   const restartPractice = useCallback(() => {
     setResults((previousResults) =>

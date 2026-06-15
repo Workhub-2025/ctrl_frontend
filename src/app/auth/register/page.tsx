@@ -306,7 +306,7 @@ function UnifiedAuthContent() {
         {/* Top Branding */}
         <div className="relative z-10">
           <Link href="/" className="inline-block transition-transform hover:scale-105">
-            <BrandLogo layout="horizontal" className="h-10 w-auto" />
+            <BrandLogo layout="horizontal" className="h-10 w-[4.5rem]" />
           </Link>
         </div>
 
@@ -340,7 +340,7 @@ function UnifiedAuthContent() {
           {/* Mobile Logo */}
           <div className="mb-10 flex justify-center lg:hidden">
             <Link href="/" className="inline-block">
-              <BrandLogo layout="stacked" className="h-16 w-auto transition-transform hover:scale-105" />
+              <BrandLogo layout="stacked" className="h-16 w-[7.125rem] transition-transform hover:scale-105" />
             </Link>
           </div>
 

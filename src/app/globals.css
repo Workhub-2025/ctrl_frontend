@@ -782,6 +782,48 @@ html[data-ctrl-theme="dark-blue"] .ctrl-portal [data-sidebar="sidebar"] {
   color: hsl(var(--foreground)) !important;
 }
 
+/* Landing page theme normalization */
+.ctrl-landing-page {
+  color: hsl(var(--foreground));
+}
+
+.ctrl-brand-logo {
+  isolation: isolate;
+}
+
+.ctrl-brand-logo-image {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: optimize-contrast;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+html[data-ctrl-theme="dark-blue"] .ctrl-landing-page :where([class~="text-slate-900"], [class~="text-slate-800"], [class~="text-gray-900"], [class~="text-zinc-900"], [class~="text-black"]),
+html[data-ctrl-theme="black"] .ctrl-landing-page :where([class~="text-slate-900"], [class~="text-slate-800"], [class~="text-gray-900"], [class~="text-zinc-900"], [class~="text-black"]) {
+  color: hsl(var(--foreground)) !important;
+}
+
+html[data-ctrl-theme="dark-blue"] .ctrl-landing-page :where([class~="text-slate-700"], [class~="text-slate-600"], [class~="text-slate-500"], [class~="text-slate-400"], [class~="text-gray-600"], [class~="text-gray-500"]),
+html[data-ctrl-theme="black"] .ctrl-landing-page :where([class~="text-slate-700"], [class~="text-slate-600"], [class~="text-slate-500"], [class~="text-slate-400"], [class~="text-gray-600"], [class~="text-gray-500"]) {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+html[data-ctrl-theme="dark-blue"] .ctrl-landing-page :where([class~="bg-white"], [class~="bg-white/80"], [class~="bg-white/95"], [class~="bg-slate-50"], [class~="bg-slate-50/50"], [class~="bg-slate-100"]),
+html[data-ctrl-theme="black"] .ctrl-landing-page :where([class~="bg-white"], [class~="bg-white/80"], [class~="bg-white/95"], [class~="bg-slate-50"], [class~="bg-slate-50/50"], [class~="bg-slate-100"]) {
+  background-color: hsl(var(--card) / 0.9) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
+
+html[data-ctrl-theme="dark-blue"] .ctrl-landing-page :where([class~="border-slate-100"], [class~="border-slate-200"], [class~="border-slate-200/50"], [class~="border-slate-300"]),
+html[data-ctrl-theme="black"] .ctrl-landing-page :where([class~="border-slate-100"], [class~="border-slate-200"], [class~="border-slate-200/50"], [class~="border-slate-300"]) {
+  border-color: hsl(var(--border) / 0.72) !important;
+}
+
+html[data-ctrl-theme="soft-cream"] .ctrl-landing-page :where([class~="bg-[#0a0a0a]"], [class~="bg-[#0a0a0a]/90"], [class~="bg-[#0a0a0a]/95"], [class~="bg-[#080808]/90"], [class~="bg-[#050505]"], [class~="bg-[#020202]"]),
+html[data-ctrl-theme="light-blue"] .ctrl-landing-page :where([class~="bg-[#0a0a0a]"], [class~="bg-[#0a0a0a]/90"], [class~="bg-[#0a0a0a]/95"], [class~="bg-[#080808]/90"], [class~="bg-[#050505]"], [class~="bg-[#020202]"]) {
+  background-color: hsl(var(--card) / 0.92) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
+
 html[data-ctrl-focus="enhanced"] .ctrl-portal :focus-visible {
   outline: 3px solid hsl(var(--ring));
   outline-offset: 4px;
@@ -1104,7 +1146,9 @@ img[src*="newlogo.png"] {
 
 /* Filtros adaptativos para logo en modo oscuro - páginas auth */
 .logo-adaptive-filter {
-  transition: all 0.3s ease;
+  filter: brightness(1.05) contrast(1.18) saturate(0.95);
+  mix-blend-mode: normal;
+  transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
 /* Dark/black theme logos */
@@ -1112,8 +1156,8 @@ html[data-ctrl-theme="dark-blue"] .logo-adaptive-filter,
 html[data-ctrl-theme="black"] .logo-adaptive-filter,
 .dark .logo-adaptive-filter,
 [data-theme="dark"] .logo-adaptive-filter {
-  mix-blend-mode: screen !important;
-  filter: brightness(1.7) contrast(1.5) saturate(1.2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3)) !important;
+  mix-blend-mode: normal !important;
+  filter: invert(1) brightness(1.18) contrast(1.16) saturate(0.82) !important;
 }
 
 /* Light/cream theme logos */
@@ -1121,8 +1165,8 @@ html[data-ctrl-theme="soft-cream"] .logo-adaptive-filter,
 html[data-ctrl-theme="light-blue"] .logo-adaptive-filter,
 .light .logo-adaptive-filter,
 [data-theme="light"] .logo-adaptive-filter {
-  mix-blend-mode: multiply !important;
-  filter: invert(0.85) brightness(0.6) contrast(1.5) saturate(1.5) !important;
+  mix-blend-mode: normal !important;
+  filter: brightness(1.03) contrast(1.16) saturate(0.95) !important;
 }
 @keyframes ctrl-priority-wiggle {
   0%,

@@ -468,7 +468,7 @@ export function CandidateDashboardContent() {
     setSelectedApplicationKey(sessionParam);
   }, [sessionParam]);
 
-  const loadApplications = useCallback(async (options?: { force?: boolean }) => {
+  const loadApplications = useCallback(async (options?: { force?: boolean; preserveOnError?: boolean }) => {
     const isManualRefresh = !!options?.force;
     const startTime = Date.now();
     if (isManualRefresh) setIsRefreshing(true);
@@ -490,7 +490,9 @@ export function CandidateDashboardContent() {
       });
     } catch (applicationError) {
       console.error("[CandidateDashboard] Failed to load applications:", applicationError);
-      setLoadError("We could not load your assessments. Please refresh or try again shortly.");
+      if (!options?.preserveOnError) {
+        setLoadError("We could not load your assessments. Please refresh or try again shortly.");
+      }
     } finally {
       if (isManualRefresh) {
         const elapsedTime = Date.now() - startTime;
@@ -510,7 +512,7 @@ export function CandidateDashboardContent() {
 
   useEffect(() => {
     return listenForAssessmentCompletion(() => {
-      void loadApplications({ force: true });
+      void loadApplications({ force: true, preserveOnError: true });
     });
   }, [loadApplications]);
 
