@@ -2237,7 +2237,7 @@ button[aria-label="Toggle theme"] {
 }
 
 /* Optimizar rendering de imágenes del logo */
-img[src="/icon1.png"] {
+img[src*="newlogo.png"] {
   content-visibility: auto;
   contain-intrinsic-size: 3rem 3rem;
   image-rendering: -webkit-optimize-contrast;

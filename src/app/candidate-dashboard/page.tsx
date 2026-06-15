@@ -148,7 +148,7 @@ export default function CandidateDashboardOverviewPage() {
 
   const activeApps = applications.filter((app) => {
     const status = mapPortalStatus(app);
-    return status === "Awaiting Assessment" || status === "In Progress";
+    return status === "Awaiting Assessment" || status === "In Progress" || status === "Soft Locked";
   });
 
   const completedApps = applications.filter((app) => {
