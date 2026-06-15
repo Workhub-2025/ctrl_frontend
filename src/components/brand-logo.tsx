@@ -18,13 +18,11 @@ export function BrandMark({
   title = "CTRL mark",
 }: BrandMarkProps) {
   return (
-    <div className={cn("flex items-center justify-center", className)}>
+    <div className={cn("inline-flex items-center justify-center", className)}>
       <img
         src="/assets/newlogo.png"
         alt={title}
-        // Use mix-blend-multiply + invert in light mode, and mix-blend-screen + dark:invert-0 in dark mode
-        // to handle the black background of the logo asset cleanly across all themes.
-        className="h-full w-full object-contain object-center mix-blend-multiply invert dark:mix-blend-screen dark:invert-0 scale-125 -translate-x-1 translate-y-0.5 pointer-events-none hue-rotate-[60deg]"
+        className="ctrl-brand-logo-image logo-adaptive-filter pointer-events-none block h-full w-full object-contain object-center"
       />
     </div>
   );
@@ -32,13 +30,7 @@ export function BrandMark({
 
 export function CtrlText({ className }: { className?: string }) {
   return (
-    <img
-      src="https://see.fontimg.com/api/rf5/9MqPB/YWZmYmE0ZjMwZGU1NDI0OTg1NTFiYWM2YzcwNzM4NzUub3Rm/Q1RSTA/tabel-sans.png?r=fs&h=89&w=1000&fg=FFFFFF&bg=000000&tb=1&s=89"
-      alt="CTRL"
-      // Use mix-blend-multiply + invert in light mode, and mix-blend-screen + dark:invert-0 in dark mode
-      // to render the white-on-black image asset with high contrast on both light and dark themes.
-      className={cn("inline-block object-contain mix-blend-multiply invert dark:mix-blend-screen dark:invert-0 h-[1em] translate-y-[-0.05em]", className)}
-    />
+    <span className={cn("font-semibold tracking-normal text-current", className)}>CTRL</span>
   );
 }
 
@@ -50,18 +42,16 @@ export function BrandLogo({
   return (
     <div 
       className={cn(
-        "flex items-center select-none", 
-        layout === "stacked" ? "flex-col gap-4" : "flex-row gap-4",
+        "ctrl-brand-logo inline-flex shrink-0 select-none items-center justify-center",
+        layout === "stacked" ? "h-14 w-[6.25rem]" : "h-10 w-[4.5rem]",
         className
       )} 
       aria-label={title}
     >
-      <BrandMark className={layout === "stacked" ? "h-20 w-20" : "h-12 w-12"} />
       <img
-        src="https://see.fontimg.com/api/rf5/9MqPB/YWZmYmE0ZjMwZGU1NDI0OTg1NTFiYWM2YzcwNzM4NzUub3Rm/Q1RSTA/tabel-sans.png?r=fs&h=89&w=1000&fg=FFFFFF&bg=000000&tb=1&s=89"
-        alt="CTRL Text"
-        // Use mix-blend-multiply + invert in light mode, and mix-blend-screen + dark:invert-0 in dark mode
-        className={cn("object-contain mix-blend-multiply invert dark:mix-blend-screen dark:invert-0", layout === "stacked" ? "h-10" : "h-7")}
+        src="/assets/newlogo.png"
+        alt={title}
+        className="ctrl-brand-logo-image logo-adaptive-filter pointer-events-none block h-full w-full object-contain object-center"
       />
     </div>
   );

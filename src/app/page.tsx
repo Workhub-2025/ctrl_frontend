@@ -1,7 +1,7 @@
 "use client";
 
 import { LandingHero } from "@/components/landing/landing-hero";
-import { BrandLogo, BrandMark, CtrlText } from "@/components/brand-logo";
+import { BrandLogo, CtrlText } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -228,7 +228,7 @@ export default function Home() {
         )}>
           {/* Logo */}
           <Link href="/" className="flex items-center group relative z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
-            <BrandLogo className="w-24 sm:w-28 transition-opacity group-hover:opacity-80" />
+            <BrandLogo className="h-10 w-[4.5rem] sm:h-12 sm:w-[5.35rem] transition-opacity group-hover:opacity-90" />
           </Link>
 
           {/* Links (Desktop) */}
@@ -607,7 +607,7 @@ export default function Home() {
             <div className="mx-auto max-w-[1440px] px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-16">
                 <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
-                  <BrandLogo layout="stacked" className="self-start" />
+                  <BrandLogo layout="stacked" className="h-14 w-[6.25rem] self-start" />
                   <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light mt-2">
                     Empowering teams to make objective, data-driven hiring decisions with confidence and speed.
                   </p>
