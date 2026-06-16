@@ -6,17 +6,15 @@ import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 import type { ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
 
-type SupportTicket = {
+type BillingRequestRow = {
   documentId?: string;
   id?: string;
   subject?: string;
-  metadata?: {
-    requestKind?: string;
-    upgradeType?: string;
-    clientDocumentId?: string;
-    clientName?: string;
-    payload?: ClientUpgradeRequestPayload;
-  } | null;
+  clientDocumentId?: string;
+  requestKind?: string;
+  upgradeType?: string;
+  payload?: ClientUpgradeRequestPayload;
+  billingStatus?: string;
 };
 
 function getAppUrl() {
@@ -44,28 +42,31 @@ export async function POST(
     );
   }
 
-  const { ticketId } = await params;
+  const { ticketId: requestId } = await params;
 
   try {
-    const ticketResponse = await strapiRequest<{ data?: SupportTicket }>(
-      `/support-tickets/${encodeURIComponent(ticketId)}`
+    const requestResponse = await strapiRequest<{ data?: BillingRequestRow }>(
+      `/admin/billing/requests/${encodeURIComponent(requestId)}`
     );
-    const ticket = ticketResponse.data;
-    const metadata = ticket?.metadata;
-    if (!ticket || !metadata?.payload) {
-      return NextResponse.json({ error: "Billing ticket not found" }, { status: 404 });
+    const billingRequest = requestResponse.data;
+    const payload = billingRequest?.payload;
+
+    if (!billingRequest || !payload) {
+      return NextResponse.json({ error: "Billing request not found" }, { status: 404 });
     }
 
-    const requestKind = metadata.requestKind;
-    if (requestKind !== "client_upgrade" && requestKind !== "contract_renewal") {
-      return NextResponse.json({ error: "Billing ticket not found" }, { status: 404 });
+    if (billingRequest.billingStatus === "paid") {
+      return NextResponse.json({ error: "This request is already paid" }, { status: 400 });
+    }
+
+    if (billingRequest.billingStatus === "invoice_sent") {
+      return NextResponse.json({ error: "Invoice has already been sent for this request" }, { status: 400 });
     }
 
     const pricingResponse = await strapiRequest<{ data?: Record<string, number | string> }>(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
-    const payload = metadata.payload as ClientUpgradeRequestPayload;
 
     let amountPence = 0;
     switch (payload.type) {
@@ -93,7 +94,10 @@ export async function POST(
     }
 
     const currency = String(pricing.currency ?? "gbp");
+    const requestKind = billingRequest.requestKind ?? "client_upgrade";
+    const requestDocumentId = billingRequest.documentId ?? billingRequest.id ?? requestId;
     const stripe = getStripeClient();
+
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
       success_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?paid=1`,
@@ -105,23 +109,23 @@ export async function POST(
             currency,
             unit_amount: amountPence,
             product_data: {
-              name: ticket.subject ?? "CTRL platform upgrade",
-              description: metadata.upgradeType?.replace(/_/g, " ") ?? "Upgrade request",
+              name: billingRequest.subject ?? "CTRL platform upgrade",
+              description: billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request",
             },
           },
         },
       ],
       metadata: {
-        requestKind: requestKind ?? "client_upgrade",
-        ticketDocumentId: ticket.documentId ?? ticket.id ?? ticketId,
-        clientDocumentId: metadata.clientDocumentId ?? "",
-        upgradeType: metadata.upgradeType ?? "",
+        requestKind,
+        billingRequestDocumentId: requestDocumentId,
+        clientDocumentId: billingRequest.clientDocumentId ?? "",
+        upgradeType: billingRequest.upgradeType ?? "",
         payload: JSON.stringify(payload),
       },
     });
 
     await strapiRequest(
-      `/admin/billing/tickets/${encodeURIComponent(ticket.documentId ?? ticketId)}/invoice-sent`,
+      `/admin/billing/requests/${encodeURIComponent(String(requestDocumentId))}/invoice-sent`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -134,10 +138,12 @@ export async function POST(
 
     return NextResponse.json({
       data: {
+        billingRequestDocumentId: requestDocumentId,
         checkoutSessionId: checkoutSession.id,
         checkoutUrl: checkoutSession.url,
         amountDuePence: amountPence,
         currency,
+        billingStatus: "invoice_sent",
       },
     });
   } catch (error) {

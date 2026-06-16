@@ -7,6 +7,7 @@ import {
   CalendarRange,
   CheckCircle2,
   Clock3,
+  Loader2,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -68,11 +69,18 @@ const UPGRADE_TYPE_LABELS: Record<ClientUpgradeRequestType, string> = {
   contract_extension: "Contract renewal",
 };
 
-const STATUS_CLASSES: Record<string, string> = {
-  open: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300",
-  in_progress: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-  resolved: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  closed: "border-border bg-muted/60 text-muted-foreground",
+const BILLING_STATUS_LABELS: Record<string, string> = {
+  requested: "Awaiting invoice",
+  invoice_sent: "Invoice ready",
+  paid: "Paid",
+  failed: "Payment failed",
+};
+
+const BILLING_STATUS_CLASSES: Record<string, string> = {
+  requested: "border-border/60 bg-muted/35 text-muted-foreground",
+  invoice_sent: "border-primary/25 bg-primary/10 text-primary",
+  paid: "border-border/60 bg-muted/35 text-foreground",
+  failed: "border-destructive/30 bg-destructive/10 text-destructive",
 };
 
 export function ClientUpgradeContent() {
@@ -84,12 +92,14 @@ export function ClientUpgradeContent() {
     upgradeRequestsLoading,
     submittingUpgrade,
     error,
+    setError,
     loadEntitlements,
     loadUpgradeRequests,
     submitUpgradeRequest,
   } = useClientPortal();
 
   const [activeRequestType, setActiveRequestType] = useState<ClientInitiatedUpgradeType | null>(null);
+  const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
 
   const contract = entitlements?.contract ?? summary?.activeContract ?? null;
   const seats = summary?.seats;
@@ -103,13 +113,37 @@ export function ClientUpgradeContent() {
   );
 
   const openRequests = useMemo(
-    () => upgradeRequests.filter((request) => request.status === "open" || request.status === "in_progress"),
+    () => upgradeRequests.filter((request) => request.billingStatus !== "paid"),
     [upgradeRequests]
   );
 
   const refreshAll = () => {
     void loadEntitlements(true);
     void loadUpgradeRequests(true);
+  };
+
+  const payForUpgrade = async (ticketDocumentId: string) => {
+    setPayingRequestId(ticketDocumentId);
+    setError(null);
+    try {
+      const response = await fetch("/api/client/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billingRequestDocumentId: ticketDocumentId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error ?? "Checkout could not be opened");
+      }
+      if (!body.data?.checkoutUrl) {
+        throw new Error("Checkout link is unavailable. Contact CTRL support if this persists.");
+      }
+      window.location.href = body.data.checkoutUrl as string;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Checkout could not be opened");
+    } finally {
+      setPayingRequestId(null);
+    }
   };
 
   return (
@@ -291,7 +325,7 @@ export function ClientUpgradeContent() {
               <PortalSectionHeader
                 eyebrow="History"
                 title="Your upgrade requests"
-                description="Structured requests submitted from this portal. General support tickets stay in Messages."
+                description="Structured billing requests submitted from this portal. These are separate from general support messages."
               />
 
               {upgradeRequestsLoading && upgradeRequests.length === 0 ? (
@@ -322,14 +356,17 @@ export function ClientUpgradeContent() {
                             <Badge
                               variant="outline"
                               className={cn(
-                                "rounded-full text-[10px] font-semibold capitalize",
-                                STATUS_CLASSES[request.status] ?? STATUS_CLASSES.open
+                                "rounded-full text-[10px] font-semibold",
+                                BILLING_STATUS_CLASSES[request.billingStatus ?? "requested"] ??
+                                  BILLING_STATUS_CLASSES.requested
                               )}
                             >
-                              {request.status.replace(/_/g, " ")}
+                              {BILLING_STATUS_LABELS[request.billingStatus ?? "requested"] ?? "Requested"}
                             </Badge>
                           </div>
-                          <p className="font-mono text-xs font-semibold text-primary">{request.ticketNumber}</p>
+                          <p className="font-mono text-xs font-semibold text-muted-foreground">
+                            {request.requestNumber || request.ticketNumber}
+                          </p>
                           <p className="text-sm font-semibold text-foreground">{request.subject}</p>
                           <p className="text-xs text-muted-foreground">
                             Submitted {formatDate(request.createdAt)}
@@ -346,19 +383,13 @@ export function ClientUpgradeContent() {
                         {request.billingStatus === "invoice_sent" ? (
                           <Button
                             size="sm"
-                            className="rounded-xl"
-                            onClick={async () => {
-                              const response = await fetch("/api/client/billing/checkout", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ ticketDocumentId: request.id }),
-                              });
-                              const body = await response.json().catch(() => ({}));
-                              if (body.data?.checkoutUrl) {
-                                window.location.href = body.data.checkoutUrl as string;
-                              }
-                            }}
+                            className="rounded-xl gap-2"
+                            disabled={payingRequestId === request.id}
+                            onClick={() => void payForUpgrade(request.id)}
                           >
+                            {payingRequestId === request.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : null}
                             Pay now
                           </Button>
                         ) : null}

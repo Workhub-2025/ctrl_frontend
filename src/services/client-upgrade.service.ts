@@ -1,9 +1,11 @@
 import "server-only";
 
 import {
-  parseBillingRequestFromTicket,
   type ClientUpgradeRequestPayload,
   type ClientUpgradeRequestRecord,
+  type ClientUpgradeRequestType,
+  type ClientBillingRequestKind,
+  buildUpgradeRequestSubject,
 } from "@/lib/client/entitlements";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 import { getServerSession } from "next-auth/next";
@@ -54,39 +56,48 @@ export type BackendClientEntitlements = {
   canRequestUpgrades: boolean;
 };
 
-type SupportTicketResponse = {
-  data?: {
-    id: string;
-    documentId?: string;
-    ticketNumber: string;
-    subject: string;
-    status: string;
-    priority: string;
-    createdAt: string;
-    billingStatus?: string;
-    amountDuePence?: number | null;
-    currency?: string;
-    stripeCheckoutSessionId?: string | null;
-    metadata?: Record<string, unknown> | null;
-  };
+type BillingRequestRow = {
+  documentId?: string;
+  id?: string | number;
+  requestNumber?: string;
+  clientDocumentId?: string;
+  clientName?: string;
+  requestKind?: ClientBillingRequestKind;
+  upgradeType?: ClientUpgradeRequestType;
+  subject?: string;
+  description?: string;
+  payload?: ClientUpgradeRequestPayload;
+  billingStatus?: string;
+  amountDuePence?: number | null;
+  currency?: string;
+  stripeCheckoutSessionId?: string | null;
+  createdAt?: string;
 };
 
-type SupportTicketListResponse = {
-  data?: Array<{
-    id: string;
-    documentId?: string;
-    ticketNumber: string;
-    subject: string;
-    status: string;
-    priority: string;
-    createdAt: string;
-    billingStatus?: string;
-    amountDuePence?: number | null;
-    currency?: string;
-    stripeCheckoutSessionId?: string | null;
-    metadata?: Record<string, unknown> | null;
-  }>;
-};
+function mapBillingRequest(row: BillingRequestRow): ClientUpgradeRequestRecord {
+  const payload = row.payload;
+  if (!payload?.type) {
+    throw new Error("Billing request payload is invalid");
+  }
+
+  return {
+    id: String(row.documentId ?? row.id ?? ""),
+    requestNumber: String(row.requestNumber ?? ""),
+    ticketNumber: String(row.requestNumber ?? ""),
+    subject: String(row.subject ?? buildUpgradeRequestSubject(payload)),
+    status: String(row.billingStatus ?? "requested"),
+    priority: "normal",
+    createdAt: String(row.createdAt ?? new Date().toISOString()),
+    requestKind: row.requestKind ?? "client_upgrade",
+    upgradeType: (row.upgradeType ?? payload.type) as ClientUpgradeRequestType,
+    payload,
+    billingStatus: row.billingStatus ?? "requested",
+    amountDuePence: row.amountDuePence ?? null,
+    currency: row.currency ?? "gbp",
+    stripeCheckoutSessionId: row.stripeCheckoutSessionId ?? null,
+    clientName: row.clientName,
+  };
+}
 
 export async function requireClientSession() {
   const session = await getServerSession(authOptions);
@@ -109,47 +120,19 @@ export async function getClientEntitlementsBundle(): Promise<BackendClientEntitl
   return response.data;
 }
 
-export async function listClientUpgradeRequests(): Promise<
-  Array<
-    ClientUpgradeRequestRecord & {
-      billingStatus?: string;
-      amountDuePence?: number | null;
-      currency?: string;
-      stripeCheckoutSessionId?: string | null;
-    }
-  >
-> {
+export async function listClientUpgradeRequests(): Promise<ClientUpgradeRequestRecord[]> {
   await requireClientSession();
 
-  const response = await strapiRequest<SupportTicketListResponse>("/client/billing-requests");
+  const response = await strapiRequest<{ data?: BillingRequestRow[] }>("/client/billing-requests");
   return (response.data ?? [])
-    .map((ticket) => {
-      const record = parseBillingRequestFromTicket({
-        id: ticket.documentId ?? ticket.id,
-        ticketNumber: ticket.ticketNumber,
-        subject: ticket.subject,
-        status: ticket.status,
-        priority: ticket.priority,
-        createdAt: ticket.createdAt,
-        metadata: ticket.metadata,
-      });
-      if (!record) return null;
-      return {
-        ...record,
-        billingStatus: ticket.billingStatus ?? "none",
-        amountDuePence: ticket.amountDuePence ?? null,
-        currency: ticket.currency ?? "gbp",
-        stripeCheckoutSessionId: ticket.stripeCheckoutSessionId ?? null,
-      };
+    .map((row) => {
+      try {
+        return mapBillingRequest(row);
+      } catch {
+        return null;
+      }
     })
-    .filter(Boolean) as Array<
-    ClientUpgradeRequestRecord & {
-      billingStatus?: string;
-      amountDuePence?: number | null;
-      currency?: string;
-      stripeCheckoutSessionId?: string | null;
-    }
-  >;
+    .filter(Boolean) as ClientUpgradeRequestRecord[];
 }
 
 export async function createClientUpgradeRequest(input: {
@@ -157,56 +140,15 @@ export async function createClientUpgradeRequest(input: {
   priority?: "low" | "normal" | "high" | "urgent";
 }) {
   await requireClientSession();
-  const summary = await strapiRequest<{ data?: { client?: { documentId?: string; name?: string } } }>(
-    "/client/dashboard"
-  );
-  const clientName = summary.data?.client?.name;
-  const clientDocumentId = summary.data?.client?.documentId;
 
-  if (!clientDocumentId) {
-    throw new Error("Client account could not be resolved");
-  }
-
-  const { buildUpgradeRequestSubject, buildUpgradeRequestDescription } = await import(
-    "@/lib/client/entitlements"
-  );
-  const subject = buildUpgradeRequestSubject(input.payload);
-  const description = buildUpgradeRequestDescription(input.payload, clientName);
-
-  const response = await strapiRequest<SupportTicketResponse>("/support-tickets", {
+  const response = await strapiRequest<{ data?: BillingRequestRow }>("/client/upgrade-requests", {
     method: "POST",
     body: JSON.stringify({
-      subject,
-      description,
-      category: "feature_request",
-      priority: input.priority ?? "normal",
-      metadata: {
-        requestKind: "client_upgrade",
-        upgradeType: input.payload.type,
-        clientDocumentId,
-        clientName,
-        payload: input.payload,
-      },
+      payload: input.payload,
     }),
   });
 
-  const ticket = response.data;
-  if (!ticket) throw new Error("Upgrade request could not be created");
-
-  const record = parseBillingRequestFromTicket({
-    id: ticket.documentId ?? ticket.id,
-    ticketNumber: ticket.ticketNumber,
-    subject: ticket.subject,
-    status: ticket.status,
-    priority: ticket.priority,
-    createdAt: ticket.createdAt,
-    metadata: {
-      requestKind: "client_upgrade",
-      upgradeType: input.payload.type,
-      payload: input.payload,
-    },
-  });
-
-  if (!record) throw new Error("Upgrade request was created but could not be parsed");
-  return record;
+  const row = response.data;
+  if (!row) throw new Error("Upgrade request could not be created");
+  return mapBillingRequest(row);
 }

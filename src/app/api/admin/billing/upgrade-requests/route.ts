@@ -3,7 +3,24 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { isAdminRole } from "@/lib/auth/role-model";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-import { parseBillingRequestFromTicket } from "@/lib/client/entitlements";
+
+export type AdminUpgradeRequestRow = {
+  documentId?: string;
+  id?: string;
+  requestNumber?: string;
+  clientDocumentId?: string;
+  clientName?: string;
+  requestKind?: string;
+  upgradeType?: string;
+  subject?: string;
+  description?: string;
+  payload?: Record<string, unknown>;
+  billingStatus?: string;
+  amountDuePence?: number | null;
+  currency?: string;
+  stripeCheckoutSessionId?: string | null;
+  createdAt?: string;
+};
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -15,31 +32,25 @@ export async function GET() {
   }
 
   try {
-    const response = await strapiRequest<{
-      data?: Array<Record<string, unknown>>;
-    }>("/support-tickets?category=feature_request");
+    const response = await strapiRequest<{ data?: AdminUpgradeRequestRow[] }>(
+      "/admin/billing/upgrade-requests"
+    );
 
     const data = (response.data ?? [])
-      .map((ticket) => {
-        const record = parseBillingRequestFromTicket({
-          id: String(ticket.documentId ?? ticket.id ?? ""),
-          ticketNumber: String(ticket.ticketNumber ?? ""),
-          subject: String(ticket.subject ?? ""),
-          status: String(ticket.status ?? "open"),
-          priority: String(ticket.priority ?? "normal"),
-          createdAt: String(ticket.createdAt ?? ""),
-          metadata: ticket.metadata as Record<string, unknown> | null,
-        });
-        if (!record || record.requestKind !== "client_upgrade") return null;
-        return {
-          ...record,
-          billingStatus: String(ticket.billingStatus ?? "none"),
-          amountDuePence: ticket.amountDuePence ?? null,
-          currency: String(ticket.currency ?? "gbp"),
-          stripeCheckoutSessionId: ticket.stripeCheckoutSessionId ?? null,
-        };
-      })
-      .filter(Boolean);
+      .filter((row) => row.requestKind === "client_upgrade")
+      .map((row) => ({
+        id: String(row.documentId ?? row.id ?? ""),
+        requestNumber: row.requestNumber ?? "",
+        clientDocumentId: row.clientDocumentId ?? "",
+        clientName: row.clientName ?? "Unknown client",
+        subject: row.subject ?? "",
+        upgradeType: row.upgradeType ?? "",
+        billingStatus: row.billingStatus ?? "requested",
+        amountDuePence: row.amountDuePence ?? null,
+        currency: row.currency ?? "gbp",
+        createdAt: row.createdAt ?? "",
+        payload: row.payload ?? null,
+      }));
 
     return NextResponse.json({ data });
   } catch (error) {

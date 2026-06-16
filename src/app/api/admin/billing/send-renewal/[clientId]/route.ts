@@ -103,30 +103,26 @@ export async function POST(
     const subject = buildUpgradeRequestSubject(payload);
     const description = buildUpgradeRequestDescription(payload, clientName);
 
-    const ticketResponse = await strapiRequest<{ data?: { documentId?: string; id?: string } }>(
-      "/support-tickets",
+    const billingResponse = await strapiRequest<{ data?: { documentId?: string; id?: string } }>(
+      "/admin/billing/requests",
       {
         method: "POST",
         body: JSON.stringify({
+          clientDocumentId,
+          clientName,
+          requestKind: "contract_renewal",
+          upgradeType: "contract_extension",
           subject,
           description,
-          category: "general",
-          priority: "normal",
-          metadata: {
-            requestKind: "contract_renewal",
-            upgradeType: "contract_extension",
-            clientDocumentId,
-            clientName,
-            payload,
-          },
+          payload,
         }),
       }
     );
 
-    const ticket = ticketResponse.data;
-    const ticketDocumentId = ticket?.documentId ?? ticket?.id;
-    if (!ticketDocumentId) {
-      return NextResponse.json({ error: "Renewal invoice ticket could not be created" }, { status: 500 });
+    const billingRequest = billingResponse.data;
+    const billingRequestDocumentId = billingRequest?.documentId ?? billingRequest?.id;
+    if (!billingRequestDocumentId) {
+      return NextResponse.json({ error: "Renewal billing request could not be created" }, { status: 500 });
     }
 
     const currency = String(pricing.currency ?? "gbp");
@@ -150,7 +146,7 @@ export async function POST(
       ],
       metadata: {
         requestKind: "contract_renewal",
-        ticketDocumentId,
+        billingRequestDocumentId: String(billingRequestDocumentId),
         clientDocumentId,
         upgradeType: "contract_extension",
         payload: JSON.stringify(payload),
@@ -158,7 +154,7 @@ export async function POST(
     });
 
     await strapiRequest(
-      `/admin/billing/tickets/${encodeURIComponent(ticketDocumentId)}/invoice-sent`,
+      `/admin/billing/requests/${encodeURIComponent(String(billingRequestDocumentId))}/invoice-sent`,
       {
         method: "POST",
         body: JSON.stringify({
@@ -171,7 +167,7 @@ export async function POST(
 
     return NextResponse.json({
       data: {
-        ticketDocumentId,
+        billingRequestDocumentId,
         checkoutSessionId: checkoutSession.id,
         checkoutUrl: checkoutSession.url,
         amountDuePence: amountPence,

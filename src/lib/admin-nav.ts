@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   PlusCircle,
   Ticket,
+  TrendingUp,
   Users,
 } from "lucide-react";
 
@@ -71,14 +72,22 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         href: "/admin/billing",
         label: "Pricing & invoices",
-        hint: "Stripe billing and renewals",
+        hint: "Stripe pricing and renewals",
         icon: CreditCard,
-        isActive: (pathname) => pathname.startsWith("/admin/billing"),
+        isActive: (pathname) =>
+          pathname.startsWith("/admin/billing") && !pathname.startsWith("/admin/billing/requests"),
+      },
+      {
+        href: "/admin/billing/requests",
+        label: "Upgrade requests",
+        hint: "Requested · invoiced · paid",
+        icon: TrendingUp,
+        isActive: (pathname) => pathname.startsWith("/admin/billing/requests"),
       },
       {
         href: "/admin/upgrade-requests",
         label: "Entitlements",
-        hint: "Seats, features, assessments",
+        hint: "Manual seats and features",
         icon: ArrowUpRight,
         isActive: (pathname) => pathname.startsWith("/admin/upgrade-requests"),
       },
@@ -129,6 +138,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   clients: "Clients",
   create: "Add client",
   billing: "Pricing & invoices",
+  requests: "Upgrade requests",
   "upgrade-requests": "Entitlements",
   users: "Users",
   tickets: "Support tickets",
@@ -148,6 +158,12 @@ export function getAdminBreadcrumbs(pathname: string): AdminBreadcrumb[] {
   if (path.startsWith("/admin/clients/create")) {
     crumbs.push({ label: "Clients", href: "/admin/clients" });
     crumbs.push({ label: "Add client" });
+    return crumbs;
+  }
+
+  if (path.startsWith("/admin/billing/requests")) {
+    crumbs.push({ label: "Billing & access", href: "/admin/billing" });
+    crumbs.push({ label: "Upgrade requests" });
     return crumbs;
   }
 

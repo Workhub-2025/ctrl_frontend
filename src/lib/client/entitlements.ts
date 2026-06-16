@@ -118,8 +118,12 @@ export type ClientBillingRequestKind = "client_upgrade" | "contract_renewal";
 
 export type ClientUpgradeRequestRecord = {
   id: string;
+  /** Billing request reference (UPG-0001) */
+  requestNumber: string;
+  /** @deprecated Use requestNumber — kept for backward compatibility in UI */
   ticketNumber: string;
   subject: string;
+  /** Workflow stage: requested | invoice_sent | paid | failed */
   status: string;
   priority: string;
   createdAt: string;
@@ -130,6 +134,7 @@ export type ClientUpgradeRequestRecord = {
   amountDuePence?: number | null;
   currency?: string;
   stripeCheckoutSessionId?: string | null;
+  clientName?: string;
 };
 
 export function getAssessmentVersionAccess(features?: Record<string, unknown> | null) {
@@ -253,6 +258,7 @@ export function parseBillingRequestFromTicket(ticket: {
 
   return {
     id: ticket.id,
+    requestNumber: ticket.ticketNumber,
     ticketNumber: ticket.ticketNumber,
     subject: ticket.subject,
     status: ticket.status,
@@ -261,5 +267,6 @@ export function parseBillingRequestFromTicket(ticket: {
     requestKind,
     upgradeType,
     payload,
+    billingStatus: "requested",
   };
 }

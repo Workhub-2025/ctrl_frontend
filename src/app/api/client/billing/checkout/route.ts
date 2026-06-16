@@ -17,34 +17,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { ticketDocumentId?: string };
-  if (!body.ticketDocumentId) {
-    return NextResponse.json({ error: "ticketDocumentId is required" }, { status: 400 });
+  const body = (await request.json().catch(() => ({}))) as {
+    billingRequestDocumentId?: string;
+    ticketDocumentId?: string;
+  };
+  const billingRequestDocumentId = body.billingRequestDocumentId ?? body.ticketDocumentId;
+  if (!billingRequestDocumentId) {
+    return NextResponse.json({ error: "billingRequestDocumentId is required" }, { status: 400 });
   }
 
   try {
-    const ticketResponse = await strapiRequest<{
-      data?: { stripeCheckoutSessionId?: string; billingStatus?: string };
-    }>(`/support-tickets/${encodeURIComponent(body.ticketDocumentId)}`);
+    const checkoutResponse = await strapiRequest<{
+      data?: {
+        stripeCheckoutSessionId?: string;
+        billingStatus?: string;
+        amountDuePence?: number | null;
+        currency?: string;
+      };
+    }>("/client/billing/checkout", {
+      method: "POST",
+      body: JSON.stringify({ billingRequestDocumentId }),
+    });
 
-    const ticket = ticketResponse.data;
-    if (!ticket?.stripeCheckoutSessionId) {
+    const checkout = checkoutResponse.data;
+    if (!checkout?.stripeCheckoutSessionId) {
       return NextResponse.json({ error: "No invoice is available for this request yet" }, { status: 404 });
-    }
-    if (ticket.billingStatus === "paid") {
-      return NextResponse.json({ error: "This upgrade request is already paid" }, { status: 400 });
     }
 
     const stripe = getStripeClient();
-    const checkoutSession = await stripe.checkout.sessions.retrieve(ticket.stripeCheckoutSessionId);
+    const checkoutSession = await stripe.checkout.sessions.retrieve(checkout.stripeCheckoutSessionId);
     if (!checkoutSession.url) {
-      return NextResponse.json({ error: "Checkout session URL is unavailable" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Checkout link has expired. Contact CTRL support to resend the invoice." },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
       data: {
         checkoutUrl: checkoutSession.url,
-        billingStatus: ticket.billingStatus ?? "invoice_sent",
+        billingStatus: checkout.billingStatus ?? "invoice_sent",
+        amountDuePence: checkout.amountDuePence ?? null,
+        currency: checkout.currency ?? "gbp",
       },
     });
   } catch (error) {

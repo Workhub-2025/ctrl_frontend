@@ -46,10 +46,11 @@ export async function POST(request: Request) {
   }
 
   const clientDocumentId = metadata.clientDocumentId;
-  const ticketDocumentId = metadata.ticketDocumentId;
+  const billingRequestDocumentId =
+    metadata.billingRequestDocumentId ?? metadata.ticketDocumentId;
   const payloadRaw = metadata.payload;
 
-  if (!clientDocumentId || !ticketDocumentId || !payloadRaw) {
+  if (!clientDocumentId || !billingRequestDocumentId || !payloadRaw) {
     return NextResponse.json({ error: "Incomplete checkout metadata" }, { status: 400 });
   }
 
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       clientDocumentId,
-      ticketDocumentId,
+      billingRequestDocumentId,
       payload,
       stripeCheckoutSessionId: session.id,
       stripeInvoiceId: typeof session.invoice === "string" ? session.invoice : undefined,
