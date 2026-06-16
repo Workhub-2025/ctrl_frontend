@@ -14,6 +14,17 @@ export function getStripeClient() {
   return stripeClient;
 }
 
-export function isStripeConfigured() {
+/** True when Checkout sessions can be created (send-invoice, renewals, client checkout). */
+export function isStripeCheckoutConfigured() {
+  return Boolean(process.env.STRIPE_SECRET_KEY);
+}
+
+/** True when webhook signature verification is available. */
+export function isStripeWebhookConfigured() {
   return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
+}
+
+/** @deprecated Prefer isStripeCheckoutConfigured or isStripeWebhookConfigured */
+export function isStripeConfigured() {
+  return isStripeCheckoutConfigured();
 }

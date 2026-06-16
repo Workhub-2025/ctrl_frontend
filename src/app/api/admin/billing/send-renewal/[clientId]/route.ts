@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { isAdminRole } from "@/lib/auth/role-model";
-import { getStripeClient, isStripeConfigured } from "@/lib/stripe/server";
+import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import {
   addOneYearToDate,
   buildUpgradeRequestDescription,
@@ -45,8 +45,14 @@ export async function POST(
   if (!isAdminRole(session.user.role)) {
     return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
   }
-  if (!isStripeConfigured()) {
-    return NextResponse.json({ error: "Stripe is not configured on this environment" }, { status: 503 });
+  if (!isStripeCheckoutConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
+      },
+      { status: 503 }
+    );
   }
 
   const { clientId } = await params;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { normalizeRole } from "@/lib/auth/role-model";
-import { getStripeClient, isStripeConfigured } from "@/lib/stripe/server";
+import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
 export async function POST(request: Request) {
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   if (normalizeRole(session.user.role) !== "client") {
     return NextResponse.json({ error: "Client access required" }, { status: 403 });
   }
-  if (!isStripeConfigured()) {
+  if (!isStripeCheckoutConfigured()) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 503 });
   }
 
