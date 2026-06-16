@@ -1,4 +1,5 @@
 import { fetchApi } from "@/lib/fetch-client";
+import { normalizePortalError } from "@/lib/portal-fetch-cache";
 
 export type CandidatePortalStatus =
   | "awaiting_assessment"
@@ -61,28 +62,62 @@ type CandidateJoinResponse = {
 let myApplicationsInFlight: Promise<CandidatePortalApplication[]> | null = null;
 let myApplicationsCache: CandidatePortalApplication[] | null = null;
 let myApplicationsFetchedAt = 0;
-const CANDIDATE_APPLICATIONS_CACHE_TTL_MS = 30_000;
+let lastApplicationsForceAt = 0;
 
-function hasFreshApplicationsCache() {
-  return (
-    Boolean(myApplicationsCache) &&
-    myApplicationsFetchedAt > 0 &&
-    Date.now() - myApplicationsFetchedAt < CANDIDATE_APPLICATIONS_CACHE_TTL_MS
-  );
+const CANDIDATE_APPLICATIONS_CACHE_TTL_MS = 90_000;
+const CANDIDATE_MIN_REFETCH_MS = 5_000;
+
+function isApplicationsErrorEmpty(message: string) {
+  return /not found|404|forbidden|403/i.test(message);
 }
 
 export class CandidateSessionService {
   private static readonly BASE_PATH = "/candidate-sessions";
 
+  static hasFreshApplicationsCache() {
+    return (
+      myApplicationsCache !== null &&
+      myApplicationsFetchedAt > 0 &&
+      Date.now() - myApplicationsFetchedAt < CANDIDATE_APPLICATIONS_CACHE_TTL_MS
+    );
+  }
+
+  static getCachedApplications(): CandidatePortalApplication[] | null {
+    return this.hasFreshApplicationsCache() ? myApplicationsCache : null;
+  }
+
+  static getMyApplicationsLastRefresh(): number | null {
+    return myApplicationsFetchedAt || null;
+  }
+
+  static invalidateApplications() {
+    myApplicationsInFlight = null;
+    myApplicationsCache = null;
+    myApplicationsFetchedAt = 0;
+  }
+
   static async getMyApplications(options?: {
     force?: boolean;
   }): Promise<CandidatePortalApplication[]> {
-    if (!options?.force && hasFreshApplicationsCache()) {
+    if (
+      options?.force &&
+      myApplicationsCache &&
+      this.hasFreshApplicationsCache() &&
+      Date.now() - lastApplicationsForceAt < CANDIDATE_MIN_REFETCH_MS
+    ) {
+      return myApplicationsCache;
+    }
+
+    if (!options?.force && this.hasFreshApplicationsCache()) {
       return myApplicationsCache!;
     }
 
     if (!options?.force && myApplicationsInFlight) {
       return myApplicationsInFlight;
+    }
+
+    if (options?.force) {
+      lastApplicationsForceAt = Date.now();
     }
 
     const path = options?.force
@@ -99,15 +134,25 @@ export class CandidateSessionService {
         myApplicationsFetchedAt = Date.now();
         return applications;
       })
+      .catch((error) => {
+        const message = normalizePortalError(
+          error instanceof Error ? error.message : "Request could not be completed",
+          true
+        );
+
+        if (!message || isApplicationsErrorEmpty(error instanceof Error ? error.message : "")) {
+          myApplicationsCache = myApplicationsCache ?? [];
+          myApplicationsFetchedAt = Date.now();
+          return myApplicationsCache ?? [];
+        }
+
+        throw new Error(message || "We could not load your assessments. Please try again shortly.");
+      })
       .finally(() => {
         myApplicationsInFlight = null;
       });
 
     return myApplicationsInFlight;
-  }
-
-  static getMyApplicationsLastRefresh(): number | null {
-    return myApplicationsFetchedAt || null;
   }
 
   static async joinWithAccessCode(
@@ -118,9 +163,7 @@ export class CandidateSessionService {
       { accessCode }
     );
 
-    myApplicationsInFlight = null;
-    myApplicationsCache = null;
-    myApplicationsFetchedAt = 0;
+    this.invalidateApplications();
 
     return response.data ?? null;
   }
@@ -139,9 +182,7 @@ export class CandidateSessionService {
       }
     );
 
-    myApplicationsInFlight = null;
-    myApplicationsCache = null;
-    myApplicationsFetchedAt = 0;
+    this.invalidateApplications();
 
     return response.data ?? null;
   }

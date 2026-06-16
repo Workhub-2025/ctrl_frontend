@@ -9,13 +9,14 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import {
   ClientErrorBanner,
+  ClientPageHeader,
   ClientQuickLink,
   ClientRefreshButton,
+  ClientStatTile,
 } from "@/components/dashboard/client/client-portal-ui";
-import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
+import { PortalQuickLinkRow } from "@/components/dashboard/portal/portal-ui";
 import { useClientPortal } from "@/context/client-portal-provider";
 
 export function ClientOverviewContent() {
@@ -29,18 +30,16 @@ export function ClientOverviewContent() {
   } = useClientPortal();
 
   return (
-    <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
-      <HiringManagerPageHeader
-        eyebrow="Client workspace"
-        title={summary?.client?.name ?? "Client Portal"}
+    <div className="space-y-8">
+      <ClientPageHeader
+        title={summary?.client?.name ?? "Overview"}
         description="Review hiring-manager capacity, campaign approvals, and candidate progression from one place."
-        icon={Building2}
-        notice={error ? <ClientErrorBanner message={error} /> : null}
+        notice={error ? <ClientErrorBanner tone="error">{error}</ClientErrorBanner> : null}
         action={<ClientRefreshButton onClick={() => void loadOverview(true)} loading={loading} />}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <PortalStatTile
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <ClientStatTile
           label="Hiring manager seats"
           value={summary ? `${summary.seats.used}/${summary.seats.limit}` : "…"}
           detail={
@@ -50,64 +49,66 @@ export function ClientOverviewContent() {
           }
           icon={Users}
         />
-        <PortalStatTile
+        <ClientStatTile
           label="Available invites"
           value={summary?.availableAccessCodes ?? "…"}
           detail="Unused hiring-manager invite codes"
           icon={KeyRound}
-          tone="success"
         />
-        <PortalStatTile
+        <ClientStatTile
           label="Campaign approvals"
           value={summary?.campaignsPendingApproval ?? pendingCampaigns.length}
           detail="Campaigns waiting for your review"
           icon={ClipboardCheck}
-          tone={(summary?.campaignsPendingApproval ?? 0) > 0 ? "attention" : "default"}
         />
-        <PortalStatTile
+        <ClientStatTile
           label="Candidates pending review"
           value={summary?.candidatesPendingReview ?? pendingSharedCandidates.length}
           detail="Shared candidates awaiting a decision"
           icon={UserCheck}
-          tone={(summary?.candidatesPendingReview ?? 0) > 0 ? "attention" : "default"}
         />
       </div>
 
-      <section className="space-y-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Workspaces
-          </p>
-          <h2 className="font-display text-lg font-semibold text-foreground">Go to a portal area</h2>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <ClientQuickLink
-            href="/client-dashboard/hiring-managers/"
-            icon={Users}
-            title="Hiring managers"
-            description="Manage seat access, invite codes, and hiring-manager workspaces."
-          />
-          <ClientQuickLink
-            href="/client-dashboard/progressed/"
-            icon={ClipboardCheck}
-            title="Approvals"
-            description="Review campaign submissions and shared candidate progression."
-            badge={summary?.campaignsPendingApproval ?? pendingCampaigns.length}
-          />
-          <ClientQuickLink
-            href="/client-dashboard/upgrade-requests/"
-            icon={TrendingUp}
-            title="Upgrade requests"
-            description="View entitlements and request seats, assessments, or version upgrades."
-          />
-          <ClientQuickLink
-            href="/client-dashboard/messages/"
-            icon={MessageSquare}
-            title="Messages"
-            description="Contact CTRL Support and track your ticket history."
-          />
-        </div>
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold text-foreground">Go to a workspace area</h2>
+        <PortalQuickLinkRow
+          links={[
+            {
+              href: "/client-dashboard/hiring-managers/",
+              label: "Hiring managers",
+              hint: "Seats and invite codes",
+              icon: Users,
+            },
+            {
+              href: "/client-dashboard/progressed/",
+              label: "Approvals",
+              hint: "Campaigns and candidates",
+              icon: ClipboardCheck,
+            },
+            {
+              href: "/client-dashboard/upgrade-requests/",
+              label: "Upgrade requests",
+              hint: "Seats and features",
+              icon: TrendingUp,
+            },
+          ]}
+        />
       </section>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ClientQuickLink
+          href="/client-dashboard/messages/"
+          icon={MessageSquare}
+          title="Messages"
+          description="Support tickets and hiring team correspondence."
+        />
+        <ClientQuickLink
+          href="/client-dashboard/hiring-managers/"
+          icon={Building2}
+          title="Team management"
+          description="Full hiring-manager directory, invites, and seat controls."
+        />
+      </div>
     </div>
   );
 }

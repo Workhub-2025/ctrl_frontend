@@ -29,6 +29,19 @@ export type UseCandidateApplicationsResult = {
   refresh: (options?: RefreshOptions) => Promise<void>;
 };
 
+function hydrateFromCache(
+  cached: CandidatePortalApplication[]
+): Pick<
+  UseCandidateApplicationsResult,
+  "rawApplications" | "applications" | "lastRefreshAt"
+> {
+  return {
+    rawApplications: cached,
+    applications: cached.map((app, index) => mapApplication(app, index)),
+    lastRefreshAt: CandidateSessionService.getMyApplicationsLastRefresh(),
+  };
+}
+
 /**
  * Centralised data access for every candidate portal surface. Wraps the
  * `CandidateSessionService` fetch, exposes loading/refresh/error state, maps to
@@ -36,13 +49,14 @@ export type UseCandidateApplicationsResult = {
  * another tab.
  */
 export function useCandidateApplications(): UseCandidateApplicationsResult {
-  const [rawApplications, setRawApplications] = useState<
-    CandidatePortalApplication[]
-  >([]);
-  const [applications, setApplications] = useState<CandidateApplicationView[]>(
-    []
+  const cachedOnMount = CandidateSessionService.getCachedApplications();
+  const [rawApplications, setRawApplications] = useState<CandidatePortalApplication[]>(
+    () => cachedOnMount ?? []
   );
-  const [isLoading, setIsLoading] = useState(true);
+  const [applications, setApplications] = useState<CandidateApplicationView[]>(() =>
+    cachedOnMount ? cachedOnMount.map((app, index) => mapApplication(app, index)) : []
+  );
+  const [isLoading, setIsLoading] = useState(() => !CandidateSessionService.hasFreshApplicationsCache());
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(
@@ -51,23 +65,37 @@ export function useCandidateApplications(): UseCandidateApplicationsResult {
 
   const refresh = useCallback(async (options?: RefreshOptions) => {
     const isManualRefresh = !!options?.force;
+
+    if (!isManualRefresh && CandidateSessionService.hasFreshApplicationsCache()) {
+      const hydrated = hydrateFromCache(CandidateSessionService.getCachedApplications() ?? []);
+      setRawApplications(hydrated.rawApplications);
+      setApplications(hydrated.applications);
+      setLastRefreshAt(hydrated.lastRefreshAt);
+      setError("");
+      setIsLoading(false);
+      setIsRefreshing(false);
+      return;
+    }
+
     const startTime = Date.now();
     if (isManualRefresh) setIsRefreshing(true);
     else setIsLoading(true);
     setError("");
 
     try {
-      const portalApplications = await CandidateSessionService.getMyApplications(
-        { force: options?.force }
-      );
+      const portalApplications = await CandidateSessionService.getMyApplications({
+        force: options?.force,
+      });
       setRawApplications(portalApplications);
-      setApplications(portalApplications.map((app, i) => mapApplication(app, i)));
+      setApplications(portalApplications.map((app, index) => mapApplication(app, index)));
       setLastRefreshAt(CandidateSessionService.getMyApplicationsLastRefresh());
     } catch (err) {
       console.error("[CandidateDashboard] Failed to load applications:", err);
       if (!options?.preserveOnError) {
         setError(
-          "We could not load your assessments. Please refresh or try again shortly."
+          err instanceof Error
+            ? err.message
+            : "We could not load your assessments. Please refresh or try again shortly."
         );
       }
     } finally {
@@ -89,6 +117,7 @@ export function useCandidateApplications(): UseCandidateApplicationsResult {
 
   useEffect(() => {
     return listenForAssessmentCompletion(() => {
+      CandidateSessionService.invalidateApplications();
       void refresh({ force: true, preserveOnError: true });
     });
   }, [refresh]);

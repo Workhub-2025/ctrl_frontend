@@ -57,7 +57,7 @@ import {
 } from "@/components/dashboard/candidate/candidate-portal-ui";
 import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
 import { LocationMapDialog } from "@/components/dashboard/location-map-dialog";
-import { useCandidateApplications } from "@/hooks/use-candidate-applications";
+import { useCandidatePortal } from "@/context/candidate-portal-provider";
 import {
   formatDate,
   formatDateTime,
@@ -415,7 +415,7 @@ export function CandidateDashboardContent() {
     error,
     lastRefreshAt,
     refresh,
-  } = useCandidateApplications();
+  } = useCandidatePortal();
 
   const [selectedApplicationKey, setSelectedApplicationKey] = useState<string | null>(
     sessionParam

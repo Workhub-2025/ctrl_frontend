@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { isAdminRole } from "@/lib/auth/role-model";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-import { parseUpgradeRequestFromTicket } from "@/lib/client/entitlements";
+import { parseBillingRequestFromTicket } from "@/lib/client/entitlements";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -21,7 +21,7 @@ export async function GET() {
 
     const data = (response.data ?? [])
       .map((ticket) => {
-        const record = parseUpgradeRequestFromTicket({
+        const record = parseBillingRequestFromTicket({
           id: String(ticket.documentId ?? ticket.id ?? ""),
           ticketNumber: String(ticket.ticketNumber ?? ""),
           subject: String(ticket.subject ?? ""),
@@ -30,7 +30,7 @@ export async function GET() {
           createdAt: String(ticket.createdAt ?? ""),
           metadata: ticket.metadata as Record<string, unknown> | null,
         });
-        if (!record) return null;
+        if (!record || record.requestKind !== "client_upgrade") return null;
         return {
           ...record,
           billingStatus: String(ticket.billingStatus ?? "none"),

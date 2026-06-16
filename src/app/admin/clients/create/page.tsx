@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { invalidateAdminResource } from "@/lib/admin-resource-cache";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { AdminAlert, AdminPageHeader } from "@/components/admin/admin-portal-ui";
 
 type CreatedClientResponse = {
   client?: {
@@ -134,48 +134,46 @@ export default function CreateClientPage() {
 
   return (
     <div className="space-y-6">
-      <HiringManagerPageHeader
-        eyebrow="Client Creation"
-        title="Create Client"
-        description="Create the organisation record, primary contact, active contract, and optional registration code."
-        icon={KeyRound}
+      <AdminPageHeader
+        title="Add client"
+        description="Create the organisation, primary contact, active contract, and optional registration code."
         notice={
           error ? (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-400">
-              {error}
-            </div>
+            <AdminAlert>{error}</AdminAlert>
           ) : created ? (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-5 text-sm">
+            <AdminAlert tone="info">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
                 <div className="space-y-3 flex-1">
-                  <p className="font-semibold text-white">{created.client?.name ?? "Client"} created successfully.</p>
+                  <p className="font-semibold">{created.client?.name ?? "Client"} created successfully.</p>
                   {created.accessCode?.code && (
-                    <div className="rounded-lg border border-white/5 bg-[#080c16]/55 p-3.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Client registration code</p>
-                      <p className="mt-2 break-all font-mono text-base font-black text-white bg-black/45 py-2 px-3 rounded-md border border-white/5">
+                    <div className="rounded-lg border border-border/60 bg-background/50 p-3.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Client registration code
+                      </p>
+                      <p className="mt-2 break-all rounded-md border border-border/60 bg-muted/40 px-3 py-2 font-mono text-base font-bold">
                         {created.accessCode.code}
                       </p>
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         Expires {new Date(created.accessCode.expiresAt).toLocaleString("en-GB")}. This code is shown once.
                       </p>
                     </div>
                   )}
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <Button type="button" onClick={() => router.push("/admin/clients")} className="h-[34px] rounded-lg text-xs font-semibold">
+                    <Button type="button" onClick={() => router.push("/admin/clients")} className="h-9 rounded-lg text-xs font-semibold">
                       View clients
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => setCreated(null)} className="h-[34px] rounded-lg text-xs font-semibold border-white/10 hover:bg-white/10">
+                    <Button type="button" variant="outline" onClick={() => setCreated(null)} className="h-9 rounded-lg text-xs font-semibold">
                       Create another
                     </Button>
                   </div>
                 </div>
               </div>
-            </div>
+            </AdminAlert>
           ) : null
         }
         action={
-          <Button asChild variant="outline" className="border-white/10 hover:bg-white/10 text-slate-200">
+          <Button asChild variant="outline" className="rounded-lg">
             <Link href="/admin/clients">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to clients

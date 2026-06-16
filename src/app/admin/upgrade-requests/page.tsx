@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/select";
 import { ArrowUpRight, CheckCircle2, Loader2, Minus, Plus, Search, Users } from "lucide-react";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { PORTAL_CACHE_TTL_MS } from "@/lib/portal-fetch-cache";
+import { AdminPageHeader } from "@/components/admin/admin-portal-ui";
 
 type EntitlementClient = {
   id: string;
@@ -140,15 +141,14 @@ export default function UpgradeRequestsPage() {
     "/api/admin/upgrades",
     []
   );
-  const {
-    data: versionOptions,
-    error: versionOptionsError,
-  } = useAdminResource<AssessmentVersionOptionsBySlug>(
+  const { data: versionOptions } = useAdminResource<AssessmentVersionOptionsBySlug>(
     "admin:assessment-versions",
     "/api/admin/assessment-versions",
-    {}
+    {},
+    PORTAL_CACHE_TTL_MS,
+    { allowEmpty: true }
   );
-  const error = actionError || loadError || versionOptionsError;
+  const error = actionError || loadError;
 
   useEffect(() => {
     setSelectedClientId((current) => {
@@ -343,16 +343,14 @@ export default function UpgradeRequestsPage() {
   };
 
   return (
-    <div className="max-w-7xl space-y-6">
-      <HiringManagerPageHeader
-        eyebrow="Upgrades"
-        title="Entitlement Review"
-        description="Stage seat and feature changes, then approve them after a quick review."
-        icon={ArrowUpRight}
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Entitlements"
+        description="Adjust hiring-manager seats, features, and assessment versions for each client."
         action={
-          <Button asChild variant="outline" className="rounded-xl px-4 gap-2">
+          <Button asChild variant="outline" className="rounded-lg gap-2">
             <Link href="/admin/clients">
-              Client list
+              All clients
               <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
             </Link>
           </Button>

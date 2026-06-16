@@ -1,4 +1,5 @@
 import { fetchClient } from "@/lib/fetch-client";
+import { normalizePortalError } from "@/lib/portal-fetch-cache";
 
 async function readJson<T>(response: Response): Promise<T> {
   return (await response.json().catch(() => ({}))) as T;
@@ -43,6 +44,32 @@ export type TicketStats = {
 };
 
 export class SupportTicketService {
+  private static myTicketsInFlight: Promise<SupportTicket[]> | null = null;
+  private static myTicketsCache: SupportTicket[] | null = null;
+  private static myTicketsFetchedAt = 0;
+  private static lastMyTicketsForceAt = 0;
+
+  private static readonly MY_TICKETS_TTL_MS = 90_000;
+  private static readonly MY_TICKETS_MIN_REFETCH_MS = 5_000;
+
+  static hasFreshMyTicketsCache() {
+    return (
+      this.myTicketsCache !== null &&
+      this.myTicketsFetchedAt > 0 &&
+      Date.now() - this.myTicketsFetchedAt < this.MY_TICKETS_TTL_MS
+    );
+  }
+
+  static getCachedMyTickets(): SupportTicket[] | null {
+    return this.hasFreshMyTicketsCache() ? this.myTicketsCache : null;
+  }
+
+  static invalidateMyTickets() {
+    this.myTicketsInFlight = null;
+    this.myTicketsCache = null;
+    this.myTicketsFetchedAt = 0;
+  }
+
   static async createTicket(data: {
     subject: string;
     description: string;
@@ -55,15 +82,60 @@ export class SupportTicketService {
       body: JSON.stringify(data),
     });
     const body = await readJson<{ data: SupportTicket }>(response);
+    this.invalidateMyTickets();
     return body.data;
   }
 
-  static async getMyTickets(): Promise<SupportTicket[]> {
-    const response = await fetchClient("/support-tickets/mine", {
+  static async getMyTickets(options?: { force?: boolean }): Promise<SupportTicket[]> {
+    if (
+      options?.force &&
+      this.myTicketsCache &&
+      this.hasFreshMyTicketsCache() &&
+      Date.now() - this.lastMyTicketsForceAt < this.MY_TICKETS_MIN_REFETCH_MS
+    ) {
+      return this.myTicketsCache;
+    }
+
+    if (!options?.force && this.hasFreshMyTicketsCache()) {
+      return this.myTicketsCache!;
+    }
+
+    if (!options?.force && this.myTicketsInFlight) {
+      return this.myTicketsInFlight;
+    }
+
+    if (options?.force) {
+      this.lastMyTicketsForceAt = Date.now();
+    }
+
+    this.myTicketsInFlight = fetchClient("/support-tickets/mine", {
       cache: "no-store",
-    });
-    const body = await readJson<{ data: SupportTicket[] }>(response);
-    return Array.isArray(body.data) ? body.data : [];
+    })
+      .then(async (response) => {
+        const body = await readJson<{ data: SupportTicket[] }>(response);
+        const tickets = Array.isArray(body.data) ? body.data : [];
+        this.myTicketsCache = tickets;
+        this.myTicketsFetchedAt = Date.now();
+        return tickets;
+      })
+      .catch((error) => {
+        const rawMessage =
+          error instanceof Error ? error.message : "Request could not be completed";
+        const message = normalizePortalError(rawMessage, true);
+
+        if (!message || /not found|404|forbidden|403/i.test(rawMessage)) {
+          this.myTicketsCache = this.myTicketsCache ?? [];
+          this.myTicketsFetchedAt = Date.now();
+          return this.myTicketsCache ?? [];
+        }
+
+        throw new Error(message || "We could not load your tickets. Please try again shortly.");
+      })
+      .finally(() => {
+        this.myTicketsInFlight = null;
+      });
+
+    return this.myTicketsInFlight;
   }
 
   static async getAllTickets(filters?: {

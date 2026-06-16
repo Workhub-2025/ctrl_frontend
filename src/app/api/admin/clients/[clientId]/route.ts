@@ -44,6 +44,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ data: client });
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);
+    if (upstreamStatus === 404) {
+      return NextResponse.json({ data: null });
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Client could not be loaded" },
       { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 }

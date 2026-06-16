@@ -1,17 +1,32 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  PortalAlert,
+  PortalLinkCard,
+  PortalPageHeader,
+  PortalPanel,
+  PortalStatTile,
+} from "@/components/dashboard/portal/portal-ui";
+import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
-export function ClientErrorBanner({ message }: { message: string }) {
-  return (
-    <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-600 dark:text-red-200">
-      {message}
-    </p>
-  );
+export function ClientErrorBanner({
+  message,
+  children,
+  tone = "error",
+}: {
+  message?: string;
+  children?: React.ReactNode;
+  tone?: "error" | "info";
+}) {
+  return <PortalAlert tone={tone}>{message ?? children}</PortalAlert>;
 }
+export const ClientPageHeader = PortalPageHeader;
+export const ClientStatTile = PortalStatTile;
 
 export function ClientRefreshButton({
   onClick,
@@ -26,7 +41,7 @@ export function ClientRefreshButton({
     <Button
       type="button"
       variant="outline"
-      className="h-9 rounded-xl border-border text-foreground transition-colors hover:!bg-muted hover:!text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+      className="h-9 rounded-lg"
       onClick={onClick}
       disabled={loading}
     >
@@ -53,24 +68,28 @@ export function ClientQuickLink({
   badge?: string | number;
 }) {
   return (
-    <a
+    <Link
       href={href}
-      className="group flex items-start gap-4 rounded-2xl border border-border/60 bg-background/40 p-4 transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-[#0b1220]/25 dark:hover:border-white/15"
+      className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-        <Icon className="h-5 w-5" aria-hidden="true" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="font-display text-sm font-semibold text-foreground">{title}</span>
-          {badge !== undefined && Number(badge) > 0 ? (
-            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-300">
-              {badge}
-            </span>
-          ) : null}
-        </span>
-        <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{description}</span>
-      </span>
-    </a>
+      <PortalPanel className="h-full transition-colors hover:border-primary/20">
+        <div className="flex items-start gap-3">
+          <span className={portalIconWrapLgClass}>
+            <Icon className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold text-foreground">{title}</h3>
+              {badge !== undefined && Number(badge) > 0 ? (
+                <span className="rounded-md border border-border/60 bg-muted/35 px-2 py-0.5 text-xs font-medium">
+                  {badge}
+                </span>
+              ) : null}
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+          </div>
+        </div>
+      </PortalPanel>
+    </Link>
   );
 }

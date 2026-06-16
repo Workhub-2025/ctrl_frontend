@@ -26,11 +26,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { ClientUpgradeRequestPayload, ClientUpgradeRequestType } from "@/lib/client/entitlements";
+import type { ClientInitiatedUpgradeType, ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 
 const REQUEST_COPY: Record<
-  ClientUpgradeRequestType,
+  ClientInitiatedUpgradeType,
   { title: string; description: string; icon: typeof Users }
 > = {
   seat_increase: {
@@ -71,7 +71,7 @@ export function ClientUpgradeRequestDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  requestType: ClientUpgradeRequestType;
+  requestType: ClientInitiatedUpgradeType;
   entitlements: ClientEntitlements | null;
   submitting: boolean;
   onSubmit: (payload: ClientUpgradeRequestPayload) => Promise<void>;

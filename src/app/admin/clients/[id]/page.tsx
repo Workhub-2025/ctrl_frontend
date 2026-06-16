@@ -32,7 +32,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { PORTAL_CACHE_TTL_MS } from "@/lib/portal-fetch-cache";
+import { AdminAlert, AdminPageHeader } from "@/components/admin/admin-portal-ui";
 
 type ClientDetails = {
   id: string;
@@ -113,7 +114,9 @@ export default function ClientDetailPage() {
   } = useAdminResource<ClientDetails | null>(
     `admin:client:${clientId}`,
     `/api/admin/clients/${encodeURIComponent(clientId)}`,
-    null
+    null,
+    PORTAL_CACHE_TTL_MS,
+    { allowEmpty: true }
   );
   const [actionError, setActionError] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<{ code: string; expiresAt: string } | null>(null);
@@ -196,6 +199,20 @@ export default function ClientDetailPage() {
     );
   }
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Button asChild variant="ghost" className="gap-2 px-0">
+          <Link href="/admin/clients">
+            <ArrowLeft className="h-4 w-4" />
+            Back to clients
+          </Link>
+        </Button>
+        <p className="text-sm text-muted-foreground">Loading client details…</p>
+      </div>
+    );
+  }
+
   if (!client) {
     return (
       <div className="space-y-4">
@@ -205,8 +222,8 @@ export default function ClientDetailPage() {
             Back to clients
           </Link>
         </Button>
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
-          {error || "Client could not be loaded"}
+        <div className="rounded-md border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+          {loadError || "This client could not be found."}
         </div>
       </div>
     );
@@ -214,39 +231,35 @@ export default function ClientDetailPage() {
 
   return (
     <div className="space-y-6">
-      <HiringManagerPageHeader
-        eyebrow="Client Details"
+      <AdminPageHeader
         title={client.name}
         description={`Legal name: ${client.legalName || "Not set"}`}
-        icon={Building2}
         notice={
           error ? (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-400">
-              {error}
-            </div>
+            <AdminAlert>{error}</AdminAlert>
           ) : generatedCode ? (
-            <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 px-4 py-3 text-sm">
-              <p className="font-semibold text-cyan-400">Client access code generated</p>
-              <p className="mt-2 break-all font-mono text-base font-black text-white">{generatedCode.code}</p>
-              <p className="mt-1 text-xs text-slate-400">
+            <AdminAlert tone="info">
+              <p className="font-semibold">Client access code generated</p>
+              <p className="mt-2 break-all font-mono text-base font-bold">{generatedCode.code}</p>
+              <p className="mt-1 text-xs opacity-80">
                 Expires {generatedCode.expiresAt ? new Date(generatedCode.expiresAt).toLocaleString("en-GB") : "soon"}.
                 This code is shown once.
               </p>
-            </div>
+            </AdminAlert>
           ) : null
         }
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="outline" className="h-9 border-white/10 hover:bg-white/10 text-slate-200">
+            <Button asChild variant="outline" className="h-9 rounded-lg">
               <Link href="/admin/clients">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to clients
+                All clients
               </Link>
             </Button>
-            <Button asChild variant="outline" className="h-9 border-white/10 hover:bg-white/10 text-slate-200">
+            <Button asChild variant="outline" className="h-9 rounded-lg">
               <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
-                Review entitlements
+                Entitlements
               </Link>
             </Button>
             <ClientInviteAction

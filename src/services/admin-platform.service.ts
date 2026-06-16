@@ -222,9 +222,14 @@ export type AdminClientEntitlementRow = AdminClientRow & {
 export type AdminAuditLogRow = {
   id: string;
   actor: string;
+  actorRole?: string;
   timestamp: string;
+  rawTimestamp?: string;
   event: string;
+  eventKey?: string;
   client: string;
+  resource?: string;
+  resourceLabel?: string;
   details: string;
 };
 
@@ -317,6 +322,10 @@ type RawAuditLog = {
   metadata?: Record<string, unknown> | null;
   occurredAt?: string;
   createdAt?: string;
+  actorDisplayName?: string;
+  clientDisplayName?: string | null;
+  resourceDisplayName?: string | null;
+  metadataResolved?: Record<string, string>;
 };
 
 function isActiveContract(contract?: RawContract) {
@@ -603,26 +612,64 @@ function humanize(value?: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function normalizeAuditLog(log: RawAuditLog): AdminAuditLogRow {
-  const metadata = log.metadata ?? {};
-  const clientDocumentId = String(
-    metadata.clientDocumentId ??
-    metadata.clientId ??
-    ""
-  );
+function formatAuditDetails(log: RawAuditLog): string {
+  if (log.metadataResolved && Object.keys(log.metadataResolved).length > 0) {
+    return Object.entries(log.metadataResolved)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(" · ");
+  }
 
+  const metadata = log.metadata ?? {};
+  const parts: string[] = [];
+
+  if (log.resourceDisplayName) {
+    parts.push(`${humanize(log.resource)}: ${log.resourceDisplayName}`);
+  } else if (log.resource) {
+    parts.push(humanize(log.resource));
+  }
+
+  const skipKeys = new Set(["clientDocumentId", "clientId", "clientName"]);
+  for (const [key, value] of Object.entries(metadata)) {
+    if (skipKeys.has(key)) continue;
+    if (value === null || value === undefined || value === "") continue;
+    if (typeof value === "object") {
+      parts.push(`${humanize(key)}: ${JSON.stringify(value)}`);
+    } else {
+      parts.push(`${humanize(key)}: ${String(value)}`);
+    }
+  }
+
+  return parts.join(" · ") || "No additional details recorded";
+}
+
+function formatAuditClient(log: RawAuditLog): string {
+  if (log.clientDisplayName) return log.clientDisplayName;
+
+  const metadata = log.metadata ?? {};
+  const clientName = metadata.clientName ? String(metadata.clientName) : "";
+  if (clientName) return clientName;
+
+  return "Platform-wide";
+}
+
+function formatAuditActor(log: RawAuditLog): string {
+  if (log.actorDisplayName) return log.actorDisplayName;
+  return humanize(log.actorRole) || "System";
+}
+
+function normalizeAuditLog(log: RawAuditLog): AdminAuditLogRow {
   return {
     id: log.documentId ?? String(log.id ?? `${log.actionType}-${log.occurredAt}`),
-    actor: log.actorRole
-      ? `${humanize(log.actorRole)} ${log.actorUserId ? `(${log.actorUserId})` : ""}`.trim()
-      : log.actorUserId || "System",
+    actor: formatAuditActor(log),
+    actorRole: humanize(log.actorRole),
     timestamp: formatTimestamp(log.occurredAt ?? log.createdAt),
+    rawTimestamp: log.occurredAt ?? log.createdAt ?? "",
     event: humanize(log.actionType),
-    client: clientDocumentId || String(metadata.clientName ?? "N/A"),
-    details:
-      log.resource
-        ? `${humanize(log.resource)}${log.resourceId ? ` • ${log.resourceId}` : ""}`
-        : JSON.stringify(metadata),
+    eventKey: log.actionType ?? "unknown",
+    client: formatAuditClient(log),
+    resource: humanize(log.resource),
+    resourceLabel: log.resourceDisplayName ?? "",
+    details: formatAuditDetails(log),
   };
 }
 
@@ -847,22 +894,26 @@ export async function getAdminAssessmentVersions(
 ): Promise<Record<string, AdminAssessmentVersionOption[]>> {
   const entries = await Promise.all(
     assessmentSlugs.map(async (slug) => {
-      const response = await adminStrapiRequest<AssessmentVersionsResponse>(
-        `/assessment/${encodeURIComponent(slug)}/versions`,
-        undefined,
-        authToken
-      );
+      try {
+        const response = await adminStrapiRequest<AssessmentVersionsResponse>(
+          `/assessment/${encodeURIComponent(slug)}/versions`,
+          undefined,
+          authToken
+        );
 
-      return [
-        slug,
-        (response.data ?? [])
-          .filter((version) => typeof version.version === "string" && version.version)
-          .map((version) => ({
-            version: version.version as string,
-            title: version.title || `v${version.version}`,
-            description: version.description ?? null,
-          })),
-      ] as const;
+        return [
+          slug,
+          (response.data ?? [])
+            .filter((version) => typeof version.version === "string" && version.version)
+            .map((version) => ({
+              version: version.version as string,
+              title: version.title || `v${version.version}`,
+              description: version.description ?? null,
+            })),
+        ] as const;
+      } catch {
+        return [slug, []] as const;
+      }
     })
   );
 

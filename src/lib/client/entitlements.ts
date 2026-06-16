@@ -74,10 +74,14 @@ export function resolveAssessmentLabel(slug: string, title?: string) {
   return title || known?.title || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export type ClientUpgradeRequestType =
+export type ClientInitiatedUpgradeType =
   | "seat_increase"
   | "new_assessment"
   | "assessment_version";
+
+export type ClientUpgradeRequestType =
+  | ClientInitiatedUpgradeType
+  | "contract_extension";
 
 export type ClientUpgradeRequestPayload =
   | {
@@ -99,7 +103,18 @@ export type ClientUpgradeRequestPayload =
       currentVersion: string;
       requestedVersion: string;
       notes?: string;
+    }
+  | {
+      type: "contract_extension";
+      contractDocumentId: string;
+      clientDocumentId: string;
+      clientName: string;
+      currentEndDate: string;
+      newEndDate: string;
+      seatCount: number;
     };
+
+export type ClientBillingRequestKind = "client_upgrade" | "contract_renewal";
 
 export type ClientUpgradeRequestRecord = {
   id: string;
@@ -108,6 +123,7 @@ export type ClientUpgradeRequestRecord = {
   status: string;
   priority: string;
   createdAt: string;
+  requestKind: ClientBillingRequestKind;
   upgradeType: ClientUpgradeRequestType;
   payload: ClientUpgradeRequestPayload;
   billingStatus?: string;
@@ -144,8 +160,17 @@ export function isPlatformFeatureEnabled(
   return features?.[featureKey] === true;
 }
 
+export function addOneYearToDate(dateStr: string) {
+  const date = new Date(`${dateStr}T12:00:00.000Z`);
+  if (Number.isNaN(date.getTime())) throw new Error("Invalid contract end date");
+  date.setUTCFullYear(date.getUTCFullYear() + 1);
+  return date.toISOString().split("T")[0];
+}
+
 export function buildUpgradeRequestSubject(payload: ClientUpgradeRequestPayload) {
   switch (payload.type) {
+    case "contract_extension":
+      return `Contract renewal through ${payload.newEndDate}`;
     case "seat_increase":
       return `Upgrade request: ${payload.requestedSeats} hiring manager seats`;
     case "new_assessment":
@@ -164,6 +189,12 @@ export function buildUpgradeRequestDescription(
   const header = clientName ? `Client: ${clientName}\n\n` : "";
 
   switch (payload.type) {
+    case "contract_extension":
+      return `${header}Request type: Annual contract renewal
+Client: ${payload.clientName}
+Current contract ends: ${payload.currentEndDate}
+Renewed contract ends: ${payload.newEndDate}
+Seats on renewal: ${payload.seatCount}`.trim();
     case "seat_increase":
       return `${header}Request type: Hiring manager seat increase
 Current contracted seats: ${payload.currentSeats}
@@ -198,8 +229,23 @@ export function parseUpgradeRequestFromTicket(ticket: {
   createdAt: string;
   metadata?: Record<string, unknown> | null;
 }): ClientUpgradeRequestRecord | null {
+  return parseBillingRequestFromTicket(ticket);
+}
+
+export function parseBillingRequestFromTicket(ticket: {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  status: string;
+  priority: string;
+  createdAt: string;
+  metadata?: Record<string, unknown> | null;
+}): ClientUpgradeRequestRecord | null {
   const metadata = ticket.metadata;
-  if (!metadata || metadata.requestKind !== "client_upgrade") return null;
+  if (!metadata) return null;
+
+  const requestKind = metadata.requestKind as ClientBillingRequestKind | undefined;
+  if (requestKind !== "client_upgrade" && requestKind !== "contract_renewal") return null;
 
   const upgradeType = metadata.upgradeType as ClientUpgradeRequestType | undefined;
   const payload = metadata.payload as ClientUpgradeRequestPayload | undefined;
@@ -212,6 +258,7 @@ export function parseUpgradeRequestFromTicket(ticket: {
     status: ticket.status,
     priority: ticket.priority,
     createdAt: ticket.createdAt,
+    requestKind,
     upgradeType,
     payload,
   };

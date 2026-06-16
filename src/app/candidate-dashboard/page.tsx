@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/auth.store";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { useCandidateApplications } from "@/hooks/use-candidate-applications";
+import { useCandidatePortal } from "@/context/candidate-portal-provider";
 import {
   formatDate,
   hasAvailableAssessment,
@@ -78,7 +78,7 @@ function StatTileSkeleton() {
 export default function CandidateDashboardOverviewPage() {
   const { user } = useAuth();
   const { userProfile } = useAuthStore();
-  const { applications, isLoading, error, refresh } = useCandidateApplications();
+  const { applications, isLoading, error, refresh } = useCandidatePortal();
 
   const [accessCodeInput, setAccessCodeInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

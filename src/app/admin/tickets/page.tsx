@@ -36,7 +36,7 @@ import {
   Calendar,
   Save,
 } from "lucide-react";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { AdminPageHeader } from "@/components/admin/admin-portal-ui";
 import {
   SupportTicketService,
   type SupportTicket,
@@ -482,16 +482,14 @@ export default function AdminTicketsPage() {
   ];
 
   return (
-    <div className="max-w-7xl space-y-6">
-      <HiringManagerPageHeader
-        eyebrow="Admin"
-        title="Support Tickets"
-        description="Review, triage, and resolve user-submitted support tickets."
-        icon={Ticket}
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Support tickets"
+        description="Review, triage, and resolve user-submitted tickets."
         action={
           <Button
             variant="outline"
-            className="rounded-xl px-4 gap-2"
+            className="rounded-lg gap-2"
             onClick={handleRefresh}
             disabled={refreshing}
           >

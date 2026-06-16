@@ -46,28 +46,36 @@ export async function POST(
     );
     const ticket = ticketResponse.data;
     const metadata = ticket?.metadata;
-    if (!ticket || metadata?.requestKind !== "client_upgrade" || !metadata.payload) {
-      return NextResponse.json({ error: "Upgrade request ticket not found" }, { status: 404 });
+    if (!ticket || !metadata?.payload) {
+      return NextResponse.json({ error: "Billing ticket not found" }, { status: 404 });
+    }
+
+    const requestKind = metadata.requestKind;
+    if (requestKind !== "client_upgrade" && requestKind !== "contract_renewal") {
+      return NextResponse.json({ error: "Billing ticket not found" }, { status: 404 });
     }
 
     const pricingResponse = await strapiRequest<{ data?: Record<string, number | string> }>(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
-    const payload = metadata.payload;
+    const payload = metadata.payload as ClientUpgradeRequestPayload;
 
     let amountPence = 0;
     switch (payload.type) {
       case "seat_increase":
         amountPence =
           Math.max(0, payload.requestedSeats - payload.currentSeats) *
-          Number(pricing.seatMonthlyPence ?? 0);
+          Number(pricing.seatOneOffPence ?? pricing.seatMonthlyPence ?? 0);
         break;
       case "new_assessment":
         amountPence = Number(pricing.assessmentAddonPence ?? 0);
         break;
       case "assessment_version":
         amountPence = Number(pricing.versionUpgradePence ?? 0);
+        break;
+      case "contract_extension":
+        amountPence = Number(pricing.basePlatformYearlyPence ?? pricing.basePlatformMonthlyPence ?? 0);
         break;
     }
 
@@ -98,7 +106,7 @@ export async function POST(
         },
       ],
       metadata: {
-        requestKind: "client_upgrade",
+        requestKind: requestKind ?? "client_upgrade",
         ticketDocumentId: ticket.documentId ?? ticket.id ?? ticketId,
         clientDocumentId: metadata.clientDocumentId ?? "",
         upgradeType: metadata.upgradeType ?? "",

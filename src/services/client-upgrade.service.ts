@@ -1,7 +1,7 @@
 import "server-only";
 
 import {
-  parseUpgradeRequestFromTicket,
+  parseBillingRequestFromTicket,
   type ClientUpgradeRequestPayload,
   type ClientUpgradeRequestRecord,
 } from "@/lib/client/entitlements";
@@ -25,6 +25,7 @@ export type BackendClientEntitlements = {
     status?: string;
     paymentStatus?: string;
     paidAt?: string | null;
+    daysUntilExpiry?: number | null;
   } | null;
   platformFeatures: Record<string, boolean>;
   defaultAssessments: Array<{
@@ -120,10 +121,10 @@ export async function listClientUpgradeRequests(): Promise<
 > {
   await requireClientSession();
 
-  const response = await strapiRequest<SupportTicketListResponse>("/support-tickets/mine");
+  const response = await strapiRequest<SupportTicketListResponse>("/client/billing-requests");
   return (response.data ?? [])
     .map((ticket) => {
-      const record = parseUpgradeRequestFromTicket({
+      const record = parseBillingRequestFromTicket({
         id: ticket.documentId ?? ticket.id,
         ticketNumber: ticket.ticketNumber,
         subject: ticket.subject,
@@ -192,7 +193,7 @@ export async function createClientUpgradeRequest(input: {
   const ticket = response.data;
   if (!ticket) throw new Error("Upgrade request could not be created");
 
-  const record = parseUpgradeRequestFromTicket({
+  const record = parseBillingRequestFromTicket({
     id: ticket.documentId ?? ticket.id,
     ticketNumber: ticket.ticketNumber,
     subject: ticket.subject,

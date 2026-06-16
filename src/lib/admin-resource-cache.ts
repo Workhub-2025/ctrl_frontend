@@ -1,13 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type CacheEntry<T> = {
-  data?: T;
-  error?: string;
-  promise?: Promise<T>;
-  updatedAt: number;
-};
+import {
+  fetchPortalJson,
+  invalidatePortalCache,
+  normalizePortalError,
+  peekPortalCache,
+  PORTAL_CACHE_TTL_MS,
+  PORTAL_MIN_REFETCH_MS,
+  setPortalCacheData,
+} from "@/lib/portal-fetch-cache";
 
 type ResourceState<T> = {
   data: T;
@@ -17,46 +19,33 @@ type ResourceState<T> = {
   refetch: () => Promise<T | null>;
 };
 
-const DEFAULT_TTL_MS = 30_000;
-const cache = new Map<string, CacheEntry<unknown>>();
-
-async function requestJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { cache: "no-store" });
-  const body = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(body.error || `Request failed with ${response.status}`);
-  }
-
-  return body.data as T;
-}
-
-function isFresh(entry: CacheEntry<unknown> | undefined, ttlMs: number) {
-  return Boolean(entry?.data !== undefined && Date.now() - entry.updatedAt < ttlMs);
-}
+type AdminResourceOptions = {
+  ttlMs?: number;
+  minRefetchMs?: number;
+  /** Optional empty states (null/404) resolve to fallback without a banner error. */
+  allowEmpty?: boolean;
+};
 
 export function invalidateAdminResource(key?: string) {
-  if (key) {
-    cache.delete(key);
-    return;
-  }
-  cache.clear();
+  invalidatePortalCache(key);
 }
 
 export function setAdminResourceData<T>(key: string, data: T) {
-  cache.set(key, { data, updatedAt: Date.now() });
+  setPortalCacheData(key, data);
 }
 
 export function useAdminResource<T>(
   key: string,
   url: string,
   fallback: T,
-  ttlMs = DEFAULT_TTL_MS
+  ttlMs = PORTAL_CACHE_TTL_MS,
+  options: AdminResourceOptions = {}
 ): ResourceState<T> {
-  const cached = useMemo(() => cache.get(key) as CacheEntry<T> | undefined, [key]);
-  const [data, setData] = useState<T>(() => cached?.data ?? fallback);
-  const [error, setError] = useState<string | null>(() => cached?.error ?? null);
-  const [loading, setLoading] = useState(() => !isFresh(cached, ttlMs));
+  const { minRefetchMs = PORTAL_MIN_REFETCH_MS, allowEmpty = false } = options;
+  const cached = useMemo(() => peekPortalCache<T>(key), [key]);
+  const [data, setData] = useState<T>(() => cached ?? fallback);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(() => cached === undefined);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -66,82 +55,62 @@ export function useAdminResource<T>(
     };
   }, []);
 
-  const load = useCallback(async (force = false) => {
-    const existing = cache.get(key) as CacheEntry<T> | undefined;
+  const load = useCallback(
+    async (force = false) => {
+      if (mountedRef.current) setLoading(true);
 
-    if (!force && isFresh(existing, ttlMs)) {
-      if (mountedRef.current) {
-        setData(existing!.data as T);
-        setError(null);
-        setLoading(false);
+      try {
+        const next = await fetchPortalJson<T>({
+          key,
+          url,
+          fallback,
+          force,
+          ttlMs,
+          minRefetchMs,
+          allowEmpty,
+        });
+        if (mountedRef.current) {
+          setData(next);
+          setError(null);
+        }
+        return next;
+      } catch (err) {
+        const message = normalizePortalError(
+          err instanceof Error ? err.message : "Request could not be completed",
+          allowEmpty
+        );
+        if (mountedRef.current) {
+          if (message) setError(message);
+          else setError(null);
+        }
+        return null;
+      } finally {
+        if (mountedRef.current) setLoading(false);
       }
-      return existing!.data as T;
+    },
+    [allowEmpty, fallback, key, minRefetchMs, ttlMs, url]
+  );
+
+  useEffect(() => {
+    const warm = peekPortalCache<T>(key);
+    if (warm !== undefined) {
+      setData(warm);
+      setLoading(false);
     }
+    void load(false);
+  }, [key, url, ttlMs, allowEmpty]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const promise =
-      !force && existing?.promise
-        ? (existing.promise as Promise<T>)
-        : requestJson<T>(url);
-
-    cache.set(key, {
-      data: existing?.data,
-      error: existing?.error,
-      promise,
-      updatedAt: existing?.updatedAt ?? 0,
-    });
-    if (mountedRef.current) setLoading(true);
-
-    try {
-      const next = await promise;
-      cache.set(key, { data: next, updatedAt: Date.now() });
+  const refetch = useCallback(() => load(true), [load]);
+  const mutate = useCallback(
+    (next: T) => {
+      setPortalCacheData(key, next);
       if (mountedRef.current) {
         setData(next);
         setError(null);
       }
-      return next;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Request could not be completed";
-      cache.set(key, {
-        data: existing?.data,
-        error: message,
-        updatedAt: existing?.updatedAt ?? 0,
-      });
-      if (mountedRef.current) setError(message);
-      return null;
-    } finally {
-      if (mountedRef.current) setLoading(false);
-    }
-  }, [key, ttlMs, url]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const existing = cache.get(key) as CacheEntry<T> | undefined;
-
-    if (isFresh(existing, ttlMs)) {
-      setData(existing!.data as T);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    void load().then((next) => {
-      if (cancelled || next === null) return;
-      setData(next);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [key, load, ttlMs]);
-
-  const refetch = useCallback(() => load(true), [load]);
-  const mutate = useCallback((next: T) => {
-    cache.set(key, { data: next, updatedAt: Date.now() });
-    if (mountedRef.current) {
-      setData(next);
-      setError(null);
-    }
-  }, [key]);
+    },
+    [key]
+  );
 
   return { data, error, loading, mutate, refetch };
 }

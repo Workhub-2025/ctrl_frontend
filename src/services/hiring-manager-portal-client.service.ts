@@ -123,10 +123,16 @@ let sessionsFetchedAt = 0;
 let overviewInFlight: Promise<HiringManagerOverview> | null = null;
 let overviewCache: HiringManagerOverview | null = null;
 let overviewFetchedAt = 0;
-const PORTAL_CACHE_TTL_MS = 30_000;
+let lastOverviewForceAt = 0;
+const PORTAL_CACHE_TTL_MS = 90_000;
+const PORTAL_MIN_REFETCH_MS = 5_000;
 
 function isFresh(timestamp: number) {
   return timestamp > 0 && Date.now() - timestamp < PORTAL_CACHE_TTL_MS;
+}
+
+function canForceRefresh(lastForceAt: number) {
+  return Date.now() - lastForceAt >= PORTAL_MIN_REFETCH_MS;
 }
 
 function hydrateOverviewCaches(overview: HiringManagerOverview) {
@@ -241,10 +247,20 @@ export class HiringManagerPortalClientService {
   static async getOverview(options?: {
     force?: boolean;
   }): Promise<HiringManagerOverview> {
+    if (
+      options?.force &&
+      overviewCache &&
+      isFresh(overviewFetchedAt) &&
+      !canForceRefresh(lastOverviewForceAt)
+    ) {
+      return overviewCache;
+    }
     if (!options?.force && overviewCache && isFresh(overviewFetchedAt)) {
       return overviewCache;
     }
     if (!options?.force && overviewInFlight) return overviewInFlight;
+
+    if (options?.force) lastOverviewForceAt = Date.now();
 
     overviewInFlight = fetch("/api/hiring-manager/overview", {
       cache: "no-store",

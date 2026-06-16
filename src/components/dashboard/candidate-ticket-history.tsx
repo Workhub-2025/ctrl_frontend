@@ -168,31 +168,47 @@ export function CandidateTicketHistory({
 }: {
   refreshKey?: number;
 } = {}) {
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [tickets, setTickets] = useState<SupportTicket[]>(
+    () => SupportTicketService.getCachedMyTickets() ?? []
+  );
+  const [isLoading, setIsLoading] = useState(
+    () => !SupportTicketService.hasFreshMyTicketsCache()
+  );
   const [error, setError] = useState<string | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  const loadTickets = useCallback(async () => {
+  const loadTickets = useCallback(async (options?: { force?: boolean }) => {
+    const cached = SupportTicketService.getCachedMyTickets();
+    const isManualRefresh = !!options?.force;
+
+    if (!isManualRefresh && cached) {
+      setTickets(cached);
+      setError(null);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      const data = await SupportTicketService.getMyTickets();
+      const data = await SupportTicketService.getMyTickets({ force: options?.force });
       setTickets(data);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "We couldn't load your tickets. Please try again."
-      );
+      if (!cached) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "We couldn't load your tickets. Please try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadTickets();
+    void loadTickets(refreshKey ? { force: true } : undefined);
   }, [loadTickets, refreshKey]);
 
   const openCount = tickets.filter(
@@ -215,7 +231,7 @@ export function CandidateTicketHistory({
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => void loadTickets()}
+              onClick={() => void loadTickets({ force: true })}
               disabled={isLoading}
               className="h-9 gap-2 rounded-xl text-xs font-semibold"
             >
@@ -253,7 +269,7 @@ export function CandidateTicketHistory({
                 <AlertCircle className="h-6 w-6 text-destructive" aria-hidden="true" />
                 <p className="text-sm font-semibold">Couldn&apos;t load tickets</p>
                 <p className="text-xs text-muted-foreground">{error}</p>
-                <Button variant="outline" size="sm" onClick={() => void loadTickets()}>
+                <Button variant="outline" size="sm" onClick={() => void loadTickets({ force: true })}>
                   Try again
                 </Button>
               </div>

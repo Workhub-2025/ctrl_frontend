@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { LifeBuoy, Mail, MessageSquare, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { ClientPageHeader } from "@/components/dashboard/client/client-portal-ui";
 import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
 import { CreateTicketDialog } from "@/components/dashboard/create-ticket-dialog";
 import { CandidateTicketHistory } from "@/components/dashboard/candidate-ticket-history";
@@ -22,11 +22,9 @@ export function ClientMessagesContent() {
 
   return (
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
-      <HiringManagerPageHeader
-        eyebrow="Messages"
-        title="Support hub"
+      <ClientPageHeader
+        title="Messages"
         description="Raise a support ticket or message CTRL Support. All messages are tracked so you can follow up."
-        icon={LifeBuoy}
       />
 
       <section className="space-y-4">

@@ -35,13 +35,19 @@ export async function POST(request: Request) {
   }
 
   const session = event.data.object;
-  if (session.metadata?.requestKind !== "client_upgrade") {
+  const requestKind = session.metadata?.requestKind;
+  if (requestKind !== "client_upgrade" && requestKind !== "contract_renewal") {
     return NextResponse.json({ received: true });
   }
 
-  const clientDocumentId = session.metadata.clientDocumentId;
-  const ticketDocumentId = session.metadata.ticketDocumentId;
-  const payloadRaw = session.metadata.payload;
+  const metadata = session.metadata;
+  if (!metadata) {
+    return NextResponse.json({ error: "Missing checkout metadata" }, { status: 400 });
+  }
+
+  const clientDocumentId = metadata.clientDocumentId;
+  const ticketDocumentId = metadata.ticketDocumentId;
+  const payloadRaw = metadata.payload;
 
   if (!clientDocumentId || !ticketDocumentId || !payloadRaw) {
     return NextResponse.json({ error: "Incomplete checkout metadata" }, { status: 400 });

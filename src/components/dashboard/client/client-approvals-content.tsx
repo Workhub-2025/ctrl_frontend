@@ -13,10 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { getAssessmentSettingSummary } from "@/components/dashboard/client/client-portal-utils";
 import {
   ClientErrorBanner,
+  ClientPageHeader,
   ClientRefreshButton,
 } from "@/components/dashboard/client/client-portal-ui";
 import {
@@ -110,11 +110,9 @@ export function ClientApprovalsContent() {
 
   return (
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
-      <HiringManagerPageHeader
-        eyebrow="Approvals"
+      <ClientPageHeader
         title="Approvals"
         description="Review campaign submissions and shared candidates before they progress."
-        icon={ClipboardCheck}
         notice={error ? <ClientErrorBanner message={error} /> : null}
         action={
           <ClientRefreshButton

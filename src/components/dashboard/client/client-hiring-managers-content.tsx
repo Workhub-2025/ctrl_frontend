@@ -20,9 +20,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import {
   ClientErrorBanner,
+  ClientPageHeader,
   ClientRefreshButton,
 } from "@/components/dashboard/client/client-portal-ui";
 import {
@@ -90,20 +90,20 @@ export function ClientHiringManagersContent() {
 
   return (
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
-      <HiringManagerPageHeader
-        eyebrow="Hiring managers"
-        title="Hiring Managers"
+      <ClientPageHeader
+        title="Hiring managers"
         description="Seat access and hiring-manager activity for this client account."
-        icon={Users}
-        badge={
-          summary ? (
-            <Badge className="rounded-lg border-primary/20 bg-primary/15 px-3 py-1 font-semibold text-primary hover:bg-primary/20">
-              {summary.seats.available} open seat{summary.seats.available === 1 ? "" : "s"}
-            </Badge>
-          ) : null
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {summary ? (
+              <Badge variant="outline" className="font-medium">
+                {summary.seats.available} open seat{summary.seats.available === 1 ? "" : "s"}
+              </Badge>
+            ) : null}
+            <ClientRefreshButton onClick={() => void loadOverview(true)} loading={loading} />
+          </div>
         }
         notice={error ? <ClientErrorBanner message={error} /> : null}
-        action={<ClientRefreshButton onClick={() => void loadOverview(true)} loading={loading} />}
       />
 
       <PortalPanel accent="primary">

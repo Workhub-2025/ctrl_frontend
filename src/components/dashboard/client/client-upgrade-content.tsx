@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowUpRight,
   BookOpenCheck,
@@ -13,11 +13,11 @@ import {
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { formatDate } from "@/components/dashboard/client/client-portal-utils";
 import { ClientUpgradeRequestDialog } from "@/components/dashboard/client/client-upgrade-request-dialog";
 import {
   ClientErrorBanner,
+  ClientPageHeader,
   ClientRefreshButton,
 } from "@/components/dashboard/client/client-portal-ui";
 import {
@@ -29,13 +29,14 @@ import {
 import { useClientPortal } from "@/context/client-portal-provider";
 import {
   CLIENT_PLATFORM_FEATURES,
+  type ClientInitiatedUpgradeType,
   type ClientUpgradeRequestType,
 } from "@/lib/client/entitlements";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 const REQUEST_ACTIONS: Array<{
-  type: ClientUpgradeRequestType;
+  type: ClientInitiatedUpgradeType;
   title: string;
   description: string;
   icon: typeof Users;
@@ -64,6 +65,7 @@ const UPGRADE_TYPE_LABELS: Record<ClientUpgradeRequestType, string> = {
   seat_increase: "Seat increase",
   new_assessment: "New assessment",
   assessment_version: "Version upgrade",
+  contract_extension: "Contract renewal",
 };
 
 const STATUS_CLASSES: Record<string, string> = {
@@ -87,12 +89,7 @@ export function ClientUpgradeContent() {
     submitUpgradeRequest,
   } = useClientPortal();
 
-  const [activeRequestType, setActiveRequestType] = useState<ClientUpgradeRequestType | null>(null);
-
-  useEffect(() => {
-    void loadEntitlements();
-    void loadUpgradeRequests();
-  }, [loadEntitlements, loadUpgradeRequests]);
+  const [activeRequestType, setActiveRequestType] = useState<ClientInitiatedUpgradeType | null>(null);
 
   const contract = entitlements?.contract ?? summary?.activeContract ?? null;
   const seats = summary?.seats;
@@ -117,11 +114,9 @@ export function ClientUpgradeContent() {
 
   return (
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
-      <HiringManagerPageHeader
-        eyebrow="Upgrade requests"
-        title="Platform entitlements"
-        description="Review what is on your contract today and submit structured upgrade requests for seats, assessments, or content versions."
-        icon={TrendingUp}
+      <ClientPageHeader
+        title="Upgrade requests"
+        description="Review your contract entitlements and submit structured requests for seats, assessments, or content versions."
         notice={error ? <ClientErrorBanner message={error} /> : null}
         action={
           <ClientRefreshButton
@@ -176,6 +171,19 @@ export function ClientUpgradeContent() {
                   <p className="mt-1 text-xs text-muted-foreground">
                     Billing: {entitlements?.contractActive ? "Active" : "Inactive or payment pending"} ·{" "}
                     {entitlements?.contract?.paymentStatus?.replace(/_/g, " ") ?? "not required"}
+                    {entitlements?.contract?.daysUntilExpiry != null ? (
+                      <>
+                        {" "}
+                        ·{" "}
+                        {entitlements.contract.daysUntilExpiry <= 30 ? (
+                          <span className="font-medium text-amber-600 dark:text-amber-300">
+                            {entitlements.contract.daysUntilExpiry} days until renewal
+                          </span>
+                        ) : (
+                          <span>{entitlements.contract.daysUntilExpiry} days remaining</span>
+                        )}
+                      </>
+                    ) : null}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border/60 bg-background/30 p-4 dark:border-white/5 dark:bg-[#0b1220]/25">

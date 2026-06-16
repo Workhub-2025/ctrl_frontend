@@ -161,8 +161,8 @@ export const fetchClient = async (
                 // Cache static test content for 5 minutes by default
                 nextOptions = { revalidate: 300, ...nextOptions };
             } else if (url.includes('/candidate-sessions/me')) {
-                // Cache active candidate applications for 15 seconds to deduplicate page transitions
-                nextOptions = { revalidate: 15, ...nextOptions };
+                // Align with portal in-memory cache (90s)
+                nextOptions = { revalidate: 90, ...nextOptions };
             }
         }
 

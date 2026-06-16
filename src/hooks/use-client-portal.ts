@@ -14,6 +14,11 @@ import type {
   ClientUpgradeRequestRecord,
 } from "@/lib/client/entitlements";
 import type { BackendClientEntitlements } from "@/services/client-upgrade.service";
+import {
+  fetchPortalJson,
+  invalidatePortalCache,
+  PORTAL_CACHE_TTL_MS,
+} from "@/lib/portal-fetch-cache";
 
 export type SeatSlot =
   | { type: "occupied"; label: string; manager: ClientHiringManagerSeat }
@@ -48,7 +53,7 @@ type ClientPortalContextValue = {
   pendingSharedCandidates: ClientSharedCandidate[];
   seatSlots: SeatSlot[];
   loadOverview: (force?: boolean) => Promise<void>;
-  loadSharedCandidates: (reviewStatus?: string) => Promise<void>;
+  loadSharedCandidates: (reviewStatus?: string, force?: boolean) => Promise<void>;
   loadEntitlements: (force?: boolean) => Promise<void>;
   loadUpgradeRequests: (force?: boolean) => Promise<void>;
   submitUpgradeRequest: (input: {
@@ -73,41 +78,39 @@ export type ClientOverviewData = {
   hiringManagers: ClientHiringManagerSeat[];
 };
 
-const CACHE_TTL_MS = 30_000;
-let overviewCache: { data: ClientOverviewData; timestamp: number } | null = null;
-let overviewInFlight: Promise<ClientOverviewData> | null = null;
-
-async function readJson<T>(response: Response): Promise<T> {
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error((body as { error?: string }).error || `Request failed (${response.status})`);
-  }
-  return body as T;
-}
-
-async function fetchOverview(force = false): Promise<ClientOverviewData> {
-  const now = Date.now();
-  if (!force && overviewCache && now - overviewCache.timestamp < CACHE_TTL_MS) {
-    return overviewCache.data;
-  }
-  if (!force && overviewInFlight) return overviewInFlight;
-
-  overviewInFlight = fetch("/api/client/overview", { cache: "no-store" })
-    .then((response) => readJson<{ data?: ClientOverviewData }>(response))
-    .then((body) => {
-      if (!body.data) throw new Error("Client overview could not be loaded");
-      overviewCache = { data: body.data, timestamp: Date.now() };
-      return body.data;
-    })
-    .finally(() => {
-      overviewInFlight = null;
-    });
-
-  return overviewInFlight;
-}
+const EMPTY_OVERVIEW: ClientOverviewData = {
+  summary: null,
+  campaigns: [],
+  accessCodes: [],
+  hiringManagers: [],
+};
 
 export function invalidateClientOverviewCache() {
-  overviewCache = null;
+  invalidatePortalCache("client:overview");
+}
+
+function applyOverview(state: ClientOverviewData) {
+  return {
+    summary: state.summary,
+    campaigns: state.campaigns,
+    accessCodes: state.accessCodes,
+    hiringManagers: state.hiringManagers,
+    contract: state.summary?.activeContract ?? null,
+  };
+}
+
+async function fetchOverviewCached(force = false) {
+  return fetchPortalJson<ClientOverviewData>({
+    key: "client:overview",
+    url: "/api/client/overview",
+    fallback: EMPTY_OVERVIEW,
+    force,
+    allowEmpty: true,
+    transform: (body) => {
+      const record = body as { data?: ClientOverviewData };
+      return record.data ?? EMPTY_OVERVIEW;
+    },
+  });
 }
 
 export function useClientPortalState(): ClientPortalContextValue {
@@ -168,14 +171,15 @@ export function useClientPortalState(): ClientPortalContextValue {
 
   const loadOverview = useCallback(async (force = false) => {
     setLoading(true);
-    setError(null);
     try {
-      const overview = await fetchOverview(force);
-      setSummary(overview.summary);
-      setCampaigns(overview.campaigns);
-      setAccessCodes(overview.accessCodes);
-      setHiringManagers(overview.hiringManagers);
-      setContract(overview.summary?.activeContract ?? null);
+      const overview = await fetchOverviewCached(force);
+      const next = applyOverview(overview);
+      setSummary(next.summary);
+      setCampaigns(next.campaigns);
+      setAccessCodes(next.accessCodes);
+      setHiringManagers(next.hiringManagers);
+      setContract(next.contract);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Client dashboard could not be loaded");
     } finally {
@@ -183,65 +187,82 @@ export function useClientPortalState(): ClientPortalContextValue {
     }
   }, []);
 
-  const loadSharedCandidates = useCallback(async (reviewStatus?: string) => {
+  const loadSharedCandidates = useCallback(async (reviewStatus?: string, force = false) => {
     setSharedLoading(true);
-    setError(null);
+    const cacheKey = `client:shared:${reviewStatus ?? "all"}`;
+    const query = reviewStatus ? `?reviewStatus=${encodeURIComponent(reviewStatus)}` : "";
+
     try {
-      const query = reviewStatus ? `?reviewStatus=${encodeURIComponent(reviewStatus)}` : "";
-      const body = await fetch(`/api/client/shared-candidates${query}`, {
-        cache: "no-store",
-      }).then((r) => readJson<{ data?: ClientSharedCandidate[] }>(r));
-      setSharedCandidates(body.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Shared candidates could not be loaded");
+      const data = await fetchPortalJson<ClientSharedCandidate[]>({
+        key: cacheKey,
+        url: `/api/client/shared-candidates${query}`,
+        fallback: [],
+        force,
+        allowEmpty: true,
+      });
+      setSharedCandidates(data);
+    } catch {
+      // Keep existing list — shared candidates are secondary data.
     } finally {
       setSharedLoading(false);
     }
   }, []);
 
-  const loadEntitlements = useCallback(async (_force = false) => {
+  const loadEntitlements = useCallback(async (force = false) => {
     setEntitlementsLoading(true);
-    setError(null);
     try {
-      const body = await fetch("/api/client/entitlements", { cache: "no-store" }).then((r) =>
-        readJson<{ data?: ClientEntitlements }>(r)
-      );
-      setEntitlements(body.data ?? null);
-      if (body.data?.contract) setContract(body.data.contract);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Entitlements could not be loaded");
+      const data = await fetchPortalJson<ClientEntitlements | null>({
+        key: "client:entitlements",
+        url: "/api/client/entitlements",
+        fallback: null,
+        force,
+        allowEmpty: true,
+      });
+      setEntitlements(data);
+      if (data?.contract) setContract(data.contract);
+    } catch {
+      // Entitlements are optional on some pages — avoid global error banners.
     } finally {
       setEntitlementsLoading(false);
     }
   }, []);
 
-  const loadUpgradeRequests = useCallback(async (_force = false) => {
+  const loadUpgradeRequests = useCallback(async (force = false) => {
     setUpgradeRequestsLoading(true);
-    setError(null);
     try {
-      const body = await fetch("/api/client/upgrade-requests", { cache: "no-store" }).then((r) =>
-        readJson<{ data?: ClientUpgradeRequestRecord[] }>(r)
-      );
-      setUpgradeRequests(body.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Upgrade requests could not be loaded");
+      const data = await fetchPortalJson<ClientUpgradeRequestRecord[]>({
+        key: "client:upgrade-requests",
+        url: "/api/client/upgrade-requests",
+        fallback: [],
+        force,
+        allowEmpty: true,
+      });
+      setUpgradeRequests(data);
+    } catch {
+      // Billing list failures should not block the rest of the portal.
     } finally {
       setUpgradeRequestsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void loadOverview();
-  }, [loadOverview]);
+    void loadOverview(false);
+    void loadEntitlements(false);
+    void loadUpgradeRequests(false);
+  }, [loadEntitlements, loadOverview, loadUpgradeRequests]);
 
   const reviewCampaign = async (campaignId: string, decision: "approved" | "rejected") => {
     setReviewingId(campaignId);
     try {
-      await fetch(`/api/client/campaign-approvals/${campaignId}/review`, {
+      const response = await fetch(`/api/client/campaign-approvals/${campaignId}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decision }),
-      }).then((r) => readJson(r));
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Campaign could not be reviewed");
+      }
       invalidateClientOverviewCache();
       await loadOverview(true);
     } catch (err) {
@@ -257,15 +278,19 @@ export function useClientPortalState(): ClientPortalContextValue {
   ) => {
     setReviewingCandidateId(id);
     try {
-      await fetch(`/api/client/shared-candidates/${encodeURIComponent(id)}/status`, {
-        method: "POST",
+      const response = await fetch(`/api/client/shared-candidates/${id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reviewStatus }),
-      }).then((r) => readJson(r));
-      invalidateClientOverviewCache();
-      await Promise.all([loadSharedCandidates(), loadOverview(true)]);
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Review status could not be updated");
+      }
+      invalidatePortalCache("client:shared:all");
+      await Promise.all([loadSharedCandidates(undefined, true), loadOverview(true)]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Candidate review could not be saved");
+      setError(err instanceof Error ? err.message : "Review status could not be updated");
     } finally {
       setReviewingCandidateId(null);
     }
@@ -273,9 +298,16 @@ export function useClientPortalState(): ClientPortalContextValue {
 
   const generateSeatCode = async (seatLabel: string) => {
     setCodeBusy(seatLabel);
-    setError(null);
     try {
-      await fetch("/api/client/access-codes", { method: "POST" }).then((r) => readJson(r));
+      const response = await fetch("/api/client/access-codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seatLabel }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Access code could not be generated");
+      }
       invalidateClientOverviewCache();
       await loadOverview(true);
     } catch (err) {
@@ -287,13 +319,14 @@ export function useClientPortalState(): ClientPortalContextValue {
 
   const refreshSeatCode = async (seatLabel: string, refreshCodeDocumentId: string) => {
     setCodeBusy(seatLabel);
-    setError(null);
     try {
-      await fetch("/api/client/access-codes", {
+      const response = await fetch(`/api/client/access-codes/${refreshCodeDocumentId}/refresh`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshCodeDocumentId }),
-      }).then((r) => readJson(r));
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Access code could not be refreshed");
+      }
       invalidateClientOverviewCache();
       await loadOverview(true);
     } catch (err) {
@@ -305,47 +338,38 @@ export function useClientPortalState(): ClientPortalContextValue {
 
   const releaseHiringManager = async (manager: ClientHiringManagerSeat) => {
     setReleasingManagerId(manager.documentId);
-    setError(null);
     try {
-      await fetch(
-        `/api/client/hiring-managers/${encodeURIComponent(manager.documentId)}/release`,
-        { method: "POST" }
-      ).then((r) => readJson(r));
+      const response = await fetch(`/api/client/hiring-managers/${manager.documentId}/release`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Hiring manager could not be released");
+      }
       invalidateClientOverviewCache();
       await loadOverview(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hiring-manager seat could not be released");
+      setError(err instanceof Error ? err.message : "Hiring manager could not be released");
     } finally {
       setReleasingManagerId(null);
     }
   };
 
   const updateApprovalMode = async (checked: boolean) => {
-    const nextMode = checked ? "auto_approve" : "require_approval";
-    const clientDocumentId = summary?.client?.documentId;
-    if (!clientDocumentId) {
-      setError("Client account could not be resolved");
-      return;
-    }
-
-    const previousSummary = summary;
     setApprovalModeBusy(true);
-    setError(null);
-    setSummary((current) =>
-      current?.client
-        ? { ...current, client: { ...current.client, campaignApprovalMode: nextMode } }
-        : current
-    );
-
     try {
-      await fetch("/api/client/approval-mode", {
+      const response = await fetch("/api/client/approval-mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientDocumentId, mode: nextMode }),
-      }).then((r) => readJson(r));
+        body: JSON.stringify({ requireApproval: checked }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Approval mode could not be updated");
+      }
       invalidateClientOverviewCache();
+      await loadOverview(true);
     } catch (err) {
-      setSummary(previousSummary);
       setError(err instanceof Error ? err.message : "Approval mode could not be updated");
     } finally {
       setApprovalModeBusy(false);
@@ -357,21 +381,22 @@ export function useClientPortalState(): ClientPortalContextValue {
     priority?: "low" | "normal" | "high" | "urgent";
   }) => {
     setSubmittingUpgrade(true);
-    setError(null);
     try {
-      const body = await fetch("/api/client/upgrade-requests", {
+      const response = await fetch("/api/client/upgrade-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
-      }).then((r) => readJson<{ data?: ClientUpgradeRequestRecord }>(r));
-
-      if (!body.data) throw new Error("Upgrade request could not be submitted");
-      setUpgradeRequests((current) => [body.data!, ...current]);
-      return body.data;
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error((body as { error?: string }).error || "Upgrade request could not be submitted");
+      }
+      invalidatePortalCache("client:upgrade-requests");
+      await loadUpgradeRequests(true);
+      return (body as { data: ClientUpgradeRequestRecord }).data;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Upgrade request could not be submitted";
-      setError(message);
-      throw new Error(message);
+      setError(err instanceof Error ? err.message : "Upgrade request could not be submitted");
+      throw err;
     } finally {
       setSubmittingUpgrade(false);
     }
