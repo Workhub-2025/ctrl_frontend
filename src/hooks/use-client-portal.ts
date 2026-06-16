@@ -9,6 +9,62 @@ import type {
   ClientHiringManagerSeat,
   ClientSharedCandidate,
 } from "@/services/client-portal.service";
+import type {
+  ClientUpgradeRequestPayload,
+  ClientUpgradeRequestRecord,
+} from "@/lib/client/entitlements";
+import type { BackendClientEntitlements } from "@/services/client-upgrade.service";
+
+export type SeatSlot =
+  | { type: "occupied"; label: string; manager: ClientHiringManagerSeat }
+  | { type: "empty"; label: string; accessCode?: ClientAccessCode };
+
+export type ClientEntitlements = BackendClientEntitlements;
+
+type ClientPortalContextValue = {
+  summary: ClientDashboardSummary | null;
+  campaigns: ClientCampaignApprovalItem[];
+  accessCodes: ClientAccessCode[];
+  hiringManagers: ClientHiringManagerSeat[];
+  sharedCandidates: ClientSharedCandidate[];
+  contract: ClientContract | null;
+  entitlements: ClientEntitlements | null;
+  upgradeRequests: ClientUpgradeRequestRecord[];
+  loading: boolean;
+  sharedLoading: boolean;
+  entitlementsLoading: boolean;
+  upgradeRequestsLoading: boolean;
+  reviewingId: string | null;
+  reviewingCandidateId: string | null;
+  codeBusy: string | null;
+  releasingManagerId: string | null;
+  approvalModeBusy: boolean;
+  submittingUpgrade: boolean;
+  error: string | null;
+  setError: (message: string | null) => void;
+  pendingCampaigns: ClientCampaignApprovalItem[];
+  activeHiringManagers: ClientHiringManagerSeat[];
+  previousHiringManagers: ClientHiringManagerSeat[];
+  pendingSharedCandidates: ClientSharedCandidate[];
+  seatSlots: SeatSlot[];
+  loadOverview: (force?: boolean) => Promise<void>;
+  loadSharedCandidates: (reviewStatus?: string) => Promise<void>;
+  loadEntitlements: (force?: boolean) => Promise<void>;
+  loadUpgradeRequests: (force?: boolean) => Promise<void>;
+  submitUpgradeRequest: (input: {
+    payload: ClientUpgradeRequestPayload;
+    priority?: "low" | "normal" | "high" | "urgent";
+  }) => Promise<ClientUpgradeRequestRecord>;
+  reviewCampaign: (campaignId: string, decision: "approved" | "rejected") => Promise<void>;
+  updateSharedCandidateStatus: (
+    id: string,
+    reviewStatus: ClientSharedCandidate["reviewStatus"]
+  ) => Promise<void>;
+  generateSeatCode: (seatLabel: string) => Promise<void>;
+  refreshSeatCode: (seatLabel: string, refreshCodeDocumentId: string) => Promise<void>;
+  releaseHiringManager: (manager: ClientHiringManagerSeat) => Promise<void>;
+  updateApprovalMode: (checked: boolean) => Promise<void>;
+};
 
 export type ClientOverviewData = {
   summary: ClientDashboardSummary | null;
@@ -16,10 +72,6 @@ export type ClientOverviewData = {
   accessCodes: ClientAccessCode[];
   hiringManagers: ClientHiringManagerSeat[];
 };
-
-export type SeatSlot =
-  | { type: "occupied"; label: string; manager: ClientHiringManagerSeat }
-  | { type: "empty"; label: string; accessCode?: ClientAccessCode };
 
 const CACHE_TTL_MS = 30_000;
 let overviewCache: { data: ClientOverviewData; timestamp: number } | null = null;
@@ -58,21 +110,25 @@ export function invalidateClientOverviewCache() {
   overviewCache = null;
 }
 
-export function useClientPortal() {
+export function useClientPortalState(): ClientPortalContextValue {
   const [summary, setSummary] = useState<ClientDashboardSummary | null>(null);
   const [campaigns, setCampaigns] = useState<ClientCampaignApprovalItem[]>([]);
   const [accessCodes, setAccessCodes] = useState<ClientAccessCode[]>([]);
   const [hiringManagers, setHiringManagers] = useState<ClientHiringManagerSeat[]>([]);
   const [sharedCandidates, setSharedCandidates] = useState<ClientSharedCandidate[]>([]);
   const [contract, setContract] = useState<ClientContract | null>(null);
+  const [entitlements, setEntitlements] = useState<ClientEntitlements | null>(null);
+  const [upgradeRequests, setUpgradeRequests] = useState<ClientUpgradeRequestRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [sharedLoading, setSharedLoading] = useState(false);
-  const [contractLoading, setContractLoading] = useState(false);
+  const [entitlementsLoading, setEntitlementsLoading] = useState(false);
+  const [upgradeRequestsLoading, setUpgradeRequestsLoading] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reviewingCandidateId, setReviewingCandidateId] = useState<string | null>(null);
   const [codeBusy, setCodeBusy] = useState<string | null>(null);
   const [releasingManagerId, setReleasingManagerId] = useState<string | null>(null);
   const [approvalModeBusy, setApprovalModeBusy] = useState(false);
+  const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const pendingCampaigns = useMemo(
@@ -119,6 +175,7 @@ export function useClientPortal() {
       setCampaigns(overview.campaigns);
       setAccessCodes(overview.accessCodes);
       setHiringManagers(overview.hiringManagers);
+      setContract(overview.summary?.activeContract ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Client dashboard could not be loaded");
     } finally {
@@ -142,18 +199,34 @@ export function useClientPortal() {
     }
   }, []);
 
-  const loadContract = useCallback(async () => {
-    setContractLoading(true);
+  const loadEntitlements = useCallback(async (_force = false) => {
+    setEntitlementsLoading(true);
     setError(null);
     try {
-      const body = await fetch("/api/client/contract", { cache: "no-store" }).then((r) =>
-        readJson<{ data?: { contract?: ClientContract | null } }>(r)
+      const body = await fetch("/api/client/entitlements", { cache: "no-store" }).then((r) =>
+        readJson<{ data?: ClientEntitlements }>(r)
       );
-      setContract(body.data?.contract ?? null);
+      setEntitlements(body.data ?? null);
+      if (body.data?.contract) setContract(body.data.contract);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Contract could not be loaded");
+      setError(err instanceof Error ? err.message : "Entitlements could not be loaded");
     } finally {
-      setContractLoading(false);
+      setEntitlementsLoading(false);
+    }
+  }, []);
+
+  const loadUpgradeRequests = useCallback(async (_force = false) => {
+    setUpgradeRequestsLoading(true);
+    setError(null);
+    try {
+      const body = await fetch("/api/client/upgrade-requests", { cache: "no-store" }).then((r) =>
+        readJson<{ data?: ClientUpgradeRequestRecord[] }>(r)
+      );
+      setUpgradeRequests(body.data ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upgrade requests could not be loaded");
+    } finally {
+      setUpgradeRequestsLoading(false);
     }
   }, []);
 
@@ -279,6 +352,31 @@ export function useClientPortal() {
     }
   };
 
+  const submitUpgradeRequest = async (input: {
+    payload: ClientUpgradeRequestPayload;
+    priority?: "low" | "normal" | "high" | "urgent";
+  }) => {
+    setSubmittingUpgrade(true);
+    setError(null);
+    try {
+      const body = await fetch("/api/client/upgrade-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      }).then((r) => readJson<{ data?: ClientUpgradeRequestRecord }>(r));
+
+      if (!body.data) throw new Error("Upgrade request could not be submitted");
+      setUpgradeRequests((current) => [body.data!, ...current]);
+      return body.data;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upgrade request could not be submitted";
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setSubmittingUpgrade(false);
+    }
+  };
+
   return {
     summary,
     campaigns,
@@ -286,9 +384,18 @@ export function useClientPortal() {
     hiringManagers,
     sharedCandidates,
     contract,
+    entitlements,
+    upgradeRequests,
     loading,
     sharedLoading,
-    contractLoading,
+    entitlementsLoading,
+    upgradeRequestsLoading,
+    reviewingId,
+    reviewingCandidateId,
+    codeBusy,
+    releasingManagerId,
+    approvalModeBusy,
+    submittingUpgrade,
     error,
     setError,
     pendingCampaigns,
@@ -296,14 +403,11 @@ export function useClientPortal() {
     previousHiringManagers,
     pendingSharedCandidates,
     seatSlots,
-    reviewingId,
-    reviewingCandidateId,
-    codeBusy,
-    releasingManagerId,
-    approvalModeBusy,
     loadOverview,
     loadSharedCandidates,
-    loadContract,
+    loadEntitlements,
+    loadUpgradeRequests,
+    submitUpgradeRequest,
     reviewCampaign,
     updateSharedCandidateStatus,
     generateSeatCode,

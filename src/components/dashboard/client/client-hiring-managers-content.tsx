@@ -22,23 +22,19 @@ import {
 } from "@/components/ui/dialog";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import {
+  ClientErrorBanner,
+  ClientRefreshButton,
+} from "@/components/dashboard/client/client-portal-ui";
+import {
   PortalEmptyState,
   PortalPanel,
   PortalSectionHeader,
 } from "@/components/dashboard/portal/portal-ui";
 import { formatDateTime } from "@/components/dashboard/client/client-portal-utils";
 import type { SeatSlot } from "@/hooks/use-client-portal";
-import { useClientPortal } from "@/hooks/use-client-portal";
+import { useClientPortal } from "@/context/client-portal-provider";
 import type { ClientHiringManagerSeat } from "@/services/client-portal.service";
 import { cn } from "@/lib/utils";
-
-function ErrorBanner({ message }: { message: string }) {
-  return (
-    <p className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs leading-relaxed text-red-600 dark:text-red-200">
-      {message}
-    </p>
-  );
-}
 
 export function ClientHiringManagersContent() {
   const {
@@ -106,22 +102,8 @@ export function ClientHiringManagersContent() {
             </Badge>
           ) : null
         }
-        notice={error ? <ErrorBanner message={error} /> : null}
-        action={
-          <Button
-            type="button"
-            variant="outline"
-            className="h-9 rounded-xl border-border text-foreground transition-colors hover:!bg-muted hover:!text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
-            onClick={() => void loadOverview(true)}
-            disabled={loading}
-          >
-            <RefreshCw
-              className={cn("mr-2 h-4 w-4", loading && "motion-safe:animate-spin text-primary")}
-              aria-hidden="true"
-            />
-            Refresh
-          </Button>
-        }
+        notice={error ? <ClientErrorBanner message={error} /> : null}
+        action={<ClientRefreshButton onClick={() => void loadOverview(true)} loading={loading} />}
       />
 
       <PortalPanel accent="primary">

@@ -2,6 +2,7 @@
 
 import { ClipboardCheck, Home, MessageSquare, TrendingUp, Users } from "lucide-react";
 import { RoleDashboardShell } from "@/components/dashboard/role-dashboard-shell";
+import { ClientPortalProvider } from "@/context/client-portal-provider";
 
 export default function ClientDashboardLayout({
   children,
@@ -9,6 +10,7 @@ export default function ClientDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <ClientPortalProvider>
     <RoleDashboardShell
       title="Client Portal"
       subtitle="Seat access, campaign approvals, and hiring-manager oversight"
@@ -39,5 +41,6 @@ export default function ClientDashboardLayout({
     >
       {children}
     </RoleDashboardShell>
+    </ClientPortalProvider>
   );
 }

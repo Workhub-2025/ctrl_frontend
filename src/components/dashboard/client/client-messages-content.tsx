@@ -33,7 +33,7 @@ export function ClientMessagesContent() {
         <PortalSectionHeader
           eyebrow="Get help"
           title="Choose the right channel"
-          description="IT tickets are for platform issues. Direct messages are for account, billing, and contract questions."
+          description="Use upgrade requests for seats, assessments, or version changes. Raise a ticket here for platform issues or account questions."
         />
 
         <div className="grid gap-4 md:grid-cols-2">
