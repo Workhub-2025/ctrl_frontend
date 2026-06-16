@@ -30,6 +30,8 @@ import {
   X,
   ArrowLeft,
   Eye,
+  LockOpen,
+  RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -140,6 +142,11 @@ export function HiringManagerSessionDetailsDialog({
 
           {session && (
             <>
+              {/* Compute isInPerson for this session */}
+              {(() => {
+                const isInPerson = !(session.location.toLowerCase().includes('zoom') || session.location.toLowerCase().includes('remote') || session.location.toLowerCase().includes('http'));
+                return (
+                  <>
               {/* Header */}
               <DialogHeader className="border-b border-white/5 pb-4 relative z-10 text-left pr-12 flex flex-col gap-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
@@ -348,12 +355,40 @@ export function HiringManagerSessionDetailsDialog({
                               </div>
                             </div>
 
-                            <div className="flex justify-center sm:justify-self-center">
-                              <ScoreRing value={hasScore ? roundedOverall : null} />
-                            </div>
+                            {(() => {
+                              const showPromptUnlock = candidate.status === 'locked' && isInPerson && onUnlockCandidate;
+                              if (showPromptUnlock) {
+                                return (
+                                  <div className="flex items-center gap-3 col-span-2 justify-center sm:justify-end">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={(e) => { e.stopPropagation(); onUnlockCandidate(candidate.id); }}
+                                      disabled={unlockingCandidateId === candidate.id}
+                                      className="h-9 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 px-4 text-xs font-semibold transition-colors hover:border-emerald-400/40"
+                                    >
+                                      {unlockingCandidateId === candidate.id ? (
+                                        <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Unlocking...</>
+                                      ) : (
+                                        <><LockOpen className="mr-1.5 h-3.5 w-3.5" /> Unlock</>
+                                      )}
+                                    </Button>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <>
+                                  <div className="flex justify-center sm:justify-self-center">
+                                    <ScoreRing value={hasScore ? roundedOverall : null} />
+                                  </div>
+                                </>
+                              );
+                            })()}
 
                             {/* Right: stats + actions */}
                             <div className="flex items-center justify-between gap-4 sm:justify-end shrink-0" onClick={(e) => e.stopPropagation()}>
+                              {!(candidate.status === 'locked' && isInPerson && onUnlockCandidate) && (
                               <div className="min-w-[130px] border-r border-white/5 pr-4">
                                 <div className="text-right">
                                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Progress</p>
@@ -379,6 +414,7 @@ export function HiringManagerSessionDetailsDialog({
                                   })}
                                 </div>
                               </div>
+                              )}
 
                               <Button
                                 variant="outline"
@@ -390,7 +426,7 @@ export function HiringManagerSessionDetailsDialog({
                                 View results
                               </Button>
 
-                              {(onKickCandidate || (candidate.status === "locked" && onUnlockCandidate)) && (
+                              {onKickCandidate && (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
@@ -402,26 +438,14 @@ export function HiringManagerSessionDetailsDialog({
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="border-white/10 bg-slate-900 text-slate-200">
-                                    {candidate.status === "locked" && onUnlockCandidate && (
-                                      <DropdownMenuItem
-                                        disabled={unlockingCandidateId === candidate.id || (session.startsAt ? new Date(session.startsAt).getTime() > Date.now() : false)}
-                                        onClick={() => onUnlockCandidate(candidate.id)}
-                                        className="flex items-center gap-2 text-emerald-400 focus:bg-emerald-500/10 focus:text-emerald-300 cursor-pointer font-bold"
-                                      >
-                                        <Check className="h-4 w-4" />
-                                        {unlockingCandidateId === candidate.id ? "Unlocking…" : "Unlock candidate"}
-                                      </DropdownMenuItem>
-                                    )}
-                                    {onKickCandidate && (
-                                      <DropdownMenuItem
-                                        disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
-                                        onClick={() => onKickCandidate(session.id, candidate.id)}
-                                        className="flex items-center gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-300 cursor-pointer"
-                                      >
-                                        <UserMinus className="h-4 w-4" />
-                                        {removingCandidateId === candidate.id ? "Removing…" : "Remove candidate"}
-                                      </DropdownMenuItem>
-                                    )}
+                                    <DropdownMenuItem
+                                      disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
+                                      onClick={() => onKickCandidate(session.id, candidate.id)}
+                                      className="flex items-center gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-300 cursor-pointer"
+                                    >
+                                      <UserMinus className="h-4 w-4" />
+                                      {removingCandidateId === candidate.id ? "Removing…" : "Remove candidate"}
+                                    </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               )}
@@ -494,6 +518,9 @@ export function HiringManagerSessionDetailsDialog({
                   </div>
                 )}
               </div>
+                  </>
+                );
+              })()}
             </>
           )}
         </DialogContent>
@@ -524,7 +551,7 @@ export function CandidateResultsDialog({
       <DialogContent
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        className="fixed left-1/2 top-1/2 h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[1.5rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 p-6 text-slate-100 shadow-2xl backdrop-blur-md flex flex-col gap-5 [&>button]:hidden"
+        className="fixed left-1/2 top-1/2 h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-y-auto overflow-x-hidden rounded-[1.5rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 p-6 text-slate-100 shadow-2xl backdrop-blur-md flex flex-col gap-5 [&>button]:hidden"
       >
         <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />

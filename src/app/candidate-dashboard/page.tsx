@@ -26,7 +26,9 @@ import {
   Route,
   ArrowRight,
   ShieldCheck,
-  Video
+  Video,
+  Globe,
+  MapPin
 } from "lucide-react";
 import {
   CandidateSessionService,
@@ -246,9 +248,11 @@ export default function CandidateDashboardOverviewPage() {
 	                          <CardTitle className="text-xl font-bold line-clamp-1">{app.campaign?.name || "Assessment"}</CardTitle>
 	                          <CardDescription className="text-sm mt-1 text-muted-foreground truncate">{app.campaign?.jobRole || "Role"}</CardDescription>
 	                        </div>
-                        <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0 px-2.5 py-0.5 font-semibold rounded-lg pointer-events-none">
-                           {mapPortalStatus(app)}
-                        </Badge>
+                        {mapPortalStatus(app) !== "In Progress" && mapPortalStatus(app) !== "Awaiting Assessment" && (
+                          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0 px-2.5 py-0.5 font-semibold rounded-lg pointer-events-none">
+                             {mapPortalStatus(app)}
+                          </Badge>
+                        )}
 	                    </div>
 	                  </CardHeader>
 	                  <CardContent className="space-y-5 pl-6">
@@ -258,8 +262,22 @@ export default function CandidateDashboardOverviewPage() {
 	                           <span className="truncate">{formatDate(app.sessionStartsAt || app.campaign?.endDate)}</span>
 	                        </div>
 	                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-	                           <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-	                           <span className="truncate">{formatMode(app.mode)}</span>
+                           {app.mode === "remote" ? (
+                             <>
+                               <Globe className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                               <span className="truncate">Remote Session</span>
+                             </>
+                           ) : app.mode === "in_person" ? (
+                             <>
+                               <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                               <span className="truncate">{app.campaign?.location || "In-person"}</span>
+                             </>
+                           ) : (
+                             <>
+                               <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                               <span className="truncate">{formatMode(app.mode)}</span>
+                             </>
+                           )}
                         </div>
                     </div>
 

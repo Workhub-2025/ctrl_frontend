@@ -605,7 +605,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   const { candidate, campaign } = reportData;
 
   return (
-    <div className="max-w-7xl space-y-6">
+    <div className="max-w-full overflow-x-hidden space-y-6">
       {/* Premium Header Card */}
       {!embedded && (
         <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md p-6 shadow-xl">
@@ -929,7 +929,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                               Detailed Typing Run Performance
                             </p>
                             <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
-                              <table className="w-full text-left border-collapse text-xs">
+                              <table className="w-full max-w-full table-fixed text-left border-collapse text-xs">
                                 <thead>
                                   <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                                     <th className="p-3">Run</th>
@@ -1194,7 +1194,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                       Logged Information Details
                                     </p>
                                     <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
-                                      <table className="w-full text-left border-collapse text-xs">
+                                      <table className="w-full max-w-full table-fixed text-left border-collapse text-xs">
                                         <thead>
                                           <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                                             <th className="p-3">Criterion</th>

@@ -191,32 +191,40 @@ export function HiringManagerCampaignsList() {
                 </div>
 
                 <div className="pt-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Assessment Stack ({campaign.assessmentStack.length})
-                  </p>
-                  <div className="mt-2.5 flex flex-wrap gap-1.5">
-                    {campaign.assessmentStack.map((item) => {
-                      const Icon = getAssessmentIcon(item);
+                  <span className="text-[10px] text-muted-foreground font-medium">{campaign.assessmentStack.length} assessment{campaign.assessmentStack.length === 1 ? "" : "s"}</span>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {(() => {
+                      const versionSummary = getAssessmentVersionSummary(campaign.assessmentSettings);
+                      const maxVisible = 3;
+                      const visibleStack = campaign.assessmentStack.slice(0, maxVisible);
+                      const hiddenCount = campaign.assessmentStack.length - maxVisible;
                       return (
-                        <span key={item} className={dashboardInfoPillClassName}>
-                          <Icon className="h-3.5 w-3.5 text-primary/75 shrink-0" />
-                          {item}
-                        </span>
+                        <>
+                          {visibleStack.map((item) => {
+                            const Icon = getAssessmentIcon(item);
+                            const matchedVersion = versionSummary.find((v) =>
+                              v.key.replace(/-/g, "").toLowerCase().includes(item.toLowerCase().replace(/\s+/g, "").replace(/-/g, "")) ||
+                              item.toLowerCase().replace(/\s+/g, "").replace(/-/g, "").includes(v.key.replace(/-/g, "").toLowerCase())
+                            );
+                            const displayLabel = matchedVersion
+                              ? `${item} v${String((matchedVersion.label.match(/v(.+)$/)?.[1]) ?? "1")}`
+                              : item;
+                            return (
+                              <span key={item} className="inline-flex items-center gap-1 rounded-md border border-border/55 bg-muted/40 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground dark:border-white/5 dark:bg-white/[0.02] dark:text-slate-300">
+                                <Icon className="h-3 w-3 text-primary/75 shrink-0" />
+                                {displayLabel}
+                              </span>
+                            );
+                          })}
+                          {hiddenCount > 0 && (
+                            <span className="rounded-md border border-border/40 bg-muted/30 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground dark:border-white/5 dark:bg-white/[0.02]">
+                              +{hiddenCount} more
+                            </span>
+                          )}
+                        </>
                       );
-                    })}
+                    })()}
                   </div>
-                  {getAssessmentVersionSummary(campaign.assessmentSettings).length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {getAssessmentVersionSummary(campaign.assessmentSettings).map((item) => (
-                        <span
-                          key={item.key}
-                          className="rounded-md border border-primary/15 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold capitalize text-primary"
-                        >
-                          {item.label}
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex justify-end pt-2">

@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Clock,
+  Globe,
   Loader2,
   Lock,
   Mail,
@@ -39,6 +40,8 @@ import {
 } from "lucide-react";
 import { SecurePreflightModal } from "@/components/assessment";
 import { candidateAssessmentItems } from "@/components/dashboard/candidate-dashboard-data";
+import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
+import { LocationMapDialog } from "@/components/dashboard/location-map-dialog";
 import {
   CandidateSessionService,
   type CandidatePortalApplication,
@@ -334,6 +337,13 @@ function AssessmentListItem({ item, step, totalSteps }: { item: any; step: numbe
   const isAvailable = item.isAvailable;
   const isActive = !isCompleted && isAvailable;
 
+  // Determine if the assessment has a future startsAt and should be disabled
+  const hasFutureStart = (() => {
+    if (!item.startsAt) return false;
+    const startTime = new Date(item.startsAt).getTime();
+    return !Number.isNaN(startTime) && startTime > Date.now();
+  })();
+
   return (
     <>
       <div className="relative flex gap-6 group">
@@ -430,6 +440,18 @@ function AssessmentListItem({ item, step, totalSteps }: { item: any; step: numbe
                     : "Locked"}
                 </span>
               </div>
+            ) : hasFutureStart ? (
+              <div className="space-y-2">
+                <Button
+                  disabled
+                  className="h-9 gap-2 font-semibold rounded-lg opacity-60 cursor-not-allowed"
+                >
+                  <PlayCircle className="h-4 w-4" aria-hidden="true" /> Start Assessment
+                </Button>
+                <p className="text-xs text-slate-400">
+                  <SoftLockTimer sessionStartsAt={item.startsAt} />
+                </p>
+              </div>
             ) : (
               <Button
                 onClick={() => setShowPreflight(true)}
@@ -448,6 +470,61 @@ function AssessmentListItem({ item, step, totalSteps }: { item: any; step: numbe
         href={item.href}
       />
     </>
+  );
+}
+
+// Mode-based subtitle for the detail header
+function DetailSubtitle({ application }: { application: CandidateApplication }) {
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+
+  const isRemote =
+    application.mode === "Remote" ||
+    application.mode === "remote";
+
+  const isInPerson =
+    application.mode === "In-person" ||
+    application.mode === "in_person";
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-slate-400 text-sm mt-1">
+      <span className="font-semibold text-slate-300">{application.role}</span>
+      <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
+
+      {isRemote ? (
+        <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
+          <Globe className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+          <span>Remote Session</span>
+        </div>
+      ) : isInPerson ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setLocationDialogOpen(true)}
+            className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg hover:border-primary/40 hover:text-primary transition-colors cursor-pointer"
+          >
+            <MapPin className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+            <span>{application.location || "View Location"}</span>
+          </button>
+          <LocationMapDialog
+            address={application.location === "Location to be confirmed" ? "" : application.location}
+            open={locationDialogOpen}
+            onOpenChange={setLocationDialogOpen}
+          />
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
+            <MapPin className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+            <span>{application.location}</span>
+          </div>
+          <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
+          <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
+            <Target className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
+            <span>{application.mode}</span>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -702,27 +779,17 @@ export function CandidateDashboardContent() {
 
               <div className="flex flex-col gap-3.5 relative z-10">
                 <div>
-                  <Badge variant="outline" className={`${statusClassNames[currentApplication.status]} pointer-events-none`}>
-                    {currentApplication.status}
-                  </Badge>
+                  {currentApplication.status !== "In Progress" && currentApplication.status !== "Awaiting Assessment" && (
+                    <Badge variant="outline" className={`${statusClassNames[currentApplication.status]} pointer-events-none`}>
+                      {currentApplication.status}
+                    </Badge>
+                  )}
                 </div>
                 <div className="space-y-2 min-w-0">
                   <h2 className="text-3xl font-extrabold text-foreground tracking-tight line-clamp-2">
                     {currentApplication.campaign}
                   </h2>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-slate-400 text-sm mt-1">
-                    <span className="font-semibold text-slate-300">{currentApplication.role}</span>
-                    <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
-                    <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
-                      <MapPin className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
-                      <span>{currentApplication.location}</span>
-                    </div>
-                    <span className="h-1 w-1 rounded-full bg-slate-700 hidden sm:inline-block" />
-                    <div className="flex items-center gap-1 text-slate-400 bg-slate-500/5 dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 px-2.5 py-0.5 rounded-lg">
-                      <Target className="h-3.5 w-3.5 text-primary/80 shrink-0" aria-hidden="true" />
-                      <span>{currentApplication.mode}</span>
-                    </div>
-                  </div>
+                  <DetailSubtitle application={currentApplication} />
                 </div>
               </div>
             </div>
@@ -799,15 +866,18 @@ export function CandidateDashboardContent() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="px-5 pb-5">
-                    <Button
-                      variant="outline"
-                      className="bg-background dark:bg-transparent border-white/10 shadow-sm hover:!bg-white/10 hover:!text-white transition-colors font-semibold rounded-lg h-10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-                      asChild
+                    <ContactFormDialog
+                      recipient="Hiring Manager"
+                      defaultSubject="CTRL Candidate Query"
+                      triggerVariant="outline"
                     >
-                      <a href="mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query">
+                      <Button
+                        variant="outline"
+                        className="bg-background dark:bg-transparent border-white/10 shadow-sm hover:!bg-white/10 hover:!text-white transition-colors font-semibold rounded-lg h-10 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                      >
                         <Mail className="h-4 w-4 mr-2 text-primary" aria-hidden="true" /> Contact Hiring Manager
-                      </a>
-                    </Button>
+                      </Button>
+                    </ContactFormDialog>
                   </CardContent>
                 </Card>
               </div>

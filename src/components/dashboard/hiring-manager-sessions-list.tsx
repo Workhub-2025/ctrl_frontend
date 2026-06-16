@@ -87,7 +87,13 @@ export function HiringManagerSessionsList() {
     candidateLimit: "12",
     startsAt: "",
     location: "",
+    address: "",
   });
+
+  const [draftDate, setDraftDate] = useState("");
+  const [draftTime, setDraftTime] = useState("");
+  const [dateError, setDateError] = useState("");
+  const [timeError, setTimeError] = useState("");
 
   const selectedCampaign = useMemo(() => {
     return campaigns.find((c) => c.documentId === draft.campaignDocumentId) ?? null;
@@ -189,6 +195,10 @@ export function HiringManagerSessionsList() {
       setCreateError(null);
       setCreatedMessage(null);
       setCreatedSession(null);
+      setDraftDate("");
+      setDraftTime("");
+      setDateError("");
+      setTimeError("");
     }
   };
 
@@ -215,6 +225,21 @@ export function HiringManagerSessionsList() {
       return;
     }
 
+    if (!draftDate) {
+      setDateError("Start date is required");
+      return;
+    }
+    if (!draftTime) {
+      setTimeError("Start time is required");
+      return;
+    }
+
+    const combinedDateTime = new Date(`${draftDate}T${draftTime}`);
+    if (combinedDateTime.getTime() < Date.now()) {
+      setDateError("Start date cannot be in the past");
+      return;
+    }
+
     setIsCreating(true);
     try {
       const finalLocation = draft.location.trim() || (locationType === "Remote" ? "Remote Session" : "In-Person");
@@ -223,9 +248,10 @@ export function HiringManagerSessionsList() {
         campaignDocumentId: draft.campaignDocumentId,
         name: draft.name.trim(),
         candidateLimit,
-        startsAt: draft.startsAt ? new Date(draft.startsAt).toISOString() : null,
+        startsAt: draftDate && draftTime ? new Date(`${draftDate}T${draftTime}`).toISOString() : null,
         location: finalLocation,
         mode: locationType === "Remote" ? "remote" : "in_person",
+        ...(draft.address?.trim() ? { address: draft.address.trim() } : {}),
       });
 
       if (created) {
@@ -241,7 +267,10 @@ export function HiringManagerSessionsList() {
         candidateLimit: "12",
         startsAt: "",
         location: "",
+        address: "",
       }));
+      setDraftDate("");
+      setDraftTime("");
       await loadSessions(true);
     } catch (createSessionError) {
       setCreateError(
@@ -632,21 +661,46 @@ export function HiringManagerSessionsList() {
                   </div>
                 </div>
 
-                {/* Starts At */}
+                {/* Date & Time */}
                 <div className="space-y-2">
-                  <Label htmlFor="sessionStartsAt" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
                     <CalendarClock className="h-4 w-4 text-primary" />
-                    Starts at
+                    Start Date & Time
                   </Label>
-                  <Input
-                    id="sessionStartsAt"
-                    type="datetime-local"
-                    value={draft.startsAt}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, startsAt: event.target.value }))
-                    }
-                    className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="sessionDate" className="text-[10px] font-semibold text-slate-500">
+                        Date *
+                      </Label>
+                      <Input
+                        id="sessionDate"
+                        type="date"
+                        value={draftDate}
+                        onChange={(e) => {
+                          setDraftDate(e.target.value);
+                          setDateError("");
+                        }}
+                        className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
+                      />
+                      {dateError && <p className="text-[10px] text-red-400 font-medium">{dateError}</p>}
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="sessionTime" className="text-[10px] font-semibold text-slate-500">
+                        Time *
+                      </Label>
+                      <Input
+                        id="sessionTime"
+                        type="time"
+                        value={draftTime}
+                        onChange={(e) => {
+                          setDraftTime(e.target.value);
+                          setTimeError("");
+                        }}
+                        className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
+                      />
+                      {timeError && <p className="text-[10px] text-red-400 font-medium">{timeError}</p>}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Delivery Mode Toggle (only for Hybrid Campaigns) */}
@@ -709,6 +763,24 @@ export function HiringManagerSessionsList() {
                     </p>
                   )}
                 </div>
+
+                {/* Session Address (In-person only) */}
+                {locationType === "In-person" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="sessionAddress" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      <Building className="h-4 w-4 text-primary" />
+                      Session Address
+                      <span className="ml-2 text-xs bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full font-normal normal-case tracking-normal">Optional for now</span>
+                    </Label>
+                    <Input
+                      id="sessionAddress"
+                      value={draft.address}
+                      onChange={(e) => setDraft((current) => ({ ...current, address: e.target.value }))}
+                      placeholder="e.g. 123 Main Street, London EC1A 1BB"
+                      className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Drawer Actions / Submit */}

@@ -1,9 +1,19 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LifeBuoy, MailPlus, ShieldCheck } from "lucide-react";
+import { LifeBuoy, MailPlus, ShieldCheck, Ticket } from "lucide-react";
 import { hiringManagerSupport } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { cn } from "@/lib/utils";
+import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
+import { CreateTicketDialog } from "@/components/dashboard/create-ticket-dialog";
+
+const supportConfig = [
+  { recipient: "CTRL Support", subject: "Campaign Operations Support" },
+  { recipient: "CTRL Support", subject: "Assessment Operations Query" },
+  { recipient: "CTRL Support", subject: "Commercial Access Request" },
+];
 
 export default function HiringManagerSupportPage() {
   return (
@@ -13,6 +23,14 @@ export default function HiringManagerSupportPage() {
         title="Support"
         description="Get help with sessions, campaign setup, assessment guidance, and access requests."
         icon={LifeBuoy}
+        action={
+          <CreateTicketDialog>
+            <Button className="gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-white font-semibold text-sm hover:from-indigo-400 hover:to-primary/90 transition-all shadow-[0_4px_15px_rgba(99,102,241,0.15)]">
+              <Ticket className="h-4 w-4" aria-hidden="true" />
+              Create Ticket
+            </Button>
+          </CreateTicketDialog>
+        }
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -23,6 +41,7 @@ export default function HiringManagerSupportPage() {
             : index === 1 
             ? "from-blue-500 to-sky-400" 
             : "from-indigo-500 to-purple-400";
+          const config = supportConfig[index];
 
           return (
             <Card
@@ -38,9 +57,15 @@ export default function HiringManagerSupportPage() {
               </CardHeader>
               <CardContent className="space-y-4 p-0 pt-3 flex flex-col justify-between flex-grow">
                 <p className="text-xs leading-relaxed text-slate-400">{item.description}</p>
-                <Button variant="outline" className="w-full h-9 rounded-lg border-white/15 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors">
-                  Raise request
-                </Button>
+                <ContactFormDialog
+                  recipient={config.recipient}
+                  defaultSubject={config.subject}
+                  triggerVariant="outline"
+                >
+                  <Button variant="outline" className="w-full h-9 rounded-lg border-white/15 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors">
+                    Raise request
+                  </Button>
+                </ContactFormDialog>
               </CardContent>
             </Card>
           );

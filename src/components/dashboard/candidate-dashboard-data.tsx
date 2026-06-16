@@ -64,6 +64,7 @@ export const candidateSupportLinks: Array<{
   href: string;
   icon: LucideIcon;
   actionLabel: string;
+  isContactForm?: boolean;
 }> = [
   {
     title: "Raise a Support Ticket",
@@ -77,9 +78,10 @@ export const candidateSupportLinks: Array<{
     title: "Contact Hiring Manager",
     description:
       "Use this for questions about your allocated assessment or the recruitment process.",
-    href: "mailto:hiring@ctrl.local?subject=CTRL%20Candidate%20Query",
+    href: "#",
     icon: Mail,
-    actionLabel: "Email Hiring Manager",
+    actionLabel: "Send Message",
+    isContactForm: true,
   },
 ];
 

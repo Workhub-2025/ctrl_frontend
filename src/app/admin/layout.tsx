@@ -32,6 +32,7 @@ import {
   History,
   Building2,
   PlusCircle,
+  Ticket,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -228,6 +229,22 @@ export default function AdminLayout({
                   >
                     <History className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
                     <span>Audit Logs</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/admin/tickets")}
+                  tooltip="Tickets"
+                  className="rounded-xl data-[active=true]:bg-primary/10 dark:data-[active=true]:bg-primary/15 data-[active=true]:text-primary hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all duration-200 data-[active=true]:border-l-2 data-[active=true]:border-primary data-[active=true]:pl-3.5"
+                >
+                  <Link
+                    href="/admin/tickets"
+                    className="font-medium focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg text-sm flex items-center gap-3 py-2"
+                  >
+                    <Ticket className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
+                    <span>Tickets</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

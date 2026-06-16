@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowRight,
+  Building,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
   FolderKanban,
+  Globe,
   LayoutDashboard,
   RefreshCw,
   Users,
@@ -104,7 +106,7 @@ export function HiringManagerOverview() {
     () =>
       sessions
         .filter((session) => session.status !== "Closed" && session.status !== "Cancelled")
-        .slice(0, 4),
+        .slice(0, 6),
     [sessions]
   );
 
@@ -143,7 +145,78 @@ export function HiringManagerOverview() {
         <OverviewMetric title="Pending approvals" value={metrics.pendingApprovals} detail="Campaigns waiting on client review" icon={ClipboardList} accent="warning" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <DashboardInfoCard accent="session" interactive={false}>
+          <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
+            <CardTitle className="text-base font-bold text-foreground">Session queue</CardTitle>
+            <p className="text-xs text-muted-foreground">{formatLastRefresh(lastRefreshAt)}</p>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-5 pl-6">
+            {upcomingSessions.length ? (
+              upcomingSessions.map((session) => {
+                const isRemote = session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http");
+                const occupancyPercent = session.candidateLimit > 0 ? Math.min(100, Math.round((session.candidateCount / session.candidateLimit) * 100)) : 0;
+                const countdown = (() => {
+                  if (!session.startsAt) return null;
+                  const diff = new Date(session.startsAt).getTime() - Date.now();
+                  if (diff <= 0) return null;
+                  const days = Math.floor(diff / 86400000);
+                  const hours = Math.floor((diff % 86400000) / 3600000);
+                  const mins = Math.floor((diff % 3600000) / 60000);
+                  if (days > 0) return `in ${days}d ${hours}h`;
+                  if (hours > 0) return `in ${hours}h ${mins}m`;
+                  return `in ${mins}m`;
+                })();
+                return (
+                  <div key={session.id} className="rounded-xl border border-border/55 bg-background/35 p-3 dark:border-white/5 dark:bg-white/[0.02] space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-foreground">{session.campaign}</p>
+                        <p className="truncate text-xs text-muted-foreground">{session.date} · {session.location}</p>
+                      </div>
+                      <span className={dashboardInfoMetaClassName}>{session.status}</span>
+                    </div>
+                    {/* Occupancy bar */}
+                    <div className="flex items-center gap-2">
+                      <div className="h-1 flex-1 rounded-full bg-muted dark:bg-white/5 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-400 transition-all duration-500" style={{ width: `${occupancyPercent}%` }} />
+                      </div>
+                      <span className="text-[10px] font-semibold text-muted-foreground tabular-nums">{session.candidateCount}/{session.candidateLimit}</span>
+                    </div>
+                    {/* Meta row */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="rounded-md border-border/40 bg-background/50 px-1.5 py-0 text-[10px] font-semibold text-muted-foreground dark:border-white/5 dark:bg-white/[0.02] pointer-events-none gap-1">
+                        {isRemote ? <Globe className="h-3 w-3" /> : <Building className="h-3 w-3" />}
+                        {isRemote ? "Remote" : "In-Person"}
+                      </Badge>
+                      {countdown && (
+                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                          {countdown}
+                        </span>
+                      )}
+                      <span className="rounded border border-border/50 bg-muted/70 px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider text-muted-foreground dark:border-white/5 dark:bg-black/30 dark:text-slate-300">
+                        {session.accessValue}
+                      </span>
+                      <Link
+                        href="/hiring-manager-dashboard/sessions/"
+                        className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        View details
+                        <ArrowRight className="h-3 w-3" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-background/40 p-5 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.01]">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                No sessions need attention.
+              </div>
+            )}
+          </CardContent>
+        </DashboardInfoCard>
+
         <DashboardInfoCard accent="campaign" interactive={false}>
           <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
             <CardTitle className="text-base font-bold text-foreground">Campaign focus</CardTitle>
@@ -181,33 +254,6 @@ export function HiringManagerOverview() {
               <p className="rounded-xl border border-dashed border-border bg-background/40 p-5 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.01]">
                 No campaigns have been created yet.
               </p>
-            )}
-          </CardContent>
-        </DashboardInfoCard>
-
-        <DashboardInfoCard accent="session" interactive={false}>
-          <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
-            <CardTitle className="text-base font-bold text-foreground">Session queue</CardTitle>
-            <p className="text-xs text-muted-foreground">{formatLastRefresh(lastRefreshAt)}</p>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-5 pl-6">
-            {upcomingSessions.length ? (
-              upcomingSessions.map((session) => (
-                <div key={session.id} className="rounded-xl border border-border/55 bg-background/35 p-3 dark:border-white/5 dark:bg-white/[0.02]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-foreground">{session.campaign}</p>
-                      <p className="truncate text-xs text-muted-foreground">{session.date} · {session.location}</p>
-                    </div>
-                    <span className={dashboardInfoMetaClassName}>{session.status}</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-background/40 p-5 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.01]">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                No sessions need attention.
-              </div>
             )}
           </CardContent>
         </DashboardInfoCard>

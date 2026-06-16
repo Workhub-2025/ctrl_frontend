@@ -195,22 +195,22 @@ export default function ProfilePage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="flex w-full overflow-x-auto whitespace-nowrap scrollbar-none bg-slate-100/80 dark:bg-[#090d16] p-1 border border-border/60 dark:border-white/5 rounded-xl gap-1">
+          <TabsList className="flex w-full flex-wrap bg-slate-100/80 dark:bg-[#090d16] p-1 border border-border/60 dark:border-white/5 rounded-xl gap-1">
             <TabsTrigger 
               value="profile" 
-              className="flex-1 min-w-[135px] sm:min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
+              className="flex-1 min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
             >
               Profile Information
             </TabsTrigger>
             <TabsTrigger 
               value="equality" 
-              className="flex-1 min-w-[135px] sm:min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
+              className="flex-1 min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
             >
               Equality Monitoring
             </TabsTrigger>
             <TabsTrigger 
               value="privacy" 
-              className="flex-1 min-w-[135px] sm:min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
+              className="flex-1 min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
             >
               Privacy Settings
             </TabsTrigger>

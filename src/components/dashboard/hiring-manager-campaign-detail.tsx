@@ -71,6 +71,7 @@ export function HiringManagerCampaignDetailView({
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<CampaignSession | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
+  const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
 
   const loadCampaign = useCallback(async (force = false) => {
     const startTime = Date.now();
@@ -156,6 +157,22 @@ export function HiringManagerCampaignDetailView({
       );
     } finally {
       setRemovingCandidateId(null);
+    }
+  };
+
+  const handleUnlockCandidate = async (candidateSessionId: string) => {
+    setUnlockingCandidateId(candidateSessionId);
+    try {
+      const success = await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
+      if (success) {
+        await loadCampaign(true);
+      } else {
+        alert("Failed to unlock candidate session.");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUnlockingCandidateId(null);
     }
   };
 
@@ -270,28 +287,30 @@ export function HiringManagerCampaignDetailView({
             {campaign.assessmentStack.length === 0 ? (
               <p className="text-xs text-slate-500 italic">No assessments linked.</p>
             ) : (
-              campaign.assessmentStack.map((assessment) => {
-                const Icon = getAssessmentIcon(assessment);
-                return (
-                  <span
-                    key={assessment}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border/55 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-slate-200 dark:border-white/5 dark:bg-white/[0.02]"
-                  >
-                    <Icon className="h-3.5 w-3.5 text-primary" />
-                    {assessment}
-                  </span>
-                );
-              })
+              (() => {
+                const versionSummary = getAssessmentVersionSummary(campaign.assessmentSettings);
+                return campaign.assessmentStack.map((assessment) => {
+                  const Icon = getAssessmentIcon(assessment);
+                  const matchedVersion = versionSummary.find((v) =>
+                    v.key.replace(/-/g, "").toLowerCase().includes(assessment.toLowerCase().replace(/\s+/g, "").replace(/-/g, "")) ||
+                    assessment.toLowerCase().replace(/\s+/g, "").replace(/-/g, "").includes(v.key.replace(/-/g, "").toLowerCase())
+                  );
+                  const displayLabel = matchedVersion
+                    ? `${assessment} v${String((matchedVersion.label.match(/v(.+)$/)?.[1]) ?? "1")}`
+                    : assessment;
+                  return (
+                    <span
+                      key={assessment}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-border/55 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-slate-200 dark:border-white/5 dark:bg-white/[0.02]"
+                      title={matchedVersion?.detail || undefined}
+                    >
+                      <Icon className="h-3.5 w-3.5 text-primary" />
+                      {displayLabel}
+                    </span>
+                  );
+                });
+              })()
             )}
-            {getAssessmentVersionSummary(campaign.assessmentSettings).map((item) => (
-              <span
-                key={item.key}
-                className="inline-flex items-center rounded-lg border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-semibold capitalize text-primary"
-                title={item.detail || undefined}
-              >
-                {item.label}
-              </span>
-            ))}
           </CardContent>
         </Card>
 
@@ -415,24 +434,55 @@ export function HiringManagerCampaignDetailView({
                           {candidate.sessionName ?? "Main Session"}
                         </td>
                         <td className="p-3">
-                          <div className="flex items-center gap-3 max-w-[200px]">
-                            <div className="h-1.5 flex-1 rounded-full bg-white/10 overflow-hidden">
-                              <div
-                                className={[
-                                  "h-full rounded-full transition-all duration-300",
-                                  progressStatus === "completed"
-                                    ? "bg-emerald-400"
-                                    : progressStatus === "in_progress"
-                                      ? "bg-orange-400"
-                                      : "bg-slate-500"
-                                ].join(" ")}
-                                style={{ width: `${completionPercent}%` }}
-                              />
+                          {completedCount >= totalCount ? (
+                            (() => {
+                              const results = candidate.results ?? [];
+                              const stack = candidate.assessmentStack ?? campaign.assessmentStack;
+                              const equalWeight = stack.length > 0 ? 100 / stack.length : 0;
+                              let oScore = 0;
+                              for (const r of results) {
+                                if ((r.completedAt || r.numericScore !== null) && r.numericScore !== null && r.numericScore !== undefined) {
+                                  oScore += (r.numericScore * equalWeight) / 100;
+                                }
+                              }
+                              const roundedScore = Math.round(oScore);
+                              const scoreHue = Math.round(roundedScore * 1.2);
+                              const circumference = 2 * Math.PI * 12;
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <div className="relative h-8 w-8">
+                                    <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32" aria-hidden="true">
+                                      <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                                      <circle cx="16" cy="16" r="12" fill="none" stroke={`hsl(${scoreHue}, 72%, 58%)`} strokeLinecap="round" strokeWidth="3" strokeDasharray={circumference} strokeDashoffset={circumference * (1 - roundedScore / 100)} />
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <span className="text-[9px] font-black tabular-nums text-white">{roundedScore}</span>
+                                    </div>
+                                  </div>
+                                  <span className="text-xs font-bold text-emerald-400">{roundedScore}%</span>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <div className="flex items-center gap-3 max-w-[200px]">
+                              <div className="h-1.5 flex-1 rounded-full bg-white/10 overflow-hidden">
+                                <div
+                                  className={[
+                                    "h-full rounded-full transition-all duration-300",
+                                    progressStatus === "completed"
+                                      ? "bg-emerald-400"
+                                      : progressStatus === "in_progress"
+                                        ? "bg-orange-400"
+                                        : "bg-slate-500"
+                                  ].join(" ")}
+                                  style={{ width: `${completionPercent}%` }}
+                                />
+                              </div>
+                              <span className="font-semibold shrink-0 text-slate-300">
+                                {completedCount}/{totalCount}
+                              </span>
                             </div>
-                            <span className="font-semibold shrink-0 text-slate-300">
-                              {completedCount}/{totalCount}
-                            </span>
-                          </div>
+                          )}
                         </td>
                         <td className="p-3 text-right">
                           <Button
@@ -479,6 +529,8 @@ export function HiringManagerCampaignDetailView({
           `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`
         }
         assessmentStack={campaign.assessmentStack}
+        onUnlockCandidate={handleUnlockCandidate}
+        unlockingCandidateId={unlockingCandidateId}
       />
 
       <CandidateResultsDialog
