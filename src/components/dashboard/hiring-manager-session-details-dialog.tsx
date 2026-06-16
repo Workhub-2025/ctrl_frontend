@@ -40,6 +40,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { portalBadgeClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 
@@ -211,7 +213,7 @@ export function HiringManagerSessionDetailsDialog({
                       }}
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
                     >
-                      {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedCode ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -233,8 +235,8 @@ export function HiringManagerSessionDetailsDialog({
                 </div>
 
                 {/* Delivery */}
-                <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 p-4 shadow-sm">
-                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-emerald-500/10 blur-xl" />
+                <div className={cn(portalPanelClass, "relative overflow-hidden p-4 shadow-sm")}>
+                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-primary/10 blur-xl" />
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Delivery Type</p>
                   <div className="mt-2 flex items-center gap-2">
                     {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http")
@@ -332,16 +334,7 @@ export function HiringManagerSessionDetailsDialog({
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
                                   <h4 className="text-sm font-bold text-white tracking-tight leading-snug">{candidate.name}</h4>
-                                  <Badge className={[
-                                    "pointer-events-none rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
-                                    candidate.status === "locked"
-                                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/10"
-                                      : progress.completed >= progress.total
-                                        ? "bg-emerald-500/10 text-emerald-400"
-                                        : progress.completed > 0
-                                          ? "bg-orange-500/10 text-orange-400"
-                                          : "bg-slate-500/10 text-slate-400"
-                                  ].join(" ")}>
+                                  <Badge className={cn(portalBadgeClass, "pointer-events-none border-none text-[10px] font-semibold")}>
                                     {candidate.status === "locked"
                                       ? "Locked"
                                       : progress.completed >= progress.total
@@ -366,7 +359,7 @@ export function HiringManagerSessionDetailsDialog({
                                       size="sm"
                                       onClick={(e) => { e.stopPropagation(); onUnlockCandidate(candidate.id); }}
                                       disabled={unlockingCandidateId === candidate.id}
-                                      className="h-9 rounded-xl border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 px-4 text-xs font-semibold transition-colors hover:border-emerald-400/40"
+                                      className="h-9 rounded-xl px-4 text-xs font-semibold transition-colors"
                                     >
                                       {unlockingCandidateId === candidate.id ? (
                                         <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Unlocking...</>
@@ -406,7 +399,7 @@ export function HiringManagerSessionDetailsDialog({
                                         className={[
                                           "h-2.5 w-6 rounded-full border transition-colors",
                                           isCompleted
-                                            ? "border-emerald-400/40 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.24)]"
+                                            ? "border-primary/40 bg-primary shadow-[0_0_8px_rgba(99,102,241,0.24)]"
                                             : "border-white/10 bg-white/[0.04]"
                                         ].join(" ")}
                                       />
@@ -474,11 +467,7 @@ export function HiringManagerSessionDetailsDialog({
                                   const isCompleted = item.status === "completed";
                                   const scoreVal = item.result?.numericScore ?? 0;
                                   const key = getAssessmentKey(item.name, item.result);
-                                  let colorClass = "bg-primary";
-                                  if (key === "typing") colorClass = "bg-indigo-500";
-                                  else if (key === "prioritisation") colorClass = "bg-sky-500";
-                                  else if (key === "situational-judgement") colorClass = "bg-violet-500";
-                                  else if (key === "call-simulation") colorClass = "bg-emerald-500";
+                                  const colorClass = "bg-primary";
                                   return (
                                     <div
                                       key={`${item.name}-${idx}`}

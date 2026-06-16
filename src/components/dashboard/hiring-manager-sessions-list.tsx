@@ -40,6 +40,13 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import {
+  portalAlertErrorClass,
+  portalBadgeClass,
+  portalIconWrapLgClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   HiringManagerPortalClientService,
@@ -426,7 +433,7 @@ export function HiringManagerSessionsList() {
       </div>
 
       {error && (
-        <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">
+        <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>
           {error}
         </p>
       )}
@@ -453,13 +460,12 @@ export function HiringManagerSessionsList() {
           {createdSession ? (
             /* SUCCESS VIEW */
             <div className="space-y-6 py-2">
-              <div className="flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 relative overflow-hidden">
-                <div className="absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 h-20 w-20 rounded-full bg-emerald-500/10 blur-xl pointer-events-none" />
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mb-3 shadow-inner">
+              <div className={cn(portalPanelClass, "relative flex flex-col items-center justify-center overflow-hidden p-6 text-center")}>
+                <div className={cn(portalIconWrapLgClass, "mb-3 rounded-full")}>
                   <Check className="h-6 w-6" />
                 </div>
                 <h3 className="text-sm font-bold text-white">Ready for Candidates</h3>
-                <p className="text-[11px] text-slate-400 max-w-[240px] mt-1">
+                <p className="mt-1 max-w-[240px] text-[11px] text-slate-400">
                   Share this access code with candidates to allow them to take the assessments.
                 </p>
               </div>
@@ -483,8 +489,8 @@ export function HiringManagerSessionsList() {
                 >
                   {copiedSessionId === createdSession.id ? (
                     <>
-                      <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400 animate-in zoom-in-50 duration-200" />
-                      <span className="text-emerald-400">Copied!</span>
+                      <Check className="mr-1.5 h-3.5 w-3.5 animate-in zoom-in-50 duration-200" />
+                      <span>Copied!</span>
                     </>
                   ) : (
                     <>
@@ -817,7 +823,7 @@ export function HiringManagerSessionsList() {
       </Sheet>
 
       {error && (
-        <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">
+        <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>
           {error}
         </p>
       )}
@@ -833,7 +839,7 @@ export function HiringManagerSessionsList() {
           <TabsTrigger value="live" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
             Live
             {liveCount > 0 ? (
-              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-emerald-500/20 text-emerald-400 px-1.5 py-0 animate-pulse">
+              <Badge variant="secondary" className={cn("ml-1.5 animate-pulse rounded-full border-none px-1.5 py-0", portalBadgeClass)}>
                 {liveCount}
               </Badge>
             ) : (
@@ -865,7 +871,7 @@ export function HiringManagerSessionsList() {
 
       <div className="space-y-4">
         {filteredSessions.length === 0 ? (
-          <DashboardInfoCard accent="muted" interactive={false} className="border-dashed shadow-none">
+          <DashboardInfoCard interactive={false} className="border-dashed shadow-none">
             <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
               No sessions found in this category.
             </CardContent>
@@ -874,13 +880,6 @@ export function HiringManagerSessionsList() {
           filteredSessions.map((session) => (
             <DashboardInfoCard
               key={session.id}
-              accent={
-                session.status === "Live"
-                  ? "success"
-                  : session.status === "Closed" || session.status === "Cancelled"
-                    ? "muted"
-                    : "session"
-              }
             >
               <CardContent className="space-y-4 p-5 pl-7">
                 {/* Header row: Badges on left, Candidates count with progress bar on right */}
@@ -953,8 +952,8 @@ export function HiringManagerSessionsList() {
                       >
                         {copiedSessionId === session.id ? (
                           <>
-                            <Check className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
-                            <span className="text-emerald-400">Copied!</span>
+                            <Check className="mr-1.5 h-3.5 w-3.5" />
+                            <span>Copied!</span>
                           </>
                         ) : (
                           <>

@@ -28,6 +28,8 @@ import {
   dashboardInfoPillClassName,
 } from "@/components/dashboard/dashboard-info-card";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
+import { portalAlertInfoClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 
 type HiringManagerAssessmentLibraryProps = {
   assessments: HiringManagerAssessment[];
@@ -48,7 +50,7 @@ export function HiringManagerAssessmentLibrary({
 
   if (assessments.length === 0) {
     return (
-      <DashboardInfoCard accent="muted" interactive={false} className="border-dashed">
+      <DashboardInfoCard interactive={false} className="border-dashed">
         <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
           No active assessments are currently available from Strapi. Once Nelson
           enables or seeds the assessment records, they will appear here
@@ -66,7 +68,6 @@ export function HiringManagerAssessmentLibrary({
           return (
             <DashboardInfoCard
               key={assessment.id}
-              accent="assessment"
             >
               <CardHeader className="space-y-3 pb-3 pl-6">
                 <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -189,7 +190,7 @@ export function HiringManagerAssessmentLibrary({
                       {selected.whyItMatters}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4 text-xs font-semibold text-amber-400 leading-relaxed">
+                  <div className={cn(portalAlertInfoClass, "text-xs font-semibold leading-relaxed")}>
                     Remote and premium delivery can be permission-locked later
                     without changing the assessment definition coming from Strapi.
                   </div>

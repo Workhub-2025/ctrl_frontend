@@ -7,7 +7,6 @@ import { useAssessmentStore } from "@/store/assessment.store";
 import { useTypingSessionStore } from "@/store/typing-session.store";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +14,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import {
+  portalAlertErrorClass,
+  portalIconWrapLgClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 
 type SecureAssessmentShellProps = {
   assessmentName: string;
@@ -302,30 +306,30 @@ export function SecureAssessmentShell({
         <div className="mx-auto w-full max-w-[1680px] px-4 py-6 md:px-6">
           {needsFullscreenActivation && secureModeActive ? (
             <div className="flex min-h-[520px] items-center justify-center py-12">
-              <Card className="w-full max-w-xl bg-card border-border dark:border-white/10 shadow-2xl p-6 text-center">
-                <CardHeader>
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <div className={cn(portalPanelClass, "w-full max-w-xl p-6 text-center shadow-2xl")}>
+                <div className="space-y-4 pb-4">
+                  <div className={cn(portalIconWrapLgClass, "mx-auto mb-4 h-16 w-16 rounded-2xl")}>
                     <Monitor className="h-8 w-8" aria-hidden="true" />
                   </div>
-                  <CardTitle className="text-2xl font-bold">Secure Fullscreen Required</CardTitle>
-                  <CardDescription>
+                  <h2 className="text-2xl font-bold text-foreground">Secure Fullscreen Required</h2>
+                  <p className="text-sm text-muted-foreground">
                     To maintain test integrity, this assessment must be executed in fullscreen mode.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-left space-y-3 p-4 bg-muted/30 dark:bg-white/[0.02] rounded-xl border border-border/50">
+                  </p>
+                </div>
+                <div className={cn(portalPanelClass, "space-y-3 p-4 text-left")}>
                   <p className="text-sm font-semibold text-foreground">Lockdown rules in effect:</p>
-                  <ul className="text-xs space-y-2 text-muted-foreground list-disc pl-4">
+                  <ul className="list-disc space-y-2 pl-4 text-xs text-muted-foreground">
                     <li>Exiting fullscreen will automatically pause the test countdown.</li>
                     <li>Tab switching, window blurring, and screenshot shortcuts are disabled and logged.</li>
                     <li>Copying, pasting, and right-clicks are locked.</li>
                   </ul>
-                </CardContent>
-                <CardFooter className="pt-6">
-                  <Button onClick={enterFullscreen} size="lg" className="w-full font-bold shadow-lg">
+                </div>
+                <div className="pt-6">
+                  <Button onClick={enterFullscreen} size="lg" className="w-full font-bold">
                     Launch Fullscreen Session
                   </Button>
-                </CardFooter>
-              </Card>
+                </div>
+              </div>
             </div>
           ) : (
             children
@@ -344,47 +348,40 @@ export function SecureAssessmentShell({
 
       {/* Blocker Modal (Pause & Security Alert Overlays) */}
       {isPaused && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-4 motion-safe:animate-in motion-safe:fade-in duration-200">
-          <Card className="w-full max-w-lg bg-card border-border dark:border-white/10 shadow-2xl p-6 text-center">
-            <CardHeader>
-              <div
-                className={cn(
-                  "mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl",
-                  securityViolation
-                    ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
-                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                )}
-              >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
+          <div className={cn(portalPanelClass, "w-full max-w-lg p-6 text-center shadow-2xl")}>
+            <div className="space-y-4 pb-4">
+              <div className={cn(portalIconWrapLgClass, "mx-auto mb-4 h-16 w-16 rounded-2xl")}>
                 {securityViolation ? (
                   <ShieldAlert className="h-8 w-8" aria-hidden="true" />
                 ) : (
                   <Pause className="h-8 w-8" aria-hidden="true" />
                 )}
               </div>
-              <CardTitle className="text-2xl font-bold">
+              <h2 className="text-2xl font-bold text-foreground">
                 {securityViolation ? "Security Lockout Active" : "Assessment Paused"}
-              </CardTitle>
-              <CardDescription>
+              </h2>
+              <p className="text-sm text-muted-foreground">
                 {securityViolation
                   ? "A security event has triggered a session suspension."
                   : "Your timer and progress are temporarily held."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </p>
+            </div>
+            <div className="space-y-4">
               {securityViolation ? (
-                <div className="text-sm font-medium text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-200/50 dark:border-red-900/40 text-left space-y-2">
+                <div className={cn(portalAlertErrorClass, "space-y-2 text-left")}>
                   <p className="font-bold">Reason for suspension:</p>
-                  <p className="text-xs text-muted-foreground leading-normal">{securityViolation}</p>
+                  <p className="text-xs leading-normal text-muted-foreground">{securityViolation}</p>
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   Your assessment has been paused. All inputs are disabled. Resume when you are ready to continue the assessment.
                 </p>
               )}
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3 pt-6 border-t border-border/50">
+            </div>
+            <div className="flex flex-col gap-3 border-t border-border/50 pt-6">
               {securityViolation && !isFullscreen ? (
-                <Button onClick={enterFullscreen} size="lg" className="w-full font-bold shadow-lg">
+                <Button onClick={enterFullscreen} size="lg" className="w-full font-bold">
                   <RefreshCw className="mr-2 h-4 w-4" aria-hidden="true" />
                   Re-enter Secure Fullscreen Mode
                 </Button>
@@ -395,7 +392,7 @@ export function SecureAssessmentShell({
                     setSecurityViolation(null);
                   }}
                   size="lg"
-                  className="w-full font-bold shadow-lg"
+                  className="w-full font-bold"
                 >
                   <Play className="mr-2 h-4 w-4" aria-hidden="true" />
                   Resume Assessment
@@ -406,13 +403,13 @@ export function SecureAssessmentShell({
                   variant="ghost"
                   onClick={onExit}
                   disabled={isSubmitting}
-                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
+                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
                   Exit & Audit Session
                 </Button>
               )}
-            </CardFooter>
-          </Card>
+            </div>
+          </div>
         </div>
       )}
     </div>

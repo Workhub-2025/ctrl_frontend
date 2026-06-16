@@ -5,6 +5,7 @@ import {
   CalendarClock,
   Loader2,
   RefreshCw,
+  RotateCw,
   Save,
   Send,
   Sparkles,
@@ -63,7 +64,7 @@ type ExpiringContract = {
   daysUntilExpiry: number | null;
   paymentStatus: string;
   pendingRenewal: {
-    ticketDocumentId: string;
+    billingRequestDocumentId: string;
     billingStatus: string;
     amountDuePence: number | null;
     currency: string;
@@ -89,6 +90,7 @@ export default function AdminBillingPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [renewingId, setRenewingId] = useState<string | null>(null);
+  const [resendingRenewalId, setResendingRenewalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -195,6 +197,27 @@ export default function AdminBillingPage() {
       setError(err instanceof Error ? err.message : "Renewal invoice could not be sent");
     } finally {
       setRenewingId(null);
+    }
+  };
+
+  const resendRenewalLink = async (billingRequestDocumentId: string) => {
+    setResendingRenewalId(billingRequestDocumentId);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/admin/billing/resend-invoice/${encodeURIComponent(billingRequestDocumentId)}`,
+        { method: "POST" }
+      );
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Renewal payment link could not be resent");
+      setMessage("Renewal payment link regenerated — client can use Pay now again.");
+      invalidatePortalCache("admin:billing:expiring-contracts");
+      await load(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Renewal payment link could not be resent");
+    } finally {
+      setResendingRenewalId(null);
     }
   };
 
@@ -387,26 +410,47 @@ export default function AdminBillingPage() {
                       </p>
                     ) : null}
                   </div>
-                  <Button
-                    size="sm"
-                    className="rounded-xl gap-2 shrink-0"
-                    disabled={
-                      !row.clientDocumentId ||
-                      renewingId === row.clientDocumentId ||
-                      row.pendingRenewal?.billingStatus === "invoice_sent" ||
-                      row.pendingRenewal?.billingStatus === "paid"
-                    }
-                    onClick={() =>
-                      row.clientDocumentId ? void sendRenewal(row.clientDocumentId) : undefined
-                    }
-                  >
-                    {renewingId === row.clientDocumentId ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                    Send renewal invoice
-                  </Button>
+                  {row.pendingRenewal?.billingStatus === "invoice_sent" &&
+                  row.pendingRenewal.billingRequestDocumentId ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl gap-2 shrink-0"
+                      disabled={
+                        resendingRenewalId === row.pendingRenewal.billingRequestDocumentId
+                      }
+                      onClick={() =>
+                        void resendRenewalLink(row.pendingRenewal!.billingRequestDocumentId)
+                      }
+                    >
+                      {resendingRenewalId === row.pendingRenewal.billingRequestDocumentId ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RotateCw className="h-4 w-4" />
+                      )}
+                      Resend link
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="rounded-xl gap-2 shrink-0"
+                      disabled={
+                        !row.clientDocumentId ||
+                        renewingId === row.clientDocumentId ||
+                        row.pendingRenewal?.billingStatus === "paid"
+                      }
+                      onClick={() =>
+                        row.clientDocumentId ? void sendRenewal(row.clientDocumentId) : undefined
+                      }
+                    >
+                      {renewingId === row.clientDocumentId ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                      Send renewal invoice
+                    </Button>
+                  )}
               </AdminPanel>
             ))
           )}

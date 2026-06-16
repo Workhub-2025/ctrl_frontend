@@ -23,7 +23,6 @@ import {
   Building2,
   CheckCircle2,
   Clock3,
-  Download,
   Gauge,
   KeyRound,
   MoreHorizontal,
@@ -148,18 +147,12 @@ export default function ClientsListPage() {
         title="All clients"
         description="Organisations, contracts, seat capacity, and onboarding invites."
         action={
-          <div className="flex gap-2">
-            <Button variant="outline" className="rounded-lg">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button asChild className="rounded-lg">
-              <Link href="/admin/clients/create">
-                <Plus className="mr-2 h-4 w-4" />
-                Add client
-              </Link>
-            </Button>
-          </div>
+          <Button asChild className="rounded-lg">
+            <Link href="/admin/clients/create">
+              <Plus className="mr-2 h-4 w-4" />
+              Add client
+            </Link>
+          </Button>
         }
       />
 

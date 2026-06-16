@@ -14,7 +14,7 @@ export function getStripeClient() {
   return stripeClient;
 }
 
-/** True when Checkout sessions can be created (send-invoice, renewals, client checkout). */
+/** True when Checkout sessions can be created (send/resend invoice, renewals, client checkout). */
 export function isStripeCheckoutConfigured() {
   return Boolean(process.env.STRIPE_SECRET_KEY);
 }

@@ -10,7 +10,6 @@ import {
   PortalEyebrow,
   PortalPanel,
   PortalSectionHeader,
-  type PortalPanelAccent,
 } from "@/components/dashboard/portal/portal-ui";
 
 const supportConfig = [
@@ -19,7 +18,7 @@ const supportConfig = [
   { recipient: "CTRL Support", subject: "Commercial Access Request" },
 ];
 
-const supportAccents: PortalPanelAccent[] = ["primary", "session", "campaign"];
+
 const supportIcons = [LifeBuoy, ShieldCheck, MailPlus];
 const supportEyebrows = ["Operations", "Assessments", "Commercial"];
 
@@ -33,7 +32,7 @@ export default function HiringManagerSupportPage() {
         icon={LifeBuoy}
         action={
           <CreateTicketDialog>
-            <Button className="gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-white font-semibold text-sm hover:from-indigo-400 hover:to-primary/90 transition-all shadow-[0_4px_15px_rgba(99,102,241,0.15)]">
+            <Button className="gap-2 rounded-xl font-semibold text-sm">
               <Ticket className="h-4 w-4" aria-hidden="true" />
               Create Ticket
             </Button>
@@ -52,10 +51,9 @@ export default function HiringManagerSupportPage() {
           {hiringManagerSupport.map((item, index) => {
             const Icon = supportIcons[index];
             const config = supportConfig[index];
-            const accent = supportAccents[index];
 
             return (
-              <PortalPanel key={item.title} accent={accent} className="flex flex-col">
+              <PortalPanel key={item.title} className="flex flex-col">
                 <div className="flex flex-1 flex-col gap-4 p-6">
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
                     <Icon className="h-5 w-5" aria-hidden="true" />

@@ -4,7 +4,6 @@ export {
   PortalSectionHeader as AdminSectionHeader,
   PortalStatTile as AdminStatTile,
   PortalPanel as AdminPanel,
-  PortalLinkCard as AdminLinkCard,
   PortalAlert as AdminAlert,
   PortalQuickLinkRow as AdminQuickLinkRow,
   PortalTableShell as AdminTableShell,

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { MapPin, ExternalLink, Copy, Check } from "lucide-react";
+import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
 
 interface LocationMapDialogProps {
@@ -137,9 +138,9 @@ export function LocationMapDialog({
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-4 py-10">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-amber-500/20 bg-amber-500/10">
+            <div className={portalIconWrapLgClass}>
               <MapPin
-                className="h-7 w-7 text-amber-500 dark:text-amber-400"
+                className="h-7 w-7"
                 aria-hidden="true"
               />
             </div>

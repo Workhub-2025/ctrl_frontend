@@ -31,6 +31,14 @@ import {
   type HiringManagerAssessmentResult,
 } from "@/services/hiring-manager-portal-client.service";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
+import {
+  portalAlertErrorClass,
+  portalBadgeClass,
+  portalIconWrapLgClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 
 type CandidateRow = {
   id: string;
@@ -235,70 +243,41 @@ export function HiringManagerCandidatesView() {
       />
 
       {error && (
-        <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-100">
+        <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>
           {error}
         </p>
       )}
 
       {/* Stats Summary Widget Row */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        {/* Card 1: Total Candidates */}
-        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Total Candidates</span>
-              <Users className="h-4 w-4 text-indigo-400/85" />
-            </div>
-            <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-white leading-none tracking-tight">{stats.total}</span>
-              <span className="text-[10px] text-slate-500 font-medium">registered applicants</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 2: Completed */}
-        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase text-emerald-400 font-bold tracking-wider">Completed</span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-            </div>
-            <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-emerald-400 leading-none tracking-tight">{stats.completed}</span>
-              <span className="text-[10px] text-slate-500 font-medium font-semibold">
-                {stats.total > 0 ? `${Math.round((stats.completed / stats.total) * 100)}% completion rate` : "ready for review"}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 3: In Progress */}
-        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase text-orange-400 font-bold tracking-wider">In Progress</span>
-              <RefreshCw className="h-3.5 w-3.5 text-orange-400" />
-            </div>
-            <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-orange-400 leading-none tracking-tight">{stats.inProgress}</span>
-              <span className="text-[10px] text-slate-500 font-medium">active evaluation sessions</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Card 4: Not Started */}
-        <Card className="relative border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/40 backdrop-blur-md">
-          <CardContent className="p-4 flex flex-col justify-between h-full min-h-[90px]">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase text-slate-400 font-bold tracking-wider">Not Started</span>
-              <Clock3 className="h-4 w-4 text-slate-400" />
-            </div>
-            <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="text-2xl font-black text-slate-300 leading-none tracking-tight">{stats.notStarted}</span>
-              <span className="text-[10px] text-slate-500 font-medium">awaiting first assessment</span>
-            </div>
-          </CardContent>
-        </Card>
+        <PortalStatTile
+          label="Total Candidates"
+          value={stats.total}
+          detail="registered applicants"
+          icon={Users}
+        />
+        <PortalStatTile
+          label="Completed"
+          value={stats.completed}
+          detail={
+            stats.total > 0
+              ? `${Math.round((stats.completed / stats.total) * 100)}% completion rate`
+              : "ready for review"
+          }
+          icon={CheckCircle2}
+        />
+        <PortalStatTile
+          label="In Progress"
+          value={stats.inProgress}
+          detail="active evaluation sessions"
+          icon={RefreshCw}
+        />
+        <PortalStatTile
+          label="Not Started"
+          value={stats.notStarted}
+          detail="awaiting first assessment"
+          icon={Clock3}
+        />
       </div>
 
       {/* Unified Search & Filters Card */}
@@ -409,13 +388,13 @@ export function HiringManagerCandidatesView() {
           filteredCandidates.map((candidate) => (
             <Card
               key={`${candidate.campaignId}-${candidate.candidateSessionId}`}
-              className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0b1329]/40 to-[#080c16]/30 dark:from-[#0f1b36]/30 dark:to-[#080c16]/25 shadow-lg hover:border-primary/30 transition-all duration-300"
+              className={cn(portalPanelClass, "rounded-2xl shadow-lg transition-all duration-300 hover:border-primary/30")}
             >
               <CardContent className="p-5 space-y-5">
                 {/* Top Section: Avatar, Meta Info, and Actions */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/25 to-indigo-500/25 border border-primary/20 text-sm font-black text-primary uppercase shadow-sm">
+                    <div className={cn(portalIconWrapLgClass, "rounded-xl text-sm font-black uppercase")}>
                       {candidate.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
                     </div>
                     <div className="min-w-0">
@@ -423,14 +402,7 @@ export function HiringManagerCandidatesView() {
                         <h2 className="text-base font-bold text-white tracking-tight leading-snug">
                           {candidate.name}
                         </h2>
-                        <Badge className={[
-                          "pointer-events-none rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
-                          candidate.progress === "completed"
-                            ? "bg-emerald-500/10 text-emerald-400"
-                            : candidate.progress === "in_progress"
-                              ? "bg-orange-500/10 text-orange-400"
-                              : "bg-slate-500/10 text-slate-400"
-                        ].join(" ")}>
+                        <Badge className={cn(portalBadgeClass, "pointer-events-none border-none text-[10px] font-semibold")}>
                           {progressLabel(candidate.progress)}
                         </Badge>
                       </div>
@@ -539,12 +511,8 @@ export function HiringManagerCandidatesView() {
                           const scoreValue = matchedResult?.numericScore ?? 0;
                           const key = getAssessmentKey(stackName, matchedResult);
 
-                          // 4 different colors for the 4 types
-                          let colorClass = "bg-primary";
-                          if (key === "typing") colorClass = "bg-indigo-500";
-                          else if (key === "prioritisation") colorClass = "bg-sky-500";
-                          else if (key === "situational-judgement") colorClass = "bg-violet-500";
-                          else if (key === "call-simulation") colorClass = "bg-emerald-500";
+                          // Unified segment color
+                          const colorClass = "bg-primary";
 
                           // Tooltip metrics content
                           let metricsContent = null;

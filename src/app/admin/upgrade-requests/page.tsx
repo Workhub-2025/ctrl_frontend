@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,7 +17,22 @@ import {
 import { ArrowUpRight, CheckCircle2, Loader2, Minus, Plus, Search, Users } from "lucide-react";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 import { PORTAL_CACHE_TTL_MS } from "@/lib/portal-fetch-cache";
-import { AdminPageHeader } from "@/components/admin/admin-portal-ui";
+import { cn } from "@/lib/utils";
+import {
+  AdminAlert,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSectionHeader,
+  AdminStatTile,
+} from "@/components/admin/admin-portal-ui";
+import {
+  portalAlertErrorClass,
+  portalAlertInfoClass,
+  portalBadgeClass,
+  portalInputClass,
+  portalLabelClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 
 type EntitlementClient = {
   id: string;
@@ -358,23 +372,19 @@ export default function UpgradeRequestsPage() {
       />
 
       {error && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/5 px-4 py-3 text-sm text-red-600">
-          {error}
-        </div>
+        <div className={portalAlertErrorClass}>{error}</div>
       )}
       {savedMessage && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-600">
-          {savedMessage}
-        </div>
+        <div className={portalAlertInfoClass}>{savedMessage}</div>
       )}
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
-          <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
-            <CardTitle className="text-base font-bold text-foreground font-display">Clients</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground/95">Select a client to stage changes.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 p-4">
+        <AdminPanel padding={false} className="overflow-hidden">
+          <div className="border-b border-border/50 bg-muted/20 p-4 dark:border-white/6 dark:bg-black/10">
+            <h2 className="text-base font-bold font-display text-foreground">Clients</h2>
+            <p className="text-xs text-muted-foreground">Select a client to stage changes.</p>
+          </div>
+          <div className="space-y-4 p-4">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -416,25 +426,23 @@ export default function UpgradeRequestsPage() {
                 </button>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
 
         {!selectedClient || !selectedDraft ? (
-          <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden flex items-center justify-center p-12">
-            <CardContent className="py-12 text-center text-sm text-muted-foreground">
-              Select a client to review entitlements.
-            </CardContent>
-          </Card>
+          <AdminPanel className="flex items-center justify-center p-12">
+            <p className="text-sm text-muted-foreground">Select a client to review entitlements.</p>
+          </AdminPanel>
         ) : (
           <div className="space-y-4">
-            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
-              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10 space-y-3">
+            <AdminPanel padding={false} className="overflow-hidden">
+              <div className="space-y-3 border-b border-border/40 bg-muted/20 p-6 dark:border-white/5 dark:bg-black/10">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg font-bold text-foreground font-display">{selectedClient.name}</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">{selectedClient.primaryContact}</CardDescription>
+                    <h2 className="text-lg font-bold font-display text-foreground">{selectedClient.name}</h2>
+                    <p className="text-xs text-muted-foreground">{selectedClient.primaryContact}</p>
                   </div>
-                  <Badge variant="outline" className="rounded-lg font-semibold px-2 py-0.5 border-primary/25 text-primary bg-primary/5">{selectedClient.status}</Badge>
+                  <Badge variant="outline" className={cn("rounded-lg px-2 py-0.5 font-semibold", portalBadgeClass)}>{selectedClient.status}</Badge>
                 </div>
                 <div className="grid gap-3 grid-cols-3 pt-1">
                   <MiniStat label="Current HM seats" value={seatSummary(selectedClient)} />
@@ -442,7 +450,7 @@ export default function UpgradeRequestsPage() {
                   <MiniStat label="Contract" value={selectedClient.activeContract?.status ?? "None"} />
                 </div>
                 {!selectedClient.activeContract && (
-                  <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4 text-xs mt-2">
+                  <div className={cn(portalAlertInfoClass, "mt-2 p-4 text-xs")}>
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <p className="text-muted-foreground/90 leading-relaxed">
                         No active contract is attached. Generate a draft allocation from the current active HM seats.
@@ -459,8 +467,8 @@ export default function UpgradeRequestsPage() {
                     </div>
                   </div>
                 )}
-              </CardHeader>
-              <CardContent className="space-y-6 p-6">
+              </div>
+              <div className="space-y-6 p-6">
                 <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)]">
                   <div className="space-y-2">
                     <Label htmlFor="hmSeatCount" className="text-xs font-bold text-slate-400 uppercase tracking-wider">HM seats</Label>
@@ -519,20 +527,20 @@ export default function UpgradeRequestsPage() {
                     setAssessmentVersionState(selectedClient.id, assessmentKey, version)
                   }
                 />
-              </CardContent>
-            </Card>
+              </div>
+            </AdminPanel>
 
-            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
-              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
+            <AdminPanel padding={false} className="overflow-hidden">
+              <div className="border-b border-border/40 bg-muted/20 p-6 dark:border-white/5 dark:bg-black/10">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <CardTitle className="text-base font-bold text-foreground font-display">Final review</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">Approve staged entitlement overrides.</CardDescription>
+                    <h2 className="text-base font-bold font-display text-foreground">Final review</h2>
+                    <p className="text-xs text-muted-foreground">Approve staged entitlement overrides.</p>
                   </div>
-                  <Badge variant="outline" className="rounded-lg font-semibold border-primary/20 bg-primary/10 text-primary px-2.5 py-0.5">{pendingChanges.length} change{pendingChanges.length === 1 ? "" : "s"}</Badge>
+                  <Badge variant="outline" className={cn("rounded-lg px-2.5 py-0.5 font-semibold", portalBadgeClass)}>{pendingChanges.length} change{pendingChanges.length === 1 ? "" : "s"}</Badge>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4 p-6">
+              </div>
+              <div className="space-y-4 p-6">
                 {pendingChanges.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-border/60 p-5 text-center text-xs text-muted-foreground/75 bg-slate-100/5 dark:bg-black/5">
                     No staged changes yet.
@@ -540,8 +548,8 @@ export default function UpgradeRequestsPage() {
                 ) : (
                   <div className="space-y-2.5">
                     {pendingChanges.map((change) => (
-                      <div key={change} className="flex items-center gap-3 rounded-xl border border-border/60 dark:border-white/5 p-4 text-xs font-medium text-foreground bg-slate-100/10 dark:bg-black/5">
-                        <CheckCircle2 className="h-[18px] w-[18px] text-emerald-500 shrink-0" />
+                      <div key={change} className={cn(portalPanelClass, "flex items-center gap-3 p-4 text-xs font-medium text-foreground")}>
+                        <CheckCircle2 className="h-[18px] w-[18px] shrink-0 text-primary" />
                         <span>{change}</span>
                       </div>
                     ))}
@@ -557,8 +565,8 @@ export default function UpgradeRequestsPage() {
                     Approve changes
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </AdminPanel>
           </div>
         )}
       </div>

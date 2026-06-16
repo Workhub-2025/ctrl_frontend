@@ -31,6 +31,12 @@ import {
   type HiringManagerAssessmentResult,
   type HiringManagerCampaignDetail,
 } from "@/services/hiring-manager-portal-client.service";
+import {
+  portalAlertErrorClass,
+  portalAlertInfoClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 
 type CandidateReportProps = {
   candidateId: string;
@@ -685,12 +691,10 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
 
       {decision && (
-        <div className={[
-          "rounded-xl border px-4 py-3 flex items-center justify-between text-sm shadow-sm",
-          decision === "Move forward"
-            ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
-            : "border-red-500/20 bg-red-500/5 text-red-300"
-        ].join(" ")}>
+        <div className={cn(
+          "flex items-center justify-between text-sm shadow-sm",
+          decision === "Move forward" ? portalAlertInfoClass : portalAlertErrorClass
+        )}>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5" />
             <span>Candidate decision finalized: <strong className="text-white uppercase font-bold tracking-wider">{decision}</strong></span>
@@ -708,7 +712,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
       {/* Weighted Score Summary & Radar Chart */}
       <div>
-        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#080c16]/50 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:bg-[#0b1329]/45 backdrop-blur-md">
+        <Card className={cn(portalPanelClass, "relative overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.12)] backdrop-blur-md")}>
           <CardContent className="relative p-6">
             <div className="flex flex-col justify-between space-y-5">
               <div>

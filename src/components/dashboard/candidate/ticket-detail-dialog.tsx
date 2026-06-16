@@ -11,30 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Tag, TicketCheck } from "lucide-react";
 import type { SupportTicket } from "@/services/support-ticket.service";
 import { cn } from "@/lib/utils";
+import { portalAlertInfoClass, portalBadgeClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 type StatusKey = "open" | "in_progress" | "resolved" | "closed";
 
-const STATUS_TONES: Record<StatusKey, { label: string; className: string }> = {
-  open: {
-    label: "Open",
-    className:
-      "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300",
-  },
-  in_progress: {
-    label: "In progress",
-    className:
-      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-  },
-  resolved: {
-    label: "Resolved",
-    className:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  },
-  closed: {
-    label: "Closed",
-    className:
-      "border-border bg-muted/60 text-muted-foreground dark:border-white/10",
-  },
+const STATUS_LABELS: Record<StatusKey, string> = {
+  open: "Open",
+  in_progress: "In progress",
+  resolved: "Resolved",
+  closed: "Closed",
 };
 
 function normaliseStatus(status: string): StatusKey {
@@ -82,7 +67,6 @@ export function TicketDetailDialog({
   if (!ticket) return null;
 
   const status = normaliseStatus(ticket.status);
-  const tone = STATUS_TONES[status];
   const isResolved = status === "resolved" || status === "closed";
   const isContact = ticket.category === "contact";
 
@@ -108,9 +92,9 @@ export function TicketDetailDialog({
                 </span>
                 <Badge
                   variant="outline"
-                  className={cn("rounded-full text-[11px] font-semibold", tone.className)}
+                  className={cn("rounded-full text-[11px] font-semibold", portalBadgeClass)}
                 >
-                  {tone.label}
+                  {STATUS_LABELS[status]}
                 </Badge>
                 {isContact ? (
                   <Badge variant="outline" className="rounded-full text-[11px]">
@@ -152,13 +136,13 @@ export function TicketDetailDialog({
           </div>
 
           {isResolved && ticket.resolution ? (
-            <div className="flex items-start gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+            <div className={cn(portalAlertInfoClass, "flex items-start gap-2 p-4")}>
               <CheckCircle2
-                className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
+                className="mt-0.5 h-4 w-4 shrink-0 text-primary"
                 aria-hidden="true"
               />
               <div className="min-w-0 space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-600 dark:text-emerald-300">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                   Resolution
                 </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">

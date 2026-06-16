@@ -27,6 +27,12 @@ import {
 } from "@/services/hiring-manager-portal-client.service";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
+import {
+  portalAlertErrorClass,
+  portalIconWrapLgClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 
 function formatLastRefresh(value: number | null) {
   if (!value) return "Not refreshed yet";
@@ -119,7 +125,7 @@ export function HiringManagerOverview() {
         icon={LayoutDashboard}
         notice={
           error ? (
-            <p className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">
+            <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>
               {error}
             </p>
           ) : null
@@ -150,7 +156,6 @@ export function HiringManagerOverview() {
           value={metrics.liveSessions}
           detail={`${metrics.upcomingSessions} upcoming`}
           icon={CalendarClock}
-          tone="success"
         />
         <PortalStatTile
           label="Candidates joined"
@@ -163,12 +168,11 @@ export function HiringManagerOverview() {
           value={metrics.pendingApprovals}
           detail="Campaigns waiting on client review"
           icon={ClipboardList}
-          tone="attention"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <DashboardInfoCard accent="session" interactive={false}>
+        <DashboardInfoCard interactive={false}>
           <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
             <CardTitle className="text-base font-bold text-foreground">Session queue</CardTitle>
             <p className="text-xs text-muted-foreground">{formatLastRefresh(lastRefreshAt)}</p>
@@ -190,7 +194,7 @@ export function HiringManagerOverview() {
                   return `in ${mins}m`;
                 })();
                 return (
-                  <div key={session.id} className="rounded-xl border border-border/55 bg-background/35 p-3 dark:border-white/5 dark:bg-white/[0.02] space-y-2">
+                  <div key={session.id} className={cn(portalPanelClass, "space-y-2 p-3")}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-bold text-foreground">{session.campaign}</p>
@@ -231,15 +235,17 @@ export function HiringManagerOverview() {
                 );
               })
             ) : (
-              <div className="flex items-center gap-2 rounded-xl border border-dashed border-border bg-background/40 p-5 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.01]">
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              <div className={cn(portalPanelClass, "flex items-center gap-2 border-dashed p-5 text-sm text-muted-foreground")}>
+                <span className={portalIconWrapLgClass}>
+                  <CheckCircle2 className="h-4 w-4" />
+                </span>
                 No sessions need attention.
               </div>
             )}
           </CardContent>
         </DashboardInfoCard>
 
-        <DashboardInfoCard accent="campaign" interactive={false}>
+        <DashboardInfoCard interactive={false}>
           <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
             <CardTitle className="text-base font-bold text-foreground">Campaign focus</CardTitle>
             <p className="text-xs text-muted-foreground">Highest priority campaigns and their next milestone.</p>
@@ -250,7 +256,7 @@ export function HiringManagerOverview() {
                 <Link
                   key={campaign.id}
                   href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}
-                  className="block rounded-xl border border-border/55 bg-background/35 p-4 transition-colors hover:border-primary/25 dark:border-white/5 dark:bg-white/[0.02] dark:hover:border-primary/30"
+                  className={cn(portalPanelClass, "block p-4 transition-colors hover:border-primary/30")}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">
@@ -273,7 +279,7 @@ export function HiringManagerOverview() {
                 </Link>
               ))
             ) : (
-              <p className="rounded-xl border border-dashed border-border bg-background/40 p-5 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.01]">
+              <p className={cn(portalPanelClass, "border-dashed p-5 text-sm text-muted-foreground")}>
                 No campaigns have been created yet.
               </p>
             )}

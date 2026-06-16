@@ -1,4 +1,3 @@
-export * from './texts.service'
 export * from './users-simple.service'
 export * from './question.service'
 export * from './audio-call.service'

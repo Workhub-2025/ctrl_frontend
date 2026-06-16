@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
   BookOpenCheck,
@@ -27,6 +28,10 @@ import {
   PortalSectionHeader,
   PortalStatTile,
 } from "@/components/dashboard/portal/portal-ui";
+import {
+  portalBadgeClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { useClientPortal } from "@/context/client-portal-provider";
 import {
   CLIENT_PLATFORM_FEATURES,
@@ -77,10 +82,10 @@ const BILLING_STATUS_LABELS: Record<string, string> = {
 };
 
 const BILLING_STATUS_CLASSES: Record<string, string> = {
-  requested: "border-border/60 bg-muted/35 text-muted-foreground",
-  invoice_sent: "border-primary/25 bg-primary/10 text-primary",
-  paid: "border-border/60 bg-muted/35 text-foreground",
-  failed: "border-destructive/30 bg-destructive/10 text-destructive",
+  requested: portalBadgeClass,
+  invoice_sent: portalBadgeClass,
+  paid: portalBadgeClass,
+  failed: portalBadgeClass,
 };
 
 export function ClientUpgradeContent() {
@@ -100,6 +105,9 @@ export function ClientUpgradeContent() {
 
   const [activeRequestType, setActiveRequestType] = useState<ClientInitiatedUpgradeType | null>(null);
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const contract = entitlements?.contract ?? summary?.activeContract ?? null;
   const seats = summary?.seats;
@@ -121,6 +129,46 @@ export function ClientUpgradeContent() {
     void loadEntitlements(true);
     void loadUpgradeRequests(true);
   };
+
+  useEffect(() => {
+    const paid = searchParams.get("paid");
+    const sessionId = searchParams.get("session_id");
+    if (paid !== "1" || !sessionId) return;
+
+    let cancelled = false;
+    const confirmPayment = async () => {
+      setConfirmingPayment(true);
+      setError(null);
+      try {
+        const response = await fetch("/api/client/billing/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stripeCheckoutSessionId: sessionId }),
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(body.error ?? "Payment could not be confirmed");
+        }
+        await Promise.all([loadEntitlements(true), loadUpgradeRequests(true)]);
+        if (!cancelled) {
+          router.replace("/client-dashboard/upgrade-requests/");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Payment could not be confirmed");
+        }
+      } finally {
+        if (!cancelled) {
+          setConfirmingPayment(false);
+        }
+      }
+    };
+
+    void confirmPayment();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, loadEntitlements, loadUpgradeRequests, router, setError]);
 
   const payForUpgrade = async (ticketDocumentId: string) => {
     setPayingRequestId(ticketDocumentId);
@@ -155,7 +203,7 @@ export function ClientUpgradeContent() {
         action={
           <ClientRefreshButton
             onClick={refreshAll}
-            loading={entitlementsLoading || upgradeRequestsLoading}
+            loading={entitlementsLoading || upgradeRequestsLoading || confirmingPayment}
           />
         }
       />
@@ -172,20 +220,18 @@ export function ClientUpgradeContent() {
           value={activeFeatures.length}
           detail={`${CLIENT_PLATFORM_FEATURES.length} optional features available`}
           icon={CheckCircle2}
-          tone="success"
         />
         <PortalStatTile
           label="Open upgrade requests"
           value={openRequests.length}
           detail="Awaiting CTRL review"
           icon={Clock3}
-          tone={openRequests.length > 0 ? "attention" : "default"}
         />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
-          <PortalPanel accent="primary">
+          <PortalPanel>
             <div className="space-y-6 p-6">
               <PortalSectionHeader
                 eyebrow="Your plan"
@@ -194,7 +240,7 @@ export function ClientUpgradeContent() {
               />
 
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-border/60 bg-background/30 p-4 dark:border-white/5 dark:bg-[#0b1220]/25">
+                <div className={cn(portalPanelClass, "p-4")}>
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     <CalendarRange className="h-4 w-4" aria-hidden="true" />
                     Contract period
@@ -210,7 +256,7 @@ export function ClientUpgradeContent() {
                         {" "}
                         ·{" "}
                         {entitlements.contract.daysUntilExpiry <= 30 ? (
-                          <span className="font-medium text-amber-600 dark:text-amber-300">
+                          <span className="font-medium text-foreground">
                             {entitlements.contract.daysUntilExpiry} days until renewal
                           </span>
                         ) : (
@@ -220,7 +266,7 @@ export function ClientUpgradeContent() {
                     ) : null}
                   </p>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-background/30 p-4 dark:border-white/5 dark:bg-[#0b1220]/25">
+                <div className={cn(portalPanelClass, "p-4")}>
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     <Users className="h-4 w-4" aria-hidden="true" />
                     Seat usage
@@ -248,7 +294,7 @@ export function ClientUpgradeContent() {
                       <li key={feature.key}>
                         <Badge
                           variant="outline"
-                          className="rounded-full border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300"
+                          className={cn("rounded-full px-3 py-1 text-[11px] font-semibold", portalBadgeClass)}
                         >
                           {feature.label}
                         </Badge>
@@ -266,7 +312,7 @@ export function ClientUpgradeContent() {
                   {(entitlements?.defaultAssessments ?? []).map((assessment) => (
                     <li
                       key={assessment.slug}
-                      className="rounded-xl border border-border/60 bg-background/30 px-4 py-3 dark:border-white/5 dark:bg-[#0b1220]/25"
+                      className={cn(portalPanelClass, "px-4 py-3")}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -296,7 +342,7 @@ export function ClientUpgradeContent() {
                     {entitlements?.additionalAssessments.map((assessment) => (
                       <li
                         key={assessment.slug}
-                        className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3"
+                        className={cn(portalPanelClass, "px-4 py-3")}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -307,7 +353,7 @@ export function ClientUpgradeContent() {
                           </div>
                           <Badge
                             variant="outline"
-                            className="shrink-0 rounded-lg border-emerald-500/30 text-[10px] font-semibold text-emerald-600 dark:text-emerald-300"
+                            className={cn("shrink-0 rounded-lg text-[10px] font-semibold", portalBadgeClass)}
                           >
                             up to v{assessment.maxVersion}
                           </Badge>
@@ -320,7 +366,7 @@ export function ClientUpgradeContent() {
             </div>
           </PortalPanel>
 
-          <PortalPanel accent="campaign">
+          <PortalPanel>
             <div className="space-y-5 p-6">
               <PortalSectionHeader
                 eyebrow="History"
@@ -345,7 +391,7 @@ export function ClientUpgradeContent() {
                   {upgradeRequests.map((request) => (
                     <li
                       key={request.id}
-                      className="rounded-xl border border-border/60 bg-background/30 p-4 dark:border-white/5 dark:bg-[#0b1220]/25"
+                      className={cn(portalPanelClass, "p-4")}
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0 space-y-2">
@@ -372,7 +418,7 @@ export function ClientUpgradeContent() {
                             Submitted {formatDate(request.createdAt)}
                           </p>
                           {request.billingStatus === "invoice_sent" ? (
-                            <p className="text-xs font-medium text-amber-600 dark:text-amber-300">
+                            <p className="text-xs font-medium text-muted-foreground">
                               Invoice ready
                               {request.amountDuePence
                                 ? ` · ${formatMoney(request.amountDuePence, request.currency ?? "gbp")}`
@@ -411,7 +457,7 @@ export function ClientUpgradeContent() {
           </PortalPanel>
         </div>
 
-        <PortalPanel accent="warning" className="h-fit">
+        <PortalPanel className="h-fit">
           <div className="space-y-4 p-6">
             <PortalSectionHeader
               eyebrow="Request an upgrade"
@@ -426,7 +472,7 @@ export function ClientUpgradeContent() {
                     key={action.type}
                     type="button"
                     onClick={() => setActiveRequestType(action.type)}
-                    className="flex w-full items-start gap-3 rounded-xl border border-border/60 bg-background/30 p-4 text-left transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-[#0b1220]/25 dark:hover:border-white/15"
+                    className={cn(portalPanelClass, "flex w-full items-start gap-3 p-4 text-left transition-colors hover:border-primary/30")}
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                       <Icon className="h-5 w-5" aria-hidden="true" />

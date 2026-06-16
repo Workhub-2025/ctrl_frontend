@@ -30,6 +30,11 @@ import {
   PortalPanel,
   PortalSectionHeader,
 } from "@/components/dashboard/portal/portal-ui";
+import {
+  portalBadgeClass,
+  portalIconWrapClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { formatDateTime } from "@/components/dashboard/client/client-portal-utils";
 import type { SeatSlot } from "@/hooks/use-client-portal";
 import { useClientPortal } from "@/context/client-portal-provider";
@@ -106,7 +111,7 @@ export function ClientHiringManagersContent() {
         notice={error ? <ClientErrorBanner message={error} /> : null}
       />
 
-      <PortalPanel accent="primary">
+      <PortalPanel>
         <div className="space-y-6 p-6">
           <PortalSectionHeader
             eyebrow="Seat matrix"
@@ -169,7 +174,7 @@ export function ClientHiringManagersContent() {
                     key={manager.documentId}
                     type="button"
                     onClick={() => setSelectedSeat({ type: "occupied", label: "Previous", manager })}
-                    className="rounded-xl border border-border/60 bg-background/30 p-4 text-left transition-colors hover:border-primary/30 dark:border-white/5 dark:bg-[#0b1220]/25 dark:hover:border-white/20"
+                    className={cn(portalPanelClass, "p-4 text-left transition-colors hover:border-primary/30")}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -273,7 +278,7 @@ export function ClientHiringManagersContent() {
                   {selectedSeat.manager.campaigns.map((campaign) => (
                     <div
                       key={campaign.documentId}
-                      className="space-y-3 rounded-xl border border-border bg-background/40 p-4 transition-colors hover:border-primary/20 dark:border-white/5 dark:bg-white/[0.02]"
+                      className={cn(portalPanelClass, "space-y-3 p-4 transition-colors hover:border-primary/20")}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -345,7 +350,7 @@ function SeatCard({
       className={cn(
         "relative flex min-h-[200px] flex-col justify-between overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:scale-[1.01]",
         seat.type === "occupied"
-          ? "border-border/60 bg-background/40 dark:border-white/5 dark:bg-[#0b1220]/25 hover:border-primary/30"
+          ? cn(portalPanelClass, "hover:border-primary/30")
           : "border-2 border-dashed border-border/80 bg-transparent hover:border-primary/40 dark:border-white/10 dark:hover:border-primary/45"
       )}
     >
@@ -436,18 +441,18 @@ function SeatCard({
           {seat.accessCode ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-cyan-600 dark:text-cyan-400">
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 motion-safe:animate-pulse" />
+                <span className={cn("flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest", portalBadgeClass)}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
                   Invite code active
                 </span>
                 <span className="text-[9px] text-muted-foreground">Expires in 7 days</span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/5 px-3 py-2 font-mono text-sm font-semibold text-cyan-700 shadow-inner dark:text-cyan-300">
+              <div className={cn(portalPanelClass, "flex items-center gap-1.5 px-3 py-2 font-mono text-sm font-semibold shadow-inner")}>
                 <span className="flex-1 select-all truncate">{seat.accessCode.code}</span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 rounded-md text-cyan-600 hover:bg-cyan-500/10 hover:text-cyan-700 dark:text-cyan-400"
+                  className={cn(portalIconWrapClass, "h-6 w-6 rounded-md")}
                   onClick={() => {
                     if (seat.accessCode?.code) {
                       void navigator.clipboard.writeText(seat.accessCode.code);

@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-/** Settings removed — redirect legacy bookmarks to overview. */
+/** Legacy bookmark — settings removed; send to overview. */
 export default function AdminSettingsRedirect() {
   const router = useRouter();
 

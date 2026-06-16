@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Mail, Send, CheckCircle, Loader2 } from "lucide-react";
+import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { SupportTicketService } from "@/services/support-ticket.service";
 import type { CandidateSessionContext } from "@/components/dashboard/candidate/candidate-portal-ui";
 
@@ -157,9 +158,9 @@ export function ContactFormDialog({
 
         {isSuccess ? (
           <div className="flex flex-col items-center justify-center gap-4 py-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
+            <div className={portalIconWrapLgClass}>
               <CheckCircle
-                className="h-7 w-7 text-emerald-500 dark:text-emerald-400"
+                className="h-7 w-7"
                 aria-hidden="true"
               />
             </div>

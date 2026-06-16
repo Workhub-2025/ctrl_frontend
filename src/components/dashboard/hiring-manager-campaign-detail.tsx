@@ -459,7 +459,7 @@ export function HiringManagerCampaignDetailView({
                                       <span className="text-[9px] font-black tabular-nums text-white">{roundedScore}</span>
                                     </div>
                                   </div>
-                                  <span className="text-xs font-bold text-emerald-400">{roundedScore}%</span>
+                                  <span className="text-xs font-bold text-muted-foreground">{roundedScore}%</span>
                                 </div>
                               );
                             })()
@@ -470,7 +470,7 @@ export function HiringManagerCampaignDetailView({
                                   className={[
                                     "h-full rounded-full transition-all duration-300",
                                     progressStatus === "completed"
-                                      ? "bg-emerald-400"
+                                      ? "bg-primary"
                                       : progressStatus === "in_progress"
                                         ? "bg-orange-400"
                                         : "bg-slate-500"

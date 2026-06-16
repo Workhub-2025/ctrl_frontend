@@ -154,7 +154,6 @@ export const fetchClient = async (
                 url.includes('/a-sja-question') ||
                 url.includes('/a-pja-question') ||
                 url.includes('/a-audio-call') ||
-                url.includes('/texts') ||
                 url.includes('/question');
 
             if (isStaticResource) {

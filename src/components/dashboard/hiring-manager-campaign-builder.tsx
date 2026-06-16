@@ -28,6 +28,11 @@ import {
 } from "lucide-react";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
+import {
+  portalAlertErrorClass,
+  portalAlertInfoClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 
 interface CampaignBuilderProps {
   assessments: HiringManagerAssessment[];
@@ -583,13 +588,13 @@ export function HiringManagerCampaignBuilder({
                        } ${locked ? "cursor-not-allowed opacity-50" : ""}`}
                      >
                        {mode.replace("_", " ").replace("-", " ")}
-                       {locked && <Lock className="h-3.5 w-3.5 text-amber-400" />}
+                       {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                      </button>
                   );
                 })}
               </div>
               {(!allowRemoteDelivery || !allowHybridDelivery) && (
-                <p className="mt-3 text-[10px] leading-relaxed text-amber-300/80">
+                <p className={cn(portalAlertInfoClass, "mt-3 text-[10px] leading-relaxed")}>
                   Remote and Hybrid options require client feature activation by an administrator.
                 </p>
               )}
@@ -762,7 +767,7 @@ export function HiringManagerCampaignBuilder({
                               onClick={() => toggleLockSlug(assessment.slug)}
                               className={`h-9 w-9 shrink-0 rounded-lg transition-colors ${
                                 lockedSlugs.includes(assessment.slug)
-                                  ? "bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 hover:text-amber-300"
+                                  ? "bg-muted/40 text-foreground hover:bg-muted/60"
                                   : "bg-white/[0.02] text-slate-500 hover:bg-white/[0.05] hover:text-slate-400"
                               }`}
                               title={lockedSlugs.includes(assessment.slug) ? "Weight locked (Click to unlock)" : "Weight unlocked (Click to lock)"}
@@ -784,28 +789,21 @@ export function HiringManagerCampaignBuilder({
 
             {selectedAssessments.length > 0 && (
               <div
-                className={`rounded-xl border p-3.5 ${
-                  assessmentWeightTotal === 100
-                    ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
-                    : "border-red-500/20 bg-red-500/5 text-red-300"
-                }`}
+                className={cn(
+                  "rounded-xl border p-3.5",
+                  assessmentWeightTotal === 100 ? portalAlertInfoClass : portalAlertErrorClass
+                )}
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold">
                     Total weighting
                   </p>
-                  <p
-                    className={`text-base font-bold ${
-                      assessmentWeightTotal === 100
-                        ? "text-emerald-400"
-                        : "text-red-400"
-                    }`}
-                  >
+                  <p className="text-base font-bold text-foreground">
                     {assessmentWeightTotal}%
                   </p>
                 </div>
                 {assessmentWeightTotal !== 100 && (
-                  <p className="mt-2 text-[10px] leading-relaxed text-red-400/80">
+                  <p className="mt-2 text-[10px] leading-relaxed opacity-80">
                     Weights must sum to 100% before the campaign can be created.
                   </p>
                 )}
@@ -833,13 +831,13 @@ export function HiringManagerCampaignBuilder({
             </Button>
 
             {savedMessage && (
-              <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs leading-normal text-emerald-400">
+              <p className={cn(portalAlertInfoClass, "text-xs leading-normal")}>
                 {savedMessage}
               </p>
             )}
 
             {errorMessage && (
-              <p className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs leading-normal text-red-400">
+              <p className={cn(portalAlertErrorClass, "text-xs leading-normal")}>
                 {errorMessage}
               </p>
             )}

@@ -5,13 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +17,9 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { invalidateAdminResource } from "@/lib/admin-resource-cache";
-import { AdminAlert, AdminPageHeader } from "@/components/admin/admin-portal-ui";
+import { AdminAlert, AdminPageHeader, AdminPanel, AdminSectionHeader } from "@/components/admin/admin-portal-ui";
+import { portalIconWrapLgClass, portalInputClass, portalLabelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 
 type CreatedClientResponse = {
   client?: {
@@ -143,7 +138,9 @@ export default function CreateClientPage() {
           ) : created ? (
             <AdminAlert tone="info">
               <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
+                <span className={portalIconWrapLgClass}>
+                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                </span>
                 <div className="space-y-3 flex-1">
                   <p className="font-semibold">{created.client?.name ?? "Client"} created successfully.</p>
                   {created.accessCode?.code && (
@@ -184,132 +181,130 @@ export default function CreateClientPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
-          <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
-            <CardHeader>
-              <CardTitle className="text-base font-bold text-white">Organisation</CardTitle>
-              <CardDescription className="text-slate-400">Only fields stored on the Client record are included here.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
+          <AdminPanel className="space-y-4">
+            <AdminSectionHeader
+              title="Organisation"
+              description="Only fields stored on the Client record are included here."
+            />
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="clientName" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Client organisation name</Label>
+                <Label htmlFor="clientName" className={portalLabelClass}>Client organisation name</Label>
                 <Input
                   id="clientName"
                   value={form.name}
                   onChange={(event) => updateField("name", event.target.value)}
                   placeholder="Met Police"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="legalName" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Legal name</Label>
+                <Label htmlFor="legalName" className={portalLabelClass}>Legal name</Label>
                 <Input
                   id="legalName"
                   value={form.legalName}
                   onChange={(event) => updateField("legalName", event.target.value)}
                   placeholder="Metropolitan Police Service"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="officeAddress" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Office address</Label>
+                <Label htmlFor="officeAddress" className={portalLabelClass}>Office address</Label>
                 <Input
                   id="officeAddress"
                   value={form.officeAddress}
                   onChange={(event) => updateField("officeAddress", event.target.value)}
                   placeholder="Head office address"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="city" className="text-xs font-semibold uppercase tracking-wider text-slate-400">City</Label>
+                <Label htmlFor="city" className={portalLabelClass}>City</Label>
                 <Input
                   id="city"
                   value={form.city}
                   onChange={(event) => updateField("city", event.target.value)}
                   placeholder="London"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="state" className="text-xs font-semibold uppercase tracking-wider text-slate-400">County / region</Label>
+                <Label htmlFor="state" className={portalLabelClass}>County / region</Label>
                 <Input
                   id="state"
                   value={form.state}
                   onChange={(event) => updateField("state", event.target.value)}
                   placeholder="Greater London"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zipCode" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Postcode</Label>
+                <Label htmlFor="zipCode" className={portalLabelClass}>Postcode</Label>
                 <Input
                   id="zipCode"
                   value={form.zipCode}
                   onChange={(event) => updateField("zipCode", event.target.value)}
                   placeholder="SW1A 1AA"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="timeZone" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Time zone</Label>
+                <Label htmlFor="timeZone" className={portalLabelClass}>Time zone</Label>
                 <Input
                   id="timeZone"
                   value={form.timeZone}
                   onChange={(event) => updateField("timeZone", event.target.value)}
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </AdminPanel>
 
-          <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
-            <CardHeader>
-              <CardTitle className="text-base font-bold text-white">Primary Contact</CardTitle>
-              <CardDescription className="text-slate-400">The person who receives client registration and approval workflow updates.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
+          <AdminPanel className="space-y-4">
+            <AdminSectionHeader
+              title="Primary Contact"
+              description="The person who receives client registration and approval workflow updates."
+            />
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="contactName" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Contact name</Label>
+                <Label htmlFor="contactName" className={portalLabelClass}>Contact name</Label>
                 <Input
                   id="contactName"
                   value={form.primaryContactName}
                   onChange={(event) => updateField("primaryContactName", event.target.value)}
                   placeholder="John Smith"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contactEmail" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Contact email</Label>
+                <Label htmlFor="contactEmail" className={portalLabelClass}>Contact email</Label>
                 <Input
                   id="contactEmail"
                   type="email"
                   value={form.primaryContactEmail}
                   onChange={(event) => updateField("primaryContactEmail", event.target.value)}
                   placeholder="john.smith@example.gov.uk"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="contactPhone" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Contact phone</Label>
+                <Label htmlFor="contactPhone" className={portalLabelClass}>Contact phone</Label>
                 <Input
                   id="contactPhone"
                   value={form.primaryContactPhone}
                   onChange={(event) => updateField("primaryContactPhone", event.target.value)}
                   placeholder="020 7230 1212"
-                  className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10")}
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-slate-400">Campaign approval mode</Label>
+                <Label className={portalLabelClass}>Campaign approval mode</Label>
                 <Select
                   value={form.campaignApprovalMode}
                   onValueChange={(value) =>
                     updateField("campaignApprovalMode", value as "auto_approve" | "require_approval")
                   }
                 >
-                  <SelectTrigger className="h-10 border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors">
+                  <SelectTrigger className={cn(portalInputClass, "h-10")}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -318,114 +313,119 @@ export default function CreateClientPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </AdminPanel>
 
-          <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
-            <CardHeader>
-              <CardTitle className="text-base font-bold text-white">Initial Contract</CardTitle>
-              <CardDescription className="text-slate-400">Seat count controls how many hiring managers the client can activate.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
+          <AdminPanel className="space-y-5">
+            <AdminSectionHeader
+              title="Initial Contract"
+              description="Seat count controls how many hiring managers the client can activate."
+            />
+            <div className="space-y-5">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Start date</Label>
+                  <Label htmlFor="startDate" className={portalLabelClass}>Start date</Label>
                   <Input
                     id="startDate"
                     type="date"
                     value={form.startDate}
                     onChange={(event) => updateField("startDate", event.target.value)}
-                    className="h-10 border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
+                    className={cn(portalInputClass, "h-10 [color-scheme:dark]")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endDate" className="text-xs font-semibold uppercase tracking-wider text-slate-400">End date</Label>
+                  <Label htmlFor="endDate" className={portalLabelClass}>End date</Label>
                   <Input
                     id="endDate"
                     type="date"
                     value={form.endDate}
                     onChange={(event) => updateField("endDate", event.target.value)}
-                    className="h-10 border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
+                    className={cn(portalInputClass, "h-10 [color-scheme:dark]")}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="seats" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Hiring manager seats</Label>
+                  <Label htmlFor="seats" className={portalLabelClass}>Hiring manager seats</Label>
                   <Input
                     id="seats"
                     type="number"
                     min={1}
                     value={form.seatCount}
                     onChange={(event) => updateField("seatCount", event.target.value)}
-                    className="h-10 border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                    className={cn(portalInputClass, "h-10")}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wider text-slate-400">Contract notes</Label>
+                <Label htmlFor="notes" className={portalLabelClass}>Contract notes</Label>
                 <Textarea
                   id="notes"
                   value={form.notes}
                   onChange={(event) => updateField("notes", event.target.value)}
                   placeholder="Commercial notes, procurement reference, or onboarding context"
-                  className="min-h-24 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                  className={cn(portalInputClass, "min-h-24")}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </AdminPanel>
         </div>
 
-        <Card className="h-fit relative overflow-hidden rounded-2xl border border-border/50 bg-[#0e172e]/85 dark:border-white/5 dark:bg-[#0b1329]/35 shadow-xl backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="text-base font-bold text-white">Review</CardTitle>
-            <CardDescription className="text-slate-400">Create the client and active contract in Strapi.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <div className="flex items-center gap-2 text-slate-300 font-medium">
-              <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
+        <AdminPanel className="h-fit space-y-4">
+          <AdminSectionHeader
+            title="Review"
+            description="Create the client and active contract in Strapi."
+          />
+          <div className="space-y-4 text-sm">
+            <div className="flex items-center gap-3 font-medium text-foreground">
+              <span className={portalIconWrapLgClass}>
+                <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+              </span>
               Client organisation record
             </div>
-            <div className="flex items-center gap-2 text-slate-300 font-medium">
-              <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
+            <div className="flex items-center gap-3 font-medium text-foreground">
+              <span className={portalIconWrapLgClass}>
+                <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+              </span>
               Primary contact details
             </div>
-            <div className="flex items-center gap-2 text-slate-300 font-medium">
-              <CheckCircle2 className="h-4 w-4 text-cyan-400 shrink-0" />
+            <div className="flex items-center gap-3 font-medium text-foreground">
+              <span className={portalIconWrapLgClass}>
+                <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+              </span>
               {Number.isInteger(seatCount) && seatCount > 0 ? seatCount : 0} hiring manager seats
             </div>
-            <label className="flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.01] p-3.5 cursor-pointer hover:border-white/10 transition-colors">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-3.5 transition-colors hover:bg-muted/30 dark:border-white/8">
               <Checkbox
                 checked={form.issueAccessCode}
                 onCheckedChange={(checked) => updateField("issueAccessCode", checked === true)}
-                className="mt-0.5 border-white/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary rounded-md"
+                className="mt-0.5 rounded-md"
               />
               <span>
-                <span className="block font-bold text-white text-xs">Generate registration code</span>
-                <span className="mt-1 block text-[11px] leading-relaxed text-slate-400">
+                <span className="block text-xs font-semibold text-foreground">Generate registration code</span>
+                <span className="mt-1 block text-[11px] leading-relaxed text-muted-foreground">
                   The code is returned once after creation so the primary contact can register.
                 </span>
               </span>
             </label>
             <Button
               type="button"
-              className="w-full h-10 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:opacity-95 text-slate-950 font-bold transition-all shadow-[0_4px_15px_rgba(6,182,212,0.15)]"
+              className="h-10 w-full rounded-xl font-semibold"
               onClick={submit}
               disabled={isSubmitting || Boolean(created)}
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-950" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating…
                 </>
               ) : (
                 <>
-                  <KeyRound className="mr-2 h-4 w-4 text-slate-950" />
+                  <KeyRound className="mr-2 h-4 w-4" />
                   Create client
                 </>
               )}
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </AdminPanel>
       </div>
     </div>
   );

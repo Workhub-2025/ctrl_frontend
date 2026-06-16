@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -11,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
   AdminAlert,
@@ -116,12 +115,6 @@ export default function AuditLogsPage() {
       <AdminPageHeader
         title="Audit log"
         description="Every administrative action on the platform, newest first."
-        action={
-          <Button variant="outline" className="rounded-lg" disabled>
-            <Download className="mr-2 h-4 w-4" />
-            Export
-          </Button>
-        }
         notice={error ? <AdminAlert>{error}</AdminAlert> : null}
       />
 

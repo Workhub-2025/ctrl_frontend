@@ -11,7 +11,9 @@ import {
   PortalEyebrow,
   PortalPanel,
   PortalSectionHeader,
+  portalBadgeClass,
 } from "@/components/dashboard/portal/portal-ui";
+import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 export function ClientMessagesContent() {
   const [ticketRefreshKey, setTicketRefreshKey] = useState(0);
@@ -35,9 +37,9 @@ export function ClientMessagesContent() {
         />
 
         <div className="grid gap-4 md:grid-cols-2">
-          <PortalPanel accent="primary" className="flex flex-col">
+          <PortalPanel className="flex flex-col">
             <div className="flex flex-1 flex-col gap-4 p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
+              <div className={portalIconWrapLgClass}>
                 <Ticket className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
@@ -63,15 +65,13 @@ export function ClientMessagesContent() {
             </div>
           </PortalPanel>
 
-          <PortalPanel accent="warning" className="flex flex-col">
+          <PortalPanel className="flex flex-col">
             <div className="flex flex-1 flex-col gap-4 p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-300">
+              <div className={portalIconWrapLgClass}>
                 <Mail className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
-                <PortalEyebrow className="text-amber-600 dark:text-amber-400">
-                  Account support
-                </PortalEyebrow>
+                <PortalEyebrow>Account support</PortalEyebrow>
                 <h2 className="font-display text-lg font-semibold">Message CTRL Support</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Questions about your contract, seats, billing, or account configuration.
@@ -90,7 +90,7 @@ export function ClientMessagesContent() {
                 >
                   <Button
                     variant="outline"
-                    className="h-10 w-full gap-2 rounded-xl border-amber-500/30 font-semibold dark:border-amber-500/25"
+                    className="h-10 w-full gap-2 rounded-xl font-semibold"
                   >
                     <MessageSquare className="h-4 w-4" aria-hidden="true" />
                     Send message

@@ -6,6 +6,7 @@ import {
   CreditCard,
   Loader2,
   RefreshCw,
+  RotateCw,
   Send,
   TrendingUp,
 } from "lucide-react";
@@ -72,6 +73,7 @@ export default function AdminUpgradeRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -151,6 +153,41 @@ export default function AdminUpgradeRequestsPage() {
       setError(err instanceof Error ? err.message : "Invoice could not be sent");
     } finally {
       setSendingId(null);
+    }
+  };
+
+  const resendInvoice = async (requestId: string) => {
+    setResendingId(requestId);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/admin/billing/resend-invoice/${encodeURIComponent(requestId)}`,
+        { method: "POST" }
+      );
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Payment link could not be resent");
+
+      setRequests((current) =>
+        current.map((request) =>
+          request.id === requestId
+            ? {
+                ...request,
+                billingStatus: "invoice_sent",
+                amountDuePence: body.data?.amountDuePence ?? request.amountDuePence,
+                currency: body.data?.currency ?? request.currency ?? "gbp",
+              }
+            : request
+        )
+      );
+      setMessage("Payment link regenerated — client can use Pay now again.");
+      invalidatePortalCache("admin:billing:upgrade-requests");
+      void load(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Payment link could not be resent");
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -252,6 +289,22 @@ export default function AdminUpgradeRequestsPage() {
                             <Send className="h-4 w-4" />
                           )}
                           Send invoice
+                        </Button>
+                      ) : null}
+                      {stage.key === "invoice_sent" ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full rounded-xl gap-2"
+                          disabled={resendingId === request.id}
+                          onClick={() => void resendInvoice(request.id)}
+                        >
+                          {resendingId === request.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <RotateCw className="h-4 w-4" />
+                          )}
+                          Resend link
                         </Button>
                       ) : null}
                     </AdminPanel>

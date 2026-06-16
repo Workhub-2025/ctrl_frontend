@@ -26,6 +26,8 @@ import {
   CandidateSectionHeader,
   CandidateStatTile,
 } from "@/components/dashboard/candidate/candidate-portal-ui";
+import { portalAlertErrorClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   ArrowRight,
@@ -190,7 +192,7 @@ export default function CandidateDashboardOverviewPage() {
       {error ? (
         <div
           role="alert"
-          className="flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-700 sm:flex-row sm:items-center sm:justify-between dark:text-amber-300"
+          className={cn(portalAlertErrorClass, "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between")}
         >
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
@@ -202,7 +204,7 @@ export default function CandidateDashboardOverviewPage() {
           <Button
             variant="outline"
             onClick={() => void refresh({ force: true })}
-            className="shrink-0 gap-2 border-amber-500/40 bg-transparent font-semibold"
+            className="shrink-0 gap-2 font-semibold"
           >
             <RefreshCw className="h-4 w-4" aria-hidden="true" /> Retry
           </Button>
@@ -235,7 +237,7 @@ export default function CandidateDashboardOverviewPage() {
       </section>
 
       {!isLoading && nextUpApp && hasAvailableAssessment(nextUpApp) ? (
-        <CandidatePanel accent="primary">
+        <CandidatePanel>
           <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="min-w-0 space-y-4">
               <div className="space-y-1">
@@ -342,10 +344,7 @@ export default function CandidateDashboardOverviewPage() {
                       : app.modeLabel;
 
                 return (
-                  <CandidatePanel
-                    key={app.key}
-                    accent={hasAvailableAssessment(app) ? "primary" : "none"}
-                  >
+                  <CandidatePanel key={app.key}>
                     <div className="space-y-4 p-5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">

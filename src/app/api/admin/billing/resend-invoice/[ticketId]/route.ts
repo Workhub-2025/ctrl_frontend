@@ -13,6 +13,8 @@ type BillingRequestRow = BillingRequestCheckoutRow & {
   billingStatus?: string;
 };
 
+const RESENDABLE_STATUSES = new Set(["invoice_sent", "failed"]);
+
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ ticketId: string }> }
@@ -50,8 +52,12 @@ export async function POST(
       return NextResponse.json({ error: "This request is already paid" }, { status: 400 });
     }
 
-    if (billingRequest.billingStatus === "invoice_sent") {
-      return NextResponse.json({ error: "Invoice has already been sent for this request" }, { status: 400 });
+    const billingStatus = billingRequest.billingStatus ?? "requested";
+    if (!RESENDABLE_STATUSES.has(billingStatus)) {
+      return NextResponse.json(
+        { error: "Invoice has not been sent yet. Use Send invoice instead." },
+        { status: 400 }
+      );
     }
 
     const pricingResponse = await strapiRequest<{ data?: Record<string, number | string> }>(
@@ -86,7 +92,7 @@ export async function POST(
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Invoice could not be created" },
+      { error: error instanceof Error ? error.message : "Invoice link could not be resent" },
       { status: 500 }
     );
   }

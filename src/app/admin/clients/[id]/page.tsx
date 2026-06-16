@@ -27,13 +27,27 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 import { PORTAL_CACHE_TTL_MS } from "@/lib/portal-fetch-cache";
-import { AdminAlert, AdminPageHeader } from "@/components/admin/admin-portal-ui";
+import {
+  AdminAlert,
+  AdminPageHeader,
+  AdminPanel,
+  AdminSectionHeader,
+  AdminStatTile,
+} from "@/components/admin/admin-portal-ui";
+import {
+  portalBadgeClass,
+  portalLabelClass,
+  portalPanelClass,
+  portalAlertErrorClass,
+  portalAlertInfoClass,
+  portalInputClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 
 type ClientDetails = {
   id: string;
@@ -80,25 +94,8 @@ function formatDate(value?: string | null) {
   });
 }
 
-function statusClass(status: string) {
-  switch (status.toLowerCase()) {
-    case "active":
-    case "approved":
-      return "border-emerald-500/20 bg-emerald-500/10 text-emerald-600";
-    case "pending":
-    case "awaiting signup":
-      return "border-blue-500/20 bg-blue-500/10 text-blue-600";
-    case "paused":
-    case "rejected":
-      return "border-orange-500/20 bg-orange-500/10 text-orange-600";
-    case "expired":
-    case "disabled":
-      return "border-red-500/20 bg-red-500/10 text-red-600";
-    case "needs contract":
-      return "border-slate-500/20 bg-slate-500/10 text-slate-600";
-    default:
-      return "border-muted-foreground/20 text-muted-foreground";
-  }
+function statusClass(_status: string) {
+  return portalBadgeClass;
 }
 
 export default function ClientDetailPage() {
@@ -314,7 +311,7 @@ export default function ClientDetailPage() {
             <TabsTrigger
               key={tab}
               value={tab}
-              className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-slate-400 hover:text-white capitalize data-[state=active]:border-cyan-500 data-[state=active]:text-cyan-400 data-[state=active]:shadow-none transition-all"
+              className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-semibold capitalize text-muted-foreground transition-all hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
             >
               {tab === "access" ? "Access codes" : tab}
             </TabsTrigger>
@@ -323,145 +320,116 @@ export default function ClientDetailPage() {
 
         <TabsContent value="summary" className="mt-6 space-y-6">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Contract state</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-extrabold text-foreground">{client.billingStatus}</div>
-                <p className="mt-1.5 text-xs text-slate-400">Derived from the active contract</p>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Hiring manager seats</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-extrabold text-foreground">{client.seatsUsed} / {client.seatsAllowed}</div>
-                <p className="mt-1.5 text-xs text-slate-400">Active HM occupants against reusable seats</p>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Pending approvals</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-extrabold text-foreground">{client.pendingCampaignApprovals}</div>
-                <p className="mt-1.5 text-xs text-slate-400">
-                  {client.campaignApprovalMode === "require_approval" ? "Client approval required" : "Auto-approved"}
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-              <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500" />
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold tracking-wide uppercase text-slate-400">Contract end</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-extrabold text-foreground">{formatDate(client.activeContract?.endDate)}</div>
-                <p className="mt-1.5 text-xs text-slate-400">Stored on the active contract</p>
-              </CardContent>
-            </Card>
+            <AdminStatTile
+              label="Contract state"
+              value={client.billingStatus}
+              detail="Derived from the active contract"
+            />
+            <AdminStatTile
+              label="Hiring manager seats"
+              value={`${client.seatsUsed} / ${client.seatsAllowed}`}
+              detail="Active HM occupants against reusable seats"
+            />
+            <AdminStatTile
+              label="Pending approvals"
+              value={client.pendingCampaignApprovals}
+              detail={client.campaignApprovalMode === "require_approval" ? "Client approval required" : "Auto-approved"}
+            />
+            <AdminStatTile
+              label="Contract end"
+              value={formatDate(client.activeContract?.endDate)}
+              detail="Stored on the active contract"
+            />
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
-              <CardHeader>
-                <CardTitle className="text-base font-bold text-white">Onboarding path</CardTitle>
-                <CardDescription className="text-slate-400">What has to be true before the client can run their own workspace.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-3 md:grid-cols-3">
-                  <FlowStep
-                    complete={Boolean(client.activeContract)}
-                    title="Contract"
-                    detail={client.activeContract ? `${client.activeContract.seatCount} HM seats` : "Create a contract"}
-                  />
-                  <FlowStep
-                    complete={client.clientInviteStatus === "available" || client.hasClientContact}
-                    title="Client invite"
-                    detail={client.hasClientContact ? "Used" : client.clientInviteStatus === "available" ? "Pending signup" : "No active invite"}
-                  />
-                  <FlowStep
-                    complete={client.hasClientContact}
-                    title="Client contact"
-                    detail={client.hasClientContact ? "Active user linked" : "Waiting for registration"}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <AdminPanel>
+              <AdminSectionHeader
+                title="Onboarding path"
+                description="What has to be true before the client can run their own workspace."
+              />
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <FlowStep
+                  complete={Boolean(client.activeContract)}
+                  title="Contract"
+                  detail={client.activeContract ? `${client.activeContract.seatCount} HM seats` : "Create a contract"}
+                />
+                <FlowStep
+                  complete={client.clientInviteStatus === "available" || client.hasClientContact}
+                  title="Client invite"
+                  detail={client.hasClientContact ? "Used" : client.clientInviteStatus === "available" ? "Pending signup" : "No active invite"}
+                />
+                <FlowStep
+                  complete={client.hasClientContact}
+                  title="Client contact"
+                  detail={client.hasClientContact ? "Active user linked" : "Waiting for registration"}
+                />
+              </div>
+            </AdminPanel>
 
-            <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-              <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-500 to-indigo-500" />
-              <CardHeader>
-                <CardTitle className="text-base font-bold text-white">Seat ownership</CardTitle>
-                <CardDescription className="text-slate-400">Admin controls capacity. The client controls who occupies each HM seat.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-3">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Occupied seats</span>
-                  <span className="text-sm font-bold text-white">{client.seatsUsed}</span>
+            <AdminPanel>
+              <AdminSectionHeader
+                title="Seat ownership"
+                description="Admin controls capacity. The client controls who occupies each HM seat."
+              />
+              <div className="mt-4 space-y-3">
+                <div className={cn(portalPanelClass, "flex items-center justify-between p-3")}>
+                  <span className={portalLabelClass}>Occupied seats</span>
+                  <span className="text-sm font-bold text-foreground">{client.seatsUsed}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-3">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Reusable capacity</span>
-                  <span className="text-sm font-bold text-white">{client.seatsAllowed}</span>
+                <div className={cn(portalPanelClass, "flex items-center justify-between p-3")}>
+                  <span className={portalLabelClass}>Reusable capacity</span>
+                  <span className="text-sm font-bold text-foreground">{client.seatsAllowed}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.01] p-3">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Available seats</span>
-                  <span className="text-sm font-bold text-white">{Math.max(0, client.seatsAllowed - client.seatsUsed)}</span>
+                <div className={cn(portalPanelClass, "flex items-center justify-between p-3")}>
+                  <span className={portalLabelClass}>Available seats</span>
+                  <span className="text-sm font-bold text-foreground">{Math.max(0, client.seatsAllowed - client.seatsUsed)}</span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </AdminPanel>
           </div>
 
-          <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-            <CardHeader>
-              <CardTitle className="text-base font-bold text-white">Client Details</CardTitle>
-              <CardDescription className="text-slate-400">Live organisation, contact, and workflow data from Strapi.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <AdminPanel>
+            <AdminSectionHeader
+              title="Client details"
+              description="Live organisation, contact, and workflow data from Strapi."
+            />
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <Detail label="Legal name" value={client.legalName} />
               <Detail label="Primary contact" value={client.primaryContactName} />
               <Detail label="Address" value={client.address} />
               <Detail label="Time zone" value={client.timeZone} />
               <Detail label="Onboarding" value={client.onboardingCompleted ? "Completed" : "Not completed"} />
               <Detail label="Last updated" value={formatDate(client.updatedAt)} />
-            </CardContent>
-          </Card>
+            </div>
+          </AdminPanel>
         </TabsContent>
 
         <TabsContent value="contract" className="mt-6">
-          <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-            <CardHeader className="gap-4 md:flex md:flex-row md:items-start md:justify-between">
-              <div>
-                <CardTitle className="text-base font-bold text-white">Contract</CardTitle>
-                <CardDescription className="text-slate-400">Seat allocation and contract dates.</CardDescription>
-              </div>
-              <Button asChild variant="outline" size="sm" className="h-[34px] border-white/10 hover:bg-white/10 text-slate-200">
+          <AdminPanel>
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <AdminSectionHeader
+                title="Contract"
+                description="Seat allocation and contract dates."
+              />
+              <Button asChild variant="outline" size="sm" className="h-[34px] shrink-0">
                 <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
                   <SlidersHorizontal className="mr-2 h-4 w-4" />
                   Review entitlements
                 </Link>
               </Button>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Detail label="Status" value={client.activeContract?.status ?? "No active contract"} />
               <Detail label="Start date" value={formatDate(client.activeContract?.startDate)} />
               <Detail label="End date" value={formatDate(client.activeContract?.endDate)} />
               <Detail label="Seats" value={String(client.activeContract?.seatCount ?? 0)} />
-              <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4 md:col-span-2 xl:col-span-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Notes</p>
-                <p className="mt-2 text-sm text-slate-300 leading-relaxed">{client.activeContract?.notes || "No notes recorded"}</p>
+              <div className={cn(portalPanelClass, "p-4 md:col-span-2 xl:col-span-4")}>
+                <p className={portalLabelClass}>Notes</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{client.activeContract?.notes || "No notes recorded"}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </AdminPanel>
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">
@@ -552,7 +520,7 @@ function ClientInviteAction({
 }) {
   if (client.hasClientContact) {
     return (
-      <Badge variant="outline" className="h-10 gap-2 border-emerald-500/20 bg-emerald-500/10 px-3 text-emerald-600">
+      <Badge variant="outline" className={cn("h-10 gap-2 px-3", portalBadgeClass)}>
         <CheckCircle2 className="h-4 w-4" />
         Client contact active
       </Badge>
@@ -561,7 +529,7 @@ function ClientInviteAction({
 
   if (client.clientInviteStatus === "available") {
     return (
-      <Badge variant="outline" className="h-10 gap-2 border-blue-500/20 bg-blue-500/10 px-3 text-blue-600">
+      <Badge variant="outline" className={cn("h-10 gap-2 px-3", portalBadgeClass)}>
         <Clock3 className="h-4 w-4" />
         Client invite pending
       </Badge>
@@ -590,27 +558,25 @@ function FlowStep({
   detail: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-[#080c16]/30 p-4 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500" />
+    <div className={cn(portalPanelClass, "p-4")}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-bold text-white">{title}</p>
+        <p className="text-sm font-bold text-foreground">{title}</p>
         {complete ? (
-          <CheckCircle2 className="h-[18px] w-[18px] text-emerald-400" aria-hidden="true" />
+          <CheckCircle2 className="h-[18px] w-[18px] text-primary" aria-hidden="true" />
         ) : (
-          <Clock3 className="h-[18px] w-[18px] text-slate-500" aria-hidden="true" />
+          <Clock3 className="h-[18px] w-[18px] text-muted-foreground" aria-hidden="true" />
         )}
       </div>
-      <p className="mt-2 text-xs text-slate-400 leading-relaxed">{detail}</p>
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
     </div>
   );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-[#080c16]/30 p-4 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500/50" />
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-2 break-words text-sm font-bold text-white">{value}</p>
+    <div className={cn(portalPanelClass, "p-4")}>
+      <p className={portalLabelClass}>{label}</p>
+      <p className="mt-2 break-words text-sm font-bold text-foreground">{value}</p>
     </div>
   );
 }
@@ -627,28 +593,25 @@ function SimpleList({
   rows: Array<{ id: string; primary: string; secondary: string; badge: string }>;
 }) {
   return (
-    <Card className="relative overflow-hidden rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
-      <CardHeader>
-        <CardTitle className="text-base font-bold text-white">{title}</CardTitle>
-        <CardDescription className="text-slate-400">{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <AdminPanel>
+      <AdminSectionHeader title={title} description={description} />
+      <div className="mt-4 space-y-3">
         {rows.length === 0 ? (
-          <p className="text-sm italic text-slate-500">{empty}</p>
+          <p className="text-sm italic text-muted-foreground">{empty}</p>
         ) : (
           rows.map((row) => (
-            <div key={row.id} className="flex items-center justify-between gap-4 rounded-xl border border-white/5 bg-white/[0.01] p-3">
+            <div key={row.id} className={cn(portalPanelClass, "flex items-center justify-between gap-4 p-3")}>
               <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-white">{row.primary}</p>
-                <p className="truncate text-xs text-slate-400">{row.secondary}</p>
+                <p className="truncate text-sm font-bold text-foreground">{row.primary}</p>
+                <p className="truncate text-xs text-muted-foreground">{row.secondary}</p>
               </div>
-              <Badge variant="outline" className={`${statusClass(row.badge)} pointer-events-none rounded-md px-2 py-0.5 font-semibold text-xs`}>
+              <Badge variant="outline" className={cn(statusClass(row.badge), "pointer-events-none rounded-md px-2 py-0.5 text-xs font-semibold")}>
                 {row.badge}
               </Badge>
             </div>
           ))
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </AdminPanel>
   );
 }

@@ -2,6 +2,7 @@ import type {
   CandidatePortalApplication,
   CandidatePortalAssessment,
 } from "@/services/candidate-session.service";
+import { portalBadgeClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 /**
  * Shared model + helpers for the Candidate portal surfaces (overview,
@@ -168,42 +169,12 @@ export function isActiveStatus(status: CandidateApplicationStatus) {
   );
 }
 
-/**
- * Semantic status tones aligned with the Hiring Manager tonal system:
- * emerald = done/positive, blue = active, amber = needs attention,
- * slate = idle/locked, rose = negative outcome. Light + dark variants are
- * provided so the accessibility themes remap cleanly.
- */
-const statusToneClassNames: Record<CandidateApplicationStatus, string> = {
-  "Awaiting Assessment":
-    "border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-300",
-  "In Progress":
-    "border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-  Completed:
-    "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  Progressed:
-    "border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  Unsuccessful:
-    "border-rose-500/25 bg-rose-500/10 text-rose-600 dark:text-rose-300",
-  "Soft Locked":
-    "border-slate-500/25 bg-slate-500/10 text-slate-600 dark:text-slate-300",
-};
-
-export function statusBadgeClassName(status: CandidateApplicationStatus) {
-  return `inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-0.5 text-xs font-semibold ${statusToneClassNames[status]}`;
+export function statusBadgeClassName(_status: CandidateApplicationStatus) {
+  return `inline-flex items-center gap-1.5 ${portalBadgeClass}`;
 }
 
-const statusDotClassNames: Record<CandidateApplicationStatus, string> = {
-  "Awaiting Assessment": "bg-amber-500",
-  "In Progress": "bg-blue-500",
-  Completed: "bg-emerald-500",
-  Progressed: "bg-emerald-500",
-  Unsuccessful: "bg-rose-500",
-  "Soft Locked": "bg-slate-400",
-};
-
-export function statusDotClassName(status: CandidateApplicationStatus) {
-  return statusDotClassNames[status];
+export function statusDotClassName(_status: CandidateApplicationStatus) {
+  return "bg-primary";
 }
 
 const statusAccent: Record<

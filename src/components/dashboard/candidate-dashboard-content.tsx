@@ -69,6 +69,7 @@ import {
   type CandidateApplicationView,
 } from "@/lib/candidate/portal";
 import { CandidateSessionService } from "@/services/candidate-session.service";
+import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 function normaliseSlug(value?: string) {
   return (value ?? "")
@@ -170,7 +171,7 @@ function SoftLockTimer({ sessionStartsAt }: { sessionStartsAt?: string | null })
         {formatDateTime(sessionStartsAt)}
       </span>{" "}
       · unlocks in{" "}
-      <span className="font-bold text-amber-600 dark:text-amber-400">
+      <span className="font-bold text-primary">
         {timeLeft || "…"}
       </span>
     </>
@@ -205,7 +206,7 @@ function AssessmentListItem({
   const Icon = item.icon;
 
   const nodeClassName = isCompleted
-    ? "border-emerald-500 bg-emerald-500 text-white ring-4 ring-emerald-500/15"
+    ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/15"
     : isActive
       ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/15"
       : "border-border bg-card text-muted-foreground";
@@ -229,7 +230,7 @@ function AssessmentListItem({
           {!isLast ? (
             <span
               className={`mt-1 min-h-6 w-px flex-1 ${
-                isCompleted ? "bg-emerald-500/40" : "bg-border dark:bg-white/10"
+                isCompleted ? "bg-primary/40" : "bg-border dark:bg-white/10"
               }`}
               aria-hidden="true"
             />
@@ -237,7 +238,6 @@ function AssessmentListItem({
         </div>
 
         <CandidatePanel
-          accent={isCompleted ? "success" : isActive ? "primary" : "none"}
           className={`mb-1 min-w-0 flex-1 ${!isActive && !isCompleted ? "opacity-90" : ""}`}
         >
           <div className="space-y-3 p-4 sm:p-5">
@@ -270,8 +270,8 @@ function AssessmentListItem({
 
             <div className="flex flex-wrap items-center gap-2">
               {isCompleted ? (
-                <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                <div className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm font-semibold text-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden="true" />
                   {item.completedAt
                     ? `Submitted ${formatDate(item.completedAt)}`
                     : "Submitted"}
@@ -502,7 +502,7 @@ export function CandidateDashboardContent() {
   if (error && applications.length === 0) {
     return (
       <div className="max-w-3xl p-2">
-        <Alert className="rounded-2xl border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300">
+        <Alert className="rounded-2xl border-destructive/30 bg-destructive/5 text-destructive">
           <AlertTitle className="font-bold">Assessments unavailable</AlertTitle>
           <AlertDescription className="text-sm leading-relaxed">
             {error}
@@ -731,14 +731,14 @@ export function CandidateDashboardContent() {
                   )}
                 </div>
 
-                <CandidatePanel accent="warning" className="border-dashed">
+                <CandidatePanel className="border-dashed">
                   <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex min-w-0 items-start gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-300">
+                      <span className={portalIconWrapLgClass}>
                         <Mail className="h-5 w-5" aria-hidden="true" />
                       </span>
                       <div className="min-w-0 space-y-1">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
                           Session support
                         </p>
                         <h3 className="font-display text-base font-semibold">

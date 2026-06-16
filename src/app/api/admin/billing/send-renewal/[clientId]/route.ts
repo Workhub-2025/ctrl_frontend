@@ -129,7 +129,7 @@ export async function POST(
     const stripe = getStripeClient();
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
-      success_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?paid=1`,
+      success_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
       line_items: [
         {
@@ -149,7 +149,6 @@ export async function POST(
         billingRequestDocumentId: String(billingRequestDocumentId),
         clientDocumentId,
         upgradeType: "contract_extension",
-        payload: JSON.stringify(payload),
       },
     });
 

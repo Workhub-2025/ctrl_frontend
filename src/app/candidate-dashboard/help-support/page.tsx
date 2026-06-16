@@ -20,6 +20,7 @@ import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
 import { CreateTicketDialog } from "@/components/dashboard/create-ticket-dialog";
 import { CandidateTicketHistory } from "@/components/dashboard/candidate-ticket-history";
 import { candidateGuidanceItems } from "@/components/dashboard/candidate-dashboard-data";
+import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 function HelpSupportContent() {
   const router = useRouter();
@@ -67,9 +68,9 @@ function HelpSupportContent() {
         />
 
         <div className="grid gap-4 md:grid-cols-2">
-          <CandidatePanel accent="primary" className="flex flex-col">
+          <CandidatePanel className="flex flex-col">
             <div className="flex flex-1 flex-col gap-4 p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
+              <div className={portalIconWrapLgClass}>
                 <Ticket className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
@@ -99,15 +100,13 @@ function HelpSupportContent() {
             </div>
           </CandidatePanel>
 
-          <CandidatePanel accent="warning" className="flex flex-col">
+          <CandidatePanel className="flex flex-col">
             <div className="flex flex-1 flex-col gap-4 p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-600 dark:text-amber-300">
+              <div className={portalIconWrapLgClass}>
                 <Mail className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
-                <CandidateEyebrow className="text-amber-600 dark:text-amber-400">
-                  Hiring team
-                </CandidateEyebrow>
+                <CandidateEyebrow>Hiring team</CandidateEyebrow>
                 <h2 className="font-display text-lg font-semibold">Message hiring team</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Questions about the role, interview process, scheduling, venue, or
@@ -127,7 +126,7 @@ function HelpSupportContent() {
                 >
                   <Button
                     variant="outline"
-                    className="h-10 w-full gap-2 rounded-xl border-amber-500/30 font-semibold dark:border-amber-500/25"
+                    className="h-10 w-full gap-2 rounded-xl font-semibold"
                   >
                     <MessageSquare className="h-4 w-4" aria-hidden="true" />
                     Send message

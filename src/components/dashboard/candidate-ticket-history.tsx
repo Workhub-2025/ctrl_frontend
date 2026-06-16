@@ -25,30 +25,15 @@ import {
   type SupportTicket,
 } from "@/services/support-ticket.service";
 import { cn } from "@/lib/utils";
+import { portalBadgeClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 type StatusKey = "open" | "in_progress" | "resolved" | "closed";
 
-const STATUS_TONES: Record<StatusKey, { label: string; className: string }> = {
-  open: {
-    label: "Open",
-    className:
-      "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300",
-  },
-  in_progress: {
-    label: "In progress",
-    className:
-      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-  },
-  resolved: {
-    label: "Resolved",
-    className:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  },
-  closed: {
-    label: "Closed",
-    className:
-      "border-border bg-muted/60 text-muted-foreground dark:border-white/10",
-  },
+const STATUS_LABELS: Record<StatusKey, string> = {
+  open: "Open",
+  in_progress: "In progress",
+  resolved: "Resolved",
+  closed: "Closed",
 };
 
 function normaliseStatus(status: string): StatusKey {
@@ -81,13 +66,10 @@ function formatDate(value: string): string {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const tone = STATUS_TONES[normaliseStatus(status)];
+  const key = normaliseStatus(status);
   return (
-    <Badge
-      variant="outline"
-      className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", tone.className)}
-    >
-      {tone.label}
+    <Badge variant="outline" className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", portalBadgeClass)}>
+      {STATUS_LABELS[key]}
     </Badge>
   );
 }
@@ -109,7 +91,7 @@ function TicketRow({
       <button
         type="button"
         onClick={onSelect}
-        className="group w-full rounded-xl border border-border/55 bg-background/40 p-4 text-left transition-[border-color,background-color] hover:border-primary/30 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/5 dark:bg-white/[0.02]"
+        className={cn(portalPanelClass, "group w-full p-4 text-left transition-[border-color,background-color] hover:border-primary/30 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary")}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">
@@ -152,7 +134,7 @@ function TicketRow({
             </span>
           ) : null}
           {isResolved && ticket.resolution ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", portalBadgeClass)}>
               <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
               Resolved
             </span>
@@ -241,7 +223,7 @@ export function CandidateTicketHistory({
           }
         />
 
-        <CandidatePanel accent="primary">
+        <CandidatePanel>
           <div className="flex items-center gap-3 border-b border-border/40 p-5 dark:border-white/5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
               <TicketCheck className="h-[18px] w-[18px]" aria-hidden="true" />

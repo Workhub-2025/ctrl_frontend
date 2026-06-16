@@ -21,6 +21,8 @@ import {
   dashboardInfoPillClassName,
 } from "@/components/dashboard/dashboard-info-card";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { portalAlertErrorClass, portalBadgeClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignListItem,
@@ -130,14 +132,14 @@ export function HiringManagerCampaignsList() {
       </div>
 
       {error && (
-        <p className="rounded-md border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-700 dark:text-amber-100">
+        <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>
           {error}
         </p>
       )}
 
       <div className="space-y-3">
         {campaigns.length === 0 ? (
-          <DashboardInfoCard accent="muted" interactive={false} className="border-dashed">
+          <DashboardInfoCard interactive={false} className="border-dashed">
             <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
               No campaigns have been created yet. Create a campaign to attach
               assessments and generate candidate Access Codes.
@@ -145,10 +147,7 @@ export function HiringManagerCampaignsList() {
           </DashboardInfoCard>
         ) : (
           campaigns.map((campaign) => (
-            <DashboardInfoCard
-              key={campaign.id}
-              accent="campaign"
-            >
+            <DashboardInfoCard key={campaign.id}>
               <CardContent className="space-y-4 p-5 pl-7">
                 <div className="flex flex-col gap-3.5 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2">
@@ -159,16 +158,7 @@ export function HiringManagerCampaignsList() {
                       {campaign.deliveryMode}
                     </Badge>
                     {campaign.approvalStatus && (
-                      <Badge
-                        className={[
-                          "pointer-events-none rounded-md border-none text-xs font-semibold px-2 py-0.5",
-                          campaign.approvalStatus === "Pending approval"
-                            ? "bg-orange-500/10 text-orange-400"
-                            : campaign.approvalStatus === "Rejected"
-                              ? "bg-red-500/10 text-red-400"
-                              : "bg-emerald-500/10 text-emerald-400"
-                        ].join(" ")}
-                      >
+                      <Badge className={cn(portalBadgeClass, "pointer-events-none border-none text-xs font-semibold")}>
                         {campaign.approvalStatus}
                       </Badge>
                     )}

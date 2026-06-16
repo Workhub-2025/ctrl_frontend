@@ -23,7 +23,9 @@ import {
   PortalEmptyState,
   PortalPanel,
   PortalSectionHeader,
+  portalBadgeClass,
 } from "@/components/dashboard/portal/portal-ui";
+import { portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { useClientPortal } from "@/context/client-portal-provider";
 import type { ClientSharedCandidate } from "@/services/client-portal.service";
 import { cn } from "@/lib/utils";
@@ -35,19 +37,9 @@ const REVIEW_STATUS_LABELS: Record<ClientSharedCandidate["reviewStatus"], string
   rejected: "Rejected",
 };
 
-const REVIEW_STATUS_CLASSES: Record<ClientSharedCandidate["reviewStatus"], string> = {
-  pending_review: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300",
-  reviewed: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-  progressed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-  rejected: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
-};
-
 function ReviewStatusBadge({ status }: { status: ClientSharedCandidate["reviewStatus"] }) {
   return (
-    <Badge
-      variant="outline"
-      className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", REVIEW_STATUS_CLASSES[status])}
-    >
+    <Badge variant="outline" className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold", portalBadgeClass)}>
       {REVIEW_STATUS_LABELS[status]}
     </Badge>
   );
@@ -65,7 +57,7 @@ function ApprovalModeControl({
   const isAutoApprove = mode === "auto_approve";
 
   return (
-    <div className="w-full rounded-xl border border-border bg-background/50 p-4 shadow-inner dark:border-white/10 dark:bg-[#0b1220]/40 sm:w-[320px]">
+    <div className={cn(portalPanelClass, "w-full p-4 sm:w-[320px]")}>
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">
@@ -130,7 +122,7 @@ export function ClientApprovalsContent() {
           <TabsTrigger value="campaigns" className="rounded-lg px-4 text-sm font-semibold">
             Campaign approvals
             {pendingCampaigns.length > 0 ? (
-              <Badge className="ml-2 rounded-full bg-amber-500/15 px-2 py-0 text-[10px] text-amber-600 dark:text-amber-300">
+              <Badge className={cn("ml-2 rounded-full px-2 py-0 text-[10px]", portalBadgeClass)}>
                 {pendingCampaigns.length}
               </Badge>
             ) : null}
@@ -138,7 +130,7 @@ export function ClientApprovalsContent() {
           <TabsTrigger value="candidates" className="rounded-lg px-4 text-sm font-semibold">
             Shared candidates
             {sharedCandidates.filter((c) => c.reviewStatus === "pending_review").length > 0 ? (
-              <Badge className="ml-2 rounded-full bg-amber-500/15 px-2 py-0 text-[10px] text-amber-600 dark:text-amber-300">
+              <Badge className={cn("ml-2 rounded-full px-2 py-0 text-[10px]", portalBadgeClass)}>
                 {sharedCandidates.filter((c) => c.reviewStatus === "pending_review").length}
               </Badge>
             ) : null}
@@ -146,7 +138,7 @@ export function ClientApprovalsContent() {
         </TabsList>
 
         <TabsContent value="campaigns" className="mt-0 space-y-4">
-          <PortalPanel accent="warning">
+          <PortalPanel>
             <div className="space-y-6 p-6">
               <PortalSectionHeader
                 eyebrow="Campaign queue"
@@ -180,7 +172,7 @@ export function ClientApprovalsContent() {
                 pendingCampaigns.map((campaign) => (
                   <div
                     key={campaign.id}
-                    className="rounded-xl border border-border/60 bg-background/30 p-5 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-primary/30 dark:border-white/5 dark:bg-[#0b1220]/25"
+                    className={cn(portalPanelClass, "p-5 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-primary/30")}
                   >
                     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
                       <div className="min-w-0 space-y-3">
@@ -251,7 +243,7 @@ export function ClientApprovalsContent() {
                           <Button
                             disabled={reviewingId === campaign.id}
                             onClick={() => void reviewCampaign(campaign.id, "approved")}
-                            className="gap-2 rounded-xl bg-emerald-600 font-semibold text-white hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            className="gap-2 rounded-xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                             Approve
@@ -275,7 +267,7 @@ export function ClientApprovalsContent() {
         </TabsContent>
 
         <TabsContent value="candidates" className="mt-0 space-y-4">
-          <PortalPanel accent="primary">
+          <PortalPanel>
             <div className="space-y-6 p-6">
               <PortalSectionHeader
                 eyebrow="Candidate review"
@@ -331,7 +323,7 @@ export function ClientApprovalsContent() {
                             <>
                               <Button
                                 size="sm"
-                                className="rounded-xl bg-emerald-600 hover:bg-emerald-700"
+                                className="rounded-xl"
                                 disabled={reviewingCandidateId === candidate.documentId}
                                 onClick={() =>
                                   void updateSharedCandidateStatus(candidate.documentId, "progressed")
@@ -367,7 +359,7 @@ export function ClientApprovalsContent() {
                             <>
                               <Button
                                 size="sm"
-                                className="rounded-xl bg-emerald-600 hover:bg-emerald-700"
+                                className="rounded-xl"
                                 disabled={reviewingCandidateId === candidate.documentId}
                                 onClick={() =>
                                   void updateSharedCandidateStatus(candidate.documentId, "progressed")

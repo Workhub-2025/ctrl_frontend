@@ -36,7 +36,8 @@ import {
   Calendar,
   Save,
 } from "lucide-react";
-import { AdminPageHeader } from "@/components/admin/admin-portal-ui";
+import { AdminPageHeader, AdminStatTile, AdminTableShell } from "@/components/admin/admin-portal-ui";
+import { portalBadgeClass } from "@/components/dashboard/portal/portal-ui";
 import {
   SupportTicketService,
   type SupportTicket,
@@ -62,29 +63,6 @@ function relativeTime(dateStr: string): string {
 function truncate(str: string, max: number): string {
   return str.length > max ? str.slice(0, max) + "…" : str;
 }
-
-const STATUS_COLORS: Record<string, string> = {
-  open: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  in_progress: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  resolved: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-  closed: "bg-slate-500/15 text-slate-400 border-slate-500/20",
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  urgent: "bg-red-500/15 text-red-400 border-red-500/20",
-  high: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-  normal: "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  low: "bg-slate-500/15 text-slate-400 border-slate-500/20",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  bug: "bg-red-500/15 text-red-400 border-red-500/20",
-  feature_request: "bg-violet-500/15 text-violet-400 border-violet-500/20",
-  access_issue: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  assessment_issue: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
-  general: "bg-slate-500/15 text-slate-400 border-slate-500/20",
-  contact: "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
-};
 
 const CATEGORY_LABELS: Record<string, string> = {
   bug: "Bug",
@@ -119,46 +97,7 @@ function userRoleBadge(user: SupportTicket["submittedBy"]): string {
   return "Candidate";
 }
 
-/* ── stat card ─────────────────────────────────────────── */
-
-function StatCard({
-  label,
-  value,
-  color,
-  icon: Icon,
-  loading,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  icon: React.ElementType;
-  loading: boolean;
-}) {
-  return (
-    <div
-      className="relative overflow-hidden rounded-xl border border-border/60 dark:border-white/8 bg-card dark:bg-[#0b1329]/40 backdrop-blur-md p-5 shadow-lg"
-    >
-      <div className={`absolute top-0 left-0 w-1 h-full bg-gradient-to-b ${color}`} />
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {label}
-          </p>
-          {loading ? (
-            <Skeleton className="h-8 w-16" />
-          ) : (
-            <p className="text-3xl font-bold text-foreground tabular-nums">
-              {value}
-            </p>
-          )}
-        </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-          <Icon className="h-5 w-5 text-slate-400" />
-        </div>
-      </div>
-    </div>
-  );
-}
+/* ── stat tile uses AdminStatTile from portal-ui ─────────── */
 
 /* ── ticket detail dialog ─────────────────────────────── */
 
@@ -223,7 +162,7 @@ function TicketDetailDialog({
             </span>
             <Badge
               variant="outline"
-              className={`text-[10px] uppercase font-bold tracking-wider ${STATUS_COLORS[ticket.status] || STATUS_COLORS.open}`}
+              className={`text-[10px] uppercase font-bold tracking-wider ${portalBadgeClass}`}
             >
               {ticket.status.replace("_", " ")}
             </Badge>
@@ -274,7 +213,7 @@ function TicketDetailDialog({
                 Updated: {new Date(ticket.updatedAt).toLocaleString()}
               </p>
               {ticket.resolvedAt && (
-                <p className="text-xs text-emerald-400">
+                <p className="text-xs text-muted-foreground">
                   Resolved: {new Date(ticket.resolvedAt).toLocaleString()}
                 </p>
               )}
@@ -285,13 +224,13 @@ function TicketDetailDialog({
           <div className="flex items-center gap-3">
             <Badge
               variant="outline"
-              className={`text-xs font-semibold ${CATEGORY_COLORS[ticket.category] || CATEGORY_COLORS.general}`}
+              className={`text-xs font-semibold ${portalBadgeClass}`}
             >
               {CATEGORY_LABELS[ticket.category] || ticket.category}
             </Badge>
             <Badge
               variant="outline"
-              className={`text-xs font-semibold ${PRIORITY_COLORS[ticket.priority] || PRIORITY_COLORS.normal}`}
+              className={`text-xs font-semibold ${portalBadgeClass}`}
             >
               {ticket.priority}
             </Badge>
@@ -502,34 +441,26 @@ export default function AdminTicketsPage() {
       />
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <AdminStatTile
           label="Open"
-          value={stats.open}
-          color="from-amber-500 to-amber-400"
+          value={loading ? "—" : stats.open}
           icon={AlertCircle}
-          loading={loading}
         />
-        <StatCard
+        <AdminStatTile
           label="In Progress"
-          value={stats.in_progress}
-          color="from-blue-500 to-blue-400"
+          value={loading ? "—" : stats.in_progress}
           icon={Clock}
-          loading={loading}
         />
-        <StatCard
+        <AdminStatTile
           label="Resolved"
-          value={stats.resolved}
-          color="from-emerald-500 to-emerald-400"
+          value={loading ? "—" : stats.resolved}
           icon={CheckCircle2}
-          loading={loading}
         />
-        <StatCard
+        <AdminStatTile
           label="Total"
-          value={stats.total}
-          color="from-slate-500 to-slate-400"
+          value={loading ? "—" : stats.total}
           icon={Inbox}
-          loading={loading}
         />
       </div>
 
@@ -599,7 +530,7 @@ export default function AdminTicketsPage() {
       </div>
 
       {/* Ticket List */}
-      <div className="rounded-2xl border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg overflow-hidden">
+      <AdminTableShell>
         {loading ? (
           <div className="p-6 space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -650,7 +581,7 @@ export default function AdminTicketsPage() {
                 {/* Category */}
                 <Badge
                   variant="outline"
-                  className={`text-[10px] font-bold uppercase shrink-0 ${CATEGORY_COLORS[ticket.category] || CATEGORY_COLORS.general}`}
+                  className={`shrink-0 text-[10px] font-bold uppercase ${portalBadgeClass}`}
                 >
                   {CATEGORY_LABELS[ticket.category] || ticket.category}
                 </Badge>
@@ -658,7 +589,7 @@ export default function AdminTicketsPage() {
                 {/* Priority */}
                 <Badge
                   variant="outline"
-                  className={`text-[10px] font-bold uppercase shrink-0 ${PRIORITY_COLORS[ticket.priority] || PRIORITY_COLORS.normal}`}
+                  className={`shrink-0 text-[10px] font-bold uppercase ${portalBadgeClass}`}
                 >
                   {ticket.priority}
                 </Badge>
@@ -666,7 +597,7 @@ export default function AdminTicketsPage() {
                 {/* Status */}
                 <Badge
                   variant="outline"
-                  className={`text-[10px] font-bold uppercase shrink-0 ${STATUS_COLORS[ticket.status] || STATUS_COLORS.open}`}
+                  className={`shrink-0 text-[10px] font-bold uppercase ${portalBadgeClass}`}
                 >
                   {ticket.status.replace("_", " ")}
                 </Badge>
@@ -695,9 +626,7 @@ export default function AdminTicketsPage() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Detail Dialog */}
+      </AdminTableShell>
       <TicketDetailDialog
         ticket={selectedTicket}
         open={detailOpen}
