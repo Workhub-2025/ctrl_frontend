@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 576" role="img" aria-label="CTRL">
+  <!-- Clean wordmark. Black artwork so logo-adaptive-filter can invert it for dark themes. -->
+  <text
+    x="512"
+    y="288"
+    text-anchor="middle"
+    dominant-baseline="central"
+    fill="#000000"
+    font-family="Outfit, 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+    font-weight="600"
+    font-size="300"
+    letter-spacing="6"
+  >CTRL</text>
+</svg>

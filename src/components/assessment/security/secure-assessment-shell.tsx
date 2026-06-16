@@ -246,7 +246,7 @@ export function SecureAssessmentShell({
 
         <div className="flex justify-center flex-1">
           <img
-            src="/assets/newlogo.png"
+            src="/assets/newlogo.svg"
             alt="CTRL Logo"
             className="h-8 w-8 object-contain scale-125 hue-rotate-[60deg] logo-adaptive-filter pointer-events-none"
           />

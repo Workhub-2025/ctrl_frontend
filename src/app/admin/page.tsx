@@ -25,6 +25,7 @@ import Link from "next/link";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
+import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
 import { cn } from "@/lib/utils";
 
 type AdminOverviewData = {
@@ -70,7 +71,7 @@ export default function AdminOverview() {
   const seatUsage = useMemo(() => overview.seatUsage ?? [], [overview]);
 
   return (
-    <div className="max-w-7xl space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
       <HiringManagerPageHeader
         eyebrow="Platform Operations"
         title="Overview"
@@ -79,63 +80,31 @@ export default function AdminOverview() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Metric 1: Active Clients */}
-        <DashboardInfoCard accent="primary">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Active Clients</CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-              <Building2 className="h-[18px] w-[18px]" />
-            </div>
-          </CardHeader>
-          <CardContent className="pl-6">
-            <div className="text-3xl font-black text-foreground mt-1">{overview.activeClients}</div>
-            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Registered client contacts with active contracts</p>
-          </CardContent>
-        </DashboardInfoCard>
-
-        {/* Metric 2: Awaiting Signup */}
-        <DashboardInfoCard accent="session">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Awaiting Signup</CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-500/10 text-sky-500">
-              <Clock3 className="h-[18px] w-[18px]" />
-            </div>
-          </CardHeader>
-          <CardContent className="pl-6">
-            <div className="text-3xl font-black text-foreground mt-1">
-              {overview.awaitingClientSignups}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Contracted clients without a registered contact</p>
-          </CardContent>
-        </DashboardInfoCard>
-
-        {/* Metric 3: Client Invites */}
-        <DashboardInfoCard accent="campaign">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client Invites</CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-500">
-              <KeyRound className="h-[18px] w-[18px]" />
-            </div>
-          </CardHeader>
-          <CardContent className="pl-6">
-            <div className="text-3xl font-black text-foreground mt-1">{overview.availableClientCodes}</div>
-            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Active admin-issued signup invites</p>
-          </CardContent>
-        </DashboardInfoCard>
-
-        {/* Metric 4: Expiring Soon */}
-        <DashboardInfoCard accent="warning">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
-            <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Expiring Soon</CardTitle>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-500">
-              <AlertTriangle className="h-[18px] w-[18px]" />
-            </div>
-          </CardHeader>
-          <CardContent className="pl-6">
-            <div className="text-3xl font-black text-foreground mt-1">{overview.contractsExpiringSoon}</div>
-            <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Contracts expiring in the next 30 days</p>
-          </CardContent>
-        </DashboardInfoCard>
+        <PortalStatTile
+          label="Active Clients"
+          value={overview.activeClients}
+          detail="Registered client contacts with active contracts"
+          icon={Building2}
+        />
+        <PortalStatTile
+          label="Awaiting Signup"
+          value={overview.awaitingClientSignups}
+          detail="Contracted clients without a registered contact"
+          icon={Clock3}
+        />
+        <PortalStatTile
+          label="Client Invites"
+          value={overview.availableClientCodes}
+          detail="Active admin-issued signup invites"
+          icon={KeyRound}
+        />
+        <PortalStatTile
+          label="Expiring Soon"
+          value={overview.contractsExpiringSoon}
+          detail="Contracts expiring in the next 30 days"
+          icon={AlertTriangle}
+          tone="attention"
+        />
       </div>
 
       {error && (

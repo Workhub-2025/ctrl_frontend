@@ -20,7 +20,7 @@ export function BrandMark({
   return (
     <div className={cn("inline-flex items-center justify-center", className)}>
       <img
-        src="/assets/newlogo.png"
+        src="/assets/newlogo.svg"
         alt={title}
         className="ctrl-brand-logo-image logo-adaptive-filter pointer-events-none block h-full w-full object-contain object-center"
       />
@@ -49,7 +49,7 @@ export function BrandLogo({
       aria-label={title}
     >
       <img
-        src="/assets/newlogo.png"
+        src="/assets/newlogo.svg"
         alt={title}
         className="ctrl-brand-logo-image logo-adaptive-filter pointer-events-none block h-full w-full object-contain object-center"
       />

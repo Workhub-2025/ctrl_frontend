@@ -12,6 +12,7 @@ export default function ClientDashboardLayout({
     <RoleDashboardShell
       title="Client Portal"
       subtitle="Seat access, campaign approvals, and hiring-manager oversight"
+      contentWidth="wide"
       navItems={[
         { href: "/client-dashboard/", label: "Overview", icon: Home },
         {

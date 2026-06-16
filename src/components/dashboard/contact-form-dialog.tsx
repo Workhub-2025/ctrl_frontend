@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Mail, Send, CheckCircle, Loader2 } from "lucide-react";
+import { SupportTicketService } from "@/services/support-ticket.service";
+import type { CandidateSessionContext } from "@/components/dashboard/candidate/candidate-portal-ui";
 
 interface ContactFormDialogProps {
   recipient: string;
@@ -30,6 +32,13 @@ interface ContactFormDialogProps {
   triggerVariant?: "default" | "outline" | "ghost";
   triggerIcon?: React.ReactNode;
   children?: React.ReactNode;
+  /** Controlled open state (optional). Falls back to internal state. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Called after a message is submitted successfully. */
+  onSuccess?: () => void;
+  /** Optional session context attached to the ticket. */
+  sessionContext?: CandidateSessionContext;
 }
 
 export function ContactFormDialog({
@@ -39,13 +48,20 @@ export function ContactFormDialog({
   triggerVariant = "default",
   triggerIcon,
   children,
+  open: controlledOpen,
+  onOpenChange,
+  onSuccess,
+  sessionContext,
 }: ContactFormDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
   const [subject, setSubject] = useState(defaultSubject);
   const [message, setMessage] = useState("");
   const [priority, setPriority] = useState("normal");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState("");
   const [error, setError] = useState("");
 
   const resetForm = () => {
@@ -54,13 +70,14 @@ export function ContactFormDialog({
     setPriority("normal");
     setIsSubmitting(false);
     setIsSuccess(false);
+    setTicketNumber("");
     setError("");
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
+    if (!isControlled) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
     if (!nextOpen) {
-      // Reset when dialog closes
       setTimeout(resetForm, 300);
     }
   };
@@ -77,27 +94,20 @@ export function ContactFormDialog({
     setError("");
 
     try {
-      const res = await fetch("/api/support-tickets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: subject.trim() || `Message to ${recipient}`,
-          description: message.trim(),
-          category: "contact",
-          priority,
-          metadata: { recipient },
-        }),
+      const ticket = await SupportTicketService.createTicket({
+        subject: subject.trim() || `Message to ${recipient}`,
+        description: message.trim(),
+        category: "contact",
+        priority,
+        metadata: {
+          recipient,
+          ...(sessionContext ?? {}),
+        },
       });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.message || `Request failed (${res.status})`);
-      }
-
+      setTicketNumber(ticket?.ticketNumber || "");
       setIsSuccess(true);
-      setTimeout(() => {
-        handleOpenChange(false);
-      }, 2000);
+      onSuccess?.();
     } catch (err) {
       setError(
         err instanceof Error
@@ -120,48 +130,103 @@ export function ContactFormDialog({
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[480px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-            <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
-            Send a Message
-          </DialogTitle>
-          <DialogDescription className="text-sm text-slate-400">
-            Your message will be delivered to the relevant team through the CTRL
-            support system.
-          </DialogDescription>
+      <DialogContent className="overflow-hidden sm:max-w-[480px]">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"
+          aria-hidden="true"
+        />
+        <DialogHeader className="pr-10">
+          <div className="flex items-start gap-3">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"
+              aria-hidden="true"
+            >
+              <Mail className="h-5 w-5" />
+            </span>
+            <div className="space-y-1">
+              <DialogTitle className="font-display text-lg font-bold tracking-tight text-foreground">
+                Send a Message
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Your message is sent to the hiring team as a tracked ticket — save
+                the reference number to follow up in ticket history.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {isSuccess ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-3 motion-safe:animate-in motion-safe:fade-in duration-300">
-            <div className="h-14 w-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-              <CheckCircle className="h-7 w-7 text-emerald-400" aria-hidden="true" />
+          <div className="flex flex-col items-center justify-center gap-4 py-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
+              <CheckCircle
+                className="h-7 w-7 text-emerald-500 dark:text-emerald-400"
+                aria-hidden="true"
+              />
             </div>
-            <p className="text-lg font-bold text-foreground">Message sent successfully</p>
-            <p className="text-sm text-slate-400">This dialog will close automatically.</p>
+            <div className="space-y-1.5 text-center">
+              {ticketNumber ? (
+                <p className="font-mono text-xl font-bold tracking-wider text-primary">
+                  {ticketNumber}
+                </p>
+              ) : null}
+              <p className="font-display text-lg font-bold text-foreground">
+                Message sent successfully
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {ticketNumber
+                  ? "Save this reference to track your message in ticket history."
+                  : "Your message has been delivered. We'll respond as soon as possible."}
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className="mt-2 h-10 rounded-lg px-8 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            >
+              Done
+            </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-5 pt-1">
             {/* Recipient */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 To
               </label>
-              <div>
+              <div className="flex flex-wrap gap-2">
                 <Badge
                   variant="outline"
-                  className="border-primary/20 bg-primary/10 text-primary font-semibold px-3 py-1 rounded-lg pointer-events-none"
+                  className="pointer-events-none rounded-lg border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-primary"
                 >
                   {recipient}
                 </Badge>
+                {sessionContext?.campaign ? (
+                  <Badge
+                    variant="outline"
+                    className="pointer-events-none max-w-full truncate rounded-lg px-3 py-1 text-xs"
+                  >
+                    {sessionContext.campaign}
+                  </Badge>
+                ) : null}
               </div>
+              {sessionContext?.accessCode ? (
+                <p className="text-xs text-muted-foreground">
+                  Session code{" "}
+                  <span className="font-mono font-semibold text-foreground">
+                    {sessionContext.accessCode}
+                  </span>
+                  {sessionContext.sessionName
+                    ? ` · ${sessionContext.sessionName}`
+                    : null}
+                </p>
+              ) : null}
             </div>
 
             {/* Subject */}
             <div className="space-y-2">
               <label
                 htmlFor="contact-subject"
-                className="text-xs font-semibold uppercase tracking-wider text-slate-400"
+                className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
               >
                 Subject
               </label>
@@ -170,7 +235,7 @@ export function ContactFormDialog({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Brief summary of your query"
-                className="h-10 rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary"
+                className="h-10 rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
               />
             </div>
 
@@ -178,9 +243,9 @@ export function ContactFormDialog({
             <div className="space-y-2">
               <label
                 htmlFor="contact-message"
-                className="text-xs font-semibold uppercase tracking-wider text-slate-400"
+                className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
               >
-                Message <span className="text-red-400">*</span>
+                Message <span className="text-destructive">*</span>
               </label>
               <Textarea
                 id="contact-message"
@@ -190,17 +255,31 @@ export function ContactFormDialog({
                 rows={5}
                 required
                 minLength={10}
-                className="rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary resize-none"
+                className="resize-none rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
               />
+              <div className="flex justify-end">
+                <p
+                  className={`text-[11px] font-medium tabular-nums ${
+                    message.length > 0 && message.trim().length < 10
+                      ? "text-destructive"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {message.length} characters
+                  {message.length > 0 && message.trim().length < 10
+                    ? ` (min. 10)`
+                    : ""}
+                </p>
+              </div>
             </div>
 
             {/* Priority */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Priority
               </label>
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="h-10 rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus:ring-primary">
+                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary dark:border-white/10 dark:bg-white/[0.02]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -212,7 +291,7 @@ export function ContactFormDialog({
 
             {/* Error */}
             {error && (
-              <p className="text-sm text-red-400 font-medium motion-safe:animate-in motion-safe:slide-in-from-top-2">
+              <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive motion-safe:animate-in motion-safe:slide-in-from-top-2">
                 {error}
               </p>
             )}
@@ -221,7 +300,7 @@ export function ContactFormDialog({
             <Button
               type="submit"
               disabled={isSubmitting || message.trim().length < 10}
-              className="w-full h-11 rounded-lg font-semibold gap-2 shadow-md transition-transform hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              className="h-11 w-full gap-2 rounded-lg font-semibold shadow-md transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-safe:hover:scale-[1.01]"
             >
               {isSubmitting ? (
                 <>

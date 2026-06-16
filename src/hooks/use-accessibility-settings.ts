@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 
 export const ACCESSIBILITY_STORAGE_KEY = "ctrl-accessibility-settings";
@@ -59,6 +59,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
   const [settings, setSettings] = useState<AccessibilitySettings>(defaultAccessibilitySettings);
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = settings.motion === "reduced" || !!prefersReducedMotion;
+  const prevThemeRef = useRef<AccessibilitySettings["theme"] | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
@@ -78,6 +79,15 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
     window.localStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(settings));
 
     const root = document.documentElement;
+
+    // Suppress transitions during an actual theme change so the recolour is a
+    // single instant repaint instead of animating colour + blur across the DOM.
+    const themeChanged =
+      prevThemeRef.current !== null && prevThemeRef.current !== settings.theme;
+    if (themeChanged) {
+      root.setAttribute("data-ctrl-theme-switching", "");
+    }
+
     root.dataset.ctrlTheme = settings.theme;
     root.dataset.ctrlTextSize = settings.textSize;
     root.dataset.ctrlLineSpacing = settings.lineSpacing;
@@ -98,6 +108,18 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
     } else {
       root.classList.remove("light");
       root.classList.add("dark");
+    }
+
+    prevThemeRef.current = settings.theme;
+
+    // Restore transitions after the browser has painted the new theme.
+    if (themeChanged) {
+      const id = window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          root.removeAttribute("data-ctrl-theme-switching");
+        });
+      });
+      return () => window.cancelAnimationFrame(id);
     }
   }, [enabled, settings, reduceMotion]);
 

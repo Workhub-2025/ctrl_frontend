@@ -37,7 +37,7 @@ export function DashboardInfoCard({
   return (
     <Card
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-border/55 bg-card/55 shadow-sm backdrop-blur-md transition-[border-color,box-shadow,transform] duration-300 dark:border-white/5 dark:bg-[#0b1329]/25",
+        "relative overflow-hidden rounded-2xl border border-border/55 bg-card/55 shadow-sm backdrop-blur-sm transition-[border-color,box-shadow,transform] duration-300 dark:border-white/5 dark:bg-[#0b1329]/25",
         interactive && "hover:border-primary/25 hover:shadow-md dark:hover:border-primary/30",
         className
       )}

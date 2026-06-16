@@ -55,6 +55,7 @@ export type ClientDashboardSummary = {
     documentId?: string;
     name?: string;
     campaignApprovalMode?: "auto_approve" | "require_approval";
+    features?: Record<string, unknown> | null;
   };
   seats: {
     limit: number;
@@ -64,6 +65,27 @@ export type ClientDashboardSummary = {
   availableAccessCodes: number;
   candidatesPendingReview: number;
   campaignsPendingApproval: number;
+  activeContract?: ClientContract | null;
+};
+
+export type ClientContract = {
+  documentId?: string;
+  seatCount?: number;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+  notes?: string | null;
+};
+
+export type ClientSharedCandidate = {
+  documentId: string;
+  reviewStatus: "pending_review" | "reviewed" | "progressed" | "rejected";
+  sharedAt?: string | null;
+  candidateName: string;
+  candidateEmail?: string;
+  hiringManagerName: string;
+  campaignName: string;
+  role: string;
 };
 
 export type ClientAccessCode = {
@@ -337,4 +359,62 @@ export async function releaseClientHiringManagerSeat(
   );
 
   return response.data;
+}
+
+function normalizeSharedCandidate(raw: Record<string, unknown>): ClientSharedCandidate {
+  const candidates = (raw.candidates as Array<Record<string, unknown>> | undefined) ?? [];
+  const hiringManagers =
+    (raw.hiringManagers as Array<Record<string, unknown>> | undefined) ?? [];
+  const campaigns = (raw.campaigns as Array<Record<string, unknown>> | undefined) ?? [];
+
+  const candidate = candidates[0];
+  const hm = hiringManagers[0];
+  const campaign = campaigns[0];
+
+  const candidateName = [candidate?.firstName, candidate?.lastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  const hmName = [hm?.firstName, hm?.lastName].filter(Boolean).join(" ").trim();
+
+  return {
+    documentId: String(raw.documentId ?? ""),
+    reviewStatus: (raw.reviewStatus as ClientSharedCandidate["reviewStatus"]) ?? "pending_review",
+    sharedAt: (raw.sharedAt as string | undefined) ?? null,
+    candidateName: candidateName || String(candidate?.username ?? "Candidate"),
+    candidateEmail: candidate?.email as string | undefined,
+    hiringManagerName: hmName || String(hm?.email ?? "Hiring manager"),
+    campaignName: String(campaign?.name ?? "Campaign"),
+    role: String(campaign?.jobRole ?? "Role not set"),
+  };
+}
+
+export async function getClientContract(clientDocumentId: string) {
+  const response = await strapiRequest<{ data?: ClientContract | null }>(
+    `/clients/${encodeURIComponent(clientDocumentId)}/contract`
+  );
+  return response.data ?? null;
+}
+
+export async function listClientSharedCandidates(reviewStatus?: string) {
+  const query = reviewStatus ? `?reviewStatus=${encodeURIComponent(reviewStatus)}` : "";
+  const response = await strapiRequest<{ data?: Array<Record<string, unknown>> }>(
+    `/shared-candidates${query}`
+  );
+  return (response.data ?? []).map(normalizeSharedCandidate);
+}
+
+export async function updateSharedCandidateReviewStatus(
+  sharedCandidateDocumentId: string,
+  reviewStatus: ClientSharedCandidate["reviewStatus"]
+) {
+  const response = await strapiRequest<{ data?: Record<string, unknown> }>(
+    `/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/status`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reviewStatus }),
+    }
+  );
+  return response.data ? normalizeSharedCandidate(response.data) : null;
 }

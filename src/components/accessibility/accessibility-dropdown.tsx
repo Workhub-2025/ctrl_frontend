@@ -22,10 +22,10 @@ const themeOptions: {
   ];
 
 const dropdownThemeClassName: Record<AccessibilitySettings["theme"], string> = {
-  "dark-blue": "bg-[#0b1329]/95 border-white/10 text-white backdrop-blur-xl shadow-[0_32px_96px_rgba(0,0,0,0.7)]",
-  black: "bg-[#080808]/95 border-white/15 text-white backdrop-blur-xl shadow-[0_32px_96px_rgba(0,0,0,0.8)]",
-  "soft-cream": "bg-white/95 border-slate-200 text-slate-900 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.15)]",
-  "light-blue": "bg-white/95 border-slate-200 text-slate-900 backdrop-blur-xl shadow-[0_24px_64px_rgba(0,0,0,0.15)]",
+  "dark-blue": "bg-[#0b1329] border-white/10 text-white shadow-[0_32px_96px_rgba(0,0,0,0.7)]",
+  black: "bg-[#0a0a0a] border-white/15 text-white shadow-[0_32px_96px_rgba(0,0,0,0.8)]",
+  "soft-cream": "bg-white border-slate-200 text-slate-900 shadow-[0_24px_64px_rgba(0,0,0,0.15)]",
+  "light-blue": "bg-white border-slate-200 text-slate-900 shadow-[0_24px_64px_rgba(0,0,0,0.15)]",
 };
 
 function segmentedClassName(isActive: boolean, isLight: boolean) {
@@ -59,6 +59,18 @@ export function AccessibilityDropdown({
 
   const isLight = settings.theme === "soft-cream" || settings.theme === "light-blue";
 
+  const sectionLabel = (text: string) => (
+    <h4
+      className={cn(
+        "flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.18em]",
+        isLight ? "text-slate-500" : "text-slate-400"
+      )}
+    >
+      <span className="h-1 w-1 rounded-full bg-sky-500" />
+      {text}
+    </h4>
+  );
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -80,8 +92,8 @@ export function AccessibilityDropdown({
     options: { label: string; value: string }[];
     onChange: (value: string) => void;
   }) => (
-    <div className="space-y-1.5">
-      <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>{label}</h4>
+    <div className="space-y-2">
+      {sectionLabel(label)}
       <div className="flex gap-1 bg-muted/30 dark:bg-white/[0.02] p-1 rounded-xl border border-border/40 dark:border-white/5">
         {options.map((option) => (
           <button
@@ -180,17 +192,32 @@ export function AccessibilityDropdown({
               dropdownThemeClassName[settings.theme]
             )}
           >
+            {/* Top accent line */}
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-500/50 to-transparent" />
+
             {/* Header */}
-            <div className="mb-4 flex items-start justify-between gap-4 border-b border-border/40 dark:border-white/5 pb-3">
-              <div>
-                <h3 className={cn("text-sm font-bold tracking-tight", isLight ? "text-slate-900" : "text-white")}>Accessibility Control Center</h3>
-                <p className={cn("mt-0.5 text-xs text-muted-foreground/80")}>{description}</p>
+            <div className="mb-4 flex items-start justify-between gap-4 border-b border-border/40 dark:border-white/5 pb-4">
+              <div className="flex items-start gap-3">
+                <div
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+                    isLight
+                      ? "border-sky-500/20 bg-sky-500/10 text-sky-600"
+                      : "border-sky-400/20 bg-sky-400/10 text-sky-400"
+                  )}
+                >
+                  <Accessibility className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className={cn("text-sm font-bold tracking-tight", isLight ? "text-slate-900" : "text-white")}>Accessibility Control Center</h3>
+                  <p className={cn("mt-0.5 text-xs", isLight ? "text-slate-500" : "text-slate-400")}>{description}</p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
                 className={cn(
-                  "rounded-full p-1.5 transition-colors",
+                  "shrink-0 rounded-full p-1.5 transition-colors",
                   isLight ? "text-slate-400 hover:bg-slate-100 hover:text-slate-800" : "text-slate-500 hover:bg-white/5 hover:text-white"
                 )}
                 aria-label="Close accessibility settings"
@@ -201,8 +228,8 @@ export function AccessibilityDropdown({
 
             <div className="space-y-4">
               {/* Theme Grid */}
-              <div className="space-y-1.5">
-                <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>Color Theme</h4>
+              <div className="space-y-2">
+                {sectionLabel("Color Theme")}
                 <div className="grid grid-cols-2 gap-2">
                   {themeOptions.map((option) => {
                     const isActive = settings.theme === option.value;
@@ -264,7 +291,7 @@ export function AccessibilityDropdown({
 
               {/* Advanced Assistive Controls */}
               <div className="space-y-2.5">
-                <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>Cognitive & Focus Aids</h4>
+                {sectionLabel("Cognitive & Focus Aids")}
 
                 {renderToggle({
                   label: "Dyslexia Font",
@@ -301,7 +328,7 @@ export function AccessibilityDropdown({
 
               {/* Display & Motion Controls */}
               <div className="space-y-2.5">
-                <h4 className={cn("text-xs font-semibold uppercase tracking-wider", isLight ? "text-slate-500" : "text-slate-400")}>Display & Saturation</h4>
+                {sectionLabel("Display & Saturation")}
 
                 {renderToggle({
                   label: "Monochromatic Grayscale",

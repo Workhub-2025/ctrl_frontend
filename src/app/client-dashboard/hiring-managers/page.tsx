@@ -1,13 +1,7 @@
-import { ClientProductionPlaceholder } from "@/components/dashboard/client-production-placeholder";
-import { Users } from "lucide-react";
+"use client";
+
+import { ClientHiringManagersContent } from "@/components/dashboard/client";
 
 export default function ClientHiringManagersPage() {
-  return (
-    <ClientProductionPlaceholder
-      eyebrow="Hiring managers"
-      title="Hiring Managers"
-      description="Seat-level hiring-manager management will be available here."
-      icon={Users}
-    />
-  );
+  return <ClientHiringManagersContent />;
 }

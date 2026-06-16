@@ -787,6 +787,20 @@ html[data-ctrl-theme="dark-blue"] .ctrl-portal [data-sidebar="sidebar"] {
   color: hsl(var(--foreground));
 }
 
+/* ===== THEME SWITCH PERFORMANCE =====
+   While a theme change is applied, suppress all transitions/animations so the
+   recolour happens in a single instant repaint instead of animating colour +
+   backdrop-blur across the whole DOM for hundreds of milliseconds. The flag is
+   added to <html> right before the theme attribute flips and removed on the next
+   frame (see use-accessibility-settings.ts). */
+html[data-ctrl-theme-switching] *,
+html[data-ctrl-theme-switching] *::before,
+html[data-ctrl-theme-switching] *::after {
+  transition: none !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+}
+
 .ctrl-brand-logo {
   isolation: isolate;
 }
@@ -1137,7 +1151,7 @@ button[aria-label="Toggle theme"] {
 }
 
 /* Optimizar rendering de imágenes del logo */
-img[src*="newlogo.png"] {
+img[src*="newlogo.svg"] {
   content-visibility: auto;
   contain-intrinsic-size: 3rem 3rem;
   image-rendering: -webkit-optimize-contrast;

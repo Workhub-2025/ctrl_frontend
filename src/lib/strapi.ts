@@ -23,11 +23,12 @@ function getBaseUrl(): string {
 function getApiToken(): string | undefined {
     // Use || so empty strings also fall through to undefined — prevents
     // @strapi/client from throwing "A valid API token is required" at init.
+    // NEVER read NEXT_PUBLIC_* here: those are bundled into client JS and must
+    // not be usable as a full-access server token.
     return (
         process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
         process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
         process.env.STRAPI_API_TOKEN ||
-        process.env.NEXT_PUBLIC_STRAPI_API_TOKEN ||
         undefined
     );
 }

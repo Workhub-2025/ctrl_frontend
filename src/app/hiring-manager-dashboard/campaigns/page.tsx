@@ -4,7 +4,7 @@ import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-p
 
 export default function HiringManagerCampaignsPage() {
   return (
-    <div className="max-w-7xl space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
       <HiringManagerPageHeader
         eyebrow="Campaign workspace"
         title="Campaigns"

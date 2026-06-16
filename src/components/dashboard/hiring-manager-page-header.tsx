@@ -6,15 +6,15 @@ type PortalPageHeaderProps = {
   title: string;
   description: string;
   icon: LucideIcon;
-  /** Optional single badge/action rendered to the right of the title row */
   badge?: ReactNode;
-  /** Optional action button(s) aligned to the right of the header */
   action?: ReactNode;
-  /** Optional notice/alert rendered below the description */
   notice?: ReactNode;
 };
 
-/** Slim page-level header used across all portals (Client, HM, Candidate). */
+/**
+ * Shared page header for HM / Client / Admin server routes.
+ * Renders Lucide icons inline so server pages can pass icon components safely.
+ */
 export function HiringManagerPageHeader({
   eyebrow,
   title,
@@ -25,37 +25,36 @@ export function HiringManagerPageHeader({
   notice,
 }: PortalPageHeaderProps) {
   return (
-    <div className="relative pb-6 mb-6 border-b border-border/40 dark:border-white/5 transition-all duration-300">
+    <header className="relative mb-8 overflow-hidden rounded-2xl border border-border/55 bg-card/40 p-6 shadow-sm dark:border-white/5 dark:bg-[#0b1329]/25 sm:p-7">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent"
+        aria-hidden="true"
+      />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        {/* Left: icon + text */}
-        <div className="flex items-start gap-3.5 min-w-0">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-sm mt-0.5 transition-transform duration-300 hover:scale-105">
-            <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
-          </div>
-          <div className="min-w-0 space-y-1">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
+            <Icon className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 space-y-1.5">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
               {eyebrow}
             </p>
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-display">
+              <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                 {title}
               </h1>
               {badge}
             </div>
-            <p className="text-sm leading-relaxed text-muted-foreground/80 max-w-3xl pt-0.5">
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
               {description}
             </p>
-            {notice && <div className="pt-1">{notice}</div>}
+            {notice ? <div className="pt-1">{notice}</div> : null}
           </div>
         </div>
-
-        {/* Right: action */}
-        {action && (
-          <div className="flex shrink-0 items-center gap-2 sm:pt-1">
-            {action}
-          </div>
-        )}
+        {action ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>
+        ) : null}
       </div>
-    </div>
+    </header>
   );
 }

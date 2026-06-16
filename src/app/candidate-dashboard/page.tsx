@@ -1,144 +1,141 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuthStore } from "@/store/auth.store";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { useCandidateApplications } from "@/hooks/use-candidate-applications";
 import {
-  DashboardInfoCard,
-  dashboardInfoPillClassName,
-} from "@/components/dashboard/dashboard-info-card";
+  formatDate,
+  hasAvailableAssessment,
+  isActiveStatus,
+  pickPrioritySession,
+  statusBadgeClassName,
+  type CandidateApplicationView,
+} from "@/lib/candidate/portal";
+import { CandidateSessionService } from "@/services/candidate-session.service";
 import {
-  KeyRound,
-  Loader2,
-  ChevronRight,
-  Target,
-  CalendarDays,
-  CheckCircle2,
-  AlertCircle,
-  Clock3,
-  Building2,
-  Route,
+  CandidateEmptyState,
+  CandidateLinkSessionPanel,
+  CandidateMetaChip,
+  CandidatePageHeader,
+  CandidatePanel,
+  CandidateProgressHeader,
+  CandidateQuickLink,
+  CandidateSectionHeader,
+  CandidateStatTile,
+} from "@/components/dashboard/candidate/candidate-portal-ui";
+import {
+  AlertTriangle,
   ArrowRight,
-  ShieldCheck,
-  Video,
+  Briefcase,
+  CalendarClock,
+  CheckCircle2,
+  ChevronRight,
+  ClipboardCheck,
   Globe,
-  MapPin
+  KeyRound,
+  LayoutDashboard,
+  ListChecks,
+  MapPin,
+  RefreshCw,
+  Sparkles,
+  Target,
 } from "lucide-react";
-import {
-  CandidateSessionService,
-  type CandidatePortalApplication,
-} from "@/services/candidate-session.service";
 
-type CandidateApplicationStatus =
-  | "Awaiting Assessment"
-  | "In Progress"
-  | "Completed"
-  | "Progressed"
-  | "Unsuccessful"
-  | "Soft Locked";
-
-function mapPortalStatus(
-  application: CandidatePortalApplication
-): CandidateApplicationStatus {
-  switch (application.portalStatus ?? application.sessionStatus) {
-    case "in_progress":
-    case "active":
-      return "In Progress";
-    case "completed":
-      return "Completed";
-    case "progressed":
-      return "Progressed";
-    case "unsuccessful":
-      return "Unsuccessful";
-    case "soft_locked":
-    case "locked":
-      return "Soft Locked";
-    case "awaiting_assessment":
-    case "pending":
-    default:
-      return "Awaiting Assessment";
+function getActiveDateMeta(app: CandidateApplicationView) {
+  if (!app) return null;
+  if (app.sessionStartsAt) {
+    return { label: "Starts", value: formatDate(app.sessionStartsAt) };
   }
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "Date to be confirmed";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Date to be confirmed";
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
-function formatMode(value?: string | null) {
-  switch (value) {
-    case "remote": return "Remote";
-    case "hybrid": return "Hybrid";
-    case "in_person": return "In-person";
-    default: return "Mode to be confirmed";
+  const campaignEnd = app.raw.campaign?.endDate;
+  if (campaignEnd) {
+    return { label: "Due", value: formatDate(campaignEnd) };
   }
+  if (app.expiresAt) {
+    return { label: "Expires", value: formatDate(app.expiresAt) };
+  }
+  return null;
 }
 
-function getApplicationKey(application: CandidatePortalApplication) {
-  return application.documentId ?? application.candidateCode ?? "";
+function assessmentHrefFor(key: string) {
+  return `/candidate-dashboard/my-assessments?session=${encodeURIComponent(key)}`;
+}
+
+function StatTileSkeleton() {
+  return (
+    <CandidatePanel className="animate-pulse">
+      <div className="space-y-3 p-5">
+        <div className="h-3 w-24 rounded bg-muted" />
+        <div className="h-8 w-16 rounded bg-muted" />
+        <div className="h-3 w-28 rounded bg-muted" />
+      </div>
+    </CandidatePanel>
+  );
 }
 
 export default function CandidateDashboardOverviewPage() {
   const { user } = useAuth();
   const { userProfile } = useAuthStore();
-  const [applications, setApplications] = useState<CandidatePortalApplication[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { applications, isLoading, error, refresh } = useCandidateApplications();
+
   const [accessCodeInput, setAccessCodeInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [joinError, setJoinError] = useState("");
+  const [joinSuccess, setJoinSuccess] = useState("");
 
-  const displayName =
-    userProfile
-      ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() || userProfile.email || "Candidate"
-      : user?.name || `${(user as any)?.firstName || ""} ${(user as any)?.lastName || ""}`.trim() || "Candidate";
+  const displayName = userProfile
+    ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() ||
+      userProfile.email ||
+      "Candidate"
+    : user?.name || "Candidate";
+  const firstName = displayName.split(" ")[0];
 
-  const loadApplications = useCallback(async (options?: { force?: boolean }) => {
-    setIsLoading(true);
-    try {
-      const portalApplications = await CandidateSessionService.getMyApplications({ force: options?.force });
-      setApplications(portalApplications);
-    } catch (err) {
-      console.error("Failed to load applications:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const activeApps = useMemo(
+    () => applications.filter((app) => isActiveStatus(app.status)),
+    [applications]
+  );
+  const pastApps = useMemo(
+    () => applications.filter((app) => !isActiveStatus(app.status)),
+    [applications]
+  );
 
-  useEffect(() => {
-    void loadApplications();
-  }, [loadApplications]);
+  const nextUpApp = useMemo(
+    () => pickPrioritySession(activeApps.filter(hasAvailableAssessment)) ?? pickPrioritySession(activeApps),
+    [activeApps]
+  );
 
-  const handlePair = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const stats = useMemo(() => {
+    const awaitingAction = activeApps.filter(hasAvailableAssessment).length;
+    const submitted = applications.reduce((sum, app) => sum + app.completedCount, 0);
+    const totalTasks = applications.reduce((sum, app) => sum + app.totalCount, 0);
+    return {
+      active: activeApps.length,
+      awaitingAction,
+      submitted,
+      totalTasks,
+      completed: pastApps.length,
+    };
+  }, [applications, activeApps, pastApps]);
+
+  const handleJoin = async (event: React.FormEvent) => {
+    event.preventDefault();
     const code = accessCodeInput.trim();
     if (!code) {
-      setError("Please enter an Access Code.");
+      setJoinError("Please enter an Access Code.");
       return;
     }
     setIsSubmitting(true);
-    setError("");
-    setSuccess("");
-
+    setJoinError("");
+    setJoinSuccess("");
     try {
       await CandidateSessionService.joinWithAccessCode(code);
-      await loadApplications({ force: true });
-      setSuccess("Successfully linked your assessments!");
+      await refresh({ force: true });
+      setJoinSuccess("Session linked successfully.");
       setAccessCodeInput("");
     } catch (err) {
-      setError(
+      setJoinError(
         err instanceof Error
           ? err.message
           : "Invalid Access Code. Please check and try again."
@@ -148,362 +145,318 @@ export default function CandidateDashboardOverviewPage() {
     }
   };
 
-  const activeApps = applications.filter((app) => {
-    const status = mapPortalStatus(app);
-    return status === "Awaiting Assessment" || status === "In Progress" || status === "Soft Locked";
-  });
+  const hasAnySessions = applications.length > 0;
+  const orientationDescription = !hasAnySessions
+    ? "Link your first assessment session with the Access Code from your hiring team, then complete each assigned task at your own pace."
+    : stats.awaitingAction > 0
+      ? "You have assessments ready to work on. Continue your session or link another Access Code below."
+      : activeApps.length > 0
+        ? "Your active sessions are below. Check back for unlocks or new tasks from your hiring team."
+        : "All current sessions are complete. Link a new Access Code if you've been invited to another assessment.";
 
-  const completedApps = applications.filter((app) => {
-    const status = mapPortalStatus(app);
-    return status === "Completed" || status === "Progressed" || status === "Unsuccessful";
-  });
+  const statTiles = [
+    {
+      label: "Active sessions",
+      value: stats.active,
+      detail: stats.active === 1 ? "in progress" : "in progress",
+      icon: Target,
+      tone: "default" as const,
+    },
+    {
+      label: "Ready to start",
+      value: stats.awaitingAction,
+      detail: stats.awaitingAction > 0 ? "needs your action" : "nothing waiting",
+      icon: AlertTriangle,
+      tone: stats.awaitingAction > 0 ? ("attention" as const) : ("default" as const),
+    },
+    {
+      label: "Submitted",
+      value: stats.submitted,
+      detail: stats.totalTasks > 0 ? `of ${stats.totalTasks} assigned` : "none yet",
+      icon: ListChecks,
+      tone: "default" as const,
+    },
+    {
+      label: "Finished",
+      value: stats.completed,
+      detail: stats.completed === 1 ? "session closed" : "sessions closed",
+      icon: CheckCircle2,
+      tone: stats.completed > 0 ? ("success" as const) : ("default" as const),
+    },
+  ];
 
   return (
-    <div className="relative flex flex-col gap-10 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-3 duration-500 pb-12">
-      {/* 1. HERO SECTION - JOIN A SESSION */}
-      <section className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/40 dark:backdrop-blur-md p-8 sm:p-12 lg:p-16">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent pointer-events-none" />
- 
-        <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto space-y-6">
-          <div className="space-y-4">
-            <Badge variant="outline" className="border-primary/30 bg-primary/15 text-primary px-3.5 py-1 text-xs font-semibold rounded-lg shadow-sm pointer-events-none">
-              Welcome back, {displayName.split(" ")[0]}
-            </Badge>
-            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
-              Ready to start your <br className="hidden sm:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-indigo-400 to-blue-500">
-                assessment journey?
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg text-slate-400 max-w-xl mx-auto leading-relaxed">
-              Enter the Access Code provided by your Hiring Manager to instantly link a new assessment to your portal.
-            </p>
+    <div className="mx-auto w-full max-w-7xl space-y-8 pb-12 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
+      {error ? (
+        <div
+          role="alert"
+          className="flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-700 sm:flex-row sm:items-center sm:justify-between dark:text-amber-300"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <div>
+              <p className="font-semibold">Couldn&apos;t load your sessions</p>
+              <p className="text-sm opacity-90">{error}</p>
+            </div>
           </div>
- 
-          <div className="w-full max-w-md pt-4">
-            <form onSubmit={handlePair} className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" aria-hidden="true" />
-                <Input
-                  name="accessCode"
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-label="Access Code"
-                  placeholder="e.g. CTRL-9A2X…"
-                  className="pl-12 h-14 rounded-xl text-lg font-mono uppercase tracking-widest bg-background border-border focus-visible:ring-primary shadow-inner dark:border-white/10 dark:bg-[#04070d]/50"
+          <Button
+            variant="outline"
+            onClick={() => void refresh({ force: true })}
+            className="shrink-0 gap-2 border-amber-500/40 bg-transparent font-semibold"
+          >
+            <RefreshCw className="h-4 w-4" aria-hidden="true" /> Retry
+          </Button>
+        </div>
+      ) : null}
+
+      <CandidatePageHeader
+        eyebrow="Overview"
+        title={`Welcome back, ${firstName}`}
+        description={orientationDescription}
+        icon={LayoutDashboard}
+        action={
+          nextUpApp ? (
+            <Button asChild className="h-10 gap-2 rounded-xl font-semibold">
+              <Link href={assessmentHrefFor(nextUpApp.key)}>
+                {hasAvailableAssessment(nextUpApp) ? "Continue assessments" : "View session"}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {isLoading
+          ? [0, 1, 2, 3].map((i) => <StatTileSkeleton key={i} />)
+          : statTiles.map((tile) => (
+              <CandidateStatTile key={tile.label} {...tile} />
+            ))}
+      </section>
+
+      {!isLoading && nextUpApp && hasAvailableAssessment(nextUpApp) ? (
+        <CandidatePanel accent="primary">
+          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="min-w-0 space-y-4">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                  Your next task
+                </p>
+                <h2 className="font-display text-xl font-semibold text-foreground">
+                  {nextUpApp.campaign}
+                </h2>
+                <p className="text-sm text-muted-foreground">{nextUpApp.role}</p>
+              </div>
+              <CandidateProgressHeader
+                completed={nextUpApp.completedCount}
+                total={nextUpApp.totalCount}
+                percent={nextUpApp.completionPercent}
+              />
+            </div>
+            <Button asChild className="h-11 shrink-0 gap-2 rounded-xl px-8 font-semibold">
+              <Link href={assessmentHrefFor(nextUpApp.key)}>
+                {nextUpApp.completedCount > 0 ? "Continue" : "Start now"}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
+        </CandidatePanel>
+      ) : null}
+
+      {!hasAnySessions && !isLoading ? (
+        <section className="space-y-6">
+          <CandidateEmptyState
+            icon={KeyRound}
+            title="No sessions linked yet"
+            description="Enter the Access Code from your hiring manager to connect your first assessment session."
+            action={
+              <div className="w-full max-w-md">
+                <CandidateLinkSessionPanel
+                  compactTitle="Link your first session"
                   value={accessCodeInput}
-                  onChange={(e) => setAccessCodeInput(e.target.value)}
+                  onChange={setAccessCodeInput}
+                  onSubmit={handleJoin}
+                  isSubmitting={isSubmitting}
+                  error={joinError}
+                  success={joinSuccess}
                 />
               </div>
-              <Button type="submit" className="h-14 rounded-xl px-8 text-base font-semibold shadow-md transition-[transform,background-color,border-color] hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" disabled={isSubmitting || !accessCodeInput.trim()}>
-                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : "Join Assessment"}
-              </Button>
-            </form>
-            {error && <p className="mt-3 text-sm text-red-400 font-medium motion-safe:animate-in motion-safe:slide-in-from-top-2">{error}</p>}
-            {success && <p className="mt-3 text-sm text-green-400 font-medium motion-safe:animate-in motion-safe:slide-in-from-top-2">{success}</p>}
-          </div>
-        </div>
-      </section>      {/* 2. TASK-ORIENTED DISPLAY: NEEDS ATTENTION */}
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <AlertCircle className="h-6 w-6 text-primary" aria-hidden="true" /> 
-              Needs Attention
-            </h2>
-            <p className="text-sm text-slate-400">Assessments that are currently active or awaiting your input.</p>
-          </div>
-          {activeApps.length > 0 && (
-             <Link href="/candidate-dashboard/my-assessments" className="text-sm font-semibold text-primary hover:underline hidden sm:flex items-center gap-1 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-md px-1.5 py-0.5">
-               View all <ArrowRight className="h-4 w-4" aria-hidden="true" />
-             </Link>
-          )}
-        </div>
-
-        {isLoading ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-	             {[1, 2, 3].map(i => (
-	                <DashboardInfoCard key={i} accent="muted" interactive={false} className="opacity-50 animate-pulse">
-	                  <CardHeader className="h-24 bg-muted/50 rounded-t-xl" />
-	                  <CardContent className="h-32" />
-	                </DashboardInfoCard>
-	             ))}
-          </div>
-        ) : activeApps.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {activeApps.map(app => {
-              const completed = app.completion?.completed || 0;
-              const total = Math.max(1, app.completion?.total || app.assessments?.length || 1);
-              const percent = Math.round((completed / total) * 100);
-              const applicationKey = getApplicationKey(app);
-              const assessmentHref = applicationKey
-                ? `/candidate-dashboard/my-assessments?session=${encodeURIComponent(applicationKey)}`
-                : "/candidate-dashboard/my-assessments";
-
-              return (
-	                <DashboardInfoCard key={app.documentId || app.candidateCode} accent="primary">
-	                  <CardHeader className="pb-4 pl-6">
-	                    <div className="flex justify-between items-start gap-2">
-	                        <div className="min-w-0">
-	                          <CardTitle className="text-xl font-bold line-clamp-1">{app.campaign?.name || "Assessment"}</CardTitle>
-	                          <CardDescription className="text-sm mt-1 text-muted-foreground truncate">{app.campaign?.jobRole || "Role"}</CardDescription>
-	                        </div>
-                        {mapPortalStatus(app) !== "In Progress" && mapPortalStatus(app) !== "Awaiting Assessment" && (
-                          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0 px-2.5 py-0.5 font-semibold rounded-lg pointer-events-none">
-                             {mapPortalStatus(app)}
-                          </Badge>
-                        )}
-	                    </div>
-	                  </CardHeader>
-	                  <CardContent className="space-y-5 pl-6">
-	                    <div className="grid grid-cols-2 gap-3">
-	                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-	                           <CalendarDays className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-	                           <span className="truncate">{formatDate(app.sessionStartsAt || app.campaign?.endDate)}</span>
-	                        </div>
-	                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                           {app.mode === "remote" ? (
-                             <>
-                               <Globe className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                               <span className="truncate">Remote Session</span>
-                             </>
-                           ) : app.mode === "in_person" ? (
-                             <>
-                               <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                               <span className="truncate">{app.campaign?.location || "In-person"}</span>
-                             </>
-                           ) : (
-                             <>
-                               <Target className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                               <span className="truncate">{formatMode(app.mode)}</span>
-                             </>
-                           )}
-                        </div>
-                    </div>
-
-                    {app.expiresAt && (
-                      <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/15 bg-amber-500/5 px-3 py-2 text-xs text-amber-500 dark:text-amber-400">
-                        <Clock3 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        <span className="font-medium">Session expires: {formatDate(app.expiresAt)}</span>
-                      </div>
-                    )}
-                    
-                    <div className="space-y-2 bg-muted/30 p-3.5 rounded-xl dark:bg-white/[0.02] shadow-inner border border-white/5">
-	                        <div className="flex justify-between text-xs font-semibold text-muted-foreground">
-	                           <span>Progress</span>
-	                           <span>{completed} / {total} Completed</span>
-	                        </div>
-                        <Progress value={percent} className="h-1.5 bg-muted dark:bg-white/10" />
-                    </div>
-
-                    {app.assessments && app.assessments.length > 0 && (
-                       <div className="space-y-2 pt-1 border-t border-border/50 dark:border-white/5">
-	                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assessments Included</p>
-	                        <div className="flex flex-wrap gap-1.5">
-	                          {app.assessments.slice(0, 3).map((ass) => (
-	                            <span key={ass.name || ass.slug} className={dashboardInfoPillClassName}>
-	                              {ass.name || ass.slug}
-	                            </span>
-	                          ))}
-	                          {app.assessments.length > 3 && (
-	                            <span className={dashboardInfoPillClassName}>
-	                              +{app.assessments.length - 3} more
-	                            </span>
-	                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <Button className="group w-full gap-2 font-semibold shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" asChild>
-                      <Link href={assessmentHref}>
-                        Continue Assessment <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-                      </Link>
-	                    </Button>
-	                  </CardContent>
-	                </DashboardInfoCard>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="relative overflow-hidden rounded-[2rem] border border-dashed border-border dark:border-white/10 bg-gradient-to-b from-white/[0.01] to-transparent p-12 text-center">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary mb-6 shadow-inner">
-              <CheckCircle2 className="h-7 w-7 motion-safe:animate-pulse" aria-hidden="true" />
-            </div>
-            <h3 className="text-xl font-bold text-foreground mb-2">You’re all caught up!</h3>
-            <p className="max-w-sm mx-auto text-sm text-slate-400 leading-relaxed">
-              You don’t have any active assessments right now. Enter your access code in the welcome hero above to link your session and begin.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {/* 3. HOW IT WORKS - REDESIGNED */}
-      <section className="space-y-8">
-        {/* Section Header */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-foreground">How It Works</h2>
-            <p className="text-sm text-slate-400">Your step-by-step guide to completing the assessment process.</p>
-          </div>
-          <Badge variant="outline" className="w-fit border-primary/20 bg-primary/15 px-3.5 py-1 text-primary font-semibold rounded-lg shadow-sm pointer-events-none">
-            <Route className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-            Candidate Journey
-          </Badge>
-        </div>
-
-        {/* Steps — vertical timeline on mobile, horizontal on lg+ */}
-        <div className="relative">
-
-
-          <div className="grid gap-6 lg:grid-cols-3 relative z-10">
-
-            {/* STEP 1 */}
-            <div className="flex flex-col gap-5">
-              {/* Icon + step badge */}
-              <div className="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-3">
-                <div className="relative shrink-0">
-                  <div className="h-[3.5rem] w-[3.5rem] rounded-2xl border border-primary/30 bg-primary/10 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.15)]">
-                    <KeyRound className="h-6 w-6 text-primary" aria-hidden="true" />
-                  </div>
-                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center shadow-md">1</span>
-                </div>
-                <div className="lg:hidden">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Step 01</p>
-                  <h3 className="text-lg font-bold text-foreground">Join Assessment Session</h3>
-                </div>
-              </div>
-              {/* Card */}
-              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 hover:border-primary/20 dark:hover:border-primary/20 group">
-                <div className="hidden lg:block">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1">Step 01</p>
-                  <h3 className="text-lg font-bold text-foreground">Join Assessment Session</h3>
-                </div>
-                <p className="text-sm leading-relaxed text-slate-400">
-                  Enter the <span className="text-foreground font-semibold">Access Code</span> provided by your Hiring Manager. We'll instantly link the correct assessment session, date, mode, and task list to your portal.
-                </p>
-                {/* Visual accent */}
-                <div className="rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-white/[0.02] px-4 py-3 flex items-center gap-3">
-                  <div className="font-mono text-base tracking-[0.25em] font-bold text-foreground bg-background dark:bg-[#04070d]/60 border border-border dark:border-white/10 px-3 py-1.5 rounded-lg text-xs">CTRL–9A2X</div>
-                  <ArrowRight className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
-                  <span className="text-xs text-slate-400 font-medium">Session linked</span>
-                </div>
-              </div>
-            </div>
-
-            {/* STEP 2 */}
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-3">
-                <div className="relative shrink-0">
-                  <div className="h-[3.5rem] w-[3.5rem] rounded-2xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.12)]">
-                    <ShieldCheck className="h-6 w-6 text-blue-400" aria-hidden="true" />
-                  </div>
-                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-blue-500 text-white text-[10px] font-black flex items-center justify-center shadow-md">2</span>
-                </div>
-                <div className="lg:hidden">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Step 02</p>
-                  <h3 className="text-lg font-bold text-foreground">Prepare for Your Mode</h3>
-                </div>
-              </div>
-              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 hover:border-blue-400/20 dark:hover:border-blue-400/20 group">
-                <div className="hidden lg:block">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mb-1">Step 02</p>
-                  <h3 className="text-lg font-bold text-foreground">Prepare for Your Mode</h3>
-                </div>
-                <p className="text-sm leading-relaxed text-slate-400">
-                  All assessment sessions follow the <span className="text-foreground font-semibold">same assessment standards</span> — but setup requirements differ based on delivery mode.
-                </p>
-                {/* Mode sub-cards */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-[#04070d]/50 p-3.5 space-y-1.5 hover:border-primary/20 transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      <Video className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
-                      <span className="text-xs font-bold text-foreground">Remote</span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-slate-400">Quiet space, stable internet, laptop or desktop required.</p>
-                  </div>
-                  <div className="rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-[#04070d]/50 p-3.5 space-y-1.5 hover:border-primary/20 transition-colors">
-                    <div className="flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5 text-primary shrink-0" aria-hidden="true" />
-                      <span className="text-xs font-bold text-foreground">In-person</span>
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-slate-400">Attend the venue or supervised session from the hiring team.</p>
+            }
+          />
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              { icon: KeyRound, title: "Join", copy: "Link your session with a single-use Access Code." },
+              { icon: ClipboardCheck, title: "Complete", copy: "Work through each assigned assessment in order." },
+              { icon: Sparkles, title: "Outcome", copy: "Your hiring team reviews submissions and follows up." },
+            ].map((step, index) => (
+              <CandidatePanel key={step.title}>
+                <div className="flex items-start gap-3 p-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+                    <step.icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div className="space-y-1">
+                    <p className="font-display text-sm font-semibold">
+                      {index + 1}. {step.title}
+                    </p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">{step.copy}</p>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* STEP 3 */}
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center gap-4 lg:flex-col lg:items-start lg:gap-3">
-                <div className="relative shrink-0">
-                  <div className="h-[3.5rem] w-[3.5rem] rounded-2xl border border-green-500/30 bg-green-500/10 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.12)]">
-                    <CheckCircle2 className="h-6 w-6 text-green-400" aria-hidden="true" />
-                  </div>
-                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-green-500 text-white text-[10px] font-black flex items-center justify-center shadow-md">3</span>
-                </div>
-                <div className="lg:hidden">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-green-400">Step 03</p>
-                  <h3 className="text-lg font-bold text-foreground">Submit & Await Outcome</h3>
-                </div>
-              </div>
-              <div className="flex-1 rounded-2xl border border-border bg-card dark:bg-[#0b1329]/30 dark:border-white/10 dark:backdrop-blur-md p-6 space-y-4 shadow-sm hover:shadow-md transition-[border-color,box-shadow] duration-300 hover:border-green-400/20 dark:hover:border-green-400/20 group">
-                <div className="hidden lg:block">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-green-400 mb-1">Step 03</p>
-                  <h3 className="text-lg font-bold text-foreground">Submit & Await Outcome</h3>
-                </div>
-                <p className="text-sm leading-relaxed text-slate-400">
-                  Once all assigned assessments are complete, your responses are <span className="text-foreground font-semibold">securely submitted</span> for the hiring team to review.
-                </p>
-                {/* Visual confirmation state */}
-                <div className="rounded-xl border border-green-500/15 bg-green-500/5 px-4 py-3 flex items-center gap-3">
-                  <div className="h-7 w-7 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-400" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-green-400">All responses submitted</p>
-                    <p className="text-[11px] text-slate-400">No further action required from you</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* 4. COMPLETED ASSESSMENTS (Collapsible/Secondary) */}
-      {completedApps.length > 0 && (
-        <section className="space-y-4 pt-6 border-t border-border dark:border-white/5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-400" aria-hidden="true" /> Past Assessments
-            </h3>
-            <span className="text-xs text-slate-400">{completedApps.length} session{completedApps.length !== 1 ? 's' : ''}</span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-             {completedApps.map(app => {
-                const applicationKey = getApplicationKey(app);
-                const assessmentHref = applicationKey
-                  ? `/candidate-dashboard/my-assessments?session=${encodeURIComponent(applicationKey)}`
-                  : "/candidate-dashboard/my-assessments";
-
-	                return (
-	                <Link key={app.documentId || app.candidateCode} href={assessmentHref} className="block group focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-2xl">
-	                  <DashboardInfoCard accent="muted" className="h-full">
-	                    <CardHeader className="p-4 pl-6 space-y-2">
-	                       <CardTitle className="text-base font-bold line-clamp-1 group-hover:text-primary transition-colors">{app.campaign?.name || "Assessment"}</CardTitle>
-	                       <CardDescription className="text-xs text-muted-foreground line-clamp-1">{app.campaign?.jobRole || "Role"}</CardDescription>
-	                       <Badge variant="outline" className="text-xs px-2 py-0.5 rounded-md text-slate-400 border-border dark:border-white/5">{mapPortalStatus(app)}</Badge>
-	                    </CardHeader>
-	                  </DashboardInfoCard>
-	                </Link>
-                );
-             })}
+              </CandidatePanel>
+            ))}
           </div>
         </section>
-      )}
+      ) : null}
 
+      {hasAnySessions ? (
+        <section className="space-y-5">
+          <CandidateSectionHeader
+            eyebrow="Active"
+            title="Sessions in progress"
+            description="Open a session to view your assessment journey and start tasks."
+            action={
+              activeApps.length > 0 ? (
+                <CandidateQuickLink href="/candidate-dashboard/my-assessments">
+                  Open workspace <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </CandidateQuickLink>
+              ) : null
+            }
+          />
+
+          {isLoading ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {[0, 1].map((i) => (
+                <CandidatePanel key={i}>
+                  <div className="h-40 animate-pulse bg-muted/20" />
+                </CandidatePanel>
+              ))}
+            </div>
+          ) : activeApps.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {activeApps.map((app) => {
+                const dateMeta = getActiveDateMeta(app);
+                const modeLabel =
+                  app.mode === "remote"
+                    ? "Remote"
+                    : app.mode === "in_person"
+                      ? app.location
+                      : app.modeLabel;
+
+                return (
+                  <CandidatePanel
+                    key={app.key}
+                    accent={hasAvailableAssessment(app) ? "primary" : "none"}
+                  >
+                    <div className="space-y-4 p-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h3 className="line-clamp-1 font-display text-lg font-semibold">
+                            {app.campaign}
+                          </h3>
+                          <p className="truncate text-sm text-muted-foreground">{app.role}</p>
+                        </div>
+                        <span className={`${statusBadgeClassName(app.status)} shrink-0`}>
+                          {app.status}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        {dateMeta ? (
+                          <CandidateMetaChip
+                            icon={CalendarClock}
+                            label={dateMeta.label}
+                            value={dateMeta.value}
+                          />
+                        ) : null}
+                        <CandidateMetaChip
+                          icon={app.mode === "remote" ? Globe : MapPin}
+                          label="Mode"
+                          value={modeLabel}
+                        />
+                      </div>
+
+                      <CandidateProgressHeader
+                        completed={app.completedCount}
+                        total={app.totalCount}
+                        percent={app.completionPercent}
+                      />
+
+                      <Button asChild variant={hasAvailableAssessment(app) ? "default" : "outline"} className="w-full gap-2 rounded-xl font-semibold">
+                        <Link href={assessmentHrefFor(app.key)}>
+                          {hasAvailableAssessment(app) ? "Continue" : "View session"}
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </CandidatePanel>
+                );
+              })}
+            </div>
+          ) : (
+            <CandidateEmptyState
+              icon={Briefcase}
+              title="No active sessions"
+              description="Your current sessions are complete or awaiting review. Link a new Access Code if you've been invited to another assessment."
+            />
+          )}
+        </section>
+      ) : null}
+
+      {hasAnySessions && !isLoading ? (
+        <CandidateLinkSessionPanel
+          value={accessCodeInput}
+          onChange={setAccessCodeInput}
+          onSubmit={handleJoin}
+          isSubmitting={isSubmitting}
+          error={joinError}
+          success={joinSuccess}
+        />
+      ) : null}
+
+      {pastApps.length > 0 ? (
+        <section className="space-y-5 border-t border-border/60 pt-8 dark:border-white/5">
+          <CandidateSectionHeader
+            eyebrow="History"
+            title="Past sessions"
+            description={`${pastApps.length} completed or closed session${pastApps.length !== 1 ? "s" : ""}.`}
+          />
+
+          <CandidatePanel>
+            <ul className="divide-y divide-border/60 dark:divide-white/5">
+              {pastApps.map((app) => (
+                <li key={app.key}>
+                  <Link
+                    href={assessmentHrefFor(app.key)}
+                    className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                  >
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="line-clamp-1 font-display text-sm font-semibold group-hover:text-primary">
+                          {app.campaign}
+                        </h3>
+                        <span className={`${statusBadgeClassName(app.status)} shrink-0`}>
+                          {app.status}
+                        </span>
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground">{app.role}</p>
+                    </div>
+                    <div className="hidden shrink-0 text-right text-xs sm:block">
+                      <p className="font-semibold tabular-nums">
+                        {app.completedCount}/{app.totalCount}
+                      </p>
+                      {app.completedAt ? (
+                        <p className="text-muted-foreground">
+                          {formatDate(app.completedAt)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </CandidatePanel>
+        </section>
+      ) : null}
     </div>
   );
 }

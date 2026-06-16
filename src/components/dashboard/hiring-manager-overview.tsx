@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +26,7 @@ import {
   type HiringManagerSessionListItem,
 } from "@/services/hiring-manager-portal-client.service";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
 
 function formatLastRefresh(value: number | null) {
   if (!value) return "Not refreshed yet";
@@ -111,7 +111,7 @@ export function HiringManagerOverview() {
   );
 
   return (
-    <div className="max-w-7xl space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-6">
       <HiringManagerPageHeader
         eyebrow="Hiring-manager overview"
         title="Overview"
@@ -139,10 +139,32 @@ export function HiringManagerOverview() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <OverviewMetric title="Campaigns" value={campaigns.length} detail="Configured campaign workspaces" icon={FolderKanban} />
-        <OverviewMetric title="Live sessions" value={metrics.liveSessions} detail={`${metrics.upcomingSessions} upcoming`} icon={CalendarClock} accent="success" />
-        <OverviewMetric title="Candidates joined" value={metrics.joinedCandidates} detail={`${metrics.completedCandidates} with submitted results`} icon={Users} accent="session" />
-        <OverviewMetric title="Pending approvals" value={metrics.pendingApprovals} detail="Campaigns waiting on client review" icon={ClipboardList} accent="warning" />
+        <PortalStatTile
+          label="Campaigns"
+          value={campaigns.length}
+          detail="Configured campaign workspaces"
+          icon={FolderKanban}
+        />
+        <PortalStatTile
+          label="Live sessions"
+          value={metrics.liveSessions}
+          detail={`${metrics.upcomingSessions} upcoming`}
+          icon={CalendarClock}
+          tone="success"
+        />
+        <PortalStatTile
+          label="Candidates joined"
+          value={metrics.joinedCandidates}
+          detail={`${metrics.completedCandidates} with submitted results`}
+          icon={Users}
+        />
+        <PortalStatTile
+          label="Pending approvals"
+          value={metrics.pendingApprovals}
+          detail="Campaigns waiting on client review"
+          icon={ClipboardList}
+          tone="attention"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -259,34 +281,5 @@ export function HiringManagerOverview() {
         </DashboardInfoCard>
       </div>
     </div>
-  );
-}
-
-function OverviewMetric({
-  title,
-  value,
-  detail,
-  icon: Icon,
-  accent = "primary",
-}: {
-  title: string;
-  value: number;
-  detail: string;
-  icon: LucideIcon;
-  accent?: "primary" | "success" | "session" | "warning";
-}) {
-  return (
-    <DashboardInfoCard accent={accent}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 pl-6">
-        <CardTitle className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</CardTitle>
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-          <Icon className="h-4 w-4" />
-        </div>
-      </CardHeader>
-      <CardContent className="pt-2 pl-6">
-        <div className="text-3xl font-extrabold text-foreground">{value}</div>
-        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
-      </CardContent>
-    </DashboardInfoCard>
   );
 }

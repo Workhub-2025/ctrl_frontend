@@ -75,9 +75,9 @@ function RoleDashboardHeader({
       : user?.name || `${(user as any)?.firstName || ""} ${(user as any)?.lastName || ""}`.trim() || "CTRL User";
   const displayEmail = userProfile?.email || user?.email;
 
-  const initials = displayName
+  const initials = String(displayName)
     .split(" ")
-    .map((n) => n[0])
+    .map((n: string) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2);
@@ -90,7 +90,7 @@ function RoleDashboardHeader({
         {hideSidebar && (
           <Link href={homeHref} className="flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-lg">
             <img
-              src="/assets/newlogo.png"
+              src="/assets/newlogo.svg"
               className="h-8 w-8 object-contain object-center scale-125 pointer-events-none hue-rotate-[60deg] logo-adaptive-filter"
               alt="CTRL Logo"
             />
@@ -235,7 +235,7 @@ function RoleDashboardFrame({
               className="flex items-center gap-3 px-2 py-1.5 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
             >
               <img
-                src="/assets/newlogo.png"
+                src="/assets/newlogo.svg"
                 className="h-9 w-9 object-contain object-center scale-125 pointer-events-none hue-rotate-[60deg] transition-transform duration-300 hover:rotate-6 logo-adaptive-filter"
                 alt="CTRL Logo"
               />

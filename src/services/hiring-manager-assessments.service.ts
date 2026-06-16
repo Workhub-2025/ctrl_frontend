@@ -16,10 +16,12 @@ function getStrapiBaseUrl() {
 }
 
 function getStrapiApiToken() {
+  // This service only reads assessment content. Prefer a read-only token and
+  // never reach for the full-access token here — the user's session JWT is the
+  // primary credential (see getStrapiAuthToken).
   return (
-    process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
-    process.env.STRAPI_API_TOKEN ||
     process.env.STRAPI_API_READONLY_TOKEN ||
+    process.env.STRAPI_API_TOKEN ||
     undefined
   );
 }

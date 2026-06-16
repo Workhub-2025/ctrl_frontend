@@ -65,6 +65,10 @@ export const isAdminRole = (role: unknown) => {
 };
 
 export const inferDevSeededRole = (email?: string | null): AppRole | null => {
+  // Demo email → role mapping is a local dev convenience only. In production we
+  // must trust the role Strapi returns, never a hardcoded email, to prevent
+  // privilege escalation if a demo account ever exists in a prod database.
+  if (process.env.NODE_ENV === "production") return null;
   if (!email) return null;
   return DEV_SEEDED_ROLE_BY_EMAIL[email.trim().toLowerCase()] ?? null;
 };

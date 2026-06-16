@@ -23,10 +23,20 @@ import {
 } from "@/components/ui/select";
 import { Ticket, CheckCircle, Loader2, Send } from "lucide-react";
 import { SupportTicketService } from "@/services/support-ticket.service";
+import type { CandidateSessionContext } from "@/components/dashboard/candidate/candidate-portal-ui";
 
 interface CreateTicketDialogProps {
   children?: React.ReactNode;
   triggerLabel?: string;
+  /** Controlled open state (optional). Falls back to internal state. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultOpen?: boolean;
+  /** Pre-fill the subject field when the dialog opens. */
+  defaultSubject?: string;
+  /** Called after a ticket is submitted successfully. */
+  onSuccess?: () => void;
+  sessionContext?: CandidateSessionContext;
 }
 
 const CATEGORIES = [
@@ -47,10 +57,18 @@ const PRIORITIES = [
 export function CreateTicketDialog({
   children,
   triggerLabel = "Create Ticket",
+  open: controlledOpen,
+  onOpenChange,
+  defaultOpen = false,
+  defaultSubject = "",
+  onSuccess,
+  sessionContext,
 }: CreateTicketDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
   const [category, setCategory] = useState("");
-  const [subject, setSubject] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("normal");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,7 +82,7 @@ export function CreateTicketDialog({
 
   const resetForm = () => {
     setCategory("");
-    setSubject("");
+    setSubject(defaultSubject);
     setDescription("");
     setPriority("normal");
     setIsSubmitting(false);
@@ -75,7 +93,8 @@ export function CreateTicketDialog({
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
-    setOpen(nextOpen);
+    if (!isControlled) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
     if (!nextOpen) {
       setTimeout(resetForm, 300);
     }
@@ -111,11 +130,13 @@ export function CreateTicketDialog({
         metadata: {
           pageUrl: window.location.pathname,
           userAgent: navigator.userAgent,
+          ...(sessionContext ?? {}),
         },
       });
 
       setTicketNumber(ticket?.ticketNumber || "CTRL-XXXX");
       setIsSuccess(true);
+      onSuccess?.();
     } catch (err) {
       setError(
         err instanceof Error
@@ -138,46 +159,66 @@ export function CreateTicketDialog({
         )}
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-            <Ticket className="h-5 w-5 text-primary" aria-hidden="true" />
-            Create Support Ticket
-          </DialogTitle>
-          <DialogDescription className="text-sm text-slate-400">
-            Submit a detailed ticket and our team will review it shortly.
-          </DialogDescription>
+      <DialogContent className="overflow-hidden sm:max-w-[520px]">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"
+          aria-hidden="true"
+        />
+        <DialogHeader className="pr-10">
+          <div className="flex items-start gap-3">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"
+              aria-hidden="true"
+            >
+              <Ticket className="h-5 w-5" />
+            </span>
+            <div className="space-y-1">
+              <DialogTitle className="font-display text-lg font-bold tracking-tight text-foreground">
+                Create Support Ticket
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Submit a detailed ticket and our team will review it shortly.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
 
         {isSuccess ? (
-          <div className="flex flex-col items-center justify-center py-10 gap-4 motion-safe:animate-in motion-safe:fade-in duration-300">
-            <div className="h-14 w-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center gap-4 py-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-300">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10">
               <CheckCircle
-                className="h-7 w-7 text-emerald-400"
+                className="h-7 w-7 text-emerald-500 dark:text-emerald-400"
                 aria-hidden="true"
               />
             </div>
-            <div className="text-center space-y-1">
-              <p className="font-mono text-xl font-bold text-primary tracking-wider">
+            <div className="space-y-1.5 text-center">
+              <p className="font-mono text-xl font-bold tracking-wider text-primary">
                 {ticketNumber}
               </p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="font-display text-lg font-bold text-foreground">
                 Ticket submitted successfully
               </p>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Your ticket has been submitted. We&apos;ll review it shortly.
               </p>
             </div>
+            <Button
+              type="button"
+              onClick={() => handleOpenChange(false)}
+              className="mt-2 h-10 rounded-lg px-8 font-semibold focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            >
+              Done
+            </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+          <form onSubmit={handleSubmit} className="space-y-5 pt-1">
             {/* Category */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Category <span className="text-red-400">*</span>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Category <span className="text-destructive">*</span>
               </label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="h-10 rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus:ring-primary">
+                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary dark:border-white/10 dark:bg-white/[0.02]">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -189,7 +230,7 @@ export function CreateTicketDialog({
                 </SelectContent>
               </Select>
               {fieldErrors.category && (
-                <p className="text-xs text-red-400 font-medium">
+                <p className="text-xs font-medium text-destructive">
                   {fieldErrors.category}
                 </p>
               )}
@@ -199,9 +240,9 @@ export function CreateTicketDialog({
             <div className="space-y-2">
               <label
                 htmlFor="ticket-subject"
-                className="text-xs font-semibold uppercase tracking-wider text-slate-400"
+                className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
               >
-                Subject <span className="text-red-400">*</span>
+                Subject <span className="text-destructive">*</span>
               </label>
               <Input
                 id="ticket-subject"
@@ -209,17 +250,17 @@ export function CreateTicketDialog({
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Brief summary of the issue"
                 maxLength={200}
-                className="h-10 rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary"
+                className="h-10 rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
               />
-              <div className="flex justify-between">
+              <div className="flex items-center justify-between gap-3">
                 {fieldErrors.subject ? (
-                  <p className="text-xs text-red-400 font-medium">
+                  <p className="text-xs font-medium text-destructive">
                     {fieldErrors.subject}
                   </p>
                 ) : (
                   <span />
                 )}
-                <p className="text-[10px] text-slate-500">
+                <p className="text-[11px] font-medium tabular-nums text-muted-foreground">
                   {subject.length}/200
                 </p>
               </div>
@@ -229,9 +270,9 @@ export function CreateTicketDialog({
             <div className="space-y-2">
               <label
                 htmlFor="ticket-description"
-                className="text-xs font-semibold uppercase tracking-wider text-slate-400"
+                className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
               >
-                Description <span className="text-red-400">*</span>
+                Description <span className="text-destructive">*</span>
               </label>
               <Textarea
                 id="ticket-description"
@@ -239,21 +280,21 @@ export function CreateTicketDialog({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Please describe the issue in detail (min. 20 characters)"
                 rows={5}
-                className="rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary resize-none"
+                className="resize-none rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
               />
-              <div className="flex justify-between">
+              <div className="flex items-center justify-between gap-3">
                 {fieldErrors.description ? (
-                  <p className="text-xs text-red-400 font-medium">
+                  <p className="text-xs font-medium text-destructive">
                     {fieldErrors.description}
                   </p>
                 ) : (
                   <span />
                 )}
                 <p
-                  className={`text-[10px] ${
+                  className={`text-[11px] font-medium tabular-nums ${
                     description.length > 0 && description.length < 20
-                      ? "text-red-400"
-                      : "text-slate-500"
+                      ? "text-destructive"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {description.length} characters
@@ -266,11 +307,11 @@ export function CreateTicketDialog({
 
             {/* Priority */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
                 Priority
               </label>
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="h-10 rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus:ring-primary">
+                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary dark:border-white/10 dark:bg-white/[0.02]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -285,22 +326,30 @@ export function CreateTicketDialog({
 
             {/* Page Context */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Page Context
+              <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Context
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Badge
                   variant="outline"
-                  className="border-white/10 bg-white/5 text-slate-400 font-mono text-xs px-3 py-1.5 rounded-lg pointer-events-none truncate max-w-full"
+                  className="pointer-events-none max-w-full truncate rounded-lg border-border bg-muted/50 px-3 py-1.5 font-mono text-xs text-muted-foreground dark:border-white/10 dark:bg-white/5"
                 >
                   {pageContext || "/"}
                 </Badge>
+                {sessionContext?.campaign ? (
+                  <Badge
+                    variant="outline"
+                    className="pointer-events-none max-w-full truncate rounded-lg px-3 py-1.5 text-xs"
+                  >
+                    {sessionContext.campaign}
+                  </Badge>
+                ) : null}
               </div>
             </div>
 
             {/* Error */}
             {error && (
-              <p className="text-sm text-red-400 font-medium motion-safe:animate-in motion-safe:slide-in-from-top-2">
+              <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive motion-safe:animate-in motion-safe:slide-in-from-top-2">
                 {error}
               </p>
             )}
@@ -314,7 +363,7 @@ export function CreateTicketDialog({
                 !subject.trim() ||
                 description.trim().length < 20
               }
-              className="w-full h-11 rounded-lg font-semibold gap-2 shadow-md transition-transform hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              className="h-11 w-full gap-2 rounded-lg font-semibold shadow-md transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-safe:hover:scale-[1.01]"
             >
               {isSubmitting ? (
                 <>

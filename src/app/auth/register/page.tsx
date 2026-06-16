@@ -233,15 +233,8 @@ function UnifiedAuthContent() {
         accessCode: formData.accessCode.trim(),
       };
 
-      console.log("📝 Registration data being sent:", {
-        ...registrationData,
-        password: "[HIDDEN]",
-        accessCode: "[HIDDEN]",
-      });
-
       // Call registration via useAuth hook. Backend validates and attaches the access code.
-      const result = await registerUser(registrationData);
-      console.log("✅ Registration result:", result);
+      await registerUser(registrationData);
       setSubmitStatus("success");
       // Success will be handled by the useAuth hook (redirect to login)
       // No need to set success state here since we'll be redirected
@@ -299,24 +292,78 @@ function UnifiedAuthContent() {
         {/* Background Visuals */}
         <div className="absolute inset-0 pointer-events-none z-0">
           <AnimatedBackground disabled={reduceMotion} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black opacity-80 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/90 mix-blend-multiply" />
+          {/* Reticle grid echoing the logo registration marks */}
+          <div
+            aria-hidden
+            className="absolute inset-0 opacity-[0.18]"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, rgba(148,163,184,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.4) 1px, transparent 1px)",
+              backgroundSize: "56px 56px",
+              maskImage: "radial-gradient(ellipse 80% 70% at 30% 40%, black 20%, transparent 80%)",
+              WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 30% 40%, black 20%, transparent 80%)",
+            }}
+          />
+          <div
+            aria-hidden
+            className="absolute left-[12%] top-[34%] h-[28rem] w-[28rem] rounded-full blur-3xl"
+            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.18), rgba(37,99,235,0.06) 45%, transparent 70%)" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 mix-blend-multiply" />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/80 mix-blend-multiply" />
         </div>
 
+        {/* Corner registration ticks */}
+        <span aria-hidden className="pointer-events-none absolute left-8 top-8 z-10 h-6 w-6 border-l-2 border-t-2 border-white/15" />
+        <span aria-hidden className="pointer-events-none absolute bottom-8 right-8 z-10 h-6 w-6 border-b-2 border-r-2 border-white/15" />
+
         {/* Top Branding */}
-        <div className="relative z-10">
+        <div className="relative z-10 flex items-center justify-between">
           <Link href="/" className="inline-block transition-transform hover:scale-105">
             <BrandLogo layout="horizontal" className="h-10 w-[4.5rem]" />
           </Link>
+          <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+            Secure access
+          </span>
+        </div>
+
+        {/* Middle Value Proposition */}
+        <div className="relative z-10 max-w-lg">
+          <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-400/80">
+            Dispatch Intelligence Platform
+          </p>
+          <h2 className="text-4xl font-medium leading-[1.1] tracking-tight text-white xl:text-5xl">
+            Recruit for the moments that{" "}
+            <span className="bg-gradient-to-r from-sky-300 to-blue-400 bg-clip-text text-transparent">
+              actually matter
+            </span>
+            .
+          </h2>
+          <ul className="mt-8 space-y-3.5">
+            {[
+              "Behavioural scoring under real pressure",
+              "Pressure-tested operational scenarios",
+              "Three role-built portals, one platform",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-3 text-[15px] text-slate-300">
+                <CheckCircle className="h-4 w-4 shrink-0 text-cyan-400" />
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Bottom Narrative */}
         <div className="relative z-10 max-w-lg">
-          <blockquote className="space-y-6">
-            <p className="text-3xl font-medium leading-tight tracking-tight text-white">
+          <blockquote className="space-y-4 border-l-2 border-cyan-400/40 pl-5">
+            <p className="text-xl font-medium leading-snug tracking-tight text-white/90">
               "We stopped guessing based on interviews. Now we evaluate candidates under actual control room pressure."
             </p>
-            <footer className="text-sm font-semibold text-cyan-400 uppercase tracking-widest flex items-center gap-3">
+            <footer className="flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">
               <span className="h-px w-8 bg-cyan-400" />
               Mission Critical Assessment
             </footer>
@@ -364,37 +411,43 @@ function UnifiedAuthContent() {
             </div>
           ) : (
             <div className="relative animate-in fade-in slide-in-from-bottom-4 duration-500" aria-busy={isAuthBusy}>
-              {/* Sleek Tab Toggle */}
-              <div className="mb-8 flex items-center gap-6 border-b border-white/10 pb-4">
+              {/* Segmented toggle */}
+              <div
+                role="tablist"
+                aria-label="Authentication mode"
+                className="mb-8 grid grid-cols-2 gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1"
+              >
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={isLoginView}
                   onClick={() => switchAuthMode(true)}
                   disabled={isAuthBusy}
                   className={cn(
-                    "relative pb-2 text-lg font-medium transition-colors",
-                    isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300",
+                    "rounded-full py-2.5 text-sm font-medium transition-all duration-300",
+                    isLoginView
+                      ? "bg-white text-black shadow-sm"
+                      : "text-slate-400 hover:text-white",
                     isAuthBusy && "cursor-not-allowed opacity-60"
                   )}
                 >
                   Sign In
-                  {isLoginView && (
-                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-cyan-400" />
-                  )}
                 </button>
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={!isLoginView}
                   onClick={() => switchAuthMode(false)}
                   disabled={isAuthBusy}
                   className={cn(
-                    "relative pb-2 text-lg font-medium transition-colors",
-                    !isLoginView ? "text-white" : "text-slate-500 hover:text-slate-300",
+                    "rounded-full py-2.5 text-sm font-medium transition-all duration-300",
+                    !isLoginView
+                      ? "bg-white text-black shadow-sm"
+                      : "text-slate-400 hover:text-white",
                     isAuthBusy && "cursor-not-allowed opacity-60"
                   )}
                 >
                   Create Account
-                  {!isLoginView && (
-                    <span className="absolute -bottom-[17px] left-0 right-0 h-[2px] rounded-t-full bg-cyan-400" />
-                  )}
                 </button>
               </div>
 
@@ -404,8 +457,8 @@ function UnifiedAuthContent() {
                   {isLoginView ? "Welcome back" : "Join the platform"}
                 </h1>
                 <p className="text-sm text-slate-400">
-                  {isLoginView 
-                    ? "Enter your credentials to securely access your workspace." 
+                  {isLoginView
+                    ? "Enter your credentials to securely access your workspace."
                     : "Use your agency access code to configure your new account."}
                 </p>
               </div>

@@ -69,7 +69,7 @@ function AdminHeader({
       <div className="text-foreground">
         <SidebarTrigger />
       </div>
-      <div className="flex-1 text-center px-3">
+      <div className="min-w-0 flex-1 px-3 text-center">
         <p className="truncate text-sm font-semibold text-foreground font-display">
           Admin Control Panel
         </p>
@@ -154,7 +154,7 @@ export default function AdminLayout({
               className="flex items-center gap-3 px-2 py-1.5 transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
             >
               <img
-                src="/assets/newlogo.png"
+                src="/assets/newlogo.svg"
                 className="h-9 w-9 object-contain object-center scale-125 pointer-events-none transition-transform duration-300 hover:rotate-6 logo-adaptive-filter"
                 alt="CTRL Logo"
               />
@@ -311,7 +311,7 @@ export default function AdminLayout({
             updateAccessibilitySettings={updateAccessibilitySettings}
             resetAccessibilitySettings={resetAccessibilitySettings}
           />
-          <main className="flex-1 p-4 sm:p-6 md:p-8">{children}</main>
+          <main className="mx-auto w-full max-w-7xl p-4 sm:p-5 md:p-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>
       </div>

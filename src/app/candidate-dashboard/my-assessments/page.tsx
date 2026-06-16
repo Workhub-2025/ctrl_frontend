@@ -1,5 +1,8 @@
 import { Suspense } from "react";
-import { CandidateDashboardContent } from "@/components/dashboard/candidate-dashboard-content";
+import {
+  CandidateAssessmentsLoadingSkeleton,
+  CandidateDashboardContent,
+} from "@/components/dashboard/candidate-dashboard-content";
 
 export const metadata = {
   title: "My Assessments",
@@ -7,7 +10,7 @@ export const metadata = {
 
 export default function MyAssessmentsPage() {
   return (
-    <Suspense fallback={<div>Loading…</div>}>
+    <Suspense fallback={<CandidateAssessmentsLoadingSkeleton />}>
       <CandidateDashboardContent />
     </Suspense>
   );

@@ -19,6 +19,7 @@ export default function HiringManagerDashboardLayout({
     <RoleDashboardShell
       title="Hiring Manager Portal"
       subtitle="Campaign operations, candidate completion, and report-ready review"
+      contentWidth="wide"
       navItems={[
         {
           href: "/hiring-manager-dashboard/",

@@ -1,7 +1,7 @@
 "use client";
 
-import { ClientDashboardContent } from "@/components/dashboard/client-dashboard-content";
+import { ClientOverviewContent } from "@/components/dashboard/client";
 
 export default function ClientDashboardPage() {
-  return <ClientDashboardContent />;
+  return <ClientOverviewContent />;
 }

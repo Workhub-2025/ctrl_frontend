@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronDown, Volume2 } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { AnimatedBackground } from "@/components/ui/animated-background";
@@ -42,75 +42,121 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
   if (!mounted) return null;
 
   // Extract color for gradient (e.g., from "bg-[#000f24]" to "#000f24")
-  const gradientColor = bgColor.startsWith("bg-[") 
-    ? bgColor.slice(4, -1) 
+  const gradientColor = bgColor.startsWith("bg-[")
+    ? bgColor.slice(4, -1)
     : bgColor.replace("bg-", "");
+
+  const container: Variants = {
+    hidden: {},
+    show: {
+      transition: { staggerChildren: 0.12, delayChildren: 0.15 },
+    },
+  };
+
+  const rise: Variants = {
+    hidden: { opacity: 0, y: 26, filter: "blur(8px)" },
+    show: {
+      opacity: 1,
+      y: 0,
+      filter: "blur(0px)",
+      transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] },
+    },
+  };
 
   return (
     <section
       id="landing-hero"
-      className={`relative min-h-[95svh] lg:min-h-[105svh] overflow-hidden flex flex-col items-center justify-center pb-20 ${bgColor}`}
+      className={`relative min-h-[92svh] lg:min-h-[100svh] overflow-hidden flex flex-col items-center justify-center pb-20 ${bgColor}`}
     >
       {/* Animated Data Streams Background */}
       <AnimatedBackground disabled={reduceMotion} />
-      
+
+      {/* Reticle grid — echoes the logo's registration marks, very subtle */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-0 pointer-events-none opacity-[0.18] dark:opacity-[0.22]"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
+          color: "rgb(148 163 184 / 0.35)",
+          maskImage: "radial-gradient(ellipse 70% 60% at 50% 42%, black 30%, transparent 78%)",
+          WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 42%, black 30%, transparent 78%)",
+        }}
+      />
+
+      {/* Soft radial spotlight behind the headline */}
+      <motion.div
+        aria-hidden
+        className="absolute left-1/2 top-[38%] z-0 h-[42rem] w-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(56,189,248,0.16) 0%, rgba(37,99,235,0.08) 38%, transparent 70%)",
+        }}
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.85 }}
+        animate={reduceMotion ? {} : { opacity: [0.7, 1, 0.7], scale: [0.95, 1.04, 0.95] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+      />
+
       {/* Soft bottom fade to seamlessly blend into the next section */}
-      <div 
-        className="absolute bottom-0 inset-x-0 h-48 pointer-events-none z-0" 
+      <div
+        className="absolute bottom-0 inset-x-0 h-48 pointer-events-none z-[1]"
         style={{ background: `linear-gradient(to top, ${gradientColor.startsWith('#') ? gradientColor : (gradientColor === 'black' ? 'black' : 'var(--tw-gradient-from)')}, transparent)` }}
       />
 
       <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6" style={{ paddingTop: navHeight }}>
-        <div className="flex flex-col items-center text-center max-w-[56rem] mx-auto gap-8">
-          
+        <motion.div
+          variants={container}
+          initial={reduceMotion ? false : "hidden"}
+          animate={reduceMotion ? undefined : "show"}
+          className="flex flex-col items-center text-center max-w-[58rem] mx-auto gap-7"
+        >
           {/* Technical Tag Eyebrow */}
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 15 }}
-            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-white/5 px-3.5 py-1.5 text-[11px] font-mono tracking-wider text-slate-500 dark:text-slate-400 backdrop-blur-sm pointer-events-none">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              SYS_STATUS: ACTIVE // DISPATCH_STACK_ONLINE
+          <motion.div variants={rise}>
+            <div className="group inline-flex items-center gap-2.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.04] px-4 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 backdrop-blur-sm pointer-events-none">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              Dispatch Intelligence Platform
             </div>
           </motion.div>
 
           {/* Main Headline */}
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          <motion.h1
+            variants={rise}
+            className="text-[2.75rem] leading-[1.05] sm:text-6xl lg:text-[4.75rem] lg:leading-[1.04] font-medium tracking-tight text-slate-900 dark:text-white font-display text-balance"
           >
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight text-slate-900 dark:text-white leading-[1.08] font-display text-balance">
-              Hiring the Right People Starts with the Right Intelligence
-            </h1>
-          </motion.div>
+            Hiring the right people starts with the{" "}
+            <span className="relative whitespace-nowrap">
+              <span className="bg-gradient-to-r from-sky-500 to-blue-600 dark:from-sky-300 dark:to-blue-400 bg-clip-text text-transparent">
+                right intelligence
+              </span>
+            </span>
+          </motion.h1>
 
           {/* Subtitle */}
-          <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
+          <motion.p
+            variants={rise}
+            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-light"
           >
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-light">
-              CTRL reveals how candidates think, respond and perform under pressure, providing the behavioural insight needed to recruit with confidence, reduce risk and build stronger operational teams.
-            </p>
-          </motion.div>
+            CTRL reveals how candidates think, respond and perform under pressure — giving you the
+            behavioural insight to recruit with confidence, reduce risk and build stronger
+            operational teams.
+          </motion.p>
 
           {/* Call to Action Buttons */}
           <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
+            variants={rise}
+            className="mt-2 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
           >
             <Button
               asChild
-              className="h-12 md:h-14 rounded-full bg-slate-900 dark:bg-white px-8 text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors text-sm md:text-base font-medium w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50"
+              className="group h-12 md:h-14 rounded-full bg-slate-900 dark:bg-white px-8 text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors text-sm md:text-base font-medium w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50"
             >
               <Link href="/auth/register?mode=register" className="flex items-center justify-center">
                 Get Started
-                <ArrowRight className="h-4 w-4 ml-2" aria-hidden="true" />
+                <ArrowRight className="h-4 w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
               </Link>
             </Button>
             <Button
@@ -123,52 +169,34 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
             </Button>
           </motion.div>
 
-          {/* Minimal Waveform Monitor Widget (Center-aligned) */}
+          {/* Trust strip — quiet proof points instead of a noisy widget */}
           <motion.div
-            initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-            animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: "easeOut" }}
-            className="w-full max-w-lg mt-8 relative rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md shadow-lg dark:shadow-2xl p-4 flex flex-col gap-3 font-mono text-xs text-left select-none telemetry-grid"
+            variants={rise}
+            className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-mono uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500"
           >
-            <div className="flex justify-between items-center text-[10px] text-slate-500">
-              <span className="flex items-center gap-1.5 uppercase tracking-wider">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Voice Connection // Live Telemetry Feed
-              </span>
-              <span>TIME 01:14</span>
-            </div>
-            
-            <div className="w-full h-12 rounded-lg border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative flex items-center justify-center p-2">
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_0%,rgba(255,255,255,0.01)_50%,transparent_100%)] pointer-events-none" />
-              <div className="flex items-center gap-1.5 w-full justify-center relative z-10">
-                {[16, 28, 18, 38, 22, 32, 14, 30, 20, 34, 15, 26, 12, 22, 30, 42, 28, 48, 16, 33, 49, 12, 24, 38].map((peak, i) => (
-                  <motion.div
-                    key={i}
-                    className="w-1 bg-slate-400 dark:bg-white/30 rounded-full"
-                    style={{ height: "10px" }}
-                    animate={reduceMotion ? {} : { height: ["10px", `${peak / 1.3}px`, "10px"] }}
-                    transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.05, ease: "easeInOut" }}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center text-[9px] text-slate-500 tracking-wider">
-              <span>GEO_REF: 51.5074° N, 0.1278° W</span>
-              <span>WPM: 72 // ACCURACY: 98.4%</span>
-            </div>
+            <span className="flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-sky-500/70" />
+              Behavioural scoring
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-sky-500/70" />
+              Pressure-tested scenarios
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="h-1 w-1 rounded-full bg-sky-500/70" />
+              Three role-built portals
+            </span>
           </motion.div>
-
-        </div>
+        </motion.div>
       </div>
 
       {/* Scroll Down Indicator */}
       <motion.button
         onClick={() => scrollToScene("capabilities")}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-        initial={reduceMotion ? false : { opacity: 0, y: -10 }}
-        animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.8, ease: "easeOut" }}
+        initial={reduceMotion ? false : { opacity: 0 }}
+        animate={reduceMotion ? {} : { opacity: 1 }}
+        transition={{ duration: 0.8, delay: 1.1, ease: "easeOut" }}
         aria-label="Scroll down"
       >
         <motion.div
