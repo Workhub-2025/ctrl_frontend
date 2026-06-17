@@ -13,6 +13,11 @@ export default withAuth(
             return portalApiResponse;
         }
 
+        const assessmentApiResponse = guardAssessmentApiRoute(pathname, !!token);
+        if (assessmentApiResponse) {
+            return assessmentApiResponse;
+        }
+
         // Protect admin routes - only allow admin users
         if (pathname.startsWith('/admin')) {
             if (!token) {
@@ -52,7 +57,8 @@ export default withAuth(
                 if (
                     pathname.startsWith('/api/hiring-manager') ||
                     pathname.startsWith('/api/client') ||
-                    pathname.startsWith('/api/admin')
+                    pathname.startsWith('/api/admin') ||
+                    pathname.startsWith('/api/assessment')
                 ) {
                     return true;
                 }
@@ -96,5 +102,6 @@ export const config = {
         '/api/hiring-manager/:path*',
         '/api/client/:path*',
         '/api/admin/:path*',
+        '/api/assessment/:path*',
     ]
 };

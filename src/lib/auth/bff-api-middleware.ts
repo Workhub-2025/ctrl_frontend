@@ -40,3 +40,19 @@ export function guardPortalApiRoute(
 
   return null;
 }
+
+const ASSESSMENT_API_PREFIX = '/api/assessment';
+
+/** Requires any authenticated portal user for assessment BFF routes. */
+export function guardAssessmentApiRoute(
+  pathname: string,
+  hasToken: boolean,
+): NextResponse | null {
+  if (!pathname.startsWith(ASSESSMENT_API_PREFIX)) return null;
+
+  if (!hasToken) {
+    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+  }
+
+  return null;
+}
