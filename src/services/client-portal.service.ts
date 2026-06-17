@@ -88,6 +88,18 @@ export type ClientSharedCandidate = {
   role: string;
 };
 
+export type ClientOutreachTemplateKey = "inperson" | "phone";
+
+export type ClientOutreachTemplatePrefill = {
+  subject: string;
+  body: string;
+};
+
+export type ClientOutreachTemplates = Record<
+  ClientOutreachTemplateKey,
+  ClientOutreachTemplatePrefill
+>;
+
 export type ClientAccessCode = {
   documentId: string;
   code?: string;
@@ -437,4 +449,39 @@ export async function updateSharedCandidateReviewStatus(
     }
   );
   return response.data ? normalizeSharedCandidate(response.data) : null;
+}
+
+export async function getSharedCandidateMessageTemplates(
+  sharedCandidateDocumentId: string
+): Promise<ClientOutreachTemplates> {
+  const response = await strapiRequest<{ data?: ClientOutreachTemplates }>(
+    `/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/message-templates`
+  );
+  return (
+    response.data ?? {
+      inperson: { subject: "", body: "" },
+      phone: { subject: "", body: "" },
+    }
+  );
+}
+
+export async function sendSharedCandidateMessage(
+  sharedCandidateDocumentId: string,
+  payload: {
+    subject: string;
+    body: string;
+    templateKey?: ClientOutreachTemplateKey;
+  }
+): Promise<{ sent: string[]; failed: string[] }> {
+  const response = await strapiRequest<{
+    data?: { sent?: string[]; failed?: string[] };
+  }>(`/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/message`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  return {
+    sent: response.data?.sent ?? [],
+    failed: response.data?.failed ?? [],
+  };
 }

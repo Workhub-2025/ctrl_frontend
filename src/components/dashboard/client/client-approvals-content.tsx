@@ -5,6 +5,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ClipboardCheck,
+  Mail,
   RefreshCw,
   UserCheck,
   XCircle,
@@ -27,6 +28,7 @@ import {
 } from "@/components/dashboard/portal/portal-ui";
 import { portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { useClientPortal } from "@/context/client-portal-provider";
+import { ClientCandidateOutreachDialog } from "@/components/dashboard/client/client-candidate-outreach-dialog";
 import type { ClientSharedCandidate } from "@/services/client-portal.service";
 import { cn } from "@/lib/utils";
 
@@ -314,6 +316,18 @@ export function ClientApprovalsContent() {
                           <p className="text-xs text-muted-foreground">
                             {candidate.role} · Recommended by {candidate.hiringManagerName}
                           </p>
+                        </div>
+                        <div className="flex shrink-0 items-start">
+                          <ClientCandidateOutreachDialog candidate={candidate}>
+                            <Button
+                              variant="outline"
+                              className="gap-2 rounded-xl font-semibold"
+                              disabled={!candidate.candidateEmail}
+                            >
+                              <Mail className="h-4 w-4" aria-hidden="true" />
+                              Send message
+                            </Button>
+                          </ClientCandidateOutreachDialog>
                         </div>
                       </div>
                     </li>
