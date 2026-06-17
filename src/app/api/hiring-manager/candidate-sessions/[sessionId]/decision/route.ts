@@ -15,84 +15,95 @@ function getStrapiBaseUrl() {
   );
 }
 
+import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ sessionId: string }> }
 ) {
-  const { sessionId } = await context.params;
-  const session = await getServerSession(authOptions);
-  const strapiJwt = await getServerStrapiJwt(request);
-  const limiter = await applyRateLimit({
-    key: `hm-candidate-decision:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
-    limit: 20,
-    windowMs: 60_000,
-  });
-
-  if (!limiter.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Please retry shortly." },
-      {
-        status: 429,
-        headers: {
-          "retry-after": String(limiter.retryAfterSeconds),
-        },
-      }
-    );
-  }
-
-  if (!session?.user?.id || !strapiJwt) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
-
-  let body: { decision?: string; note?: string } = {};
   try {
-    body = (await request.json()) as { decision?: string; note?: string };
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
-  }
+    await requireHmSession();
 
-  if (!body.decision || !["approve", "reject"].includes(body.decision)) {
-    return NextResponse.json(
-      { error: "decision must be approve or reject" },
-      { status: 400 }
-    );
-  }
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
 
-  try {
-    const strapiRes = await fetch(
-      `${getStrapiBaseUrl()}/hiring-manager/candidate-sessions/${encodeURIComponent(sessionId)}/decision`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${strapiJwt}`,
-        },
-        body: JSON.stringify({
-          decision: body.decision,
-          note: body.note,
-        }),
-      }
-    );
+    const { sessionId } = await context.params;
+    const session = await getServerSession(authOptions);
+    const strapiJwt = await getServerStrapiJwt(request);
+    const limiter = await applyRateLimit({
+      key: `hm-candidate-decision:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
+      limit: 20,
+      windowMs: 60_000,
+    });
 
-    if (!strapiRes.ok) {
-      const errorBody = await strapiRes.json().catch(() => null);
+    if (!limiter.allowed) {
       return NextResponse.json(
+        { error: "Too many requests. Please retry shortly." },
         {
-          error:
-            errorBody?.error?.message ||
-            errorBody?.message ||
-            "Failed to record candidate decision",
-        },
-        { status: strapiRes.status }
+          status: 429,
+          headers: {
+            "retry-after": String(limiter.retryAfterSeconds),
+          },
+        }
       );
     }
 
-    const data = await strapiRes.json();
-    return NextResponse.json({ data: data.data });
+    if (!session?.user?.id || !strapiJwt) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    let body: { decision?: string; note?: string } = {};
+    try {
+      body = (await request.json()) as { decision?: string; note?: string };
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    if (!body.decision || !["approve", "reject"].includes(body.decision)) {
+      return NextResponse.json(
+        { error: "decision must be approve or reject" },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const strapiRes = await fetch(
+        `${getStrapiBaseUrl()}/hiring-manager/candidate-sessions/${encodeURIComponent(sessionId)}/decision`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${strapiJwt}`,
+          },
+          body: JSON.stringify({
+            decision: body.decision,
+            note: body.note,
+          }),
+        }
+      );
+
+      if (!strapiRes.ok) {
+        const errorBody = await strapiRes.json().catch(() => null);
+        return NextResponse.json(
+          {
+            error:
+              errorBody?.error?.message ||
+              errorBody?.message ||
+              "Failed to record candidate decision",
+          },
+          { status: strapiRes.status }
+        );
+      }
+
+      const data = await strapiRes.json();
+      return NextResponse.json({ data: data.data });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Internal Server Error" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal Server Error" },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Decision could not be recorded");
   }
 }

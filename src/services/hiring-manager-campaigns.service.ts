@@ -1,17 +1,11 @@
 import "server-only";
 
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-
-const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
-const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
-
-function getStrapiBaseUrl() {
-  return stripTrailingSlashes(
-    process.env.STRAPI_API_URL ??
-      process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-      "http://localhost:1337/api"
-  );
-}
+import {
+  getStrapiApiBaseUrl,
+  joinStrapiApiPath,
+  stripLeadingSlashes,
+} from "@/lib/strapi-server";
 
 async function getJwt() {
   return getServerStrapiJwt();
@@ -34,7 +28,7 @@ export async function strapiRequest<T>(path: string, init?: RequestInit): Promis
   }
 
   const response = await fetch(
-    `${getStrapiBaseUrl()}/${stripLeadingSlashes(path)}`,
+    joinStrapiApiPath(getStrapiApiBaseUrl(), path),
     {
       cache: "no-store",
       ...init,
@@ -577,24 +571,33 @@ export async function getHiringManagerOverview(): Promise<{
   sessions: HiringManagerSessionListItem[];
   error: string | null;
 }> {
-  const campaignsResult = await getHiringManagerCampaigns();
-  const [detailsResults, sessionsResult] = await Promise.all([
-    Promise.all(
-      campaignsResult.campaigns.map((campaign) =>
-        getHiringManagerCampaignDetail(campaign.id)
-      )
-    ),
-    getHiringManagerSessions(),
-  ]);
+  try {
+    const response = await strapiRequest<{
+      data?: {
+        campaigns?: RawCampaign[];
+        campaignDetails?: RawCampaign[];
+        sessions?: RawAssessmentSession[];
+      };
+    }>("/hiring-manager/overview");
 
-  return {
-    campaigns: campaignsResult.campaigns,
-    campaignDetails: detailsResults
-      .map((result) => result.campaign)
-      .filter(Boolean) as HiringManagerCampaignDetail[],
-    sessions: sessionsResult.sessions,
-    error: campaignsResult.error ?? sessionsResult.error ?? detailsResults.find((result) => result.error)?.error ?? null,
-  };
+    const payload = response.data ?? {};
+    const campaigns = (payload.campaigns ?? []).map(normalizeCampaign);
+    const campaignDetails = (payload.campaignDetails ?? []).map(normalizeCampaignDetail);
+    const sessions = (payload.sessions ?? []).map(normalizeAssessmentSession);
+
+    return { campaigns, campaignDetails, sessions, error: null };
+  } catch (error) {
+    console.error("[getHiringManagerOverview] Failed to load overview", error);
+    return {
+      campaigns: [],
+      campaignDetails: [],
+      sessions: [],
+      error:
+        error instanceof Error
+          ? error.message
+          : "Hiring Manager overview could not be loaded.",
+    };
+  }
 }
 
 export async function createHiringManagerCampaign(

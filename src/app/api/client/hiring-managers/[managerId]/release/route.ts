@@ -4,11 +4,18 @@ import {
   releaseClientHiringManagerSeat,
 } from "@/services/client-portal.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function POST(
   request: Request,
   context: { params: Promise<any> }
 ) {
   try {
+    await requireClientSession();
+
+  const crossOriginResponse = rejectMutatingCrossOrigin(request);
+  if (crossOriginResponse) return crossOriginResponse;
+
     const { managerId } = await context.params;
     const summary = await getClientDashboardSummary();
     const clientDocumentId = summary?.client?.documentId;
@@ -23,14 +30,7 @@ export async function POST(
     const released = await releaseClientHiringManagerSeat(clientDocumentId, managerId);
     return NextResponse.json({ data: released });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Hiring-manager seat could not be released",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Hiring manager could not be released");
+  
   }
 }

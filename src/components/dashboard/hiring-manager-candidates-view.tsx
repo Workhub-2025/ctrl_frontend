@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,10 +25,10 @@ import {
   Clock3,
   Search,
 } from "lucide-react";
-import {
-  HiringManagerPortalClientService,
-  type HiringManagerCampaignDetail,
-  type HiringManagerAssessmentResult,
+import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
+import type {
+  HiringManagerCampaignDetail,
+  HiringManagerAssessmentResult,
 } from "@/services/hiring-manager-portal-client.service";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
@@ -149,44 +149,30 @@ function progressLabel(progress: CandidateRow["progress"]) {
 }
 
 export function HiringManagerCandidatesView() {
-  const [campaigns, setCampaigns] = useState<HiringManagerCampaignDetail[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(null);
+  const { campaignDetails: campaigns, error, lastRefreshAt, loading, loadOverview } =
+    useHiringManagerPortal();
+  const [isForceRefreshing, setIsForceRefreshing] = useState(false);
   const [campaignFilter, setCampaignFilter] = useState("all");
   const [sessionFilter, setSessionFilter] = useState("all");
   const [progressFilter, setProgressFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const loadCandidates = async (force = false) => {
+  const handleRefresh = async () => {
     const startTime = Date.now();
-    setIsRefreshing(true);
-    setError(null);
+    setIsForceRefreshing(true);
     try {
-      const overview = await HiringManagerPortalClientService.getOverview({ force });
-      setCampaigns(overview.campaignDetails);
-      setLastRefreshAt(Date.now());
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Candidates could not be loaded."
-      );
+      await loadOverview(true);
     } finally {
-      if (force) {
-        const elapsedTime = Date.now() - startTime;
-        const minSpin = 800; // ms to ensure smooth spin
-        if (elapsedTime < minSpin) {
-          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
-        }
+      const elapsedTime = Date.now() - startTime;
+      const minSpin = 800;
+      if (elapsedTime < minSpin) {
+        await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
       }
-      setIsRefreshing(false);
+      setIsForceRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    void loadCandidates(false);
-  }, []);
+  const isRefreshing = loading || isForceRefreshing;
 
   const candidates = useMemo(() => buildCandidateRows(campaigns), [campaigns]);
   const campaignOptions = useMemo(
@@ -367,7 +353,7 @@ export function HiringManagerCandidatesView() {
         <Button
           type="button"
           variant="outline"
-          onClick={() => loadCandidates(true)}
+          onClick={() => void handleRefresh()}
           disabled={isRefreshing}
           className="w-fit hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
         >

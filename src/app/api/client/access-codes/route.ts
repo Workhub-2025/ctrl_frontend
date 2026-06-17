@@ -5,23 +5,27 @@ import {
   refreshHiringManagerAccessCode,
 } from "@/services/client-portal.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function GET() {
   try {
+    await requireClientSession();
+
     const codes = await getClientAccessCodes();
     return NextResponse.json({ data: codes });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Access codes could not be loaded",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Access codes could not be loaded");
+  
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
+
+    await requireClientSession();
+
     const body = await request.json().catch(() => ({}));
     const code = body?.refreshCodeDocumentId
       ? await refreshHiringManagerAccessCode(String(body.refreshCodeDocumentId))
@@ -29,12 +33,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ data: code }, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Access code could not be generated",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Access codes could not be loaded");
+  
   }
 }

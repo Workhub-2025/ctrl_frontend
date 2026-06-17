@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { reviewClientCampaign } from "@/services/client-portal.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function POST(
   request: NextRequest,
   context: { params: Promise<any> }
 ) {
   try {
+    await requireClientSession();
+
+  const crossOriginResponse = rejectMutatingCrossOrigin(request);
+  if (crossOriginResponse) return crossOriginResponse;
+
     const { campaignId } = await context.params;
     const body = await request.json().catch(() => ({}));
     if (!["approved", "rejected"].includes(body?.decision)) {
@@ -24,12 +31,7 @@ export async function POST(
 
     return NextResponse.json({ data: campaign });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Campaign could not be reviewed",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Campaign review could not be submitted");
+  
   }
 }

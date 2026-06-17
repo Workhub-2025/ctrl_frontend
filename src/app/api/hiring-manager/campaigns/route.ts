@@ -91,21 +91,34 @@ async function enforceRateLimit(request: NextRequest, action: "get" | "post") {
   );
 }
 
+import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function GET(request: NextRequest) {
-  const limited = await enforceRateLimit(request, "get");
-  if (limited) return limited;
+  try {
+    await requireHmSession();
 
-  const result = await getHiringManagerCampaigns();
+    const limited = await enforceRateLimit(request, "get");
+    if (limited) return limited;
 
-  if (result.error) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
+    const result = await getHiringManagerCampaigns();
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+
+    return NextResponse.json({ data: result.campaigns });
+  } catch (error) {
+    return handleBffRouteError(error, "Campaigns could not be loaded");
   }
-
-  return NextResponse.json({ data: result.campaigns });
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await requireHmSession();
+
+  const crossOriginResponse = rejectMutatingCrossOrigin(request);
+  if (crossOriginResponse) return crossOriginResponse;
+
     const limited = await enforceRateLimit(request, "post");
     if (limited) return limited;
 

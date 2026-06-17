@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { getClientContract, getClientDashboardSummary } from "@/services/client-portal.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 export async function GET() {
   try {
+    await requireClientSession();
+
     const summary = await getClientDashboardSummary();
     const clientDocumentId = summary?.client?.documentId;
     if (!clientDocumentId) {
@@ -18,9 +21,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Contract could not be loaded" },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Contract could not be loaded");
   }
 }

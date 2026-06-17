@@ -9,27 +9,34 @@ import {
   inviteHiringManagerByEmail,
 } from "@/services/client-portal.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function POST(request: NextRequest) {
-  const originRejected = rejectCrossOriginRequest(request);
-  if (originRejected) {
-    return originRejected;
-  }
-
-  const session = await getServerSession(authOptions);
-  const limiter = await applyRateLimit({
-    key: `client-hm-invite:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
-    limit: 10,
-    windowMs: 60_000,
-  });
-
-  if (!limiter.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Please retry shortly." },
-      { status: 429, headers: { "retry-after": String(limiter.retryAfterSeconds) } }
-    );
-  }
-
   try {
+    await requireClientSession();
+
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
+
+    const originRejected = rejectCrossOriginRequest(request);
+    if (originRejected) {
+      return originRejected;
+    }
+
+    const session = await getServerSession(authOptions);
+    const limiter = await applyRateLimit({
+      key: `client-hm-invite:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
+      limit: 10,
+      windowMs: 60_000,
+    });
+
+    if (!limiter.allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please retry shortly." },
+        { status: 429, headers: { "retry-after": String(limiter.retryAfterSeconds) } }
+      );
+    }
+
     const body = await request.json().catch(() => ({}));
     const email = typeof body?.email === "string" ? body.email.trim() : "";
 
@@ -58,14 +65,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: result }, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Hiring-manager invite could not be sent",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Hiring-manager invite could not be sent");
   }
 }

@@ -188,3 +188,8 @@ export function peekPortalCache<T>(key: string): T | undefined {
   const entry = stores.get(key) as CacheEntry<T> | undefined;
   return entry?.data;
 }
+
+export function getPortalCacheUpdatedAt(key: string): number | null {
+  const entry = stores.get(key);
+  return entry?.updatedAt ? entry.updatedAt : null;
+}

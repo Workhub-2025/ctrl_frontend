@@ -22,20 +22,18 @@ const ROLE_ALIASES: Record<string, AppRole> = {
   administrator: "admin",
 };
 
-const normalizeRoleLabel = (value: string) =>
+export const normalizeRoleLabel = (value: string) =>
   value.trim().toLowerCase().replace(/\s+/g, "_");
 
-const DEV_SEEDED_ROLE_BY_EMAIL: Record<string, AppRole> = {
-  "candidate.demo@ctrl.local": "candidate",
-  "recruiter.demo@ctrl.local": "hiring_manager",
-  "client.demo@ctrl.local": "client",
-  "admin.demo@ctrl.local": "admin",
-};
+function roleFromString(value: string): AppRole | null {
+  const normalized = normalizeRoleLabel(value);
+  return ROLE_ALIASES[normalized] ?? null;
+}
 
-export const normalizeRole = (role: unknown): AppRole => {
+/** Returns null when the role cannot be mapped to a known portal role. */
+export const resolveAppRole = (role: unknown): AppRole | null => {
   if (typeof role === "string" && role.trim().length > 0) {
-    const normalized = normalizeRoleLabel(role);
-    return ROLE_ALIASES[normalized] ?? "candidate";
+    return roleFromString(role);
   }
 
   if (
@@ -44,7 +42,7 @@ export const normalizeRole = (role: unknown): AppRole => {
     "type" in role &&
     typeof (role as { type?: unknown }).type === "string"
   ) {
-    return normalizeRole((role as { type: string }).type);
+    return resolveAppRole((role as { type: string }).type);
   }
 
   if (
@@ -53,15 +51,26 @@ export const normalizeRole = (role: unknown): AppRole => {
     "name" in role &&
     typeof (role as { name?: unknown }).name === "string"
   ) {
-    return normalizeRole((role as { name: string }).name);
+    return resolveAppRole((role as { name: string }).name);
   }
 
-  return "candidate";
+  return null;
+};
+
+export const normalizeRole = (role: unknown): AppRole => {
+  return resolveAppRole(role) ?? "candidate";
 };
 
 export const isAdminRole = (role: unknown) => {
   const normalized = normalizeRole(role);
   return normalized === "admin";
+};
+
+const DEV_SEEDED_ROLE_BY_EMAIL: Record<string, AppRole> = {
+  "candidate.demo@ctrl.local": "candidate",
+  "recruiter.demo@ctrl.local": "hiring_manager",
+  "client.demo@ctrl.local": "client",
+  "admin.demo@ctrl.local": "admin",
 };
 
 export const inferDevSeededRole = (email?: string | null): AppRole | null => {

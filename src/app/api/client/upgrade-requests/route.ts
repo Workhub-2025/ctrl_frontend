@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import {
   createClientUpgradeRequest,
   listClientUpgradeRequests,
-  requireClientSession,
 } from "@/services/client-upgrade.service";
 import type { ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 export async function GET() {
   try {
@@ -12,15 +13,17 @@ export async function GET() {
     const data = await listClientUpgradeRequests();
     return NextResponse.json({ data });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Upgrade requests could not be loaded";
-    const status = message === "Authentication required" ? 401 : message === "Client access required" ? 403 : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleBffRouteError(error, "Upgrade requests could not be loaded");
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
+
     await requireClientSession();
+
     const body = (await request.json().catch(() => ({}))) as {
       payload?: ClientUpgradeRequestPayload;
       priority?: "low" | "normal" | "high" | "urgent";
@@ -38,14 +41,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upgrade request could not be submitted";
-    const status =
-      message === "Authentication required"
-        ? 401
-        : message === "Client access required"
-          ? 403
-          : message.includes("must be") || message.includes("Please provide")
-            ? 400
-            : 500;
-    return NextResponse.json({ error: message }, { status });
+    if (
+      message.includes("must be") ||
+      message.includes("Please provide") ||
+      message.includes("payload")
+    ) {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    return handleBffRouteError(error, "Upgrade request could not be submitted");
   }
 }

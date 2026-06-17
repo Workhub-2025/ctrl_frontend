@@ -7,11 +7,13 @@ import {
   type ClientBillingRequestKind,
   buildUpgradeRequestSubject,
 } from "@/lib/client/entitlements";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
+import {
+  requireClientSession,
+  handleBffRouteError,
+} from "@/lib/auth/bff-session";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { normalizeRole } from "@/lib/auth/role-model";
+
+export { requireClientSession, handleBffRouteError };
 
 export type BackendClientEntitlements = {
   client: {
@@ -112,17 +114,6 @@ function mapBillingRequest(row: BillingRequestRow): ClientUpgradeRequestRecord {
   };
 }
 
-export async function requireClientSession() {
-  const session = await getServerSession(authOptions);
-  const strapiJwt = await getServerStrapiJwt();
-  if (!session?.user?.id || !strapiJwt) {
-    throw new Error("Authentication required");
-  }
-  if (normalizeRole(session.user.role) !== "client") {
-    throw new Error("Client access required");
-  }
-  return session;
-}
 
 /** Backend-resolved entitlements — never compute unlock state in the browser. */
 export async function getClientEntitlementsBundle(): Promise<BackendClientEntitlements> {

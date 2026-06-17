@@ -51,6 +51,7 @@ import {
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import { OptionalDateTimeFields } from "@/components/dashboard/portal/optional-datetime-fields";
 import {
@@ -70,16 +71,28 @@ function formatLastRefresh(value: number | null) {
 }
 
 export function HiringManagerSessionsList() {
-  const [sessions, setSessions] = useState<HiringManagerSessionListItem[]>([]);
-  const [campaigns, setCampaigns] = useState<HiringManagerCampaignListItem[]>([]);
-  const [campaignDetails, setCampaignDetails] = useState<HiringManagerCampaignDetail[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    sessions,
+    campaigns: allCampaigns,
+    campaignDetails,
+    error,
+    lastRefreshAt,
+    loading,
+    loadOverview,
+  } = useHiringManagerPortal();
+  const campaigns = useMemo(
+    () =>
+      allCampaigns.filter(
+        (campaign) =>
+          campaign.documentId &&
+          campaign.approvalStatus !== "Pending approval" &&
+          campaign.approvalStatus !== "Rejected"
+      ),
+    [allCampaigns]
+  );
   const [createError, setCreateError] = useState<string | null>(null);
   const [createdMessage, setCreatedMessage] = useState<string | null>(null);
-  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(
-    HiringManagerPortalClientService.getSessionsLastRefresh()
-  );
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isForceRefreshing, setIsForceRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
@@ -143,51 +156,44 @@ export function HiringManagerSessionsList() {
     }
   }, [selectedCampaign]);
 
+  useEffect(() => {
+    setDraft((current) => ({
+      ...current,
+      campaignDocumentId: campaigns.some(
+        (campaign) => campaign.documentId === current.campaignDocumentId
+      )
+        ? current.campaignDocumentId
+        : campaigns[0]?.documentId || "",
+    }));
+  }, [campaigns]);
+
   const loadSessions = async (force = false) => {
+    if (!force) {
+      await loadOverview(true);
+      return;
+    }
+
     const startTime = Date.now();
-    setIsRefreshing(true);
-    setError(null);
+    setIsForceRefreshing(true);
     try {
-      const overview = await HiringManagerPortalClientService.getOverview({ force });
-      const approvedCampaigns = overview.campaigns.filter(
-        (campaign) => campaign.documentId && campaign.approvalStatus !== "Pending approval" && campaign.approvalStatus !== "Rejected"
-      );
-      setSessions(overview.sessions);
-      setCampaignDetails(overview.campaignDetails);
-      setSelectedSession((current) =>
-        current
-          ? overview.sessions.find((session) => session.id === current.id) ?? null
-          : null
-      );
-      setCampaigns(approvedCampaigns);
-      setDraft((current) => ({
-        ...current,
-        campaignDocumentId: approvedCampaigns.some((campaign) => campaign.documentId === current.campaignDocumentId)
-          ? current.campaignDocumentId
-          : approvedCampaigns[0]?.documentId || "",
-      }));
-      setLastRefreshAt(HiringManagerPortalClientService.getSessionsLastRefresh());
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Sessions could not be loaded."
-      );
+      await loadOverview(true);
     } finally {
-      if (force) {
-        const elapsedTime = Date.now() - startTime;
-        const minSpin = 800; // ms to ensure smooth spin
-        if (elapsedTime < minSpin) {
-          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
-        }
+      const elapsedTime = Date.now() - startTime;
+      const minSpin = 800;
+      if (elapsedTime < minSpin) {
+        await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
       }
-      setIsRefreshing(false);
+      setIsForceRefreshing(false);
     }
   };
 
+  const isRefreshing = loading || isForceRefreshing;
+
   useEffect(() => {
-    void loadSessions(false);
-  }, []);
+    setSelectedSession((current) =>
+      current ? sessions.find((session) => session.id === current.id) ?? null : null
+    );
+  }, [sessions]);
 
   const refreshLabel = useMemo(
     () => `Last refresh: ${formatLastRefresh(lastRefreshAt)}`,

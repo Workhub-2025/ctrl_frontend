@@ -16,61 +16,72 @@ function getStrapiBaseUrl() {
   );
 }
 
+import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ sessionId: string }> }
 ) {
-  const { sessionId } = await context.params;
-  const session = await getServerSession(authOptions);
-  const strapiJwt = await getServerStrapiJwt(request);
-  const limiter = await applyRateLimit({
-    key: `hm-candidate-unlock:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
-    limit: 15,
-    windowMs: 60_000,
-  });
-
-  if (!limiter.allowed) {
-    return NextResponse.json(
-      { error: "Too many requests. Please retry shortly." },
-      {
-        status: 429,
-        headers: {
-          "retry-after": String(limiter.retryAfterSeconds),
-        },
-      }
-    );
-  }
-
-  if (!session?.user?.id || !strapiJwt) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
-
   try {
-    const strapiRes = await fetch(
-      `${getStrapiBaseUrl()}/candidate-sessions/${encodeURIComponent(sessionId)}/unlock`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${strapiJwt}`,
-        },
-      }
-    );
+    await requireHmSession();
 
-    if (!strapiRes.ok) {
-      const body = await strapiRes.json().catch(() => null);
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
+
+    const { sessionId } = await context.params;
+    const session = await getServerSession(authOptions);
+    const strapiJwt = await getServerStrapiJwt(request);
+    const limiter = await applyRateLimit({
+      key: `hm-candidate-unlock:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
+      limit: 15,
+      windowMs: 60_000,
+    });
+
+    if (!limiter.allowed) {
       return NextResponse.json(
-        { error: body?.error?.message || "Failed to unlock candidate" },
-        { status: strapiRes.status }
+        { error: "Too many requests. Please retry shortly." },
+        {
+          status: 429,
+          headers: {
+            "retry-after": String(limiter.retryAfterSeconds),
+          },
+        }
       );
     }
 
-    const data = await strapiRes.json();
-    return NextResponse.json({ data: data.data });
+    if (!session?.user?.id || !strapiJwt) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    try {
+      const strapiRes = await fetch(
+        `${getStrapiBaseUrl()}/candidate-sessions/${encodeURIComponent(sessionId)}/unlock`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${strapiJwt}`,
+          },
+        }
+      );
+
+      if (!strapiRes.ok) {
+        const body = await strapiRes.json().catch(() => null);
+        return NextResponse.json(
+          { error: body?.error?.message || "Failed to unlock candidate" },
+          { status: strapiRes.status }
+        );
+      }
+
+      const data = await strapiRes.json();
+      return NextResponse.json({ data: data.data });
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Internal Server Error" },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal Server Error" },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Candidate could not be unlocked");
   }
 }

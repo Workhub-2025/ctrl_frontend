@@ -1,8 +1,15 @@
 import { NextResponse } from "next/server";
 import { updateClientCampaignApprovalMode } from "@/services/client-portal.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function POST(request: Request) {
   try {
+    await requireClientSession();
+
+  const crossOriginResponse = rejectMutatingCrossOrigin(request);
+  if (crossOriginResponse) return crossOriginResponse;
+
     const body = await request.json().catch(() => ({}));
     const mode = body?.mode;
     const clientDocumentId =
@@ -25,14 +32,7 @@ export async function POST(request: Request) {
     const client = await updateClientCampaignApprovalMode(clientDocumentId, mode);
     return NextResponse.json({ data: client });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Campaign approval mode could not be updated",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Approval mode could not be updated");
+  
   }
 }

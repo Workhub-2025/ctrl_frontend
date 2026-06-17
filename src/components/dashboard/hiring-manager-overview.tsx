@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,11 +19,11 @@ import {
 } from "lucide-react";
 import { DashboardInfoCard, dashboardInfoMetaClassName } from "@/components/dashboard/dashboard-info-card";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
-import {
-  HiringManagerPortalClientService,
-  type HiringManagerCampaignDetail,
-  type HiringManagerCampaignListItem,
-  type HiringManagerSessionListItem,
+import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
+import type {
+  HiringManagerCampaignDetail,
+  HiringManagerCampaignListItem,
+  HiringManagerSessionListItem,
 } from "@/services/hiring-manager-portal-client.service";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
@@ -45,34 +45,15 @@ function formatLastRefresh(value: number | null) {
 }
 
 export function HiringManagerOverview() {
-  const [campaigns, setCampaigns] = useState<HiringManagerCampaignListItem[]>([]);
-  const [campaignDetails, setCampaignDetails] = useState<HiringManagerCampaignDetail[]>([]);
-  const [sessions, setSessions] = useState<HiringManagerSessionListItem[]>([]);
-  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(
-    HiringManagerPortalClientService.getSessionsLastRefresh()
-  );
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadOverview = async (force = false) => {
-    setIsRefreshing(true);
-    setError(null);
-    try {
-      const overview = await HiringManagerPortalClientService.getOverview({ force });
-      setCampaigns(overview.campaigns);
-      setCampaignDetails(overview.campaignDetails);
-      setSessions(overview.sessions);
-      setLastRefreshAt(HiringManagerPortalClientService.getSessionsLastRefresh());
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Hiring-manager overview could not be loaded.");
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadOverview(false);
-  }, []);
+  const {
+    campaigns,
+    campaignDetails,
+    sessions,
+    loading: isRefreshing,
+    error,
+    lastRefreshAt,
+    loadOverview,
+  } = useHiringManagerPortal();
 
   const metrics = useMemo(() => {
     const liveSessions = sessions.filter((session) => session.status === "Live").length;

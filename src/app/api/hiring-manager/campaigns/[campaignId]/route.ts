@@ -24,43 +24,60 @@ async function enforceRateLimit(request: NextRequest, action: "get" | "delete") 
   );
 }
 
+import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function GET(
   request: NextRequest,
   context: { params: Promise<any> }
 ) {
-  const limited = await enforceRateLimit(request, "get");
-  if (limited) return limited;
+  try {
+    await requireHmSession();
 
-  const { campaignId } = await context.params;
-  const result = await getHiringManagerCampaignDetail(campaignId);
+    const limited = await enforceRateLimit(request, "get");
+    if (limited) return limited;
 
-  if (result.error) {
-    return NextResponse.json({ error: result.error }, { status: 404 });
+    const { campaignId } = await context.params;
+    const result = await getHiringManagerCampaignDetail(campaignId);
+
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 404 });
+    }
+
+    return NextResponse.json({ data: result.campaign });
+  } catch (error) {
+    return handleBffRouteError(error, "Campaign could not be loaded");
   }
-
-  return NextResponse.json({ data: result.campaign });
 }
 
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<any> }
 ) {
-  const limited = await enforceRateLimit(request, "delete");
-  if (limited) return limited;
-
   try {
-    const { campaignId } = await context.params;
-    await deleteHiringManagerCampaign(campaignId);
-    return NextResponse.json({ data: { deleted: true } });
+    await requireHmSession();
+
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
+
+    const limited = await enforceRateLimit(request, "delete");
+    if (limited) return limited;
+
+    try {
+      const { campaignId } = await context.params;
+      await deleteHiringManagerCampaign(campaignId);
+      return NextResponse.json({ data: { deleted: true } });
+    } catch (error) {
+      return NextResponse.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "Campaign could not be deleted",
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Campaign could not be deleted",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Campaign could not be loaded");
   }
 }

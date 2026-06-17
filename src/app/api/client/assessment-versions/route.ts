@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getAdminAssessmentVersions } from "@/services/admin-platform.service";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { getClientEntitlementsBundle, requireClientSession } from "@/services/client-upgrade.service";
+import { getClientEntitlementsBundle } from "@/services/client-upgrade.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 export async function GET() {
   try {
     await requireClientSession();
@@ -15,9 +16,6 @@ export async function GET() {
     const data = await getAdminAssessmentVersions(slugs, strapiJwt).catch(() => ({}));
     return NextResponse.json({ data });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Assessment versions could not be loaded" },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Assessment versions could not be loaded");
   }
 }

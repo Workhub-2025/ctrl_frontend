@@ -1,46 +1,17 @@
 import "server-only";
 
 import type Stripe from "stripe";
+import { getStrapiApiBaseUrl } from "@/lib/strapi-server";
+import {
+  parseBillingCheckoutMetadata,
+  type BillingCheckoutMetadata,
+} from "@/lib/stripe/billing-checkout-metadata";
+
+export type { BillingCheckoutMetadata };
+export { parseBillingCheckoutMetadata };
 
 function getStrapiBaseUrl() {
-  return (
-    process.env.STRAPI_API_URL ??
-    process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-    "http://localhost:1337/api"
-  ).replace(/\/+$/, "");
-}
-
-export type BillingCheckoutMetadata = {
-  requestKind: "client_upgrade" | "contract_renewal" | "contract_activation";
-  clientDocumentId: string;
-  billingRequestDocumentId: string;
-};
-
-export function parseBillingCheckoutMetadata(
-  session: Stripe.Checkout.Session
-): BillingCheckoutMetadata | null {
-  const requestKind = session.metadata?.requestKind;
-  if (
-    requestKind !== "client_upgrade" &&
-    requestKind !== "contract_renewal" &&
-    requestKind !== "contract_activation"
-  ) {
-    return null;
-  }
-
-  const clientDocumentId = session.metadata?.clientDocumentId;
-  const billingRequestDocumentId =
-    session.metadata?.billingRequestDocumentId ?? session.metadata?.ticketDocumentId;
-
-  if (!clientDocumentId || !billingRequestDocumentId) {
-    return null;
-  }
-
-  return {
-    requestKind,
-    clientDocumentId,
-    billingRequestDocumentId,
-  };
+  return getStrapiApiBaseUrl();
 }
 
 function extractStrapiErrorMessage(body: unknown): string | undefined {
@@ -91,3 +62,6 @@ export async function fulfillBillingRequest(input: {
 
   return data ?? {};
 }
+
+// Keep Stripe import referenced for re-export consumers that typed against this module.
+export type StripeCheckoutSession = Stripe.Checkout.Session;

@@ -38,10 +38,6 @@ const nextConfig: NextConfig = {
   // which breaks next-auth client-side session fetches.
   trailingSlash: process.env.CLOUDFLARE_PAGES === 'true',
 
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-
   experimental: {
     serverActions: {
       bodySizeLimit: '50mb',

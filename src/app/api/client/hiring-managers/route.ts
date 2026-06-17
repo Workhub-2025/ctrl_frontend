@@ -4,8 +4,11 @@ import {
   getClientHiringManagers,
 } from "@/services/client-portal.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 export async function GET() {
   try {
+    await requireClientSession();
+
     const summary = await getClientDashboardSummary();
     const clientDocumentId = summary?.client?.documentId;
 
@@ -19,12 +22,7 @@ export async function GET() {
     const managers = await getClientHiringManagers(clientDocumentId);
     return NextResponse.json({ data: managers });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Hiring managers could not be loaded",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Hiring managers could not be loaded");
+  
   }
 }

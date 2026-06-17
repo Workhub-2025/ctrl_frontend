@@ -1,11 +1,17 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
-import { isAdminRole, normalizeRole, routeForRole } from '@/lib/auth/role-model';
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+import { guardPortalApiRoute } from "@/lib/auth/bff-api-middleware";
+import { isAdminRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
 
 export default withAuth(
     function middleware(req) {
         const token = req.nextauth.token;
         const { pathname } = req.nextUrl;
+
+        const portalApiResponse = guardPortalApiRoute(pathname, !!token, token?.role);
+        if (portalApiResponse) {
+            return portalApiResponse;
+        }
 
         // Protect admin routes - only allow admin users
         if (pathname.startsWith('/admin')) {
@@ -43,6 +49,14 @@ export default withAuth(
             authorized: ({ token, req }) => {
                 const { pathname } = req.nextUrl;
 
+                if (
+                    pathname.startsWith('/api/hiring-manager') ||
+                    pathname.startsWith('/api/client') ||
+                    pathname.startsWith('/api/admin')
+                ) {
+                    return true;
+                }
+
                 // Protect admin routes - require authentication first, role check is in middleware().
                 if (pathname.startsWith('/admin')) {
                     return !!token;
@@ -79,5 +93,8 @@ export const config = {
         '/assessment/:path*',
         '/results/:path*',
         '/profile',
+        '/api/hiring-manager/:path*',
+        '/api/client/:path*',
+        '/api/admin/:path*',
     ]
 };

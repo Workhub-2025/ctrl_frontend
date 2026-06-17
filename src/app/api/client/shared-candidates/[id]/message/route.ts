@@ -7,35 +7,38 @@ import {
   sendSharedCandidateMessage,
   type ClientOutreachTemplateKey,
 } from "@/services/client-portal.service";
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const originRejected = rejectCrossOriginRequest(request);
-  if (originRejected) {
-    return originRejected;
-  }
-
-  const session = await getServerSession(authOptions);
-  const limiter = await applyRateLimit({
-    key: `client-outreach:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
-    limit: 10,
-    windowMs: 60_000,
-  });
-
-  if (!limiter.allowed) {
-    return NextResponse.json(
-      { error: "Too many messages sent. Please retry shortly." },
-      { status: 429, headers: { "retry-after": String(limiter.retryAfterSeconds) } }
-    );
-  }
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
-
   try {
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
+
+    await requireClientSession();
+
+    const originRejected = rejectCrossOriginRequest(request);
+    if (originRejected) {
+      return originRejected;
+    }
+
+    const session = await getServerSession(authOptions);
+    const limiter = await applyRateLimit({
+      key: `client-outreach:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
+      limit: 10,
+      windowMs: 60_000,
+    });
+
+    if (!limiter.allowed) {
+      return NextResponse.json(
+        { error: "Too many messages sent. Please retry shortly." },
+        { status: 429, headers: { "retry-after": String(limiter.retryAfterSeconds) } }
+      );
+    }
+
     const { id } = await context.params;
     const body = (await request.json().catch(() => ({}))) as {
       subject?: string;
@@ -58,12 +61,6 @@ export async function POST(
 
     return NextResponse.json({ data });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Message could not be sent",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Message could not be sent");
   }
 }

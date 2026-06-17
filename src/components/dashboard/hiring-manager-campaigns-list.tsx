@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CardContent } from "@/components/ui/card";
@@ -23,10 +23,7 @@ import {
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { portalAlertErrorClass, portalBadgeClass, portalPrimaryButtonClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
-import {
-  HiringManagerPortalClientService,
-  type HiringManagerCampaignListItem,
-} from "@/services/hiring-manager-portal-client.service";
+import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
 
 function formatLastRefresh(value: number | null) {
   if (!value) return "Not refreshed yet";
@@ -52,42 +49,30 @@ function getAssessmentVersionSummary(settings?: Record<string, unknown> | null) 
 }
 
 export function HiringManagerCampaignsList() {
-  const [campaigns, setCampaigns] = useState<HiringManagerCampaignListItem[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [lastRefreshAt, setLastRefreshAt] = useState<number | null>(
-    HiringManagerPortalClientService.getSessionsLastRefresh()
-  );
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { campaigns, error, lastRefreshAt, loading, loadOverview } = useHiringManagerPortal();
+  const [isForceRefreshing, setIsForceRefreshing] = useState(false);
 
-  const loadCampaigns = async (force = false) => {
+  const handleRefresh = async (force = false) => {
+    if (!force) {
+      await loadOverview(true);
+      return;
+    }
+
     const startTime = Date.now();
-    setIsRefreshing(true);
-    setError(null);
+    setIsForceRefreshing(true);
     try {
-      const overview = await HiringManagerPortalClientService.getOverview({ force });
-      setCampaigns(overview.campaigns);
-      setLastRefreshAt(HiringManagerPortalClientService.getSessionsLastRefresh());
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : "Campaigns could not be loaded."
-      );
+      await loadOverview(true);
     } finally {
-      if (force) {
-        const elapsedTime = Date.now() - startTime;
-        const minSpin = 800; // ms to ensure smooth spin
-        if (elapsedTime < minSpin) {
-          await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
-        }
+      const elapsedTime = Date.now() - startTime;
+      const minSpin = 800;
+      if (elapsedTime < minSpin) {
+        await new Promise((resolve) => setTimeout(resolve, minSpin - elapsedTime));
       }
-      setIsRefreshing(false);
+      setIsForceRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    void loadCampaigns(false);
-  }, []);
+  const isRefreshing = loading || isForceRefreshing;
 
   const refreshLabel = useMemo(
     () => `Last refresh: ${formatLastRefresh(lastRefreshAt)}`,
@@ -111,7 +96,7 @@ export function HiringManagerCampaignsList() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => loadCampaigns(true)}
+            onClick={() => void handleRefresh(true)}
             disabled={isRefreshing}
             className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:text-slate-300 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
           >

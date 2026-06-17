@@ -1,14 +1,9 @@
 import "server-only";
 
-const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
-const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
+import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 function getStrapiBaseUrl() {
-  return stripTrailingSlashes(
-    process.env.STRAPI_API_URL ??
-      process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-      "http://localhost:1337/api"
-  );
+  return getStrapiApiBaseUrl();
 }
 
 class AdminStrapiRequestError extends Error {
@@ -34,7 +29,7 @@ async function adminStrapiRequest<T>(
   if (!authToken) throw new Error("Authenticated admin session is required");
 
   const response = await fetch(
-    `${getStrapiBaseUrl()}/${stripLeadingSlashes(path)}`,
+    joinStrapiApiPath(getStrapiBaseUrl(), path),
     {
       cache: "no-store",
       ...init,

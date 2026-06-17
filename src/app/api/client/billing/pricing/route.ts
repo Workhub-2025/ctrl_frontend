@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-import { requireClientSession } from "@/services/client-upgrade.service";
 
+import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 export async function GET() {
   try {
     await requireClientSession();
