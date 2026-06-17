@@ -112,7 +112,10 @@ export type ClientUpgradeBundleItem =
       assessmentLabel: string;
       currentVersion: string;
       requestedVersion: string;
+      notes?: string;
     };
+
+export const CUSTOM_ASSESSMENT_VERSION = "custom";
 
 export type ClientUpgradeBundleLineItem = {
   label: string;
@@ -252,7 +255,9 @@ function buildBundleSubject(items: ClientUpgradeBundleItem[]) {
       case "new_assessment":
         return `Upgrade request: add ${item.assessmentLabel} assessment`;
       case "assessment_version":
-        return `Upgrade request: ${item.assessmentLabel} up to v${item.requestedVersion}`;
+        return item.requestedVersion === CUSTOM_ASSESSMENT_VERSION
+          ? `Upgrade request: custom ${item.assessmentLabel} content pack`
+          : `Upgrade request: ${item.assessmentLabel} up to v${item.requestedVersion}`;
       default:
         return "Platform upgrade request";
     }
@@ -278,7 +283,9 @@ export function buildUpgradeRequestSubject(payload: ClientUpgradeRequestPayload)
     case "new_assessment":
       return `Upgrade request: add ${payload.assessmentLabel} assessment`;
     case "assessment_version":
-      return `Upgrade request: ${payload.assessmentLabel} up to v${payload.requestedVersion}`;
+      return payload.requestedVersion === CUSTOM_ASSESSMENT_VERSION
+        ? `Upgrade request: custom ${payload.assessmentLabel} content pack`
+        : `Upgrade request: ${payload.assessmentLabel} up to v${payload.requestedVersion}`;
     default:
       return "Platform upgrade request";
   }
@@ -296,7 +303,9 @@ function describeBundleItem(item: ClientUpgradeBundleItem, index: number) {
     case "new_assessment":
       return `${index}. Add assessment: ${item.assessmentLabel} (${item.assessmentSlug})\n   Business case: ${item.notes.trim()}`;
     case "assessment_version":
-      return `${index}. ${item.assessmentLabel}: v${item.currentVersion} -> v${item.requestedVersion}`;
+      return item.requestedVersion === CUSTOM_ASSESSMENT_VERSION
+        ? `${index}. Custom content pack: ${item.assessmentLabel}\n   Brief: ${item.notes?.trim() ?? ""}`
+        : `${index}. ${item.assessmentLabel}: v${item.currentVersion} -> v${item.requestedVersion}`;
     default:
       return `${index}. Entitlement change`;
   }

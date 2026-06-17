@@ -40,11 +40,13 @@ import {
   computeLineItems,
   computePendingChanges,
   createEmptyUpgradeDraft,
+  getCustomVersionPlaceholder,
   sumLineItems,
   type ClientEntitlementAssessment,
   type ClientUpgradeDraft,
   type ClientUpgradePricing,
 } from "@/lib/client/upgrade-bundle";
+import { CUSTOM_ASSESSMENT_VERSION } from "@/lib/client/entitlements";
 import { formatMoney } from "@/lib/money";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 import { cn } from "@/lib/utils";
@@ -189,16 +191,6 @@ export function ClientUpgradeBuilder({
     }));
   };
 
-  const setAssessmentVersion = (slug: string, version: string) => {
-    setDraft((current) => ({
-      ...current,
-      assessmentVersions: {
-        ...current.assessmentVersions,
-        [slug]: version,
-      },
-    }));
-  };
-
   const handleSubmit = async () => {
     setFieldError(null);
 
@@ -210,6 +202,15 @@ export function ClientUpgradeBuilder({
     if (draft.addonAssessmentSlug && draft.addonNotes.trim().length < 20) {
       setFieldError("Explain why you need the add-on assessment (at least 20 characters).");
       return;
+    }
+
+    for (const assessment of versionAssessments) {
+      if (draft.assessmentVersions[assessment.slug] !== CUSTOM_ASSESSMENT_VERSION) continue;
+      const brief = draft.customVersionNotes[assessment.slug]?.trim() ?? "";
+      if (brief.length > 0 && brief.length < 20) {
+        setFieldError(`Describe your custom ${assessment.title} content pack (at least 20 characters).`);
+        return;
+      }
     }
 
     try {
@@ -248,7 +249,8 @@ export function ClientUpgradeBuilder({
         </p>
       ) : null}
 
-      <div className={cn("space-y-4", !canRequestUpgrades && "pointer-events-none opacity-60")}>
+      <div className={cn("space-y-5", !canRequestUpgrades && "pointer-events-none opacity-60")}>
+        <div className="grid gap-4 md:grid-cols-2">
         <section className={cn(portalPanelClass, "space-y-3 p-4")}>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <Users className="h-4 w-4" aria-hidden="true" />
@@ -260,18 +262,25 @@ export function ClientUpgradeBuilder({
               size="icon"
               variant="outline"
               className="h-9 w-9 rounded-xl"
-              disabled={draft.requestedSeats <= Math.max(currentSeats + 1, 1)}
+              disabled={draft.requestedSeats <= Math.max(currentSeats, 1)}
               onClick={() =>
-                updateDraft({ requestedSeats: Math.max(currentSeats + 1, draft.requestedSeats - 1) })
+                updateDraft({ requestedSeats: Math.max(currentSeats, draft.requestedSeats - 1) })
               }
             >
               <Minus className="h-4 w-4" />
             </Button>
             <Input
               type="number"
-              min={Math.max(currentSeats + 1, 1)}
+              min={Math.max(currentSeats, 1)}
               value={draft.requestedSeats}
-              onChange={(event) => updateDraft({ requestedSeats: Number(event.target.value) || currentSeats })}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                updateDraft({
+                  requestedSeats: Number.isFinite(next)
+                    ? Math.max(currentSeats, next)
+                    : Math.max(currentSeats, 1),
+                });
+              }}
               className="rounded-xl text-center"
             />
             <Button
@@ -286,6 +295,7 @@ export function ClientUpgradeBuilder({
           </div>
           <p className="text-xs text-muted-foreground">
             Current allocation: {currentSeats} seat{currentSeats === 1 ? "" : "s"}
+            {draft.requestedSeats <= currentSeats ? " · no seat change staged" : ""}
           </p>
         </section>
 
@@ -324,8 +334,9 @@ export function ClientUpgradeBuilder({
             })}
           </ul>
         </section>
+        </div>
 
-        <section className={cn(portalPanelClass, "space-y-3 p-4")}>
+        <section className={cn(portalPanelClass, "space-y-4 p-4")}>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             <TrendingUp className="h-4 w-4" aria-hidden="true" />
             Assessment versions
@@ -338,43 +349,80 @@ export function ClientUpgradeBuilder({
                   : (assessment.availableVersions ?? []).filter(
                       (option) => compareVersions(option.version, assessment.maxVersion) > 0
                     );
-              const selected = draft.assessmentVersions[assessment.slug] ?? assessment.maxVersion;
+              const selected =
+                draft.assessmentVersions[assessment.slug] ?? assessment.maxVersion;
+              const isCustom = selected === CUSTOM_ASSESSMENT_VERSION;
 
               return (
-                <div key={assessment.slug} className="rounded-xl border border-border/50 p-3 dark:border-white/5">
+                <div key={assessment.slug} className="rounded-xl border border-border/50 p-4 dark:border-white/5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
                       <p className="text-xs text-muted-foreground">Current access: up to v{assessment.maxVersion}</p>
                     </div>
-                    {options.length === 0 ? (
+                    {options.length === 0 && !isCustom ? (
                       <Badge variant="outline" className="rounded-lg text-[10px] font-semibold">
-                        Latest included
+                        Custom pack available
                       </Badge>
                     ) : null}
                   </div>
-                  {options.length > 0 ? (
-                    <div className="mt-3 space-y-2">
-                      <Label className="text-xs text-muted-foreground">Requested max version</Label>
-                      <Select
-                        value={selected}
-                        onValueChange={(value) => setAssessmentVersion(assessment.slug, value)}
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={assessment.maxVersion}>
-                            Keep v{assessment.maxVersion}
+                  <div className="mt-3 space-y-2">
+                    <Label className="text-xs text-muted-foreground">Requested access</Label>
+                    <Select
+                      value={selected}
+                      onValueChange={(value) => {
+                        setDraft((current) => ({
+                          ...current,
+                          assessmentVersions: {
+                            ...current.assessmentVersions,
+                            [assessment.slug]: value,
+                          },
+                        }));
+                      }}
+                    >
+                      <SelectTrigger className="rounded-xl">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={assessment.maxVersion}>
+                          Keep v{assessment.maxVersion} (no change)
+                        </SelectItem>
+                        {options.map((option) => (
+                          <SelectItem key={option.version} value={option.version}>
+                            Up to v{option.version}
+                            {option.title ? ` · ${option.title}` : ""}
                           </SelectItem>
-                          {options.map((option) => (
-                            <SelectItem key={option.version} value={option.version}>
-                              Up to v{option.version}
-                              {option.title ? ` · ${option.title}` : ""}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        ))}
+                        <SelectItem value={CUSTOM_ASSESSMENT_VERSION}>
+                          Custom content pack
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {isCustom ? (
+                    <div className="mt-3 space-y-2">
+                      <Label htmlFor={`custom-version-${assessment.slug}`} className="text-xs">
+                        Custom content brief
+                      </Label>
+                      <Textarea
+                        id={`custom-version-${assessment.slug}`}
+                        value={draft.customVersionNotes[assessment.slug] ?? ""}
+                        onChange={(event) =>
+                          setDraft((current) => ({
+                            ...current,
+                            customVersionNotes: {
+                              ...current.customVersionNotes,
+                              [assessment.slug]: event.target.value,
+                            },
+                          }))
+                        }
+                        placeholder={getCustomVersionPlaceholder(assessment.slug)}
+                        rows={3}
+                        className="resize-none rounded-xl text-sm"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        For example: bespoke typing passages, a tailored PJA/SJA scenario pack, or organisation-specific wording.
+                      </p>
                     </div>
                   ) : null}
                 </div>

@@ -1,5 +1,6 @@
 import {
   CLIENT_DELIVERY_FEATURES,
+  CUSTOM_ASSESSMENT_VERSION,
   type ClientDeliveryFeatureKey,
   type ClientUpgradeBundleItem,
   type ClientUpgradeBundleLineItem,
@@ -18,6 +19,7 @@ export type ClientUpgradeDraft = {
   requestedSeats: number;
   deliveryFeatures: Record<ClientDeliveryFeatureKey, boolean>;
   assessmentVersions: Record<string, string>;
+  customVersionNotes: Record<string, string>;
   addonAssessmentSlug: string | null;
   addonAssessmentLabel: string | null;
   addonNotes: string;
@@ -34,14 +36,30 @@ export type ClientEntitlementAssessment = {
   upgradeableVersions?: Array<{ version: string; title: string; description: string | null }>;
 };
 
+const CUSTOM_VERSION_PLACEHOLDERS: Record<string, string> = {
+  typing: "Describe custom typing wording, passages, or terminology for your organisation.",
+  prioritisation: "Describe the custom PJA pack, scenarios, or scoring context you need.",
+  "situational-judgement": "Describe the custom SJA scenarios or values framework you need.",
+  "call-simulation": "Describe the custom call scripts, personas, or grading criteria you need.",
+};
+
+export function getCustomVersionPlaceholder(slug: string) {
+  return (
+    CUSTOM_VERSION_PLACEHOLDERS[slug] ??
+    "Describe the custom assessment content, pack, or wording you need."
+  );
+}
+
 export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraft {
+  const baseline = Math.max(currentSeats, 1);
   return {
-    requestedSeats: Math.max(currentSeats + 1, 2),
+    requestedSeats: baseline,
     deliveryFeatures: {
       deliveryRemote: false,
       deliveryHybrid: false,
     },
     assessmentVersions: {},
+    customVersionNotes: {},
     addonAssessmentSlug: null,
     addonAssessmentLabel: null,
     addonNotes: "",
@@ -74,7 +92,7 @@ export function computePendingChanges(input: {
   const changes: string[] = [];
 
   if (input.draft.requestedSeats > input.currentSeats) {
-    changes.push(`HM seats: ${input.currentSeats} -> ${input.draft.requestedSeats}`);
+    changes.push(`HM seats: ${input.currentSeats} → ${input.draft.requestedSeats}`);
   }
 
   for (const feature of CLIENT_DELIVERY_FEATURES) {
@@ -88,8 +106,17 @@ export function computePendingChanges(input: {
   for (const assessment of input.assessments) {
     const requested = input.draft.assessmentVersions[assessment.slug];
     if (!requested || requested === assessment.maxVersion) continue;
+
+    if (requested === CUSTOM_ASSESSMENT_VERSION) {
+      const brief = input.draft.customVersionNotes[assessment.slug]?.trim();
+      if (brief && brief.length >= 20) {
+        changes.push(`${assessment.title}: custom content pack`);
+      }
+      continue;
+    }
+
     if (compareVersions(requested, assessment.maxVersion) > 0) {
-      changes.push(`${assessment.title}: up to v${assessment.maxVersion} -> up to v${requested}`);
+      changes.push(`${assessment.title}: up to v${assessment.maxVersion} → up to v${requested}`);
     }
   }
 
@@ -130,7 +157,23 @@ export function buildUpgradeBundleItems(input: {
 
   for (const assessment of input.assessments) {
     const requested = input.draft.assessmentVersions[assessment.slug];
-    if (!requested || compareVersions(requested, assessment.maxVersion) <= 0) continue;
+    if (!requested || requested === assessment.maxVersion) continue;
+
+    if (requested === CUSTOM_ASSESSMENT_VERSION) {
+      const notes = input.draft.customVersionNotes[assessment.slug]?.trim() ?? "";
+      if (notes.length < 20) continue;
+      items.push({
+        type: "assessment_version",
+        assessmentSlug: assessment.slug,
+        assessmentLabel: assessment.title,
+        currentVersion: assessment.maxVersion,
+        requestedVersion: CUSTOM_ASSESSMENT_VERSION,
+        notes,
+      });
+      continue;
+    }
+
+    if (compareVersions(requested, assessment.maxVersion) <= 0) continue;
     items.push({
       type: "assessment_version",
       assessmentSlug: assessment.slug,
@@ -192,7 +235,10 @@ export function computeLineItems(
         break;
       case "assessment_version":
         lineItems.push({
-          label: `${item.assessmentLabel} version upgrade (up to v${item.requestedVersion})`,
+          label:
+            item.requestedVersion === CUSTOM_ASSESSMENT_VERSION
+              ? `Custom content pack: ${item.assessmentLabel}`
+              : `${item.assessmentLabel} version upgrade (up to v${item.requestedVersion})`,
           quantity: 1,
           unitAmountPence: pricing.versionUpgradePence ?? 0,
         });
