@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { initCallSimulationSession } from '@/app/actions/assessment-call-simulation.actions';
+import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 
 type CallRun = {
@@ -237,24 +238,24 @@ const emptyForm: IncidentForm = {
 
 const fallbackRuns: CallRun[] = [
   {
-    id: 'fallback-practice',
+    id: 'practice-1',
     title: 'Practice Call',
     kind: 'practice',
-    audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
+    audioSrc: '/assets/call-simulation/call-0-practice-burglary-residential-v3.mp3',
     scenarioKey: 'call_2_burglary_residential',
   },
   {
-    id: 'fallback-call-1',
+    id: 'call-1',
     title: 'Call 1',
     kind: 'final',
-    audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
-    scenarioKey: 'call_2_burglary_residential',
+    audioSrc: '/assets/call-simulation/call-1-active-car-break-in.mp3',
+    scenarioKey: 'call_1_active_car_break_in',
   },
   {
-    id: 'fallback-call-2',
+    id: 'call-2',
     title: 'Call 2',
     kind: 'final',
-    audioSrc: '/assets/Call%202%20-%20Burglary%20of%20a%20Residential%20Property%20v3_FINAL.mp3',
+    audioSrc: '/assets/call-simulation/call-2-burglary-residential-v3.mp3',
     scenarioKey: 'call_2_burglary_residential',
   },
 ];
@@ -666,7 +667,7 @@ export default function CallSimulationTest({
 
     const submitAssessment = async () => {
       try {
-        const response = await fetch('/api/assessment/call-simulation/submit', {
+        const response = await fetch(getAssessmentSubmitUrl('call-simulation'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

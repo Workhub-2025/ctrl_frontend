@@ -27,6 +27,7 @@ import type { TypingTestProgress } from '@/types/assessments-progress.types';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
 import { AssessmentAttemptService, type CandidateAssessmentAttempt } from '@/services/assessment-attempt.service';
+import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 
 const typingSequence = [
@@ -657,7 +658,7 @@ export default function TypingTest({
 
     const submit = async () => {
       try {
-        const response = await fetch('/api/assessment/typing/submit', {
+        const response = await fetch(getAssessmentSubmitUrl('typing'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

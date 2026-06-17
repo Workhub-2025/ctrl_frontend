@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 import { initPjaSession } from '@/app/actions/assessment-pja.actions';
 
@@ -606,7 +607,7 @@ export default function PrioritisationTest({
         }));
 
       try {
-        const response = await fetch('/api/assessment/prioritisation/submit', {
+        const response = await fetch(getAssessmentSubmitUrl('prioritisation'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

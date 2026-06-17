@@ -10,6 +10,17 @@ import {
   ListOrdered,
   Phone,
 } from "lucide-react";
+import { getAssessmentPagePath, getAssessmentSubmitUrl } from "./helpers";
+import { CallSimulationReportBreakdown } from "./report/call-simulation-breakdown";
+import { PrioritisationReportBreakdown } from "./report/prioritisation-breakdown";
+import {
+  hasCallSimulationReportBreakdown,
+  hasPrioritisationReportBreakdown,
+  hasSituationalJudgementReportBreakdown,
+  hasTypingReportBreakdown,
+} from "./report/shared";
+import { SituationalJudgementReportBreakdown } from "./report/situational-judgement-breakdown";
+import { TypingReportBreakdown } from "./report/typing-breakdown";
 import type { AssessmentUiPlugin } from "./types";
 
 const plugins: AssessmentUiPlugin[] = [
@@ -18,53 +29,65 @@ const plugins: AssessmentUiPlugin[] = [
     title: "Typing Assessment",
     description:
       "Complete a timed typing exercise designed to assess speed and accuracy.",
-    href: "/assessment/typing",
+    href: getAssessmentPagePath("typing"),
     duration: "10-15 min",
     icon: Keyboard,
     timed: false,
     supportsHeartbeat: true,
     requiresServerInit: true,
+    strapiSessionPath: "/assessment/typing/session",
     component: TypingTest,
     shellTitle: "Typing Assessment",
+    reportBreakdown: TypingReportBreakdown,
+    hasReportBreakdown: hasTypingReportBreakdown,
   },
   {
     slug: "call-simulation",
     title: "Call Simulation",
     description:
       "Listen to a simulated call and record the key details clearly and accurately.",
-    href: "/assessment/call-simulation",
+    href: getAssessmentPagePath("call-simulation"),
     duration: "10 min",
     icon: Phone,
     timed: true,
     supportsHeartbeat: true,
+    strapiSessionPath: "/assessment/call-simulation/session",
     component: CallSimulationTest,
     shellTitle: "Call Simulation",
+    reportBreakdown: CallSimulationReportBreakdown,
+    hasReportBreakdown: hasCallSimulationReportBreakdown,
   },
   {
     slug: "situational-judgement",
     title: "Situational Judgement Assessment",
     description:
       "Respond to realistic scenarios that assess judgement, prioritisation, and decision-making.",
-    href: "/assessment/situational-judgement",
+    href: getAssessmentPagePath("situational-judgement"),
     duration: "15-20 min",
     icon: ClipboardCheck,
     timed: true,
     supportsHeartbeat: true,
+    strapiSessionPath: "/assessment/situational-judgement/session",
     component: SituationalJudgementTest,
     shellTitle: "Situational Judgement Assessment",
+    reportBreakdown: SituationalJudgementReportBreakdown,
+    hasReportBreakdown: hasSituationalJudgementReportBreakdown,
   },
   {
     slug: "prioritisation",
     title: "Prioritisation Judgement Assessment",
     description:
       "Rank incident sets from highest to lowest priority to show operational risk judgement.",
-    href: "/assessment/prioritisation",
+    href: getAssessmentPagePath("prioritisation"),
     duration: "Untimed",
     icon: ListOrdered,
     timed: true,
     supportsHeartbeat: true,
+    strapiSessionPath: "/assessment/prioritisation/session",
     component: PrioritisationTest,
     shellTitle: "Prioritisation Judgement Assessment",
+    reportBreakdown: PrioritisationReportBreakdown,
+    hasReportBreakdown: hasPrioritisationReportBreakdown,
   },
 ];
 
@@ -78,6 +101,10 @@ export function getAssessmentPluginTitle(slug: string): string | undefined {
   return getAssessmentUiPlugin(slug)?.title;
 }
 
+export function getAssessmentPluginIcon(slug: string) {
+  return getAssessmentUiPlugin(slug)?.icon;
+}
+
 export function listAssessmentUiPlugins(): AssessmentUiPlugin[] {
   return [...plugins];
 }
@@ -89,6 +116,8 @@ export function listAssessmentSlugs(): string[] {
 export function getTimedAssessmentSlugs(): Set<string> {
   return new Set(plugins.filter((plugin) => plugin.timed).map((plugin) => plugin.slug));
 }
+
+export { getAssessmentSubmitUrl };
 
 export const candidateAssessmentItems = plugins.map((plugin) => ({
   icon: plugin.icon,

@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 import { initSjaSession } from '@/app/actions/assessment-sja.actions';
 
@@ -354,7 +355,7 @@ export default function SituationalJudgementTest({
 
     const submitAssessment = async () => {
       try {
-        const response = await fetch('/api/assessment/situational-judgement/submit', {
+        const response = await fetch(getAssessmentSubmitUrl('situational-judgement'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

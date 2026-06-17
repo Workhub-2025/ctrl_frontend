@@ -1,4 +1,4 @@
-import { initTypingSession } from "@/app/actions/assessment-typing-texts.actions";
+import { initTypingSession } from "@/assessments/plugins/actions/typing-session";
 import { TypingTestClient } from "@/app/assessment/typing/typing-test-client";
 import { AssessmentShellPage } from "@/assessments/plugins/assessment-shell-page";
 import { getAssessmentUiPlugin } from "@/assessments/plugins/registry";
