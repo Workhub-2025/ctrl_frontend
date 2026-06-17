@@ -18,9 +18,9 @@ function getStrapiBaseUrl() {
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<any> }
+  context: { params: Promise<{ sessionId: string }> }
 ) {
-  const { id } = await context.params;
+  const { sessionId } = await context.params;
   const session = await getServerSession(authOptions);
   const strapiJwt = await getServerStrapiJwt(request);
   const limiter = await applyRateLimit({
@@ -47,7 +47,7 @@ export async function POST(
 
   try {
     const strapiRes = await fetch(
-      `${getStrapiBaseUrl()}/candidate-sessions/${encodeURIComponent(id)}/unlock`,
+      `${getStrapiBaseUrl()}/candidate-sessions/${encodeURIComponent(sessionId)}/unlock`,
       {
         method: "POST",
         headers: {
