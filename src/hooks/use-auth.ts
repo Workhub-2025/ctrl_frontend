@@ -76,6 +76,8 @@ export function useAuth() {
     };
 
     const login = async (email: string, password: string) => {
+        const LOGIN_TIMEOUT_MS = 30_000;
+
         try {
             clearUserProfile();
             clearClientSessionCache();
@@ -93,6 +95,7 @@ export function useAuth() {
                     password,
                 }),
                 credentials: 'same-origin',
+                signal: AbortSignal.timeout(LOGIN_TIMEOUT_MS),
             });
 
             const body = await response.json().catch(() => ({}));
@@ -118,15 +121,17 @@ export function useAuth() {
                 setSession(nextSession);
                 setStatus('authenticated');
                 setUserProfile(userData as IUser);
-                routeAfterLogin(userData);
+                const destination = redirectPath || routeForRole(userData.role);
+                // Hard navigation ensures middleware sees the new session cookie.
+                window.location.assign(destination);
             } else if (redirectPath) {
-                router.push(redirectPath);
+                window.location.assign(redirectPath);
             } else {
                 const freshSession = await getClientSession({ force: true });
                 if (freshSession?.user) {
                     setSession(freshSession);
                     setStatus('authenticated');
-                    routeAfterLogin(freshSession.user);
+                    window.location.assign(routeForRole(freshSession.user.role));
                 } else {
                     throw new Error('Authentication failed: wrong user or password');
                 }
@@ -136,6 +141,9 @@ export function useAuth() {
         } catch (error) {
             console.error('Login error:', error);
             setStatus('unauthenticated');
+            if (error instanceof Error && error.name === 'TimeoutError') {
+                throw new Error('Login timed out. Check your connection and try again.');
+            }
             throw error;
         }
     };

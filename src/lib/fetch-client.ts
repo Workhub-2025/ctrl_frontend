@@ -107,8 +107,14 @@ export const fetchClient = async (
             url.includes('/access-code/register') ||
             url.includes('/users-permissions/');
 
-        // Add auth token + tenant context
-        const { jwt: authToken, tenant } = await getSessionContext();
+        // Auth calls (e.g. login route → Strapi) must not await getServerSession — avoids hangs in route handlers.
+        let authToken: string | null = null;
+        let tenant: string | null = null;
+        if (!isAuthEndpoint) {
+            const sessionContext = await getSessionContext();
+            authToken = sessionContext.jwt;
+            tenant = sessionContext.tenant;
+        }
 
         const hasAuthorizationHeader =
             typeof headerRecord.Authorization === 'string' ||

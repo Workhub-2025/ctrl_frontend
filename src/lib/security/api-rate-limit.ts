@@ -94,6 +94,7 @@ const applyUpstashRateLimit = async ({
     const incrResponse = await fetch(`${UPSTASH_URL}/incr/${encodeURIComponent(redisKey)}`, {
       method: "POST",
       headers: baseHeaders,
+      signal: AbortSignal.timeout(3_000),
     });
     const incrJson = (await incrResponse.json()) as { result?: number };
     const count = Number(incrJson.result ?? 0);
@@ -108,6 +109,7 @@ const applyUpstashRateLimit = async ({
         {
           method: "POST",
           headers: baseHeaders,
+          signal: AbortSignal.timeout(3_000),
         }
       );
     }
@@ -115,6 +117,7 @@ const applyUpstashRateLimit = async ({
     const ttlResponse = await fetch(`${UPSTASH_URL}/pttl/${encodeURIComponent(redisKey)}`, {
       method: "POST",
       headers: baseHeaders,
+      signal: AbortSignal.timeout(3_000),
     });
     const ttlJson = (await ttlResponse.json()) as { result?: number };
     const ttlMs =

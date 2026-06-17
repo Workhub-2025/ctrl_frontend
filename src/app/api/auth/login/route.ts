@@ -140,6 +140,17 @@ export async function POST(request: Request) {
       if (error.code === "LOCKED") {
         return lockedResponse(request, jsonResponse, error.retryAfterSeconds);
       }
+
+      if (error.code === "INVALID") {
+        if (jsonResponse) {
+          return NextResponse.json({ error: error.message }, { status: 401 });
+        }
+        const loginUrl = new URL("/auth/register", request.url);
+        loginUrl.searchParams.set("mode", "login");
+        loginUrl.searchParams.set("error", "CredentialsSignin");
+        loginUrl.searchParams.set("message", error.message);
+        return NextResponse.redirect(loginUrl, 303);
+      }
     }
 
     if (jsonResponse) {

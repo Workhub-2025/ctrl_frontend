@@ -114,7 +114,25 @@ export async function authenticateCredentials(params: {
     });
 
     return { authResponse, role };
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message.trim() : "";
+    const isStrapiRejection =
+      message.length > 0 &&
+      message !== "Invalid Strapi auth response" &&
+      message !== "Login failed" &&
+      message !== "Request timeout" &&
+      message !== "Request failed";
+
+    if (isStrapiRejection) {
+      logAuthAuditEvent("login_failure", {
+        email,
+        ipAddress,
+        userAgent,
+        reason: message,
+      });
+      throw new CredentialAuthError("INVALID", message);
+    }
+
     const failedAttempt = await recordFailedLoginAttempt(attemptKey);
 
     logAuthAuditEvent("login_failure", {

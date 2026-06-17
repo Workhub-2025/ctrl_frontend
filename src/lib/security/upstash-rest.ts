@@ -1,5 +1,6 @@
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const UPSTASH_TIMEOUT_MS = 3_000;
 
 export const isUpstashConfigured = () =>
   Boolean(UPSTASH_URL && UPSTASH_TOKEN);
@@ -9,13 +10,20 @@ const baseHeaders = () => ({
   "Content-Type": "application/json",
 });
 
+async function upstashFetch(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, {
+    ...init,
+    signal: init?.signal ?? AbortSignal.timeout(UPSTASH_TIMEOUT_MS),
+  });
+}
+
 export async function upstashGet(key: string): Promise<string | null> {
   if (!isUpstashConfigured()) {
     return null;
   }
 
   try {
-    const response = await fetch(
+    const response = await upstashFetch(
       `${UPSTASH_URL}/get/${encodeURIComponent(key)}`,
       { method: "POST", headers: baseHeaders() }
     );
@@ -41,7 +49,7 @@ export async function upstashSet(
         ? `${UPSTASH_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}/px/${ttlMs}`
         : `${UPSTASH_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}`;
 
-    const response = await fetch(url, { method: "POST", headers: baseHeaders() });
+    const response = await upstashFetch(url, { method: "POST", headers: baseHeaders() });
     const json = (await response.json()) as { result?: string };
     return json.result === "OK";
   } catch {
@@ -55,7 +63,7 @@ export async function upstashDel(key: string): Promise<boolean> {
   }
 
   try {
-    const response = await fetch(
+    const response = await upstashFetch(
       `${UPSTASH_URL}/del/${encodeURIComponent(key)}`,
       { method: "POST", headers: baseHeaders() }
     );
@@ -72,7 +80,7 @@ export async function upstashLpush(key: string, value: string): Promise<boolean>
   }
 
   try {
-    const response = await fetch(
+    const response = await upstashFetch(
       `${UPSTASH_URL}/lpush/${encodeURIComponent(key)}/${encodeURIComponent(value)}`,
       { method: "POST", headers: baseHeaders() }
     );

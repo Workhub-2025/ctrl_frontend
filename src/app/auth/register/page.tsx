@@ -175,8 +175,9 @@ function UnifiedAuthContent() {
       try {
         await login(email, password);
       } catch (err) {
-        setAuthAction(null);
         throw err;
+      } finally {
+        setAuthAction(null);
       }
     },
     [login]
