@@ -1,16 +1,26 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
-export async function GET() {
+async function requireAdminStrapiSession() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.jwt) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  const strapiJwt = await getServerStrapiJwt();
+  if (!session?.user?.id || !strapiJwt) {
+    return { error: NextResponse.json({ error: "Authentication required" }, { status: 401 }) };
   }
   if (!isAdminRole(session.user.role)) {
-    return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+    return { error: NextResponse.json({ error: "Administrator access required" }, { status: 403 }) };
+  }
+  return { session };
+}
+
+export async function GET() {
+  const auth = await requireAdminStrapiSession();
+  if ("error" in auth) {
+    return auth.error;
   }
 
   try {
@@ -25,12 +35,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.jwt) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-  }
-  if (!isAdminRole(session.user.role)) {
-    return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+  const auth = await requireAdminStrapiSession();
+  if ("error" in auth) {
+    return auth.error;
   }
 
   try {

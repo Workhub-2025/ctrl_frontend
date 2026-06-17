@@ -24,6 +24,10 @@ import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-d
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { cn } from "@/lib/utils";
 import {
+  portalPanelElevatedClass,
+  portalPanelNestedClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import {
   CandidateResultsDialog,
   HiringManagerSessionDetailsDialog,
   type ResultsDialogState,
@@ -262,7 +266,7 @@ export function HiringManagerCampaignDetailView({
       />
 
       <div className="w-full">
-        <Card className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 backdrop-blur-md hover:border-primary/45 transition-colors duration-300">
+        <Card className={cn(portalPanelElevatedClass, "relative overflow-hidden transition-colors duration-300 hover:border-primary/45")}>
           <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-sky-400" />
           <CardContent className="p-5 flex flex-col justify-between">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -277,7 +281,7 @@ export function HiringManagerCampaignDetailView({
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-        <Card className="rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+        <Card className={cn(portalPanelNestedClass, "rounded-2xl bg-card/40 backdrop-blur-md shadow-sm")}>
           <CardHeader className="border-b border-border/40 dark:border-white/5 p-4">
             <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <ClipboardList className="h-4 w-4 text-primary" /> Assessment stack
@@ -314,7 +318,7 @@ export function HiringManagerCampaignDetailView({
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-border/50 bg-card/40 dark:border-white/5 dark:bg-[#0b1329]/25 shadow-sm backdrop-blur-md">
+        <Card className={cn(portalPanelNestedClass, "rounded-2xl bg-card/40 backdrop-blur-md shadow-sm")}>
           <CardHeader className="border-b border-border/40 dark:border-white/5 p-4">
             <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
               <Calendar className="h-4 w-4 text-primary" /> Campaign Timeline
@@ -333,7 +337,7 @@ export function HiringManagerCampaignDetailView({
         </Card>
       </div>
 
-      <Card className="rounded-xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-lg">
+      <Card className={cn(portalPanelElevatedClass, "rounded-xl shadow-lg")}>
         <CardHeader className="border-b border-white/10 p-4">
           <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider">Sessions</CardTitle>
         </CardHeader>
@@ -346,7 +350,7 @@ export function HiringManagerCampaignDetailView({
             campaign.assessmentSessions.map((session) => (
               <div
                 key={session.id}
-                className="grid gap-3 rounded-lg border border-white/10 bg-[#0b1329]/20 p-4 md:grid-cols-[minmax(0,1fr)_auto] items-center hover:border-primary/20 transition-all duration-300"
+                className={cn(portalPanelNestedClass, "grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto] items-center hover:border-primary/20 transition-all duration-300")}
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -380,7 +384,7 @@ export function HiringManagerCampaignDetailView({
       </Card>
 
       {/* Candidates in Campaign Section */}
-      <Card className="rounded-xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-2xl">
+      <Card className={cn(portalPanelElevatedClass, "rounded-xl")}>
         <CardHeader className="border-b border-white/10 p-5 flex flex-row items-center justify-between">
           <CardTitle className="text-base font-bold text-white flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" /> Candidates in Campaign ({campaign.joinedCandidates.length})

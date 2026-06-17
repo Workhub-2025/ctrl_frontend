@@ -21,7 +21,7 @@ import {
   dashboardInfoPillClassName,
 } from "@/components/dashboard/dashboard-info-card";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
-import { portalAlertErrorClass, portalBadgeClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalAlertErrorClass, portalBadgeClass, portalPrimaryButtonClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import {
   HiringManagerPortalClientService,
@@ -121,7 +121,7 @@ export function HiringManagerCampaignsList() {
           <Button
             type="button"
             asChild
-            className="h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 hover:opacity-95 shadow-[0_4px_20px_rgba(99,102,241,0.15)]"
+            className={cn(portalPrimaryButtonClass, "h-10")}
           >
             <Link href="/hiring-manager-dashboard/campaigns/create/?returnTo=/hiring-manager-dashboard/campaigns/">
               <Plus className="mr-2 h-4 w-4" />

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import {
     resolveCorrelationId,
     startServerActionTrace,
@@ -97,7 +98,8 @@ export async function POST(request: Request) {
     try {
         // 1. Authentication
         const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
+        const strapiJwt = await getServerStrapiJwt(request);
+        if (!session?.user?.id || !strapiJwt) {
             trace.failure(new Error("Unauthorized"));
             return NextResponse.json(
                 { error: "Unauthorized" },
@@ -149,7 +151,7 @@ export async function POST(request: Request) {
         // 4. Persist through the same assessment submission endpoint used by the
         //    other assessments. Strapi resolves candidate session -> campaign/session
         //    and performs server-side scoring/idempotency.
-        const strapiClient = getStrapiClient(session.user.jwt);
+        const strapiClient = getStrapiClient(strapiJwt);
 
         const assessmentRuns = runs.filter((r) => r.runIndex > 0);
         const practiceRuns = runs.filter((r) => r.runIndex === 0);

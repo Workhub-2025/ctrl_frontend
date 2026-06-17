@@ -55,3 +55,9 @@ export function clearClientSessionCache() {
   cachedSession = undefined;
   sessionInFlight = null;
 }
+
+/** Set session cache after a successful JSON login — avoids an extra /session round trip. */
+export function primeClientSession(session: NonNullable<ClientAuthSession>) {
+  cachedSession = session;
+  sessionInFlight = null;
+}

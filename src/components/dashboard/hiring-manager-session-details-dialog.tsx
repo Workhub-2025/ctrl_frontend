@@ -40,7 +40,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
-import { portalBadgeClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalBadgeClass,
+  portalDialogShellClass,
+  portalPanelClass,
+  portalPanelElevatedClass,
+  portalProgressBarClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
@@ -124,7 +130,10 @@ export function HiringManagerSessionDetailsDialog({
         <DialogContent
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
-          className="fixed left-1/2 top-1/2 h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-[1.5rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 p-6 text-slate-100 shadow-2xl backdrop-blur-md flex flex-col gap-5 [&>button]:hidden"
+          className={cn(
+            portalDialogShellClass,
+            "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-5 p-6 [&>button]:hidden"
+          )}
         >
           {/* Ambient glows */}
           <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
@@ -197,7 +206,7 @@ export function HiringManagerSessionDetailsDialog({
               {/* Metric Cards */}
               <div className="grid gap-4 sm:grid-cols-3 relative z-10">
                 {/* Access Code */}
-                <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 p-4 shadow-sm">
+                <div className={cn(portalPanelElevatedClass, "relative overflow-hidden p-4 shadow-sm")}>
                   <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-indigo-500/10 blur-xl" />
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Code</p>
                   <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-2.5 py-1.5">
@@ -219,7 +228,7 @@ export function HiringManagerSessionDetailsDialog({
                 </div>
 
                 {/* Occupancy */}
-                <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0b1329]/40 p-4 shadow-sm">
+                <div className={cn(portalPanelElevatedClass, "relative overflow-hidden p-4 shadow-sm")}>
                   <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-primary/10 blur-xl" />
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Occupancy</p>
                   <div className="mt-2 flex items-baseline justify-between">
@@ -228,7 +237,7 @@ export function HiringManagerSessionDetailsDialog({
                   </div>
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-500"
+                      className={portalProgressBarClass}
                       style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
                     />
                   </div>
@@ -317,8 +326,8 @@ export function HiringManagerSessionDetailsDialog({
                           className={[
                             "rounded-2xl border transition-all duration-300",
                             isExpanded
-                              ? "border-primary/30 bg-gradient-to-br from-[#0b1329]/40 to-[#080c16]/30 shadow-[0_4px_20px_rgba(99,102,241,0.06)]"
-                              : "border-white/10 bg-gradient-to-br from-[#0b1329]/40 to-[#080c16]/30 hover:border-primary/20"
+                              ? cn(portalPanelElevatedClass, "border-primary/30 shadow-[0_4px_20px_rgba(99,102,241,0.06)]")
+                              : cn(portalPanelElevatedClass, "border-white/10 hover:border-primary/20")
                           ].join(" ")}
                         >
                           {/* Row header */}
@@ -540,7 +549,10 @@ export function CandidateResultsDialog({
       <DialogContent
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        className="fixed left-1/2 top-1/2 h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-y-auto overflow-x-hidden rounded-[1.5rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 p-6 text-slate-100 shadow-2xl backdrop-blur-md flex flex-col gap-5 [&>button]:hidden"
+        className={cn(
+          portalDialogShellClass,
+          "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-x-hidden p-6 [&>button]:hidden"
+        )}
       >
         <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />

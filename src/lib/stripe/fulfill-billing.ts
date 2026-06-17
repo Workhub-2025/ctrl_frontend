@@ -49,12 +49,17 @@ function extractStrapiErrorMessage(body: unknown): string | undefined {
   return undefined;
 }
 
+export type FulfillBillingResult = {
+  alreadyPaid?: boolean;
+  billingRequest?: unknown;
+};
+
 export async function fulfillBillingRequest(input: {
   clientDocumentId: string;
   billingRequestDocumentId: string;
   stripeCheckoutSessionId: string;
   stripeInvoiceId?: string;
-}): Promise<void> {
+}): Promise<FulfillBillingResult> {
   const secret = process.env.BILLING_INTERNAL_SECRET;
   if (!secret) {
     throw new Error("BILLING_INTERNAL_SECRET is not configured");
@@ -69,8 +74,16 @@ export async function fulfillBillingRequest(input: {
     body: JSON.stringify(input),
   });
 
+  const responseBody = await response.json().catch(() => ({}));
+
   if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(extractStrapiErrorMessage(errorBody) ?? "Fulfillment failed");
+    throw new Error(extractStrapiErrorMessage(responseBody) ?? "Fulfillment failed");
   }
+
+  const data =
+    responseBody && typeof responseBody === "object" && "data" in responseBody
+      ? (responseBody as { data?: FulfillBillingResult }).data
+      : undefined;
+
+  return data ?? {};
 }

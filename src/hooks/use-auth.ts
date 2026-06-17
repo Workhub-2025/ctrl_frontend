@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
-import { getCurrentUserAction, updateCurrentUserAction } from '@/app/actions/users.actions';
+import { updateCurrentUserAction } from '@/app/actions/users.actions';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
-import { clearClientSessionCache, getClientSession, type ClientAuthSession } from '@/lib/auth/client-session';
+import { clearClientSessionCache, getClientSession, primeClientSession, type ClientAuthSession } from '@/lib/auth/client-session';
 import { useAuthStore } from '@/store/auth.store';
 
 export function useAuth() {
@@ -75,19 +75,6 @@ export function useAuth() {
         router.push('/candidate-dashboard/');
     };
 
-    const waitForSession = async (attempts = 12, delayMs = 120) => {
-        for (let attempt = 0; attempt < attempts; attempt += 1) {
-            const freshSession = await loadSession({ force: true });
-            if (freshSession?.user) {
-                return freshSession;
-            }
-
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-
-        return null;
-    };
-
     const login = async (email: string, password: string) => {
         try {
             clearUserProfile();
@@ -99,6 +86,7 @@ export function useAuth() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    Accept: 'application/json',
                 },
                 body: new URLSearchParams({
                     email,
@@ -107,52 +95,44 @@ export function useAuth() {
                 credentials: 'same-origin',
             });
 
-            const redirectedPath = response.url ? new URL(response.url).pathname : '';
+            const body = await response.json().catch(() => ({}));
 
-            if (response.redirected && !redirectedPath.startsWith('/auth/')) {
-                console.log('✅ SignIn successful, getting user data for routing...');
-
-                const freshSession = await waitForSession();
-
-                // Get fresh user data directly from Strapi for routing decisions
-                try {
-                    const result = await getCurrentUserAction();
-                    const userData = result.success ? result.data : null;
-                    console.log('📋 Fresh user data for routing:', userData);
-
-                    if (userData) {
-                        const resolvedUserData = userData.role
-                            ? userData
-                            : {
-                                ...userData,
-                                role: freshSession?.user?.role || session?.user?.role || 'candidate',
-                            };
-                        // Persist profile in Zustand store
-                        setUserProfile(resolvedUserData as IUser);
-                        // Route based on fresh user data
-                        routeAfterLogin(resolvedUserData);
-                    } else if (freshSession?.user) {
-                        console.warn('⚠️ Profile lookup returned null, routing from session');
-                        routeAfterLogin(freshSession.user);
-                    } else {
-                        routeByRole(session?.user?.role);
-                    }
-                } catch (profileError) {
-                    console.warn('⚠️ Could not get fresh profile, falling back to session', profileError);
-                    // Fallback: use freshly loaded session data if available
-                    if (freshSession?.user) {
-                        routeAfterLogin(freshSession.user);
-                    } else if (session?.user) {
-                        routeAfterLogin(session.user);
-                    } else {
-                        routeByRole();
-                    }
+            if (!response.ok) {
+                if (response.status === 429) {
+                    throw new Error(
+                        body.error ?? 'Too many login attempts. Please try again later.'
+                    );
                 }
-
-                return { success: true };
+                throw new Error(body.error ?? 'Authentication failed: wrong user or password');
             }
 
-            throw new Error('Authentication failed: wrong user or password');
+            const userData = body.data?.user;
+            const redirectPath = body.data?.redirectPath as string | undefined;
+
+            if (userData) {
+                const nextSession: ClientAuthSession = {
+                    user: userData,
+                    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                };
+                primeClientSession(nextSession);
+                setSession(nextSession);
+                setStatus('authenticated');
+                setUserProfile(userData as IUser);
+                routeAfterLogin(userData);
+            } else if (redirectPath) {
+                router.push(redirectPath);
+            } else {
+                const freshSession = await getClientSession({ force: true });
+                if (freshSession?.user) {
+                    setSession(freshSession);
+                    setStatus('authenticated');
+                    routeAfterLogin(freshSession.user);
+                } else {
+                    throw new Error('Authentication failed: wrong user or password');
+                }
+            }
+
+            return { success: true };
         } catch (error) {
             console.error('Login error:', error);
             setStatus('unauthenticated');
@@ -205,10 +185,11 @@ export function useAuth() {
 
             await fetch('/api/auth/logout', {
                 method: 'POST',
+                headers: { Accept: 'application/json' },
                 credentials: 'same-origin',
             });
 
-            router.push('/');
+            router.replace('/');
         } catch (error) {
             console.error('Logout error:', error);
         }

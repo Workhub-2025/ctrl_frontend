@@ -36,11 +36,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    await fulfillBillingRequest({
+    const fulfillment = await fulfillBillingRequest({
       clientDocumentId: metadata.clientDocumentId,
       billingRequestDocumentId: metadata.billingRequestDocumentId,
       stripeCheckoutSessionId: session.id,
       stripeInvoiceId: typeof session.invoice === "string" ? session.invoice : undefined,
+    });
+
+    return NextResponse.json({
+      received: true,
+      alreadyPaid: fulfillment.alreadyPaid === true,
     });
   } catch (error) {
     return NextResponse.json(
@@ -48,6 +53,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ received: true });
 }

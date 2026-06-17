@@ -78,6 +78,7 @@ export default function AdminUpgradeRequestsPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   const load = async (force = false) => {
+    if (force) invalidatePortalCache("admin:billing:upgrade-requests");
     if (force) setRefreshing(true);
     else setLoading(true);
     setError(null);
@@ -101,6 +102,26 @@ export default function AdminUpgradeRequestsPage() {
 
   useEffect(() => {
     void load();
+  }, []);
+
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        void load(true);
+      }
+    };
+
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void load(true);
+      }
+    }, 20_000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.clearInterval(intervalId);
+    };
   }, []);
 
   const grouped = useMemo(() => {

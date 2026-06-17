@@ -90,76 +90,41 @@ export class AuthAPI {
      * Login user (for direct API usage, not NextAuth)
      */
     static async login(credentials: LoginUserData): Promise<StrapiAuthResponse> {
-        console.log('🚀 AuthAPI.login called with:', { identifier: credentials.identifier });
-
         try {
-            console.log('📡 Making POST request to /auth/local...');
             const response = await fetchApi.post<StrapiAuthResponse>(
                 '/auth/local',
                 credentials
             );
 
-            console.log('✅ Strapi response received successfully');
-            console.log('🔍 Initial auth response:', {
-                hasJWT: !!response.jwt,
-                hasUser: !!response.user,
-                userEmail: response.user?.email,
-                initialRole: response.user?.role
-            });
-
-            // Step 2: Get complete user data with populated role (CountTV pattern)
-            if (response.jwt) {
-                console.log('🔄 Fetching complete user data with populated role...');
-
-                try {
-                    const userResponse = await fetchApi.get<StrapiAuthResponse['user']>('/users/me?populate=role', {
-                        headers: {
-                            'Authorization': `Bearer ${response.jwt}`
-                        }
-                    });
-
-                    console.log('✅ Complete user data retrieved:', {
-                        userEmail: userResponse.email,
-                        roleName: typeof userResponse.role === 'object' && userResponse.role !== null ? userResponse.role.name : 'Missing',
-                        roleId: typeof userResponse.role === 'object' && userResponse.role !== null ? userResponse.role.id : 'Missing',
-                        fullRole: userResponse.role
-                    });
-
-                    const serverRoleUser = hasRole(userResponse)
-                        ? null
-                        : await fetchUserWithRoleFromServer(userResponse.id ?? response.user?.id);
-
-                    if (serverRoleUser?.role) {
-                        console.log('✅ Role recovered via server user lookup:', {
-                            userEmail: serverRoleUser.email,
-                            role: serverRoleUser.role,
-                        });
-                    }
-
-                    // Return enhanced response with complete user data
-                    return {
-                        jwt: response.jwt,
-                        user: {
-                            ...userResponse,
-                            ...(serverRoleUser ?? {}),
-                            // Ensure role is properly structured
-                            role: serverRoleUser?.role ?? userResponse.role
-                        }
-                    };
-                } catch (userError: any) {
-                    console.error('❌ Error fetching complete user data:', userError.message);
-                    // Fallback to original response if user data fetch fails
-                    return response;
-                }
+            if (!response.jwt || !response.user) {
+                throw new Error('Invalid Strapi auth response');
             }
 
-            return response;
-        } catch (error: any) {
-            console.error('❌ AuthAPI.login error details:', {
-                message: error.message,
-                stack: error.stack
+            if (hasRole(response.user)) {
+                return response;
+            }
+
+            // Fallback when backend role populate is unavailable (older Strapi builds).
+            const userResponse = await fetchApi.get<StrapiAuthResponse['user']>('/users/me?populate=role', {
+                headers: {
+                    Authorization: `Bearer ${response.jwt}`,
+                },
             });
-            const errorMessage = error.message || 'Login failed';
+
+            const serverRoleUser = hasRole(userResponse)
+                ? null
+                : await fetchUserWithRoleFromServer(userResponse.id ?? response.user?.id);
+
+            return {
+                jwt: response.jwt,
+                user: {
+                    ...userResponse,
+                    ...(serverRoleUser ?? {}),
+                    role: serverRoleUser?.role ?? userResponse.role,
+                },
+            };
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Login failed';
             throw new Error(errorMessage);
         }
     }

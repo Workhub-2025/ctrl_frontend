@@ -3,6 +3,9 @@
  * - TTL avoids refetching on every navigation
  * - minRefetchMs throttles back-to-back force refreshes
  * - In-flight deduplication prevents duplicate parallel requests
+ *
+ * Security: per-tab only; stores non-sensitive portal list/summary data.
+ * Auth is enforced by upstream API routes — never cache secrets or JWTs here.
  */
 
 export const PORTAL_CACHE_TTL_MS = 90_000;
@@ -112,12 +115,10 @@ export async function fetchPortalJson<T>(options: PortalFetchOptions<T>): Promis
 
   const existing = stores.get(key) as CacheEntry<T> | undefined;
 
-  if (!force && isFresh(existing, ttlMs)) {
+  if (force) {
+    stores.delete(key);
+  } else if (isFresh(existing, ttlMs)) {
     return existing!.data as T;
-  }
-
-  if (force && isThrottled(existing, minRefetchMs) && existing?.data !== undefined) {
-    return existing.data as T;
   }
 
   if (!force && existing?.promise) {

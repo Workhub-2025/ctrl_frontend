@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 
 // Forward requests to Strapi
@@ -22,6 +23,7 @@ export async function POST(
   const { sessionId } = await context.params;
   const id = sessionId;
   const session = await getServerSession(authOptions);
+  const strapiJwt = await getServerStrapiJwt(request);
   const limiter = await applyRateLimit({
     key: `hm-session-status:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
     limit: 15,
@@ -40,7 +42,7 @@ export async function POST(
     );
   }
 
-  if (!session?.user?.jwt) {
+  if (!session?.user?.id || !strapiJwt) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
@@ -58,7 +60,7 @@ export async function POST(
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.user.jwt}`,
+          Authorization: `Bearer ${strapiJwt}`,
         },
         body: JSON.stringify({
           data: {

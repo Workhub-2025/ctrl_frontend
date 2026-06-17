@@ -100,6 +100,7 @@ export function ClientUpgradeContent() {
     setError,
     loadEntitlements,
     loadUpgradeRequests,
+    markUpgradeRequestPaid,
     submitUpgradeRequest,
   } = useClientPortal();
 
@@ -149,6 +150,11 @@ export function ClientUpgradeContent() {
         if (!response.ok) {
           throw new Error(body.error ?? "Payment could not be confirmed");
         }
+        const paidRequestId = (body as { data?: { billingRequestDocumentId?: string } }).data
+          ?.billingRequestDocumentId;
+        if (paidRequestId) {
+          markUpgradeRequestPaid(paidRequestId);
+        }
         await Promise.all([loadEntitlements(true), loadUpgradeRequests(true)]);
         if (!cancelled) {
           router.replace("/client-dashboard/upgrade-requests/");
@@ -168,7 +174,7 @@ export function ClientUpgradeContent() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams, loadEntitlements, loadUpgradeRequests, router, setError]);
+  }, [searchParams, loadEntitlements, loadUpgradeRequests, markUpgradeRequestPaid, router, setError]);
 
   const payForUpgrade = async (ticketDocumentId: string) => {
     setPayingRequestId(ticketDocumentId);

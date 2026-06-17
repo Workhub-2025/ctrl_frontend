@@ -4,8 +4,9 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { AnimatedBackground } from "@/components/ui/animated-background";
 import { AnimatedSubmitButton, ButtonState } from "@/components/ui/animated-submit-button";
+import { AuthBrandingPane } from "@/components/auth/auth-branding-pane";
+import { AuthLoginForm } from "@/components/auth/auth-login-form";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,6 @@ function UnifiedAuthContent() {
     settings: accessibilitySettings,
     updateSettings: updateAccessibilitySettings,
     resetSettings: resetAccessibilitySettings,
-    reduceMotion,
     themeClassName: bgColor,
   } = useAccessibilitySettings();
   
@@ -63,7 +63,7 @@ function UnifiedAuthContent() {
   });
 
   const [isLoginView, setIsLoginView] = useState(false);
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [initialLoginEmail, setInitialLoginEmail] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -101,7 +101,7 @@ function UnifiedAuthContent() {
     }
 
     if (email) {
-      setLoginData((prev) => ({ ...prev, email }));
+      setInitialLoginEmail(email);
       setFormData((prev) => ({ ...prev, email }));
     }
 
@@ -144,7 +144,7 @@ function UnifiedAuthContent() {
 
   const inputClassName = useCallback(
     (field: AuthField, extra?: string) => cn(
-      "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-all focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50",
+      "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-[border-color,box-shadow] focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50",
       hasInvalidField(field) && "border-red-500/80 bg-red-950/15 focus-visible:border-red-400/80 focus-visible:ring-red-400/40",
       extra
     ),
@@ -165,18 +165,17 @@ function UnifiedAuthContent() {
     []
   );
 
-  const handleLoginInputChange = useCallback(
-    (field: keyof typeof loginData, value: string) => {
-      if (invalidResetTimer.current) {
-        window.clearTimeout(invalidResetTimer.current);
+  const handleLogin = useCallback(
+    async ({ email, password }: { email: string; password: string }) => {
+      setAuthAction("login");
+      try {
+        await login(email, password);
+      } catch (err) {
+        setAuthAction(null);
+        throw err;
       }
-
-      setLoginData((prev) => ({ ...prev, [field]: value }));
-      setError(""); // Clear error when user starts typing
-      setInvalidFields([]);
-      setSubmitStatus("idle");
     },
-    []
+    [login]
   );
 
   const validateForm = (): AuthField[] => {
@@ -258,120 +257,9 @@ function UnifiedAuthContent() {
     }
   };
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (authAction) return;
-
-    setError("");
-    setInvalidFields([]);
-
-    if (!loginData.email || !loginData.password) {
-      const fields: AuthField[] = [];
-      if (!loginData.email) fields.push("loginEmail");
-      if (!loginData.password) fields.push("loginPassword");
-      showFieldErrors(fields);
-      return;
-    }
-
-    try {
-      setAuthAction("login");
-      setSubmitStatus("loading");
-      await login(loginData.email, loginData.password);
-      setSubmitStatus("success");
-    } catch (err: any) {
-      setError("Credentials not verified.");
-      setAuthAction(null);
-      setSubmitStatus("error");
-    }
-  };
-
   return (
-    <div className={cn("relative flex min-h-[100svh] w-full ctrl-landing-page transition-colors duration-500", bgColor)}>
-      {/* Left Pane - Branding & Narrative (Hidden on Mobile) */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden border-r border-white/10 bg-[#050505] p-12 lg:flex xl:p-16">
-        {/* Background Visuals */}
-        <div className="absolute inset-0 pointer-events-none z-0">
-          <AnimatedBackground disabled={reduceMotion} />
-          {/* Reticle grid echoing the logo registration marks */}
-          <div
-            aria-hidden
-            className="absolute inset-0 opacity-[0.18]"
-            style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(148,163,184,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.4) 1px, transparent 1px)",
-              backgroundSize: "56px 56px",
-              maskImage: "radial-gradient(ellipse 80% 70% at 30% 40%, black 20%, transparent 80%)",
-              WebkitMaskImage: "radial-gradient(ellipse 80% 70% at 30% 40%, black 20%, transparent 80%)",
-            }}
-          />
-          <div
-            aria-hidden
-            className="absolute left-[12%] top-[34%] h-[28rem] w-[28rem] rounded-full blur-3xl"
-            style={{ background: "radial-gradient(circle, rgba(56,189,248,0.18), rgba(37,99,235,0.06) 45%, transparent 70%)" }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/80 mix-blend-multiply" />
-        </div>
-
-        {/* Corner registration ticks */}
-        <span aria-hidden className="pointer-events-none absolute left-8 top-8 z-10 h-6 w-6 border-l-2 border-t-2 border-white/15" />
-        <span aria-hidden className="pointer-events-none absolute bottom-8 right-8 z-10 h-6 w-6 border-b-2 border-r-2 border-white/15" />
-
-        {/* Top Branding */}
-        <div className="relative z-10 flex items-center justify-between">
-          <Link href="/" className="inline-block transition-transform hover:scale-105">
-            <BrandLogo layout="horizontal" className="h-10 w-[4.5rem]" />
-          </Link>
-          <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            </span>
-            Secure access
-          </span>
-        </div>
-
-        {/* Middle Value Proposition */}
-        <div className="relative z-10 max-w-lg">
-          <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.28em] text-cyan-400/80">
-            Dispatch Intelligence Platform
-          </p>
-          <h2 className="text-4xl font-medium leading-[1.1] tracking-tight text-white xl:text-5xl">
-            Recruit for the moments that{" "}
-            <span className="bg-gradient-to-r from-sky-300 to-blue-400 bg-clip-text text-transparent">
-              actually matter
-            </span>
-            .
-          </h2>
-          <ul className="mt-8 space-y-3.5">
-            {[
-              "Behavioural scoring under real pressure",
-              "Pressure-tested operational scenarios",
-              "Three role-built portals, one platform",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-3 text-[15px] text-slate-300">
-                <CheckCircle className="h-4 w-4 shrink-0 text-cyan-400" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Bottom Narrative */}
-        <div className="relative z-10 max-w-lg">
-          <blockquote className="space-y-4 border-l-2 border-cyan-400/40 pl-5">
-            <p className="text-xl font-medium leading-snug tracking-tight text-white/90">
-              "We stopped guessing based on interviews. Now we evaluate candidates under actual control room pressure."
-            </p>
-            <footer className="flex items-center gap-3 text-xs font-semibold uppercase tracking-widest text-cyan-400">
-              <span className="h-px w-8 bg-cyan-400" />
-              Mission Critical Assessment
-            </footer>
-          </blockquote>
-        </div>
-      </div>
-
-      {/* Right Pane - Form Area */}
+    <div className={cn("relative flex min-h-[100svh] w-full ctrl-landing-page", bgColor)}>
+      <AuthBrandingPane />
       <div className="relative flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-12 xl:px-24">
         {/* Accessibility Dropdown at Top Right */}
         <div className="absolute top-6 right-6 lg:top-8 lg:right-8 z-50">
@@ -464,63 +352,11 @@ function UnifiedAuthContent() {
               </div>
 
               {isLoginView ? (
-                <form onSubmit={handleLoginSubmit} className="space-y-5" noValidate>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Email Address</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="john.smith@organization.com"
-                      value={loginData.email}
-                      onChange={(e) => handleLoginInputChange("email", e.target.value)}
-                      required
-                      disabled={isAuthBusy}
-                      className={inputClassName("loginEmail")}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Password</Label>
-                      <Link href="/auth/forgot-password" className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors">
-                        Forgot Password?
-                      </Link>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        id="login-password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        value={loginData.password}
-                        onChange={(e) => handleLoginInputChange("password", e.target.value)}
-                        required
-                        disabled={isAuthBusy}
-                        className={inputClassName("loginPassword", "pr-12")}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
-                        onClick={() => setShowPassword(!showPassword)}
-                        disabled={isAuthBusy}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <AnimatedSubmitButton
-                      type="submit"
-                      status={submitStatus}
-                      idleText="Sign In"
-                      errorMessage={submitStatus === "error" ? error : undefined}
-                      disabled={isAuthBusy}
-                      className="w-full"
-                    />
-                  </div>
-                </form>
+                <AuthLoginForm
+                  initialEmail={initialLoginEmail}
+                  disabled={isAuthBusy}
+                  onSubmit={handleLogin}
+                />
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   <div className="space-y-2">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { getStrapiClient } from "@/lib/strapi";
 import {
   resolveCorrelationId,
@@ -92,7 +93,8 @@ export async function POST(request: Request) {
 
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || !session.user.jwt) {
+    const strapiJwt = await getServerStrapiJwt(request);
+    if (!session?.user?.id || !strapiJwt) {
       trace.failure(new Error("Unauthorized"));
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -128,7 +130,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const strapiClient = getStrapiClient(session.user.jwt);
+    const strapiClient = getStrapiClient(strapiJwt);
     const created = await strapiClient.fetch("/assessment/call-simulation/results", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

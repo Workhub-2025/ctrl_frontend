@@ -37,6 +37,8 @@ import {
   portalBadgeClass,
   portalIconWrapLgClass,
   portalPanelClass,
+  portalPanelElevatedClass,
+  portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -281,7 +283,7 @@ export function HiringManagerCandidatesView() {
       </div>
 
       {/* Unified Search & Filters Card */}
-      <Card className="border border-white/10 bg-[#080c16]/30 dark:bg-[#0b1329]/45 backdrop-blur-md">
+      <Card className={cn(portalPanelElevatedClass, "border-white/10")}>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             {/* Search Input */}
@@ -450,7 +452,7 @@ export function HiringManagerCandidatesView() {
                       </div>
                       <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden border border-white/5">
                         <div
-                          className="h-full bg-gradient-to-r from-primary to-indigo-500 rounded-full transition-all duration-500"
+                          className={portalProgressBarClass}
                           style={{ width: `${candidate.overallScore}%` }}
                         />
                       </div>

@@ -7,6 +7,7 @@ import {
   type ClientBillingRequestKind,
   buildUpgradeRequestSubject,
 } from "@/lib/client/entitlements";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
@@ -101,7 +102,8 @@ function mapBillingRequest(row: BillingRequestRow): ClientUpgradeRequestRecord {
 
 export async function requireClientSession() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.jwt) {
+  const strapiJwt = await getServerStrapiJwt();
+  if (!session?.user?.id || !strapiJwt) {
     throw new Error("Authentication required");
   }
   if (normalizeRole(session.user.role) !== "client") {

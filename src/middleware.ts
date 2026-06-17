@@ -54,7 +54,8 @@ export default withAuth(
                     pathname.startsWith('/client-dashboard') ||
                     pathname.startsWith('/hiring-manager-dashboard') ||
                     pathname.startsWith('/assessment') ||
-                    pathname.startsWith('/results')) {
+                    pathname.startsWith('/results') ||
+                    pathname.startsWith('/profile')) {
                     return !!token;
                 }
 
@@ -76,6 +77,7 @@ export const config = {
         '/client-dashboard/:path*',
         '/hiring-manager-dashboard/:path*',
         '/assessment/:path*',
-        '/results/:path*'
+        '/results/:path*',
+        '/profile',
     ]
 };

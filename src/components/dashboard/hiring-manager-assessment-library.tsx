@@ -28,7 +28,7 @@ import {
   dashboardInfoPillClassName,
 } from "@/components/dashboard/dashboard-info-card";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
-import { portalAlertInfoClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalAlertInfoClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
 type HiringManagerAssessmentLibraryProps = {
@@ -117,7 +117,7 @@ export function HiringManagerAssessmentLibrary({
         <DialogContent className="max-w-3xl p-0 text-white overflow-hidden rounded-[1.25rem] border border-white/10 bg-[#080c16]/95 shadow-2xl backdrop-blur-xl">
           {selected && (
             <div className="overflow-hidden">
-              <div className="border-b border-white/5 bg-[#0b1329]/30 p-6">
+              <div className={cn(portalPanelClass, "border-b border-white/5 p-6")}>
                 <DialogHeader className="space-y-3 text-left">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className="rounded-lg border-primary/20 bg-primary/15 text-xs font-bold text-primary px-2.5 py-0.5">

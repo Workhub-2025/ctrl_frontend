@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
 import {
   deleteAdminClient,
@@ -13,7 +14,7 @@ type RouteContext = {
   params: Promise<any>;
 };
 
-async function requireAdmin() {
+async function requireAdmin(request?: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return {
@@ -27,7 +28,14 @@ async function requireAdmin() {
       response: NextResponse.json({ error: "Administrator access required" }, { status: 403 }),
     };
   }
-  return { ok: true as const, session };
+  const strapiJwt = await getServerStrapiJwt(request);
+  if (!strapiJwt) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: "Authentication required" }, { status: 401 }),
+    };
+  }
+  return { ok: true as const, session, strapiJwt };
 }
 
 async function getClientId(context: RouteContext) {
@@ -36,11 +44,11 @@ async function getClientId(context: RouteContext) {
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
   try {
-    const client = await getAdminClientDetails(await getClientId(context), auth.session.user.jwt);
+    const client = await getAdminClientDetails(await getClientId(context), auth.strapiJwt);
     return NextResponse.json({ data: client });
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);
@@ -55,7 +63,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const auth = await requireAdmin();
+  const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
   try {
@@ -67,7 +75,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     await deleteAdminClient(
       await getClientId(context),
       body.confirmName,
-      auth.session.user.jwt
+      auth.strapiJwt
     );
     return NextResponse.json({ data: { deleted: true } });
   } catch (error) {
@@ -80,7 +88,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-    const auth = await requireAdmin();
+    const auth = await requireAdmin(request);
     if (!auth.ok) return auth.response;
 
     try {
@@ -93,7 +101,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         const updated = await updateAdminClient(
             await getClientId(context),
             body,
-            auth.session.user.jwt
+            auth.strapiJwt
         );
         return NextResponse.json({ data: updated });
     } catch (error) {

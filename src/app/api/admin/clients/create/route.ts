@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
 import {
   createAdminClient,
@@ -63,7 +65,7 @@ function validatePayload(body: unknown):
   };
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -73,12 +75,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
     }
 
+    const strapiJwt = await getServerStrapiJwt(request);
+    if (!strapiJwt) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     const validation = validatePayload(await request.json().catch(() => null));
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const created = await createAdminClient(validation.data, session.user.jwt);
+    const created = await createAdminClient(validation.data, strapiJwt);
     return NextResponse.json({ data: created }, { status: 201 });
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);

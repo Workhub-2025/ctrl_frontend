@@ -1,19 +1,19 @@
 import { NextResponse } from "next/server";
-import { encode } from "next-auth/jwt";
-import { AuthAPI } from "@/services/auth-api";
-import { inferDevSeededRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
-import { logAuthAuditEvent } from "@/lib/security/audit-log";
+import {
+  authenticateCredentials,
+  CredentialAuthError,
+} from "@/lib/auth/credential-auth";
+import { routeForRole } from "@/lib/auth/role-model";
+import {
+  attachSessionCookie,
+  buildPublicUser,
+  encodeSessionToken,
+  getAuthRequestContext,
+} from "@/lib/auth/session-config";
+import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 
-const SESSION_MAX_AGE = 30 * 24 * 60 * 60;
-
-const getRequestContext = (request: Request) => {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const userAgent = request.headers.get("user-agent") ?? "unknown";
-  const ipAddress = forwardedFor?.split(",")[0]?.trim() || realIp || "unknown";
-
-  return { ipAddress, userAgent };
-};
+const wantsJsonResponse = (request: Request) =>
+  request.headers.get("accept")?.includes("application/json") ?? false;
 
 const resolveCallbackPath = (value: FormDataEntryValue | null, role: string) => {
   const fallback = routeForRole(role);
@@ -33,13 +33,41 @@ const resolveCallbackPath = (value: FormDataEntryValue | null, role: string) => 
   }
 };
 
+const lockedResponse = (request: Request, jsonResponse: boolean, retryAfterSeconds?: number) => {
+  if (jsonResponse) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Please try again later." },
+      {
+        status: 429,
+        headers: retryAfterSeconds
+          ? { "Retry-After": String(retryAfterSeconds) }
+          : undefined,
+      }
+    );
+  }
+
+  const loginUrl = new URL("/auth/register", request.url);
+  loginUrl.searchParams.set("mode", "login");
+  loginUrl.searchParams.set("error", "LockedOut");
+  return NextResponse.redirect(loginUrl, 303);
+};
+
 export async function POST(request: Request) {
+  const forbidden = rejectCrossOriginRequest(request);
+  if (forbidden) {
+    return forbidden;
+  }
+
   const formData = await request.formData();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const { ipAddress, userAgent } = getRequestContext(request);
+  const jsonResponse = wantsJsonResponse(request);
+  const context = getAuthRequestContext(request);
 
   if (!email || !password) {
+    if (jsonResponse) {
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    }
     const loginUrl = new URL("/auth/register", request.url);
     loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
@@ -47,82 +75,76 @@ export async function POST(request: Request) {
   }
 
   try {
-    logAuthAuditEvent("login_attempt", {
+    const { authResponse, role } = await authenticateCredentials({
       email,
-      ipAddress,
-      userAgent,
-    });
-
-    const authResponse = await AuthAPI.login({
-      identifier: email,
       password,
+      context,
     });
-
-    if (!authResponse.jwt || !authResponse.user) {
-      throw new Error("Invalid Strapi auth response");
-    }
-
-    const userRole = authResponse.user.role;
-    const fallbackDevRole = inferDevSeededRole(authResponse.user.email || email);
-    const role = userRole
-      ? normalizeRole(userRole)
-      : fallbackDevRole ?? "candidate";
 
     const callbackPath = resolveCallbackPath(formData.get("callbackUrl"), role);
-    const response = NextResponse.redirect(new URL(callbackPath, request.url), 303);
-    const secret = process.env.NEXTAUTH_SECRET;
+    const token = await encodeSessionToken({
+      id: authResponse.user!.id,
+      email: authResponse.user!.email,
+      firstName: authResponse.user!.firstName,
+      lastName: authResponse.user!.lastName,
+      role,
+      jwt: authResponse.jwt!,
+      organization:
+        typeof authResponse.user!.organization === "string"
+          ? authResponse.user!.organization
+          : undefined,
+      phone:
+        typeof authResponse.user!.phone === "string" ? authResponse.user!.phone : undefined,
+      equalityMonitoring: authResponse.user!.equalityMonitoring,
+      agreeToMarketing: authResponse.user!.agreeToMarketing ?? undefined,
+      agreeToTerms: authResponse.user!.agreeToTerms ?? undefined,
+      agreeToDataPrivacyPolicy: authResponse.user!.agreeToDataPrivacyPolicy ?? undefined,
+    });
 
-    if (!secret) {
-      throw new Error("NEXTAUTH_SECRET is required for login.");
+    const publicUser = buildPublicUser(authResponse.user!, role);
+
+    if (jsonResponse) {
+      const response = NextResponse.json({
+        data: {
+          user: publicUser,
+          redirectPath: callbackPath,
+        },
+      });
+      attachSessionCookie(response, token);
+      return response;
     }
 
-    const token = await encode({
-      secret,
-      maxAge: SESSION_MAX_AGE,
-      token: {
-        sub: String(authResponse.user.id),
-        email: authResponse.user.email,
-        name: `${authResponse.user.firstName || ""} ${authResponse.user.lastName || ""}`.trim(),
-        role,
-        jwt: authResponse.jwt,
-        firstName: authResponse.user.firstName,
-        lastName: authResponse.user.lastName,
-        organization: typeof authResponse.user.organization === "string" ? authResponse.user.organization : undefined,
-        phone: typeof authResponse.user.phone === "string" ? authResponse.user.phone : undefined,
-        equalityMonitoring: authResponse.user.equalityMonitoring,
-        agreeToMarketing: authResponse.user.agreeToMarketing ?? undefined,
-        agreeToTerms: authResponse.user.agreeToTerms ?? undefined,
-        agreeToDataPrivacyPolicy: authResponse.user.agreeToDataPrivacyPolicy ?? undefined,
-      },
-    });
-
-    const secureCookie = process.env.NEXTAUTH_URL?.startsWith("https://") || process.env.VERCEL === "1";
-    response.cookies.set({
-      name: secureCookie ? "__Secure-next-auth.session-token" : "next-auth.session-token",
-      value: token,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: secureCookie,
-      path: "/",
-      maxAge: SESSION_MAX_AGE,
-    });
-
-    logAuthAuditEvent("login_success", {
-      email,
-      ipAddress,
-      userAgent,
-      role,
-      userId: authResponse.user.id,
-    });
-
+    const response = NextResponse.redirect(new URL(callbackPath, request.url), 303);
+    attachSessionCookie(response, token);
     return response;
   } catch (error) {
-    logAuthAuditEvent("login_failure", {
-      email,
-      ipAddress,
-      userAgent,
-      reason: error instanceof Error ? error.message : "Unknown error",
-    });
+    if (error instanceof CredentialAuthError) {
+      if (error.code === "RATE_LIMITED") {
+        if (jsonResponse) {
+          return NextResponse.json(
+            { error: error.message },
+            {
+              status: 429,
+              headers: error.retryAfterSeconds
+                ? { "Retry-After": String(error.retryAfterSeconds) }
+                : undefined,
+            }
+          );
+        }
+        const loginUrl = new URL("/auth/register", request.url);
+        loginUrl.searchParams.set("mode", "login");
+        loginUrl.searchParams.set("error", "CredentialsSignin");
+        return NextResponse.redirect(loginUrl, 303);
+      }
+
+      if (error.code === "LOCKED") {
+        return lockedResponse(request, jsonResponse, error.retryAfterSeconds);
+      }
+    }
+
+    if (jsonResponse) {
+      return NextResponse.json({ error: "Credentials not verified" }, { status: 401 });
+    }
 
     const loginUrl = new URL("/auth/register", request.url);
     loginUrl.searchParams.set("mode", "login");

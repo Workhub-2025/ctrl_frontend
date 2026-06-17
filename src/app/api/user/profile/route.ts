@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/next-auth-options';
+import { getServerStrapiJwt } from '@/lib/auth/strapi-jwt';
 import { resolveCorrelationId, startServerActionTrace } from '@/lib/observability/server-observability';
 import { applyRateLimit, extractClientIp } from '@/lib/security/api-rate-limit';
 
@@ -9,8 +10,9 @@ export async function GET(request: NextRequest) {
     const trace = startServerActionTrace('profile.get', { correlationId });
     try {
         const session = await getServerSession(authOptions);
+        const strapiJwt = await getServerStrapiJwt(request);
 
-        if (!session?.user?.jwt) {
+        if (!session?.user?.id || !strapiJwt) {
             trace.failure(new Error('Unauthorized'));
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
@@ -36,7 +38,7 @@ export async function GET(request: NextRequest) {
 
         // Fetch complete user profile from Strapi
         const { getStrapiClient } = await import('@/lib/strapi');
-        const strapiClient = getStrapiClient(session.user.jwt);
+        const strapiClient = getStrapiClient(strapiJwt);
         const meResponse = await strapiClient.fetch('/users/me?populate=*');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const userData: any = await meResponse.json();
@@ -69,8 +71,9 @@ export async function PUT(request: NextRequest) {
     const trace = startServerActionTrace('profile.put', { correlationId });
     try {
         const session = await getServerSession(authOptions);
+        const strapiJwt = await getServerStrapiJwt(request);
 
-        if (!session?.user?.jwt) {
+        if (!session?.user?.id || !strapiJwt) {
             trace.failure(new Error('Unauthorized'));
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
@@ -118,7 +121,7 @@ export async function PUT(request: NextRequest) {
 
         // Update the signed-in user's own profile without requiring broad user.update permissions.
         const { getStrapiClient } = await import('@/lib/strapi');
-        const strapiClient = getStrapiClient(session.user.jwt);
+        const strapiClient = getStrapiClient(strapiJwt);
         const updateResponse = await strapiClient.fetch('/users/me', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },

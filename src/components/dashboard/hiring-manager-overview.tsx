@@ -31,6 +31,7 @@ import {
   portalAlertErrorClass,
   portalIconWrapLgClass,
   portalPanelClass,
+  portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -205,7 +206,7 @@ export function HiringManagerOverview() {
                     {/* Occupancy bar */}
                     <div className="flex items-center gap-2">
                       <div className="h-1 flex-1 rounded-full bg-muted dark:bg-white/5 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-400 transition-all duration-500" style={{ width: `${occupancyPercent}%` }} />
+                        <div className={portalProgressBarClass} style={{ width: `${occupancyPercent}%` }} />
                       </div>
                       <span className="text-[10px] font-semibold text-muted-foreground tabular-nums">{session.candidateCount}/{session.candidateLimit}</span>
                     </div>

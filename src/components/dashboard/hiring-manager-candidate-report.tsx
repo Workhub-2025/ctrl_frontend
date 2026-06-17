@@ -34,7 +34,15 @@ import {
 import {
   portalAlertErrorClass,
   portalAlertInfoClass,
+  portalHeroPanelClass,
+  portalMutedBubbleClass,
+  portalCodeSurfaceClass,
+  portalScoreMeterClass,
+  portalSuccessButtonClass,
   portalPanelClass,
+  portalPanelElevatedClass,
+  portalPanelNestedClass,
+  portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -482,7 +490,7 @@ function CallTranscriptPlayer() {
                     ? "bg-primary/10 border-primary shadow-[0_0_15px_rgba(99,102,241,0.1)] scale-[1.01]"
                     : isOperator
                     ? "bg-slate-800/40 border-slate-700/30 text-slate-300 hover:border-slate-600/40"
-                    : "bg-[#0b1329]/50 border-white/5 text-slate-100 hover:border-white/10"
+                    : cn(portalMutedBubbleClass, "border")
                 }`}
               >
                 <div className="flex items-center gap-1.5 font-bold uppercase text-[9px] tracking-wider text-slate-500 mb-1">
@@ -580,7 +588,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-white/10 bg-[#0b1220] p-6 text-sm text-slate-300">
+      <div className={cn(portalPanelNestedClass, "rounded-lg p-6 text-sm text-muted-foreground")}>
         Loading candidate report...
       </div>
     );
@@ -614,7 +622,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
     <div className="max-w-full overflow-x-hidden space-y-6">
       {/* Premium Header Card */}
       {!embedded && (
-        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md p-6 shadow-xl">
+        <div className={cn(portalHeroPanelClass, "p-6")}>
           <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
           
           <div className="relative space-y-4">
@@ -650,7 +658,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                   <Button
                     type="button"
                     onClick={() => setDecision("Move forward")}
-                    className="h-[34px] rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-xs font-bold text-slate-950 hover:from-emerald-400 hover:to-teal-300 transition-all shadow-[0_0_15px_rgba(52,211,153,0.15)]"
+                    className={cn(portalSuccessButtonClass, "h-[34px]")}
                   >
                     <ThumbsUp className="mr-1.5 h-3.5 w-3.5 text-slate-950" />
                     Pass
@@ -759,7 +767,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                 <div className="mt-4">
                   <div className="relative h-3 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500"
+                      className={portalScoreMeterClass}
                       style={{ width: `${Math.max(0, Math.min(100, overallScore))}%` }}
                     />
                   </div>
@@ -778,7 +786,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
       </div>
 
       {/* Assessment Breakdown List */}
-      <Card className="rounded-2xl border border-white/10 bg-[#0b1329]/45 backdrop-blur-md shadow-2xl">
+      <Card className={cn(portalPanelElevatedClass, "rounded-2xl")}>
         <CardHeader className="border-b border-white/10 p-5">
           <CardTitle className="text-lg font-bold text-white flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-primary" /> Assessment breakdown
@@ -803,7 +811,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             return (
               <div
                 key={row.name}
-                className="space-y-4 rounded-xl border border-white/10 bg-[#0b1329]/20 p-5 hover:border-primary/30 transition-all duration-300"
+                className={cn(portalPanelNestedClass, "space-y-4 p-5 hover:border-primary/30 transition-all duration-300")}
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex items-start gap-3 min-w-0">
@@ -856,7 +864,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                     </div>
                     <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-primary/80 to-indigo-500 rounded-full transition-all duration-300"
+                        className={portalProgressBarClass}
                         style={{ width: `${scoreValue}%` }}
                       />
                     </div>
@@ -932,7 +940,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                             <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
                               Detailed Typing Run Performance
                             </p>
-                            <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
+                            <div className={portalCodeSurfaceClass}>
                               <table className="w-full max-w-full table-fixed text-left border-collapse text-xs">
                                 <thead>
                                   <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
@@ -1171,7 +1179,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                         </div>
                                         <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
                                           <div
-                                            className="h-full rounded-full bg-gradient-to-r from-primary to-indigo-500"
+                                            className={portalProgressBarClass}
                                             style={{ width: `${pct}%` }}
                                           />
                                         </div>
@@ -1197,7 +1205,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                                     <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                                       Logged Information Details
                                     </p>
-                                    <div className="overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60">
+                                    <div className={portalCodeSurfaceClass}>
                                       <table className="w-full max-w-full table-fixed text-left border-collapse text-xs">
                                         <thead>
                                           <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">

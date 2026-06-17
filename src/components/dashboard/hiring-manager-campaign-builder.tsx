@@ -31,6 +31,8 @@ import { HiringManagerPortalClientService } from "@/services/hiring-manager-port
 import {
   portalAlertErrorClass,
   portalAlertInfoClass,
+  portalHeroPanelClass,
+  portalPrimaryButtonClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -404,7 +406,7 @@ export function HiringManagerCampaignBuilder({
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-5 xl:sticky xl:top-24 self-start max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
-        <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/50 backdrop-blur-md shadow-xl">
+        <Card className={portalHeroPanelClass}>
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">Campaign details</CardTitle>
           </CardHeader>
@@ -473,7 +475,7 @@ export function HiringManagerCampaignBuilder({
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/50 backdrop-blur-md shadow-xl">
+        <Card className={portalHeroPanelClass}>
           <CardHeader className="border-b border-white/5 p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-base font-bold text-white">
@@ -561,7 +563,7 @@ export function HiringManagerCampaignBuilder({
       </div>
 
       <aside className="space-y-4">
-        <Card className="sticky top-24 rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/85 to-[#0b1329]/60 backdrop-blur-md shadow-xl">
+        <Card className={cn(portalHeroPanelClass, "sticky top-24")}>
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">Campaign review</CardTitle>
           </CardHeader>
@@ -824,7 +826,7 @@ export function HiringManagerCampaignBuilder({
               type="button"
               disabled={!hasRequiredSetup || isSaving}
               onClick={saveDraft}
-              className="h-10 w-full rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 shadow-[0_4px_20px_rgba(99,102,241,0.15)] disabled:cursor-not-allowed disabled:opacity-50"
+              className={cn(portalPrimaryButtonClass, "h-10 w-full disabled:cursor-not-allowed disabled:opacity-50")}
             >
               <Save className="mr-2 h-4 w-4" />
               {isSaving ? "Creating…" : "Create campaign"}

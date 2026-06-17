@@ -1,89 +1,66 @@
 /**
- * Debug utility for authentication issues
+ * Debug utility for authentication issues (development only).
  */
 
 export const debugAuthToken = async (): Promise<void> => {
-    console.log('🔍 [DEBUG] Starting authentication debug...');
+    if (process.env.NODE_ENV === 'production') {
+        console.warn('[DEBUG] debugAuthToken is disabled in production');
+        return;
+    }
+
+    console.log('[DEBUG] Starting authentication debug...');
 
     if (typeof window === 'undefined') {
-        // Server-side debugging
-        console.log('🖥️ [DEBUG] Running on server side');
-
         try {
             const { getServerSession } = await import('next-auth/next');
             const { authOptions } = await import('@/lib/auth/next-auth-options');
+            const { getServerStrapiJwt } = await import('@/lib/auth/strapi-jwt');
             const session = await getServerSession(authOptions);
+            const strapiJwt = await getServerStrapiJwt();
 
-            console.log('🔍 [DEBUG] Server session:', {
+            console.log('[DEBUG] Server session:', {
                 hasSession: !!session,
                 hasUser: !!session?.user,
-                hasJwt: !!session?.user?.jwt,
+                hasServerJwt: !!strapiJwt,
                 userId: session?.user?.id,
                 userEmail: session?.user?.email,
                 userRole: session?.user?.role,
-                jwtPreview: session?.user?.jwt ? `${session.user.jwt.substring(0, 20)}...` : 'No JWT'
             });
-
-            if (session?.user?.jwt) {
-                console.log('✅ [DEBUG] JWT token available on server');
-            } else {
-                console.error('❌ [DEBUG] No JWT token in server session');
-            }
-
-        } catch (error: any) {
-            console.error('💥 [DEBUG] Error getting server session:', error.message);
+        } catch (error: unknown) {
+            console.error('[DEBUG] Error getting server session:', error instanceof Error ? error.message : error);
         }
     } else {
-        // Client-side debugging
-        console.log('🌐 [DEBUG] Running on client side');
-
         try {
             const { getSession } = await import('next-auth/react');
             const session = await getSession();
 
-            console.log('🔍 [DEBUG] Client session:', {
+            console.log('[DEBUG] Client session:', {
                 hasSession: !!session,
                 hasUser: !!session?.user,
-                hasJwt: !!session?.user?.jwt,
                 userId: session?.user?.id,
                 userEmail: session?.user?.email,
                 userRole: session?.user?.role,
-                jwtPreview: session?.user?.jwt ? `${session.user.jwt.substring(0, 20)}...` : 'No JWT'
             });
-
-            // Check localStorage as fallback
-            const localToken = localStorage.getItem('strapi-jwt');
-            console.log('🔍 [DEBUG] localStorage token:', {
-                hasToken: !!localToken,
-                tokenPreview: localToken ? `${localToken.substring(0, 20)}...` : 'No token'
-            });
-
-            if (session?.user?.jwt) {
-                console.log('✅ [DEBUG] JWT token available on client');
-            } else if (localToken) {
-                console.log('⚠️ [DEBUG] No JWT in session but found in localStorage');
-            } else {
-                console.error('❌ [DEBUG] No JWT token available');
-            }
-
-        } catch (error: any) {
-            console.error('💥 [DEBUG] Error getting client session:', error.message);
+            console.log('[DEBUG] Strapi JWT is server-only — browser uses /api/strapi-proxy');
+        } catch (error: unknown) {
+            console.error('[DEBUG] Error getting client session:', error instanceof Error ? error.message : error);
         }
     }
 
-    console.log('🔍 [DEBUG] Authentication debug complete');
+    console.log('[DEBUG] Authentication debug complete');
 };
 
-/**
- * Debug environment variables
- */
 export const debugEnvironment = (): void => {
-    console.log('🌍 [DEBUG] Environment check:', {
+    if (process.env.NODE_ENV === 'production') {
+        return;
+    }
+
+    console.log('[DEBUG] Environment check:', {
         isServer: typeof window === 'undefined',
         NODE_ENV: process.env.NODE_ENV,
-        STRAPI_API_URL: process.env.STRAPI_API_URL,
-        NEXT_PUBLIC_STRAPI_API_URL: process.env.NEXT_PUBLIC_STRAPI_API_URL,
+        STRAPI_API_URL: process.env.STRAPI_API_URL ? 'SET' : 'NOT SET',
+        NEXT_PUBLIC_STRAPI_API_URL: process.env.NEXT_PUBLIC_STRAPI_API_URL ? 'SET' : 'NOT SET',
         NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT SET'
+        NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT SET',
     });
 };

@@ -46,7 +46,7 @@ src/lib/strapi.ts expone tres constructores:
 ```
 
 **Regla de uso:**
-- Operaciones del usuario (read/write datos propios) → `getServerStrapiClient()` o `getStrapiClient(session.user.jwt)`
+- Operaciones del usuario (read/write datos propios) → server: `getServerStrapiJwt()`; browser: `/api/strapi-proxy`
 - Operaciones privilegiadas sin contexto de usuario → `getStrapiClient()` o `strapiServerClient` (usan API Token)
 - `use-auth.ts` (cliente) → solo vía Server Actions (`getCurrentUserAction`, etc.)
 

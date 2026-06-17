@@ -1,7 +1,6 @@
 import "server-only";
 
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 
 const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
 const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
@@ -15,8 +14,7 @@ function getStrapiBaseUrl() {
 }
 
 async function getJwt() {
-  const session = await getServerSession(authOptions);
-  return session?.user?.jwt ?? null;
+  return getServerStrapiJwt();
 }
 
 class StrapiRequestError extends Error {

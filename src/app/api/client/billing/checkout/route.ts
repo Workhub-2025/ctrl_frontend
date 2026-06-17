@@ -1,13 +1,36 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { normalizeRole } from "@/lib/auth/role-model";
 import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
+import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const originRejected = rejectCrossOriginRequest(request);
+  if (originRejected) {
+    return originRejected;
+  }
+
+  const rateLimit = await applyRateLimit({
+    key: `billing:checkout:${extractClientIp(request)}`,
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds ?? 60) } }
+    );
+  }
+
   const session = await getServerSession(authOptions);
-  if (!session?.user?.jwt) {
+  const strapiJwt = await getServerStrapiJwt(request);
+
+  if (!session?.user?.id || !strapiJwt) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
   if (normalizeRole(session.user.role) !== "client") {

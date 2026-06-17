@@ -10,13 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, Download } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
+import { downloadCsv } from "@/lib/export-csv";
 import {
   AdminAlert,
   AdminPageHeader,
   AdminPanel,
 } from "@/components/admin/admin-portal-ui";
+import { Button } from "@/components/ui/button";
 import { portalBadgeClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 import { cn } from "@/lib/utils";
@@ -145,6 +147,28 @@ export default function AuditLogsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={filteredLogs.length === 0}
+            onClick={() =>
+              downloadCsv(
+                `audit-log-${new Date().toISOString().slice(0, 10)}.csv`,
+                ["Timestamp", "Event", "Actor", "Client", "Resource", "Details"],
+                filteredLogs.map((log) => [
+                  log.timestamp,
+                  log.event,
+                  log.actor,
+                  log.client,
+                  log.resourceLabel ?? log.resource ?? "",
+                  log.details,
+                ])
+              )
+            }
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
         </div>
 
         <p className="text-xs text-muted-foreground">

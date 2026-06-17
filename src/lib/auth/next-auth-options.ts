@@ -1,16 +1,12 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from 'next-auth';
-import { AuthAPI } from '@/services/auth-api';
 import { logAuthAuditEvent } from '@/lib/security/audit-log';
-import { inferDevSeededRole, normalizeRole } from '@/lib/auth/role-model';
 import {
-    buildLoginAttemptKey,
-    checkLoginAttemptAllowed,
-    clearLoginAttempts,
-    recordFailedLoginAttempt,
-} from '@/lib/security/login-attempt-guard';
+    authenticateCredentials,
+    CredentialAuthError,
+} from '@/lib/auth/credential-auth';
+import { SESSION_IDLE_MAX_AGE } from '@/lib/auth/session-config';
 
-// Extended User type for our application
 interface ExtendedUser extends User {
     role: string;
     jwt: string;
@@ -29,13 +25,11 @@ const getHeaderValue = (headers: unknown, name: string): string | undefined => {
 
     const normalizedName = name.toLowerCase();
 
-    // Headers API support
     if ('get' in headers && typeof (headers as { get?: unknown }).get === 'function') {
         const value = (headers as Headers).get(normalizedName) ?? (headers as Headers).get(name);
         return value ?? undefined;
     }
 
-    // Plain object support
     const record = headers as Record<string, string | string[] | undefined>;
     const candidate = record[name] ?? record[normalizedName];
 
@@ -65,149 +59,56 @@ export const authOptions = {
                 password: { label: 'Password', type: 'password' }
             },
             async authorize(credentials, req): Promise<ExtendedUser | null> {
-                console.log('🔐 NextAuth authorize called with:', { email: credentials?.email });
-
                 if (!credentials?.email || !credentials?.password) {
-                    console.log('❌ Missing credentials');
                     return null;
                 }
 
                 const normalizedEmail = credentials.email.trim().toLowerCase();
-                const { ipAddress, userAgent } = extractRequestContext(req);
-                const attemptKey = buildLoginAttemptKey(normalizedEmail, ipAddress);
-
-                const attemptGuard = checkLoginAttemptAllowed(attemptKey);
-                if (!attemptGuard.allowed) {
-                    logAuthAuditEvent('login_locked', {
-                        email: normalizedEmail,
-                        ipAddress,
-                        userAgent,
-                        retryAfterSeconds: attemptGuard.retryAfterSeconds,
-                    });
-                    throw new Error('LOCKED_OUT');
-                }
-
-                logAuthAuditEvent('login_attempt', {
-                    email: normalizedEmail,
-                    ipAddress,
-                    userAgent,
-                    remainingAttempts: attemptGuard.remainingAttempts,
-                });
+                const context = extractRequestContext(req);
 
                 try {
-                    console.log('🔄 Calling AuthAPI.login...');
-                    const authResponse = await AuthAPI.login({
-                        identifier: normalizedEmail,
+                    const { authResponse, role } = await authenticateCredentials({
+                        email: normalizedEmail,
                         password: credentials.password,
+                        context,
                     });
 
-                    console.log('🔍 Strapi Auth Response Debug:', {
-                        hasJWT: !!authResponse.jwt,
-                        hasUser: !!authResponse.user,
-                        userEmail: authResponse.user?.email,
-                        roleObject: authResponse.user?.role,
-                        roleName: typeof authResponse.user?.role === 'object' && authResponse.user.role !== null ? (authResponse.user.role as any).name : 'Candidate',
-                        roleType: typeof authResponse.user?.role
-                    });
+                    const user = authResponse.user!;
 
-                    if (authResponse.jwt && authResponse.user) {
-                        // Extract role name from Strapi Users & Permissions role object
-                        const userRole = authResponse.user.role;
-                        const fallbackDevRole = inferDevSeededRole(authResponse.user.email || normalizedEmail);
-                        const roleValue = userRole
-                            ? normalizeRole(userRole)
-                            : fallbackDevRole ?? 'candidate';
-
-                        console.log('🎯 Role extracted from Strapi:', roleValue);
-
-                        const user: ExtendedUser = {
-                            id: authResponse.user.id.toString(),
-                            email: authResponse.user.email,
-                            name: `${authResponse.user.firstName || ''} ${authResponse.user.lastName || ''}`.trim(),
-                            role: roleValue,
-                            jwt: authResponse.jwt,
-                            firstName: authResponse.user.firstName,
-                            lastName: authResponse.user.lastName,
-                            organization: typeof authResponse.user.organization === 'string' ? authResponse.user.organization : undefined,
-                            phone: typeof authResponse.user.phone === 'string' ? authResponse.user.phone : undefined,
-                            // Include equality monitoring data for routing decisions (with proper type conversion)
-                            equalityMonitoring: authResponse.user.equalityMonitoring,
-                            agreeToMarketing: authResponse.user.agreeToMarketing ?? undefined,
-                            agreeToTerms: authResponse.user.agreeToTerms ?? undefined,
-                            agreeToDataPrivacyPolicy: authResponse.user.agreeToDataPrivacyPolicy ?? undefined,
-                        };
-
-                        console.log('✅ NextAuth user object created:', {
-                            ...user,
-                            jwt: '[HIDDEN]',
-                            equalityMonitoring: user.equalityMonitoring
-                        });
-
-                        clearLoginAttempts(attemptKey);
-                        logAuthAuditEvent('login_success', {
-                            email: normalizedEmail,
-                            ipAddress,
-                            userAgent,
-                            role: roleValue,
-                            userId: authResponse.user.id,
-                        });
-                        return user;
+                    return {
+                        id: user.id.toString(),
+                        email: user.email,
+                        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+                        role,
+                        jwt: authResponse.jwt!,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        organization: typeof user.organization === 'string' ? user.organization : undefined,
+                        phone: typeof user.phone === 'string' ? user.phone : undefined,
+                        equalityMonitoring: user.equalityMonitoring,
+                        agreeToMarketing: user.agreeToMarketing ?? undefined,
+                        agreeToTerms: user.agreeToTerms ?? undefined,
+                        agreeToDataPrivacyPolicy: user.agreeToDataPrivacyPolicy ?? undefined,
+                    };
+                } catch (error) {
+                    if (error instanceof CredentialAuthError) {
+                        if (error.code === 'LOCKED') {
+                            throw new Error('LOCKED_OUT');
+                        }
+                        if (error.code === 'INVALID') {
+                            return null;
+                        }
+                        if (error.code === 'RATE_LIMITED') {
+                            throw new Error('LOCKED_OUT');
+                        }
                     }
 
-                    console.log('❌ Invalid Strapi response - missing JWT or user');
-                    const failedAttempt = recordFailedLoginAttempt(attemptKey);
                     logAuthAuditEvent('login_failure', {
                         email: normalizedEmail,
-                        ipAddress,
-                        userAgent,
-                        reason: 'Invalid response payload',
-                        failures: failedAttempt.failures,
-                        remainingAttempts: failedAttempt.remainingAttempts,
+                        ipAddress: context.ipAddress,
+                        userAgent: context.userAgent,
+                        reason: 'Auth service unavailable',
                     });
-
-                    if (failedAttempt.lockedUntil) {
-                        logAuthAuditEvent('login_locked', {
-                            email: normalizedEmail,
-                            ipAddress,
-                            userAgent,
-                            retryAfterSeconds: Math.ceil((failedAttempt.lockedUntil - Date.now()) / 1000),
-                        });
-                        throw new Error('LOCKED_OUT');
-                    }
-                    return null;
-                } catch (error: any) {
-                    console.error('❌ NextAuth authorization error:', error.message);
-                    console.error('❌ Full error:', error);
-                    const message = String(error?.message || '');
-                    if (message === 'LOCKED_OUT') {
-                        throw error;
-                    }
-
-                    const failedAttempt = recordFailedLoginAttempt(attemptKey);
-                    logAuthAuditEvent('login_failure', {
-                        email: normalizedEmail,
-                        ipAddress,
-                        userAgent,
-                        reason: message || 'Unknown error',
-                        failures: failedAttempt.failures,
-                        remainingAttempts: failedAttempt.remainingAttempts,
-                    });
-
-                    if (failedAttempt.lockedUntil) {
-                        logAuthAuditEvent('login_locked', {
-                            email: normalizedEmail,
-                            ipAddress,
-                            userAgent,
-                            retryAfterSeconds: Math.ceil((failedAttempt.lockedUntil - Date.now()) / 1000),
-                        });
-                        throw new Error('LOCKED_OUT');
-                    }
-
-                    const likelyCredentialFailure = /invalid|identifier|password|credentials/i.test(message);
-                    if (likelyCredentialFailure) {
-                        return null;
-                    }
-
                     throw new Error('AUTH_SERVICE_UNAVAILABLE');
                 }
             }
@@ -218,6 +119,8 @@ export const authOptions = {
     },
     callbacks: {
         async jwt({ token, user }: any) {
+            const now = Math.floor(Date.now() / 1000);
+
             if (user) {
                 token.role = user.role;
                 token.jwt = user.jwt;
@@ -229,14 +132,26 @@ export const authOptions = {
                 token.agreeToMarketing = user.agreeToMarketing;
                 token.agreeToTerms = user.agreeToTerms;
                 token.agreeToDataPrivacyPolicy = user.agreeToDataPrivacyPolicy;
+                token.lastActivity = now;
+                return token;
             }
+
+            const lastActivity = typeof token.lastActivity === 'number' ? token.lastActivity : now;
+            if (now - lastActivity > SESSION_IDLE_MAX_AGE) {
+                return { expired: true };
+            }
+
+            token.lastActivity = now;
             return token;
         },
         async session({ session, token }: any) {
+            if (token?.expired) {
+                return { ...session, user: undefined, expires: new Date(0).toISOString() };
+            }
+
             if (token) {
                 session.user.id = token.sub || '';
                 session.user.role = token.role;
-                session.user.jwt = token.jwt;
                 session.user.firstName = token.firstName;
                 session.user.lastName = token.lastName;
                 session.user.organization = token.organization;

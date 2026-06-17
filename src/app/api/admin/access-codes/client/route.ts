@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
 import {
   generateAdminClientAccessCode,
   getStrapiErrorStatus,
 } from "@/services/admin-platform.service";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -22,9 +24,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "clientDocumentId is required" }, { status: 400 });
     }
 
+    const strapiJwt = await getServerStrapiJwt(request);
+    if (!strapiJwt) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
     const result = await generateAdminClientAccessCode(
       body.clientDocumentId,
-      session.user.jwt
+      strapiJwt
     );
 
     return NextResponse.json({ data: result }, { status: 201 });

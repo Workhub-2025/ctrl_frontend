@@ -28,12 +28,8 @@ function getStrapiApiToken() {
 
 async function getStrapiAuthToken() {
   try {
-    const [{ getServerSession }, { authOptions }] = await Promise.all([
-      import("next-auth/next"),
-      import("@/lib/auth/next-auth-options"),
-    ]);
-    const session = await getServerSession(authOptions);
-    return session?.user?.jwt || getStrapiApiToken();
+    const { getServerStrapiJwt } = await import("@/lib/auth/strapi-jwt");
+    return (await getServerStrapiJwt()) || getStrapiApiToken();
   } catch {
     return getStrapiApiToken();
   }

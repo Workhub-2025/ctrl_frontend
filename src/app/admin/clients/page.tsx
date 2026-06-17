@@ -28,9 +28,11 @@ import {
   MoreHorizontal,
   Plus,
   Search,
+  Download,
 } from "lucide-react";
 import Link from "next/link";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
+import { downloadCsv } from "@/lib/export-csv";
 import {
   AdminAlert,
   AdminPageHeader,
@@ -147,12 +149,48 @@ export default function ClientsListPage() {
         title="All clients"
         description="Organisations, contracts, seat capacity, and onboarding invites."
         action={
-          <Button asChild className="rounded-lg">
-            <Link href="/admin/clients/create">
-              <Plus className="mr-2 h-4 w-4" />
-              Add client
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-lg"
+              disabled={filteredClients.length === 0}
+              onClick={() =>
+                downloadCsv(
+                  `clients-${new Date().toISOString().slice(0, 10)}.csv`,
+                  [
+                    "Name",
+                    "Status",
+                    "Plan",
+                    "Seats used",
+                    "Seats allowed",
+                    "Billing",
+                    "Primary contact",
+                    "Last activity",
+                  ],
+                  filteredClients.map((client) => [
+                    client.name,
+                    client.status,
+                    client.plan,
+                    client.seatsUsed,
+                    client.seatsAllowed,
+                    client.billingStatus,
+                    client.primaryContact,
+                    client.lastActivity,
+                  ])
+                )
+              }
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button asChild className="rounded-lg">
+              <Link href="/admin/clients/create">
+                <Plus className="mr-2 h-4 w-4" />
+                Add client
+              </Link>
+            </Button>
+          </div>
         }
       />
 

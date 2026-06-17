@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ClientAccessCode,
   ClientCampaignApprovalItem,
@@ -56,6 +56,7 @@ type ClientPortalContextValue = {
   loadSharedCandidates: (reviewStatus?: string, force?: boolean) => Promise<void>;
   loadEntitlements: (force?: boolean) => Promise<void>;
   loadUpgradeRequests: (force?: boolean) => Promise<void>;
+  markUpgradeRequestPaid: (billingRequestDocumentId: string) => void;
   submitUpgradeRequest: (input: {
     payload: ClientUpgradeRequestPayload;
     priority?: "low" | "normal" | "high" | "urgent";
@@ -133,6 +134,8 @@ export function useClientPortalState(): ClientPortalContextValue {
   const [approvalModeBusy, setApprovalModeBusy] = useState(false);
   const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const entitlementsLoadIdRef = useRef(0);
+  const upgradeRequestsLoadIdRef = useRef(0);
 
   const pendingCampaigns = useMemo(
     () => campaigns.filter((c) => c.approvalStatus === "Pending approval"),
@@ -209,6 +212,8 @@ export function useClientPortalState(): ClientPortalContextValue {
   }, []);
 
   const loadEntitlements = useCallback(async (force = false) => {
+    if (force) invalidatePortalCache("client:entitlements");
+    const loadId = ++entitlementsLoadIdRef.current;
     setEntitlementsLoading(true);
     try {
       const data = await fetchPortalJson<ClientEntitlements | null>({
@@ -218,16 +223,21 @@ export function useClientPortalState(): ClientPortalContextValue {
         force,
         allowEmpty: true,
       });
+      if (loadId !== entitlementsLoadIdRef.current) return;
       setEntitlements(data);
       if (data?.contract) setContract(data.contract);
     } catch {
       // Entitlements are optional on some pages — avoid global error banners.
     } finally {
-      setEntitlementsLoading(false);
+      if (loadId === entitlementsLoadIdRef.current) {
+        setEntitlementsLoading(false);
+      }
     }
   }, []);
 
   const loadUpgradeRequests = useCallback(async (force = false) => {
+    if (force) invalidatePortalCache("client:upgrade-requests");
+    const loadId = ++upgradeRequestsLoadIdRef.current;
     setUpgradeRequestsLoading(true);
     try {
       const data = await fetchPortalJson<ClientUpgradeRequestRecord[]>({
@@ -237,12 +247,25 @@ export function useClientPortalState(): ClientPortalContextValue {
         force,
         allowEmpty: true,
       });
+      if (loadId !== upgradeRequestsLoadIdRef.current) return;
       setUpgradeRequests(data);
     } catch {
       // Billing list failures should not block the rest of the portal.
     } finally {
-      setUpgradeRequestsLoading(false);
+      if (loadId === upgradeRequestsLoadIdRef.current) {
+        setUpgradeRequestsLoading(false);
+      }
     }
+  }, []);
+
+  const markUpgradeRequestPaid = useCallback((billingRequestDocumentId: string) => {
+    setUpgradeRequests((current) =>
+      current.map((request) =>
+        request.id === billingRequestDocumentId
+          ? { ...request, billingStatus: "paid", status: "paid" }
+          : request
+      )
+    );
   }, []);
 
   useEffect(() => {
@@ -432,6 +455,7 @@ export function useClientPortalState(): ClientPortalContextValue {
     loadSharedCandidates,
     loadEntitlements,
     loadUpgradeRequests,
+    markUpgradeRequestPaid,
     submitUpgradeRequest,
     reviewCampaign,
     updateSharedCandidateStatus,

@@ -42,6 +42,7 @@ export function AnimatedBackground({ disabled = false }: { disabled?: boolean })
             repeat: Infinity,
             ease: "linear",
           }}
+          style={{ willChange: "transform" }}
         />
       ))}
     </div>

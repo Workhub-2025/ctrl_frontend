@@ -6,7 +6,7 @@ declare module 'next-auth' {
         user: {
             id: number;
             role?: string;
-            jwt?: string;
+            jwt?: string; // server-only in NextAuth JWT cookie; not exposed via /api/auth/session
             firstName?: string;
             lastName?: string;
             organization?: string;
@@ -50,5 +50,7 @@ declare module 'next-auth/jwt' {
         };
         agreeToTerms?: boolean;
         agreeToDataPrivacyPolicy?: boolean;
+        lastActivity?: number;
+        expired?: boolean;
     }
 }

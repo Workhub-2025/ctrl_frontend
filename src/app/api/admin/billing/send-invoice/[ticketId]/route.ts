@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
+import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
 import {
   createBillingCheckoutSession,
@@ -18,7 +19,8 @@ export async function POST(
   { params }: { params: Promise<{ ticketId: string }> }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.jwt) {
+  const strapiJwt = await getServerStrapiJwt();
+  if (!session?.user?.id || !strapiJwt) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
   if (!isAdminRole(session.user.role)) {

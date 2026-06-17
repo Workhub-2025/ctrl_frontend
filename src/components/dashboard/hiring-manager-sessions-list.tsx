@@ -43,8 +43,11 @@ import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-d
 import {
   portalAlertErrorClass,
   portalBadgeClass,
+  portalDialogShellClass,
   portalIconWrapLgClass,
   portalPanelClass,
+  portalPrimaryButtonClass,
+  portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
@@ -424,7 +427,7 @@ export function HiringManagerSessionsList() {
               setCreatedSession(null);
               setCreateError(null);
             }}
-            className="h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 hover:opacity-95 shadow-[0_4px_20px_rgba(99,102,241,0.15)]"
+            className={cn(portalPrimaryButtonClass, "h-10")}
           >
             <Plus className="mr-2 h-4 w-4" />
             Create session
@@ -440,7 +443,7 @@ export function HiringManagerSessionsList() {
 
       {/* Slide-over Drawer for Creating Session */}
       <Sheet open={isCreateOpen} onOpenChange={handleOpenChange}>
-        <SheetContent className="w-full sm:max-w-md border-l border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 text-slate-100 backdrop-blur-lg p-6 overflow-y-auto shadow-2xl flex flex-col gap-6 [&>button]:text-slate-400 [&>button]:hover:text-white [&>button]:transition-colors">
+        <SheetContent className={cn(portalDialogShellClass, "flex w-full flex-col gap-6 border-l p-6 sm:max-w-md [&>button]:text-slate-400 [&>button]:transition-colors [&>button]:hover:text-white")}>
           <SheetHeader className="border-b border-white/5 pb-4">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-inner">
@@ -525,7 +528,7 @@ export function HiringManagerSessionsList() {
               <Button
                 type="button"
                 onClick={() => setIsCreateOpen(false)}
-                className="w-full h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 hover:opacity-95 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                className={cn(portalPrimaryButtonClass, "h-10 w-full animate-in fade-in slide-in-from-bottom-2 duration-300")}
               >
                 Done
               </Button>
@@ -811,7 +814,7 @@ export function HiringManagerSessionsList() {
                     type="button"
                     onClick={createSession}
                     disabled={isCreating || campaigns.length === 0}
-                    className="flex-1 h-10 rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 hover:opacity-95 shadow-[0_4px_20px_rgba(99,102,241,0.15)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className={cn(portalPrimaryButtonClass, "h-10 flex-1 disabled:cursor-not-allowed disabled:opacity-50")}
                   >
 	                    {isCreating ? "Creating…" : "Create Session"}
                   </Button>
@@ -906,7 +909,7 @@ export function HiringManagerSessionsList() {
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-16 overflow-hidden rounded-full border border-border/50 bg-muted dark:border-white/5 dark:bg-white/5">
                           <div 
-                            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500"
+                            className={portalProgressBarClass}
                             style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
                           />
                         </div>

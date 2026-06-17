@@ -20,10 +20,8 @@ const getBaseUrl = () => {
         );
     }
 
-    return normalizeApiBaseUrl(
-        process.env.NEXT_PUBLIC_STRAPI_API_URL || process.env.STRAPI_API_URL,
-        'http://localhost:1337/api'
-    );
+    // Browser calls go through the Next.js BFF — Strapi JWT stays server-side.
+    return '/api/strapi-proxy';
 };
 
 const joinUrl = (baseUrl: string, url: string) => {
@@ -41,27 +39,6 @@ interface SessionContext {
     tenant: string | null;
 }
 
-// Function to get CSRF token
-const getCsrfToken = async (): Promise<string | null> => {
-    try {
-        const baseUrl = getBaseUrl();
-        const response = await fetch(`${baseUrl}/csrf`, {
-            credentials: 'include',
-        });
-
-        if (!response.ok) {
-            // CSRF not required/available, return null
-            return null;
-        }
-
-        const data = await response.json();
-        return data.csrfToken;
-    } catch (error) {
-        console.debug('CSRF token not available:', error);
-        return null;
-    }
-};
-
 // Function to get auth + tenant context from NextAuth session
 const getSessionContext = async (): Promise<SessionContext> => {
     // Server-side: try to get token from NextAuth session
@@ -72,19 +49,21 @@ const getSessionContext = async (): Promise<SessionContext> => {
             const session = await getServerSession(authOptions);
 
             return {
-                jwt: session?.user?.jwt ?? null,
+                jwt: null,
                 tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
             };
-        } catch (error: any) {
-            console.error('🔐 [SERVER] Failed to get server session:', error.message);
+        } catch (error: unknown) {
+            console.error(
+                '🔐 [SERVER] Failed to get server session:',
+                error instanceof Error ? error.message : error
+            );
             return { jwt: null, tenant: null };
         }
     } else {
-        // Client-side: share the same in-memory NextAuth session lookup as useAuth.
         const session = await getClientSession();
 
         return {
-            jwt: session?.user?.jwt ?? null,
+            jwt: null,
             tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
         };
     }
@@ -122,7 +101,6 @@ export const fetchClient = async (
             (headers as Record<string, string>)['Content-Type'] = 'application/json';
         }
 
-        // Add CSRF token for state-changing operations (but not for auth endpoints)
         const method = (options.method || 'GET').toLowerCase();
         const isAuthEndpoint =
             url.includes('/auth/local') ||

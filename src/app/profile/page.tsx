@@ -32,7 +32,7 @@ import EqualityMonitoringForm from "@/components/auth/equality-monitoring-form";
 import { EqualityMonitoringData, IUser } from "@/types";
 import Link from "next/link";
 import { TelInput } from "@/components/ui/telInput";
-import { RoleDashboardShell } from "@/components/dashboard/role-dashboard-shell";
+import { PortalMinimalShell } from "@/components/dashboard/portal/portal-minimal-shell";
 import { isAdminRole, routeForRole } from "@/lib/auth/role-model";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -177,13 +177,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <RoleDashboardShell
+    <PortalMinimalShell
+      homeHref={returnPath}
       title="Profile Settings"
       subtitle="Manage your account information and privacy settings"
-      hideSidebar={true}
-      navItems={[]}
+      maxWidthClass="max-w-4xl"
     >
-      <div className="mx-auto max-w-4xl space-y-6 py-4">
+      <div className="space-y-6 py-4">
         <div className="flex items-center justify-between">
           <Link
             href={returnPath}
@@ -497,6 +497,6 @@ export default function ProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
-    </RoleDashboardShell>
+    </PortalMinimalShell>
   );
 }
