@@ -6,15 +6,18 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   ArrowLeft,
   Eye,
-  Mail,
-  Plus,
+  Pencil,
   RefreshCw,
   Trash2,
-  X,
   Keyboard,
   ClipboardList,
   BrainCircuit,
@@ -80,63 +83,6 @@ export function HiringManagerCampaignDetailView({
   const [selectedSession, setSelectedSession] = useState<CampaignSession | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
   const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
-  const [inviteEmailInput, setInviteEmailInput] = useState("");
-  const [inviteEmails, setInviteEmails] = useState<string[]>([]);
-  const [isSendingInvites, setIsSendingInvites] = useState(false);
-  const [inviteFeedback, setInviteFeedback] = useState<string | null>(null);
-
-  const addInviteEmails = (raw: string) => {
-    const parsed = raw
-      .split(/[\s,;]+/)
-      .map((value) => value.trim().toLowerCase())
-      .filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
-
-    if (parsed.length === 0) return;
-
-    setInviteEmails((current) => {
-      const seen = new Set(current);
-      const next = [...current];
-      for (const email of parsed) {
-        if (seen.has(email) || next.length >= 25) continue;
-        seen.add(email);
-        next.push(email);
-      }
-      return next;
-    });
-    setInviteEmailInput("");
-  };
-
-  const sendCandidateInvites = async () => {
-    if (inviteEmails.length === 0) return;
-
-    setIsSendingInvites(true);
-    setInviteFeedback(null);
-    setError(null);
-
-    try {
-      const result = await HiringManagerPortalClientService.inviteCandidates(
-        campaignId,
-        inviteEmails
-      );
-      const sentCount = result.sent.length;
-      const failedCount = result.failed.length;
-      setInviteFeedback(
-        failedCount > 0
-          ? `Sent ${sentCount} invite${sentCount === 1 ? "" : "s"}. ${failedCount} failed.`
-          : `Sent ${sentCount} invite${sentCount === 1 ? "" : "s"}.`
-      );
-      setInviteEmails([]);
-      await loadCampaign(true);
-    } catch (inviteError) {
-      setError(
-        inviteError instanceof Error
-          ? inviteError.message
-          : "Candidate invites could not be sent."
-      );
-    } finally {
-      setIsSendingInvites(false);
-    }
-  };
 
   const loadCampaign = useCallback(async (force = false) => {
     const startTime = Date.now();
@@ -269,6 +215,8 @@ export function HiringManagerCampaignDetailView({
     );
   }
 
+  const canEditAssessmentStack = campaign.sessions === 0;
+
   return (
     <div className="max-w-7xl space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -302,27 +250,59 @@ export function HiringManagerCampaignDetailView({
           ) : null
         }
         action={
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void loadCampaign(true)}
-              disabled={isRefreshing}
-              className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
-            >
-              <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isRefreshing && "animate-spin text-primary")} />
-              Refresh
-            </Button>
-            <Button
-              type="button"
-              onClick={deleteCampaign}
-              disabled={isDeleting}
-              className="h-9 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
-            >
-              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              {isDeleting ? "Deleting..." : "Delete Campaign"}
-            </Button>
-          </div>
+          <TooltipProvider>
+            <div className="flex flex-wrap items-center gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      asChild={canEditAssessmentStack}
+                      disabled={!canEditAssessmentStack}
+                      className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {canEditAssessmentStack ? (
+                        <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
+                          <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                          Edit campaign
+                        </Link>
+                      ) : (
+                        <>
+                          <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                          Edit campaign
+                        </>
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!canEditAssessmentStack ? (
+                  <TooltipContent className="border-white/10 bg-slate-950 text-slate-100">
+                    Delete all sessions to continue
+                  </TooltipContent>
+                ) : null}
+              </Tooltip>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void loadCampaign(true)}
+                disabled={isRefreshing}
+                className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+              >
+                <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isRefreshing && "animate-spin text-primary")} />
+                Refresh
+              </Button>
+              <Button
+                type="button"
+                onClick={deleteCampaign}
+                disabled={isDeleting}
+                className="h-9 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                {isDeleting ? "Deleting..." : "Delete Campaign"}
+              </Button>
+            </div>
+          </TooltipProvider>
         }
       />
 
@@ -397,115 +377,6 @@ export function HiringManagerCampaignDetailView({
           </CardContent>
         </Card>
       </div>
-
-      <Card className={cn(portalPanelElevatedClass, "rounded-xl shadow-lg")}>
-        <CardHeader className="border-b border-white/10 p-4">
-          <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-            <Mail className="h-4 w-4 text-primary" />
-            Candidate email invites
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 p-4">
-          <p className="text-xs text-slate-400">
-            Add up to 25 candidate emails. Invites use the campaign delivery mode
-            ({campaign.deliveryMode.toLowerCase()}).
-          </p>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              type="email"
-              placeholder="candidate@email.com"
-              value={inviteEmailInput}
-              onChange={(event) => setInviteEmailInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  addInviteEmails(inviteEmailInput);
-                }
-              }}
-              className="rounded-lg border-white/10 bg-white/[0.02] text-white"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              className="shrink-0 rounded-lg border-white/10"
-              onClick={() => addInviteEmails(inviteEmailInput)}
-              disabled={!inviteEmailInput.trim() || inviteEmails.length >= 25}
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              Add
-            </Button>
-          </div>
-          {inviteEmails.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {inviteEmails.map((email) => (
-                <Badge
-                  key={email}
-                  variant="secondary"
-                  className="gap-1 rounded-lg border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-slate-200"
-                >
-                  {email}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setInviteEmails((current) => current.filter((value) => value !== email))
-                    }
-                    className="rounded-full p-0.5 hover:bg-white/10"
-                    aria-label={`Remove ${email}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs italic text-slate-500">
-              Paste multiple emails separated by commas or new lines.
-            </p>
-          )}
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="button"
-              className="rounded-lg"
-              onClick={() => void sendCandidateInvites()}
-              disabled={inviteEmails.length === 0 || isSendingInvites}
-            >
-              {isSendingInvites ? (
-                <RefreshCw className="mr-2 h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
-              ) : (
-                <Mail className="mr-2 h-4 w-4" aria-hidden="true" />
-              )}
-              {isSendingInvites ? "Sending invites…" : "Send invites"}
-            </Button>
-            {inviteFeedback ? (
-              <p className="text-xs text-emerald-400">{inviteFeedback}</p>
-            ) : null}
-          </div>
-          {(campaign.pendingInvites?.length ?? 0) > 0 ? (
-            <div className="overflow-x-auto rounded-lg border border-white/10 bg-[#080c16]/30">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-white/10 bg-white/[0.02] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                    <th className="p-3">Email</th>
-                    <th className="p-3">Status</th>
-                    <th className="p-3">Code</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
-                  {campaign.pendingInvites?.map((invite) => (
-                    <tr key={invite.id}>
-                      <td className="p-3">{invite.email}</td>
-                      <td className="p-3 capitalize">{invite.inviteStatus}</td>
-                      <td className="p-3 font-mono text-[11px] text-slate-400">
-                        {invite.candidateCode ?? "—"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
 
       <Card className={cn(portalPanelElevatedClass, "rounded-xl shadow-lg")}>
         <CardHeader className="border-b border-white/10 p-4">
@@ -710,6 +581,8 @@ export function HiringManagerCampaignDetailView({
         assessmentStack={campaign.assessmentStack}
         onUnlockCandidate={handleUnlockCandidate}
         unlockingCandidateId={unlockingCandidateId}
+        campaignStatus={campaign.status}
+        onInvitesSent={() => loadCampaign(true)}
       />
 
       <CandidateResultsDialog

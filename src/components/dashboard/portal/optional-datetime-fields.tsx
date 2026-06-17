@@ -1,0 +1,249 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { format, parseISO } from "date-fns";
+import { CalendarIcon, Clock3 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+const fieldTriggerClass =
+  "flex h-10 w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 text-sm transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50";
+
+const placeholderClass = "text-slate-500";
+const valueClass = "text-slate-100";
+
+function formatDateLabel(value: string) {
+  return format(parseISO(value), "dd/MM/yyyy");
+}
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) =>
+  hour.toString().padStart(2, "0")
+);
+
+const MINUTE_OPTIONS = Array.from({ length: 12 }, (_, index) =>
+  (index * 5).toString().padStart(2, "0")
+);
+
+type OptionalDateFieldProps = {
+  id?: string;
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  disabled?: boolean;
+};
+
+export function OptionalDateField({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  disabled = false,
+}: OptionalDateFieldProps) {
+  const selectedDate = value ? parseISO(value) : undefined;
+
+  return (
+    <div className="space-y-1.5">
+      {label ? (
+        <Label htmlFor={id} className="text-[10px] font-semibold text-slate-500">
+          {label}
+        </Label>
+      ) : null}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            id={id}
+            type="button"
+            disabled={disabled}
+            className={cn(
+              fieldTriggerClass,
+              error && "border-red-500/50",
+              disabled && "cursor-not-allowed opacity-50"
+            )}
+          >
+            <CalendarIcon className="h-4 w-4 shrink-0 text-slate-500" />
+            <span className={value ? valueClass : placeholderClass}>
+              {value ? formatDateLabel(value) : "--/--/----"}
+            </span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          className="w-auto border-white/10 bg-slate-950 p-0 text-slate-100"
+        >
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => onChange(date ? format(date, "yyyy-MM-dd") : "")}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+      {error ? <p className="text-[10px] font-medium text-red-400">{error}</p> : null}
+    </div>
+  );
+}
+
+type OptionalTimeFieldProps = {
+  id?: string;
+  label?: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  disabled?: boolean;
+};
+
+export function OptionalTimeField({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  disabled = false,
+}: OptionalTimeFieldProps) {
+  const [hour, setHour] = useState("");
+  const [minute, setMinute] = useState("");
+
+  useEffect(() => {
+    if (!value) {
+      setHour("");
+      setMinute("");
+      return;
+    }
+    const [nextHour = "", nextMinute = ""] = value.split(":");
+    setHour(nextHour);
+    setMinute(nextMinute);
+  }, [value]);
+
+  const commitTime = (nextHour: string, nextMinute: string) => {
+    if (nextHour && nextMinute) {
+      onChange(`${nextHour}:${nextMinute}`);
+      return;
+    }
+    onChange("");
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {label ? (
+        <Label htmlFor={id} className="text-[10px] font-semibold text-slate-500">
+          {label}
+        </Label>
+      ) : null}
+      <div
+        className={cn(
+          fieldTriggerClass,
+          "px-2.5",
+          error && "border-red-500/50",
+          disabled && "cursor-not-allowed opacity-50"
+        )}
+      >
+        <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
+        <div className="flex flex-1 items-center gap-1.5">
+          <Select
+            value={hour || undefined}
+            onValueChange={(nextHour) => {
+              setHour(nextHour);
+              commitTime(nextHour, minute);
+            }}
+            disabled={disabled}
+          >
+            <SelectTrigger
+              id={id}
+              className="h-8 flex-1 border-white/10 bg-transparent px-2 text-xs text-slate-100 focus:ring-primary/50"
+            >
+              <SelectValue placeholder="--" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56 border-white/10 bg-slate-950 text-slate-100">
+              {HOUR_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className={value ? valueClass : placeholderClass}>:</span>
+          <Select
+            value={minute || undefined}
+            onValueChange={(nextMinute) => {
+              setMinute(nextMinute);
+              commitTime(hour, nextMinute);
+            }}
+            disabled={disabled}
+          >
+            <SelectTrigger className="h-8 flex-1 border-white/10 bg-transparent px-2 text-xs text-slate-100 focus:ring-primary/50">
+              <SelectValue placeholder="--" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56 border-white/10 bg-slate-950 text-slate-100">
+              {MINUTE_OPTIONS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {error ? <p className="text-[10px] font-medium text-red-400">{error}</p> : null}
+    </div>
+  );
+}
+
+type OptionalDateTimeFieldsProps = {
+  dateId?: string;
+  timeId?: string;
+  dateLabel?: string;
+  timeLabel?: string;
+  dateValue: string;
+  timeValue: string;
+  onDateChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  dateError?: string;
+  timeError?: string;
+  disabled?: boolean;
+};
+
+export function OptionalDateTimeFields({
+  dateId,
+  timeId,
+  dateLabel = "Date *",
+  timeLabel = "Time *",
+  dateValue,
+  timeValue,
+  onDateChange,
+  onTimeChange,
+  dateError,
+  timeError,
+  disabled = false,
+}: OptionalDateTimeFieldsProps) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <OptionalDateField
+        id={dateId}
+        label={dateLabel}
+        value={dateValue}
+        onChange={onDateChange}
+        error={dateError}
+        disabled={disabled}
+      />
+      <OptionalTimeField
+        id={timeId}
+        label={timeLabel}
+        value={timeValue}
+        onChange={onTimeChange}
+        error={timeError}
+        disabled={disabled}
+      />
+    </div>
+  );
+}

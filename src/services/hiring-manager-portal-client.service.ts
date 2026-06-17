@@ -32,6 +32,7 @@ export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
   startDate: string;
   endDate: string;
   location: string;
+  linkedAssessmentSlugs: string[];
   assessmentSessions: HiringManagerSessionListItem[];
   joinedCandidates: Array<{
     id: string;
@@ -45,13 +46,6 @@ export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
     campaignName?: string;
     assessmentStack?: string[];
     results?: HiringManagerAssessmentResult[];
-  }>;
-  pendingInvites?: Array<{
-    id: string;
-    email: string;
-    inviteStatus: "invited" | "registered" | "started";
-    candidateCode?: string;
-    mode?: "in_person" | "remote";
   }>;
 };
 
@@ -68,6 +62,13 @@ export type HiringManagerSessionListItem = {
   candidateLimit: number;
   accessMode: string;
   accessValue: string;
+  pendingInvites: Array<{
+    id: string;
+    email: string;
+    inviteStatus: "invited" | "registered" | "started";
+    candidateCode?: string;
+    mode?: "in_person" | "remote";
+  }>;
   candidates: Array<{
     id: string;
     name: string;
@@ -351,6 +352,14 @@ export class HiringManagerPortalClientService {
     overviewFetchedAt = 0;
   }
 
+  static async deleteSession(sessionId: string): Promise<void> {
+    const response = await fetch(`/api/hiring-manager/sessions/${sessionId}`, {
+      method: "DELETE",
+    });
+    await readJson<{ data?: unknown; error?: string }>(response);
+    this.invalidate();
+  }
+
   static async deleteCampaign(campaignId: string): Promise<void> {
     const response = await fetch(`/api/hiring-manager/campaigns/${campaignId}`, {
       method: "DELETE",
@@ -405,17 +414,16 @@ export class HiringManagerPortalClientService {
     };
   }
 
-  static async inviteCandidates(
-    campaignId: string,
-    emails: string[],
-    options?: { mode?: "remote" | "in_person" }
+  static async inviteCandidatesToSession(
+    sessionId: string,
+    emails: string[]
   ): Promise<{ sent: string[]; failed: string[] }> {
     const response = await fetch(
-      `/api/hiring-manager/campaigns/${campaignId}/invite-candidates`,
+      `/api/hiring-manager/sessions/${sessionId}/invite-candidates`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emails, mode: options?.mode }),
+        body: JSON.stringify({ emails }),
       }
     );
     const body = await readJson<{

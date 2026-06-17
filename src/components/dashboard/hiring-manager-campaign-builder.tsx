@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import {
   portalPrimaryButtonClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { OptionalDateField } from "@/components/dashboard/portal/optional-datetime-fields";
 
 interface CampaignBuilderProps {
   assessments: HiringManagerAssessment[];
@@ -44,6 +45,16 @@ interface CampaignBuilderProps {
   allowTypingExtreme?: boolean;
   allowRemoteDelivery?: boolean;
   allowHybridDelivery?: boolean;
+  mode?: "create" | "edit-stack";
+  campaignId?: string;
+  initialStackDraft?: {
+    assessmentSlugs: string[];
+    assessmentWeights: Record<string, number>;
+    assessmentVersions: Record<string, string>;
+    typingDifficulty: CampaignDraft["typingDifficulty"];
+    prioritisationScoringMode: CampaignDraft["prioritisationScoringMode"];
+    deliveryMode: CampaignDraft["deliveryMode"];
+  };
 }
 
 type CreateCampaignResponse = {
@@ -142,14 +153,32 @@ export function HiringManagerCampaignBuilder({
   allowTypingExtreme = false,
   allowRemoteDelivery = false,
   allowHybridDelivery = false,
+  mode = "create",
+  campaignId,
+  initialStackDraft,
 }: CampaignBuilderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isEditStackMode = mode === "edit-stack";
   const [draft, setDraft] = useState<CampaignDraft>(emptyDraft);
   const [lockedSlugs, setLockedSlugs] = useState<string[]>([]);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isEditStackMode || !initialStackDraft) return;
+
+    setDraft((current) => ({
+      ...current,
+      assessmentSlugs: initialStackDraft.assessmentSlugs,
+      assessmentWeights: initialStackDraft.assessmentWeights,
+      assessmentVersions: initialStackDraft.assessmentVersions,
+      typingDifficulty: initialStackDraft.typingDifficulty,
+      prioritisationScoringMode: initialStackDraft.prioritisationScoringMode,
+      deliveryMode: initialStackDraft.deliveryMode,
+    }));
+  }, [initialStackDraft, isEditStackMode]);
 
   const selectedAssessments = useMemo(
     () =>
@@ -168,13 +197,14 @@ export function HiringManagerCampaignBuilder({
     0
   );
 
-  const hasRequiredSetup =
-    draft.campaignName.trim() &&
-    draft.roleTitle.trim() &&
-    draft.candidateVolume.trim() &&
-    draft.startDate.trim() &&
-    selectedAssessments.length > 0 &&
-    selectedAssessments.every((assessment) => assessment.documentId);
+  const hasRequiredSetup = isEditStackMode
+    ? selectedAssessments.length > 0 && selectedAssessments.every((assessment) => assessment.documentId)
+    : draft.campaignName.trim() &&
+      draft.roleTitle.trim() &&
+      draft.candidateVolume.trim() &&
+      draft.startDate.trim() &&
+      selectedAssessments.length > 0 &&
+      selectedAssessments.every((assessment) => assessment.documentId);
   const isReady = hasRequiredSetup && assessmentWeightTotal === 100;
 
   const updateDraft = <Key extends keyof CampaignDraft>(
@@ -306,20 +336,26 @@ export function HiringManagerCampaignBuilder({
     if (!isReady) {
       if (assessmentWeightTotal !== 100) {
         setErrorMessage(
-          "Assessment weights must equal 100% overall. Update the selected assessment weights before creating the campaign."
+          isEditStackMode
+            ? "Assessment weights must equal 100% overall before saving."
+            : "Assessment weights must equal 100% overall. Update the selected assessment weights before creating the campaign."
         );
       } else {
         setErrorMessage(
-          "Complete the required campaign fields and select assessments loaded from Strapi."
+          isEditStackMode
+            ? "Select at least one assessment before saving."
+            : "Complete the required campaign fields and select assessments loaded from Strapi."
         );
       }
       return;
     }
 
-    const candidateCount = Number.parseInt(draft.candidateVolume, 10);
-    if (!Number.isInteger(candidateCount) || candidateCount < 1) {
-      setErrorMessage("Expected candidates must be at least 1.");
-      return;
+    if (!isEditStackMode) {
+      const candidateCount = Number.parseInt(draft.candidateVolume, 10);
+      if (!Number.isInteger(candidateCount) || candidateCount < 1) {
+        setErrorMessage("Expected candidates must be at least 1.");
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -348,6 +384,54 @@ export function HiringManagerCampaignBuilder({
         {}
       );
 
+      const assessmentSettings = {
+        weights: selectedAssessments.reduce<Record<string, number>>(
+          (weights, assessment) => {
+            weights[assessment.slug] = draft.assessmentWeights[assessment.slug] ?? 0;
+            return weights;
+          },
+          {}
+        ),
+        ...perAssessmentSettings,
+      };
+
+      if (isEditStackMode) {
+        if (!campaignId) {
+          throw new Error("Campaign could not be identified.");
+        }
+
+        const response = await fetch(
+          `/api/hiring-manager/campaigns/${campaignId}/assessment-stack`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              assessmentDocumentIds: selectedAssessments
+                .map((assessment) => assessment.documentId)
+                .filter(Boolean),
+              assessmentSettings,
+              assessmentMode:
+                draft.deliveryMode === "remote"
+                  ? "remote"
+                  : draft.deliveryMode === "hybrid"
+                    ? "hybrid"
+                    : "in_person",
+            }),
+          }
+        );
+        const body = (await response.json().catch(() => ({}))) as CreateCampaignResponse;
+
+        if (!response.ok) {
+          throw new Error(body.error || "Assessment stack could not be updated.");
+        }
+
+        HiringManagerPortalClientService.invalidate();
+        router.refresh();
+        router.push(`/hiring-manager-dashboard/campaigns/${campaignId}`);
+        return;
+      }
+
+      const candidateCount = Number.parseInt(draft.candidateVolume, 10);
       const response = await fetch("/api/hiring-manager/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -368,16 +452,7 @@ export function HiringManagerCampaignBuilder({
           assessmentDocumentIds: selectedAssessments
             .map((assessment) => assessment.documentId)
             .filter(Boolean),
-          assessmentSettings: {
-            weights: selectedAssessments.reduce<Record<string, number>>(
-              (weights, assessment) => {
-                weights[assessment.slug] = draft.assessmentWeights[assessment.slug] ?? 0;
-                return weights;
-              },
-              {}
-            ),
-            ...perAssessmentSettings,
-          },
+          assessmentSettings,
         }),
       });
       const body = (await response.json().catch(() => ({}))) as CreateCampaignResponse;
@@ -396,7 +471,11 @@ export function HiringManagerCampaignBuilder({
       router.push(safeReturnTo);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Campaign could not be created."
+        error instanceof Error
+          ? error.message
+          : isEditStackMode
+            ? "Assessment stack could not be updated."
+            : "Campaign could not be created."
       );
     } finally {
       setIsSaving(false);
@@ -406,6 +485,7 @@ export function HiringManagerCampaignBuilder({
   return (
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="space-y-5 xl:sticky xl:top-24 self-start max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
+        {!isEditStackMode ? (
         <Card className={portalHeroPanelClass}>
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">Campaign details</CardTitle>
@@ -449,15 +529,11 @@ export function HiringManagerCampaignBuilder({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="startDate" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                Planned start
-              </Label>
-              <Input
+              <OptionalDateField
                 id="startDate"
-                type="date"
+                label="Planned start"
                 value={draft.startDate}
-                onChange={(event) => updateDraft("startDate", event.target.value)}
-                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
+                onChange={(value) => updateDraft("startDate", value)}
               />
             </div>
             <div className="space-y-2 md:col-span-2">
@@ -474,6 +550,7 @@ export function HiringManagerCampaignBuilder({
             </div>
           </CardContent>
         </Card>
+        ) : null}
 
         <Card className={portalHeroPanelClass}>
           <CardHeader className="border-b border-white/5 p-5">
@@ -565,9 +642,12 @@ export function HiringManagerCampaignBuilder({
       <aside className="space-y-4">
         <Card className={cn(portalHeroPanelClass, "sticky top-24")}>
           <CardHeader className="border-b border-white/5 p-5">
-            <CardTitle className="text-base font-bold text-white">Campaign review</CardTitle>
+            <CardTitle className="text-base font-bold text-white">
+              {isEditStackMode ? "Update campaign setup" : "Campaign review"}
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 p-5">            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <CardContent className="space-y-4 p-5">
+            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
               <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
                 Delivery mode
               </p>
@@ -806,7 +886,9 @@ export function HiringManagerCampaignBuilder({
                 </div>
                 {assessmentWeightTotal !== 100 && (
                   <p className="mt-2 text-[10px] leading-relaxed opacity-80">
-                    Weights must sum to 100% before the campaign can be created.
+                    {isEditStackMode
+                      ? "Weights must sum to 100% before saving."
+                      : "Weights must sum to 100% before the campaign can be created."}
                   </p>
                 )}
               </div>
@@ -829,7 +911,13 @@ export function HiringManagerCampaignBuilder({
               className={cn(portalPrimaryButtonClass, "h-10 w-full disabled:cursor-not-allowed disabled:opacity-50")}
             >
               <Save className="mr-2 h-4 w-4" />
-              {isSaving ? "Creating…" : "Create campaign"}
+              {isSaving
+                ? isEditStackMode
+                  ? "Saving…"
+                  : "Creating…"
+                : isEditStackMode
+                  ? "Save changes"
+                  : "Create campaign"}
             </Button>
 
             {savedMessage && (

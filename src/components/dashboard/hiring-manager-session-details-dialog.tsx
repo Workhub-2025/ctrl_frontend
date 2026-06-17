@@ -32,6 +32,7 @@ import {
   Eye,
   LockOpen,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import { areAllSessionCandidatesComplete } from "@/lib/hiring-manager/session-completion";
 import {
   portalBadgeClass,
   portalDialogShellClass,
@@ -48,6 +50,7 @@ import {
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { CandidateEmailInvitesPanel } from "@/components/dashboard/candidate-email-invites-panel";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 
@@ -79,6 +82,10 @@ type HiringManagerSessionDetailsDialogProps = {
   unlockingCandidateId?: string | null;
   onUpdateSessionStatus?: (sessionId: string, status: "closed") => void;
   updatingSessionId?: string | null;
+  onDeleteSession?: (sessionId: string) => void;
+  deletingSessionId?: string | null;
+  campaignStatus?: "Live" | "Configured" | "Draft" | "Closed" | "Archived";
+  onInvitesSent?: () => void | Promise<void>;
 };
 
 export function HiringManagerSessionDetailsDialog({
@@ -97,6 +104,10 @@ export function HiringManagerSessionDetailsDialog({
   unlockingCandidateId,
   onUpdateSessionStatus,
   updatingSessionId,
+  onDeleteSession,
+  deletingSessionId,
+  campaignStatus,
+  onInvitesSent,
 }: HiringManagerSessionDetailsDialogProps) {
   const [copiedCode, setCopiedCode] = useState(false);
   const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(null);
@@ -176,17 +187,53 @@ export function HiringManagerSessionDetailsDialog({
                   
                   {/* Session Status Actions in Dialog */}
                   <div className="flex items-center gap-2">
-                    {session.status === "Live" && onUpdateSessionStatus && (
+                    {session.candidateCount === 0 && onDeleteSession ? (
                       <Button
                         type="button"
                         size="sm"
-                        disabled={updatingSessionId === session.id}
-                        onClick={() => onUpdateSessionStatus(session.id, "closed")}
-                        className="h-8 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 transition-all duration-300 cursor-pointer"
+                        disabled={deletingSessionId === session.id}
+                        onClick={() => onDeleteSession(session.id)}
+                        className="h-8 rounded-lg text-xs font-bold border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 disabled:opacity-50 transition-all duration-300 cursor-pointer"
                       >
-                        {updatingSessionId === session.id ? "Closing..." : "Close Session"}
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                        {deletingSessionId === session.id ? "Deleting…" : "Delete session"}
                       </Button>
-                    )}
+                    ) : null}
+                    {session.status === "Live" &&
+                    session.candidateCount > 0 &&
+                    onUpdateSessionStatus ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex">
+                              <Button
+                                type="button"
+                                size="sm"
+                                disabled={
+                                  updatingSessionId === session.id ||
+                                  !areAllSessionCandidatesComplete(
+                                    session.candidates,
+                                    expectedAssessmentCount
+                                  )
+                                }
+                                onClick={() => onUpdateSessionStatus(session.id, "closed")}
+                                className="h-8 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300"
+                              >
+                                {updatingSessionId === session.id ? "Closing..." : "Close Session"}
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {!areAllSessionCandidatesComplete(
+                            session.candidates,
+                            expectedAssessmentCount
+                          ) ? (
+                            <TooltipContent className="border-white/10 bg-slate-950 text-slate-100">
+                              All candidates must complete their assessments before closing
+                            </TooltipContent>
+                          ) : null}
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : null}
                   </div>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5 font-medium">
@@ -260,6 +307,27 @@ export function HiringManagerSessionDetailsDialog({
                   <p className="mt-1.5 truncate text-[11px] text-slate-400 font-medium">{session.location}</p>
                 </div>
               </div>
+
+              <CandidateEmailInvitesPanel
+                sessionId={session.id}
+                deliveryMode={session.type}
+                candidateCount={session.candidateCount}
+                candidateLimit={session.candidateLimit}
+                pendingInvites={session.pendingInvites}
+                disabled={
+                  session.status === "Closed"
+                  || session.status === "Cancelled"
+                  || campaignStatus !== "Live"
+                }
+                disabledReason={
+                  campaignStatus !== "Live"
+                    ? "Invites are available once the campaign is live."
+                    : session.status === "Closed" || session.status === "Cancelled"
+                      ? "This session is no longer accepting invites."
+                      : undefined
+                }
+                onInvitesSent={onInvitesSent}
+              />
 
               {/* Candidates */}
               <div className="space-y-4 relative z-10">

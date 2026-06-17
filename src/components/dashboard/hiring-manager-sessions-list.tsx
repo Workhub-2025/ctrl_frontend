@@ -22,6 +22,7 @@ import {
   Building,
   Sparkles,
   Layers3,
+  Trash2,
 } from "lucide-react";
 import {
   Select,
@@ -51,6 +52,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
+import { OptionalDateTimeFields } from "@/components/dashboard/portal/optional-datetime-fields";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
@@ -80,6 +82,7 @@ export function HiringManagerSessionsList() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<HiringManagerSessionListItem | null>(null);
   const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
 
@@ -314,6 +317,31 @@ export function HiringManagerSessionsList() {
       );
     } finally {
       setRemovingCandidateId(null);
+    }
+  };
+
+  const deleteSession = async (sessionId: string, sessionName: string) => {
+    const confirmed = window.confirm(
+      `Delete "${sessionName}"? This cannot be undone. Only empty sessions can be deleted.`
+    );
+    if (!confirmed) return;
+
+    setCreateError(null);
+    setDeletingSessionId(sessionId);
+    try {
+      await HiringManagerPortalClientService.deleteSession(sessionId);
+      if (selectedSession?.id === sessionId) {
+        setSelectedSession(null);
+      }
+      await loadSessions(true);
+    } catch (deleteError) {
+      setCreateError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Session could not be deleted."
+      );
+    } finally {
+      setDeletingSessionId(null);
     }
   };
 
@@ -676,40 +704,23 @@ export function HiringManagerSessionsList() {
                     <CalendarClock className="h-4 w-4 text-primary" />
                     Start Date & Time
                   </Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="sessionDate" className="text-[10px] font-semibold text-slate-500">
-                        Date *
-                      </Label>
-                      <Input
-                        id="sessionDate"
-                        type="date"
-                        value={draftDate}
-                        onChange={(e) => {
-                          setDraftDate(e.target.value);
-                          setDateError("");
-                        }}
-                        className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
-                      />
-                      {dateError && <p className="text-[10px] text-red-400 font-medium">{dateError}</p>}
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="sessionTime" className="text-[10px] font-semibold text-slate-500">
-                        Time *
-                      </Label>
-                      <Input
-                        id="sessionTime"
-                        type="time"
-                        value={draftTime}
-                        onChange={(e) => {
-                          setDraftTime(e.target.value);
-                          setTimeError("");
-                        }}
-                        className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors [color-scheme:dark]"
-                      />
-                      {timeError && <p className="text-[10px] text-red-400 font-medium">{timeError}</p>}
-                    </div>
-                  </div>
+                  <OptionalDateTimeFields
+                    dateId="sessionDate"
+                    timeId="sessionTime"
+                    dateValue={draftDate}
+                    timeValue={draftTime}
+                    onDateChange={(value) => {
+                      setDraftDate(value);
+                      setDateError("");
+                    }}
+                    onTimeChange={(value) => {
+                      setDraftTime(value);
+                      setTimeError("");
+                    }}
+                    dateError={dateError}
+                    timeError={timeError}
+                    disabled={isCreating}
+                  />
                 </div>
 
                 {/* Delivery Mode Toggle (only for Hybrid Campaigns) */}
@@ -976,6 +987,20 @@ export function HiringManagerSessionsList() {
                         <Eye className="mr-1.5 h-3.5 w-3.5" />
                         View details
                       </Button>
+
+                      {session.candidateCount === 0 ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={deletingSessionId === session.id}
+                          onClick={() => deleteSession(session.id, session.campaign)}
+                          className="h-8 rounded-lg border-red-500/20 bg-transparent px-3 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+                        >
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                          {deletingSessionId === session.id ? "Deleting…" : "Delete"}
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -1006,6 +1031,14 @@ export function HiringManagerSessionsList() {
         unlockingCandidateId={unlockingCandidateId}
         onUpdateSessionStatus={handleUpdateSessionStatus}
         updatingSessionId={updatingSessionId}
+        onDeleteSession={
+          selectedSession?.candidateCount === 0
+            ? (sessionId) => deleteSession(sessionId, selectedSession.campaign)
+            : undefined
+        }
+        deletingSessionId={deletingSessionId}
+        campaignStatus={selectedCampaignDetail?.status}
+        onInvitesSent={() => loadSessions(true)}
       />
     </div>
   );
