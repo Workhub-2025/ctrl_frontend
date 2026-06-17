@@ -1,8 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { CalendarIcon, Clock3 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 const fieldTriggerClass =
@@ -10,6 +18,12 @@ const fieldTriggerClass =
 
 const placeholderClass = "text-slate-500";
 const valueClass = "text-slate-100";
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) =>
+  hour.toString().padStart(2, "0")
+);
+
+const MINUTE_OPTIONS = ["00", "15", "30", "45"];
 
 function formatDateLabel(value: string) {
   return format(parseISO(value), "dd/MM/yyyy");
@@ -20,6 +34,21 @@ function normalizeTimeValue(raw: string) {
   const [hour = "", minute = ""] = raw.split(":");
   if (!hour || !minute) return "";
   return `${hour.padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
+function prefersSelectTimePicker() {
+  if (typeof window === "undefined") return true;
+
+  const ua = navigator.userAgent;
+  const isWebKitWithoutChrome =
+    (/Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR|Brave/.test(ua)) ||
+    /iPhone|iPad|iPod/.test(ua);
+
+  if (isWebKitWithoutChrome) return true;
+
+  const input = document.createElement("input");
+  input.type = "time";
+  return typeof input.showPicker !== "function";
 }
 
 type OptionalDateFieldProps = {
@@ -95,6 +124,139 @@ type OptionalTimeFieldProps = {
   step?: number;
 };
 
+function NativeTimeField({
+  id,
+  value,
+  onChange,
+  error,
+  disabled = false,
+  step = 900,
+}: Omit<OptionalTimeFieldProps, "label">) {
+  const displayValue = normalizeTimeValue(value);
+
+  return (
+    <div
+      className={cn(
+        "relative h-10 w-full",
+        disabled && "cursor-not-allowed opacity-50"
+      )}
+    >
+      <div
+        className={cn(
+          fieldTriggerClass,
+          "pointer-events-none absolute inset-0",
+          error && "border-red-500/50"
+        )}
+        aria-hidden="true"
+      >
+        <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
+        <span className={displayValue ? valueClass : placeholderClass}>
+          {displayValue || "--:--"}
+        </span>
+      </div>
+      <input
+        id={id}
+        type="time"
+        value={displayValue}
+        step={step}
+        disabled={disabled}
+        onChange={(event) => onChange(normalizeTimeValue(event.target.value))}
+        className={cn(
+          "absolute inset-0 h-full w-full cursor-pointer opacity-0",
+          "[color-scheme:dark]"
+        )}
+      />
+    </div>
+  );
+}
+
+function SelectTimeField({
+  id,
+  value,
+  onChange,
+  error,
+  disabled = false,
+}: Omit<OptionalTimeFieldProps, "label" | "step">) {
+  const [hour, setHour] = useState("");
+  const [minute, setMinute] = useState("");
+
+  useEffect(() => {
+    if (!value) {
+      setHour("");
+      setMinute("");
+      return;
+    }
+    const [nextHour = "", nextMinute = ""] = normalizeTimeValue(value).split(":");
+    setHour(nextHour);
+    setMinute(nextMinute);
+  }, [value]);
+
+  const commitTime = (nextHour: string, nextMinute: string) => {
+    if (nextHour && nextMinute) {
+      onChange(`${nextHour}:${nextMinute}`);
+      return;
+    }
+    onChange("");
+  };
+
+  return (
+    <div
+      className={cn(
+        fieldTriggerClass,
+        "px-2.5",
+        error && "border-red-500/50",
+        disabled && "cursor-not-allowed opacity-50"
+      )}
+    >
+      <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
+      <div className="flex flex-1 items-center gap-1.5">
+        <Select
+          value={hour || undefined}
+          onValueChange={(nextHour) => {
+            setHour(nextHour);
+            commitTime(nextHour, minute);
+          }}
+          disabled={disabled}
+        >
+          <SelectTrigger
+            id={id}
+            className="h-8 flex-1 border-white/10 bg-transparent px-2 text-xs text-slate-100 focus:ring-primary/50"
+          >
+            <SelectValue placeholder="--" />
+          </SelectTrigger>
+          <SelectContent className="z-[200] max-h-56 border-white/10 bg-slate-950 text-slate-100">
+            {HOUR_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className={value ? valueClass : placeholderClass}>:</span>
+        <Select
+          value={minute || undefined}
+          onValueChange={(nextMinute) => {
+            setMinute(nextMinute);
+            commitTime(hour, nextMinute);
+          }}
+          disabled={disabled}
+        >
+          <SelectTrigger className="h-8 flex-1 border-white/10 bg-transparent px-2 text-xs text-slate-100 focus:ring-primary/50">
+            <SelectValue placeholder="--" />
+          </SelectTrigger>
+          <SelectContent className="z-[200] max-h-56 border-white/10 bg-slate-950 text-slate-100">
+            {MINUTE_OPTIONS.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+}
+
 export function OptionalTimeField({
   id,
   label,
@@ -104,7 +266,11 @@ export function OptionalTimeField({
   disabled = false,
   step = 900,
 }: OptionalTimeFieldProps) {
-  const displayValue = normalizeTimeValue(value);
+  const [useSelectPicker, setUseSelectPicker] = useState(true);
+
+  useEffect(() => {
+    setUseSelectPicker(prefersSelectTimePicker());
+  }, []);
 
   return (
     <div className="space-y-1.5">
@@ -113,38 +279,24 @@ export function OptionalTimeField({
           {label}
         </Label>
       ) : null}
-      <div
-        className={cn(
-          "relative h-10 w-full",
-          disabled && "cursor-not-allowed opacity-50"
-        )}
-      >
-        <div
-          className={cn(
-            fieldTriggerClass,
-            "pointer-events-none absolute inset-0",
-            error && "border-red-500/50"
-          )}
-          aria-hidden="true"
-        >
-          <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
-          <span className={displayValue ? valueClass : placeholderClass}>
-            {displayValue || "--:--"}
-          </span>
-        </div>
-        <input
+      {useSelectPicker ? (
+        <SelectTimeField
           id={id}
-          type="time"
-          value={displayValue}
-          step={step}
+          value={value}
+          onChange={onChange}
+          error={error}
           disabled={disabled}
-          onChange={(event) => onChange(normalizeTimeValue(event.target.value))}
-          className={cn(
-            "absolute inset-0 h-full w-full cursor-pointer opacity-0",
-            "[color-scheme:dark]"
-          )}
         />
-      </div>
+      ) : (
+        <NativeTimeField
+          id={id}
+          value={value}
+          onChange={onChange}
+          error={error}
+          disabled={disabled}
+          step={step}
+        />
+      )}
       {error ? <p className="text-[10px] font-medium text-red-400">{error}</p> : null}
     </div>
   );
