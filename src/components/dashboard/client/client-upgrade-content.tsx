@@ -270,66 +270,62 @@ export function ClientUpgradeContent() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
-        <div className="space-y-6 lg:col-span-4 xl:col-span-3">
-          <PortalPanel>
-            <div className="space-y-5 p-5">
-              <PortalSectionHeader
-                eyebrow="Your plan"
-                title="Current entitlements"
-                description="Live contract limits and platform access for this client account."
-              />
+      <div className="space-y-8">
+        <PortalPanel>
+          <div className="space-y-6 p-6">
+            <PortalSectionHeader
+              eyebrow="Your plan"
+              title="Current entitlements"
+              description="Live contract limits and platform access for this client account."
+            />
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className={cn(portalPanelClass, "p-4")}>
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <CalendarRange className="h-4 w-4" aria-hidden="true" />
-                    Contract period
-                  </div>
-                  <p className="mt-3 text-sm font-semibold text-foreground">
-                    {contract?.startDate && contract?.endDate
-                      ? `${formatDate(contract.startDate)} – ${formatDate(contract.endDate)}`
-                      : "Pending activation — term starts on payment"}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Billing: {entitlements?.contractActive ? "Active" : "Inactive or payment pending"} ·{" "}
-                    {entitlements?.contract?.paymentStatus?.replace(/_/g, " ") ?? "not required"}
-                    {entitlements?.contract?.daysUntilExpiry != null ? (
-                      <>
-                        {" "}
-                        ·{" "}
-                        {entitlements.contract.daysUntilExpiry <= 30 ? (
-                          <span className="font-medium text-foreground">
-                            {entitlements.contract.daysUntilExpiry} days until renewal
-                          </span>
-                        ) : (
-                          <span>{entitlements.contract.daysUntilExpiry} days remaining</span>
-                        )}
-                      </>
-                    ) : null}
-                  </p>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className={cn(portalPanelClass, "p-4")}>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <CalendarRange className="h-4 w-4" aria-hidden="true" />
+                  Contract period
                 </div>
-                <div className={cn(portalPanelClass, "p-4")}>
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <Users className="h-4 w-4" aria-hidden="true" />
-                    Seat usage
-                  </div>
-                  <p className="mt-3 font-display text-2xl font-semibold text-foreground">
-                    {seats?.used ?? 0}/{contract?.seatCount ?? seats?.limit ?? "—"}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {seats?.available ?? 0} seat{(seats?.available ?? 0) === 1 ? "" : "s"} available
-                  </p>
-                </div>
+                <p className="mt-3 text-sm font-semibold text-foreground">
+                  {contract?.startDate && contract?.endDate
+                    ? `${formatDate(contract.startDate)} – ${formatDate(contract.endDate)}`
+                    : "Pending activation — term starts on payment"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Billing: {entitlements?.contractActive ? "Active" : "Inactive or payment pending"} ·{" "}
+                  {entitlements?.contract?.paymentStatus?.replace(/_/g, " ") ?? "not required"}
+                  {entitlements?.contract?.daysUntilExpiry != null ? (
+                    <>
+                      {" "}
+                      ·{" "}
+                      {entitlements.contract.daysUntilExpiry <= 30 ? (
+                        <span className="font-medium text-foreground">
+                          {entitlements.contract.daysUntilExpiry} days until renewal
+                        </span>
+                      ) : (
+                        <span>{entitlements.contract.daysUntilExpiry} days remaining</span>
+                      )}
+                    </>
+                  ) : null}
+                </p>
               </div>
+              <div className={cn(portalPanelClass, "p-4")}>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Users className="h-4 w-4" aria-hidden="true" />
+                  Seat usage
+                </div>
+                <p className="mt-3 font-display text-2xl font-semibold text-foreground">
+                  {seats?.used ?? 0}/{contract?.seatCount ?? seats?.limit ?? "—"}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {seats?.available ?? 0} seat{(seats?.available ?? 0) === 1 ? "" : "s"} available
+                </p>
+              </div>
+            </div>
 
+            <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Delivery methods
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Billable delivery features. Add remote or hybrid delivery in the upgrade builder when you
-                  need them enabled.
                 </p>
                 <ul className="grid gap-3 sm:grid-cols-2">
                   {deliveryFeatures.map((feature) => (
@@ -359,18 +355,19 @@ export function ClientUpgradeContent() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Core assessments
                 </p>
-                <ul className="space-y-2">
+                <ul className="grid gap-3 sm:grid-cols-2">
                   {defaultAssessments.map((assessment) => (
-                    <li key={assessment.slug} className={cn(portalPanelClass, "px-3 py-2.5")}>
+                    <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
                           {(assessment.upgradeableVersions?.length ?? 0) > 0 ? (
-                            <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                              Upgrades: {assessment.upgradeableVersions?.map((v) => `v${v.version}`).join(", ")}
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Upgrades:{" "}
+                              {assessment.upgradeableVersions?.map((v) => `v${v.version}`).join(", ")}
                             </p>
                           ) : (
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">Included on platform</p>
+                            <p className="mt-1 text-xs text-muted-foreground">Included on platform</p>
                           )}
                         </div>
                         <Badge variant="outline" className="shrink-0 rounded-lg text-[10px] font-semibold">
@@ -381,48 +378,49 @@ export function ClientUpgradeContent() {
                   ))}
                 </ul>
               </div>
-
-              {(entitlements?.additionalAssessments.length ?? 0) > 0 ? (
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Add-ons active
-                  </p>
-                  <ul className="space-y-2">
-                    {entitlements?.additionalAssessments.map((assessment) => (
-                      <li key={assessment.slug} className={cn(portalPanelClass, "px-3 py-2.5")}>
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
-                          <Badge variant="outline" className={cn("shrink-0 rounded-lg text-[10px] font-semibold", portalBadgeClass)}>
-                            v{assessment.maxVersion}
-                          </Badge>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
             </div>
-          </PortalPanel>
-        </div>
 
-        <div className="lg:col-span-5 xl:col-span-6">
-          <PortalPanel>
-            <div className="p-5 lg:p-6">
-              <ClientUpgradeBuilder
-                entitlements={entitlements}
-                canRequestUpgrades={canRequestUpgrades}
-                submitting={submittingUpgrade}
-                onSubmit={async (payload) => {
-                  await submitUpgradeRequest({ payload });
-                }}
-              />
-            </div>
-          </PortalPanel>
-        </div>
+            {(entitlements?.additionalAssessments.length ?? 0) > 0 ? (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Add-on assessments active
+                </p>
+                <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {entitlements?.additionalAssessments.map((assessment) => (
+                    <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
+                        <Badge
+                          variant="outline"
+                          className={cn("shrink-0 rounded-lg text-[10px] font-semibold", portalBadgeClass)}
+                        >
+                          v{assessment.maxVersion}
+                        </Badge>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        </PortalPanel>
 
-        <div className="space-y-6 lg:col-span-3 xl:col-span-3" id="upgrade-request-history">
+        <PortalPanel>
+          <div className="p-6">
+            <ClientUpgradeBuilder
+              entitlements={entitlements}
+              canRequestUpgrades={canRequestUpgrades}
+              submitting={submittingUpgrade}
+              onSubmit={async (payload) => {
+                await submitUpgradeRequest({ payload });
+              }}
+            />
+          </div>
+        </PortalPanel>
+
+        <div id="upgrade-request-history">
           <PortalPanel>
-            <div className="space-y-5 p-5">
+            <div className="space-y-5 p-6">
               <PortalSectionHeader
                 eyebrow="History"
                 title="Your upgrade requests"
@@ -437,7 +435,7 @@ export function ClientUpgradeContent() {
                 <PortalEmptyState
                   icon={TrendingUp}
                   title="No upgrade requests yet"
-                  description="Use the builder in the centre to stage changes and submit one billing request."
+                  description="Use the upgrade builder above to stage changes and submit one billing request."
                 />
               ) : null}
 

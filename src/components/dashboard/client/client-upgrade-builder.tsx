@@ -341,7 +341,7 @@ export function ClientUpgradeBuilder({
             <TrendingUp className="h-4 w-4" aria-hidden="true" />
             Assessment versions
           </div>
-          <div className="space-y-3">
+          <div className="grid gap-4 md:grid-cols-2">
             {versionAssessments.map((assessment) => {
               const options =
                 (assessment.upgradeableVersions?.length ?? 0) > 0
