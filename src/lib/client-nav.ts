@@ -4,6 +4,7 @@ import {
   Home,
   MessageSquare,
   TrendingUp,
+  UserCheck,
   Users,
 } from "lucide-react";
 
@@ -47,11 +48,22 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
         isActive: (pathname) => pathname.startsWith("/client-dashboard/hiring-managers"),
       },
       {
-        href: "/client-dashboard/progressed",
-        label: "Approvals",
-        hint: "Campaigns and candidates",
+        href: "/client-dashboard/campaign-approvals",
+        label: "Campaign approvals",
+        hint: "Review hiring campaigns",
         icon: ClipboardCheck,
-        isActive: (pathname) => pathname.startsWith("/client-dashboard/progressed"),
+        isActive: (pathname) =>
+          pathname.startsWith("/client-dashboard/campaign-approvals") ||
+          pathname.startsWith("/client-dashboard/progressed"),
+      },
+      {
+        href: "/client-dashboard/client-approved-candidates",
+        label: "Candidate reviews",
+        hint: "Recommended candidates",
+        icon: UserCheck,
+        isActive: (pathname) =>
+          pathname.startsWith("/client-dashboard/client-approved-candidates") ||
+          pathname.startsWith("/client-dashboard/candidate-approvals"),
       },
     ],
   },
@@ -83,7 +95,10 @@ export type ClientBreadcrumb = { label: string; href?: string };
 const SEGMENT_LABELS: Record<string, string> = {
   "client-dashboard": "Client",
   "hiring-managers": "Hiring managers",
-  progressed: "Approvals",
+  "campaign-approvals": "Campaign approvals",
+  "client-approved-candidates": "Candidate reviews",
+  "candidate-approvals": "Candidate reviews",
+  progressed: "Campaign approvals",
   "upgrade-requests": "Upgrade requests",
   messages: "Messages",
 };

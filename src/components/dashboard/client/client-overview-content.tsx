@@ -176,10 +176,16 @@ export function ClientOverviewContent() {
               icon: Users,
             },
             {
-              href: "/client-dashboard/progressed/",
-              label: "Approvals",
-              hint: "Campaigns and candidates",
+              href: "/client-dashboard/campaign-approvals/",
+              label: "Campaign approvals",
+              hint: "Review hiring campaigns",
               icon: ClipboardCheck,
+            },
+            {
+              href: "/client-dashboard/client-approved-candidates/",
+              label: "Candidate reviews",
+              hint: "Recommended candidates",
+              icon: UserCheck,
             },
             {
               href: "/client-dashboard/upgrade-requests/",
