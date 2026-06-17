@@ -11,6 +11,7 @@ import {
   Phone,
 } from "lucide-react";
 import { getAssessmentPagePath, getAssessmentSubmitUrl } from "./helpers";
+import { getAssessmentCardDuration } from "@/lib/assessment-catalog-defaults";
 import { CallSimulationReportBreakdown } from "./report/call-simulation-breakdown";
 import { PrioritisationReportBreakdown } from "./report/prioritisation-breakdown";
 import {
@@ -30,9 +31,9 @@ const plugins: AssessmentUiPlugin[] = [
     description:
       "Complete a timed typing exercise designed to assess speed and accuracy.",
     href: getAssessmentPagePath("typing"),
-    duration: "10-15 min",
+    duration: getAssessmentCardDuration("typing"),
     icon: Keyboard,
-    timed: false,
+    timed: true,
     supportsHeartbeat: true,
     requiresServerInit: true,
     strapiSessionPath: "/assessment/typing/session",
@@ -47,7 +48,7 @@ const plugins: AssessmentUiPlugin[] = [
     description:
       "Listen to a simulated call and record the key details clearly and accurately.",
     href: getAssessmentPagePath("call-simulation"),
-    duration: "10 min",
+    duration: getAssessmentCardDuration("call-simulation"),
     icon: Phone,
     timed: true,
     supportsHeartbeat: true,
@@ -63,7 +64,7 @@ const plugins: AssessmentUiPlugin[] = [
     description:
       "Respond to realistic scenarios that assess judgement, prioritisation, and decision-making.",
     href: getAssessmentPagePath("situational-judgement"),
-    duration: "15-20 min",
+    duration: getAssessmentCardDuration("situational-judgement"),
     icon: ClipboardCheck,
     timed: true,
     supportsHeartbeat: true,
@@ -79,7 +80,7 @@ const plugins: AssessmentUiPlugin[] = [
     description:
       "Rank incident sets from highest to lowest priority to show operational risk judgement.",
     href: getAssessmentPagePath("prioritisation"),
-    duration: "Untimed",
+    duration: getAssessmentCardDuration("prioritisation"),
     icon: ListOrdered,
     timed: true,
     supportsHeartbeat: true,

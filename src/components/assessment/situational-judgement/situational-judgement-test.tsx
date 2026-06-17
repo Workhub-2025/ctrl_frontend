@@ -23,6 +23,8 @@ import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessme
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 import { initSjaSession } from '@/app/actions/assessment-sja.actions';
+import { buildTimedAssessmentSubmitMeta } from '@/lib/assessment-completion-status';
+import { STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS } from '@/lib/assessment-catalog-defaults';
 
 type ScenarioOption = {
   id: string;
@@ -156,6 +158,8 @@ function SJTAnimationPreview() {
 type AssessmentSessionConfig = {
   version?: string;
   difficulty?: string;
+  questionCount?: number;
+  timeLimitSeconds?: number;
 };
 
 type Phase = 'landing' | 'rules' | 'scenario' | 'submitting' | 'submitted';
@@ -166,7 +170,8 @@ type SjtResponse = {
   worstOptionId: string;
 };
 
-const SJT_DURATION_SECONDS = 20 * 60;
+const formatAssessmentMinutes = (seconds: number) =>
+  `${Math.max(1, Math.round(seconds / 60))} minutes`;
 
 const formatTimer = (seconds: number) => {
   const safeSeconds = Math.max(0, seconds);
@@ -208,9 +213,19 @@ export default function SituationalJudgementTest({
   const [worstOptionId, setWorstOptionId] = useState<string | null>(null);
   const [responses, setResponses] = useState<SjtResponse[]>([]);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState(SJT_DURATION_SECONDS);
+  const [timedOut, setTimedOut] = useState(false);
+  const [timeLimitSeconds, setTimeLimitSeconds] = useState(STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS);
+  const [timeRemaining, setTimeRemaining] = useState(STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS);
   const startedAtRef = useRef<string | null>(null);
   const sessionConfigRef = useRef<AssessmentSessionConfig>({});
+  const responsesRef = useRef<SjtResponse[]>([]);
+  const bestOptionIdRef = useRef<string | null>(null);
+  const worstOptionIdRef = useRef<string | null>(null);
+  const scenarioIndexRef = useRef(0);
+  responsesRef.current = responses;
+  bestOptionIdRef.current = bestOptionId;
+  worstOptionIdRef.current = worstOptionId;
+  scenarioIndexRef.current = scenarioIndex;
 
   const practiceScenarios = useMemo(() => {
     return content.sjaRounds.filter((s: any) => s.type === 'practice');
@@ -223,9 +238,16 @@ export default function SituationalJudgementTest({
   const scenarios = finalScenarios;
   const activeScenario = scenarios[scenarioIndex] ?? scenarios[0] ?? fallbackContent.sjaRounds[0];
   const progress = scenarios.length > 0 ? ((scenarioIndex + 1) / scenarios.length) * 100 : 0;
-  const timerProgress = ((SJT_DURATION_SECONDS - timeRemaining) / SJT_DURATION_SECONDS) * 100;
+  const timeLimitLabel = formatAssessmentMinutes(timeLimitSeconds);
+  const scenarioCountLabel = `${scenarios.length} live ${scenarios.length === 1 ? 'scenario' : 'scenarios'}`;
+  const timerProgress = timeLimitSeconds > 0
+    ? ((timeLimitSeconds - timeRemaining) / timeLimitSeconds) * 100
+    : 0;
   const timerTone = timeRemaining <= 300 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
-  const canSubmitScenario = Boolean(bestOptionId && worstOptionId && bestOptionId !== worstOptionId);
+  const canSubmitScenario =
+    timeRemaining > 0 &&
+    Boolean(bestOptionId && worstOptionId && bestOptionId !== worstOptionId);
+  const isTimeExpired = timeRemaining <= 0;
 
   const isAssessmentLive = useMemo(
     () => phase === 'scenario' || phase === 'submitting',
@@ -270,8 +292,12 @@ export default function SituationalJudgementTest({
         const sessionData = await initSjaSession(candidateSessionDocumentId);
         if (cancelled) return;
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
+          const sessionLimit =
+            sessionData.config?.timeLimitSeconds ?? STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;
           setContent({ version: sessionData.config?.version || '1.0.0', sjaRounds: sessionData.runs });
           sessionConfigRef.current = sessionData.config ?? {};
+          setTimeLimitSeconds(sessionLimit);
+          setTimeRemaining(sessionLimit);
           setLoading(false);
           return;
         } else {
@@ -300,9 +326,10 @@ export default function SituationalJudgementTest({
     setWorstOptionId(null);
     setResponses([]);
     setSubmitError(null);
-    setTimeRemaining(SJT_DURATION_SECONDS);
+    setTimedOut(false);
+    setTimeRemaining(timeLimitSeconds);
     setPhase('scenario');
-  }, []);
+  }, [timeLimitSeconds]);
 
   const closeAssessment = useCallback(() => {
     closeAssessmentWindow();
@@ -344,6 +371,44 @@ export default function SituationalJudgementTest({
   }, [isPaused, phase, timeRemaining]);
 
   useEffect(() => {
+    if (phase !== 'scenario' || timeRemaining > 0 || timedOut) return;
+
+    let submissionResponses = [...responsesRef.current];
+    const scenario = scenarios[scenarioIndexRef.current];
+    const best = bestOptionIdRef.current;
+    const worst = worstOptionIdRef.current;
+
+    if (
+      scenario &&
+      best &&
+      worst &&
+      best !== worst &&
+      !submissionResponses.some((response) => response.scenarioId === scenario.id)
+    ) {
+      submissionResponses = [
+        ...submissionResponses,
+        {
+          scenarioId: scenario.id,
+          bestOptionId: best,
+          worstOptionId: worst,
+        },
+      ];
+    }
+
+    if (submissionResponses.length === 0) {
+      setSubmitError('Time expired before any scenarios were completed.');
+      setTimedOut(true);
+      setPhase('submitted');
+      return;
+    }
+
+    responsesRef.current = submissionResponses;
+    setResponses(submissionResponses);
+    setTimedOut(true);
+    setPhase('submitting');
+  }, [phase, scenarios, timeRemaining, timedOut]);
+
+  useEffect(() => {
     if (phase !== 'submitted' || submitError) return;
     void markCompleted();
   }, [markCompleted, phase, submitError]);
@@ -354,17 +419,26 @@ export default function SituationalJudgementTest({
     let cancelled = false;
 
     const submitAssessment = async () => {
+      const submissionResponses = responsesRef.current;
+
       try {
         const response = await fetch(getAssessmentSubmitUrl('situational-judgement'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            responses,
+            responses: submissionResponses,
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
             candidateSessionDocumentId,
             assessmentVersion: sessionConfigRef.current.version,
             difficulty: sessionConfigRef.current.difficulty,
+            questionCount: scenarios.length,
+            answeredCount: submissionResponses.length,
+            ...buildTimedAssessmentSubmitMeta({
+              timedOut,
+              expectedCount: scenarios.length,
+              answeredCount: submissionResponses.length,
+            }),
           }),
         });
 
@@ -392,7 +466,7 @@ export default function SituationalJudgementTest({
     return () => {
       cancelled = true;
     };
-  }, [candidateSessionDocumentId, phase, responses]);
+  }, [candidateSessionDocumentId, phase, responses, scenarios.length, timedOut]);
 
   const renderOption = (option: ScenarioOption) => {
     const isBest = bestOptionId === option.id;
@@ -422,6 +496,7 @@ export default function SituationalJudgementTest({
               setBestOptionId(option.id);
               if (worstOptionId === option.id) setWorstOptionId(null);
             }}
+            disabled={isTimeExpired}
           >
             Most effective
           </Button>
@@ -432,6 +507,7 @@ export default function SituationalJudgementTest({
               setWorstOptionId(option.id);
               if (bestOptionId === option.id) setBestOptionId(null);
             }}
+            disabled={isTimeExpired}
           >
             Least effective
           </Button>
@@ -514,7 +590,7 @@ export default function SituationalJudgementTest({
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground">20 minutes</p>
+              <p className="text-sm font-semibold text-foreground">{timeLimitLabel}</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">A visual time bar stays on screen during the live scenarios.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
@@ -524,7 +600,7 @@ export default function SituationalJudgementTest({
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <ListChecks className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground">Twenty live scenarios</p>
+              <p className="text-sm font-semibold text-foreground">{scenarioCountLabel}</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Your live judgement decisions are submitted securely.</p>
             </div>
           </div>
@@ -644,7 +720,7 @@ export default function SituationalJudgementTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Live Assessment Questions</h2>
                 </div>
-                <p>The live assessment contains 20 scored scenarios and has a 20-minute time limit. The time bar begins when you start the scenarios and remains visible throughout.</p>
+                <p>The live assessment contains {scenarios.length} scored scenarios and has a {timeLimitLabel} time limit. The time bar begins when you start the scenarios and remains visible throughout.</p>
               </div>
             </div>
 
@@ -652,7 +728,7 @@ export default function SituationalJudgementTest({
               <h2 className="mb-3 text-lg font-semibold text-foreground">Step-by-Step Instructions</h2>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {[
-                  'Start the live assessment when you are ready for the 20-minute timer',
+                  `Start the live assessment when you are ready for the ${timeLimitLabel} timer`,
                   'Read the situation carefully',
                   'Read all four actions before choosing',
                   'Choose the MOST effective action',
@@ -682,11 +758,16 @@ export default function SituationalJudgementTest({
 
       {phase === 'scenario' && (
         <div className="mx-auto flex min-h-[560px] w-full flex-col justify-center py-6">
+          {isTimeExpired ? (
+            <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
+              Time limit reached. Submitting your completed scenarios…
+            </div>
+          ) : null}
           <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  20-minute assessment timer
+                  {timeLimitLabel} assessment timer
                 </p>
                 <p className={`mt-1 text-2xl font-semibold tabular-nums ${timerTone}`}>
                   {formatTimer(timeRemaining)}
@@ -735,7 +816,7 @@ export default function SituationalJudgementTest({
             <p className="text-sm text-muted-foreground">
               Select one most effective and one least effective response.
             </p>
-            <Button onClick={submitCurrentScenario} disabled={!canSubmitScenario}>
+            <Button onClick={submitCurrentScenario} disabled={!canSubmitScenario || isTimeExpired}>
               {scenarioIndex >= scenarios.length - 1 ? 'Submit assessment' : 'Next scenario'}
             </Button>
           </div>
@@ -748,7 +829,7 @@ export default function SituationalJudgementTest({
             <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Final scenario complete
+            {timedOut ? 'Saving timed submission' : 'Final scenario complete'}
           </p>
           <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Submitting assessment
@@ -767,10 +848,20 @@ export default function SituationalJudgementTest({
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
           </p>
+          {timedOut && !submitError ? (
+            <Badge
+              variant="outline"
+              className="mt-4 border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+            >
+              Timeout
+            </Badge>
+          ) : null}
           <p className="mt-4 max-w-md text-muted-foreground">
             {submitError
               ? submitError
-              : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments or await further information from the Hiring Manager.'}
+              : timedOut
+                ? 'Time limit reached. Your completed scenarios were submitted and scored.'
+                : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments or await further information from the Hiring Manager.'}
           </p>
           <Button variant="outline" className="mt-8 h-11 px-6" onClick={closeAssessment}>
             <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />

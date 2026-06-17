@@ -25,6 +25,11 @@ import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessme
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 import { initPjaSession } from '@/app/actions/assessment-pja.actions';
+import { buildTimedAssessmentSubmitMeta } from '@/lib/assessment-completion-status';
+import {
+  PJA_INCIDENTS_PER_ROUND,
+  STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
+} from '@/lib/assessment-catalog-defaults';
 
 type Incident = {
   id: string;
@@ -211,7 +216,12 @@ function PrioritisationAnimationPreview() {
 type AssessmentSessionConfig = {
   version?: string;
   difficulty?: string;
+  roundCount?: number;
+  timeLimitSeconds?: number;
 };
+
+const formatAssessmentMinutes = (seconds: number) =>
+  `${Math.max(1, Math.round(seconds / 60))} minutes`;
 
 type Phase =
   | 'landing'
@@ -231,6 +241,13 @@ type RoundSnapshot = {
 };
 
 type PrioritySlot = string | null;
+
+const formatTimer = (seconds: number) => {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, '0');
+  const remainingSeconds = (safeSeconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
+};
 
 const fallbackContent: PrioritisationContent = {
   version: '1.0.0',
@@ -289,8 +306,15 @@ export default function PrioritisationTest({
   const [pressedIncidentId, setPressedIncidentId] = useState<string | null>(null);
   const [draggingIncidentId, setDraggingIncidentId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
+  const [timeLimitSeconds, setTimeLimitSeconds] = useState(STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS);
+  const [timeRemaining, setTimeRemaining] = useState(STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS);
   const startedAtRef = useRef<string | null>(null);
   const sessionConfigRef = useRef<AssessmentSessionConfig>({});
+  const snapshotsRef = useRef<RoundSnapshot[]>([]);
+  const prioritySlotsRef = useRef<PrioritySlot[]>([]);
+  snapshotsRef.current = snapshots;
+  prioritySlotsRef.current = prioritySlots;
 
   const practiceRounds = useMemo(() => {
     return content.pjaRounds.filter((r: any) => r.type === 'practice');
@@ -330,9 +354,10 @@ export default function PrioritisationTest({
       prioritySlots,
       completedRounds: snapshots.length,
       roundCount: finalRounds.length,
+      timeRemaining,
       contentVersion: sessionConfigRef.current.version ?? content.version ?? '1.0.0',
     }),
-    [content.version, finalIndex, finalRounds.length, prioritySlots, snapshots.length],
+    [content.version, finalIndex, finalRounds.length, prioritySlots, snapshots.length, timeRemaining],
   );
 
   const {
@@ -357,6 +382,14 @@ export default function PrioritisationTest({
     finalRounds.length > 0
       ? ((finalIndex + 1) / finalRounds.length) * 100
       : 0;
+  const timeLimitLabel = formatAssessmentMinutes(timeLimitSeconds);
+  const timerProgress =
+    timeLimitSeconds > 0
+      ? ((timeLimitSeconds - timeRemaining) / timeLimitSeconds) * 100
+      : 0;
+  const timerTone =
+    timeRemaining <= 300 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
+  const isTimeExpired = timeRemaining <= 0;
 
   useEffect(() => {
     let cancelled = false;
@@ -368,8 +401,12 @@ export default function PrioritisationTest({
         const sessionData = await initPjaSession(candidateSessionDocumentId);
         if (cancelled) return;
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
+          const sessionLimit =
+            sessionData.config?.timeLimitSeconds ?? STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;
           setContent({ version: sessionData.config?.version || '1.0.0', pjaRounds: sessionData.runs });
           sessionConfigRef.current = sessionData.config ?? {};
+          setTimeLimitSeconds(sessionLimit);
+          setTimeRemaining(sessionLimit);
           setLoading(false);
           return;
         } else {
@@ -418,8 +455,10 @@ export default function PrioritisationTest({
     setSelectedIncidentId(null);
     setPressedIncidentId(null);
     setDraggingIncidentId(null);
+    setTimedOut(false);
+    setTimeRemaining(timeLimitSeconds);
     setPhase('final-round');
-  }, [finalRounds]);
+  }, [finalRounds, timeLimitSeconds]);
 
   const closeAssessment = useCallback(() => {
     closeAssessmentWindow();
@@ -571,6 +610,8 @@ export default function PrioritisationTest({
   };
 
   const completeFinalRound = () => {
+    if (isTimeExpired) return;
+
     const snapshot: RoundSnapshot = {
       mode: 'final',
       roundId: activeRound.id,
@@ -594,29 +635,87 @@ export default function PrioritisationTest({
   };
 
   useEffect(() => {
+    if (phase !== 'final-round') return;
+    if (timeRemaining <= 0 || isPaused) return;
+
+    const timerId = window.setTimeout(() => {
+      setTimeRemaining((currentValue) => Math.max(currentValue - 1, 0));
+    }, 1000);
+
+    return () => window.clearTimeout(timerId);
+  }, [isPaused, phase, timeRemaining]);
+
+  useEffect(() => {
+    if (phase !== 'final-round' || timeRemaining > 0 || timedOut) return;
+
+    const currentSnapshots = snapshotsRef.current;
+    const placed = prioritySlotsRef.current.filter(
+      (slot): slot is string => typeof slot === 'string' && slot.length > 0,
+    );
+    const currentRound = finalRounds[finalIndex];
+    let finalSnapshots = currentSnapshots.filter((snapshot) => snapshot.mode === 'final');
+
+    if (
+      currentRound &&
+      placed.length === PJA_INCIDENTS_PER_ROUND &&
+      placed.length === currentRound.incidents.length
+    ) {
+      finalSnapshots = [
+        ...finalSnapshots,
+        {
+          mode: 'final' as const,
+          roundId: currentRound.id,
+          roundNumber: finalIndex + 1,
+          order: placed,
+        },
+      ];
+      setSnapshots(finalSnapshots);
+      snapshotsRef.current = finalSnapshots;
+    }
+
+    if (finalSnapshots.length === 0) {
+      setSubmitError('Time expired before any live rounds were completed.');
+      setTimedOut(true);
+      setPhase('submitted');
+      return;
+    }
+
+    setTimedOut(true);
+    setPhase('submitting');
+  }, [finalIndex, finalRounds, phase, timeRemaining, timedOut]);
+
+  useEffect(() => {
     if (phase !== 'submitting') return;
 
     let cancelled = false;
 
     const submitAssessment = async () => {
-      const finalRounds = snapshots
+      const submittedFinalRounds = snapshotsRef.current
         .filter((snapshot) => snapshot.mode === 'final')
         .map((snapshot) => ({
           roundId: snapshot.roundId,
           order: snapshot.order,
         }));
+      const expectedRoundCount = finalRounds.length;
 
       try {
         const response = await fetch(getAssessmentSubmitUrl('prioritisation'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            rounds: finalRounds,
+            rounds: submittedFinalRounds,
             startedAt: startedAtRef.current ?? new Date().toISOString(),
             completedAt: new Date().toISOString(),
             candidateSessionDocumentId,
             assessmentVersion: sessionConfigRef.current.version,
             difficulty: sessionConfigRef.current.difficulty,
+            roundCount: expectedRoundCount,
+            answeredCount: submittedFinalRounds.length,
+            ...buildTimedAssessmentSubmitMeta({
+              timedOut,
+              expectedCount: expectedRoundCount,
+              answeredCount: submittedFinalRounds.length,
+            }),
           }),
         });
 
@@ -644,7 +743,7 @@ export default function PrioritisationTest({
     return () => {
       cancelled = true;
     };
-  }, [candidateSessionDocumentId, phase, snapshots]);
+  }, [candidateSessionDocumentId, finalRounds.length, phase, timedOut]);
 
   useEffect(() => {
     if (phase !== 'submitted' || submitError) return;
@@ -660,6 +759,36 @@ export default function PrioritisationTest({
 
     return (
       <div className="mx-auto flex min-h-[560px] w-full flex-col justify-center">
+        {isFinal && isTimeExpired ? (
+          <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-800 dark:text-amber-200">
+            Time limit reached. Submitting your completed live rounds…
+          </div>
+        ) : null}
+        {isFinal ? (
+          <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {timeLimitLabel} assessment timer
+                </p>
+                <p className={`mt-1 text-2xl font-semibold tabular-nums ${timerTone}`}>
+                  {formatTimer(timeRemaining)}
+                </p>
+              </div>
+              <Badge
+                variant="outline"
+                className={
+                  timeRemaining <= 300
+                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                    : undefined
+                }
+              >
+                {timeRemaining <= 300 ? 'Final 5 minutes' : 'Time-sensitive'}
+              </Badge>
+            </div>
+            <Progress value={timerProgress} className="mt-4 h-2.5" />
+          </div>
+        ) : null}
         <div className="rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -857,7 +986,7 @@ export default function PrioritisationTest({
           </p>
           <Button
             onClick={isFinal ? completeFinalRound : completePracticeRound}
-            disabled={placedCount !== activeRound.incidents.length}
+            disabled={isTimeExpired || placedCount !== activeRound.incidents.length}
           >
             {isFinal ? 'Submit final round' : 'Complete practice round'}
           </Button>
@@ -950,8 +1079,8 @@ export default function PrioritisationTest({
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground">Three practice rounds</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">Get used to the format before scoring begins.</p>
+              <p className="text-sm font-semibold text-foreground">{timeLimitLabel}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">A visual time bar stays on screen during the live rounds.</p>
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <Target className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
@@ -960,8 +1089,12 @@ export default function PrioritisationTest({
             </div>
             <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
               <ListChecks className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="text-sm font-semibold text-foreground">Fifteen live rounds</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">Your live ranking decisions are submitted securely.</p>
+              <p className="text-sm font-semibold text-foreground">
+                {finalRounds.length} live {finalRounds.length === 1 ? 'round' : 'rounds'}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {practiceRounds.length} practice {practiceRounds.length === 1 ? 'round' : 'rounds'} before scoring begins.
+              </p>
             </div>
           </div>
           <Button className="mt-8 h-12 px-7" size="lg" onClick={() => setPhase('rules')}>
@@ -1075,7 +1208,7 @@ export default function PrioritisationTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Practice Questions</h2>
                 </div>
-                <p>Start with three practice questions. They help you get used to the format and are not scored.</p>
+                <p>Start with {practiceRounds.length} practice {practiceRounds.length === 1 ? 'question' : 'questions'}. They help you get used to the format and are not scored.</p>
               </div>
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
@@ -1085,7 +1218,7 @@ export default function PrioritisationTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Live Assessment Questions</h2>
                 </div>
-                <p>After practice, you will complete 15 scored live questions. Each live question contains six incidents to rank.</p>
+                <p>After practice, you will complete {finalRounds.length} scored live {finalRounds.length === 1 ? 'question' : 'questions'} within a {timeLimitLabel} time limit. Each live question contains six incidents to rank. The time bar begins when you start the live rounds and remains visible throughout.</p>
               </div>
             </div>
 
@@ -1196,7 +1329,7 @@ export default function PrioritisationTest({
             <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            Final block complete
+            {timedOut ? 'Saving timed submission' : 'Final block complete'}
           </p>
           <p className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Submitting assessment
@@ -1216,10 +1349,20 @@ export default function PrioritisationTest({
           <p className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             Assessment submitted
           </p>
+          {timedOut && !submitError ? (
+            <Badge
+              variant="outline"
+              className="mt-4 border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+            >
+              Timeout
+            </Badge>
+          ) : null}
           <p className="mt-4 max-w-md text-muted-foreground">
             {submitError
               ? submitError
-              : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments or await further information from the Hiring Manager.'}
+              : timedOut
+                ? 'Time limit reached. Your completed live rounds were submitted and scored.'
+                : 'Thank you. Your assessment has been submitted successfully. Please complete any remaining assessments or await further information from the Hiring Manager.'}
           </p>
           <Button variant="outline" className="mt-8 h-11 px-6" onClick={closeAssessment}>
             <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />

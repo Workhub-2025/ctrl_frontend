@@ -1,3 +1,4 @@
+import { PJA_INCIDENTS_PER_ROUND } from "@/lib/assessment-catalog-defaults";
 import type { AssessmentSubmitHandler } from "./types";
 
 type PrioritisationRound = {
@@ -12,6 +13,10 @@ export type PrioritisationSubmitPayload = {
   candidateSessionDocumentId?: string | null;
   assessmentVersion?: string;
   difficulty?: string;
+  roundCount?: number;
+  answeredCount?: number;
+  timedOut?: boolean;
+  completionStatus?: "complete" | "timeout" | "partial";
 };
 
 export const prioritisationSubmitHandler: AssessmentSubmitHandler<PrioritisationSubmitPayload> = {
@@ -22,8 +27,35 @@ export const prioritisationSubmitHandler: AssessmentSubmitHandler<Prioritisation
     }
 
     const value = body as Record<string, unknown>;
-    if (!Array.isArray(value.rounds) || value.rounds.length !== 15) {
-      return { valid: false, error: "rounds must contain 15 live rankings" };
+    if (!Array.isArray(value.rounds) || value.rounds.length < 1) {
+      return { valid: false, error: "rounds must contain at least one live ranking" };
+    }
+
+    const timedOut =
+      value.timedOut === true || value.completionStatus === "timeout";
+    const expectedCount =
+      typeof value.roundCount === "number" ? value.roundCount : undefined;
+
+    if (
+      !timedOut &&
+      expectedCount !== undefined &&
+      value.rounds.length !== expectedCount
+    ) {
+      return {
+        valid: false,
+        error: `rounds must contain ${expectedCount} live rankings`,
+      };
+    }
+
+    if (
+      timedOut &&
+      expectedCount !== undefined &&
+      value.rounds.length > expectedCount
+    ) {
+      return {
+        valid: false,
+        error: `rounds cannot exceed ${expectedCount} live rankings`,
+      };
     }
 
     for (const round of value.rounds) {
@@ -34,21 +66,40 @@ export const prioritisationSubmitHandler: AssessmentSubmitHandler<Prioritisation
       if (
         typeof item.roundId !== "string" ||
         !Array.isArray(item.order) ||
-        item.order.length !== 6
+        item.order.length !== PJA_INCIDENTS_PER_ROUND
       ) {
         return {
           valid: false,
-          error: "Each round must include roundId and 6 ranked incident IDs",
+          error: `Each round must include roundId and ${PJA_INCIDENTS_PER_ROUND} ranked incident IDs`,
         };
       }
-      if (new Set(item.order).size !== 6 || item.order.some((id) => typeof id !== "string")) {
-        return { valid: false, error: "Each ranking must contain 6 unique incident IDs" };
+      if (
+        new Set(item.order).size !== PJA_INCIDENTS_PER_ROUND ||
+        item.order.some((id) => typeof id !== "string")
+      ) {
+        return {
+          valid: false,
+          error: `Each ranking must contain ${PJA_INCIDENTS_PER_ROUND} unique incident IDs`,
+        };
       }
     }
 
     if (typeof value.startedAt !== "string" || typeof value.completedAt !== "string") {
       return { valid: false, error: "startedAt and completedAt are required ISO strings" };
     }
+
+    const answeredCount =
+      typeof value.answeredCount === "number" ? value.answeredCount : value.rounds.length;
+    const completionStatus =
+      value.completionStatus === "timeout" ||
+      value.completionStatus === "partial" ||
+      value.completionStatus === "complete"
+        ? value.completionStatus
+        : timedOut
+          ? "timeout"
+          : expectedCount !== undefined && answeredCount < expectedCount
+            ? "partial"
+            : "complete";
 
     return {
       valid: true,
@@ -63,6 +114,10 @@ export const prioritisationSubmitHandler: AssessmentSubmitHandler<Prioritisation
         assessmentVersion:
           typeof value.assessmentVersion === "string" ? value.assessmentVersion : undefined,
         difficulty: typeof value.difficulty === "string" ? value.difficulty : undefined,
+        roundCount: expectedCount,
+        answeredCount,
+        timedOut: completionStatus === "timeout",
+        completionStatus,
       },
     };
   },
@@ -76,6 +131,10 @@ export const prioritisationSubmitHandler: AssessmentSubmitHandler<Prioritisation
         assessmentVersion: data.assessmentVersion,
         difficulty: data.difficulty,
         rounds: data.rounds,
+        roundCount: data.roundCount,
+        answeredCount: data.answeredCount,
+        timedOut: data.timedOut,
+        completionStatus: data.completionStatus,
       },
     };
   },

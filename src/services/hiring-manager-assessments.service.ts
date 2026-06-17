@@ -1,5 +1,18 @@
 import "server-only";
 
+import {
+  ASSESSMENT_CATALOGUE_DEFAULTS,
+  CALL_SIMULATION_CALL_COUNT,
+  PJA_ROUND_COUNT,
+  SJT_QUESTION_COUNT,
+  STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
+  TYPING_ACCURACY_THRESHOLD,
+  TYPING_ROUND_COUNT,
+  TYPING_TIME_LIMIT_PER_ROUND_SECONDS,
+  TYPING_TIME_LIMIT_SECONDS,
+  TYPING_WPM_THRESHOLD,
+} from "@/lib/assessment-catalog-defaults";
+
 type StrapiAssessmentResponse = {
   data?: unknown[];
 };
@@ -170,15 +183,15 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       "Measures transcription speed and accuracy using one practice run and three scored typing runs.",
     isActive: true,
     order: 1,
-    timeLimitSeconds: 90,
-    passingScore: 70,
+    timeLimitSeconds: TYPING_TIME_LIMIT_SECONDS,
+    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS.typing.passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.typing",
-      roundCount: 1,
-      timeLimitPerRound: 90,
-      minWpm: 40,
-      minAccuracy: 95,
+      roundCount: TYPING_ROUND_COUNT,
+      timeLimitPerRound: TYPING_TIME_LIMIT_PER_ROUND_SECONDS,
+      minWpm: TYPING_WPM_THRESHOLD,
+      minAccuracy: TYPING_ACCURACY_THRESHOLD,
     },
   },
   {
@@ -188,12 +201,13 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
     description: "Measures behavioural judgement using best/worst responses across realistic workplace scenarios.",
     isActive: true,
     order: 2,
-    passingScore: 70,
+    timeLimitSeconds: STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
+    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS["situational-judgement"].passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.situational-judgement",
-      questionCount: 20,
-      passingPercentage: 70,
+      questionCount: SJT_QUESTION_COUNT,
+      passingPercentage: ASSESSMENT_CATALOGUE_DEFAULTS["situational-judgement"].passingScore,
     },
   },
   {
@@ -204,12 +218,13 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       "Measures risk-aware incident prioritisation using six-incident ranking sets.",
     isActive: true,
     order: 3,
-    passingScore: 65,
+    timeLimitSeconds: STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
+    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS.prioritisation.passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.prioritisation",
-      roundCount: 15,
-      passingScore: 65,
+      roundCount: PJA_ROUND_COUNT,
+      passingScore: ASSESSMENT_CATALOGUE_DEFAULTS.prioritisation.passingScore,
     },
   },
   {
@@ -220,11 +235,11 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       "Assesses call handling, listening accuracy, and structured information capture.",
     isActive: true,
     order: 4,
-    passingScore: 70,
+    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS["call-simulation"].passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.call-simulation",
-      callCount: 1,
+      callCount: CALL_SIMULATION_CALL_COUNT,
       evaluationRubric: "",
     },
   },
@@ -270,11 +285,14 @@ function inferDurationSeconds(
 
   switch (config?.__component) {
     case "assessment-config.typing":
-      return (config.roundCount ?? 1) * (config.timeLimitPerRound ?? 90);
+      return (
+        (config.roundCount ?? TYPING_ROUND_COUNT) *
+        (config.timeLimitPerRound ?? TYPING_TIME_LIMIT_PER_ROUND_SECONDS)
+      );
     case "assessment-config.situational-judgement":
-      return config.questionCount ? config.questionCount * 60 : null;
+      return STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;
     case "assessment-config.prioritisation":
-      return null;
+      return STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;
     case "assessment-config.call-simulation":
       return config.callCount ? config.callCount * 240 : null;
     default:

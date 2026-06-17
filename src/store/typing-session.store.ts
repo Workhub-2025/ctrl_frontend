@@ -1,5 +1,11 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import {
+    TYPING_ACCURACY_THRESHOLD,
+    TYPING_ROUND_COUNT,
+    TYPING_TIME_LIMIT_PER_ROUND_SECONDS,
+    TYPING_WPM_THRESHOLD,
+} from '@/lib/assessment-catalog-defaults';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,10 +39,10 @@ export type SubmissionStatus = 'idle' | 'submitting' | 'submitted' | 'error';
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
 export const DEFAULT_TYPING_CONFIG: TypingConfig = {
-    roundCount: 1,
-    timeLimitPerRound: 90,
-    minWpm: 32,
-    minAccuracy: 90,
+    roundCount: TYPING_ROUND_COUNT,
+    timeLimitPerRound: TYPING_TIME_LIMIT_PER_ROUND_SECONDS,
+    minWpm: TYPING_WPM_THRESHOLD,
+    minAccuracy: TYPING_ACCURACY_THRESHOLD,
     difficulty: 'Base',
     version: '1.0.0',
 };

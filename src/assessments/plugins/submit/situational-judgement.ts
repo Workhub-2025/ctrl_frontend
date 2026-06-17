@@ -13,6 +13,10 @@ export type SjtSubmitPayload = {
   candidateSessionDocumentId?: string | null;
   assessmentVersion?: string;
   difficulty?: string;
+  questionCount?: number;
+  answeredCount?: number;
+  timedOut?: boolean;
+  completionStatus?: "complete" | "timeout" | "partial";
 };
 
 export const situationalJudgementSubmitHandler: AssessmentSubmitHandler<SjtSubmitPayload> = {
@@ -23,8 +27,35 @@ export const situationalJudgementSubmitHandler: AssessmentSubmitHandler<SjtSubmi
     }
 
     const value = body as Record<string, unknown>;
-    if (!Array.isArray(value.responses) || value.responses.length !== 20) {
-      return { valid: false, error: "responses must contain 20 scenario responses" };
+    if (!Array.isArray(value.responses) || value.responses.length < 1) {
+      return { valid: false, error: "responses must contain at least one scenario response" };
+    }
+
+    const timedOut =
+      value.timedOut === true || value.completionStatus === "timeout";
+    const expectedCount =
+      typeof value.questionCount === "number" ? value.questionCount : undefined;
+
+    if (
+      !timedOut &&
+      expectedCount !== undefined &&
+      value.responses.length !== expectedCount
+    ) {
+      return {
+        valid: false,
+        error: `responses must contain ${expectedCount} scenario responses`,
+      };
+    }
+
+    if (
+      timedOut &&
+      expectedCount !== undefined &&
+      value.responses.length > expectedCount
+    ) {
+      return {
+        valid: false,
+        error: `responses cannot exceed ${expectedCount} scenario responses`,
+      };
     }
 
     for (const response of value.responses) {
@@ -51,6 +82,21 @@ export const situationalJudgementSubmitHandler: AssessmentSubmitHandler<SjtSubmi
       return { valid: false, error: "startedAt and completedAt are required ISO strings" };
     }
 
+    const answeredCount =
+      typeof value.answeredCount === "number"
+        ? value.answeredCount
+        : value.responses.length;
+    const completionStatus =
+      value.completionStatus === "timeout" ||
+      value.completionStatus === "partial" ||
+      value.completionStatus === "complete"
+        ? value.completionStatus
+        : timedOut
+          ? "timeout"
+          : expectedCount !== undefined && answeredCount < expectedCount
+            ? "partial"
+            : "complete";
+
     return {
       valid: true,
       data: {
@@ -64,6 +110,10 @@ export const situationalJudgementSubmitHandler: AssessmentSubmitHandler<SjtSubmi
         assessmentVersion:
           typeof value.assessmentVersion === "string" ? value.assessmentVersion : undefined,
         difficulty: typeof value.difficulty === "string" ? value.difficulty : undefined,
+        questionCount: expectedCount,
+        answeredCount,
+        timedOut: completionStatus === "timeout",
+        completionStatus,
       },
     };
   },
@@ -77,6 +127,10 @@ export const situationalJudgementSubmitHandler: AssessmentSubmitHandler<SjtSubmi
         assessmentVersion: data.assessmentVersion,
         difficulty: data.difficulty,
         responses: data.responses,
+        questionCount: data.questionCount,
+        answeredCount: data.answeredCount,
+        timedOut: data.timedOut,
+        completionStatus: data.completionStatus,
       },
     };
   },

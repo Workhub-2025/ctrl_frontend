@@ -12,6 +12,7 @@ export type SjaSessionData = {
   runs: SjaRun[];
   config?: {
     questionCount: number;
+    timeLimitSeconds?: number;
     version?: string;
     difficulty?: string;
   };
@@ -40,6 +41,7 @@ export type PjaSessionData = {
   runs: PjaRound[];
   config?: {
     roundCount: number;
+    timeLimitSeconds?: number;
     version?: string;
     difficulty?: string;
   };

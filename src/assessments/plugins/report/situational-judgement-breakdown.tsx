@@ -1,4 +1,5 @@
 import { portalProgressBarClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { AssessmentCompletionTag } from "./completion-tag";
 import type { AssessmentReportBreakdownProps } from "./types";
 
 const COMPETENCY_FLOORS: Record<string, number> = {
@@ -19,6 +20,9 @@ export function SituationalJudgementReportBreakdown({ result }: AssessmentReport
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <AssessmentCompletionTag metrics={sjtMetrics} />
+      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
           <p className="text-xs text-slate-500 font-medium">Decision Band</p>

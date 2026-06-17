@@ -10,6 +10,11 @@ import {
   formatAssessmentResultScore,
   isAbandonedAssessmentResult,
 } from "@/lib/assessment-result-status";
+import {
+  TYPING_ACCURACY_THRESHOLD,
+  TYPING_WPM_THRESHOLD,
+  inferTypingPass,
+} from "@/lib/assessment-catalog-defaults";
 
 async function getJwt() {
   return getServerStrapiJwt();
@@ -356,12 +361,13 @@ function normalizeAssessmentResult(
     score: formatAssessmentResultScore({
       assessmentStatus: result.assessmentStatus,
       numericScore,
+      metrics: result.metrics ?? null,
     }),
     numericScore,
     assessmentStatus: result.assessmentStatus ?? null,
     passed:
       result.passed ??
-      (wpm !== null && accuracy !== null ? wpm >= 32 && accuracy >= 90 : null),
+      (wpm !== null && accuracy !== null ? inferTypingPass(wpm, accuracy) : null),
     completedAt: result.completedAt,
     wpm,
     accuracy,

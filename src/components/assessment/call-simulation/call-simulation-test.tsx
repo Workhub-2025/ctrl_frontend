@@ -32,6 +32,7 @@ import {
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { initCallSimulationSession } from '@/app/actions/assessment-call-simulation.actions';
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
+import { CALL_SIMULATION_REVIEW_SECONDS } from '@/lib/assessment-catalog-defaults';
 import { cn } from '@/lib/utils';
 
 type CallRun = {
@@ -198,7 +199,7 @@ type RunSnapshot = {
 };
 
 const CONTENT_URL = '/assessment-content/call-simulation.json';
-const REVIEW_SECONDS = 60;
+const REVIEW_SECONDS = CALL_SIMULATION_REVIEW_SECONDS;
 
 const REFERENCE_NUMBER_OPTIONS = [
   '63918',

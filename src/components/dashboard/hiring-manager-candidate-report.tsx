@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { getAssessmentPluginIcon } from "@/assessments/plugins/registry";
+import { AssessmentCompletionTag } from "@/assessments/plugins/report/completion-tag";
 import {
   AssessmentReportBreakdown,
   hasAssessmentReportBreakdown,
@@ -572,6 +573,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                         ].join(" ")}>
                           {status.label}
                         </Badge>
+                        <AssessmentCompletionTag metrics={row.result?.metrics ?? null} />
                       </div>
                       <p className="mt-1 text-xs text-slate-500 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
@@ -690,7 +692,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                     {breakdownOpen && key ? (
                       <div className="rounded-xl border border-white/10 bg-black/20 p-4 space-y-4">
                         <AssessmentReportBreakdown slug={key} result={row.result} />
-                      </div>
+                            </div>
                     ) : null}
                   </div>
                 )}

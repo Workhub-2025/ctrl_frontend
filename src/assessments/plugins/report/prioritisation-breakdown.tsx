@@ -1,4 +1,5 @@
 import { portalProgressBarClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { AssessmentCompletionTag } from "./completion-tag";
 import type { AssessmentReportBreakdownProps } from "./types";
 
 export function PrioritisationReportBreakdown({ result }: AssessmentReportBreakdownProps) {
@@ -8,6 +9,7 @@ export function PrioritisationReportBreakdown({ result }: AssessmentReportBreakd
 
   return (
     <div className="space-y-4">
+      <AssessmentCompletionTag metrics={pjaMetrics} />
       <div className="space-y-3.5 rounded-lg border border-white/5 bg-white/[0.01] p-4">
         <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
           Priority Band Accuracy
