@@ -3,9 +3,7 @@
 import { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { CalendarIcon, Clock3 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -40,6 +38,7 @@ type OptionalDateFieldProps = {
   onChange: (value: string) => void;
   error?: string;
   disabled?: boolean;
+  min?: string;
 };
 
 export function OptionalDateField({
@@ -49,9 +48,8 @@ export function OptionalDateField({
   onChange,
   error,
   disabled = false,
+  min,
 }: OptionalDateFieldProps) {
-  const selectedDate = value ? parseISO(value) : undefined;
-
   return (
     <div className="space-y-1.5">
       {label ? (
@@ -59,36 +57,38 @@ export function OptionalDateField({
           {label}
         </Label>
       ) : null}
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            id={id}
-            type="button"
-            disabled={disabled}
-            className={cn(
-              fieldTriggerClass,
-              error && "border-red-500/50",
-              disabled && "cursor-not-allowed opacity-50"
-            )}
-          >
-            <CalendarIcon className="h-4 w-4 shrink-0 text-slate-500" />
-            <span className={value ? valueClass : placeholderClass}>
-              {value ? formatDateLabel(value) : "--/--/----"}
-            </span>
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          className="w-auto border-white/10 bg-slate-950 p-0 text-slate-100"
+      <div
+        className={cn(
+          "relative h-10 w-full",
+          disabled && "cursor-not-allowed opacity-50"
+        )}
+      >
+        <div
+          className={cn(
+            fieldTriggerClass,
+            "pointer-events-none absolute inset-0",
+            error && "border-red-500/50"
+          )}
+          aria-hidden="true"
         >
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={(date) => onChange(date ? format(date, "yyyy-MM-dd") : "")}
-            initialFocus
-          />
-        </PopoverContent>
-      </Popover>
+          <CalendarIcon className="h-4 w-4 shrink-0 text-slate-500" />
+          <span className={value ? valueClass : placeholderClass}>
+            {value ? formatDateLabel(value) : "--/--/----"}
+          </span>
+        </div>
+        <input
+          id={id}
+          type="date"
+          value={value}
+          min={min}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.value)}
+          className={cn(
+            "absolute inset-0 h-full w-full cursor-pointer opacity-0",
+            "[color-scheme:dark]"
+          )}
+        />
+      </div>
       {error ? <p className="text-[10px] font-medium text-red-400">{error}</p> : null}
     </div>
   );
@@ -164,7 +164,7 @@ export function OptionalTimeField({
             >
               <SelectValue placeholder="--" />
             </SelectTrigger>
-            <SelectContent className="max-h-56 border-white/10 bg-slate-950 text-slate-100">
+            <SelectContent className="z-[200] max-h-56 border-white/10 bg-slate-950 text-slate-100">
               {HOUR_OPTIONS.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
@@ -184,7 +184,7 @@ export function OptionalTimeField({
             <SelectTrigger className="h-8 flex-1 border-white/10 bg-transparent px-2 text-xs text-slate-100 focus:ring-primary/50">
               <SelectValue placeholder="--" />
             </SelectTrigger>
-            <SelectContent className="max-h-56 border-white/10 bg-slate-950 text-slate-100">
+            <SelectContent className="z-[200] max-h-56 border-white/10 bg-slate-950 text-slate-100">
               {MINUTE_OPTIONS.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
@@ -211,6 +211,7 @@ type OptionalDateTimeFieldsProps = {
   dateError?: string;
   timeError?: string;
   disabled?: boolean;
+  minDate?: string;
 };
 
 export function OptionalDateTimeFields({
@@ -225,6 +226,7 @@ export function OptionalDateTimeFields({
   dateError,
   timeError,
   disabled = false,
+  minDate,
 }: OptionalDateTimeFieldsProps) {
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -235,6 +237,7 @@ export function OptionalDateTimeFields({
         onChange={onDateChange}
         error={dateError}
         disabled={disabled}
+        min={minDate}
       />
       <OptionalTimeField
         id={timeId}
