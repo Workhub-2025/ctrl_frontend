@@ -55,6 +55,11 @@ export type BackendClientEntitlements = {
     maxVersion: string;
   }>;
   canRequestUpgrades: boolean;
+  lockState?: {
+    operational: boolean;
+    reason: string | null;
+    userMessage: string;
+  };
 };
 
 type BillingRequestRow = {

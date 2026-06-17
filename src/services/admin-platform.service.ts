@@ -309,6 +309,7 @@ export type AdminClientAccessCodeResult = {
   expiresAt: string;
   status: string;
   targetRole: string;
+  invitedEmail?: string;
 };
 
 type RawAuditLog = {
@@ -722,6 +723,26 @@ export async function generateAdminClientAccessCode(
 
   if (!response.data?.code) {
     throw new AdminStrapiRequestError("Client access code could not be generated", 500);
+  }
+  return response.data;
+}
+
+export async function sendAdminClientInvite(
+  clientDocumentId: string,
+  input: { email: string; accessCodeDocumentId?: string },
+  authToken?: string | null
+): Promise<AdminClientAccessCodeResult> {
+  const response = await adminStrapiRequest<{ data?: AdminClientAccessCodeResult }>(
+    `/admin/clients/${encodeURIComponent(clientDocumentId)}/send-client-invite`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+    authToken
+  );
+
+  if (!response.data?.documentId) {
+    throw new AdminStrapiRequestError("Client invite could not be sent", 500);
   }
   return response.data;
 }

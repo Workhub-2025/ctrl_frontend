@@ -61,6 +61,8 @@ export function mapPortalStatus(
     case "soft_locked":
     case "locked":
       return "Soft Locked";
+    case "contract_locked":
+      return "Soft Locked";
     case "awaiting_assessment":
     case "pending":
     default:
@@ -256,6 +258,9 @@ export function compareText(left: string, right: string) {
 
 /** Session has at least one assessment the candidate can start now. */
 export function hasAvailableAssessment(application: CandidateApplicationView) {
+  if (application.raw.portalStatus === "contract_locked") {
+    return false;
+  }
   return application.assessments.some(
     (assessment) =>
       assessment.status !== "completed" &&

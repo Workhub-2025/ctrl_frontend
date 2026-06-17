@@ -7,7 +7,8 @@ export type CandidatePortalStatus =
   | "completed"
   | "progressed"
   | "unsuccessful"
-  | "soft_locked";
+  | "soft_locked"
+  | "contract_locked";
 
 export type CandidatePortalAssessment = {
   documentId?: string;

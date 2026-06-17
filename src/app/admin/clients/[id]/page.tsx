@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -118,6 +118,9 @@ export default function ClientDetailPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [generatedCode, setGeneratedCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [generatingCode, setGeneratingCode] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [sendingInvite, setSendingInvite] = useState(false);
+  const [inviteNotice, setInviteNotice] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -127,6 +130,12 @@ export default function ClientDetailPage() {
     [client?.name, confirmName]
   );
   const error = actionError || loadError;
+
+  useEffect(() => {
+    if (client?.primaryContactEmail) {
+      setInviteEmail(client.primaryContactEmail);
+    }
+  }, [client?.primaryContactEmail]);
 
   const generateClientCode = async () => {
     setGeneratingCode(true);
@@ -187,6 +196,41 @@ export default function ClientDetailPage() {
     }
   };
 
+  const sendClientInvite = async () => {
+    if (!client || !inviteEmail.trim()) return;
+    setSendingInvite(true);
+    setActionError(null);
+    setInviteNotice(null);
+    try {
+      const response = await fetch(
+        `/api/admin/clients/${encodeURIComponent(clientId)}/send-invite`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: inviteEmail.trim().toLowerCase() }),
+        }
+      );
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Client invite could not be sent");
+      setInviteNotice(`Invite sent to ${inviteEmail.trim().toLowerCase()}`);
+      mutateClient(
+        client
+          ? {
+            ...client,
+            clientInviteStatus: "available",
+            clientInviteExpiresAt: body.data?.expiresAt ?? client.clientInviteExpiresAt,
+            canGenerateClientCode: false,
+          }
+          : client
+      );
+      invalidateAdminResource("admin:clients");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Client invite could not be sent");
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[320px] items-center justify-center text-sm text-muted-foreground">
@@ -243,6 +287,8 @@ export default function ClientDetailPage() {
                 This code is shown once.
               </p>
             </AdminAlert>
+          ) : inviteNotice ? (
+            <AdminAlert tone="info">{inviteNotice}</AdminAlert>
           ) : null
         }
         action={
@@ -261,8 +307,12 @@ export default function ClientDetailPage() {
             </Button>
             <ClientInviteAction
               client={client}
+              inviteEmail={inviteEmail}
+              onInviteEmailChange={setInviteEmail}
               generatingCode={generatingCode}
+              sendingInvite={sendingInvite}
               onGenerate={generateClientCode}
+              onSendInvite={sendClientInvite}
             />
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
               <AlertDialogTrigger asChild>
@@ -511,12 +561,20 @@ export default function ClientDetailPage() {
 
 function ClientInviteAction({
   client,
+  inviteEmail,
+  onInviteEmailChange,
   generatingCode,
+  sendingInvite,
   onGenerate,
+  onSendInvite,
 }: {
   client: ClientDetails;
+  inviteEmail: string;
+  onInviteEmailChange: (value: string) => void;
   generatingCode: boolean;
+  sendingInvite: boolean;
   onGenerate: () => void;
+  onSendInvite: () => void;
 }) {
   if (client.hasClientContact) {
     return (
@@ -527,24 +585,48 @@ function ClientInviteAction({
     );
   }
 
-  if (client.clientInviteStatus === "available") {
-    return (
-      <Badge variant="outline" className={cn("h-10 gap-2 px-3", portalBadgeClass)}>
-        <Clock3 className="h-4 w-4" />
-        Client invite pending
-      </Badge>
-    );
-  }
-
   return (
-    <Button variant="outline" onClick={onGenerate} disabled={!client.canGenerateClientCode || generatingCode}>
-      {generatingCode ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+    <div className="flex flex-wrap items-end gap-2">
+      <div className="min-w-[220px] space-y-1">
+        <Label htmlFor="clientInviteEmail" className={portalLabelClass}>Client contact email</Label>
+        <Input
+          id="clientInviteEmail"
+          type="email"
+          value={inviteEmail}
+          onChange={(event) => onInviteEmailChange(event.target.value)}
+          placeholder="contact@organisation.gov.uk"
+          className={cn(portalInputClass, "h-9")}
+        />
+      </div>
+      <Button
+        variant="outline"
+        className="h-9"
+        onClick={onSendInvite}
+        disabled={sendingInvite || !inviteEmail.trim()}
+      >
+        {sendingInvite ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Mail className="mr-2 h-4 w-4" />
+        )}
+        Send invite
+      </Button>
+      {client.clientInviteStatus === "available" ? (
+        <Badge variant="outline" className={cn("h-9 gap-2 px-3", portalBadgeClass)}>
+          <Clock3 className="h-4 w-4" />
+          Invite pending
+        </Badge>
       ) : (
-        <KeyRound className="mr-2 h-4 w-4" />
+        <Button variant="outline" className="h-9" onClick={onGenerate} disabled={!client.canGenerateClientCode || generatingCode}>
+          {generatingCode ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <KeyRound className="mr-2 h-4 w-4" />
+          )}
+          Generate code only
+        </Button>
       )}
-      Generate client invite
-    </Button>
+    </div>
   );
 }
 

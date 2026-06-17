@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, KeyRound, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ type CreatedClientResponse = {
     seatsAllowed: number;
   };
   accessCode?: {
+    documentId?: string;
     code: string;
     expiresAt: string;
   };
@@ -61,6 +62,9 @@ export default function CreateClientPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedClientResponse | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [sendingInvite, setSendingInvite] = useState(false);
+  const [inviteSent, setInviteSent] = useState(false);
 
   const seatCount = useMemo(() => Number.parseInt(form.seatCount, 10), [form.seatCount]);
 
@@ -117,6 +121,8 @@ export default function CreateClientPage() {
       }
 
       setCreated(body.data ?? null);
+      setInviteEmail(form.primaryContactEmail.trim().toLowerCase());
+      setInviteSent(false);
       invalidateAdminResource("admin:clients");
       invalidateAdminResource("admin:overview");
       invalidateAdminResource("admin:upgrades");
@@ -124,6 +130,34 @@ export default function CreateClientPage() {
       setError(err instanceof Error ? err.message : "Client could not be created");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const sendClientInvite = async () => {
+    if (!created?.client?.id || !inviteEmail.trim()) return;
+    setSendingInvite(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/admin/clients/${encodeURIComponent(created.client.id)}/send-invite`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: inviteEmail.trim().toLowerCase(),
+            accessCodeDocumentId: created.accessCode?.documentId,
+          }),
+        }
+      );
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error || "Client invite could not be sent");
+      }
+      setInviteSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Client invite could not be sent");
+    } finally {
+      setSendingInvite(false);
     }
   };
 
@@ -156,6 +190,46 @@ export default function CreateClientPage() {
                       </p>
                     </div>
                   )}
+                  <div className="rounded-lg border border-border/60 bg-background/50 p-3.5 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Email the client contact an invitation with their registration access code.
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="inviteEmail" className={portalLabelClass}>Client contact email</Label>
+                      <Input
+                        id="inviteEmail"
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(event) => setInviteEmail(event.target.value)}
+                        placeholder="contact@organisation.gov.uk"
+                        className={cn(portalInputClass, "h-10")}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-lg text-xs font-semibold"
+                      onClick={sendClientInvite}
+                      disabled={sendingInvite || inviteSent || !inviteEmail.trim()}
+                    >
+                      {sendingInvite ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending…
+                        </>
+                      ) : inviteSent ? (
+                        <>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          Invite sent
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="mr-2 h-4 w-4" />
+                          Send client invite
+                        </>
+                      )}
+                    </Button>
+                  </div>
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button type="button" onClick={() => router.push("/admin/clients")} className="h-9 rounded-lg text-xs font-semibold">
                       View clients
