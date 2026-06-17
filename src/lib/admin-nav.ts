@@ -5,6 +5,7 @@ import {
   CreditCard,
   History,
   LayoutDashboard,
+  Mail,
   PlusCircle,
   Ticket,
   TrendingUp,
@@ -104,6 +105,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         isActive: (pathname) => pathname.startsWith("/admin/users"),
       },
       {
+        href: "/admin/comms",
+        label: "Operational email",
+        hint: "Broadcast platform updates",
+        icon: Mail,
+        isActive: (pathname) => pathname.startsWith("/admin/comms"),
+      },
+      {
         href: "/admin/tickets",
         label: "Support tickets",
         hint: "IT and platform issues",
@@ -141,6 +149,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   requests: "Upgrade requests",
   "upgrade-requests": "Entitlements",
   users: "Users",
+  comms: "Operational email",
   tickets: "Support tickets",
   "audit-logs": "Audit log",
 };
