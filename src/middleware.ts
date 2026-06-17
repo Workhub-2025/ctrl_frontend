@@ -1,6 +1,6 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { guardPortalApiRoute } from "@/lib/auth/bff-api-middleware";
+import { guardAssessmentApiRoute, guardPortalApiRoute } from "@/lib/auth/bff-api-middleware";
 import { isAdminRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
 
 export default withAuth(
