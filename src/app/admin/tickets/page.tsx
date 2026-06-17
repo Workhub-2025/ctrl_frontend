@@ -36,13 +36,16 @@ import {
   Calendar,
   Save,
 } from "lucide-react";
-import { AdminPageHeader, AdminStatTile, AdminTableShell } from "@/components/admin/admin-portal-ui";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { portalBadgeClass } from "@/components/dashboard/portal/portal-ui";
 import {
   SupportTicketService,
   type SupportTicket,
+  type SupportTicketMessage,
   type TicketStats,
 } from "@/services/support-ticket.service";
+import { AdminPageHeader, AdminStatTile, AdminTableShell } from "@/components/admin/admin-portal-ui";
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -73,7 +76,21 @@ const CATEGORY_LABELS: Record<string, string> = {
   contact: "Contact",
 };
 
-const STATUS_OPTIONS = ["open", "in_progress", "resolved", "closed"];
+const STATUS_OPTIONS = [
+  "open",
+  "in_progress",
+  "awaiting_user",
+  "resolved",
+  "closed",
+];
+
+const STATUS_LABELS: Record<string, string> = {
+  open: "Open",
+  in_progress: "In Progress",
+  awaiting_user: "Awaiting User Confirmation",
+  resolved: "Resolved (→ awaiting user)",
+  closed: "Closed",
+};
 const CATEGORY_OPTIONS = [
   "bug",
   "feature_request",
@@ -99,6 +116,20 @@ function userRoleBadge(user: SupportTicket["submittedBy"]): string {
 
 /* ── stat tile uses AdminStatTile from portal-ui ─────────── */
 
+function formatDateTime(value: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+}
+
+function messageAuthorLabel(message: SupportTicketMessage): string {
+  const author = message.author;
+  if (!author) return "System";
+  const name = [author.firstName, author.lastName].filter(Boolean).join(" ");
+  return name || author.email || "Unknown";
+}
+
 /* ── ticket detail dialog ─────────────────────────────── */
 
 function TicketDetailDialog({
@@ -116,14 +147,42 @@ function TicketDetailDialog({
   const [resolution, setResolution] = useState(ticket?.resolution || "");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [messages, setMessages] = useState<SupportTicketMessage[]>([]);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [reply, setReply] = useState("");
+  const [isInternal, setIsInternal] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  const ticketId = ticket?.documentId || ticket?.id;
+
+  const loadMessages = useCallback(async () => {
+    if (!ticketId) return;
+    setLoadingMessages(true);
+    try {
+      const data = await SupportTicketService.getTicketMessages(ticketId);
+      setMessages(data);
+    } catch (err) {
+      console.error("Failed to load ticket messages", err);
+    } finally {
+      setLoadingMessages(false);
+    }
+  }, [ticketId]);
 
   useEffect(() => {
     if (ticket) {
       setStatus(ticket.status);
       setResolution(ticket.resolution || "");
       setSaveError("");
+      setReply("");
+      setIsInternal(false);
     }
   }, [ticket]);
+
+  useEffect(() => {
+    if (open && ticketId) {
+      void loadMessages();
+    }
+  }, [open, ticketId, loadMessages]);
 
   const handleSave = async () => {
     if (!ticket) return;
@@ -148,9 +207,31 @@ function TicketDetailDialog({
     }
   };
 
+  const handleSendReply = async () => {
+    if (!ticketId || !reply.trim()) return;
+    setSending(true);
+    try {
+      await SupportTicketService.addTicketMessage(ticketId, {
+        body: reply.trim(),
+        isInternal,
+      });
+      setReply("");
+      setIsInternal(false);
+      await loadMessages();
+      onUpdated();
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to send message"
+      );
+    } finally {
+      setSending(false);
+    }
+  };
+
   if (!ticket) return null;
 
   const metadata = ticket.metadata as { pageUrl?: string; userAgent?: string; recipient?: string } | null;
+  const canReply = status !== "closed";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -272,6 +353,82 @@ function TicketDetailDialog({
             </div>
           )}
 
+          {/* Message thread */}
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Conversation
+            </p>
+            {loadingMessages ? (
+              <p className="text-sm text-slate-400">Loading messages…</p>
+            ) : messages.length === 0 ? (
+              <p className="text-sm text-slate-500">No thread messages yet.</p>
+            ) : (
+              <ul className="space-y-2 max-h-48 overflow-y-auto">
+                {messages.map((message) => (
+                  <li
+                    key={message.documentId || message.id}
+                    className={`rounded-lg border p-3 text-sm ${
+                      message.isInternal
+                        ? "border-amber-500/20 bg-amber-500/5"
+                        : "border-white/8 bg-white/[0.02]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                      <span className="font-medium text-foreground">
+                        {messageAuthorLabel(message)}
+                        {message.isInternal ? (
+                          <span className="ml-2 text-amber-400">Internal</span>
+                        ) : null}
+                      </span>
+                      <time>{formatDateTime(message.createdAt)}</time>
+                    </div>
+                    <p className="mt-1.5 whitespace-pre-wrap text-slate-300 leading-relaxed">
+                      {message.body}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {canReply ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  placeholder="Reply to the user…"
+                  rows={3}
+                  className="rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary resize-none"
+                />
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="internal-note"
+                    checked={isInternal}
+                    onCheckedChange={(checked) =>
+                      setIsInternal(checked === true)
+                    }
+                  />
+                  <Label
+                    htmlFor="internal-note"
+                    className="text-xs text-slate-400 cursor-pointer"
+                  >
+                    Internal note (not visible to submitter)
+                  </Label>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleSendReply}
+                  disabled={sending || !reply.trim()}
+                  className="gap-2"
+                >
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : null}
+                  Send reply
+                </Button>
+              </div>
+            ) : null}
+          </div>
+
           {/* Admin Actions */}
           <div className="rounded-xl border border-primary/10 bg-primary/[0.02] p-4 space-y-4">
             <p className="text-xs font-bold uppercase tracking-wider text-primary">
@@ -289,16 +446,26 @@ function TicketDetailDialog({
                 <SelectContent>
                   {STATUS_OPTIONS.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {s.replace("_", " ").replace(/\b\w/g, (c) =>
-                        c.toUpperCase()
-                      )}
+                      {STATUS_LABELS[s] ||
+                        s.replace("_", " ").replace(/\b\w/g, (c) =>
+                          c.toUpperCase()
+                        )}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {(status === "awaiting_user" || status === "resolved") && (
+                <p className="text-xs text-slate-500">
+                  User must confirm before the ticket closes. Use &quot;Awaiting
+                  User Confirmation&quot; or &quot;Resolved&quot; — both notify
+                  the submitter.
+                </p>
+              )}
             </div>
 
-            {(status === "resolved" || status === "closed") && (
+            {(status === "awaiting_user" ||
+              status === "resolved" ||
+              status === "closed") && (
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-400">
                   Resolution Notes
@@ -351,6 +518,7 @@ export default function AdminTicketsPage() {
   const [stats, setStats] = useState<TicketStats>({
     open: 0,
     in_progress: 0,
+    awaiting_user: 0,
     resolved: 0,
     closed: 0,
     total: 0,
@@ -416,6 +584,11 @@ export default function AdminTicketsPage() {
     { key: "all", label: "All", count: stats.total },
     { key: "open", label: "Open", count: stats.open },
     { key: "in_progress", label: "In Progress", count: stats.in_progress },
+    {
+      key: "awaiting_user",
+      label: "Awaiting User",
+      count: stats.awaiting_user ?? 0,
+    },
     { key: "resolved", label: "Resolved", count: stats.resolved },
     { key: "closed", label: "Closed", count: stats.closed },
   ];

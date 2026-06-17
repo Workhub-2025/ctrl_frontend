@@ -68,7 +68,7 @@ export function ClientCandidateApprovalsContent() {
           <ClientRefreshButton
             onClick={() => {
               void loadOverview(true);
-              void loadSharedCandidates(true);
+              void loadSharedCandidates(undefined, true);
             }}
             loading={sharedLoading}
           />

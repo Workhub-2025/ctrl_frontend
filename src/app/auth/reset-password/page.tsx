@@ -148,11 +148,11 @@ function ResetPasswordForm() {
 
             <AnimatedSubmitButton
               type="submit"
-              state={submitStatus}
-              idleLabel="Update password"
-              loadingLabel="Updating…"
-              successLabel="Password updated"
-              invalidLabel="Try again"
+              status={submitStatus}
+              idleText="Update password"
+              errorMessage={
+                submitStatus === "error" || submitStatus === "invalid" ? error : undefined
+              }
               className="w-full rounded-xl"
               disabled={submitStatus === "loading" || submitStatus === "success"}
             />

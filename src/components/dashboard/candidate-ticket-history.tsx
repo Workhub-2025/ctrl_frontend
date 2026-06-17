@@ -27,12 +27,13 @@ import {
 import { cn } from "@/lib/utils";
 import { portalBadgeClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 
-type StatusKey = "open" | "in_progress" | "resolved" | "closed";
+type StatusKey = "open" | "in_progress" | "resolved" | "awaiting_user" | "closed";
 
 const STATUS_LABELS: Record<StatusKey, string> = {
   open: "Open",
   in_progress: "In progress",
   resolved: "Resolved",
+  awaiting_user: "Awaiting confirmation",
   closed: "Closed",
 };
 
@@ -42,6 +43,7 @@ function normaliseStatus(status: string): StatusKey {
     key === "open" ||
     key === "in_progress" ||
     key === "resolved" ||
+    key === "awaiting_user" ||
     key === "closed"
   ) {
     return key;
@@ -290,6 +292,7 @@ export function CandidateTicketHistory({
         ticket={selectedTicket}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+        onTicketUpdated={() => void loadTickets({ force: true })}
       />
     </>
   );

@@ -107,11 +107,11 @@ function ForgotPasswordForm() {
 
               <AnimatedSubmitButton
                 type="submit"
-                state={submitStatus}
-                idleLabel="Send reset link"
-                loadingLabel="Sending…"
-                successLabel="Sent"
-                invalidLabel="Try again"
+                status={submitStatus}
+                idleText="Send reset link"
+                errorMessage={
+                  submitStatus === "error" || submitStatus === "invalid" ? error : undefined
+                }
                 className="w-full rounded-xl"
                 disabled={submitStatus === "loading"}
               />

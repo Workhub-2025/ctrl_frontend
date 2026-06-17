@@ -5,6 +5,30 @@ async function readJson<T>(response: Response): Promise<T> {
   return (await response.json().catch(() => ({}))) as T;
 }
 
+export type SupportTicketStatus =
+  | "open"
+  | "in_progress"
+  | "resolved"
+  | "awaiting_user"
+  | "closed";
+
+export type SupportTicketMessage = {
+  id: string;
+  documentId?: string;
+  body: string;
+  isInternal?: boolean;
+  author?: {
+    id: string;
+    documentId?: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    role?: { name?: string; type?: string };
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type SupportTicket = {
   id: string;
   documentId?: string;
@@ -13,9 +37,10 @@ export type SupportTicket = {
   description: string;
   category: string;
   priority: string;
-  status: string;
+  status: SupportTicketStatus | string;
   resolution?: string | null;
   resolvedAt?: string | null;
+  closedAt?: string | null;
   portal?: string | null;
   metadata?: Record<string, unknown> | null;
   submittedBy?: {
@@ -38,6 +63,7 @@ export type SupportTicket = {
 export type TicketStats = {
   open: number;
   in_progress: number;
+  awaiting_user: number;
   resolved: number;
   closed: number;
   total: number;
@@ -191,10 +217,46 @@ export class SupportTicketService {
       body.data ?? {
         open: 0,
         in_progress: 0,
+        awaiting_user: 0,
         resolved: 0,
         closed: 0,
         total: 0,
       }
     );
+  }
+
+  static async getTicketMessages(id: string): Promise<SupportTicketMessage[]> {
+    const response = await fetchClient(`/support-tickets/${id}/messages`, {
+      cache: "no-store",
+    });
+    const body = await readJson<{ data: SupportTicketMessage[] }>(response);
+    return Array.isArray(body.data) ? body.data : [];
+  }
+
+  static async addTicketMessage(
+    id: string,
+    data: { body: string; isInternal?: boolean }
+  ): Promise<SupportTicketMessage> {
+    const response = await fetchClient(`/support-tickets/${id}/messages`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    const body = await readJson<{ data: SupportTicketMessage }>(response);
+    this.invalidateMyTickets();
+    return body.data;
+  }
+
+  static async confirmTicketResolution(
+    id: string,
+    action: "confirm" | "reopen",
+    body?: string
+  ): Promise<SupportTicket> {
+    const response = await fetchClient(`/support-tickets/${id}/confirm-resolution`, {
+      method: "POST",
+      body: JSON.stringify({ action, body }),
+    });
+    const result = await readJson<{ data: SupportTicket }>(response);
+    this.invalidateMyTickets();
+    return result.data;
   }
 }
