@@ -6,6 +6,7 @@ import {
   BriefcaseBusiness,
   ClipboardCheck,
   KeyRound,
+  Mail,
   RefreshCw,
   UserCheck,
   Users,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -49,15 +51,18 @@ export function ClientHiringManagersContent() {
     loading,
     error,
     codeBusy,
+    inviteBusy,
     releasingManagerId,
     loadOverview,
     generateSeatCode,
     refreshSeatCode,
+    sendSeatInvite,
     releaseHiringManager,
   } = useClientPortal();
 
   const [selectedSeat, setSelectedSeat] = useState<SeatSlot | null>(null);
   const [pendingSeatLabel, setPendingSeatLabel] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
 
   useEffect(() => {
     if (!pendingSeatLabel) return;
@@ -91,6 +96,14 @@ export function ClientHiringManagersContent() {
   const handleRelease = async (manager: ClientHiringManagerSeat) => {
     await releaseHiringManager(manager);
     setSelectedSeat(null);
+  };
+
+  const handleSendInvite = async (seat: Extract<SeatSlot, { type: "empty" }>) => {
+    const email = inviteEmail.trim();
+    if (!email) return;
+
+    await sendSeatInvite(seat.label, email, seat.accessCode?.documentId);
+    setInviteEmail("");
   };
 
   return (
@@ -206,10 +219,40 @@ export function ClientHiringManagersContent() {
                   {selectedSeat.label} access code
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground">
-                  Share this code with the hiring manager assigned to this seat.
+                  Email an invite or share the access code manually with the hiring manager.
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-5 pt-3">
+                <div className="space-y-2">
+                  <label htmlFor="hm-invite-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Hiring manager email
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="hm-invite-email"
+                      type="email"
+                      placeholder="name@company.com"
+                      value={inviteEmail}
+                      onChange={(event) => setInviteEmail(event.target.value)}
+                      className="rounded-xl"
+                    />
+                    <Button
+                      type="button"
+                      className="shrink-0 gap-2 rounded-xl"
+                      onClick={() => void handleSendInvite(selectedSeat)}
+                      disabled={!inviteEmail.trim() || inviteBusy === selectedSeat.label}
+                    >
+                      <Mail className={cn("h-4 w-4", inviteBusy === selectedSeat.label && "motion-safe:animate-pulse")} aria-hidden="true" />
+                      {inviteBusy === selectedSeat.label ? "Sending…" : "Send invite"}
+                    </Button>
+                  </div>
+                  {selectedSeat.accessCode?.invitedEmail ? (
+                    <p className="text-xs text-muted-foreground">
+                      Last invited: {selectedSeat.accessCode.invitedEmail}
+                    </p>
+                  ) : null}
+                </div>
+
                 <div className="relative overflow-hidden rounded-xl border border-border bg-muted/40 p-5 shadow-inner dark:border-white/10 dark:bg-white/[0.02]">
                   <p className="break-all text-center font-mono text-2xl font-bold tracking-widest text-primary">
                     {selectedSeat.accessCode?.code ?? "No code available"}
@@ -443,7 +486,7 @@ function SeatCard({
               <div className="flex items-center justify-between">
                 <span className={cn("flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest", portalBadgeClass)}>
                   <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
-                  Invite code active
+                  {seat.accessCode.invitedEmail ? "Invited" : "Invite code active"}
                 </span>
                 <span className="text-[9px] text-muted-foreground">Expires in 7 days</span>
               </div>

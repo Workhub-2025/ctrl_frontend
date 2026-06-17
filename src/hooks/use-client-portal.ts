@@ -42,6 +42,7 @@ type ClientPortalContextValue = {
   reviewingId: string | null;
   reviewingCandidateId: string | null;
   codeBusy: string | null;
+  inviteBusy: string | null;
   releasingManagerId: string | null;
   approvalModeBusy: boolean;
   submittingUpgrade: boolean;
@@ -68,6 +69,7 @@ type ClientPortalContextValue = {
   ) => Promise<void>;
   generateSeatCode: (seatLabel: string) => Promise<void>;
   refreshSeatCode: (seatLabel: string, refreshCodeDocumentId: string) => Promise<void>;
+  sendSeatInvite: (seatLabel: string, email: string, accessCodeDocumentId?: string) => Promise<void>;
   releaseHiringManager: (manager: ClientHiringManagerSeat) => Promise<void>;
   updateApprovalMode: (checked: boolean) => Promise<void>;
 };
@@ -130,6 +132,7 @@ export function useClientPortalState(): ClientPortalContextValue {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reviewingCandidateId, setReviewingCandidateId] = useState<string | null>(null);
   const [codeBusy, setCodeBusy] = useState<string | null>(null);
+  const [inviteBusy, setInviteBusy] = useState<string | null>(null);
   const [releasingManagerId, setReleasingManagerId] = useState<string | null>(null);
   const [approvalModeBusy, setApprovalModeBusy] = useState(false);
   const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
@@ -359,6 +362,32 @@ export function useClientPortalState(): ClientPortalContextValue {
     }
   };
 
+  const sendSeatInvite = async (
+    seatLabel: string,
+    email: string,
+    accessCodeDocumentId?: string
+  ) => {
+    setInviteBusy(seatLabel);
+    try {
+      const response = await fetch("/api/client/hiring-managers/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, accessCodeDocumentId }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Invite could not be sent");
+      }
+      invalidateClientOverviewCache();
+      await loadOverview(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invite could not be sent");
+      throw err;
+    } finally {
+      setInviteBusy(null);
+    }
+  };
+
   const releaseHiringManager = async (manager: ClientHiringManagerSeat) => {
     setReleasingManagerId(manager.documentId);
     try {
@@ -441,6 +470,7 @@ export function useClientPortalState(): ClientPortalContextValue {
     reviewingId,
     reviewingCandidateId,
     codeBusy,
+    inviteBusy,
     releasingManagerId,
     approvalModeBusy,
     submittingUpgrade,
@@ -461,6 +491,7 @@ export function useClientPortalState(): ClientPortalContextValue {
     updateSharedCandidateStatus,
     generateSeatCode,
     refreshSeatCode,
+    sendSeatInvite,
     releaseHiringManager,
     updateApprovalMode,
   };

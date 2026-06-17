@@ -101,6 +101,8 @@ type RawCandidateSession = {
   removedAt?: string | null;
   removalReason?: string | null;
   createdAt?: string;
+  invitedEmail?: string | null;
+  inviteStatus?: "invited" | "registered" | "started" | null;
   users_permissions_users?: Array<{
     documentId?: string;
     firstName?: string;
@@ -196,11 +198,19 @@ export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
     name: string;
     email?: string;
     status?: string;
+    inviteStatus?: "invited" | "registered" | "started" | null;
     sessionName?: string;
     campaignId?: string;
     campaignName?: string;
     assessmentStack?: string[];
     results: HiringManagerAssessmentResult[];
+  }>;
+  pendingInvites: Array<{
+    id: string;
+    email: string;
+    inviteStatus: "invited" | "registered" | "started";
+    candidateCode?: string;
+    mode?: "in_person" | "remote";
   }>;
 };
 
@@ -372,8 +382,9 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
       return {
         id: candidateSession.documentId ?? String(candidateSession.id ?? candidateSession.candidateCode),
         name: name || user?.email || candidateSession.candidateCode || "Candidate",
-        email: user?.email,
+        email: user?.email ?? candidateSession.invitedEmail ?? undefined,
         status: candidateSession.sessionStatus,
+        inviteStatus: candidateSession.inviteStatus ?? null,
         hasStartedAssessment:
           results.length > 0 ||
           candidateSession.sessionStatus === "completed" ||
@@ -433,6 +444,18 @@ function normalizeCampaign(campaign: RawCampaign): HiringManagerCampaignListItem
   };
 }
 
+function getPendingInvites(campaign: RawCampaign) {
+  return getCampaignCandidateSessions(campaign)
+    .filter((session) => Boolean(session.invitedEmail))
+    .map((session) => ({
+      id: session.documentId ?? String(session.id ?? session.candidateCode ?? session.invitedEmail),
+      email: session.invitedEmail ?? "Unknown email",
+      inviteStatus: (session.inviteStatus ?? "invited") as "invited" | "registered" | "started",
+      candidateCode: session.candidateCode,
+      mode: session.mode,
+    }));
+}
+
 function normalizeCampaignDetail(campaign: RawCampaign): HiringManagerCampaignDetail {
   const base = normalizeCampaign(campaign);
   const assessmentSessions = (campaign.assessment_sessions ?? []).map((session) =>
@@ -457,6 +480,7 @@ function normalizeCampaignDetail(campaign: RawCampaign): HiringManagerCampaignDe
         assessmentStack: base.assessmentStack,
       }))
     ),
+    pendingInvites: getPendingInvites(campaign),
   };
 }
 
@@ -619,4 +643,34 @@ export async function deleteHiringManagerCampaign(campaignDocumentId: string): P
       method: "DELETE",
     }
   );
+}
+
+export async function inviteCandidatesToCampaign(
+  campaignDocumentId: string,
+  emails: string[],
+  options?: { mode?: "remote" | "in_person" }
+): Promise<{
+  sent: string[];
+  failed: string[];
+  sessions: Array<Record<string, unknown>>;
+}> {
+  const response = await strapiRequest<{
+    data?: {
+      sent?: string[];
+      failed?: string[];
+      sessions?: Array<Record<string, unknown>>;
+    };
+  }>(`/hiring-manager/campaigns/${campaignDocumentId}/invite-candidates`, {
+    method: "POST",
+    body: JSON.stringify({
+      emails,
+      mode: options?.mode,
+    }),
+  });
+
+  return {
+    sent: response.data?.sent ?? [],
+    failed: response.data?.failed ?? [],
+    sessions: response.data?.sessions ?? [],
+  };
 }

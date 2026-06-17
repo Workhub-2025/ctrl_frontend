@@ -105,6 +105,12 @@ function UnifiedAuthContent() {
       setFormData((prev) => ({ ...prev, email }));
     }
 
+    const accessCode = searchParams.get("code");
+    if (accessCode) {
+      setIsLoginView(false);
+      setFormData((prev) => ({ ...prev, accessCode }));
+    }
+
     if (authError) {
       setError("Credentials not verified.");
     }

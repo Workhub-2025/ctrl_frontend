@@ -96,6 +96,7 @@ export type ClientAccessCode = {
   targetRole: string;
   createdAt?: string;
   updatedAt?: string;
+  invitedEmail?: string | null;
 };
 
 export type ClientHiringManagerSeat = {
@@ -298,6 +299,25 @@ export async function refreshHiringManagerAccessCode(refreshCodeDocumentId: stri
     {
       method: "POST",
       body: JSON.stringify({ refreshCodeDocumentId }),
+    }
+  );
+
+  return response.data;
+}
+
+export async function inviteHiringManagerByEmail(input: {
+  clientDocumentId: string;
+  email: string;
+  accessCodeDocumentId?: string;
+}) {
+  const response = await strapiRequest<{ data?: ClientAccessCode & { invitedEmail?: string } }>(
+    `/clients/${encodeURIComponent(input.clientDocumentId)}/hiring-manager-invites`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        email: input.email,
+        accessCodeDocumentId: input.accessCodeDocumentId,
+      }),
     }
   );
 

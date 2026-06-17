@@ -6,11 +6,15 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   Eye,
+  Mail,
+  Plus,
   RefreshCw,
   Trash2,
+  X,
   Keyboard,
   ClipboardList,
   BrainCircuit,
@@ -76,6 +80,63 @@ export function HiringManagerCampaignDetailView({
   const [selectedSession, setSelectedSession] = useState<CampaignSession | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
   const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
+  const [inviteEmailInput, setInviteEmailInput] = useState("");
+  const [inviteEmails, setInviteEmails] = useState<string[]>([]);
+  const [isSendingInvites, setIsSendingInvites] = useState(false);
+  const [inviteFeedback, setInviteFeedback] = useState<string | null>(null);
+
+  const addInviteEmails = (raw: string) => {
+    const parsed = raw
+      .split(/[\s,;]+/)
+      .map((value) => value.trim().toLowerCase())
+      .filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+
+    if (parsed.length === 0) return;
+
+    setInviteEmails((current) => {
+      const seen = new Set(current);
+      const next = [...current];
+      for (const email of parsed) {
+        if (seen.has(email) || next.length >= 25) continue;
+        seen.add(email);
+        next.push(email);
+      }
+      return next;
+    });
+    setInviteEmailInput("");
+  };
+
+  const sendCandidateInvites = async () => {
+    if (inviteEmails.length === 0) return;
+
+    setIsSendingInvites(true);
+    setInviteFeedback(null);
+    setError(null);
+
+    try {
+      const result = await HiringManagerPortalClientService.inviteCandidates(
+        campaignId,
+        inviteEmails
+      );
+      const sentCount = result.sent.length;
+      const failedCount = result.failed.length;
+      setInviteFeedback(
+        failedCount > 0
+          ? `Sent ${sentCount} invite${sentCount === 1 ? "" : "s"}. ${failedCount} failed.`
+          : `Sent ${sentCount} invite${sentCount === 1 ? "" : "s"}.`
+      );
+      setInviteEmails([]);
+      await loadCampaign(true);
+    } catch (inviteError) {
+      setError(
+        inviteError instanceof Error
+          ? inviteError.message
+          : "Candidate invites could not be sent."
+      );
+    } finally {
+      setIsSendingInvites(false);
+    }
+  };
 
   const loadCampaign = useCallback(async (force = false) => {
     const startTime = Date.now();
@@ -339,6 +400,115 @@ export function HiringManagerCampaignDetailView({
 
       <Card className={cn(portalPanelElevatedClass, "rounded-xl shadow-lg")}>
         <CardHeader className="border-b border-white/10 p-4">
+          <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <Mail className="h-4 w-4 text-primary" />
+            Candidate email invites
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 p-4">
+          <p className="text-xs text-slate-400">
+            Add up to 25 candidate emails. Invites use the campaign delivery mode
+            ({campaign.deliveryMode.toLowerCase()}).
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              type="email"
+              placeholder="candidate@email.com"
+              value={inviteEmailInput}
+              onChange={(event) => setInviteEmailInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addInviteEmails(inviteEmailInput);
+                }
+              }}
+              className="rounded-lg border-white/10 bg-white/[0.02] text-white"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 rounded-lg border-white/10"
+              onClick={() => addInviteEmails(inviteEmailInput)}
+              disabled={!inviteEmailInput.trim() || inviteEmails.length >= 25}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Add
+            </Button>
+          </div>
+          {inviteEmails.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {inviteEmails.map((email) => (
+                <Badge
+                  key={email}
+                  variant="secondary"
+                  className="gap-1 rounded-lg border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-slate-200"
+                >
+                  {email}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setInviteEmails((current) => current.filter((value) => value !== email))
+                    }
+                    className="rounded-full p-0.5 hover:bg-white/10"
+                    aria-label={`Remove ${email}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs italic text-slate-500">
+              Paste multiple emails separated by commas or new lines.
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              className="rounded-lg"
+              onClick={() => void sendCandidateInvites()}
+              disabled={inviteEmails.length === 0 || isSendingInvites}
+            >
+              {isSendingInvites ? (
+                <RefreshCw className="mr-2 h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
+              ) : (
+                <Mail className="mr-2 h-4 w-4" aria-hidden="true" />
+              )}
+              {isSendingInvites ? "Sending invites…" : "Send invites"}
+            </Button>
+            {inviteFeedback ? (
+              <p className="text-xs text-emerald-400">{inviteFeedback}</p>
+            ) : null}
+          </div>
+          {(campaign.pendingInvites?.length ?? 0) > 0 ? (
+            <div className="overflow-x-auto rounded-lg border border-white/10 bg-[#080c16]/30">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-white/10 bg-white/[0.02] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                    <th className="p-3">Email</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Code</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5 text-slate-200">
+                  {campaign.pendingInvites?.map((invite) => (
+                    <tr key={invite.id}>
+                      <td className="p-3">{invite.email}</td>
+                      <td className="p-3 capitalize">{invite.inviteStatus}</td>
+                      <td className="p-3 font-mono text-[11px] text-slate-400">
+                        {invite.candidateCode ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card className={cn(portalPanelElevatedClass, "rounded-xl shadow-lg")}>
+        <CardHeader className="border-b border-white/10 p-4">
           <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider">Sessions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4">
@@ -433,6 +603,11 @@ export function HiringManagerCampaignDetailView({
                         <td className="p-3">
                           <div className="font-semibold text-white">{candidate.name}</div>
                           <div className="text-[10px] text-slate-400 mt-0.5">{candidate.email}</div>
+                          {candidate.inviteStatus ? (
+                            <Badge variant="outline" className="mt-1 rounded-md px-1.5 py-0 text-[10px] capitalize">
+                              {candidate.inviteStatus === "registered" ? "Joined" : candidate.inviteStatus}
+                            </Badge>
+                          ) : null}
                         </td>
                         <td className="p-3 text-slate-300">
                           {candidate.sessionName ?? "Main Session"}

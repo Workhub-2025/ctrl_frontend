@@ -38,11 +38,19 @@ export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
     name: string;
     email?: string;
     status?: string;
+    inviteStatus?: "invited" | "registered" | "started" | null;
     sessionName?: string;
     campaignId?: string;
     campaignName?: string;
     assessmentStack?: string[];
     results?: HiringManagerAssessmentResult[];
+  }>;
+  pendingInvites?: Array<{
+    id: string;
+    email: string;
+    inviteStatus: "invited" | "registered" | "started";
+    candidateCode?: string;
+    mode?: "in_person" | "remote";
   }>;
 };
 
@@ -366,6 +374,31 @@ export class HiringManagerPortalClientService {
       console.error("[unlockCandidate] Failed to unlock candidate", err);
       return false;
     }
+  }
+
+  static async inviteCandidates(
+    campaignId: string,
+    emails: string[],
+    options?: { mode?: "remote" | "in_person" }
+  ): Promise<{ sent: string[]; failed: string[] }> {
+    const response = await fetch(
+      `/api/hiring-manager/campaigns/${campaignId}/invite-candidates`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emails, mode: options?.mode }),
+      }
+    );
+    const body = await readJson<{
+      data?: { sent?: string[]; failed?: string[] };
+      error?: string;
+    }>(response);
+
+    this.invalidate();
+    return {
+      sent: body.data?.sent ?? [],
+      failed: body.data?.failed ?? [],
+    };
   }
 
   static async updateSessionStatus(
