@@ -31,7 +31,7 @@ import { DEFAULT_PLATFORM_ASSESSMENTS } from "@/lib/client/entitlements";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 
 const REQUEST_COPY: Record<
-  ClientInitiatedUpgradeType,
+  Extract<ClientInitiatedUpgradeType, "seat_increase" | "new_assessment" | "assessment_version">,
   { title: string; description: string; icon: typeof Users }
 > = {
   seat_increase: {
@@ -72,7 +72,7 @@ export function ClientUpgradeRequestDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  requestType: ClientInitiatedUpgradeType;
+  requestType: Extract<ClientInitiatedUpgradeType, "seat_increase" | "new_assessment" | "assessment_version">;
   entitlements: ClientEntitlements | null;
   submitting: boolean;
   onSubmit: (payload: ClientUpgradeRequestPayload) => Promise<void>;

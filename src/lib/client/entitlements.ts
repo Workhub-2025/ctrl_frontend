@@ -1,6 +1,11 @@
-export const CLIENT_PLATFORM_FEATURES = [
+export const CLIENT_DELIVERY_FEATURES = [
   { key: "deliveryRemote", label: "Remote delivery", group: "Delivery" },
   { key: "deliveryHybrid", label: "Hybrid delivery", group: "Delivery" },
+] as const;
+
+/** @deprecated Billable client upgrades use CLIENT_DELIVERY_FEATURES only. Difficulty options are not features. */
+export const CLIENT_PLATFORM_FEATURES = [
+  ...CLIENT_DELIVERY_FEATURES,
   { key: "advancedPja", label: "Advanced PJA scoring", group: "Prioritisation" },
   { key: "extremePja", label: "Extreme PJA scoring", group: "Prioritisation" },
   { key: "typingIntermediate", label: "Intermediate typing", group: "Typing" },
@@ -47,6 +52,15 @@ export const DEFAULT_PLATFORM_ASSESSMENTS = [
 /** @deprecated Use DEFAULT_PLATFORM_ASSESSMENTS */
 export const CLIENT_ASSESSMENT_ENTITLEMENTS = DEFAULT_PLATFORM_ASSESSMENTS;
 
+export const DEFAULT_PLATFORM_ASSESSMENT_VERSION_ENTITLEMENTS = DEFAULT_PLATFORM_ASSESSMENTS.map(
+  (assessment) => ({
+    key: assessment.key,
+    label: assessment.label,
+    title: assessment.title,
+    description: assessment.description,
+  })
+);
+
 export type ClientAssessmentSlug = DefaultPlatformAssessmentSlug;
 
 export type ClientCatalogueAssessment = {
@@ -74,10 +88,44 @@ export function resolveAssessmentLabel(slug: string, title?: string) {
   return title || known?.title || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+export type ClientDeliveryFeatureKey = (typeof CLIENT_DELIVERY_FEATURES)[number]["key"];
+
+export type ClientUpgradeBundleItem =
+  | {
+      type: "seat_increase";
+      currentSeats: number;
+      requestedSeats: number;
+    }
+  | {
+      type: "delivery_feature";
+      featureKey: ClientDeliveryFeatureKey;
+    }
+  | {
+      type: "new_assessment";
+      assessmentSlug: string;
+      assessmentLabel: string;
+      notes: string;
+    }
+  | {
+      type: "assessment_version";
+      assessmentSlug: string;
+      assessmentLabel: string;
+      currentVersion: string;
+      requestedVersion: string;
+    };
+
+export type ClientUpgradeBundleLineItem = {
+  label: string;
+  quantity: number;
+  unitAmountPence: number;
+};
+
 export type ClientInitiatedUpgradeType =
   | "seat_increase"
   | "new_assessment"
-  | "assessment_version";
+  | "assessment_version"
+  | "delivery_feature"
+  | "upgrade_bundle";
 
 export type ClientUpgradeRequestType =
   | ClientInitiatedUpgradeType
@@ -92,6 +140,10 @@ export type ClientUpgradeRequestPayload =
       notes?: string;
     }
   | {
+      type: "delivery_feature";
+      featureKey: ClientDeliveryFeatureKey;
+    }
+  | {
       type: "new_assessment";
       assessmentSlug: string;
       assessmentLabel: string;
@@ -104,6 +156,12 @@ export type ClientUpgradeRequestPayload =
       currentVersion: string;
       requestedVersion: string;
       notes?: string;
+    }
+  | {
+      type: "upgrade_bundle";
+      items: ClientUpgradeBundleItem[];
+      notes?: string;
+      lineItems?: ClientUpgradeBundleLineItem[];
     }
   | {
       type: "contract_extension";
@@ -180,20 +238,67 @@ export function addOneYearToDate(dateStr: string) {
   return date.toISOString().split("T")[0];
 }
 
+function buildBundleSubject(items: ClientUpgradeBundleItem[]) {
+  if (items.length === 1) {
+    const item = items[0];
+    switch (item.type) {
+      case "seat_increase":
+        return `Upgrade request: ${item.requestedSeats} hiring manager seats`;
+      case "delivery_feature":
+        return `Upgrade request: ${
+          CLIENT_DELIVERY_FEATURES.find((feature) => feature.key === item.featureKey)?.label ??
+          item.featureKey
+        }`;
+      case "new_assessment":
+        return `Upgrade request: add ${item.assessmentLabel} assessment`;
+      case "assessment_version":
+        return `Upgrade request: ${item.assessmentLabel} up to v${item.requestedVersion}`;
+      default:
+        return "Platform upgrade request";
+    }
+  }
+  return `Upgrade request: ${items.length} entitlement changes`;
+}
+
 export function buildUpgradeRequestSubject(payload: ClientUpgradeRequestPayload) {
   switch (payload.type) {
     case "contract_activation":
       return `Initial contract activation — ${payload.seatCount} hiring manager seats`;
     case "contract_extension":
       return `Contract renewal through ${payload.newEndDate}`;
+    case "upgrade_bundle":
+      return buildBundleSubject(payload.items);
     case "seat_increase":
       return `Upgrade request: ${payload.requestedSeats} hiring manager seats`;
+    case "delivery_feature":
+      return `Upgrade request: ${
+        CLIENT_DELIVERY_FEATURES.find((feature) => feature.key === payload.featureKey)?.label ??
+        payload.featureKey
+      }`;
     case "new_assessment":
       return `Upgrade request: add ${payload.assessmentLabel} assessment`;
     case "assessment_version":
       return `Upgrade request: ${payload.assessmentLabel} up to v${payload.requestedVersion}`;
     default:
       return "Platform upgrade request";
+  }
+}
+
+function describeBundleItem(item: ClientUpgradeBundleItem, index: number) {
+  switch (item.type) {
+    case "seat_increase":
+      return `${index}. Hiring manager seats: ${item.currentSeats} -> ${item.requestedSeats} (+${Math.max(0, item.requestedSeats - item.currentSeats)})`;
+    case "delivery_feature":
+      return `${index}. Enable ${
+        CLIENT_DELIVERY_FEATURES.find((feature) => feature.key === item.featureKey)?.label ??
+        item.featureKey
+      }`;
+    case "new_assessment":
+      return `${index}. Add assessment: ${item.assessmentLabel} (${item.assessmentSlug})\n   Business case: ${item.notes.trim()}`;
+    case "assessment_version":
+      return `${index}. ${item.assessmentLabel}: v${item.currentVersion} -> v${item.requestedVersion}`;
+    default:
+      return `${index}. Entitlement change`;
   }
 }
 
@@ -204,6 +309,16 @@ export function buildUpgradeRequestDescription(
   const header = clientName ? `Client: ${clientName}\n\n` : "";
 
   switch (payload.type) {
+    case "upgrade_bundle":
+      return `${header}Request type: Bundled platform upgrade\n\n${payload.items
+        .map((item, index) => describeBundleItem(item, index + 1))
+        .join("\n")}${payload.notes?.trim() ? `\n\nAdditional context:\n${payload.notes.trim()}` : ""}`.trim();
+    case "delivery_feature":
+      return `${header}Request type: Delivery feature
+Feature: ${
+        CLIENT_DELIVERY_FEATURES.find((feature) => feature.key === payload.featureKey)?.label ??
+        payload.featureKey
+      }`.trim();
     case "contract_activation":
       return `${header}Request type: Initial contract activation
 Client: ${payload.clientName}

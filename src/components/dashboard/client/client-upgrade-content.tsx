@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
-  BookOpenCheck,
   CalendarRange,
   CheckCircle2,
   Clock3,
@@ -16,7 +15,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/components/dashboard/client/client-portal-utils";
-import { ClientUpgradeRequestDialog } from "@/components/dashboard/client/client-upgrade-request-dialog";
+import { ClientUpgradeBuilder } from "@/components/dashboard/client/client-upgrade-builder";
 import {
   ClientErrorBanner,
   ClientPageHeader,
@@ -34,44 +33,19 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { useClientPortal } from "@/context/client-portal-provider";
 import {
-  CLIENT_PLATFORM_FEATURES,
+  CLIENT_DELIVERY_FEATURES,
   DEFAULT_PLATFORM_ASSESSMENTS,
-  type ClientInitiatedUpgradeType,
   type ClientUpgradeRequestType,
 } from "@/lib/client/entitlements";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
-const REQUEST_ACTIONS: Array<{
-  type: ClientInitiatedUpgradeType;
-  title: string;
-  description: string;
-  icon: typeof Users;
-}> = [
-  {
-    type: "seat_increase",
-    title: "More hiring manager seats",
-    description: "Expand reusable seat capacity on your contract.",
-    icon: Users,
-  },
-  {
-    type: "new_assessment",
-    title: "New add-on assessment",
-    description: "Request assessments beyond the core SJA, TA, PJA, and SCA platform.",
-    icon: BookOpenCheck,
-  },
-  {
-    type: "assessment_version",
-    title: "Assessment version upgrade",
-    description: "Move to newer content for assessments you already use.",
-    icon: TrendingUp,
-  },
-];
-
 const UPGRADE_TYPE_LABELS: Record<ClientUpgradeRequestType, string> = {
   seat_increase: "Seat increase",
   new_assessment: "New assessment",
   assessment_version: "Version upgrade",
+  delivery_feature: "Delivery feature",
+  upgrade_bundle: "Bundled upgrade",
   contract_extension: "Contract renewal",
   contract_activation: "Contract activation",
 };
@@ -106,7 +80,6 @@ export function ClientUpgradeContent() {
     submitUpgradeRequest,
   } = useClientPortal();
 
-  const [activeRequestType, setActiveRequestType] = useState<ClientInitiatedUpgradeType | null>(null);
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
   const searchParams = useSearchParams();
@@ -134,15 +107,21 @@ export function ClientUpgradeContent() {
       title: assessment.title,
       maxVersion: "1.0.0",
       includedByDefault: true,
+      availableVersions: [],
+      upgradeableVersions: [],
     }));
 
-  const activeFeatureCount = useMemo(
-    () =>
-      CLIENT_PLATFORM_FEATURES.filter(
-        (feature) => entitlements?.platformFeatures?.[feature.key] === true
-      ).length,
-    [entitlements?.platformFeatures]
-  );
+  const deliveryFeatures = useMemo(() => {
+    const fromDelivery = entitlements?.deliveryFeatures ?? {};
+    const fromPlatform = entitlements?.platformFeatures ?? {};
+    return CLIENT_DELIVERY_FEATURES.map((feature) => ({
+      ...feature,
+      active:
+        fromDelivery[feature.key] === true || fromPlatform[feature.key] === true,
+    }));
+  }, [entitlements?.deliveryFeatures, entitlements?.platformFeatures]);
+
+  const activeDeliveryFeatureCount = deliveryFeatures.filter((feature) => feature.active).length;
 
   const openRequests = useMemo(
     () => upgradeRequests.filter((request) => request.billingStatus !== "paid"),
@@ -227,7 +206,7 @@ export function ClientUpgradeContent() {
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <ClientPageHeader
         title="Upgrade requests"
-        description="Review your contract entitlements and submit structured requests for seats, assessments, or content versions."
+        description="Review your contract entitlements and submit one structured billing request for seats, delivery methods, versions, or add-ons."
         notice={
           error ? (
             <ClientErrorBanner message={error} />
@@ -279,9 +258,9 @@ export function ClientUpgradeContent() {
           icon={Users}
         />
         <PortalStatTile
-          label="Active features"
-          value={`${activeFeatureCount}/${CLIENT_PLATFORM_FEATURES.length}`}
-          detail="Optional delivery and scoring features on your account"
+          label="Delivery methods"
+          value={`${activeDeliveryFeatureCount}/${CLIENT_DELIVERY_FEATURES.length}`}
+          detail="Remote and hybrid delivery on your account"
           icon={CheckCircle2}
         />
         <PortalStatTile
@@ -347,36 +326,33 @@ export function ClientUpgradeContent() {
 
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Platform features
+                  Delivery methods
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Optional delivery and scoring features. Request changes via Messages if you need one
-                  enabled — our team will quote and activate after approval.
+                  Billable delivery features. Add remote or hybrid delivery in the upgrade builder when you
+                  need them enabled.
                 </p>
                 <ul className="grid gap-3 sm:grid-cols-2">
-                  {CLIENT_PLATFORM_FEATURES.map((feature) => {
-                    const active = entitlements?.platformFeatures?.[feature.key] === true;
-                    return (
-                      <li
-                        key={feature.key}
-                        className={cn(portalPanelClass, "flex items-center justify-between gap-3 px-4 py-3")}
+                  {deliveryFeatures.map((feature) => (
+                    <li
+                      key={feature.key}
+                      className={cn(portalPanelClass, "flex items-center justify-between gap-3 px-4 py-3")}
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{feature.label}</p>
+                        <p className="text-xs text-muted-foreground">{feature.group}</p>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 rounded-lg text-[10px] font-semibold",
+                          feature.active ? portalBadgeClass : "text-muted-foreground"
+                        )}
                       >
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{feature.label}</p>
-                          <p className="text-xs text-muted-foreground">{feature.group}</p>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "shrink-0 rounded-lg text-[10px] font-semibold",
-                            active ? portalBadgeClass : "text-muted-foreground"
-                          )}
-                        >
-                          {active ? "Active" : "Not included"}
-                        </Badge>
-                      </li>
-                    );
-                  })}
+                        {feature.active ? "Active" : "Not included"}
+                      </Badge>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -385,15 +361,20 @@ export function ClientUpgradeContent() {
                   Core assessments (included)
                 </p>
                 <ul className="grid gap-3 sm:grid-cols-2">
-                  {(defaultAssessments).map((assessment) => (
-                    <li
-                      key={assessment.slug}
-                      className={cn(portalPanelClass, "px-4 py-3")}
-                    >
+                  {defaultAssessments.map((assessment) => (
+                    <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
                           <p className="text-xs text-muted-foreground">Included on every client platform</p>
+                          {(assessment.upgradeableVersions?.length ?? 0) > 0 ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Upgradeable:{" "}
+                              {assessment.upgradeableVersions
+                                ?.map((version) => `v${version.version}`)
+                                .join(", ")}
+                            </p>
+                          ) : null}
                         </div>
                         <Badge variant="outline" className="shrink-0 rounded-lg text-[10px] font-semibold">
                           up to v{assessment.maxVersion}
@@ -413,15 +394,20 @@ export function ClientUpgradeContent() {
                     <p className="text-xs text-muted-foreground">Active on your account</p>
                     <ul className="grid gap-3 sm:grid-cols-2">
                       {entitlements?.additionalAssessments.map((assessment) => (
-                        <li
-                          key={assessment.slug}
-                          className={cn(portalPanelClass, "px-4 py-3")}
-                        >
+                        <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
                               {assessment.summary ? (
                                 <p className="text-xs text-muted-foreground">{assessment.summary}</p>
+                              ) : null}
+                              {(assessment.upgradeableVersions?.length ?? 0) > 0 ? (
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  Upgradeable:{" "}
+                                  {assessment.upgradeableVersions
+                                    ?.map((version) => `v${version.version}`)
+                                    .join(", ")}
+                                </p>
                               ) : null}
                             </div>
                             <Badge
@@ -440,15 +426,12 @@ export function ClientUpgradeContent() {
                 <p className="text-xs text-muted-foreground">
                   {requestableAssessments.length > 0
                     ? "Available to request — not yet on your account"
-                    : "No add-on assessments are listed in the catalogue yet. You can still describe a custom assessment when submitting a request."}
+                    : "No add-on assessments are listed in the catalogue yet. You can still describe a custom assessment in the upgrade builder."}
                 </p>
                 {requestableAssessments.length > 0 ? (
                   <ul className="grid gap-3 sm:grid-cols-2">
                     {requestableAssessments.map((assessment) => (
-                      <li
-                        key={assessment.slug}
-                        className={cn(portalPanelClass, "px-4 py-3")}
-                      >
+                      <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
@@ -470,6 +453,7 @@ export function ClientUpgradeContent() {
             </div>
           </PortalPanel>
 
+          <div id="upgrade-request-history">
           <PortalPanel>
             <div className="space-y-5 p-6">
               <PortalSectionHeader
@@ -486,17 +470,14 @@ export function ClientUpgradeContent() {
                 <PortalEmptyState
                   icon={TrendingUp}
                   title="No upgrade requests yet"
-                  description="Submit a request using one of the options on the right when you need more capacity or content."
+                  description="Use the upgrade builder on the right to stage changes and submit one billing request."
                 />
               ) : null}
 
               {upgradeRequests.length > 0 ? (
                 <ul className="space-y-3">
                   {upgradeRequests.map((request) => (
-                    <li
-                      key={request.id}
-                      className={cn(portalPanelClass, "p-4")}
-                    >
+                    <li key={request.id} className={cn(portalPanelClass, "p-4")}>
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
@@ -551,78 +532,30 @@ export function ClientUpgradeContent() {
 
               <div className="flex justify-end border-t border-border/50 pt-4 dark:border-white/5">
                 <Button asChild variant="outline" className="rounded-xl gap-2">
-                  <Link href="/client-dashboard/messages/">
-                    View all messages
+                  <Link href="#upgrade-request-history">
+                    View all requests
                     <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
                 </Button>
               </div>
             </div>
           </PortalPanel>
+          </div>
         </div>
 
         <PortalPanel className="h-fit">
-          <div className="space-y-4 p-6">
-            <PortalSectionHeader
-              eyebrow="Request an upgrade"
-              title="What do you need?"
-              description={
-                canRequestUpgrades
-                  ? "Each request is routed to CTRL with the details our team needs to quote and approve changes."
-                  : "Upgrade requests will be available once your organisation has a contract on file."
-              }
+          <div className="p-6">
+            <ClientUpgradeBuilder
+              entitlements={entitlements}
+              canRequestUpgrades={canRequestUpgrades}
+              submitting={submittingUpgrade}
+              onSubmit={async (payload) => {
+                await submitUpgradeRequest({ payload });
+              }}
             />
-            {!canRequestUpgrades ? (
-              <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground dark:border-white/5">
-                Contact CTRL support if you need help setting up your initial contract.
-              </p>
-            ) : null}
-            <div className="space-y-3">
-              {REQUEST_ACTIONS.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <button
-                    key={action.type}
-                    type="button"
-                    disabled={!canRequestUpgrades}
-                    onClick={() => setActiveRequestType(action.type)}
-                    className={cn(
-                      portalPanelClass,
-                      "flex w-full items-start gap-3 p-4 text-left transition-colors",
-                      canRequestUpgrades
-                        ? "hover:border-primary/30"
-                        : "cursor-not-allowed opacity-60"
-                    )}
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold text-foreground">{action.title}</span>
-                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                        {action.description}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </PortalPanel>
       </div>
-
-      {activeRequestType ? (
-        <ClientUpgradeRequestDialog
-          open={Boolean(activeRequestType)}
-          onOpenChange={(open) => !open && setActiveRequestType(null)}
-          requestType={activeRequestType}
-          entitlements={entitlements}
-          submitting={submittingUpgrade}
-          onSubmit={async (payload) => {
-            await submitUpgradeRequest({ payload });
-          }}
-        />
-      ) : null}
     </div>
   );
 }

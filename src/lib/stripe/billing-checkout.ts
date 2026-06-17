@@ -1,7 +1,10 @@
 import "server-only";
 
 import type Stripe from "stripe";
-import type { ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
+import type {
+  ClientUpgradeBundleLineItem,
+  ClientUpgradeRequestPayload,
+} from "@/lib/client/entitlements";
 import { getStripeClient } from "@/lib/stripe/server";
 
 export type BillingRequestCheckoutRow = {
@@ -18,15 +21,87 @@ export function getStripeAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 }
 
+function sumLineItems(lineItems: ClientUpgradeBundleLineItem[]) {
+  return lineItems.reduce((total, item) => total + item.quantity * item.unitAmountPence, 0);
+}
+
+function computeBundleLineItemsFromPricing(
+  payload: Extract<ClientUpgradeRequestPayload, { type: "upgrade_bundle" }>,
+  pricing: Record<string, number | string>
+): ClientUpgradeBundleLineItem[] {
+  if (Array.isArray(payload.lineItems) && payload.lineItems.length > 0) {
+    return payload.lineItems;
+  }
+
+  const seatPrice = Number(pricing.seatOneOffPence ?? pricing.seatMonthlyPence ?? 0);
+  const addonPrice = Number(pricing.assessmentAddonPence ?? 0);
+  const versionPrice = Number(pricing.versionUpgradePence ?? 0);
+  const featurePrices =
+    pricing.featurePrices && typeof pricing.featurePrices === "object"
+      ? (pricing.featurePrices as Record<string, number>)
+      : {};
+
+  const lineItems: ClientUpgradeBundleLineItem[] = [];
+
+  for (const item of payload.items) {
+    switch (item.type) {
+      case "seat_increase": {
+        const additional = Math.max(0, item.requestedSeats - item.currentSeats);
+        if (additional > 0) {
+          lineItems.push({
+            label: `${additional} additional HM seat${additional === 1 ? "" : "s"}`,
+            quantity: additional,
+            unitAmountPence: seatPrice,
+          });
+        }
+        break;
+      }
+      case "delivery_feature":
+        lineItems.push({
+          label: item.featureKey === "deliveryRemote" ? "Remote delivery" : "Hybrid delivery",
+          quantity: 1,
+          unitAmountPence: featurePrices[item.featureKey] ?? 0,
+        });
+        break;
+      case "new_assessment":
+        lineItems.push({
+          label: `Add-on assessment: ${item.assessmentLabel}`,
+          quantity: 1,
+          unitAmountPence: addonPrice,
+        });
+        break;
+      case "assessment_version":
+        lineItems.push({
+          label: `${item.assessmentLabel} version upgrade (up to v${item.requestedVersion})`,
+          quantity: 1,
+          unitAmountPence: versionPrice,
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
+  return lineItems;
+}
+
 export function computeUpgradeAmountPence(
   payload: ClientUpgradeRequestPayload,
   pricing: Record<string, number | string>
 ): number {
   switch (payload.type) {
+    case "upgrade_bundle":
+      return sumLineItems(computeBundleLineItemsFromPricing(payload, pricing));
     case "seat_increase":
       return (
         Math.max(0, payload.requestedSeats - payload.currentSeats) *
         Number(pricing.seatOneOffPence ?? pricing.seatMonthlyPence ?? 0)
+      );
+    case "delivery_feature":
+      return Number(
+        typeof pricing.featurePrices === "object" && pricing.featurePrices && !Array.isArray(pricing.featurePrices)
+          ? (pricing.featurePrices as Record<string, number>)[payload.featureKey] ?? 0
+          : 0
       );
     case "new_assessment":
       return Number(pricing.assessmentAddonPence ?? 0);
@@ -37,6 +112,51 @@ export function computeUpgradeAmountPence(
     default:
       return 0;
   }
+}
+
+function buildStripeLineItems(
+  billingRequest: BillingRequestCheckoutRow,
+  payload: ClientUpgradeRequestPayload,
+  pricing: Record<string, number | string>,
+  currency: string
+): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  if (payload.type === "upgrade_bundle") {
+    const bundleLineItems = computeBundleLineItemsFromPricing(payload, pricing);
+    if (bundleLineItems.length === 0) {
+      throw new Error("No billable line items found for this upgrade bundle");
+    }
+
+    return bundleLineItems.map((item) => ({
+      quantity: item.quantity,
+      price_data: {
+        currency,
+        unit_amount: item.unitAmountPence,
+        product_data: {
+          name: item.label,
+          description: billingRequest.subject ?? "CTRL platform upgrade",
+        },
+      },
+    }));
+  }
+
+  const amountPence = computeUpgradeAmountPence(payload, pricing);
+  if (amountPence <= 0) {
+    throw new Error("Pricing is not configured for this upgrade type. Set prices in Admin → Billing.");
+  }
+
+  return [
+    {
+      quantity: 1,
+      price_data: {
+        currency,
+        unit_amount: amountPence,
+        product_data: {
+          name: billingRequest.subject ?? "CTRL platform upgrade",
+          description: billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request",
+        },
+      },
+    },
+  ];
 }
 
 export async function createBillingCheckoutSession(
@@ -70,19 +190,7 @@ export async function createBillingCheckoutSession(
     mode: "payment",
     success_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
-    line_items: [
-      {
-        quantity: 1,
-        price_data: {
-          currency,
-          unit_amount: amountPence,
-          product_data: {
-            name: billingRequest.subject ?? "CTRL platform upgrade",
-            description: billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request",
-          },
-        },
-      },
-    ],
+    line_items: buildStripeLineItems(billingRequest, payload, pricing, currency),
     metadata: {
       requestKind,
       billingRequestDocumentId: requestDocumentId,

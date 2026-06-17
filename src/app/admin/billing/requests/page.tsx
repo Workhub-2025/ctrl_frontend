@@ -47,6 +47,8 @@ const UPGRADE_TYPE_LABELS: Record<string, string> = {
   seat_increase: "Seat increase",
   new_assessment: "New assessment",
   assessment_version: "Version upgrade",
+  delivery_feature: "Delivery feature",
+  upgrade_bundle: "Bundled upgrade",
   contract_extension: "Contract renewal",
 };
 

@@ -31,17 +31,22 @@ export type BackendClientEntitlements = {
     daysUntilExpiry?: number | null;
   } | null;
   platformFeatures: Record<string, boolean>;
+  deliveryFeatures?: Record<string, boolean>;
   defaultAssessments: Array<{
     slug: string;
     title: string;
     maxVersion: string;
     includedByDefault: boolean;
+    availableVersions?: Array<{ version: string; title: string; description: string | null }>;
+    upgradeableVersions?: Array<{ version: string; title: string; description: string | null }>;
   }>;
   additionalAssessments: Array<{
     slug: string;
     title: string;
     summary?: string | null;
     maxVersion: string;
+    availableVersions?: Array<{ version: string; title: string; description: string | null }>;
+    upgradeableVersions?: Array<{ version: string; title: string; description: string | null }>;
   }>;
   requestableAssessments: Array<{
     slug: string;
@@ -53,6 +58,8 @@ export type BackendClientEntitlements = {
     title: string;
     summary?: string | null;
     maxVersion: string;
+    availableVersions?: Array<{ version: string; title: string; description: string | null }>;
+    upgradeableVersions?: Array<{ version: string; title: string; description: string | null }>;
   }>;
   canRequestUpgrades: boolean;
   lockState?: {
