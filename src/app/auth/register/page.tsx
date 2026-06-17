@@ -73,11 +73,9 @@ function UnifiedAuthContent() {
   const [submitStatus, setSubmitStatus] = useState<ButtonState>("idle");
   const [invalidFields, setInvalidFields] = useState<AuthField[]>([]);
   const invalidResetTimer = useRef<number | null>(null);
-  const { register: registerUser, login, isLoading } = useAuth();
-  const isAuthBusy = authAction !== null || isLoading;
-  const authActionMessage = authAction === "login"
-    ? "Checking your credentials..."
-    : "Setting up your account...";
+  const { register: registerUser, login } = useAuth();
+  // Only disable while a login/register submit is in flight — not during background session bootstrap.
+  const isAuthBusy = authAction !== null;
 
   useEffect(() => {
     return () => {
