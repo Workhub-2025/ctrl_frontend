@@ -509,11 +509,17 @@ function CallTranscriptPlayer() {
   );
 }
 
+function getHmDecisionLabel(decision: "approved" | "rejected") {
+  return decision === "approved" ? "Move forward" : "Reject";
+}
+
 export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId, embedded = false }: CandidateReportProps) {
   const [reportData, setReportData] = useState<CandidateReportData | null>(null);
-  const [decision, setDecision] = useState<"Move forward" | "Reject" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [hmDecision, setHmDecision] = useState<"pending" | "approved" | "rejected" | null>(null);
+  const [decisionSubmitting, setDecisionSubmitting] = useState<"approve" | "reject" | null>(null);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [openBreakdownKey, setOpenBreakdownKey] = useState<string | null>(null);
   const [selectedCallRunIndex, setSelectedCallRunIndex] = useState<number | null>(null);
 
@@ -522,7 +528,8 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
     async function loadReport() {
       setIsLoading(true);
-      setError(null);
+      setLoadError(null);
+      setDecisionError(null);
       try {
         const campaigns = campaignId
           ? [
@@ -541,13 +548,14 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
         if (!cancelled) {
           setReportData(matched ?? null);
+          setHmDecision(matched?.candidate.hmDecision ?? "pending");
           if (!matched) {
-            setError("Candidate report could not be found.");
+            setLoadError("Candidate report could not be found.");
           }
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(
+          setLoadError(
             loadError instanceof Error
               ? loadError.message
               : "Candidate report could not be loaded."
@@ -586,6 +594,56 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         badge: "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-none"
       };
 
+  const resolvedSessionId = candidateSessionId ?? reportData?.candidate.id ?? null;
+  const decisionPending = !hmDecision || hmDecision === "pending";
+  const canRecordDecision = allAssessmentsCompleted && decisionPending && Boolean(resolvedSessionId);
+
+  async function handleDecision(decision: "approve" | "reject") {
+    if (!resolvedSessionId || decisionSubmitting) return;
+
+    setDecisionSubmitting(decision);
+    setDecisionError(null);
+
+    try {
+      const result = await HiringManagerPortalClientService.submitCandidateDecision({
+        candidateSessionId: resolvedSessionId,
+        decision,
+      });
+      setHmDecision(result.hmDecision);
+    } catch (submitError) {
+      setDecisionError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Candidate decision could not be saved."
+      );
+    } finally {
+      setDecisionSubmitting(null);
+    }
+  }
+
+  const decisionActionBar = canRecordDecision ? (
+    <div className="flex flex-wrap items-center justify-end gap-3">
+      <Button
+        type="button"
+        disabled={Boolean(decisionSubmitting)}
+        onClick={() => void handleDecision("reject")}
+        className="h-[34px] rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+      >
+        <ThumbsDown className="mr-1.5 h-3.5 w-3.5" />
+        {decisionSubmitting === "reject" ? "Rejecting…" : "Reject"}
+      </Button>
+      <Button
+        type="button"
+        disabled={Boolean(decisionSubmitting)}
+        onClick={() => void handleDecision("approve")}
+        className={cn(portalSuccessButtonClass, "h-[34px]")}
+      >
+        <ThumbsUp className="mr-1.5 h-3.5 w-3.5 text-slate-950" />
+        {decisionSubmitting === "approve" ? "Saving…" : "Pass"}
+      </Button>
+    </div>
+  ) : null;
+
   if (isLoading) {
     return (
       <div className={cn(portalPanelNestedClass, "rounded-lg p-6 text-sm text-muted-foreground")}>
@@ -610,7 +668,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
           </Button>
         )}
         <div className="rounded-lg border border-red-400/20 bg-red-400/10 p-6 text-sm text-red-100">
-          {error || "Candidate report could not be found."}
+          {loadError || "Candidate report could not be found."}
         </div>
       </div>
     );
@@ -645,26 +703,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                 </Badge>
               </div>
               
-              {allAssessmentsCompleted && (
-                <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
-                  <Button
-                    type="button"
-                    onClick={() => setDecision("Reject")}
-                    className="h-[34px] rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
-                  >
-                    <ThumbsDown className="mr-1.5 h-3.5 w-3.5" />
-                    Reject
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setDecision("Move forward")}
-                    className={cn(portalSuccessButtonClass, "h-[34px]")}
-                  >
-                    <ThumbsUp className="mr-1.5 h-3.5 w-3.5 text-slate-950" />
-                    Pass
-                  </Button>
-                </div>
-              )}
+              {decisionActionBar}
             </div>
             
             <div className="flex flex-col gap-2.5 pt-1">
@@ -697,24 +736,31 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
 
 
 
+      {embedded && decisionActionBar && (
+        <div className={cn(portalPanelNestedClass, "flex flex-wrap items-center justify-between gap-3 p-4")}>
+          <p className="text-sm text-slate-300">All assessments complete — record your decision.</p>
+          {decisionActionBar}
+        </div>
+      )}
 
-      {decision && (
+      {decisionError && (
+        <div className={cn(portalAlertErrorClass, "text-sm")}>{decisionError}</div>
+      )}
+
+      {hmDecision && hmDecision !== "pending" && (
         <div className={cn(
-          "flex items-center justify-between text-sm shadow-sm",
-          decision === "Move forward" ? portalAlertInfoClass : portalAlertErrorClass
+          "flex items-center text-sm shadow-sm",
+          hmDecision === "approved" ? portalAlertInfoClass : portalAlertErrorClass
         )}>
           <div className="flex items-center gap-2">
             <CheckCircle2 className="h-5 w-5" />
-            <span>Candidate decision finalized: <strong className="text-white uppercase font-bold tracking-wider">{decision}</strong></span>
+            <span>
+              Candidate decision finalized:{" "}
+              <strong className="text-white uppercase font-bold tracking-wider">
+                {getHmDecisionLabel(hmDecision)}
+              </strong>
+            </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDecision(null)}
-            className="text-slate-400 hover:text-white hover:bg-white/10 h-7 text-[11px]"
-          >
-            Reset decision
-          </Button>
         </div>
       )}
 

@@ -103,6 +103,7 @@ type RawCandidateSession = {
   createdAt?: string;
   invitedEmail?: string | null;
   inviteStatus?: "invited" | "registered" | "started" | null;
+  hmDecision?: "pending" | "approved" | "rejected" | null;
   users_permissions_users?: Array<{
     documentId?: string;
     firstName?: string;
@@ -199,6 +200,7 @@ export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
     email?: string;
     status?: string;
     inviteStatus?: "invited" | "registered" | "started" | null;
+    hmDecision?: "pending" | "approved" | "rejected" | null;
     sessionName?: string;
     campaignId?: string;
     campaignName?: string;
@@ -385,6 +387,7 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
         email: user?.email ?? candidateSession.invitedEmail ?? undefined,
         status: candidateSession.sessionStatus,
         inviteStatus: candidateSession.inviteStatus ?? null,
+        hmDecision: candidateSession.hmDecision ?? "pending",
         hasStartedAssessment:
           results.length > 0 ||
           candidateSession.sessionStatus === "completed" ||

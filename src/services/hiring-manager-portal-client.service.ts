@@ -39,6 +39,7 @@ export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
     email?: string;
     status?: string;
     inviteStatus?: "invited" | "registered" | "started" | null;
+    hmDecision?: "pending" | "approved" | "rejected" | null;
     sessionName?: string;
     campaignId?: string;
     campaignName?: string;
@@ -374,6 +375,34 @@ export class HiringManagerPortalClientService {
       console.error("[unlockCandidate] Failed to unlock candidate", err);
       return false;
     }
+  }
+
+  static async submitCandidateDecision(input: {
+    candidateSessionId: string;
+    decision: "approve" | "reject";
+    note?: string;
+  }): Promise<{ hmDecision: "approved" | "rejected" }> {
+    const response = await fetch(
+      `/api/hiring-manager/candidate-sessions/${encodeURIComponent(input.candidateSessionId)}/decision`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          decision: input.decision,
+          note: input.note,
+        }),
+      }
+    );
+    const body = await readJson<{
+      data?: { hmDecision?: "approved" | "rejected" };
+      error?: string;
+    }>(response);
+
+    this.invalidate();
+
+    return {
+      hmDecision: body.data?.hmDecision ?? (input.decision === "approve" ? "approved" : "rejected"),
+    };
   }
 
   static async inviteCandidates(

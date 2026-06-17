@@ -87,12 +87,10 @@ export function ClientApprovalsContent() {
     sharedLoading,
     error,
     reviewingId,
-    reviewingCandidateId,
     approvalModeBusy,
     loadOverview,
     loadSharedCandidates,
     reviewCampaign,
-    updateSharedCandidateStatus,
     updateApprovalMode,
   } = useClientPortal();
 
@@ -104,7 +102,7 @@ export function ClientApprovalsContent() {
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <ClientPageHeader
         title="Approvals"
-        description="Review campaign submissions and shared candidates before they progress."
+        description="Review campaign submissions and candidates recommended by your hiring managers."
         notice={error ? <ClientErrorBanner message={error} /> : null}
         action={
           <ClientRefreshButton
@@ -128,7 +126,7 @@ export function ClientApprovalsContent() {
             ) : null}
           </TabsTrigger>
           <TabsTrigger value="candidates" className="rounded-lg px-4 text-sm font-semibold">
-            Shared candidates
+            Approved candidates
             {sharedCandidates.filter((c) => c.reviewStatus === "pending_review").length > 0 ? (
               <Badge className={cn("ml-2 rounded-full px-2 py-0 text-[10px]", portalBadgeClass)}>
                 {sharedCandidates.filter((c) => c.reviewStatus === "pending_review").length}
@@ -271,22 +269,22 @@ export function ClientApprovalsContent() {
             <div className="space-y-6 p-6">
               <PortalSectionHeader
                 eyebrow="Candidate review"
-                title="Shared candidates"
-                description="Hiring managers share candidates here for your review before progression."
+                title="Approved candidates"
+                description="Hiring managers recommend candidates here after assessment review. This list is for your visibility — no further approval is required."
               />
 
               {sharedLoading && (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <RefreshCw className="h-4 w-4 motion-safe:animate-spin text-primary" aria-hidden="true" />
-                  Loading shared candidates…
+                  Loading approved candidates…
                 </p>
               )}
 
               {!sharedLoading && sharedCandidates.length === 0 && (
                 <PortalEmptyState
                   icon={UserCheck}
-                  title="No shared candidates"
-                  description="Candidates shared by hiring managers will appear here for review."
+                  title="No approved candidates yet"
+                  description="When a hiring manager passes a candidate, they will appear here for your records."
                 />
               )}
 
@@ -314,72 +312,8 @@ export function ClientApprovalsContent() {
                             ) : null}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {candidate.role} · Shared by {candidate.hiringManagerName}
+                            {candidate.role} · Recommended by {candidate.hiringManagerName}
                           </p>
-                        </div>
-
-                        <div className="flex shrink-0 flex-wrap gap-2">
-                          {candidate.reviewStatus === "pending_review" && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="rounded-xl"
-                                disabled={reviewingCandidateId === candidate.documentId}
-                                onClick={() =>
-                                  void updateSharedCandidateStatus(candidate.documentId, "progressed")
-                                }
-                              >
-                                Mark progressed
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="rounded-xl border-red-500/20 text-red-500 hover:!bg-red-500/10"
-                                disabled={reviewingCandidateId === candidate.documentId}
-                                onClick={() =>
-                                  void updateSharedCandidateStatus(candidate.documentId, "rejected")
-                                }
-                              >
-                                Reject
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="rounded-xl"
-                                disabled={reviewingCandidateId === candidate.documentId}
-                                onClick={() =>
-                                  void updateSharedCandidateStatus(candidate.documentId, "reviewed")
-                                }
-                              >
-                                Mark reviewed
-                              </Button>
-                            </>
-                          )}
-                          {candidate.reviewStatus === "reviewed" && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="rounded-xl"
-                                disabled={reviewingCandidateId === candidate.documentId}
-                                onClick={() =>
-                                  void updateSharedCandidateStatus(candidate.documentId, "progressed")
-                                }
-                              >
-                                Mark progressed
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="rounded-xl border-red-500/20 text-red-500 hover:!bg-red-500/10"
-                                disabled={reviewingCandidateId === candidate.documentId}
-                                onClick={() =>
-                                  void updateSharedCandidateStatus(candidate.documentId, "rejected")
-                                }
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
                         </div>
                       </div>
                     </li>
