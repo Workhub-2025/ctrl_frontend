@@ -100,8 +100,9 @@ type RawContract = {
   documentId?: string;
   seatCount?: number;
   status?: "active" | "soft_locked" | "pending_deletion";
-  startDate?: string;
-  endDate?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  paymentStatus?: "not_required" | "pending" | "paid" | "failed";
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -149,7 +150,7 @@ type RawClient = {
 export type AdminClientRow = {
   id: string;
   name: string;
-  status: "Active" | "Awaiting signup" | "Paused" | "Expired" | "Needs contract";
+  status: "Active" | "Awaiting signup" | "Awaiting payment" | "Paused" | "Expired" | "Needs contract";
   plan: string;
   seatsUsed: number;
   seatsAllowed: number;
@@ -215,6 +216,7 @@ export type AdminClientEntitlementRow = AdminClientRow & {
     endDate: string | null;
     seatCount: number;
     notes: string;
+    paymentStatus?: string;
   } | null;
   features?: Record<string, any> | null;
 };
@@ -246,8 +248,6 @@ export type AdminClientCreateInput = {
   timeZone?: string;
   campaignApprovalMode: "auto_approve" | "require_approval";
   contract: {
-    startDate: string;
-    endDate: string;
     seatCount: number;
     notes?: string;
   };
@@ -284,6 +284,7 @@ export type AdminClientDetails = AdminClientRow & {
     endDate: string | null;
     seatCount: number;
     notes: string;
+    paymentStatus?: string;
   } | null;
   users: AdminUserRow[];
   campaigns: Array<{
@@ -331,12 +332,28 @@ type RawAuditLog = {
 
 function isActiveContract(contract?: RawContract) {
   if (!contract || contract.status !== "active") return false;
-  if (!contract.endDate) return true;
-  return new Date(contract.endDate).getTime() >= Date.now();
+  const paymentStatus = contract.paymentStatus ?? "not_required";
+  if (paymentStatus === "pending" || paymentStatus === "failed") return false;
+  if (!contract.startDate || !contract.endDate) return false;
+  const today = Date.now();
+  return (
+    new Date(contract.endDate).getTime() >= today &&
+    new Date(contract.startDate).getTime() <= today
+  );
+}
+
+function getPendingContract(client: RawClient) {
+  return (
+    (client.contracts ?? []).find(
+      (contract) =>
+        contract.status === "active" &&
+        (contract.paymentStatus === "pending" || (!contract.startDate && !contract.endDate))
+    ) ?? null
+  );
 }
 
 function getActiveContract(client: RawClient) {
-  return (client.contracts ?? []).find(isActiveContract) ?? client.contracts?.[0] ?? null;
+  return (client.contracts ?? []).find(isActiveContract) ?? null;
 }
 
 function getLatestAccessCode(
@@ -381,8 +398,10 @@ function relativeDate(value?: string) {
 
 function normalizeClient(client: RawClient): AdminClientRow {
   const activeContract = getActiveContract(client);
+  const pendingContract = getPendingContract(client);
+  const contractForSeats = activeContract ?? pendingContract;
   const hasActiveContract = isActiveContract(activeContract ?? undefined);
-  const seatsAllowed = activeContract?.seatCount ?? 0;
+  const seatsAllowed = contractForSeats?.seatCount ?? 0;
   const seatsUsed = (client.users ?? []).filter(
     (user) => !user.blocked && roleMatches(user.role, "hiring_manager")
   ).length;
@@ -400,21 +419,25 @@ function normalizeClient(client: RawClient): AdminClientRow {
   ).length;
   const status = client.softLockedAt
     ? "Paused"
-    : !activeContract
-      ? "Needs contract"
-      : !hasActiveContract
-        ? "Expired"
-        : hasClientContact
-      ? "Active"
-      : "Awaiting signup";
+    : !activeContract && pendingContract
+      ? "Awaiting payment"
+      : !activeContract && !pendingContract
+        ? "Needs contract"
+        : !hasActiveContract
+          ? "Expired"
+          : hasClientContact
+            ? "Active"
+            : "Awaiting signup";
   const billingStatus =
     status === "Paused"
       ? "Paused"
-      : activeContract && hasActiveContract
-        ? "Active"
-        : activeContract
-          ? "Expired"
-          : "Not configured";
+      : status === "Awaiting payment"
+        ? "Not configured"
+        : activeContract && hasActiveContract
+          ? "Active"
+          : activeContract
+            ? "Expired"
+            : "Not configured";
 
   return {
     id: client.documentId ?? String(client.id ?? `client-${client.name ?? "unknown"}`),
@@ -450,6 +473,8 @@ function formatAddress(client: RawClient) {
 function normalizeClientDetails(client: RawClient): AdminClientDetails {
   const row = normalizeClient(client);
   const activeContract = getActiveContract(client);
+  const pendingContract = getPendingContract(client);
+  const displayContract = activeContract ?? pendingContract;
 
   return {
     ...row,
@@ -463,14 +488,15 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
     onboardingCompleted: Boolean(client.onboardingCompleted),
     createdAt: client.createdAt ?? null,
     updatedAt: client.updatedAt ?? null,
-    activeContract: activeContract
+    activeContract: displayContract
       ? {
-          documentId: activeContract.documentId ?? "",
-          status: activeContract.status ?? "unknown",
-          startDate: activeContract.startDate ?? null,
-          endDate: activeContract.endDate ?? null,
-          seatCount: activeContract.seatCount ?? 0,
-          notes: activeContract.notes ?? "",
+          documentId: displayContract.documentId ?? "",
+          status: displayContract.status ?? "unknown",
+          startDate: displayContract.startDate ?? null,
+          endDate: displayContract.endDate ?? null,
+          seatCount: displayContract.seatCount ?? 0,
+          notes: displayContract.notes ?? "",
+          paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
         }
       : null,
     users: (client.users ?? []).map(normalizeUser),
@@ -495,17 +521,20 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
 function normalizeClientEntitlement(client: RawClient): AdminClientEntitlementRow {
   const row = normalizeClient(client);
   const activeContract = getActiveContract(client);
+  const pendingContract = getPendingContract(client);
+  const displayContract = activeContract ?? pendingContract;
 
   return {
     ...row,
-    activeContract: activeContract
+    activeContract: displayContract
       ? {
-          documentId: activeContract.documentId ?? "",
-          status: activeContract.status ?? "unknown",
-          startDate: activeContract.startDate ?? null,
-          endDate: activeContract.endDate ?? null,
-          seatCount: activeContract.seatCount ?? 0,
-          notes: activeContract.notes ?? "",
+          documentId: displayContract.documentId ?? "",
+          status: displayContract.status ?? "unknown",
+          startDate: displayContract.startDate ?? null,
+          endDate: displayContract.endDate ?? null,
+          seatCount: displayContract.seatCount ?? 0,
+          notes: displayContract.notes ?? "",
+          paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
         }
       : null,
     features: client.features ?? null,
@@ -752,12 +781,11 @@ export async function deleteAdminClient(
   confirmName: string,
   authToken?: string | null
 ): Promise<void> {
+  const trimmedName = confirmName.trim();
+  const query = new URLSearchParams({ confirmName: trimmedName }).toString();
   await adminStrapiRequest(
-    `/admin/clients/${encodeURIComponent(clientDocumentId)}`,
-    {
-      method: "DELETE",
-      body: JSON.stringify({ confirmName }),
-    },
+    `/admin/clients/${encodeURIComponent(clientDocumentId)}?${query}`,
+    { method: "DELETE" },
     authToken
   );
 }

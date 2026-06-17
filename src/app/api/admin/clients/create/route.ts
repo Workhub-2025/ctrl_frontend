@@ -31,13 +31,8 @@ function validatePayload(body: unknown):
   if (!["auto_approve", "require_approval"].includes(campaignApprovalMode ?? "")) {
     return { valid: false, error: "Campaign approval mode is invalid" };
   }
-  if (!value.contract?.startDate) return { valid: false, error: "Contract start date is required" };
-  if (!value.contract?.endDate) return { valid: false, error: "Contract end date is required" };
   if (!Number.isInteger(seatCount) || seatCount < 1) {
     return { valid: false, error: "Hiring manager seats must be at least 1" };
-  }
-  if (new Date(value.contract.endDate).getTime() <= new Date(value.contract.startDate).getTime()) {
-    return { valid: false, error: "Contract end date must be after the start date" };
   }
 
   return {
@@ -55,10 +50,8 @@ function validatePayload(body: unknown):
       timeZone: value.timeZone?.trim() || undefined,
       campaignApprovalMode: campaignApprovalMode as "auto_approve" | "require_approval",
       contract: {
-        startDate: value.contract.startDate,
-        endDate: value.contract.endDate,
         seatCount,
-        notes: value.contract.notes?.trim() || undefined,
+        notes: value.contract?.notes?.trim() || undefined,
       },
       issueAccessCode: Boolean(value.issueAccessCode),
     },

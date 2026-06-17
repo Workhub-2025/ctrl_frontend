@@ -77,6 +77,7 @@ type ClientDetails = {
     endDate: string | null;
     seatCount: number;
     notes: string;
+    paymentStatus?: string;
   } | null;
   users: Array<{ id: string; name: string; email: string; role: string; status: string }>;
   campaigns: Array<{ id: string; title: string; status: string; approvalStatus: string; createdAt: string | null }>;
@@ -124,9 +125,13 @@ export default function ClientDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [sendingActivation, setSendingActivation] = useState(false);
+  const [activationNotice, setActivationNotice] = useState<string | null>(null);
+
+  const isPendingContract = client?.activeContract?.paymentStatus === "pending";
 
   const canDelete = useMemo(
-    () => Boolean(client?.name && confirmName === client.name),
+    () => Boolean(client?.name && confirmName.trim() === client.name.trim()),
     [client?.name, confirmName]
   );
   const error = actionError || loadError;
@@ -173,6 +178,29 @@ export default function ClientDetailPage() {
     }
   };
 
+  const sendActivationInvoice = async () => {
+    if (!client) return;
+    setSendingActivation(true);
+    setActionError(null);
+    setActivationNotice(null);
+    try {
+      const response = await fetch(
+        `/api/admin/billing/send-activation/${encodeURIComponent(client.id)}`,
+        { method: "POST" }
+      );
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error || "Activation invoice could not be sent");
+      }
+      setActivationNotice("Activation invoice sent to the client contact email on file.");
+      invalidateAdminResource("admin:upgrades");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Activation invoice could not be sent");
+    } finally {
+      setSendingActivation(false);
+    }
+  };
+
   const deleteClient = async () => {
     if (!client || !canDelete) return;
     setDeleting(true);
@@ -181,7 +209,7 @@ export default function ClientDetailPage() {
       const response = await fetch(`/api/admin/clients/${encodeURIComponent(client.id)}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmName }),
+        body: JSON.stringify({ confirmName: confirmName.trim() }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "Client could not be deleted");
@@ -289,6 +317,8 @@ export default function ClientDetailPage() {
             </AdminAlert>
           ) : inviteNotice ? (
             <AdminAlert tone="info">{inviteNotice}</AdminAlert>
+          ) : activationNotice ? (
+            <AdminAlert tone="info">{activationNotice}</AdminAlert>
           ) : null
         }
         action={
@@ -460,19 +490,65 @@ export default function ClientDetailPage() {
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <AdminSectionHeader
                 title="Contract"
-                description="Seat allocation and contract dates."
+                description="Seat allocation and contract dates. Term dates are set when activation payment is received."
               />
-              <Button asChild variant="outline" size="sm" className="h-[34px] shrink-0">
-                <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Review entitlements
-                </Link>
-              </Button>
+              <div className="flex flex-wrap gap-2 shrink-0">
+                {isPendingContract ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-[34px]"
+                    disabled={sendingActivation}
+                    onClick={() => void sendActivationInvoice()}
+                  >
+                    {sendingActivation ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending…
+                      </>
+                    ) : (
+                      "Send activation invoice"
+                    )}
+                  </Button>
+                ) : null}
+                <Button asChild variant="outline" size="sm" className="h-[34px]">
+                  <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Review entitlements
+                  </Link>
+                </Button>
+              </div>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <Detail label="Status" value={client.activeContract?.status ?? "No active contract"} />
-              <Detail label="Start date" value={formatDate(client.activeContract?.startDate)} />
-              <Detail label="End date" value={formatDate(client.activeContract?.endDate)} />
+              <Detail label="Status" value={client.activeContract?.status ?? "No contract"} />
+              <Detail
+                label="Payment"
+                value={
+                  client.activeContract?.paymentStatus?.replace(/_/g, " ") ??
+                  (client.activeContract ? "not required" : "—")
+                }
+              />
+              <Detail
+                label="Start date"
+                value={
+                  client.activeContract?.startDate
+                    ? formatDate(client.activeContract.startDate)
+                    : isPendingContract
+                      ? "Starts on payment"
+                      : "Not set"
+                }
+              />
+              <Detail
+                label="End date"
+                value={
+                  client.activeContract?.endDate
+                    ? formatDate(client.activeContract.endDate)
+                    : isPendingContract
+                      ? "One year from payment"
+                      : "Not set"
+                }
+              />
               <Detail label="Seats" value={String(client.activeContract?.seatCount ?? 0)} />
               <div className={cn(portalPanelClass, "p-4 md:col-span-2 xl:col-span-4")}>
                 <p className={portalLabelClass}>Notes</p>

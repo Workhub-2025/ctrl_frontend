@@ -68,13 +68,15 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    if (!body?.confirmName || typeof body.confirmName !== "string") {
+    const confirmName =
+      typeof body?.confirmName === "string" ? body.confirmName.trim() : "";
+    if (!confirmName) {
       return NextResponse.json({ error: "confirmName is required" }, { status: 400 });
     }
 
     await deleteAdminClient(
       await getClientId(context),
-      body.confirmName,
+      confirmName,
       auth.strapiJwt
     );
     return NextResponse.json({ data: { deleted: true } });

@@ -81,7 +81,8 @@ export type ClientInitiatedUpgradeType =
 
 export type ClientUpgradeRequestType =
   | ClientInitiatedUpgradeType
-  | "contract_extension";
+  | "contract_extension"
+  | "contract_activation";
 
 export type ClientUpgradeRequestPayload =
   | {
@@ -112,9 +113,16 @@ export type ClientUpgradeRequestPayload =
       currentEndDate: string;
       newEndDate: string;
       seatCount: number;
+    }
+  | {
+      type: "contract_activation";
+      contractDocumentId: string;
+      clientDocumentId: string;
+      clientName: string;
+      seatCount: number;
     };
 
-export type ClientBillingRequestKind = "client_upgrade" | "contract_renewal";
+export type ClientBillingRequestKind = "client_upgrade" | "contract_renewal" | "contract_activation";
 
 export type ClientUpgradeRequestRecord = {
   id: string;
@@ -174,6 +182,8 @@ export function addOneYearToDate(dateStr: string) {
 
 export function buildUpgradeRequestSubject(payload: ClientUpgradeRequestPayload) {
   switch (payload.type) {
+    case "contract_activation":
+      return `Initial contract activation — ${payload.seatCount} hiring manager seats`;
     case "contract_extension":
       return `Contract renewal through ${payload.newEndDate}`;
     case "seat_increase":
@@ -194,6 +204,12 @@ export function buildUpgradeRequestDescription(
   const header = clientName ? `Client: ${clientName}\n\n` : "";
 
   switch (payload.type) {
+    case "contract_activation":
+      return `${header}Request type: Initial contract activation
+Client: ${payload.clientName}
+Seats on activation: ${payload.seatCount}
+
+Contract term begins on payment and runs for one year from the activation date.`.trim();
     case "contract_extension":
       return `${header}Request type: Annual contract renewal
 Client: ${payload.clientName}
@@ -250,7 +266,7 @@ export function parseBillingRequestFromTicket(ticket: {
   if (!metadata) return null;
 
   const requestKind = metadata.requestKind as ClientBillingRequestKind | undefined;
-  if (requestKind !== "client_upgrade" && requestKind !== "contract_renewal") return null;
+  if (requestKind !== "client_upgrade" && requestKind !== "contract_renewal" && requestKind !== "contract_activation") return null;
 
   const upgradeType = metadata.upgradeType as ClientUpgradeRequestType | undefined;
   const payload = metadata.payload as ClientUpgradeRequestPayload | undefined;

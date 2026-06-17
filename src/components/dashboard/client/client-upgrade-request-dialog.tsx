@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ClientInitiatedUpgradeType, ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
+import { DEFAULT_PLATFORM_ASSESSMENTS } from "@/lib/client/entitlements";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 
 const REQUEST_COPY: Record<
@@ -84,10 +85,16 @@ export function ClientUpgradeRequestDialog({
     () => entitlements?.requestableAssessments ?? [],
     [entitlements?.requestableAssessments]
   );
-  const versionUpgradeAssessments = useMemo(
-    () => entitlements?.versionUpgradeAssessments ?? [],
-    [entitlements?.versionUpgradeAssessments]
-  );
+  const versionUpgradeAssessments = useMemo(() => {
+    const fromEntitlements = entitlements?.versionUpgradeAssessments ?? [];
+    if (fromEntitlements.length > 0) return fromEntitlements;
+    return DEFAULT_PLATFORM_ASSESSMENTS.map((assessment) => ({
+      slug: assessment.key,
+      title: assessment.title,
+      summary: assessment.description,
+      maxVersion: "1.0.0",
+    }));
+  }, [entitlements?.versionUpgradeAssessments]);
 
   const [assessmentVersions, setAssessmentVersions] = useState<
     Record<string, Array<{ version: string; title: string; description: string | null }>>

@@ -34,11 +34,6 @@ type CreatedClientResponse = {
   };
 };
 
-const today = new Date().toISOString().slice(0, 10);
-const oneYearFromToday = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-  .toISOString()
-  .slice(0, 10);
-
 export default function CreateClientPage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -53,8 +48,6 @@ export default function CreateClientPage() {
     zipCode: "",
     timeZone: "Europe/London",
     campaignApprovalMode: "require_approval" as "auto_approve" | "require_approval",
-    startDate: today,
-    endDate: oneYearFromToday,
     seatCount: "2",
     notes: "",
     issueAccessCode: true,
@@ -65,6 +58,8 @@ export default function CreateClientPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [sendingInvite, setSendingInvite] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
+  const [activationSent, setActivationSent] = useState(false);
+  const [sendingActivation, setSendingActivation] = useState(false);
 
   const seatCount = useMemo(() => Number.parseInt(form.seatCount, 10), [form.seatCount]);
 
@@ -82,10 +77,6 @@ export default function CreateClientPage() {
     }
     if (!Number.isInteger(seatCount) || seatCount < 1) {
       setError("Hiring manager seats must be at least 1.");
-      return;
-    }
-    if (new Date(form.endDate).getTime() <= new Date(form.startDate).getTime()) {
-      setError("Contract end date must be after the start date.");
       return;
     }
 
@@ -107,8 +98,6 @@ export default function CreateClientPage() {
           timeZone: form.timeZone,
           campaignApprovalMode: form.campaignApprovalMode,
           contract: {
-            startDate: form.startDate,
-            endDate: form.endDate,
             seatCount,
             notes: form.notes,
           },
@@ -123,9 +112,28 @@ export default function CreateClientPage() {
       setCreated(body.data ?? null);
       setInviteEmail(form.primaryContactEmail.trim().toLowerCase());
       setInviteSent(false);
+      setActivationSent(false);
       invalidateAdminResource("admin:clients");
       invalidateAdminResource("admin:overview");
       invalidateAdminResource("admin:upgrades");
+
+      const clientId = body.data?.client?.id;
+      if (clientId) {
+        setSendingActivation(true);
+        try {
+          const activationResponse = await fetch(
+            `/api/admin/billing/send-activation/${encodeURIComponent(clientId)}`,
+            { method: "POST" }
+          );
+          if (activationResponse.ok) {
+            setActivationSent(true);
+          }
+        } catch {
+          // Non-blocking — admin can resend from client detail
+        } finally {
+          setSendingActivation(false);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Client could not be created");
     } finally {
@@ -165,7 +173,7 @@ export default function CreateClientPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Add client"
-        description="Create the organisation, primary contact, active contract, and optional registration code."
+        description="Create the organisation, primary contact, pending contract, and optional registration code."
         notice={
           error ? (
             <AdminAlert>{error}</AdminAlert>
@@ -177,6 +185,17 @@ export default function CreateClientPage() {
                 </span>
                 <div className="space-y-3 flex-1">
                   <p className="font-semibold">{created.client?.name ?? "Client"} created successfully.</p>
+                  {sendingActivation ? (
+                    <p className="text-sm text-muted-foreground">Sending activation invoice…</p>
+                  ) : activationSent ? (
+                    <p className="text-sm text-muted-foreground">
+                      Activation invoice sent to the client contact email on file.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Send an activation invoice from the client detail page if payment is required.
+                    </p>
+                  )}
                   {created.accessCode?.code && (
                     <div className="rounded-lg border border-border/60 bg-background/50 p-3.5">
                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -393,30 +412,10 @@ export default function CreateClientPage() {
           <AdminPanel className="space-y-5">
             <AdminSectionHeader
               title="Initial Contract"
-              description="Seat count controls how many hiring managers the client can activate."
+              description="Seat count is set now. Contract dates begin only after the client pays the activation invoice."
             />
             <div className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate" className={portalLabelClass}>Start date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={form.startDate}
-                    onChange={(event) => updateField("startDate", event.target.value)}
-                    className={cn(portalInputClass, "h-10 [color-scheme:dark]")}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate" className={portalLabelClass}>End date</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={form.endDate}
-                    onChange={(event) => updateField("endDate", event.target.value)}
-                    className={cn(portalInputClass, "h-10 [color-scheme:dark]")}
-                  />
-                </div>
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="seats" className={portalLabelClass}>Hiring manager seats</Label>
                   <Input
@@ -446,7 +445,7 @@ export default function CreateClientPage() {
         <AdminPanel className="h-fit space-y-4">
           <AdminSectionHeader
             title="Review"
-            description="Create the client and active contract in Strapi."
+            description="Create the client and pending contract in Strapi."
           />
           <div className="space-y-4 text-sm">
             <div className="flex items-center gap-3 font-medium text-foreground">

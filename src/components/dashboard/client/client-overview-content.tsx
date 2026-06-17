@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import {
   Building2,
   ClipboardCheck,
   KeyRound,
+  Loader2,
   MessageSquare,
   TrendingUp,
   UserCheck,
@@ -20,19 +22,58 @@ import {
 import { PortalQuickLinkRow } from "@/components/dashboard/portal/portal-ui";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { Button } from "@/components/ui/button";
+import { formatMoney } from "@/lib/money";
 
 export function ClientOverviewContent() {
   const {
     summary,
     entitlements,
+    upgradeRequests,
     loading,
     error,
     pendingCampaigns,
     pendingSharedCandidates,
     loadOverview,
+    loadUpgradeRequests,
   } = useClientPortal();
 
+  const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+
   const contractInactive = entitlements?.contractActive === false;
+
+  const activationInvoice = useMemo(
+    () =>
+      upgradeRequests.find(
+        (request) =>
+          request.requestKind === "contract_activation" && request.billingStatus === "invoice_sent"
+      ) ?? null,
+    [upgradeRequests]
+  );
+
+  const payForActivation = async (billingRequestDocumentId: string) => {
+    setPayingRequestId(billingRequestDocumentId);
+    setPayError(null);
+    try {
+      const response = await fetch("/api/client/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billingRequestDocumentId }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error ?? "Checkout could not be opened");
+      }
+      if (!body.data?.checkoutUrl) {
+        throw new Error("Checkout link is unavailable. Contact CTRL support if this persists.");
+      }
+      window.location.href = body.data.checkoutUrl as string;
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : "Checkout could not be opened");
+    } finally {
+      setPayingRequestId(null);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -42,6 +83,32 @@ export function ClientOverviewContent() {
         notice={
           error ? (
             <ClientErrorBanner tone="error">{error}</ClientErrorBanner>
+          ) : payError ? (
+            <ClientErrorBanner tone="error">{payError}</ClientErrorBanner>
+          ) : activationInvoice ? (
+            <ClientErrorBanner tone="info">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p>
+                  Your initial contract activation invoice is ready
+                  {activationInvoice.amountDuePence
+                    ? ` (${formatMoney(activationInvoice.amountDuePence, activationInvoice.currency ?? "gbp")})`
+                    : ""}
+                  . Pay now to start your one-year contract term.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 gap-2"
+                  disabled={payingRequestId === activationInvoice.id}
+                  onClick={() => void payForActivation(activationInvoice.id)}
+                >
+                  {payingRequestId === activationInvoice.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : null}
+                  Pay now
+                </Button>
+              </div>
+            </ClientErrorBanner>
           ) : contractInactive ? (
             <ClientErrorBanner tone="info">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -56,7 +123,15 @@ export function ClientOverviewContent() {
             </ClientErrorBanner>
           ) : null
         }
-        action={<ClientRefreshButton onClick={() => void loadOverview(true)} loading={loading} />}
+        action={
+          <ClientRefreshButton
+            onClick={() => {
+              void loadOverview(true);
+              void loadUpgradeRequests(true);
+            }}
+            loading={loading}
+          />
+        }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
