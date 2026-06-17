@@ -162,6 +162,7 @@ export async function POST(
           stripeCheckoutSessionId: checkoutSession.id,
           amountDuePence: amountPence,
           currency,
+          checkoutUrl: checkoutSession.url,
         }),
       }
     );
