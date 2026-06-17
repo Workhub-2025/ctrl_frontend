@@ -51,7 +51,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus, isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
-import { isKnownAssessmentSlug, normalizeSlug } from "@/lib/assessment-slug";
+import { isKnownAssessmentSlug, normalizeAssessmentSlugInput, normalizeSlug, resolveAssessmentSlug } from "@/lib/assessment-slug";
 import { CandidateEmailInvitesPanel } from "@/components/dashboard/candidate-email-invites-panel";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
@@ -731,23 +731,15 @@ function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCou
   return { completed, total, percent: Math.round((completed / total) * 100) };
 }
 
-function normalizeAssessmentText(value?: string | null) {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/prioritization/g, "prioritisation")
-    .replace(/[^a-z0-9]/g, "");
-}
-
 function getAssessmentKey(value?: string | null, result?: any) {
   const slug = normalizeSlug(value);
   if (isKnownAssessmentSlug(slug)) return slug;
+
+  const resolved = resolveAssessmentSlug(value, result);
+  if (resolved) return resolved;
+
   if (result) {
     if (typeof result.wpm === "number" || typeof result.accuracy === "number") return "typing";
-    if (result.metrics) {
-      const m = result.metrics;
-      if (m.highPriorityAccuracy !== undefined) return "prioritisation";
-      if (m.decisionBand !== undefined) return "situational-judgement";
-    }
     if (typeof result.durationSeconds === "number") return "call-simulation";
   }
   return "";
@@ -757,7 +749,7 @@ function isSameAssessment(expectedName?: string | null, resultName?: string | nu
   const expectedKey = getAssessmentKey(expectedName);
   const resultKey = getAssessmentKey(resultName);
   if (expectedKey && resultKey) return expectedKey === resultKey;
-  const expected = normalizeAssessmentText(expectedName);
-  const result = normalizeAssessmentText(resultName);
+  const expected = normalizeAssessmentSlugInput(expectedName);
+  const result = normalizeAssessmentSlugInput(resultName);
   return expected && result ? expected.includes(result) || result.includes(expected) : false;
 }

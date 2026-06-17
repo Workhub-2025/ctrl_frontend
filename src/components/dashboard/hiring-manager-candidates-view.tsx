@@ -42,7 +42,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
-import { isKnownAssessmentSlug, normalizeSlug } from "@/lib/assessment-slug";
+import { isKnownAssessmentSlug, normalizeAssessmentSlugInput, normalizeSlug, resolveAssessmentSlug } from "@/lib/assessment-slug";
 
 type CandidateRow = {
   id: string;
@@ -583,32 +583,18 @@ export function HiringManagerCandidatesView() {
   );
 }
 
-function normalizeAssessmentText(value?: string | null) {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/prioritization/g, "prioritisation")
-    .replace(/[^a-z0-9]/g, "");
-}
-
 function getAssessmentKey(value?: string | null, result?: any) {
   const slug = normalizeSlug(value);
   if (isKnownAssessmentSlug(slug)) return slug;
 
-  // Resilient guess fallback if name is generic (like "Assessment")
+  const resolved = resolveAssessmentSlug(value, result);
+  if (resolved) return resolved;
+
   if (result) {
-    if (typeof result.wpm === 'number' || typeof result.accuracy === 'number') {
+    if (typeof result.wpm === "number" || typeof result.accuracy === "number") {
       return "typing";
     }
-    if (result.metrics) {
-      const m = result.metrics;
-      if (m.highPriorityAccuracy !== undefined || m.mediumPriorityAccuracy !== undefined || m.lowPriorityAccuracy !== undefined) {
-        return "prioritisation";
-      }
-      if (m.decisionBand !== undefined || m.materialRiskFlagCount !== undefined || m.moderateRiskFlagCount !== undefined) {
-        return "situational-judgement";
-      }
-    }
-    if (typeof result.durationSeconds === 'number') {
+    if (typeof result.durationSeconds === "number") {
       return "call-simulation";
     }
   }
@@ -671,8 +657,8 @@ function isSameAssessment(expectedName?: string | null, resultName?: string | nu
 
   if (expectedKey && resultKey) return expectedKey === resultKey;
 
-  const expected = normalizeAssessmentText(expectedName);
-  const result = normalizeAssessmentText(resultName);
+  const expected = normalizeAssessmentSlugInput(expectedName);
+  const result = normalizeAssessmentSlugInput(resultName);
   return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
 }
 

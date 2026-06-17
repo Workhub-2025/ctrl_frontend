@@ -1,1 +1,7 @@
-export { default } from "@/assessments/plugins/call-simulation-page";
+import { renderAssessmentPage } from "@/assessments/plugins/render-assessment-page";
+
+export default function CallSimulationPage(props: {
+  searchParams?: Promise<{ candidateSessionDocumentId?: string }>;
+}) {
+  return renderAssessmentPage("call-simulation", props);
+}

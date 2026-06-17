@@ -1,15 +1,21 @@
+import type { LucideIcon } from "lucide-react";
 import type { ComponentType } from "react";
 
-export type AssessmentPageProps = {
-  searchParams?: Promise<{ candidateSessionDocumentId?: string }>;
+export type AssessmentSessionProps = {
+  candidateSessionDocumentId: string | null;
 };
 
-export type AssessmentUiPlugin = {
+export interface AssessmentUiPlugin {
   slug: string;
   title: string;
   description: string;
-  route: string;
   duration?: string;
-  timed?: boolean;
-  Page: ComponentType<AssessmentPageProps>;
-};
+  href: string;
+  icon: LucideIcon;
+  /** Recovery restart-only (typing allows resume). */
+  timed: boolean;
+  supportsHeartbeat: boolean;
+  component: ComponentType<AssessmentSessionProps>;
+  shellTitle?: string;
+  requiresServerInit?: boolean;
+}

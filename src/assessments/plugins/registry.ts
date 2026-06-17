@@ -1,8 +1,16 @@
+import {
+  CallSimulationTest,
+  PrioritisationTest,
+  SituationalJudgementTest,
+  TypingTest,
+} from "@/components/assessment";
+import {
+  ClipboardCheck,
+  Keyboard,
+  ListOrdered,
+  Phone,
+} from "lucide-react";
 import type { AssessmentUiPlugin } from "./types";
-import TypingAssessmentPage from "./typing-page";
-import SituationalJudgementAssessmentPage from "./situational-judgement-page";
-import PrioritisationAssessmentPage from "./prioritisation-page";
-import CallSimulationAssessmentPage from "./call-simulation-page";
 
 const plugins: AssessmentUiPlugin[] = [
   {
@@ -10,64 +18,87 @@ const plugins: AssessmentUiPlugin[] = [
     title: "Typing Assessment",
     description:
       "Complete a timed typing exercise designed to assess speed and accuracy.",
-    route: "/assessment/typing",
+    href: "/assessment/typing",
     duration: "10-15 min",
-    Page: TypingAssessmentPage,
+    icon: Keyboard,
+    timed: false,
+    supportsHeartbeat: true,
+    requiresServerInit: true,
+    component: TypingTest,
+    shellTitle: "Typing Assessment",
   },
   {
     slug: "call-simulation",
     title: "Call Simulation",
     description:
       "Listen to a simulated call and record the key details clearly and accurately.",
-    route: "/assessment/call-simulation",
+    href: "/assessment/call-simulation",
     duration: "10 min",
+    icon: Phone,
     timed: true,
-    Page: CallSimulationAssessmentPage,
+    supportsHeartbeat: true,
+    component: CallSimulationTest,
+    shellTitle: "Call Simulation",
   },
   {
     slug: "situational-judgement",
     title: "Situational Judgement Assessment",
     description:
       "Respond to realistic scenarios that assess judgement, prioritisation, and decision-making.",
-    route: "/assessment/situational-judgement",
+    href: "/assessment/situational-judgement",
     duration: "15-20 min",
+    icon: ClipboardCheck,
     timed: true,
-    Page: SituationalJudgementAssessmentPage,
+    supportsHeartbeat: true,
+    component: SituationalJudgementTest,
+    shellTitle: "Situational Judgement Assessment",
   },
   {
     slug: "prioritisation",
     title: "Prioritisation Judgement Assessment",
     description:
       "Rank incident sets from highest to lowest priority to show operational risk judgement.",
-    route: "/assessment/prioritisation",
+    href: "/assessment/prioritisation",
     duration: "Untimed",
+    icon: ListOrdered,
     timed: true,
-    Page: PrioritisationAssessmentPage,
+    supportsHeartbeat: true,
+    component: PrioritisationTest,
+    shellTitle: "Prioritisation Judgement Assessment",
   },
 ];
 
-const bySlug = new Map(plugins.map((plugin) => [plugin.slug, plugin]));
+const pluginMap = new Map(plugins.map((plugin) => [plugin.slug, plugin]));
 
-export function registerAssessmentPlugin(plugin: AssessmentUiPlugin): void {
-  bySlug.set(plugin.slug, plugin);
+export function getAssessmentUiPlugin(slug: string): AssessmentUiPlugin | undefined {
+  return pluginMap.get(slug);
 }
 
-export function getAssessmentPluginBySlug(slug: string): AssessmentUiPlugin | undefined {
-  return bySlug.get(slug);
+export function getAssessmentPluginTitle(slug: string): string | undefined {
+  return getAssessmentUiPlugin(slug)?.title;
+}
+
+export function listAssessmentUiPlugins(): AssessmentUiPlugin[] {
+  return [...plugins];
 }
 
 export function listAssessmentSlugs(): string[] {
   return plugins.map((plugin) => plugin.slug);
 }
 
-export function listAssessmentPlugins(): AssessmentUiPlugin[] {
-  return [...plugins];
+export function getTimedAssessmentSlugs(): Set<string> {
+  return new Set(plugins.filter((plugin) => plugin.timed).map((plugin) => plugin.slug));
 }
 
-export function getTimedAssessmentSlugs(): string[] {
-  return plugins.filter((plugin) => plugin.timed).map((plugin) => plugin.slug);
-}
+export const candidateAssessmentItems = plugins.map((plugin) => ({
+  icon: plugin.icon,
+  title: plugin.title,
+  description: plugin.description,
+  href: plugin.href,
+  duration: plugin.duration,
+  status: "Available now" as const,
+}));
 
-export function getAssessmentPluginTitle(slug: string): string | undefined {
-  return bySlug.get(slug)?.title;
-}
+export const completionLabels = Object.fromEntries(
+  plugins.map((plugin) => [plugin.slug, plugin.title]),
+);

@@ -1,8 +1,3 @@
-import {
-  getAssessmentPluginTitle,
-  getTimedAssessmentSlugs,
-} from "@/assessments/plugins/registry";
-
 export type AssessmentResultLifecycleStatus =
   | "pending"
   | "in-progress"
@@ -34,7 +29,10 @@ export function formatAssessmentResultScore(input: {
   return `${Math.round(input.numericScore)}%`;
 }
 
-export const TIMED_ASSESSMENT_SLUGS = new Set(getTimedAssessmentSlugs());
+export {
+  formatAssessmentSlugLabel,
+  TIMED_ASSESSMENT_SLUGS,
+} from "@/lib/assessment-slug";
 
 export function getHmAssessmentItemStatus(result?: {
   assessmentStatus?: string | null;
@@ -45,14 +43,4 @@ export function getHmAssessmentItemStatus(result?: {
   if (isAbandonedAssessmentResult(result.assessmentStatus)) return "abandoned";
   if (isCompletedAssessmentResult(result)) return "completed";
   return "pending";
-}
-
-export function formatAssessmentSlugLabel(slug: string): string {
-  return (
-    getAssessmentPluginTitle(slug) ??
-    slug
-      .split("-")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ")
-  );
 }

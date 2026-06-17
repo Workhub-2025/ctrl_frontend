@@ -46,7 +46,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
-import { isKnownAssessmentSlug, normalizeSlug } from "@/lib/assessment-slug";
+import { isKnownAssessmentSlug, normalizeAssessmentSlugInput, normalizeSlug } from "@/lib/assessment-slug";
 import {
   AssessmentAbandonedActions,
   formatAbandonedAssessmentSummary,
@@ -126,16 +126,9 @@ function isSameAssessment(expectedName?: string | null, resultName?: string | nu
 
   if (expectedKey && resultKey) return expectedKey === resultKey;
 
-  const expected = normalizeAssessmentText(expectedName);
-  const result = normalizeAssessmentText(resultName);
+  const expected = normalizeAssessmentSlugInput(expectedName);
+  const result = normalizeAssessmentSlugInput(resultName);
   return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
-}
-
-function normalizeAssessmentText(value?: string | null) {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/prioritization/g, "prioritisation")
-    .replace(/[^a-z0-9]/g, "");
 }
 
 function getAssessmentKey(value?: string | null) {

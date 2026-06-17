@@ -1,9 +1,5 @@
-import { notFound } from "next/navigation";
-import {
-  getAssessmentPluginBySlug,
-  listAssessmentSlugs,
-} from "@/assessments/plugins/registry";
-import type { AssessmentPageProps } from "@/assessments/plugins/types";
+import { listAssessmentSlugs } from "@/assessments/plugins/registry";
+import { renderAssessmentPage } from "@/assessments/plugins/render-assessment-page";
 
 export function generateStaticParams() {
   return listAssessmentSlugs().map((slug) => ({ slug }));
@@ -12,14 +8,10 @@ export function generateStaticParams() {
 export default async function AssessmentSlugPage({
   params,
   searchParams,
-}: AssessmentPageProps & { params: Promise<{ slug: string }> }) {
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ candidateSessionDocumentId?: string }>;
+}) {
   const { slug } = await params;
-  const plugin = getAssessmentPluginBySlug(slug);
-
-  if (!plugin) {
-    notFound();
-  }
-
-  const PageComponent = plugin.Page;
-  return <PageComponent searchParams={searchParams} />;
+  return renderAssessmentPage(slug, { searchParams });
 }
