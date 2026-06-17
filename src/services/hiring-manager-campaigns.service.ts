@@ -6,6 +6,10 @@ import {
   joinStrapiApiPath,
   stripLeadingSlashes,
 } from "@/lib/strapi-server";
+import {
+  formatAssessmentResultScore,
+  isAbandonedAssessmentResult,
+} from "@/lib/assessment-result-status";
 
 async function getJwt() {
   return getServerStrapiJwt();
@@ -173,6 +177,7 @@ export type HiringManagerAssessmentResult = {
   assessment: string;
   score: string;
   numericScore: number | null;
+  assessmentStatus?: string | null;
   passed?: boolean | null;
   completedAt?: string | null;
   wpm?: number | null;
@@ -335,8 +340,10 @@ function normalizeAssessmentResult(
   result: RawAssessmentResult,
   candidateSessionId?: string
 ): HiringManagerAssessmentResult {
-  const numericScore =
-    numberOrNull(result.score) ?? computeFallbackTypingScore(result);
+  const abandoned = isAbandonedAssessmentResult(result.assessmentStatus);
+  const numericScore = abandoned
+    ? null
+    : numberOrNull(result.score) ?? computeFallbackTypingScore(result);
   const wpm = numberOrNull(result.wpm);
   const accuracy = numberOrNull(result.accuracy);
 
@@ -346,8 +353,12 @@ function normalizeAssessmentResult(
       `${candidateSessionId ?? "candidate"}-${result.assessment?.slug ?? "result"}`,
     assessment:
       result.assessment?.displayName || result.assessment?.slug || "Assessment",
-    score: numericScore === null ? "Pending" : `${Math.round(numericScore)}%`,
+    score: formatAssessmentResultScore({
+      assessmentStatus: result.assessmentStatus,
+      numericScore,
+    }),
     numericScore,
+    assessmentStatus: result.assessmentStatus ?? null,
     passed:
       result.passed ??
       (wpm !== null && accuracy !== null ? wpm >= 32 && accuracy >= 90 : null),

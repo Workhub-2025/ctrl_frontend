@@ -14,7 +14,8 @@ import {
   Volume2,
   Timer,
 } from 'lucide-react';
-import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper, AssessmentReconnectOverlay, AssessmentPausedScreen } from '@/components/assessment/shared';
+import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -373,6 +374,40 @@ export default function CallSimulationTest({
     return runs[currentRunIndex] ?? fallbackRuns[currentRunIndex] ?? fallbackRuns[0];
   }, [currentRunIndex, runs]);
   const isFinalRun = currentRun.kind === 'final';
+
+  const isAssessmentLive = useMemo(
+    () => (phase === 'running' && isFinalRun) || phase === 'submitting',
+    [isFinalRun, phase],
+  );
+
+  const getCallSnapshot = useCallback(
+    () => ({
+      currentRunIndex,
+      reviewTimeLeft,
+      form,
+      contentVersion: sessionConfigRef.current.version ?? '1.0.0',
+    }),
+    [currentRunIndex, form, reviewTimeLeft],
+  );
+
+  const {
+    statusChecked,
+    isLocked,
+    isReconnecting,
+    isPaused,
+    reconnectSecondsLeft,
+    markCompleted,
+  } = useAssessmentHeartbeat({
+    assessmentSlug: 'call-simulation',
+    candidateSessionDocumentId,
+    contentVersion: sessionConfigRef.current.version,
+    isActive: isAssessmentLive,
+    getSnapshot: getCallSnapshot,
+    onRecovered: () => {
+      window.location.reload();
+    },
+  });
+
   const audioProgress =
     audioDuration > 0 ? Math.min((audioCurrentTime / audioDuration) * 100, 100) : 0;
   const latestSnapshot = snapshots[snapshots.length - 1];
@@ -605,7 +640,7 @@ export default function CallSimulationTest({
   }, [runs]);
 
   useEffect(() => {
-    if (phase !== 'running' || !audioEnded) return;
+    if (phase !== 'running' || !audioEnded || isPaused) return;
 
     if (reviewTimeLeft <= 0) {
       completeRun();
@@ -617,7 +652,12 @@ export default function CallSimulationTest({
     }, 1000);
 
     return () => window.clearTimeout(timerId);
-  }, [audioEnded, completeRun, phase, reviewTimeLeft]);
+  }, [audioEnded, completeRun, isPaused, phase, reviewTimeLeft]);
+
+  useEffect(() => {
+    if (phase !== 'submitted' || submitError) return;
+    void markCompleted();
+  }, [markCompleted, phase, submitError]);
 
   useEffect(() => {
     if (phase !== 'submitting') return;
@@ -686,6 +726,19 @@ export default function CallSimulationTest({
     );
   }
 
+  if (statusChecked && isLocked) {
+    return (
+      <AssessmentGameShell
+        icon={Phone}
+        title="Call Simulation"
+        eyebrow="CTRL assessment"
+        status="Assessment paused"
+      >
+        <AssessmentPausedScreen />
+      </AssessmentGameShell>
+    );
+  }
+
   // Resolve current stepper phase
   const stepperStep = 
     phase === 'landing' || phase === 'rules'
@@ -703,6 +756,7 @@ export default function CallSimulationTest({
       eyebrow="CTRL assessment"
       status={phase === 'running' ? currentRun.title : 'Audio incident log'}
     >
+      <AssessmentReconnectOverlay open={isReconnecting} secondsRemaining={reconnectSecondsLeft ?? undefined} />
       <div className="flex flex-col w-full">
         {/* Visual Stepper Progress */}
         {phase !== 'running' && phase !== 'submitting' && phase !== 'submitted' && (

@@ -5,6 +5,7 @@ import {
   Headset,
   LayoutDashboard,
   Layers3,
+  ShieldAlert,
   Users,
 } from "lucide-react";
 
@@ -64,6 +65,13 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
         icon: BookOpenCheck,
         isActive: (p) => p.startsWith("/hiring-manager-dashboard/assessments"),
       },
+      {
+        href: "/hiring-manager-dashboard/assessment-recovery",
+        label: "Assessment recovery",
+        hint: "Abandoned attempts and unlocks",
+        icon: ShieldAlert,
+        isActive: (p) => p.startsWith("/hiring-manager-dashboard/assessment-recovery"),
+      },
     ],
   },
   {
@@ -94,6 +102,7 @@ export function getHmBreadcrumbs(pathname: string) {
     sessions: "Sessions",
     candidates: "Candidates",
     assessments: "Assessments",
+    "assessment-recovery": "Assessment recovery",
     support: "Help & support",
     create: "Create campaign",
   };

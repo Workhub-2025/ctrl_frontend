@@ -14,7 +14,8 @@ import {
   Target,
   Timer,
 } from 'lucide-react';
-import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper, AssessmentReconnectOverlay, AssessmentPausedScreen } from '@/components/assessment/shared';
+import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -225,6 +226,39 @@ export default function SituationalJudgementTest({
   const timerTone = timeRemaining <= 300 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
   const canSubmitScenario = Boolean(bestOptionId && worstOptionId && bestOptionId !== worstOptionId);
 
+  const isAssessmentLive = useMemo(
+    () => phase === 'scenario' || phase === 'submitting',
+    [phase],
+  );
+
+  const getSjaSnapshot = useCallback(
+    () => ({
+      scenarioIndex,
+      responses,
+      timeRemaining,
+      contentVersion: sessionConfigRef.current.version ?? '1.0.0',
+    }),
+    [responses, scenarioIndex, timeRemaining],
+  );
+
+  const {
+    statusChecked,
+    isLocked,
+    isReconnecting,
+    isPaused,
+    reconnectSecondsLeft,
+    markCompleted,
+  } = useAssessmentHeartbeat({
+    assessmentSlug: 'situational-judgement',
+    candidateSessionDocumentId,
+    contentVersion: content.version,
+    isActive: isAssessmentLive,
+    getSnapshot: getSjaSnapshot,
+    onRecovered: () => {
+      window.location.reload();
+    },
+  });
+
   useEffect(() => {
     let cancelled = false;
 
@@ -299,14 +333,19 @@ export default function SituationalJudgementTest({
   useEffect(() => {
     if (phase !== 'scenario') return;
 
-    if (timeRemaining <= 0) return;
+    if (timeRemaining <= 0 || isPaused) return;
 
     const timerId = window.setTimeout(() => {
       setTimeRemaining((currentValue) => Math.max(currentValue - 1, 0));
     }, 1000);
 
     return () => window.clearTimeout(timerId);
-  }, [phase, timeRemaining]);
+  }, [isPaused, phase, timeRemaining]);
+
+  useEffect(() => {
+    if (phase !== 'submitted' || submitError) return;
+    void markCompleted();
+  }, [markCompleted, phase, submitError]);
 
   useEffect(() => {
     if (phase !== 'submitting') return;
@@ -422,6 +461,19 @@ export default function SituationalJudgementTest({
     );
   }
 
+  if (statusChecked && isLocked) {
+    return (
+      <AssessmentGameShell
+        icon={ClipboardCheck}
+        title="Situational Judgement Assessment"
+        eyebrow="CTRL assessment"
+        status="Assessment paused"
+      >
+        <AssessmentPausedScreen />
+      </AssessmentGameShell>
+    );
+  }
+
   // Resolve current stepper phase
   const stepperStep = 
     phase === 'landing' || phase === 'rules'
@@ -435,6 +487,7 @@ export default function SituationalJudgementTest({
       eyebrow="CTRL assessment"
       status={phase === 'scenario' ? `${formatTimer(timeRemaining)} remaining` : 'Best and worst judgement'}
     >
+      <AssessmentReconnectOverlay open={isReconnecting} secondsRemaining={reconnectSecondsLeft ?? undefined} />
       <div className="flex flex-col w-full">
         {/* Visual Stepper Progress */}
         {phase !== 'scenario' && phase !== 'submitting' && phase !== 'submitted' && (

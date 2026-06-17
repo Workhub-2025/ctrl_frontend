@@ -26,6 +26,7 @@ export type HiringManagerAssessmentResult = {
   assessment: string;
   score: string;
   numericScore: number | null;
+  assessmentStatus?: string | null;
   passed?: boolean | null;
   completedAt?: string | null;
   wpm?: number | null;

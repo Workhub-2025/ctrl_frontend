@@ -39,6 +39,7 @@ import {
   PlayCircle,
   RefreshCw,
   Target,
+  AlertTriangle,
 } from "lucide-react";
 import { SecurePreflightModal } from "@/components/assessment";
 import { AssessmentBriefDialog } from "@/components/dashboard/candidate/assessment-brief-dialog";
@@ -97,11 +98,14 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
     );
 
     const isLocked = assessment.status === "locked";
+    const isAbandoned = assessment.status === "abandoned";
 
     return {
       icon: matchedItem?.icon ?? ClipboardCheck,
       title: assessment.name ?? matchedItem?.title ?? "Assessment",
-      description: isLocked
+      description: isAbandoned
+        ? "This assessment was interrupted. Contact your hiring team before continuing."
+        : isLocked
         ? "Waiting for assessor to unlock your session."
         : assessment.status === "not_open"
           ? `Opens${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : " soon"}.`
@@ -109,10 +113,12 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
       duration: matchedItem?.duration,
       href: `${matchedItem?.href ?? `/assessment/${slug}`}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
       isCompleted: assessment.status === "completed",
+      isAbandoned,
       isAvailable:
         assessment.isAvailable !== false &&
         assessment.status !== "not_open" &&
-        !isLocked,
+        !isLocked &&
+        !isAbandoned,
       isLocked,
       availableFromLabel: formatDateTime(assessment.availableFrom),
       completedAt: assessment.completedAt ?? null,
@@ -194,8 +200,9 @@ function AssessmentListItem({
 
   const isCompleted = item.isCompleted;
   const isLocked = item.isLocked;
+  const isAbandoned = item.isAbandoned;
   const isAvailable = item.isAvailable;
-  const isActive = !isCompleted && isAvailable;
+  const isActive = !isCompleted && isAvailable && !isAbandoned;
 
   const hasFutureStart = (() => {
     if (!item.startsAt) return false;
@@ -221,6 +228,8 @@ function AssessmentListItem({
           >
             {isCompleted ? (
               <CheckCircle2 className="h-4 w-4" />
+            ) : isAbandoned ? (
+              <AlertTriangle className="h-3.5 w-3.5" />
             ) : isLocked ? (
               <Lock className="h-3.5 w-3.5" />
             ) : (
@@ -253,6 +262,11 @@ function AssessmentListItem({
                       Ready
                     </Badge>
                   ) : null}
+                  {isAbandoned ? (
+                    <Badge variant="outline" className="border-orange-500/30 bg-orange-500/10 text-[10px] font-bold uppercase tracking-wider text-orange-700 dark:text-orange-300">
+                      Interrupted
+                    </Badge>
+                  ) : null}
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   {item.description}
@@ -275,6 +289,11 @@ function AssessmentListItem({
                   {item.completedAt
                     ? `Submitted ${formatDate(item.completedAt)}`
                     : "Submitted"}
+                </div>
+              ) : isAbandoned ? (
+                <div className="inline-flex items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/5 px-3 py-2 text-xs font-semibold text-orange-800 dark:text-orange-200">
+                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                  Waiting for unlock — contact your hiring team
                 </div>
               ) : isLocked ? (
                 <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs font-semibold text-muted-foreground">

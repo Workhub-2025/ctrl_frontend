@@ -50,6 +50,7 @@ import {
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { getHmAssessmentItemStatus, isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
 import { CandidateEmailInvitesPanel } from "@/components/dashboard/candidate-email-invites-panel";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
@@ -358,17 +359,17 @@ export function HiringManagerSessionDetailsDialog({
                         return matchedResult
                           ? {
                             name: stackName,
-                            status: (matchedResult.completedAt || matchedResult.numericScore !== null) ? "completed" : "pending",
+                            status: getHmAssessmentItemStatus(matchedResult),
                             result: matchedResult,
                           }
-                          : { name: stackName, status: "pending", result: null };
+                          : { name: stackName, status: "pending" as const, result: null };
                       });
 
                       const finalDisplayList = displayAssessments.length > 0
                         ? displayAssessments
                         : (candidate.results || []).map((r) => ({
                           name: r.assessment,
-                          status: (r.completedAt || r.numericScore !== null) ? "completed" : "pending",
+                          status: getHmAssessmentItemStatus(r),
                           result: r,
                         }));
 
@@ -469,13 +470,16 @@ export function HiringManagerSessionDetailsDialog({
                                 <div className="mt-2 flex justify-end gap-1">
                                   {finalDisplayList.map((item, idx) => {
                                     const isCompleted = item.status === "completed";
+                                    const isAbandoned = item.status === "abandoned";
                                     return (
                                       <span
                                         key={`${item.name}-${idx}`}
-                                        title={`${item.name}: ${isCompleted ? "Completed" : "Pending"}`}
+                                        title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? "Completed" : "Pending"}`}
                                         className={[
                                           "h-2.5 w-6 rounded-full border transition-colors",
-                                          isCompleted
+                                          isAbandoned
+                                            ? "border-orange-400/40 bg-orange-500/70"
+                                            : isCompleted
                                             ? "border-primary/40 bg-primary shadow-[0_0_8px_rgba(99,102,241,0.24)]"
                                             : "border-white/10 bg-white/[0.04]"
                                         ].join(" ")}
@@ -542,18 +546,18 @@ export function HiringManagerSessionDetailsDialog({
                               <div className="h-4 w-full flex gap-1.5">
                                 {finalDisplayList.map((item, idx) => {
                                   const isCompleted = item.status === "completed";
+                                  const isAbandoned = item.status === "abandoned";
                                   const scoreVal = item.result?.numericScore ?? 0;
-                                  const key = getAssessmentKey(item.name, item.result);
-                                  const colorClass = "bg-primary";
+                                  const colorClass = isAbandoned ? "bg-orange-500" : "bg-primary";
                                   return (
                                     <div
                                       key={`${item.name}-${idx}`}
                                       className="relative flex-1 h-full bg-white/[0.04] border border-white/10 rounded-full overflow-hidden"
-                                      title={`${item.name}: ${isCompleted ? `${scoreVal}%` : "Pending"}`}
+                                      title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? `${scoreVal}%` : "Pending"}`}
                                     >
                                       <div
                                         className={`h-full ${colorClass} transition-all duration-500 rounded-full`}
-                                        style={{ width: `${isCompleted ? scoreVal : 0}%` }}
+                                        style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreVal : 0}%` }}
                                       />
                                     </div>
                                   );
@@ -563,11 +567,12 @@ export function HiringManagerSessionDetailsDialog({
                               <div className="flex gap-1.5">
                                 {finalDisplayList.map((item, idx) => {
                                   const isCompleted = item.status === "completed";
+                                  const isAbandoned = item.status === "abandoned";
                                   const scoreVal = item.result?.numericScore ?? 0;
                                   return (
                                     <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
                                       <span className="w-full truncate text-center text-sm font-bold tabular-nums text-slate-300">
-                                        {isCompleted ? `${scoreVal}%` : "—"}
+                                        {isAbandoned ? "Abd." : isCompleted ? `${scoreVal}%` : "—"}
                                       </span>
                                       <span className="w-full truncate text-center text-xs font-medium leading-tight text-slate-500">
                                         {item.name.split(" ")[0]}
@@ -714,7 +719,11 @@ function ScoreRing({ value }: { value: number | null }) {
 function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCount?: number) {
   const completed = new Set(
     candidate.results
-      .filter((r) => r.completedAt || r.numericScore !== null)
+      .filter(
+        (result) =>
+          !isAbandonedAssessmentResult(result.assessmentStatus)
+          && (result.completedAt || result.numericScore !== null)
+      )
       .map((r) => r.id || r.assessment)
   ).size;
   const total = Math.max(expectedAssessmentCount || 0, candidate.results.length, completed, 1);

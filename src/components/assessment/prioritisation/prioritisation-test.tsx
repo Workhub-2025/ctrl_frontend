@@ -16,7 +16,8 @@ import {
   Target,
   Timer,
 } from 'lucide-react';
-import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper, AssessmentReconnectOverlay, AssessmentPausedScreen } from '@/components/assessment/shared';
+import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -316,6 +317,41 @@ export default function PrioritisationTest({
     (incident) => !placedIncidentIds.includes(incident.id)
   );
   const latestSnapshot = snapshots[snapshots.length - 1];
+
+  const isAssessmentLive = useMemo(
+    () => phase === 'final-round' || phase === 'submitting',
+    [phase],
+  );
+
+  const getPjaSnapshot = useCallback(
+    () => ({
+      finalIndex,
+      prioritySlots,
+      completedRounds: snapshots.length,
+      roundCount: finalRounds.length,
+      contentVersion: sessionConfigRef.current.version ?? content.version ?? '1.0.0',
+    }),
+    [content.version, finalIndex, finalRounds.length, prioritySlots, snapshots.length],
+  );
+
+  const {
+    statusChecked,
+    isLocked,
+    isReconnecting,
+    isPaused,
+    reconnectSecondsLeft,
+    markCompleted,
+  } = useAssessmentHeartbeat({
+    assessmentSlug: 'prioritisation',
+    candidateSessionDocumentId,
+    contentVersion: content.version,
+    isActive: isAssessmentLive,
+    getSnapshot: getPjaSnapshot,
+    onRecovered: () => {
+      window.location.reload();
+    },
+  });
+
   const finalProgress =
     finalRounds.length > 0
       ? ((finalIndex + 1) / finalRounds.length) * 100
@@ -371,6 +407,10 @@ export default function PrioritisationTest({
   const startFinal = useCallback(() => {
     const firstRound = finalRounds[0];
     if (!firstRound) return;
+
+    if (!startedAtRef.current) {
+      startedAtRef.current = new Date().toISOString();
+    }
 
     setFinalIndex(0);
     setPrioritySlots(Array(firstRound.incidents.length).fill(null));
@@ -604,6 +644,11 @@ export default function PrioritisationTest({
       cancelled = true;
     };
   }, [candidateSessionDocumentId, phase, snapshots]);
+
+  useEffect(() => {
+    if (phase !== 'submitted' || submitError) return;
+    void markCompleted();
+  }, [markCompleted, phase, submitError]);
 
   const renderRound = (mode: 'practice' | 'final') => {
     const isFinal = mode === 'final';
@@ -842,6 +887,19 @@ export default function PrioritisationTest({
     );
   }
 
+  if (statusChecked && isLocked) {
+    return (
+      <AssessmentGameShell
+        icon={ClipboardList}
+        title="Prioritisation Judgement Assessment"
+        eyebrow="CTRL assessment"
+        status="Assessment paused"
+      >
+        <AssessmentPausedScreen />
+      </AssessmentGameShell>
+    );
+  }
+
   // Resolve current stepper phase
   const stepperStep = 
     phase === 'landing' || phase === 'rules'
@@ -865,6 +923,7 @@ export default function PrioritisationTest({
             : 'Incident queue'
       }
     >
+      <AssessmentReconnectOverlay open={isReconnecting} secondsRemaining={reconnectSecondsLeft ?? undefined} />
       <div className="flex flex-col w-full">
         {/* Visual Stepper Progress */}
         {phase !== 'practice-round' && phase !== 'final-round' && phase !== 'submitting' && phase !== 'submitted' && (

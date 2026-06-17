@@ -41,6 +41,7 @@ import {
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
 
 type CandidateRow = {
   id: string;
@@ -450,7 +451,9 @@ export function HiringManagerCandidatesView() {
                           {candidate.assessmentStack.map((name) => {
                             const weight = candidate.weights[name] ?? 0;
                             const result = candidate.results.find((r) => isSameAssessment(name, r.assessment));
-                            const isCompleted = result && (result.completedAt || result.numericScore !== null);
+                            const itemStatus = getHmAssessmentItemStatus(result);
+                            const isCompleted = itemStatus === "completed";
+                            const isAbandoned = itemStatus === "abandoned";
                             const score = result?.numericScore ?? 0;
                             const contribution = isCompleted ? parseFloat(((score * weight) / 100).toFixed(1)) : 0;
 
@@ -461,7 +464,9 @@ export function HiringManagerCandidatesView() {
                                   <span className="ctrl-tooltip-subtle text-[0.625rem] font-semibold">Weight: {weight}%</span>
                                 </div>
                                 <div className="text-right pl-2 shrink-0">
-                                  <span className="ctrl-tooltip-muted font-semibold">{isCompleted ? `${score}%` : "Pending"}</span>
+                                  <span className="ctrl-tooltip-muted font-semibold">
+                                    {isAbandoned ? "Abandoned" : isCompleted ? `${score}%` : "Pending"}
+                                  </span>
                                   {isCompleted && (
                                     <span className="ctrl-tooltip-accent text-[0.625rem] font-bold ml-1.5">(+{contribution}%)</span>
                                   )}
@@ -495,12 +500,13 @@ export function HiringManagerCandidatesView() {
                         const expectedAssessments = candidate.assessmentStack || [];
                         return expectedAssessments.map((stackName, idx) => {
                           const matchedResult = resultsMap.get(stackName.toLowerCase());
-                          const isCompleted = matchedResult && (matchedResult.completedAt || matchedResult.numericScore !== null);
+                          const itemStatus = getHmAssessmentItemStatus(matchedResult);
+                          const isCompleted = itemStatus === "completed";
+                          const isAbandoned = itemStatus === "abandoned";
                           const scoreValue = matchedResult?.numericScore ?? 0;
                           const key = getAssessmentKey(stackName, matchedResult);
 
-                          // Unified segment color
-                          const colorClass = "bg-primary";
+                          const colorClass = isAbandoned ? "bg-orange-500" : "bg-primary";
 
                           // Tooltip metrics content
                           let metricsContent = null;
@@ -534,12 +540,16 @@ export function HiringManagerCandidatesView() {
                               {/* Inner filled score bar */}
                               <div
                                 className={`h-full ${colorClass} transition-all duration-500 rounded-full`}
-                                style={{ width: `${isCompleted ? scoreValue : 0}%` }}
+                                style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreValue : 0}%` }}
                               />
                                               {/* Tooltip */}
                               <div className="ctrl-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl border backdrop-blur-md text-sm hidden group-hover:block z-50 pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
                                 <p className="ctrl-tooltip-title font-bold mb-1">{stackName}</p>
-                                {isCompleted && matchedResult ? (
+                                {isAbandoned ? (
+                                  <p className="ctrl-tooltip-warning italic text-xs">
+                                    Abandoned — contact the candidate to find out what happened.
+                                  </p>
+                                ) : isCompleted && matchedResult ? (
                                   <div className="space-y-1">
                                     <div className="flex justify-between items-center text-xs">
                                       <span className="ctrl-tooltip-muted font-medium">Assessment Score</span>

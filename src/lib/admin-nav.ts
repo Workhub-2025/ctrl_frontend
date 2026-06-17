@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Mail,
   PlusCircle,
+  RotateCcw,
   Ticket,
   TrendingUp,
   Users,
@@ -118,6 +119,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: Ticket,
         isActive: (pathname) => pathname.startsWith("/admin/tickets"),
       },
+      {
+        href: "/admin/assessment-recovery",
+        label: "Assessment recovery",
+        hint: "Abandoned attempts and unlocks",
+        icon: RotateCcw,
+        isActive: (pathname) => pathname.startsWith("/admin/assessment-recovery"),
+      },
     ],
   },
   {
@@ -151,6 +159,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   users: "Users",
   comms: "Operational email",
   tickets: "Support tickets",
+  "assessment-recovery": "Assessment recovery",
   "audit-logs": "Audit log",
 };
 

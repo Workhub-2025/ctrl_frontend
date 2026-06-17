@@ -218,6 +218,7 @@ export function getAttentionRank(application: CandidateApplicationView) {
       assessment.status !== "completed" &&
       assessment.status !== "not_open" &&
       assessment.status !== "locked" &&
+      assessment.status !== "abandoned" &&
       assessment.isAvailable !== false
   );
 
@@ -266,6 +267,7 @@ export function hasAvailableAssessment(application: CandidateApplicationView) {
       assessment.status !== "completed" &&
       assessment.status !== "not_open" &&
       assessment.status !== "locked" &&
+      assessment.status !== "abandoned" &&
       assessment.isAvailable !== false
   );
 }

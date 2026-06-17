@@ -35,6 +35,10 @@ interface CreateTicketDialogProps {
   defaultOpen?: boolean;
   /** Pre-fill the subject field when the dialog opens. */
   defaultSubject?: string;
+  /** Pre-fill the description field when the dialog opens. */
+  defaultDescription?: string;
+  /** Pre-fill the category field when the dialog opens. */
+  defaultCategory?: string;
   /** Called after a ticket is submitted successfully. */
   onSuccess?: () => void;
   sessionContext?: CandidateSessionContext;
@@ -62,6 +66,8 @@ export function CreateTicketDialog({
   onOpenChange,
   defaultOpen = false,
   defaultSubject = "",
+  defaultDescription = "",
+  defaultCategory = "",
   onSuccess,
   sessionContext,
 }: CreateTicketDialogProps) {
@@ -82,9 +88,9 @@ export function CreateTicketDialog({
     typeof window !== "undefined" ? window.location.pathname : "";
 
   const resetForm = () => {
-    setCategory("");
+    setCategory(defaultCategory);
     setSubject(defaultSubject);
-    setDescription("");
+    setDescription(defaultDescription);
     setPriority("normal");
     setIsSubmitting(false);
     setIsSuccess(false);
@@ -96,6 +102,11 @@ export function CreateTicketDialog({
   const handleOpenChange = (nextOpen: boolean) => {
     if (!isControlled) setUncontrolledOpen(nextOpen);
     onOpenChange?.(nextOpen);
+    if (nextOpen) {
+      setCategory(defaultCategory);
+      setSubject(defaultSubject);
+      setDescription(defaultDescription);
+    }
     if (!nextOpen) {
       setTimeout(resetForm, 300);
     }

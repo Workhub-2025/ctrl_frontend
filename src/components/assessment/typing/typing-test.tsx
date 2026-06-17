@@ -18,13 +18,15 @@ import {
   Target,
   Timer,
 } from 'lucide-react';
-import { AssessmentGameShell, AssessmentFlowStepper } from '@/components/assessment/shared';
+import { AssessmentGameShell, AssessmentFlowStepper, AssessmentReconnectOverlay, AssessmentPausedScreen } from '@/components/assessment/shared';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AssessmentProgressService } from '@/services/assessment-progress.service';
 import type { TypingTestProgress } from '@/types/assessments-progress.types';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
+import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
+import { AssessmentAttemptService, type CandidateAssessmentAttempt } from '@/services/assessment-attempt.service';
 import { cn } from '@/lib/utils';
 
 const typingSequence = [
@@ -333,6 +335,105 @@ export default function TypingTest({
   const startedAtRef = useRef<string | null>(null);
   // Ref used by the periodic auto-save interval (avoids stale closure over results state)
   const latestResultRef = useRef<RunResult | null>(null);
+  const resumeAppliedRef = useRef(false);
+
+  const isAssessmentLive = useMemo(() => {
+    if (currentRunIndex < 1) return false;
+    return phase === 'countdown' || phase === 'running' || phase === 'assessment-break' || phase === 'submitting';
+  }, [currentRunIndex, phase]);
+
+  const getTypingSnapshot = useCallback(() => {
+    const completedRuns = results.filter((result) => result.runIndex >= 1);
+    return {
+      completedRuns,
+      completedRunIndexes: completedRuns.map((result) => result.runIndex),
+      currentRunIndex,
+      currentRunStarted: runStarted,
+      contentVersion: configRef.current?.version ?? '1.0.0',
+    };
+  }, [currentRunIndex, results, runStarted]);
+
+  const applyTypingRecovery = useCallback(
+    (attempt: CandidateAssessmentAttempt) => {
+      if (resumeAppliedRef.current) return;
+      resumeAppliedRef.current = true;
+
+      if (attempt.recoveryMode === 'restart') {
+        clearSession();
+        window.location.reload();
+        return;
+      }
+
+      if (attempt.recoveryMode !== 'resume') return;
+
+      const snapshot = attempt.snapshot as {
+        completedRuns?: RunResult[];
+        currentRunIndex?: number;
+      } | null;
+
+      const completedRuns = Array.isArray(snapshot?.completedRuns)
+        ? snapshot.completedRuns
+        : [];
+
+      if (completedRuns.length > 0) {
+        setResults(completedRuns);
+      }
+
+      const resumeRunIndex =
+        typeof snapshot?.currentRunIndex === 'number'
+          ? snapshot.currentRunIndex
+          : completedRuns.length > 0
+            ? Math.max(...completedRuns.map((result) => result.runIndex)) + 1
+            : 1;
+
+      setCurrentRunIndex(resumeRunIndex);
+      setTypedCharacters([]);
+      setTimeLeft(configRef.current.timeLimitPerRound);
+      setRunStarted(false);
+      setCountdown(3);
+      setPhase('countdown');
+      startedAtRef.current = attempt.startedAt ?? new Date().toISOString();
+    },
+    [clearSession],
+  );
+
+  const {
+    statusChecked,
+    isLocked,
+    isReconnecting,
+    isPaused,
+    reconnectSecondsLeft,
+    markCompleted,
+  } = useAssessmentHeartbeat({
+    assessmentSlug: 'typing',
+    candidateSessionDocumentId,
+    contentVersion: config.version,
+    isActive: isAssessmentLive,
+    getSnapshot: getTypingSnapshot,
+    onRecovered: applyTypingRecovery,
+  });
+
+  useEffect(() => {
+    if (!candidateSessionDocumentId || !statusChecked || isLocked || resumeAppliedRef.current) {
+      return;
+    }
+    if (phase !== 'landing' && phase !== 'rules') return;
+
+    void AssessmentAttemptService.getStatus(candidateSessionDocumentId, 'typing').then((attempt) => {
+      if (
+        attempt?.attemptStatus === 'in_progress'
+        && attempt.recoveryMode === 'resume'
+      ) {
+        applyTypingRecovery(attempt);
+      }
+    });
+  }, [
+    applyTypingRecovery,
+    candidateSessionDocumentId,
+    isLocked,
+    phase,
+    statusChecked,
+  ]);
 
   // Keep config and sessionId refs in sync so closures always have current values
   useEffect(() => { configRef.current = config; }, [config]);
@@ -501,7 +602,7 @@ export default function TypingTest({
   }, [phase]);
 
   useEffect(() => {
-    if (phase !== 'running' || !runStarted) return;
+    if (phase !== 'running' || !runStarted || isPaused) return;
 
     captureRef.current?.focus();
     const duration = configRef.current.timeLimitPerRound;
@@ -541,7 +642,12 @@ export default function TypingTest({
       globalThis.clearInterval(timerId);
       if (autoSaveIntervalId !== undefined) globalThis.clearInterval(autoSaveIntervalId);
     };
-  }, [candidateSessionDocumentId, phase, enableAutoSave, runStarted]);
+  }, [candidateSessionDocumentId, phase, enableAutoSave, runStarted, isPaused]);
+
+  useEffect(() => {
+    if (phase !== 'submitted' || submitError) return;
+    void markCompleted();
+  }, [markCompleted, phase, submitError]);
 
   useEffect(() => {
     if (phase !== 'submitting') return;
@@ -677,6 +783,19 @@ export default function TypingTest({
     );
   }
 
+  if (statusChecked && isLocked) {
+    return (
+      <AssessmentGameShell
+        icon={Keyboard}
+        title="Typing Speed & Accuracy"
+        eyebrow="CTRL assessment"
+        status="Assessment paused"
+      >
+        <AssessmentPausedScreen />
+      </AssessmentGameShell>
+    );
+  }
+
   // Resolve current stepper phase
   const stepperStep = 
     phase === 'landing' || phase === 'rules'
@@ -696,6 +815,7 @@ export default function TypingTest({
       eyebrow="CTRL assessment"
       status={phase === 'running' ? (runStarted ? `${timeLeft}s remaining` : 'Start typing') : runLabel}
     >
+      <AssessmentReconnectOverlay open={isReconnecting} secondsRemaining={reconnectSecondsLeft ?? undefined} />
       <div className="flex flex-col w-full">
         {/* Visual Stepper Progress */}
         {phase !== 'countdown' && phase !== 'running' && phase !== 'submitting' && phase !== 'submitted' && (

@@ -45,6 +45,11 @@ import {
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
+import {
+  AssessmentAbandonedActions,
+  formatAbandonedAssessmentSummary,
+} from "@/components/dashboard/assessment-abandoned-actions";
 
 type CandidateReportProps = {
   candidateId: string;
@@ -251,6 +256,12 @@ function formatDuration(seconds?: number | null) {
 }
 
 function getAssessmentStatus(row: AssessmentReportRow) {
+  if (isAbandonedAssessmentResult(row.result?.assessmentStatus)) {
+    return {
+      label: "Abandoned",
+      className: "bg-orange-500/10 text-orange-400 border-none hover:bg-orange-500/10",
+    };
+  }
   if (row.score === null) {
     return {
       label: "Awaiting Completion",
@@ -522,6 +533,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   const [loadError, setLoadError] = useState<string | null>(null);
   const [openBreakdownKey, setOpenBreakdownKey] = useState<string | null>(null);
   const [selectedCallRunIndex, setSelectedCallRunIndex] = useState<number | null>(null);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -571,7 +583,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
     return () => {
       cancelled = true;
     };
-  }, [candidateId, campaignId, candidateSessionId]);
+  }, [candidateId, campaignId, candidateSessionId, reloadTick]);
 
   const rows = useMemo(() => {
     if (!reportData) return [];
@@ -848,6 +860,7 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
             const isPrioritisation = key === "prioritisation";
             const isSJT = key === "situational-judgement";
             const isCallSimulation = key === "call-simulation";
+            const isAbandoned = isAbandonedAssessmentResult(row.result?.assessmentStatus);
             const hasBreakdown =
               typingRuns.length > 0 ||
               (row.result?.wpm !== null && row.result?.wpm !== undefined) ||
@@ -878,8 +891,42 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                       </div>
                       <p className="mt-1 text-xs text-slate-500 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
-                        Completed: {formatCompletion(row.result?.completedAt)}
+                        {isAbandoned
+                          ? formatAbandonedAssessmentSummary(
+                              row.name,
+                              row.result?.rawData as Record<string, unknown> | null | undefined,
+                              typeof row.result?.rawData?.contentVersion === "string"
+                                ? row.result.rawData.contentVersion
+                                : null
+                            )
+                          : `Completed: ${formatCompletion(row.result?.completedAt)}`}
                       </p>
+                      {isAbandoned && resolvedSessionId && key ? (
+                        <AssessmentAbandonedActions
+                          candidateSessionDocumentId={resolvedSessionId}
+                          assessmentSlug={key}
+                          assessmentLabel={row.name}
+                          candidateName={candidate.name}
+                          candidateEmail={candidate.email}
+                          campaignName={campaign.name}
+                          snapshot={
+                            row.result?.rawData &&
+                            typeof row.result.rawData === "object" &&
+                            !(
+                              "abandoned" in row.result.rawData &&
+                              Object.keys(row.result.rawData).length === 1
+                            )
+                              ? (row.result.rawData as Record<string, unknown>)
+                              : null
+                          }
+                          contentVersion={
+                            typeof row.result?.rawData?.contentVersion === "string"
+                              ? row.result.rawData.contentVersion
+                              : null
+                          }
+                          onRecovered={() => setReloadTick((tick) => tick + 1)}
+                        />
+                      ) : null}
                     </div>
                   </div>
 
