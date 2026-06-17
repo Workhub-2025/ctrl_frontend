@@ -433,7 +433,6 @@ export default function SituationalJudgementTest({
             assessmentVersion: sessionConfigRef.current.version,
             difficulty: sessionConfigRef.current.difficulty,
             questionCount: scenarios.length,
-            answeredCount: submissionResponses.length,
             ...buildTimedAssessmentSubmitMeta({
               timedOut,
               expectedCount: scenarios.length,

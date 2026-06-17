@@ -1,3 +1,5 @@
+import { getAssessmentCompletionLabel } from "@/lib/assessment-completion-status";
+
 export type AssessmentResultLifecycleStatus =
   | "pending"
   | "in-progress"

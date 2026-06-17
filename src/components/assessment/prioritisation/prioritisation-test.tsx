@@ -710,7 +710,6 @@ export default function PrioritisationTest({
             assessmentVersion: sessionConfigRef.current.version,
             difficulty: sessionConfigRef.current.difficulty,
             roundCount: expectedRoundCount,
-            answeredCount: submittedFinalRounds.length,
             ...buildTimedAssessmentSubmitMeta({
               timedOut,
               expectedCount: expectedRoundCount,
