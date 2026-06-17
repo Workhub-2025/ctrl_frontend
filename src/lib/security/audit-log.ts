@@ -9,6 +9,9 @@ type AuthAuditEvent =
   | "register_attempt"
   | "register_success"
   | "register_failure"
+  | "password_reset_request"
+  | "password_reset_success"
+  | "password_reset_failure"
   | "authorization_denied";
 
 type AuditMetadata = Record<string, string | number | boolean | undefined | null>;

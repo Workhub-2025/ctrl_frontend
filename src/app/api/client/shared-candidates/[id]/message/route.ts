@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth/next-auth-options";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
+import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import {
   sendSharedCandidateMessage,
   type ClientOutreachTemplateKey,
@@ -12,6 +15,24 @@ export async function POST(
   const originRejected = rejectCrossOriginRequest(request);
   if (originRejected) {
     return originRejected;
+  }
+
+  const session = await getServerSession(authOptions);
+  const limiter = await applyRateLimit({
+    key: `client-outreach:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
+    limit: 10,
+    windowMs: 60_000,
+  });
+
+  if (!limiter.allowed) {
+    return NextResponse.json(
+      { error: "Too many messages sent. Please retry shortly." },
+      { status: 429, headers: { "retry-after": String(limiter.retryAfterSeconds) } }
+    );
+  }
+
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
   try {

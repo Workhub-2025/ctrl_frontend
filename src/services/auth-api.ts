@@ -134,10 +134,27 @@ export class AuthAPI {
      */
     static async forgotPassword(email: string): Promise<{ ok: boolean }> {
         try {
-            await fetchApi.post('/auth/forgot-password', { email });
+            const normalizedEmail = email.trim().toLowerCase();
+            const endpoint =
+                typeof window === 'undefined'
+                    ? `${getServerStrapiBaseUrl()}/auth/forgot-password`
+                    : '/api/auth/forgot-password';
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: normalizedEmail }),
+                cache: 'no-store',
+            });
+
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error((body as { error?: string }).error || 'Password reset request failed');
+            }
+
             return { ok: true };
-        } catch (error: any) {
-            const errorMessage = error.message || 'Password reset request failed';
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Password reset request failed';
             throw new Error(errorMessage);
         }
     }
@@ -149,21 +166,28 @@ export class AuthAPI {
         code: string,
         password: string,
         passwordConfirmation: string
-    ): Promise<StrapiAuthResponse> {
+    ): Promise<{ ok: boolean }> {
         try {
-            const response = await fetchApi.post<StrapiAuthResponse>(
-                '/auth/reset-password',
-                {
-                    code,
-                    password,
-                    passwordConfirmation,
-                }
-            );
+            const endpoint =
+                typeof window === 'undefined'
+                    ? `${getServerStrapiBaseUrl()}/auth/reset-password`
+                    : '/api/auth/reset-password';
 
-            // Don't automatically store JWT - let the calling code decide
-            return response;
-        } catch (error: any) {
-            const errorMessage = error.message || 'Password reset failed';
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, password, passwordConfirmation }),
+                cache: 'no-store',
+            });
+
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error((body as { error?: string }).error || 'Password reset failed');
+            }
+
+            return { ok: true };
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
             throw new Error(errorMessage);
         }
     }
