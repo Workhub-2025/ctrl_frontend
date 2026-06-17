@@ -46,6 +46,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
+import { isKnownAssessmentSlug, normalizeSlug } from "@/lib/assessment-slug";
 import {
   AssessmentAbandonedActions,
   formatAbandonedAssessmentSummary,
@@ -138,21 +139,8 @@ function normalizeAssessmentText(value?: string | null) {
 }
 
 function getAssessmentKey(value?: string | null) {
-  const normalized = normalizeAssessmentText(value);
-
-  if (normalized.includes("prioritisation") || normalized === "pja") {
-    return "prioritisation";
-  }
-  if (normalized.includes("situationaljudgement") || normalized === "sjt") {
-    return "situational-judgement";
-  }
-  if (normalized.includes("callsimulation")) {
-    return "call-simulation";
-  }
-  if (normalized.includes("typing")) {
-    return "typing";
-  }
-
+  const slug = normalizeSlug(value);
+  if (isKnownAssessmentSlug(slug)) return slug;
   return "";
 }
 

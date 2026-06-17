@@ -1,18 +1,25 @@
+import { getAssessmentPluginTitle } from "@/assessments/plugins/registry";
+import { normalizeSlug } from "@/lib/assessment-slug";
 import { formatAssessmentSlugLabel, TIMED_ASSESSMENT_SLUGS } from "@/lib/assessment-result-status";
+
+function getAssessmentLabel(slug: string): string {
+  return getAssessmentPluginTitle(slug) ?? formatAssessmentSlugLabel(slug);
+}
 
 export function formatAbandonSnapshotSummary(
   assessmentSlug: string,
   snapshot?: Record<string, unknown> | null,
   contentVersion?: string | null
 ): string {
-  const slugLabel = formatAssessmentSlugLabel(assessmentSlug);
+  const canonicalSlug = normalizeSlug(assessmentSlug);
+  const slugLabel = getAssessmentLabel(canonicalSlug);
   const versionSuffix = contentVersion ? ` · v${contentVersion}` : "";
 
   if (!snapshot || Object.keys(snapshot).length === 0) {
     return `${slugLabel} abandoned${versionSuffix}`;
   }
 
-  if (assessmentSlug === "typing") {
+  if (canonicalSlug === "typing") {
     const completedRuns = Array.isArray(snapshot.completedRuns)
       ? snapshot.completedRuns
       : [];
@@ -27,7 +34,7 @@ export function formatAbandonSnapshotSummary(
     }
   }
 
-  if (assessmentSlug === "situational-judgement") {
+  if (canonicalSlug === "situational-judgement") {
     const scenarioIndex =
       typeof snapshot.scenarioIndex === "number" ? snapshot.scenarioIndex + 1 : null;
     const responses = Array.isArray(snapshot.responses) ? snapshot.responses.length : 0;
@@ -36,7 +43,7 @@ export function formatAbandonSnapshotSummary(
     }
   }
 
-  if (assessmentSlug === "prioritisation") {
+  if (canonicalSlug === "prioritisation") {
     const finalIndex = typeof snapshot.finalIndex === "number" ? snapshot.finalIndex + 1 : null;
     const roundCount = typeof snapshot.roundCount === "number" ? snapshot.roundCount : null;
     if (finalIndex !== null) {
@@ -44,14 +51,14 @@ export function formatAbandonSnapshotSummary(
     }
   }
 
-  if (assessmentSlug === "call-simulation") {
+  if (canonicalSlug === "call-simulation") {
     const runIndex = typeof snapshot.currentRunIndex === "number" ? snapshot.currentRunIndex + 1 : null;
     if (runIndex !== null) {
       return `${slugLabel}: call ${runIndex}${versionSuffix}`;
     }
   }
 
-  const timedNote = TIMED_ASSESSMENT_SLUGS.has(assessmentSlug)
+  const timedNote = TIMED_ASSESSMENT_SLUGS.has(canonicalSlug)
     ? " · restart required"
     : "";
 
@@ -70,7 +77,8 @@ export function buildAssessmentRecoveryTicket(input: {
   abandonReason?: string | null;
   abandonedAt?: string | null;
 }) {
-  const assessmentLabel = input.assessmentLabel ?? formatAssessmentSlugLabel(input.assessmentSlug);
+  const assessmentLabel =
+    input.assessmentLabel ?? getAssessmentLabel(normalizeSlug(input.assessmentSlug));
   const summary = formatAbandonSnapshotSummary(
     input.assessmentSlug,
     input.snapshot,

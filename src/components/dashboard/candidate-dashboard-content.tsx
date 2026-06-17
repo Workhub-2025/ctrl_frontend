@@ -72,29 +72,24 @@ import {
 import { CandidateSessionService } from "@/services/candidate-session.service";
 import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
-function normaliseSlug(value?: string) {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/_/g, "-")
-    .replace("prioritization", "prioritisation");
-}
+import { normalizeSlug } from "@/lib/assessment-slug";
 
 function getCandidateAssessmentSlug(
   item: (typeof candidateAssessmentItems)[number]
 ) {
-  return normaliseSlug(item.href.split("/").pop());
+  return normalizeSlug(item.href.split("/").pop());
 }
 
 function getAssessmentItemsForApplication(application: CandidateApplicationView) {
   if (!application.assessments.length) return [];
 
   return application.assessments.map((assessment) => {
-    const slug = normaliseSlug(assessment.slug);
+    const slug = normalizeSlug(assessment.slug);
     const matchedItem = candidateAssessmentItems.find(
       (item) =>
         getCandidateAssessmentSlug(item) === slug ||
-        normaliseSlug(item.title) === slug ||
-        normaliseSlug(item.title) === normaliseSlug(assessment.name)
+        normalizeSlug(item.title) === slug ||
+        normalizeSlug(assessment.name) === slug
     );
 
     const isLocked = assessment.status === "locked";

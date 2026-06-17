@@ -5,6 +5,7 @@ import { Headset, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateTicketDialog } from "@/components/dashboard/create-ticket-dialog";
 import { AssessmentRecoveryDialog } from "@/components/assessment/shared";
+import { normalizeSlug } from "@/lib/assessment-slug";
 import {
   buildAssessmentRecoveryTicket,
   formatAbandonSnapshotSummary,
@@ -111,24 +112,8 @@ export function formatAbandonedAssessmentSummary(
   rawData?: Record<string, unknown> | null,
   contentVersion?: string | null
 ) {
-  const slug = assessmentName
-    .toLowerCase()
-    .replace(/prioritization/g, "prioritisation")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  const normalizedSlug = slug.includes("situational")
-    ? "situational-judgement"
-    : slug.includes("prioritisation") || slug === "pja"
-      ? "prioritisation"
-      : slug.includes("call")
-        ? "call-simulation"
-        : slug.includes("typing")
-          ? "typing"
-          : slug;
-
   return formatAbandonSnapshotSummary(
-    normalizedSlug,
+    normalizeSlug(assessmentName),
     rawData && typeof rawData === "object" && !("abandoned" in rawData && Object.keys(rawData).length === 1)
       ? rawData
       : null,
