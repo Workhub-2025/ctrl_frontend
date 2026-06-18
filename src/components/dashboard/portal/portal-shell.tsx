@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -30,6 +31,7 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
@@ -126,6 +128,19 @@ function PortalHeaderBar({
   );
 }
 
+function CloseMobileSidebarOnNavigate() {
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  }, [pathname, isMobile, setOpenMobile]);
+
+  return null;
+}
+
 export function PortalShell({
   brandSubtitle,
   homeHref,
@@ -159,6 +174,7 @@ export function PortalShell({
     <AuthProvider>
       <div className={cn("ctrl-portal min-h-screen selection:bg-primary/30", themeClassName)}>
         <SidebarProvider>
+          <CloseMobileSidebarOnNavigate />
           <Sidebar className="border-r border-border/60 bg-sidebar/95 backdrop-blur-xl dark:border-white/6 dark:bg-[#03060f]/90">
             <SidebarHeader className="border-b border-border/50 px-4 py-4 dark:border-white/6 group-data-[collapsible=icon]:px-2">
               <Link

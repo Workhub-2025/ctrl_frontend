@@ -3,8 +3,6 @@
 import { initAssessmentSession } from '@/assessments/plugins/actions/init-session';
 import type { PjaSessionData } from '@/assessments/plugins/actions/types';
 
-export type { PjaIncident, PjaRound, PjaSessionData } from '@/assessments/plugins/actions/types';
-
 export async function initPjaSession(
   candidateSessionDocumentId?: string | null,
 ): Promise<PjaSessionData> {

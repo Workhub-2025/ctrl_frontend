@@ -73,7 +73,7 @@ function isApplicationsErrorEmpty(message: string) {
 }
 
 export class CandidateSessionService {
-  private static readonly BASE_PATH = "/candidate-sessions";
+  private static readonly APPLICATIONS_PATH = "/api/candidate/applications";
 
   static hasFreshApplicationsCache() {
     return (
@@ -122,8 +122,8 @@ export class CandidateSessionService {
     }
 
     const path = options?.force
-      ? `${this.BASE_PATH}/me?_t=${Date.now()}`
-      : `${this.BASE_PATH}/me`;
+      ? `${this.APPLICATIONS_PATH}?_t=${Date.now()}`
+      : this.APPLICATIONS_PATH;
 
     myApplicationsInFlight = fetchApi
       .get<CandidateApplicationsResponse>(path, {
@@ -160,7 +160,7 @@ export class CandidateSessionService {
     accessCode: string
   ): Promise<CandidatePortalApplication | null> {
     const response = await fetchApi.post<CandidateJoinResponse>(
-      `${this.BASE_PATH}/join`,
+      this.APPLICATIONS_PATH,
       { accessCode }
     );
 
@@ -174,7 +174,7 @@ export class CandidateSessionService {
     jwt: string
   ): Promise<CandidatePortalApplication | null> {
     const response = await fetchApi.post<CandidateJoinResponse>(
-      `${this.BASE_PATH}/join`,
+      this.APPLICATIONS_PATH,
       { accessCode },
       {
         headers: {

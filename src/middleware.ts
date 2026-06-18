@@ -58,6 +58,7 @@ export default withAuth(
                     pathname.startsWith('/api/hiring-manager') ||
                     pathname.startsWith('/api/client') ||
                     pathname.startsWith('/api/admin') ||
+                    pathname.startsWith('/api/candidate') ||
                     pathname.startsWith('/api/assessment')
                 ) {
                     return true;
@@ -102,6 +103,7 @@ export const config = {
         '/api/hiring-manager/:path*',
         '/api/client/:path*',
         '/api/admin/:path*',
+        '/api/candidate/:path*',
         '/api/assessment/:path*',
     ]
 };

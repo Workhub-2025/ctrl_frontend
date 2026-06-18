@@ -42,3 +42,7 @@ export async function requireHmSession() {
 export async function requireClientSession() {
   return requireRoleSession("client");
 }
+
+export async function requireCandidateSession() {
+  return requireRoleSession("candidate");
+}

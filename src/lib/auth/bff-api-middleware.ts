@@ -11,6 +11,7 @@ const PORTAL_API_RULES: PortalApiRule[] = [
   { prefix: "/api/hiring-manager", role: "hiring_manager" },
   { prefix: "/api/client", role: "client" },
   { prefix: "/api/admin", role: "admin" },
+  { prefix: "/api/candidate", role: "candidate" },
 ];
 
 export function guardPortalApiRoute(

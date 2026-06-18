@@ -87,7 +87,10 @@ export const fetchClient = async (
         const environment = typeof window === 'undefined' ? 'SERVER' : 'CLIENT';
 
         // Prepare URL (add base URL if relative)
-        const fullUrl = joinUrl(baseUrl, url);
+        const isBrowserBffRoute =
+            typeof window !== 'undefined' &&
+            (url.startsWith('/api/') || url.startsWith('http'));
+        const fullUrl = isBrowserBffRoute ? url : joinUrl(baseUrl, url);
         // Prepare headers
 
         const headers: HeadersInit = {
@@ -177,7 +180,10 @@ export const fetchClient = async (
             if (response.status === 401) {
                 console.warn(`🔒 [${environment}] Unauthorized request`);
                 if (typeof window !== 'undefined') {
-                    window.location.href = '/auth/register?mode=login';
+                    const returnTo = encodeURIComponent(
+                        `${window.location.pathname}${window.location.search}`,
+                    );
+                    window.location.href = `/auth/register?mode=login&callbackUrl=${returnTo}`;
                 }
                 throw new Error('Unauthorized - redirecting to login');
             }

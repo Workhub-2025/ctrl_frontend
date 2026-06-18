@@ -3,8 +3,6 @@
 import { initAssessmentSession } from '@/assessments/plugins/actions/init-session';
 import type { SjaSessionData } from '@/assessments/plugins/actions/types';
 
-export type { SjaRun, SjaSessionData } from '@/assessments/plugins/actions/types';
-
 export async function initSjaSession(
   candidateSessionDocumentId?: string | null,
 ): Promise<SjaSessionData> {

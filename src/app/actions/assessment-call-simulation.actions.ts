@@ -3,8 +3,6 @@
 import { initAssessmentSession } from '@/assessments/plugins/actions/init-session';
 import type { CallSimulationSessionData } from '@/assessments/plugins/actions/types';
 
-export type { CallSimulationRun, CallSimulationSessionData } from '@/assessments/plugins/actions/types';
-
 export async function initCallSimulationSession(
   candidateSessionDocumentId?: string | null,
 ): Promise<CallSimulationSessionData> {

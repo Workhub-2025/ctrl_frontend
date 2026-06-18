@@ -6,6 +6,7 @@ describe("guardPortalApiRoute", () => {
     expect(guardPortalApiRoute("/api/client/overview", true, "client")).toBeNull();
     expect(guardPortalApiRoute("/api/hiring-manager/overview", true, "hiring_manager")).toBeNull();
     expect(guardPortalApiRoute("/api/admin/overview", true, "admin")).toBeNull();
+    expect(guardPortalApiRoute("/api/candidate/applications", true, "candidate")).toBeNull();
   });
 
   it("blocks cross-portal access", () => {
