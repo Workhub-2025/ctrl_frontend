@@ -186,14 +186,9 @@ export function PortalShell({
                   className="logo-adaptive-filter h-9 w-9 scale-125 object-contain object-center"
                   alt="CTRL"
                 />
-                <div className="group-data-[collapsible=icon]:hidden">
-                  <p className="font-display text-sm font-semibold tracking-[0.14em] text-foreground">
-                    CTRL
-                  </p>
-                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {brandSubtitle}
-                  </p>
-                </div>
+                <p className="group-data-[collapsible=icon]:hidden text-xs font-semibold uppercase tracking-[0.12em] text-foreground">
+                  {brandSubtitle}
+                </p>
               </Link>
             </SidebarHeader>
 

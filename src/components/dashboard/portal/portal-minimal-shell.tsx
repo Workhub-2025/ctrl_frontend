@@ -50,16 +50,14 @@ function PortalMinimalHeader({
     <header className="sticky top-0 z-20 flex h-14 min-w-0 items-center gap-3 border-b border-border/70 bg-background/90 px-3 backdrop-blur-md dark:border-white/6 dark:bg-[#02040a]/75 sm:px-5">
       <Link
         href={homeHref}
-        className="flex shrink-0 items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="flex shrink-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        aria-label="CTRL home"
       >
         <img
           src="/assets/newlogo.svg"
           className="logo-adaptive-filter h-8 w-8 scale-125 object-contain object-center"
           alt="CTRL"
         />
-        <span className="hidden font-display text-sm font-semibold tracking-[0.14em] text-foreground sm:inline-block">
-          CTRL
-        </span>
       </Link>
 
       {title ? (
