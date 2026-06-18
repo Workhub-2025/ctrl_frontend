@@ -111,17 +111,6 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
           animate={reduceMotion ? undefined : "show"}
           className="flex flex-col items-center text-center max-w-[58rem] mx-auto gap-7"
         >
-          {/* Technical Tag Eyebrow */}
-          <motion.div variants={rise}>
-            <div className="group inline-flex items-center gap-2.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/80 dark:bg-white/[0.04] px-4 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 backdrop-blur-sm pointer-events-none">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              </span>
-              Dispatch Intelligence Platform
-            </div>
-          </motion.div>
-
           {/* Main Headline */}
           <motion.h1
             variants={rise}

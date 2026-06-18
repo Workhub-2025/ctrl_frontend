@@ -470,14 +470,14 @@ export default function Home() {
               </Reveal>
               <RevealGroup
                 stagger={0.1}
-                className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
+                className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-stretch"
               >
                 {disciplines.map((d) => {
                   const tint = disciplineTintStyles[d.tint];
                   return (
-                    <RevealItem key={d.label} variant="zoom">
+                    <RevealItem key={d.label} variant="zoom" className="h-full w-full">
                       <div className={cn(
-                        "group flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0a0a0a]/60 px-4 py-3.5 backdrop-blur-md transition-transform duration-300 hover:-translate-y-0.5",
+                        "group flex h-full min-h-[5.5rem] w-full items-center gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0a0a0a]/60 px-4 py-3.5 backdrop-blur-md transition-transform duration-300 hover:-translate-y-0.5",
                         tint.ring
                       )}>
                         <span className={cn(
@@ -486,7 +486,7 @@ export default function Home() {
                         )}>
                           <d.icon className="h-4 w-4" aria-hidden="true" />
                         </span>
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{d.label}</span>
+                        <span className="min-w-0 flex-1 text-left text-sm font-medium leading-snug text-slate-700 dark:text-slate-200">{d.label}</span>
                       </div>
                     </RevealItem>
                   );

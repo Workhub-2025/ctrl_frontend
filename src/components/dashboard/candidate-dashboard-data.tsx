@@ -1,7 +1,7 @@
 import {
   candidateAssessmentItems,
   completionLabels,
-} from "@/assessments/plugins/registry";
+} from "@/assessments/plugins/candidate-catalog";
 import {
   Headphones,
   KeyRound,

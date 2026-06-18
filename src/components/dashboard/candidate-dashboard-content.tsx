@@ -41,7 +41,7 @@ import {
   Target,
   AlertTriangle,
 } from "lucide-react";
-import { SecurePreflightModal } from "@/components/assessment";
+import { SecurePreflightModal } from "@/components/assessment/security";
 import { AssessmentBriefDialog } from "@/components/dashboard/candidate/assessment-brief-dialog";
 import { candidateAssessmentItems } from "@/components/dashboard/candidate-dashboard-data";
 import {
