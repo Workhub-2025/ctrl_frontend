@@ -4,17 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-
-// Forward requests to Strapi
-const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
-
-function getStrapiBaseUrl() {
-  return stripTrailingSlashes(
-    process.env.STRAPI_API_URL ??
-      process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-      "http://localhost:1337/api"
-  );
-}
+import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
@@ -63,7 +53,7 @@ export async function POST(
       }
 
       const strapiRes = await fetch(
-        `${getStrapiBaseUrl()}/assessment-sessions/${encodeURIComponent(id)}`,
+        joinStrapiApiPath(getStrapiApiBaseUrl(), `/assessment-sessions/${encodeURIComponent(id)}`),
         {
           method: "PUT",
           headers: {

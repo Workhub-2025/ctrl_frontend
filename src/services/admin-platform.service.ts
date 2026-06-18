@@ -2,10 +2,6 @@ import "server-only";
 
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
-function getStrapiBaseUrl() {
-  return getStrapiApiBaseUrl();
-}
-
 class AdminStrapiRequestError extends Error {
   status: number;
 
@@ -29,7 +25,7 @@ async function adminStrapiRequest<T>(
   if (!authToken) throw new Error("Authenticated admin session is required");
 
   const response = await fetch(
-    joinStrapiApiPath(getStrapiBaseUrl(), path),
+    joinStrapiApiPath(getStrapiApiBaseUrl(), path),
     {
       cache: "no-store",
       ...init,

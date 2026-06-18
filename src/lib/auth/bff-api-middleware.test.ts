@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { guardPortalApiRoute } from "@/lib/auth/bff-api-middleware";
+import {
+  guardAuthenticatedApiRoute,
+  guardPortalApiRoute,
+} from "@/lib/auth/bff-api-middleware";
 
 describe("guardPortalApiRoute", () => {
   it("allows matching portal roles", () => {
@@ -21,5 +24,16 @@ describe("guardPortalApiRoute", () => {
 
   it("ignores unrelated routes", () => {
     expect(guardPortalApiRoute("/api/auth/login", false, null)).toBeNull();
+  });
+});
+
+describe("guardAuthenticatedApiRoute", () => {
+  it("requires authentication for user API routes", () => {
+    expect(guardAuthenticatedApiRoute("/api/user/profile", false)?.status).toBe(401);
+    expect(guardAuthenticatedApiRoute("/api/user/profile", true)).toBeNull();
+  });
+
+  it("ignores unrelated routes", () => {
+    expect(guardAuthenticatedApiRoute("/api/auth/login", false)).toBeNull();
   });
 });

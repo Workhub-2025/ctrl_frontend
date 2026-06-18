@@ -11,16 +11,7 @@ import {
 import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
-
-const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
-
-function getStrapiBaseUrl() {
-  return stripTrailingSlashes(
-    process.env.STRAPI_API_URL ??
-      process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-      "http://localhost:1337/api"
-  );
-}
+import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
@@ -71,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const entitlementsResponse = await fetch(`${getStrapiBaseUrl()}/client/entitlements`, {
+      const entitlementsResponse = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), "/client/entitlements"), {
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",

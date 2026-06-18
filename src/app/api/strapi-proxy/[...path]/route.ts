@@ -3,19 +3,11 @@ import { getToken } from "next-auth/jwt";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
+import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 const PROXY_RATE_LIMIT = 120;
 const PROXY_RATE_WINDOW_MS = 60_000;
 const MAX_PROXY_BODY_BYTES = 2 * 1024 * 1024;
-
-const getStrapiApiBase = () => {
-  const raw =
-    process.env.STRAPI_API_URL ??
-    process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-    "http://127.0.0.1:1337/api";
-  const trimmed = raw.replace(/\/+$/, "");
-  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
-};
 
 const ALLOWED_PREFIXES = [
   "support-tickets",
@@ -68,7 +60,7 @@ async function forwardToStrapi(
       ? token.organization.trim()
       : null;
 
-  const strapiUrl = new URL(`${getStrapiApiBase()}/${relativePath}`);
+  const strapiUrl = new URL(joinStrapiApiPath(getStrapiApiBaseUrl(), relativePath));
   request.nextUrl.searchParams.forEach((value, key) => {
     strapiUrl.searchParams.set(key, value);
   });

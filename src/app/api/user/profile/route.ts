@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/next-auth-options';
 import { getServerStrapiJwt } from '@/lib/auth/strapi-jwt';
 import { resolveCorrelationId, startServerActionTrace } from '@/lib/observability/server-observability';
 import { applyRateLimit, extractClientIp } from '@/lib/security/api-rate-limit';
+import { rejectMutatingCrossOrigin } from '@/lib/security/bff-mutation-guard';
 
 export async function GET(request: NextRequest) {
     const correlationId = resolveCorrelationId();
@@ -70,6 +71,9 @@ export async function PUT(request: NextRequest) {
     const correlationId = resolveCorrelationId(request.headers.get('x-correlation-id'));
     const trace = startServerActionTrace('profile.put', { correlationId });
     try {
+        const crossOriginResponse = rejectMutatingCrossOrigin(request);
+        if (crossOriginResponse) return crossOriginResponse;
+
         const session = await getServerSession(authOptions);
         const strapiJwt = await getServerStrapiJwt(request);
 

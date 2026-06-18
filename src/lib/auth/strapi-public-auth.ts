@@ -1,15 +1,6 @@
 import "server-only";
 
-const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
-
-export function getStrapiApiBaseUrl(): string {
-  const raw =
-    process.env.STRAPI_API_URL ??
-    process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-    "http://127.0.0.1:1337/api";
-  const trimmed = stripTrailingSlashes(raw.trim());
-  return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
-}
+import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 type StrapiAuthResult<T = unknown> = {
   ok: boolean;
@@ -22,8 +13,7 @@ export async function postStrapiAuth<T = unknown>(
   path: string,
   body: Record<string, unknown>
 ): Promise<StrapiAuthResult<T>> {
-  const normalizedPath = path.replace(/^\/+/, "");
-  const response = await fetch(`${getStrapiApiBaseUrl()}/${normalizedPath}`, {
+  const response = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), path), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

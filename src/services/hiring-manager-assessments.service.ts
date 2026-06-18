@@ -12,21 +12,11 @@ import {
   TYPING_TIME_LIMIT_SECONDS,
   TYPING_WPM_THRESHOLD,
 } from "@/lib/assessment-catalog-defaults";
+import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 type StrapiAssessmentResponse = {
   data?: unknown[];
 };
-
-const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
-const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
-
-function getStrapiBaseUrl() {
-  return stripTrailingSlashes(
-    process.env.STRAPI_API_URL ??
-      process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-      "http://localhost:1337/api"
-  );
-}
 
 function getStrapiApiToken() {
   // This service only reads assessment content. Prefer a read-only token and
@@ -51,7 +41,7 @@ async function getStrapiAuthToken() {
 async function fetchStrapi<T>(path: string): Promise<T> {
   const token = await getStrapiAuthToken();
   const response = await fetch(
-    `${getStrapiBaseUrl()}/${stripLeadingSlashes(path)}`,
+    joinStrapiApiPath(getStrapiApiBaseUrl(), path),
     {
       cache: "no-store",
       headers: {

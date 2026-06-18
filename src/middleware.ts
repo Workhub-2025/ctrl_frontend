@@ -1,6 +1,10 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
-import { guardAssessmentApiRoute, guardPortalApiRoute } from "@/lib/auth/bff-api-middleware";
+import {
+    guardAssessmentApiRoute,
+    guardAuthenticatedApiRoute,
+    guardPortalApiRoute,
+} from "@/lib/auth/bff-api-middleware";
 import { isAdminRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
 
 export default withAuth(
@@ -16,6 +20,11 @@ export default withAuth(
         const assessmentApiResponse = guardAssessmentApiRoute(pathname, !!token);
         if (assessmentApiResponse) {
             return assessmentApiResponse;
+        }
+
+        const authenticatedApiResponse = guardAuthenticatedApiRoute(pathname, !!token);
+        if (authenticatedApiResponse) {
+            return authenticatedApiResponse;
         }
 
         // Protect admin routes - only allow admin users
@@ -59,7 +68,8 @@ export default withAuth(
                     pathname.startsWith('/api/client') ||
                     pathname.startsWith('/api/admin') ||
                     pathname.startsWith('/api/candidate') ||
-                    pathname.startsWith('/api/assessment')
+                    pathname.startsWith('/api/assessment') ||
+                    pathname.startsWith('/api/user')
                 ) {
                     return true;
                 }
@@ -105,5 +115,6 @@ export const config = {
         '/api/admin/:path*',
         '/api/candidate/:path*',
         '/api/assessment/:path*',
+        '/api/user/:path*',
     ]
 };

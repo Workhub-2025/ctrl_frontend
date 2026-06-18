@@ -14,6 +14,8 @@ const PORTAL_API_RULES: PortalApiRule[] = [
   { prefix: "/api/candidate", role: "candidate" },
 ];
 
+const AUTHENTICATED_API_PREFIXES = ["/api/user"];
+
 export function guardPortalApiRoute(
   pathname: string,
   hasToken: boolean,
@@ -37,6 +39,21 @@ export function guardPortalApiRoute(
       { error: `${rule.role.replace("_", " ")} access required` },
       { status: 403 }
     );
+  }
+
+  return null;
+}
+
+/** Requires an authenticated session for non-role-scoped user BFF routes. */
+export function guardAuthenticatedApiRoute(
+  pathname: string,
+  hasToken: boolean,
+): NextResponse | null {
+  const matched = AUTHENTICATED_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  if (!matched) return null;
+
+  if (!hasToken) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
   return null;

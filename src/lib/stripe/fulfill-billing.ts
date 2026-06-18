@@ -1,7 +1,7 @@
 import "server-only";
 
 import type Stripe from "stripe";
-import { getStrapiApiBaseUrl } from "@/lib/strapi-server";
+import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 import {
   parseBillingCheckoutMetadata,
   type BillingCheckoutMetadata,
@@ -9,10 +9,6 @@ import {
 
 export type { BillingCheckoutMetadata };
 export { parseBillingCheckoutMetadata };
-
-function getStrapiBaseUrl() {
-  return getStrapiApiBaseUrl();
-}
 
 function extractStrapiErrorMessage(body: unknown): string | undefined {
   if (!body || typeof body !== "object") return undefined;
@@ -40,7 +36,7 @@ export async function fulfillBillingRequest(input: {
     throw new Error("BILLING_INTERNAL_SECRET is not configured");
   }
 
-  const response = await fetch(`${getStrapiBaseUrl()}/internal/billing/fulfill`, {
+  const response = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), "/internal/billing/fulfill"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
