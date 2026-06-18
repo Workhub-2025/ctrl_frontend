@@ -25,6 +25,7 @@ import {
   CandidateQuickLink,
   CandidateSectionHeader,
 } from "@/components/dashboard/candidate/candidate-portal-ui";
+import { LocationMapDialog } from "@/components/dashboard/location-map-dialog";
 import { portalAlertErrorClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import {
@@ -40,7 +41,55 @@ import {
   MapPin,
   RefreshCw,
   Sparkles,
+  Target,
 } from "lucide-react";
+
+function NextUpSessionModeMetaChip({
+  application,
+}: {
+  application: CandidateApplicationView;
+}) {
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const isRemote = application.mode === "remote";
+  const isInPerson = application.mode === "in_person";
+
+  if (isRemote) {
+    return <CandidateMetaChip icon={Globe} label="Mode" value="Remote" />;
+  }
+
+  if (isInPerson) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setLocationDialogOpen(true)}
+          className="flex min-w-0 flex-col gap-0.5 rounded-xl border border-border/70 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/5 dark:bg-white/[0.02] dark:hover:border-primary/30"
+        >
+          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            <MapPin className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
+            Location
+          </span>
+          <span className="truncate text-sm font-medium text-foreground">
+            {application.location || "View venue"}
+          </span>
+        </button>
+        <LocationMapDialog
+          address={
+            application.location === "Location to be confirmed"
+              ? ""
+              : application.location
+          }
+          open={locationDialogOpen}
+          onOpenChange={setLocationDialogOpen}
+        />
+      </>
+    );
+  }
+
+  return (
+    <CandidateMetaChip icon={Target} label="Mode" value={application.modeLabel} />
+  );
+}
 
 function getActiveDateMeta(app: CandidateApplicationView) {
   if (!app) return null;
@@ -183,24 +232,45 @@ export default function CandidateDashboardOverviewPage() {
 
       {!isLoading && nextUpApp && hasAvailableAssessment(nextUpApp) ? (
         <CandidatePanel>
-          <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-            <div className="min-w-0 space-y-4">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
-                  Your next task
-                </p>
-                <h2 className="font-display text-xl font-semibold text-foreground">
-                  {nextUpApp.campaign}
-                </h2>
-                <p className="text-sm text-muted-foreground">{nextUpApp.role}</p>
-              </div>
-              <CandidateProgressHeader
-                completed={nextUpApp.completedCount}
-                total={nextUpApp.totalCount}
-                percent={nextUpApp.completionPercent}
-              />
+          <div className="space-y-5 p-5 sm:p-6">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                Your next task
+              </p>
+              <h2 className="font-display text-xl font-semibold text-foreground">
+                {nextUpApp.campaign}
+              </h2>
+              <p className="text-sm text-muted-foreground">{nextUpApp.role}</p>
             </div>
-            <Button asChild className="h-11 shrink-0 gap-2 rounded-xl px-8 font-semibold">
+
+            {(() => {
+              const dateMeta = getActiveDateMeta(nextUpApp);
+              return (
+                <div
+                  className={cn(
+                    "grid gap-2",
+                    dateMeta ? "grid-cols-2 sm:max-w-lg" : "max-w-xs"
+                  )}
+                >
+                  {dateMeta ? (
+                    <CandidateMetaChip
+                      icon={CalendarClock}
+                      label={dateMeta.label}
+                      value={dateMeta.value}
+                    />
+                  ) : null}
+                  <NextUpSessionModeMetaChip application={nextUpApp} />
+                </div>
+              );
+            })()}
+
+            <CandidateProgressHeader
+              completed={nextUpApp.completedCount}
+              total={nextUpApp.totalCount}
+              percent={nextUpApp.completionPercent}
+            />
+
+            <Button asChild className="h-11 w-full gap-2 rounded-xl font-semibold sm:w-auto sm:min-w-[12.5rem]">
               <Link href={assessmentHrefFor(nextUpApp.key)}>
                 {nextUpApp.completedCount > 0 ? "Continue" : "Start now"}
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
