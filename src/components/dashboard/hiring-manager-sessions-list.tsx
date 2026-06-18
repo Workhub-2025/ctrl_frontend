@@ -1043,7 +1043,6 @@ export function HiringManagerSessionsList() {
             : undefined
         }
         deletingSessionId={deletingSessionId}
-        campaignStatus={selectedCampaignDetail?.status}
         onInvitesSent={() => loadSessions(true)}
       />
     </div>

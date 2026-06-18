@@ -86,7 +86,6 @@ type HiringManagerSessionDetailsDialogProps = {
   updatingSessionId?: string | null;
   onDeleteSession?: (sessionId: string) => void;
   deletingSessionId?: string | null;
-  campaignStatus?: "Live" | "Configured" | "Draft" | "Closed" | "Archived";
   onInvitesSent?: () => void | Promise<void>;
 };
 
@@ -108,7 +107,6 @@ export function HiringManagerSessionDetailsDialog({
   updatingSessionId,
   onDeleteSession,
   deletingSessionId,
-  campaignStatus,
   onInvitesSent,
 }: HiringManagerSessionDetailsDialogProps) {
   const [copiedCode, setCopiedCode] = useState(false);
@@ -316,14 +314,11 @@ export function HiringManagerSessionDetailsDialog({
                 disabled={
                   session.status === "Closed"
                   || session.status === "Cancelled"
-                  || campaignStatus !== "Live"
                 }
                 disabledReason={
-                  campaignStatus !== "Live"
-                    ? "Invites are available once the campaign is live."
-                    : session.status === "Closed" || session.status === "Cancelled"
-                      ? "This session is no longer accepting invites."
-                      : undefined
+                  session.status === "Closed" || session.status === "Cancelled"
+                    ? "This session is no longer accepting invites."
+                    : undefined
                 }
                 onInvitesSent={onInvitesSent}
               />

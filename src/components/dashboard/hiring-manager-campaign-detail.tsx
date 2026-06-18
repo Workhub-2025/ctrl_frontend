@@ -582,7 +582,6 @@ export function HiringManagerCampaignDetailView({
         assessmentStack={campaign.assessmentStack}
         onUnlockCandidate={handleUnlockCandidate}
         unlockingCandidateId={unlockingCandidateId}
-        campaignStatus={campaign.status}
         onInvitesSent={() => loadCampaign(true)}
       />
 
