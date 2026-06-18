@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalIconWrapLgClass,
+  portalPageHeaderClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
 type PortalPageHeaderProps = {
@@ -26,7 +29,7 @@ export function HiringManagerPageHeader({
   notice,
 }: PortalPageHeaderProps) {
   return (
-    <header className="mb-6 space-y-4">
+    <header className={portalPageHeaderClass}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3.5">
           <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">

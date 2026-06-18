@@ -89,6 +89,10 @@ export const portalAlertInfoClass =
 export const portalLabelClass =
   "text-xs font-medium uppercase tracking-wide text-muted-foreground";
 
+/** Page header wrapper — separates title block from main content across portals. */
+export const portalPageHeaderClass =
+  "mb-7 space-y-4 border-b border-border/60 pb-6 dark:border-white/6";
+
 export function portalStatusBadge(_status?: string) {
   return portalBadgeClass;
 }

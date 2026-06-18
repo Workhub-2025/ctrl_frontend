@@ -218,16 +218,6 @@ export default function CandidateDashboardOverviewPage() {
         title={`Welcome back, ${firstName}`}
         description={orientationDescription}
         icon={LayoutDashboard}
-        action={
-          nextUpApp ? (
-            <Button asChild className="h-10 gap-2 rounded-xl font-semibold">
-              <Link href={assessmentHrefFor(nextUpApp.key)}>
-                {hasAvailableAssessment(nextUpApp) ? "Continue assessments" : "View session"}
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-          ) : null
-        }
       />
 
       {!isLoading && nextUpApp && hasAvailableAssessment(nextUpApp) ? (

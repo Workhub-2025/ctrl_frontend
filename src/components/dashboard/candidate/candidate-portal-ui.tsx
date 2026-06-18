@@ -15,7 +15,13 @@ import {
   type CandidateApplicationView,
   type CandidateApplicationStatus,
 } from "@/lib/candidate/portal";
-import { portalPanelClass, portalIconWrapLgClass, portalAlertErrorClass, portalAlertInfoClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalPageHeaderClass,
+  portalPanelClass,
+  portalIconWrapLgClass,
+  portalAlertErrorClass,
+  portalAlertInfoClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 
 export const candidateEyebrowClassName =
   "text-[10px] font-bold uppercase tracking-[0.2em] text-primary";
@@ -48,7 +54,7 @@ export function CandidatePageHeader({
   notice?: ReactNode;
 }) {
   return (
-    <header className="mb-6 space-y-4">
+    <header className={portalPageHeaderClass}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 items-start gap-3.5">
           <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">

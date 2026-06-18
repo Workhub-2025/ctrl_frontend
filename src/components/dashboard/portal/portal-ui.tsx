@@ -14,6 +14,7 @@ import {
   portalIconWrapLgClass,
   portalInputClass,
   portalLabelClass,
+  portalPageHeaderClass,
   portalPanelClass,
   portalStatTileClass,
   portalStatusBadge,
@@ -94,7 +95,7 @@ export function PortalPageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("mb-6 space-y-4", className)}>
+    <header className={cn(portalPageHeaderClass, className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
