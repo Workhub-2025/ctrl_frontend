@@ -4,6 +4,8 @@ import * as React from "react";
 import { useState, useCallback, forwardRef, useImperativeHandle, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+import "intl-tel-input/build/css/intlTelInput.css";
+import "@/styles/intl-tel-input-custom.css";
 
 // Dynamically import IntlTelInput to prevent SSR issues
 const IntlTelInput = dynamic(() => import("intl-tel-input/reactWithUtils"), {
@@ -18,21 +20,6 @@ const IntlTelInput = dynamic(() => import("intl-tel-input/reactWithUtils"), {
     </div>
   ),
 });
-
-// Load styles on client-side only
-const loadStyles = () => {
-  if (typeof window !== 'undefined') {
-    // Create link element for styles
-    const existingLink = document.getElementById('intl-tel-input-styles');
-    if (!existingLink) {
-      const link = document.createElement('link');
-      link.id = 'intl-tel-input-styles';
-      link.rel = 'stylesheet';
-      link.href = 'https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.0/build/css/intlTelInput.css';
-      document.head.appendChild(link);
-    }
-  }
-};
 
 // Error messages mapping
 const errorMap = [
@@ -105,9 +92,7 @@ const TelInput = forwardRef<TelInputRef, TelInputProps>(({
   const [isClient, setIsClient] = useState(false);
   const intlTelInputRef = React.useRef<any>(null);
 
-  // Load styles and set client-side flag
   useEffect(() => {
-    loadStyles();
     setIsClient(true);
   }, []);
 
@@ -257,12 +242,12 @@ const TelInput = forwardRef<TelInputRef, TelInputProps>(({
             ...(preferredCountries && { preferredCountries: preferredCountries as any }),
             ...(excludeCountries && { excludeCountries: excludeCountries as any }),
             ...(onlyCountries && { onlyCountries: onlyCountries as any }),
+            allowDropdown: true,
             autoPlaceholder,
             formatOnDisplay,
             nationalMode,
             separateDialCode,
             showFlags,
-            // Load utils from CDN
             loadUtils: "https://cdn.jsdelivr.net/npm/intl-tel-input@25.11.0/build/js/utils.js" as any,
           } as any}
         />

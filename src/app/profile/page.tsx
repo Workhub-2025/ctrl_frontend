@@ -195,22 +195,22 @@ export default function ProfilePage() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="flex w-full flex-wrap bg-slate-100/80 dark:bg-[#090d16] p-1 border border-border/60 dark:border-white/5 rounded-xl gap-1">
-            <TabsTrigger 
-              value="profile" 
-              className="flex-1 min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
+          <TabsList className="flex h-auto min-h-10 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto rounded-xl border border-border/60 bg-slate-100/80 p-1 no-scrollbar dark:border-white/5 dark:bg-[#090d16]">
+            <TabsTrigger
+              value="profile"
+              className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-4 sm:py-2.5 sm:text-sm"
             >
               Profile Information
             </TabsTrigger>
-            <TabsTrigger 
-              value="equality" 
-              className="flex-1 min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
+            <TabsTrigger
+              value="equality"
+              className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-4 sm:py-2.5 sm:text-sm"
             >
               Equality Monitoring
             </TabsTrigger>
-            <TabsTrigger 
-              value="privacy" 
-              className="flex-1 min-w-0 rounded-lg data-[state=active]:bg-background dark:data-[state=active]:bg-white/10 data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all py-2.5 font-medium text-sm sm:text-base"
+            <TabsTrigger
+              value="privacy"
+              className="shrink-0 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-4 sm:py-2.5 sm:text-sm"
             >
               Privacy Settings
             </TabsTrigger>
@@ -218,8 +218,8 @@ export default function ProfilePage() {
 
           {/* Profile Information Tab */}
           <TabsContent value="profile" className="focus-visible:outline-none">
-            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
-              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
+            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl">
+              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10 rounded-t-2xl">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
                   <User className="h-5 w-5 text-primary" />
                   Personal Information
