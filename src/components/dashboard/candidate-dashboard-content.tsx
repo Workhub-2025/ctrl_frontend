@@ -23,14 +23,12 @@ import {
   ArrowLeft,
   ArrowUpDown,
   Briefcase,
-  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
   ClipboardList,
   Clock,
   Globe,
   Info,
-  KeyRound,
   Link2,
   ListChecks,
   Lock,
@@ -349,6 +347,51 @@ function AssessmentListItem({
         href={item.href}
       />
     </>
+  );
+}
+
+function SessionModeMetaChip({ application }: { application: CandidateApplicationView }) {
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const isRemote = application.mode === "remote";
+  const isInPerson = application.mode === "in_person";
+
+  if (isRemote) {
+    return (
+      <CandidateMetaChip icon={Globe} label="Mode" value="Remote" />
+    );
+  }
+
+  if (isInPerson) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setLocationDialogOpen(true)}
+          className="flex min-w-0 flex-col gap-0.5 rounded-xl border border-border/70 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/5 dark:bg-white/[0.02] dark:hover:border-primary/30"
+        >
+          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            <MapPin className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
+            Location
+          </span>
+          <span className="truncate text-sm font-medium text-foreground">
+            {application.location || "View venue"}
+          </span>
+        </button>
+        <LocationMapDialog
+          address={
+            application.location === "Location to be confirmed"
+              ? ""
+              : application.location
+          }
+          open={locationDialogOpen}
+          onOpenChange={setLocationDialogOpen}
+        />
+      </>
+    );
+  }
+
+  return (
+    <CandidateMetaChip icon={Target} label="Mode" value={application.modeLabel} />
   );
 }
 
@@ -686,7 +729,6 @@ export function CandidateDashboardContent() {
                   />
 
                   <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                    <CandidateMetaChip icon={KeyRound} label="Access code" value={currentApplication.code} mono highlight />
                     {currentApplication.linkedAt ? (
                       <CandidateMetaChip icon={Link2} label="Linked" value={formatDate(currentApplication.linkedAt)} />
                     ) : null}
@@ -696,8 +738,7 @@ export function CandidateDashboardContent() {
                     {currentApplication.expiresAt ? (
                       <CandidateMetaChip icon={Clock} label="Expires" value={formatDateTime(currentApplication.expiresAt) ?? "—"} />
                     ) : null}
-                    <CandidateMetaChip icon={Globe} label="Mode" value={currentApplication.modeLabel} />
-                    <CandidateMetaChip icon={CalendarDays} label="Due" value={formatDate(currentApplication.dueAt)} />
+                    <SessionModeMetaChip application={currentApplication} />
                   </div>
                 </div>
               </div>

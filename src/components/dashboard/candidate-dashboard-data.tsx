@@ -7,42 +7,13 @@ import {
   KeyRound,
   LifeBuoy,
   Lock,
-  Mail,
   MonitorSmartphone,
   RefreshCw,
   ShieldCheck,
-  Ticket,
   type LucideIcon,
 } from "lucide-react";
 
 export { candidateAssessmentItems, completionLabels };
-
-export const candidateSupportLinks: Array<{
-  title: string;
-  description: string;
-  href: string;
-  icon: LucideIcon;
-  actionLabel: string;
-  isContactForm?: boolean;
-}> = [
-  {
-    title: "Raise a Support Ticket",
-    description:
-      "Use our smart ticketing system to report technical issues or ask questions using presets.",
-    href: "/candidate-dashboard/help-support?action=new-ticket",
-    icon: Ticket,
-    actionLabel: "Raise Ticket",
-  },
-  {
-    title: "Contact Hiring Manager",
-    description:
-      "Use this for questions about your allocated assessment or the recruitment process.",
-    href: "#",
-    icon: Mail,
-    actionLabel: "Send Message",
-    isContactForm: true,
-  },
-];
 
 export const candidateGuidanceItems: Array<{
   title: string;
@@ -81,7 +52,7 @@ export const candidateGuidanceItems: Array<{
   },
   {
     title: "Who can I talk to about the role?",
-    body: "For questions about the interview process, role criteria, or your application status, contact the Hiring Manager directly using the action above rather than the IT support desk.",
+    body: "For questions about the interview process, role criteria, or your application status, open your session in My Assessments and use Message hiring team — your session details are attached automatically.",
     icon: Headphones,
   },
 ];

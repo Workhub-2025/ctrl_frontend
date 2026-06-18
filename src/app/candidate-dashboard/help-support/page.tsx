@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { LifeBuoy, Mail, MessageSquare, Ticket } from "lucide-react";
+import { LifeBuoy, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -16,7 +16,6 @@ import {
   CandidatePanel,
   CandidateSectionHeader,
 } from "@/components/dashboard/candidate/candidate-portal-ui";
-import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
 import { CreateTicketDialog } from "@/components/dashboard/create-ticket-dialog";
 import { CandidateTicketHistory } from "@/components/dashboard/candidate-ticket-history";
 import { candidateGuidanceItems } from "@/components/dashboard/candidate-dashboard-data";
@@ -56,86 +55,48 @@ function HelpSupportContent() {
       <CandidatePageHeader
         eyebrow="Help & Support"
         title="Help & Support"
-        description="Raise a technical ticket, message your hiring team, or browse common questions. All messages are tracked so you can follow up."
+        description="Raise a technical ticket or browse common questions. Hiring team messages are sent from your linked assessment session."
         icon={LifeBuoy}
       />
 
       <section className="space-y-4">
         <CandidateSectionHeader
           eyebrow="Get help"
-          title="Choose the right channel"
-          description="IT tickets are for platform issues. Hiring team messages are for process, scheduling, and role questions."
+          title="Technical support"
+          description="IT tickets are for platform issues. For role, scheduling, or process questions, open a session in My Assessments and use Message hiring team."
         />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <CandidatePanel className="flex flex-col">
-            <div className="flex flex-1 flex-col gap-4 p-6">
-              <div className={portalIconWrapLgClass}>
-                <Ticket className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div className="space-y-1.5">
-                <CandidateEyebrow>Technical support</CandidateEyebrow>
-                <h2 className="font-display text-lg font-semibold">Raise an IT ticket</h2>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Login problems, broken pages, assessment errors, or access code
-                  issues — our engineering desk will investigate.
-                </p>
-              </div>
-              <ul className="space-y-1.5 text-xs text-muted-foreground">
-                <li>· You&apos;ll receive a ticket reference to track progress</li>
-                <li>· Page context is attached automatically</li>
-              </ul>
-              <div className="mt-auto pt-2">
-                <CreateTicketDialog
-                  open={ticketDialogOpen}
-                  onOpenChange={handleTicketDialogOpenChange}
-                  onSuccess={handleTicketCreated}
-                >
-                  <Button className="h-10 w-full gap-2 rounded-xl font-semibold">
-                    <Ticket className="h-4 w-4" aria-hidden="true" />
-                    Create IT ticket
-                  </Button>
-                </CreateTicketDialog>
-              </div>
+        <CandidatePanel className="flex max-w-xl flex-col">
+          <div className="flex flex-1 flex-col gap-4 p-6">
+            <div className={portalIconWrapLgClass}>
+              <Ticket className="h-5 w-5" aria-hidden="true" />
             </div>
-          </CandidatePanel>
-
-          <CandidatePanel className="flex flex-col">
-            <div className="flex flex-1 flex-col gap-4 p-6">
-              <div className={portalIconWrapLgClass}>
-                <Mail className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div className="space-y-1.5">
-                <CandidateEyebrow>Hiring team</CandidateEyebrow>
-                <h2 className="font-display text-lg font-semibold">Message hiring team</h2>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Questions about the role, interview process, scheduling, venue, or
-                  your application status.
-                </p>
-              </div>
-              <ul className="space-y-1.5 text-xs text-muted-foreground">
-                <li>· Delivered as a tracked message (not live chat)</li>
-                <li>· Appears in your ticket history below</li>
-              </ul>
-              <div className="mt-auto pt-2">
-                <ContactFormDialog
-                  recipient="Hiring Manager"
-                  defaultSubject="CTRL Candidate Query"
-                  triggerVariant="outline"
-                  onSuccess={handleTicketCreated}
-                >
-                  <Button
-                    variant="outline"
-                    className="h-10 w-full gap-2 rounded-xl font-semibold"
-                  >
-                    <MessageSquare className="h-4 w-4" aria-hidden="true" />
-                    Send message
-                  </Button>
-                </ContactFormDialog>
-              </div>
+            <div className="space-y-1.5">
+              <CandidateEyebrow>Technical support</CandidateEyebrow>
+              <h2 className="font-display text-lg font-semibold">Raise an IT ticket</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Login problems, broken pages, assessment errors, or access code
+                issues — our engineering desk will investigate.
+              </p>
             </div>
-          </CandidatePanel>
-        </div>
+            <ul className="space-y-1.5 text-xs text-muted-foreground">
+              <li>· You&apos;ll receive a ticket reference to track progress</li>
+              <li>· Page context is attached automatically</li>
+            </ul>
+            <div className="mt-auto pt-2">
+              <CreateTicketDialog
+                open={ticketDialogOpen}
+                onOpenChange={handleTicketDialogOpenChange}
+                onSuccess={handleTicketCreated}
+              >
+                <Button className="h-10 w-full gap-2 rounded-xl font-semibold sm:w-auto">
+                  <Ticket className="h-4 w-4" aria-hidden="true" />
+                  Create IT ticket
+                </Button>
+              </CreateTicketDialog>
+            </div>
+          </div>
+        </CandidatePanel>
       </section>
 
       <CandidateTicketHistory refreshKey={ticketRefreshKey} />
@@ -183,10 +144,7 @@ function HelpSupportFallback() {
   return (
     <div className="mx-auto max-w-7xl space-y-6" aria-busy="true">
       <div className="h-28 animate-pulse rounded-2xl bg-muted/40" />
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="h-56 animate-pulse rounded-2xl bg-muted/40" />
-        <div className="h-56 animate-pulse rounded-2xl bg-muted/40" />
-      </div>
+      <div className="h-56 max-w-xl animate-pulse rounded-2xl bg-muted/40" />
     </div>
   );
 }
