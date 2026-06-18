@@ -216,13 +216,15 @@ export function HiringManagerCampaignDetailView({
   }
 
   const canEditAssessmentStack = campaign.sessions === 0;
+  const editCampaignLockedReason =
+    "Delete all sessions before editing the assessment stack for this campaign.";
 
   return (
     <div className="max-w-7xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <Button
           variant="outline"
-          className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+          className="h-8 w-fit shrink-0 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
           asChild
         >
           <Link href="/hiring-manager-dashboard/campaigns/">
@@ -230,6 +232,60 @@ export function HiringManagerCampaignDetailView({
             Back to campaigns
           </Link>
         </Button>
+
+        <TooltipProvider>
+          <div className="flex flex-wrap items-center gap-3">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    asChild={canEditAssessmentStack}
+                    disabled={!canEditAssessmentStack}
+                    className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {canEditAssessmentStack ? (
+                      <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                        Edit campaign
+                      </Link>
+                    ) : (
+                      <>
+                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                        Edit campaign
+                      </>
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canEditAssessmentStack ? (
+                <TooltipContent className="max-w-xs border-white/10 bg-slate-950 text-slate-100">
+                  {editCampaignLockedReason}
+                </TooltipContent>
+              ) : null}
+            </Tooltip>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadCampaign(true)}
+              disabled={isRefreshing}
+              className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+            >
+              <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isRefreshing && "animate-spin text-primary")} />
+              Refresh
+            </Button>
+            <Button
+              type="button"
+              onClick={deleteCampaign}
+              disabled={isDeleting}
+              className="h-9 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              {isDeleting ? "Deleting..." : "Delete Campaign"}
+            </Button>
+          </div>
+        </TooltipProvider>
       </div>
 
       <HiringManagerPageHeader
@@ -248,61 +304,6 @@ export function HiringManagerCampaignDetailView({
               {error}
             </p>
           ) : null
-        }
-        action={
-          <TooltipProvider>
-            <div className="flex flex-wrap items-center gap-3">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      asChild={canEditAssessmentStack}
-                      disabled={!canEditAssessmentStack}
-                      className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {canEditAssessmentStack ? (
-                        <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
-                          <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                          Edit campaign
-                        </Link>
-                      ) : (
-                        <>
-                          <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                          Edit campaign
-                        </>
-                      )}
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {!canEditAssessmentStack ? (
-                  <TooltipContent className="border-white/10 bg-slate-950 text-slate-100">
-                    Delete all sessions to continue
-                  </TooltipContent>
-                ) : null}
-              </Tooltip>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void loadCampaign(true)}
-                disabled={isRefreshing}
-                className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
-              >
-                <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isRefreshing && "animate-spin text-primary")} />
-                Refresh
-              </Button>
-              <Button
-                type="button"
-                onClick={deleteCampaign}
-                disabled={isDeleting}
-                className="h-9 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
-              >
-                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                {isDeleting ? "Deleting..." : "Delete Campaign"}
-              </Button>
-            </div>
-          </TooltipProvider>
         }
       />
 
