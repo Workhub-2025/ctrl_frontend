@@ -391,11 +391,10 @@ export function HiringManagerSessionDetailsDialog({
                         !sessionStartsAtTime ||
                         Number.isNaN(sessionStartsAtTime) ||
                         currentTime >= sessionStartsAtTime;
-                      const showPromptUnlock =
+                      const showUnlockControl =
                         candidate.status === "locked" &&
                         isInPerson &&
-                        Boolean(onUnlockCandidate) &&
-                        isUnlockWindowOpen;
+                        Boolean(onUnlockCandidate);
 
                       const initials = candidate.name
                         .split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
@@ -437,48 +436,22 @@ export function HiringManagerSessionDetailsDialog({
                               </div>
                             </div>
 
-                            <div className="flex justify-center sm:justify-self-center">
-                              <ScoreRing value={hasScore ? roundedOverall : null} />
-                            </div>
-
-                            {/* Right: stats + actions */}
-                            <div className="flex items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-                              <div className="hidden min-w-[130px] border-r border-white/5 pr-4 sm:block">
-                                <div className="text-right">
-                                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Progress</p>
-                                  <p className="text-sm font-extrabold text-white tabular-nums">
-                                    {progress.completed}/{progress.total}
-                                  </p>
-                                </div>
-                                <div className="mt-2 flex justify-end gap-1">
-                                  {finalDisplayList.map((item, idx) => {
-                                    const isCompleted = item.status === "completed";
-                                    const isAbandoned = item.status === "abandoned";
-                                    return (
-                                      <span
-                                        key={`${item.name}-${idx}`}
-                                        title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? "Completed" : "Pending"}`}
-                                        className={[
-                                          "h-2.5 w-6 rounded-full border transition-colors",
-                                          isAbandoned
-                                            ? "border-orange-400/40 bg-orange-500/70"
-                                            : isCompleted
-                                            ? "border-primary/40 bg-primary shadow-[0_0_8px_rgba(99,102,241,0.24)]"
-                                            : "border-white/10 bg-white/[0.04]"
-                                        ].join(" ")}
-                                      />
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              {showPromptUnlock ? (
+                            <div className="flex min-h-10 items-center justify-center sm:justify-self-center">
+                              {showUnlockControl ? (
                                 <Button
                                   type="button"
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => onUnlockCandidate?.(candidate.id)}
-                                  disabled={unlockingCandidateId === candidate.id}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    onUnlockCandidate?.(candidate.id);
+                                  }}
+                                  disabled={!isUnlockWindowOpen || unlockingCandidateId === candidate.id}
+                                  title={
+                                    isUnlockWindowOpen
+                                      ? "Unlock candidate"
+                                      : "Unlock is available when the session starts"
+                                  }
                                   className="h-9 w-[112px] shrink-0 rounded-xl px-3 text-xs font-semibold transition-colors"
                                 >
                                   {unlockingCandidateId === candidate.id ? (
@@ -487,6 +460,42 @@ export function HiringManagerSessionDetailsDialog({
                                     <><LockOpen className="mr-1.5 h-3.5 w-3.5" /> Unlock</>
                                   )}
                                 </Button>
+                              ) : (
+                                <ScoreRing value={hasScore ? roundedOverall : null} />
+                              )}
+                            </div>
+
+                            {/* Right: stats + actions */}
+                            <div className="flex items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              {!showUnlockControl ? (
+                                <div className="hidden min-w-[130px] border-r border-white/5 pr-4 sm:block">
+                                  <div className="text-right">
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Progress</p>
+                                    <p className="text-sm font-extrabold text-white tabular-nums">
+                                      {progress.completed}/{progress.total}
+                                    </p>
+                                  </div>
+                                  <div className="mt-2 flex justify-end gap-1">
+                                    {finalDisplayList.map((item, idx) => {
+                                      const isCompleted = item.status === "completed";
+                                      const isAbandoned = item.status === "abandoned";
+                                      return (
+                                        <span
+                                          key={`${item.name}-${idx}`}
+                                          title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? "Completed" : "Pending"}`}
+                                          className={[
+                                            "h-2.5 w-6 rounded-full border transition-colors",
+                                            isAbandoned
+                                              ? "border-orange-400/40 bg-orange-500/70"
+                                              : isCompleted
+                                              ? "border-primary/40 bg-primary shadow-[0_0_8px_rgba(99,102,241,0.24)]"
+                                              : "border-white/10 bg-white/[0.04]"
+                                          ].join(" ")}
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               ) : null}
 
                               <Button
