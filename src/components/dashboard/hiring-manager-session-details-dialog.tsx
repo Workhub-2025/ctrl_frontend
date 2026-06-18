@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -112,6 +112,14 @@ export function HiringManagerSessionDetailsDialog({
   const [copiedCode, setCopiedCode] = useState(false);
   const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(null);
   const [resultsDialog, setResultsDialog] = useState<ResultsDialogState | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!open) return;
+    setCurrentTime(Date.now());
+    const interval = window.setInterval(() => setCurrentTime(Date.now()), 30_000);
+    return () => window.clearInterval(interval);
+  }, [open]);
 
   const toggleCandidateExpand = (candidateId: string) => {
     setExpandedCandidateId((current) => (current === candidateId ? null : candidateId));
@@ -378,6 +386,16 @@ export function HiringManagerSessionDetailsDialog({
                       });
                       const roundedOverall = Math.round(overallScore);
                       const hasScore = progress.completed > 0;
+                      const sessionStartsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
+                      const isUnlockWindowOpen =
+                        !sessionStartsAtTime ||
+                        Number.isNaN(sessionStartsAtTime) ||
+                        currentTime >= sessionStartsAtTime;
+                      const showPromptUnlock =
+                        candidate.status === "locked" &&
+                        isInPerson &&
+                        Boolean(onUnlockCandidate) &&
+                        isUnlockWindowOpen;
 
                       const initials = candidate.name
                         .split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
@@ -395,7 +413,7 @@ export function HiringManagerSessionDetailsDialog({
                           {/* Row header */}
                           <div
                             onClick={() => toggleCandidateExpand(candidate.id)}
-                            className="grid cursor-pointer select-none gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_104px_auto] sm:items-center"
+                            className="grid cursor-pointer select-none gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_140px_auto] sm:items-center"
                           >
                             {/* Left: avatar + info */}
                             <div className="flex items-center gap-3 min-w-0">
@@ -419,41 +437,13 @@ export function HiringManagerSessionDetailsDialog({
                               </div>
                             </div>
 
-                            {(() => {
-                              const showPromptUnlock = candidate.status === 'locked' && isInPerson && onUnlockCandidate;
-                              if (showPromptUnlock) {
-                                return (
-                                  <div className="flex items-center gap-3 col-span-2 justify-center sm:justify-end">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={(e) => { e.stopPropagation(); onUnlockCandidate(candidate.id); }}
-                                      disabled={unlockingCandidateId === candidate.id}
-                                      className="h-9 rounded-xl px-4 text-xs font-semibold transition-colors"
-                                    >
-                                      {unlockingCandidateId === candidate.id ? (
-                                        <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Unlocking...</>
-                                      ) : (
-                                        <><LockOpen className="mr-1.5 h-3.5 w-3.5" /> Unlock</>
-                                      )}
-                                    </Button>
-                                  </div>
-                                );
-                              }
-                              return (
-                                <>
-                                  <div className="flex justify-center sm:justify-self-center">
-                                    <ScoreRing value={hasScore ? roundedOverall : null} />
-                                  </div>
-                                </>
-                              );
-                            })()}
+                            <div className="flex justify-center sm:justify-self-center">
+                              <ScoreRing value={hasScore ? roundedOverall : null} />
+                            </div>
 
                             {/* Right: stats + actions */}
-                            <div className="flex items-center justify-between gap-4 sm:justify-end shrink-0" onClick={(e) => e.stopPropagation()}>
-                              {!(candidate.status === 'locked' && isInPerson && onUnlockCandidate) && (
-                              <div className="min-w-[130px] border-r border-white/5 pr-4">
+                            <div className="flex items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              <div className="hidden min-w-[130px] border-r border-white/5 pr-4 sm:block">
                                 <div className="text-right">
                                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Progress</p>
                                   <p className="text-sm font-extrabold text-white tabular-nums">
@@ -481,7 +471,23 @@ export function HiringManagerSessionDetailsDialog({
                                   })}
                                 </div>
                               </div>
-                              )}
+
+                              {showPromptUnlock ? (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => onUnlockCandidate?.(candidate.id)}
+                                  disabled={unlockingCandidateId === candidate.id}
+                                  className="h-9 w-[112px] shrink-0 rounded-xl px-3 text-xs font-semibold transition-colors"
+                                >
+                                  {unlockingCandidateId === candidate.id ? (
+                                    <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Unlocking</>
+                                  ) : (
+                                    <><LockOpen className="mr-1.5 h-3.5 w-3.5" /> Unlock</>
+                                  )}
+                                </Button>
+                              ) : null}
 
                               <Button
                                 variant="outline"
