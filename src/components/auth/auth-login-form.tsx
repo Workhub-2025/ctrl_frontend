@@ -4,7 +4,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AnimatedSubmitButton, type ButtonState } from "@/components/ui/animated-submit-button";
+import { AnimatedSubmitButton, type ButtonState, type SubmitButtonPanelVariant } from "@/components/ui/animated-submit-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +15,14 @@ const AUTH_INPUT_CLASS =
 type AuthLoginFormProps = {
   initialEmail?: string;
   disabled?: boolean;
+  panelVariant?: SubmitButtonPanelVariant;
   onSubmit: (credentials: { email: string; password: string }) => Promise<void>;
 };
 
 export const AuthLoginForm = memo(function AuthLoginForm({
   initialEmail = "",
   disabled = false,
+  panelVariant = "dark-panel",
   onSubmit,
 }: AuthLoginFormProps) {
   const [email, setEmail] = useState(initialEmail);
@@ -176,6 +178,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
           idleText="Sign In"
           errorMessage={submitStatus === "error" ? error : undefined}
           disabled={disabled || submitStatus === "loading" || !isSubmittable}
+          panelVariant={panelVariant}
           className="w-full"
         />
       </div>

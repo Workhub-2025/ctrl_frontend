@@ -7,11 +7,15 @@ import { cn } from "@/lib/utils";
 
 export type ButtonState = "idle" | "loading" | "success" | "error" | "invalid";
 
+/** Matches auth page background: dark panels use white CTA; light panels use dark CTA. */
+export type SubmitButtonPanelVariant = "dark-panel" | "light-panel";
+
 interface AnimatedSubmitButtonProps extends Omit<HTMLMotionProps<"button">, "disabled"> {
   status: ButtonState;
   idleText?: string;
   errorMessage?: string;
   disabled?: boolean;
+  panelVariant?: SubmitButtonPanelVariant;
 }
 
 export function AnimatedSubmitButton({
@@ -20,6 +24,7 @@ export function AnimatedSubmitButton({
   errorMessage,
   className,
   disabled,
+  panelVariant = "dark-panel",
   ...props
 }: AnimatedSubmitButtonProps) {
   const [internalState, setInternalState] = useState<ButtonState>(status);
@@ -38,10 +43,13 @@ export function AnimatedSubmitButton({
 
   const isInactive =
     internalState === "loading" || (internalState === "idle" && disabled);
+  const isLightPanel = panelVariant === "light-panel";
 
-  let bgColor = "bg-white";
-  let textColor = "text-black";
-  let hoverColor = "hover:bg-slate-200 hover:shadow-sm";
+  let bgColor = isLightPanel ? "bg-slate-900" : "bg-white";
+  let textColor = isLightPanel ? "text-white" : "text-black";
+  let hoverColor = isLightPanel
+    ? "hover:bg-slate-800 hover:shadow-sm"
+    : "hover:bg-slate-200 hover:shadow-sm";
   let shadowClass = "shadow-none";
 
   if (internalState === "error" || internalState === "invalid") {
@@ -55,7 +63,7 @@ export function AnimatedSubmitButton({
     hoverColor = "hover:bg-emerald-600";
     shadowClass = "shadow-none";
   } else if (isInactive) {
-    bgColor = "bg-white/20";
+    bgColor = isLightPanel ? "bg-slate-200" : "bg-white/20";
     textColor = "text-slate-400";
     hoverColor = "";
     shadowClass = "shadow-none";

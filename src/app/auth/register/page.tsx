@@ -49,6 +49,10 @@ function UnifiedAuthContent() {
     resetSettings: resetAccessibilitySettings,
     themeClassName: bgColor,
   } = useAccessibilitySettings();
+  const submitPanelVariant =
+    accessibilitySettings.theme === "soft-cream" || accessibilitySettings.theme === "light-blue"
+      ? "light-panel"
+      : "dark-panel";
   
   const [formData, setFormData] = useState<SignUpData>({
     firstName: "",
@@ -362,6 +366,7 @@ function UnifiedAuthContent() {
                 <AuthLoginForm
                   initialEmail={initialLoginEmail}
                   disabled={isAuthBusy}
+                  panelVariant={submitPanelVariant}
                   onSubmit={handleLogin}
                 />
               ) : (
@@ -530,6 +535,7 @@ function UnifiedAuthContent() {
                       idleText="Create Account"
                       errorMessage={submitStatus === "error" ? error : undefined}
                       disabled={isAuthBusy || !isFormSubmittable}
+                      panelVariant={submitPanelVariant}
                       className="w-full"
                     />
                   </div>
