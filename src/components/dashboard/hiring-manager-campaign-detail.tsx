@@ -173,15 +173,17 @@ export function HiringManagerCampaignDetailView({
 
   const handleUnlockCandidate = async (candidateSessionId: string) => {
     setUnlockingCandidateId(candidateSessionId);
+    setError(null);
     try {
-      const success = await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
-      if (success) {
-        await loadCampaign(true);
-      } else {
-        alert("Failed to unlock candidate session.");
-      }
+      await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
+      await loadCampaign(true);
     } catch (err) {
       console.error(err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Candidate session could not be unlocked."
+      );
     } finally {
       setUnlockingCandidateId(null);
     }

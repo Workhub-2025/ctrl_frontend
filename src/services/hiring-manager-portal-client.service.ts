@@ -366,22 +366,16 @@ export class HiringManagerPortalClientService {
     this.invalidate();
   }
 
-  static async unlockCandidate(candidateSessionId: string): Promise<boolean> {
-    try {
-      const response = await fetch(
-        `/api/hiring-manager/candidate-sessions/${candidateSessionId}/unlock`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      await readJson<{ data?: unknown; error?: string }>(response);
-      this.invalidate();
-      return true;
-    } catch (err) {
-      console.error("[unlockCandidate] Failed to unlock candidate", err);
-      return false;
-    }
+  static async unlockCandidate(candidateSessionId: string): Promise<void> {
+    const response = await fetch(
+      `/api/hiring-manager/candidate-sessions/${candidateSessionId}/unlock`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    await readJson<{ data?: unknown; error?: string }>(response);
+    this.invalidate();
   }
 
   static async submitCandidateDecision(input: {

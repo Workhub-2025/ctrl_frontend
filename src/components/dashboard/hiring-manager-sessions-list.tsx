@@ -353,15 +353,17 @@ export function HiringManagerSessionsList() {
 
   const handleUnlockCandidate = async (candidateSessionId: string) => {
     setUnlockingCandidateId(candidateSessionId);
+    setCreateError(null);
     try {
-      const success = await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
-      if (success) {
-        await loadSessions(true);
-      } else {
-        alert("Failed to unlock candidate session.");
-      }
+      await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
+      await loadSessions(true);
     } catch (err) {
       console.error(err);
+      setCreateError(
+        err instanceof Error
+          ? err.message
+          : "Candidate session could not be unlocked."
+      );
     } finally {
       setUnlockingCandidateId(null);
     }
