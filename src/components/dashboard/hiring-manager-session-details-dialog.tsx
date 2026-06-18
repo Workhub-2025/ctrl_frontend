@@ -152,18 +152,6 @@ export function HiringManagerSessionDetailsDialog({
           <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
           <div className="pointer-events-none absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
 
-          {/* X close — wrapped in div to escape [&>button]:hidden */}
-          <div className="absolute right-5 top-5 z-20">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
           {session && (
             <>
               {/* Compute isInPerson for this session */}
@@ -172,23 +160,24 @@ export function HiringManagerSessionDetailsDialog({
                 return (
                   <>
               {/* Header */}
-              <DialogHeader className="border-b border-white/5 pb-4 relative z-10 text-left pr-12 flex flex-col gap-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <DialogTitle className="text-xl font-bold text-white leading-snug">
-                      {campaignName || session.campaign}
-                    </DialogTitle>
-                    <Badge className={[
-                      "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
-                      getStatusTone(session.status)
-                    ].join(" ")}>
-                      {session.status}
-                    </Badge>
+              <DialogHeader className="relative z-10 flex flex-col gap-1.5 border-b border-white/5 pb-4 text-left">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2.5">
+                      <DialogTitle className="text-xl font-bold leading-snug text-white">
+                        {campaignName || session.campaign}
+                      </DialogTitle>
+                      <Badge className={[
+                        "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
+                        getStatusTone(session.status)
+                      ].join(" ")}>
+                        {session.status}
+                      </Badge>
+                    </div>
                   </div>
-                  
-                  {/* Session Status Actions in Dialog */}
-                  <div className="flex items-center gap-2">
+
+                  <div className="flex shrink-0 items-center gap-2">
                     {session.candidateCount === 0 && onDeleteSession ? (
                       <Button
                         type="button"
@@ -229,13 +218,21 @@ export function HiringManagerSessionDetailsDialog({
                             session.candidates,
                             expectedAssessmentCount
                           ) ? (
-                            <TooltipContent className="border-white/10 bg-slate-950 text-slate-100">
-                              All candidates must complete their assessments before closing
+                            <TooltipContent className="max-w-xs border-white/10 bg-slate-950 text-slate-100">
+                              All candidates must complete their assessments before closing this session.
                             </TooltipContent>
                           ) : null}
                         </Tooltip>
                       </TooltipProvider>
                     ) : null}
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                      aria-label="Close"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5 font-medium">
