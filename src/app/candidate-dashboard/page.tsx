@@ -134,9 +134,11 @@ export default function CandidateDashboardOverviewPage() {
     ? "Link your first assessment session with the Access Code from your hiring team, then complete each assigned task at your own pace."
     : awaitingActionCount > 0
       ? "You have assessments ready to work on. Continue your session or link another Access Code below."
-      : activeApps.length > 0
+      : activeApps.length > 1
         ? "Your active sessions are below. Check back for unlocks or new tasks from your hiring team."
-        : "All current sessions are complete. Link a new Access Code if you've been invited to another assessment.";
+        : activeApps.length === 1
+          ? "Your session is active. Check back for unlocks or new tasks from your hiring team."
+          : "All current sessions are complete. Link a new Access Code if you've been invited to another assessment.";
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 pb-12 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
@@ -252,7 +254,7 @@ export default function CandidateDashboardOverviewPage() {
         </section>
       ) : null}
 
-      {hasAnySessions ? (
+      {hasAnySessions && activeApps.length !== 1 ? (
         <section className="space-y-5">
           <CandidateSectionHeader
             eyebrow="Active"
