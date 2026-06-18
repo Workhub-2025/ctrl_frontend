@@ -24,7 +24,6 @@ import {
   CandidateProgressHeader,
   CandidateQuickLink,
   CandidateSectionHeader,
-  CandidateStatTile,
 } from "@/components/dashboard/candidate/candidate-portal-ui";
 import { portalAlertErrorClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
@@ -33,17 +32,14 @@ import {
   ArrowRight,
   Briefcase,
   CalendarClock,
-  CheckCircle2,
   ChevronRight,
   ClipboardCheck,
   Globe,
   KeyRound,
   LayoutDashboard,
-  ListChecks,
   MapPin,
   RefreshCw,
   Sparkles,
-  Target,
 } from "lucide-react";
 
 function getActiveDateMeta(app: CandidateApplicationView) {
@@ -63,18 +59,6 @@ function getActiveDateMeta(app: CandidateApplicationView) {
 
 function assessmentHrefFor(key: string) {
   return `/candidate-dashboard/my-assessments?session=${encodeURIComponent(key)}`;
-}
-
-function StatTileSkeleton() {
-  return (
-    <CandidatePanel className="animate-pulse">
-      <div className="space-y-3 p-5">
-        <div className="h-3 w-24 rounded bg-muted" />
-        <div className="h-8 w-16 rounded bg-muted" />
-        <div className="h-3 w-28 rounded bg-muted" />
-      </div>
-    </CandidatePanel>
-  );
 }
 
 export default function CandidateDashboardOverviewPage() {
@@ -108,18 +92,10 @@ export default function CandidateDashboardOverviewPage() {
     [activeApps]
   );
 
-  const stats = useMemo(() => {
-    const awaitingAction = activeApps.filter(hasAvailableAssessment).length;
-    const submitted = applications.reduce((sum, app) => sum + app.completedCount, 0);
-    const totalTasks = applications.reduce((sum, app) => sum + app.totalCount, 0);
-    return {
-      active: activeApps.length,
-      awaitingAction,
-      submitted,
-      totalTasks,
-      completed: pastApps.length,
-    };
-  }, [applications, activeApps, pastApps]);
+  const awaitingActionCount = useMemo(
+    () => activeApps.filter(hasAvailableAssessment).length,
+    [activeApps]
+  );
 
   const handleJoin = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -150,42 +126,11 @@ export default function CandidateDashboardOverviewPage() {
   const hasAnySessions = applications.length > 0;
   const orientationDescription = !hasAnySessions
     ? "Link your first assessment session with the Access Code from your hiring team, then complete each assigned task at your own pace."
-    : stats.awaitingAction > 0
+    : awaitingActionCount > 0
       ? "You have assessments ready to work on. Continue your session or link another Access Code below."
       : activeApps.length > 0
         ? "Your active sessions are below. Check back for unlocks or new tasks from your hiring team."
         : "All current sessions are complete. Link a new Access Code if you've been invited to another assessment.";
-
-  const statTiles = [
-    {
-      label: "Active sessions",
-      value: stats.active,
-      detail: stats.active === 1 ? "in progress" : "in progress",
-      icon: Target,
-      tone: "default" as const,
-    },
-    {
-      label: "Ready to start",
-      value: stats.awaitingAction,
-      detail: stats.awaitingAction > 0 ? "needs your action" : "nothing waiting",
-      icon: AlertTriangle,
-      tone: stats.awaitingAction > 0 ? ("attention" as const) : ("default" as const),
-    },
-    {
-      label: "Submitted",
-      value: stats.submitted,
-      detail: stats.totalTasks > 0 ? `of ${stats.totalTasks} assigned` : "none yet",
-      icon: ListChecks,
-      tone: "default" as const,
-    },
-    {
-      label: "Finished",
-      value: stats.completed,
-      detail: stats.completed === 1 ? "session closed" : "sessions closed",
-      icon: CheckCircle2,
-      tone: stats.completed > 0 ? ("success" as const) : ("default" as const),
-    },
-  ];
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 pb-12 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
@@ -227,14 +172,6 @@ export default function CandidateDashboardOverviewPage() {
           ) : null
         }
       />
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {isLoading
-          ? [0, 1, 2, 3].map((i) => <StatTileSkeleton key={i} />)
-          : statTiles.map((tile) => (
-              <CandidateStatTile key={tile.label} {...tile} />
-            ))}
-      </section>
 
       {!isLoading && nextUpApp && hasAvailableAssessment(nextUpApp) ? (
         <CandidatePanel>
