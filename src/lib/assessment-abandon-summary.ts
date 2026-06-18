@@ -14,6 +14,13 @@ export function formatAbandonSnapshotSummary(
   const canonicalSlug = normalizeSlug(assessmentSlug);
   const slugLabel = getAssessmentLabel(canonicalSlug);
   const versionSuffix = contentVersion ? ` · v${contentVersion}` : "";
+  const recoveryPath =
+    typeof snapshot?.recoveryContext === "object" &&
+    snapshot.recoveryContext !== null &&
+    "path" in snapshot.recoveryContext &&
+    typeof snapshot.recoveryContext.path === "string"
+      ? ` · ${snapshot.recoveryContext.path}`
+      : "";
 
   if (!snapshot || Object.keys(snapshot).length === 0) {
     return `${slugLabel} abandoned${versionSuffix}`;
@@ -30,7 +37,7 @@ export function formatAbandonSnapshotSummary(
       typeof snapshot.currentRunIndex === "number" ? snapshot.currentRunIndex : null;
 
     if (completedIndexes.length > 0 && currentRunIndex !== null) {
-      return `${slugLabel}: completed runs ${completedIndexes.join(", ")} · interrupted on run ${currentRunIndex + 1}${versionSuffix}`;
+      return `${slugLabel}: completed runs ${completedIndexes.join(", ")} · interrupted on run ${currentRunIndex + 1}${versionSuffix}${recoveryPath}`;
     }
   }
 
@@ -39,7 +46,7 @@ export function formatAbandonSnapshotSummary(
       typeof snapshot.scenarioIndex === "number" ? snapshot.scenarioIndex + 1 : null;
     const responses = Array.isArray(snapshot.responses) ? snapshot.responses.length : 0;
     if (scenarioIndex !== null) {
-      return `${slugLabel}: scenario ${scenarioIndex} · ${responses} responses saved${versionSuffix}`;
+      return `${slugLabel}: scenario ${scenarioIndex} · ${responses} responses saved${versionSuffix}${recoveryPath}`;
     }
   }
 
@@ -47,14 +54,14 @@ export function formatAbandonSnapshotSummary(
     const finalIndex = typeof snapshot.finalIndex === "number" ? snapshot.finalIndex + 1 : null;
     const roundCount = typeof snapshot.roundCount === "number" ? snapshot.roundCount : null;
     if (finalIndex !== null) {
-      return `${slugLabel}: round ${finalIndex}${roundCount ? `/${roundCount}` : ""}${versionSuffix}`;
+      return `${slugLabel}: round ${finalIndex}${roundCount ? `/${roundCount}` : ""}${versionSuffix}${recoveryPath}`;
     }
   }
 
   if (canonicalSlug === "call-simulation") {
     const runIndex = typeof snapshot.currentRunIndex === "number" ? snapshot.currentRunIndex + 1 : null;
     if (runIndex !== null) {
-      return `${slugLabel}: call ${runIndex}${versionSuffix}`;
+      return `${slugLabel}: call ${runIndex}${versionSuffix}${recoveryPath}`;
     }
   }
 
@@ -62,7 +69,7 @@ export function formatAbandonSnapshotSummary(
     ? " · restart required"
     : "";
 
-  return `${slugLabel} abandoned${timedNote}${versionSuffix}`;
+  return `${slugLabel} abandoned${timedNote}${versionSuffix}${recoveryPath}`;
 }
 
 export function buildAssessmentRecoveryTicket(input: {

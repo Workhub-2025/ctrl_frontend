@@ -61,6 +61,7 @@ export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
 ];
 
 export const candidateAssessmentItems = CANDIDATE_ASSESSMENT_CATALOG.map((item) => ({
+  slug: item.slug,
   icon: item.icon,
   title: item.title,
   description: item.description,

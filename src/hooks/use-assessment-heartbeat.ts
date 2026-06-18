@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AssessmentAttemptService, type CandidateAssessmentAttempt } from "@/services/assessment-attempt.service";
 
-const HEARTBEAT_INTERVAL_MS = 15_000;
+const HEARTBEAT_INTERVAL_MS = 5_000;
 const RECONNECT_TIMEOUT_MS = 60_000;
 const RECONNECT_POLL_MS = 3_000;
 const LOCKED_STATUS_POLL_MS = 15_000;
@@ -37,6 +37,7 @@ export function useAssessmentHeartbeat({
   const getSnapshotRef = useRef(getSnapshot);
   const heartbeatInFlightRef = useRef(false);
   const onRecoveredRef = useRef(onRecovered);
+  const abandoningRef = useRef(false);
 
   useEffect(() => {
     getSnapshotRef.current = getSnapshot;
@@ -46,22 +47,58 @@ export function useAssessmentHeartbeat({
     onRecoveredRef.current = onRecovered;
   }, [onRecovered]);
 
-  const abandonAttempt = useCallback(async () => {
+  const getSnapshotWithContext = useCallback(() => {
+    const snapshot = getSnapshotRef.current() ?? {};
+    const path =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search}`
+        : null;
+
+    return {
+      ...snapshot,
+      recoveryContext: {
+        path,
+        capturedAt: new Date().toISOString(),
+        online:
+          typeof navigator !== "undefined" && "onLine" in navigator
+            ? navigator.onLine
+            : null,
+      },
+    };
+  }, []);
+
+  const abandonAttempt = useCallback(async (reason = "heartbeat_timeout") => {
     if (!candidateSessionDocumentId) return;
+    if (abandoningRef.current) return;
+    abandoningRef.current = true;
+
     try {
       await AssessmentAttemptService.abandon({
         candidateSessionDocumentId,
         assessmentSlug,
-        snapshot: getSnapshotRef.current(),
-        reason: "heartbeat_timeout",
+        snapshot: getSnapshotWithContext(),
+        reason,
       });
     } catch {
-      // Best effort — beacon may have already fired.
+      try {
+        window.localStorage.setItem(
+          `ctrl_pending_abandon:${candidateSessionDocumentId}:${assessmentSlug}`,
+          JSON.stringify({
+            candidateSessionDocumentId,
+            assessmentSlug,
+            snapshot: getSnapshotWithContext(),
+            reason,
+            queuedAt: new Date().toISOString(),
+          })
+        );
+      } catch {
+        // Best effort — stale heartbeat detection will still catch the server-side state.
+      }
     }
     setIsLocked(true);
     setIsReconnecting(false);
     setReconnectSecondsLeft(null);
-  }, [assessmentSlug, candidateSessionDocumentId]);
+  }, [assessmentSlug, candidateSessionDocumentId, getSnapshotWithContext]);
 
   const sendHeartbeat = useCallback(
     async (start = false) => {
@@ -73,12 +110,18 @@ export function useAssessmentHeartbeat({
           candidateSessionDocumentId,
           assessmentSlug,
           contentVersion: contentVersion ?? null,
-          snapshot: getSnapshotRef.current(),
+          snapshot: getSnapshotWithContext(),
           start,
         });
+        abandoningRef.current = false;
         reconnectStartedAtRef.current = null;
         setIsReconnecting(false);
         setReconnectSecondsLeft(null);
+        try {
+          window.localStorage.removeItem(`ctrl_pending_abandon:${candidateSessionDocumentId}:${assessmentSlug}`);
+        } catch {
+          // Ignore storage errors.
+        }
         return true;
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
@@ -96,8 +139,16 @@ export function useAssessmentHeartbeat({
         heartbeatInFlightRef.current = false;
       }
     },
-    [assessmentSlug, candidateSessionDocumentId, contentVersion]
+    [assessmentSlug, candidateSessionDocumentId, contentVersion, getSnapshotWithContext]
   );
+
+  const enterReconnectMode = useCallback(() => {
+    if (!reconnectStartedAtRef.current) {
+      reconnectStartedAtRef.current = Date.now();
+    }
+    setIsReconnecting(true);
+    setReconnectSecondsLeft(Math.ceil(RECONNECT_TIMEOUT_MS / 1000));
+  }, []);
 
   useEffect(() => {
     if (!candidateSessionDocumentId) {
@@ -148,6 +199,10 @@ export function useAssessmentHeartbeat({
   useEffect(() => {
     if (!isActive || isLocked || !candidateSessionDocumentId) return;
 
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      enterReconnectMode();
+    }
+
     if (!startedRef.current) {
       startedRef.current = true;
       onStart?.();
@@ -170,16 +225,14 @@ export function useAssessmentHeartbeat({
     isReconnecting,
     onStart,
     sendHeartbeat,
+    enterReconnectMode,
   ]);
 
   useEffect(() => {
     if (!isActive || isLocked || !candidateSessionDocumentId) return;
 
     const handleOffline = () => {
-      if (!reconnectStartedAtRef.current) {
-        reconnectStartedAtRef.current = Date.now();
-      }
-      setIsReconnecting(true);
+      enterReconnectMode();
     };
 
     const handleOnline = () => {
@@ -193,7 +246,7 @@ export function useAssessmentHeartbeat({
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
     };
-  }, [candidateSessionDocumentId, isActive, isLocked, sendHeartbeat]);
+  }, [candidateSessionDocumentId, enterReconnectMode, isActive, isLocked, sendHeartbeat]);
 
   useEffect(() => {
     if (!isReconnecting || isLocked) return;
@@ -207,7 +260,7 @@ export function useAssessmentHeartbeat({
       setReconnectSecondsLeft(remaining);
 
       if (elapsed >= RECONNECT_TIMEOUT_MS) {
-        void abandonAttempt();
+        void abandonAttempt("connection_lost");
         return;
       }
 
@@ -220,14 +273,54 @@ export function useAssessmentHeartbeat({
   }, [abandonAttempt, isLocked, isReconnecting, sendHeartbeat]);
 
   useEffect(() => {
+    if (!candidateSessionDocumentId) return;
+
+    const storageKey = `ctrl_pending_abandon:${candidateSessionDocumentId}:${assessmentSlug}`;
+    const flushPendingAbandon = () => {
+      let queued: {
+        candidateSessionDocumentId?: string;
+        assessmentSlug?: string;
+        snapshot?: Record<string, unknown> | null;
+        reason?: string;
+      } | null = null;
+
+      try {
+        const raw = window.localStorage.getItem(storageKey);
+        queued = raw ? JSON.parse(raw) : null;
+      } catch {
+        queued = null;
+      }
+
+      if (!queued?.candidateSessionDocumentId || !queued.assessmentSlug) return;
+
+      void AssessmentAttemptService.abandon({
+        candidateSessionDocumentId: queued.candidateSessionDocumentId,
+        assessmentSlug: queued.assessmentSlug,
+        snapshot: queued.snapshot ?? null,
+        reason: queued.reason ?? "connection_lost",
+      })
+        .then(() => {
+          window.localStorage.removeItem(storageKey);
+        })
+        .catch(() => {
+          // Keep queued until the next online event / page load.
+        });
+    };
+
+    flushPendingAbandon();
+    window.addEventListener("online", flushPendingAbandon);
+    return () => window.removeEventListener("online", flushPendingAbandon);
+  }, [assessmentSlug, candidateSessionDocumentId]);
+
+  useEffect(() => {
     if (!isActive || isLocked || !candidateSessionDocumentId) return;
 
     const handlePageHide = () => {
       const payload = JSON.stringify({
         candidateSessionDocumentId,
         assessmentSlug,
-        snapshot: getSnapshotRef.current(),
-        reason: "page_hidden",
+        snapshot: getSnapshotWithContext(),
+        reason: "window_closed",
       });
       const blob = new Blob([payload], { type: "application/json" });
       navigator.sendBeacon("/api/assessment/attempt/abandon", blob);
@@ -235,7 +328,7 @@ export function useAssessmentHeartbeat({
 
     window.addEventListener("pagehide", handlePageHide);
     return () => window.removeEventListener("pagehide", handlePageHide);
-  }, [assessmentSlug, candidateSessionDocumentId, isActive, isLocked]);
+  }, [assessmentSlug, candidateSessionDocumentId, getSnapshotWithContext, isActive, isLocked]);
 
   const markCompleted = useCallback(async () => {
     if (!candidateSessionDocumentId) return;

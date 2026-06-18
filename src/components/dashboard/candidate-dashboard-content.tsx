@@ -71,11 +71,12 @@ import { CandidateSessionService } from "@/services/candidate-session.service";
 import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 import { normalizeSlug } from "@/lib/assessment-slug";
+import { getAssessmentPagePath } from "@/assessments/plugins/helpers";
 
 function getCandidateAssessmentSlug(
   item: (typeof candidateAssessmentItems)[number]
 ) {
-  return normalizeSlug(item.href.split("/").pop());
+  return item.slug;
 }
 
 function getAssessmentItemsForApplication(application: CandidateApplicationView) {
@@ -89,6 +90,7 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
         normalizeSlug(item.title) === slug ||
         normalizeSlug(assessment.name) === slug
     );
+    const resolvedSlug = slug || matchedItem?.slug || normalizeSlug(assessment.name) || "unknown";
 
     const isLocked = assessment.status === "locked";
     const isAbandoned = assessment.status === "abandoned";
@@ -104,8 +106,8 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
           ? `Opens${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : " soon"}.`
           : matchedItem?.description ?? "Complete this assigned assessment.",
       duration: matchedItem?.duration,
-      href: `${matchedItem?.href ?? `/assessment/${slug}`}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
-      slug,
+      href: `${getAssessmentPagePath(resolvedSlug)}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
+      slug: resolvedSlug,
       isCompleted: assessment.status === "completed",
       isAbandoned,
       isAvailable:
