@@ -69,6 +69,8 @@ export const AuthLoginForm = memo(function AuthLoginForm({
     }, 1800);
   }, []);
 
+  const isSubmittable = email.trim().length > 0 && password.length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (disabled) return;
@@ -173,7 +175,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
           status={submitStatus}
           idleText="Sign In"
           errorMessage={submitStatus === "error" ? error : undefined}
-          disabled={disabled || submitStatus === "loading"}
+          disabled={disabled || submitStatus === "loading" || !isSubmittable}
           className="w-full"
         />
       </div>

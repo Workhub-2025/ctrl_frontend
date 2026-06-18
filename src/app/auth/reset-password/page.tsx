@@ -154,7 +154,12 @@ function ResetPasswordForm() {
                 submitStatus === "error" || submitStatus === "invalid" ? error : undefined
               }
               className="w-full rounded-xl"
-              disabled={submitStatus === "loading" || submitStatus === "success"}
+              disabled={
+                submitStatus === "loading" ||
+                submitStatus === "success" ||
+                password.length < 8 ||
+                password !== confirmPassword
+              }
             />
 
             <Button

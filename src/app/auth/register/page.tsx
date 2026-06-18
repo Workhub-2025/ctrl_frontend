@@ -207,6 +207,8 @@ function UnifiedAuthContent() {
     return Array.from(new Set(fields));
   };
 
+  const isFormSubmittable = validateForm().length === 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (authAction) return;
@@ -297,7 +299,7 @@ function UnifiedAuthContent() {
               </p>
               <Button 
                 onClick={() => switchAuthMode(true)} 
-                className="h-12 w-full rounded-xl bg-white text-base font-medium text-black hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                className="h-12 w-full rounded-xl bg-white text-base font-medium text-black hover:bg-slate-200 hover:shadow-sm transition-colors shadow-none"
               >
                 Sign In Now <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -527,7 +529,7 @@ function UnifiedAuthContent() {
                       status={submitStatus}
                       idleText="Create Account"
                       errorMessage={submitStatus === "error" ? error : undefined}
-                      disabled={isAuthBusy}
+                      disabled={isAuthBusy || !isFormSubmittable}
                       className="w-full"
                     />
                   </div>

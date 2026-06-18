@@ -113,7 +113,7 @@ function ForgotPasswordForm() {
                   submitStatus === "error" || submitStatus === "invalid" ? error : undefined
                 }
                 className="w-full rounded-xl"
-                disabled={submitStatus === "loading"}
+                disabled={submitStatus === "loading" || !email.trim()}
               />
 
               <Button

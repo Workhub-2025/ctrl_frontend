@@ -36,29 +36,41 @@ export function AnimatedSubmitButton({
     }
   }, [status]);
 
+  const isInactive =
+    internalState === "loading" || (internalState === "idle" && disabled);
+
   let bgColor = "bg-white";
   let textColor = "text-black";
-  let hoverColor = "hover:bg-slate-200";
+  let hoverColor = "hover:bg-slate-200 hover:shadow-sm";
+  let shadowClass = "shadow-none";
 
   if (internalState === "error" || internalState === "invalid") {
     bgColor = "bg-red-500";
     textColor = "text-white";
     hoverColor = "hover:bg-red-600";
+    shadowClass = "shadow-none";
   } else if (internalState === "success") {
     bgColor = "bg-emerald-500";
     textColor = "text-white";
     hoverColor = "hover:bg-emerald-600";
+    shadowClass = "shadow-none";
+  } else if (isInactive) {
+    bgColor = "bg-white/20";
+    textColor = "text-slate-400";
+    hoverColor = "";
+    shadowClass = "shadow-none";
   }
 
   return (
     <div className={cn("relative flex justify-center w-full", className)}>
       <motion.button
         className={cn(
-          "relative flex h-12 w-full rounded-xl items-center justify-center font-medium shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-colors overflow-visible",
+          "relative flex h-12 w-full rounded-xl items-center justify-center font-medium transition-colors overflow-visible",
+          shadowClass,
           bgColor,
           textColor,
           hoverColor,
-          disabled && internalState === "idle" && "opacity-60 cursor-not-allowed"
+          isInactive && "cursor-not-allowed"
         )}
         animate={
           internalState === "error" || internalState === "invalid"
