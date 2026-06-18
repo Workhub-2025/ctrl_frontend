@@ -5,11 +5,13 @@ export const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
 
 /** Server-side Strapi REST base URL (includes `/api`). */
 export function getStrapiApiBaseUrl() {
-  return stripTrailingSlashes(
+  const baseUrl = stripTrailingSlashes(
     process.env.STRAPI_API_URL ??
       process.env.NEXT_PUBLIC_STRAPI_API_URL ??
       "http://localhost:1337/api"
   );
+
+  return baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
 }
 
 /** Strapi host root without `/api` — for public media URLs. */
