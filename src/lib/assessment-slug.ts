@@ -1,7 +1,4 @@
-import {
-  getAssessmentPluginTitle,
-  getTimedAssessmentSlugs,
-} from "@/assessments/plugins/registry";
+import { completionLabels } from "@/assessments/plugins/candidate-catalog";
 
 export type PlatformAssessmentSlug =
   | "typing"
@@ -63,7 +60,7 @@ export function isKnownAssessmentSlug(value: string): value is PlatformAssessmen
 
 export function formatAssessmentSlugLabel(slug: string): string {
   return (
-    getAssessmentPluginTitle(slug) ??
+    completionLabels[slug] ??
     slug
       .split("-")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
@@ -71,4 +68,9 @@ export function formatAssessmentSlugLabel(slug: string): string {
   );
 }
 
-export const TIMED_ASSESSMENT_SLUGS = getTimedAssessmentSlugs();
+export const TIMED_ASSESSMENT_SLUGS: ReadonlySet<string> = new Set([
+  "typing",
+  "situational-judgement",
+  "prioritisation",
+  "call-simulation",
+]);

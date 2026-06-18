@@ -461,8 +461,8 @@ export default function PrioritisationTest({
   }, [finalRounds, timeLimitSeconds]);
 
   const closeAssessment = useCallback(() => {
-    closeAssessmentWindow();
-  }, []);
+    closeAssessmentWindow(candidateSessionDocumentId);
+  }, [candidateSessionDocumentId]);
 
   const placeIncident = (incidentId: string, targetIndex: number) => {
     setPrioritySlots((currentSlots) => {

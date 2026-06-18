@@ -107,6 +107,7 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
           : matchedItem?.description ?? "Complete this assigned assessment.",
       duration: matchedItem?.duration,
       href: `${matchedItem?.href ?? `/assessment/${slug}`}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
+      slug,
       isCompleted: assessment.status === "completed",
       isAbandoned,
       isAvailable:
@@ -568,7 +569,10 @@ export function CandidateDashboardContent() {
   const showListOnMobile = !selectedApplicationKey;
   const showDetailOnMobile = !!selectedApplicationKey;
   const outcome = currentApplication
-    ? getOutcomeGuidance(currentApplication.status)
+    ? currentApplication.completedCount >= currentApplication.totalCount &&
+      currentApplication.totalCount > 0
+      ? getOutcomeGuidance("Completed")
+      : getOutcomeGuidance(currentApplication.status)
     : null;
 
   return (
@@ -728,7 +732,7 @@ export function CandidateDashboardContent() {
                     <div className="space-y-1">
                       {currentAssessmentItems.map((item, index) => (
                         <AssessmentListItem
-                          key={item.href}
+                          key={item.slug || item.href}
                           item={item}
                           step={index + 1}
                           totalSteps={currentAssessmentItems.length}

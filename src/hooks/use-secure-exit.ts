@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { getCandidateAssessmentsReturnPath } from "@/lib/assessment-completion";
 
 /**
  * useSecureExit Hook
@@ -9,17 +10,26 @@ import { useRouter } from "next/navigation";
  * Cleans up the `ctrl_secure_lock` from localStorage, and either closes 
  * the pop-out window (if opened securely) or redirects to the dashboard.
  */
-export function useSecureExit() {
+export function useSecureExit(candidateSessionDocumentId?: string | null) {
   const router = useRouter();
 
   const handleExit = () => {
     if (typeof window !== "undefined") {
       window.localStorage.removeItem("ctrl_secure_lock");
       if (window.opener) {
-        window.close(); // Close the pop-out window
+        window.close();
+        return;
       }
     }
-    router.push("/candidate-dashboard/my-assessments/");
+
+    const params =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
+    const sessionId =
+      candidateSessionDocumentId ?? params?.get("candidateSessionDocumentId");
+
+    router.push(getCandidateAssessmentsReturnPath(sessionId));
   };
 
   return { handleExit };

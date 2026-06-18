@@ -43,8 +43,22 @@ export function listenForAssessmentCompletion(callback: () => void) {
   };
 }
 
-export function closeAssessmentWindow(fallbackPath = "/candidate-dashboard/my-assessments/") {
+export function getCandidateAssessmentsReturnPath(
+  candidateSessionDocumentId?: string | null,
+): string {
+  if (!candidateSessionDocumentId) {
+    return "/candidate-dashboard/my-assessments";
+  }
+
+  return `/candidate-dashboard/my-assessments?session=${encodeURIComponent(candidateSessionDocumentId)}`;
+}
+
+export function closeAssessmentWindow(
+  candidateSessionDocumentId?: string | null,
+) {
   if (typeof window === "undefined") return;
+
+  const fallbackPath = getCandidateAssessmentsReturnPath(candidateSessionDocumentId);
 
   try {
     window.close();

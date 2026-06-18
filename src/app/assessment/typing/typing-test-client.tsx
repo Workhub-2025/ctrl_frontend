@@ -22,7 +22,7 @@ export function TypingTestClient({
   initialSession,
   candidateSessionDocumentId,
 }: Readonly<TypingTestClientProps>) {
-  const { handleExit } = useSecureExit();
+  const { handleExit } = useSecureExit(candidateSessionDocumentId);
   const setSession = useTypingSessionStore((s) => s.setSession);
   const [integrityMonitoringActive, setIntegrityMonitoringActive] = useState(false);
 

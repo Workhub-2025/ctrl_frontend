@@ -564,8 +564,8 @@ export default function CallSimulationTest({
   }, []);
 
   const closeAssessment = useCallback(() => {
-    closeAssessmentWindow();
-  }, []);
+    closeAssessmentWindow(candidateSessionDocumentId);
+  }, [candidateSessionDocumentId]);
 
   const updateForm = (field: keyof IncidentForm, value: string) => {
     setForm((currentForm) => ({

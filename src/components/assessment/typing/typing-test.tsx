@@ -560,8 +560,8 @@ export default function TypingTest({
 
   const closeAssessment = useCallback(() => {
     clearSession();
-    closeAssessmentWindow();
-  }, [clearSession]);
+    closeAssessmentWindow(candidateSessionDocumentId);
+  }, [clearSession, candidateSessionDocumentId]);
 
   const restartPractice = useCallback(() => {
     setResults((previousResults) =>

@@ -69,6 +69,6 @@ export const candidateAssessmentItems = CANDIDATE_ASSESSMENT_CATALOG.map((item) 
   status: "Available now" as const,
 }));
 
-export const completionLabels = Object.fromEntries(
+export const completionLabels: Record<string, string> = Object.fromEntries(
   CANDIDATE_ASSESSMENT_CATALOG.map((item) => [item.slug, item.title]),
 );

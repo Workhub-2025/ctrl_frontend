@@ -332,8 +332,8 @@ export default function SituationalJudgementTest({
   }, [timeLimitSeconds]);
 
   const closeAssessment = useCallback(() => {
-    closeAssessmentWindow();
-  }, []);
+    closeAssessmentWindow(candidateSessionDocumentId);
+  }, [candidateSessionDocumentId]);
 
   const submitCurrentScenario = () => {
     if (!canSubmitScenario || !bestOptionId || !worstOptionId) return;

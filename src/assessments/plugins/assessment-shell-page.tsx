@@ -13,7 +13,7 @@ export function AssessmentShellPage({
   plugin,
   candidateSessionDocumentId,
 }: AssessmentShellPageProps) {
-  const { handleExit } = useSecureExit();
+  const { handleExit } = useSecureExit(candidateSessionDocumentId);
   const AssessmentComponent = plugin.component;
 
   return (
