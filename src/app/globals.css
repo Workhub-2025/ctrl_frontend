@@ -569,8 +569,8 @@ html[data-ctrl-theme="light-blue"] :where(.ctrl-portal, .ctrl-landing-page) .bad
   background-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-html[data-ctrl-theme="soft-cream"] :where(.ctrl-portal, .ctrl-landing-page) :where([class~="bg-card"], [class~="bg-card/40"], [class~="bg-card/45"], [class~="bg-card/55"], [class~="bg-card/60"], [class~="bg-background/30"], [class~="bg-background/40"], [class~="bg-background/50"], [class~="bg-muted/30"], [class~="bg-muted/40"]) :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"]):not(.ctrl-tooltip *),
-html[data-ctrl-theme="light-blue"] :where(.ctrl-portal, .ctrl-landing-page) :where([class~="bg-card"], [class~="bg-card/40"], [class~="bg-card/45"], [class~="bg-card/55"], [class~="bg-card/60"], [class~="bg-background/30"], [class~="bg-background/40"], [class~="bg-background/50"], [class~="bg-muted/30"], [class~="bg-muted/40"]) :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"]):not(.ctrl-tooltip *) {
+html[data-ctrl-theme="soft-cream"] :where(.ctrl-portal, .ctrl-landing-page) :where([class~="bg-card"], [class~="bg-card/40"], [class~="bg-card/45"], [class~="bg-card/55"], [class~="bg-card/60"], [class~="bg-background/30"], [class~="bg-background/40"], [class~="bg-background/50"], [class~="bg-muted/30"], [class~="bg-muted/40"]) :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"]):not(.ctrl-tooltip *):not(.ctrl-accessibility-menu *),
+html[data-ctrl-theme="light-blue"] :where(.ctrl-portal, .ctrl-landing-page) :where([class~="bg-card"], [class~="bg-card/40"], [class~="bg-card/45"], [class~="bg-card/55"], [class~="bg-card/60"], [class~="bg-background/30"], [class~="bg-background/40"], [class~="bg-background/50"], [class~="bg-muted/30"], [class~="bg-muted/40"]) :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"], [class~="text-slate-300"]):not(.ctrl-tooltip *):not(.ctrl-accessibility-menu *) {
   color: hsl(var(--foreground)) !important;
 }
 

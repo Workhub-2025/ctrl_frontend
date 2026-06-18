@@ -33,10 +33,10 @@ function segmentedClassName(isActive: boolean, isLight: boolean) {
     "rounded-lg px-2.5 py-1.5 text-xs transition-all border flex-1 text-center font-medium",
     isActive
       ? (isLight
-        ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+        ? "bg-primary border-primary text-primary-foreground shadow-sm"
         : "bg-white/15 border-white text-white shadow-sm")
       : (isLight
-        ? "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+        ? "border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground"
         : "border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200")
   );
 }
@@ -94,7 +94,7 @@ export function AccessibilityDropdown({
   }) => (
     <div className="space-y-2">
       {sectionLabel(label)}
-      <div className="flex gap-1 bg-muted/30 dark:bg-white/[0.02] p-1 rounded-xl border border-border/40 dark:border-white/5">
+      <div className="flex gap-1 bg-muted/50 dark:bg-white/[0.02] p-1 rounded-xl border border-border dark:border-white/5">
         {options.map((option) => (
           <button
             key={String(option.value)}
@@ -126,8 +126,8 @@ export function AccessibilityDropdown({
       type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        "flex w-full items-center justify-between gap-3 rounded-xl border border-border/40 dark:border-white/5 bg-muted/20 dark:bg-white/[0.02] p-3 text-left transition-all hover:scale-[1.01] hover:border-slate-300 dark:hover:border-white/20",
-        isLight ? "hover:bg-slate-50" : "hover:bg-white/[0.03]"
+        "flex w-full items-center justify-between gap-3 rounded-xl border border-border dark:border-white/5 bg-muted/30 dark:bg-white/[0.02] p-3 text-left transition-all hover:scale-[1.01] hover:border-border dark:hover:border-white/20",
+        isLight ? "hover:bg-accent/40" : "hover:bg-white/[0.03]"
       )}
     >
       <div className="flex items-start gap-3 min-w-0">
@@ -148,15 +148,15 @@ export function AccessibilityDropdown({
         className={cn(
           "flex h-5 w-8 shrink-0 items-center rounded-full border p-0.5 transition-colors",
           checked
-            ? (isLight ? "border-slate-900 bg-slate-900 text-white" : "border-white bg-white/20 text-white")
-            : (isLight ? "border-slate-300 bg-slate-100 text-slate-400" : "border-transparent bg-white/10 text-slate-400")
+            ? (isLight ? "border-primary bg-primary text-primary-foreground" : "border-white bg-white/20 text-white")
+            : (isLight ? "border-border bg-muted text-muted-foreground" : "border-transparent bg-white/10 text-slate-400")
         )}
       >
         <span
           className={cn(
             "h-3.5 w-3.5 rounded-full bg-current transition-transform",
             checked && "translate-x-3",
-            !checked && (isLight ? "bg-slate-400" : "bg-white")
+            !checked && (isLight ? "bg-muted-foreground/70" : "bg-white")
           )}
         />
       </span>
@@ -243,17 +243,17 @@ export function AccessibilityDropdown({
                           "flex items-center gap-2 rounded-xl border px-2.5 py-2 text-xs transition-all hover:scale-[1.01]",
                           isActive
                             ? (isLight
-                              ? "border-slate-950 bg-slate-100 text-slate-950 font-semibold shadow-sm"
+                              ? "border-primary bg-primary/10 text-foreground font-semibold shadow-sm ring-1 ring-primary/20"
                               : "border-white bg-white/10 text-white font-semibold shadow-sm")
                             : (isLight
-                              ? "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                              ? "border-border text-muted-foreground hover:border-primary/30 hover:bg-accent/40 hover:text-foreground"
                               : "border-white/10 text-slate-400 hover:border-white/30 hover:bg-white/5 hover:text-slate-200")
                         )}
                       >
                         <span
                           className={cn(
                             "h-4 w-4 rounded-full border shadow-inner",
-                            isActive ? (isLight ? "border-slate-900" : "border-white") : "border-transparent",
+                            isActive ? (isLight ? "border-primary ring-1 ring-primary/30" : "border-white") : "border-transparent",
                             option.swatch
                           )}
                         />
