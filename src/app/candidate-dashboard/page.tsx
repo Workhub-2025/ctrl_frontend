@@ -97,6 +97,12 @@ export default function CandidateDashboardOverviewPage() {
     [activeApps]
   );
 
+  const activeSessionGridClass = cn(
+    "grid gap-4",
+    activeApps.length > 1 && "md:grid-cols-2"
+  );
+  const activeSessionSkeletonCount = activeApps.length > 1 ? 2 : 1;
+
   const handleJoin = async (event: React.FormEvent) => {
     event.preventDefault();
     const code = accessCodeInput.trim();
@@ -262,15 +268,15 @@ export default function CandidateDashboardOverviewPage() {
           />
 
           {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {[0, 1].map((i) => (
+            <div className={activeSessionGridClass}>
+              {Array.from({ length: activeSessionSkeletonCount }, (_, i) => i).map((i) => (
                 <CandidatePanel key={i}>
                   <div className="h-40 animate-pulse bg-muted/20" />
                 </CandidatePanel>
               ))}
             </div>
           ) : activeApps.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className={activeSessionGridClass}>
               {activeApps.map((app) => {
                 const dateMeta = getActiveDateMeta(app);
                 const modeLabel =
