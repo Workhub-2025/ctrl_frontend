@@ -273,7 +273,10 @@ export default function Home() {
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
-    const updateNavHeight = () => setNavHeight(Math.round(nav.getBoundingClientRect().height));
+    const updateNavHeight = () => {
+      const { bottom } = nav.getBoundingClientRect();
+      setNavHeight(Math.ceil(bottom));
+    };
     updateNavHeight();
     const observer = new ResizeObserver(updateNavHeight);
     observer.observe(nav);

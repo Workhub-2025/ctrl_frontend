@@ -66,7 +66,7 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
   return (
     <section
       id="landing-hero"
-      className={`relative min-h-[92svh] lg:min-h-[100svh] overflow-hidden flex flex-col items-center justify-center pb-20 ${bgColor}`}
+      className={`relative min-h-[92svh] lg:min-h-[100svh] overflow-hidden flex flex-col items-center justify-start lg:justify-center pb-20 scroll-mt-24 ${bgColor}`}
     >
       {/* Animated Data Streams Background */}
       <AnimatedBackground disabled={reduceMotion} />
@@ -104,7 +104,10 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
         style={{ background: `linear-gradient(to top, ${gradientColor.startsWith('#') ? gradientColor : (gradientColor === 'black' ? 'black' : 'var(--tw-gradient-from)')}, transparent)` }}
       />
 
-      <div className="relative z-10 mx-auto w-full max-w-[1440px] px-6" style={{ paddingTop: navHeight }}>
+      <div
+        className="relative z-10 mx-auto w-full max-w-[1440px] px-6 max-lg:pt-[calc(var(--landing-nav-clearance)+1.5rem)] lg:pt-[var(--landing-nav-clearance)]"
+        style={{ "--landing-nav-clearance": `${navHeight}px` } as React.CSSProperties}
+      >
         <motion.div
           variants={container}
           initial={reduceMotion ? false : "hidden"}
