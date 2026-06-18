@@ -44,8 +44,8 @@ import {
 
 const navItems = [
   { label: "Disciplines", href: "#disciplines" },
-  { label: "For Agencies", href: "#workflow" },
-  { label: "For Candidates", href: "#candidate-experience" },
+  { label: "Hiring Workflow", href: "#workflow" },
+  { label: "Candidate Workflow", href: "#candidate-experience" },
 ];
 
 const disciplines: { label: string; icon: typeof Siren; tint: DisciplineTint }[] = [
@@ -316,6 +316,21 @@ export default function Home() {
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-full focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary">
         Skip to content
       </a>
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-40 bg-slate-900/10 dark:bg-black/50 backdrop-blur-[2px] lg:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu"
+          />
+        )}
+      </AnimatePresence>
+
       <motion.nav
         ref={navRef}
         initial={reduceMotion ? false : { y: -24, opacity: 0 }}
@@ -406,52 +421,69 @@ export default function Home() {
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-[calc(100%+16px)] left-4 right-4 sm:left-6 sm:right-6 bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex flex-col gap-6 lg:hidden shadow-xl dark:shadow-2xl origin-top"
+              className="absolute top-[calc(100%+12px)] inset-x-0 bg-[#fdfaf2]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-3xl overflow-hidden lg:hidden shadow-[0_20px_50px_-12px_rgba(15,23,42,0.18)] dark:shadow-2xl origin-top"
             >
-              <div className="flex flex-col gap-4">
-                {navItems.map((item) => {
-                  const isActive = activeSection === item.href.slice(1);
-                  return (
-                    <button
-                      key={item.href}
-                      onClick={() => {
-                        scrollToAnchor(item.href.slice(1));
-                        setIsMobileMenuOpen(false);
-                      }}
-                      aria-current={isActive ? "true" : undefined}
-                      className={cn(
-                        "flex items-center gap-3 text-left text-lg font-medium transition-colors",
-                        isActive
-                          ? "text-slate-900 dark:text-white"
-                          : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                      )}
-                    >
-                      <span
+              <nav aria-label="Mobile navigation" className="flex flex-col p-2">
+                <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 font-mono">
+                  Explore
+                </p>
+                <div className="flex flex-col gap-0.5">
+                  {navItems.map((item) => {
+                    const isActive = activeSection === item.href.slice(1);
+                    return (
+                      <button
+                        key={item.href}
+                        onClick={() => {
+                          scrollToAnchor(item.href.slice(1));
+                          setIsMobileMenuOpen(false);
+                        }}
+                        aria-current={isActive ? "true" : undefined}
                         className={cn(
-                          "h-4 w-[2px] rounded-full transition-colors",
-                          isActive ? "bg-slate-900 dark:bg-white" : "bg-transparent"
+                          "w-full flex items-center gap-3 text-left text-base font-medium px-3 py-3 min-h-[44px] rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20",
+                          isActive
+                            ? "bg-slate-900/[0.06] dark:bg-white/[0.08] text-slate-900 dark:text-white"
+                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.05] hover:text-slate-900 dark:hover:text-white"
                         )}
-                        aria-hidden="true"
-                      />
-                      {item.label}
-                    </button>
-                  );
-                })}
-              </div>
-              <hr className="border-slate-200 dark:border-white/10 my-1" />
-              <div className="flex flex-col gap-3">
-                <Link href="/auth/register?mode=login" className="group w-full flex items-center justify-center gap-2 text-base font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] py-3 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
-                  Log in
-                  <ArrowRight className="w-4 h-4 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
-                </Link>
-                <Button asChild className="rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 w-full h-12 text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
-                  <Link href="/auth/register?mode=register">Get Started</Link>
-                </Button>
-              </div>
+                      >
+                        <span
+                          className={cn(
+                            "h-4 w-[2px] shrink-0 rounded-full transition-colors",
+                            isActive ? "bg-slate-900 dark:bg-white" : "bg-slate-300/80 dark:bg-white/20"
+                          )}
+                          aria-hidden="true"
+                        />
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mx-3 my-2 h-px bg-slate-200/80 dark:bg-white/10" role="separator" />
+
+                <p className="px-3 pt-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 font-mono">
+                  Account
+                </p>
+                <div className="flex flex-col gap-2 px-1 pb-1">
+                  <Link
+                    href="/auth/register?mode=login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="group w-full flex items-center justify-between gap-2 text-base font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-3 min-h-[44px] rounded-2xl hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
+                  >
+                    Log in
+                    <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity duration-200" aria-hidden="true" />
+                  </Link>
+                  <Button asChild className="rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 w-full h-11 text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
+                    <Link href="/auth/register?mode=register" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
+                      Get Started
+                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                </div>
+              </nav>
             </motion.div>
           )}
         </AnimatePresence>
