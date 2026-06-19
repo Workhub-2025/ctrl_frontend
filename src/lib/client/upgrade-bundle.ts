@@ -1,6 +1,5 @@
 import {
   CLIENT_DELIVERY_FEATURES,
-  CUSTOM_ASSESSMENT_VERSION,
   type ClientDeliveryFeatureKey,
   type ClientUpgradeBundleItem,
   type ClientUpgradeBundleLineItem,
@@ -19,8 +18,6 @@ export type ClientUpgradePricing = {
 export type ClientUpgradeDraft = {
   requestedSeats: number;
   deliveryFeatures: Record<ClientDeliveryFeatureKey, boolean>;
-  assessmentVersions: Record<string, string>;
-  customVersionNotes: Record<string, string>;
   addonAssessmentSlug: string | null;
   addonAssessmentLabel: string | null;
   addonNotes: string;
@@ -37,20 +34,6 @@ export type ClientEntitlementAssessment = {
   upgradeableVersions?: Array<{ version: string; title: string; description: string | null }>;
 };
 
-const CUSTOM_VERSION_PLACEHOLDERS: Record<string, string> = {
-  typing: "Describe custom typing wording, passages, or terminology for your organisation.",
-  prioritisation: "Describe the custom PJA pack, scenarios, or scoring context you need.",
-  "situational-judgement": "Describe the custom SJA scenarios or values framework you need.",
-  "call-simulation": "Describe the custom call scripts, personas, or grading criteria you need.",
-};
-
-export function getCustomVersionPlaceholder(slug: string) {
-  return (
-    CUSTOM_VERSION_PLACEHOLDERS[slug] ??
-    "Describe the custom assessment content, pack, or wording you need."
-  );
-}
-
 export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraft {
   const baseline = Math.max(currentSeats, 1);
   return {
@@ -59,25 +42,12 @@ export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraf
       deliveryRemote: false,
       deliveryHybrid: false,
     },
-    assessmentVersions: {},
-    customVersionNotes: {},
     addonAssessmentSlug: null,
     addonAssessmentLabel: null,
     addonNotes: "",
     customAddonName: "",
     notes: "",
   };
-}
-
-function compareVersions(a: string, b: string) {
-  const left = a.split(".").map((part) => Number.parseInt(part, 10) || 0);
-  const right = b.split(".").map((part) => Number.parseInt(part, 10) || 0);
-  const length = Math.max(left.length, right.length, 3);
-  for (let index = 0; index < length; index += 1) {
-    const diff = (left[index] ?? 0) - (right[index] ?? 0);
-    if (diff !== 0) return diff;
-  }
-  return 0;
 }
 
 function seatOneOffPrice(pricing: ClientUpgradePricing) {
@@ -101,23 +71,6 @@ export function computePendingChanges(input: {
     const after = before || input.draft.deliveryFeatures[feature.key] === true;
     if (!before && after) {
       changes.push(`Enable ${feature.label}`);
-    }
-  }
-
-  for (const assessment of input.assessments) {
-    const requested = input.draft.assessmentVersions[assessment.slug];
-    if (!requested || requested === assessment.maxVersion) continue;
-
-    if (requested === CUSTOM_ASSESSMENT_VERSION) {
-      const brief = input.draft.customVersionNotes[assessment.slug]?.trim();
-      if (brief && brief.length >= 20) {
-        changes.push(`${assessment.title}: custom content pack`);
-      }
-      continue;
-    }
-
-    if (compareVersions(requested, assessment.maxVersion) > 0) {
-      changes.push(`${assessment.title}: up to v${assessment.maxVersion} → up to v${requested}`);
     }
   }
 
@@ -154,34 +107,6 @@ export function buildUpgradeBundleItems(input: {
         featureKey: feature.key,
       });
     }
-  }
-
-  for (const assessment of input.assessments) {
-    const requested = input.draft.assessmentVersions[assessment.slug];
-    if (!requested || requested === assessment.maxVersion) continue;
-
-    if (requested === CUSTOM_ASSESSMENT_VERSION) {
-      const notes = input.draft.customVersionNotes[assessment.slug]?.trim() ?? "";
-      if (notes.length < 20) continue;
-      items.push({
-        type: "assessment_version",
-        assessmentSlug: assessment.slug,
-        assessmentLabel: assessment.title,
-        currentVersion: assessment.maxVersion,
-        requestedVersion: CUSTOM_ASSESSMENT_VERSION,
-        notes,
-      });
-      continue;
-    }
-
-    if (compareVersions(requested, assessment.maxVersion) <= 0) continue;
-    items.push({
-      type: "assessment_version",
-      assessmentSlug: assessment.slug,
-      assessmentLabel: assessment.title,
-      currentVersion: assessment.maxVersion,
-      requestedVersion: requested,
-    });
   }
 
   if (input.draft.addonAssessmentSlug && input.draft.addonNotes.trim().length >= 20) {
@@ -245,21 +170,6 @@ export function computeLineItems(
         }
         lineItems.push({
           label: `Add-on assessment: ${item.assessmentLabel}`,
-          quantity: 1,
-          unitAmountPence,
-        });
-        break;
-      }
-      case "assessment_version": {
-        let unitAmountPence = isGrandfatherActive ? 0 : pricing.versionUpgradePence ?? 0;
-        if (!isGrandfatherActive && discountPercent) {
-          unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
-        }
-        lineItems.push({
-          label:
-            item.requestedVersion === CUSTOM_ASSESSMENT_VERSION
-              ? `Custom content pack: ${item.assessmentLabel}`
-              : `${item.assessmentLabel} version upgrade (up to v${item.requestedVersion})`,
           quantity: 1,
           unitAmountPence,
         });

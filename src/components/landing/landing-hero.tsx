@@ -127,15 +127,7 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
             </span>
           </motion.h1>
 
-          {/* Subtitle */}
-          <motion.p
-            variants={rise}
-            className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-light"
-          >
-            CTRL reveals how candidates think, respond and perform under pressure — giving you the
-            behavioural insight to recruit with confidence, reduce risk and build stronger
-            operational teams.
-          </motion.p>
+
 
           {/* Call to Action Buttons */}
           <motion.div

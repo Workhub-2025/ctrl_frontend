@@ -5,7 +5,6 @@ import {
   BookOpenCheck,
   Loader2,
   Send,
-  TrendingUp,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,11 +26,10 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ClientInitiatedUpgradeType, ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
-import { DEFAULT_PLATFORM_ASSESSMENTS } from "@/lib/client/entitlements";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 
 const REQUEST_COPY: Record<
-  Extract<ClientInitiatedUpgradeType, "seat_increase" | "new_assessment" | "assessment_version">,
+  Extract<ClientInitiatedUpgradeType, "seat_increase" | "new_assessment">,
   { title: string; description: string; icon: typeof Users }
 > = {
   seat_increase: {
@@ -44,23 +42,7 @@ const REQUEST_COPY: Record<
     description: "Request an add-on assessment beyond the core SJA, TA, PJA, and SCA platform.",
     icon: BookOpenCheck,
   },
-  assessment_version: {
-    title: "Upgrade assessment version",
-    description: "Move to a newer content version for an assessment you already use.",
-    icon: TrendingUp,
-  },
 };
-
-function compareVersions(a: string, b: string) {
-  const left = a.split(".").map((part) => Number.parseInt(part, 10) || 0);
-  const right = b.split(".").map((part) => Number.parseInt(part, 10) || 0);
-  const length = Math.max(left.length, right.length, 3);
-  for (let index = 0; index < length; index += 1) {
-    const diff = (left[index] ?? 0) - (right[index] ?? 0);
-    if (diff !== 0) return diff;
-  }
-  return 0;
-}
 
 export function ClientUpgradeRequestDialog({
   open,
@@ -72,7 +54,7 @@ export function ClientUpgradeRequestDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  requestType: Extract<ClientInitiatedUpgradeType, "seat_increase" | "new_assessment" | "assessment_version">;
+  requestType: Extract<ClientInitiatedUpgradeType, "seat_increase" | "new_assessment">;
   entitlements: ClientEntitlements | null;
   submitting: boolean;
   onSubmit: (payload: ClientUpgradeRequestPayload) => Promise<void>;
@@ -85,60 +67,20 @@ export function ClientUpgradeRequestDialog({
     () => entitlements?.requestableAssessments ?? [],
     [entitlements?.requestableAssessments]
   );
-  const versionUpgradeAssessments = useMemo(() => {
-    const fromEntitlements = entitlements?.versionUpgradeAssessments ?? [];
-    if (fromEntitlements.length > 0) return fromEntitlements;
-    return DEFAULT_PLATFORM_ASSESSMENTS.map((assessment) => ({
-      slug: assessment.key,
-      title: assessment.title,
-      summary: assessment.description,
-      maxVersion: "1.0.0",
-    }));
-  }, [entitlements?.versionUpgradeAssessments]);
-
-  const [assessmentVersions, setAssessmentVersions] = useState<
-    Record<string, Array<{ version: string; title: string; description: string | null }>>
-  >({});
 
   const [requestedSeats, setRequestedSeats] = useState(String((currentSeats ?? 1) + 1));
   const [seatNotes, setSeatNotes] = useState("");
   const [assessmentSlug, setAssessmentSlug] = useState("");
   const [customAssessmentName, setCustomAssessmentName] = useState("");
   const [newAssessmentNotes, setNewAssessmentNotes] = useState("");
-  const [requestedVersion, setRequestedVersion] = useState("");
-  const [versionNotes, setVersionNotes] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const usingCustomAssessment = requestableAssessments.length === 0;
-
-  const selectedVersionAssessment = useMemo(
-    () => versionUpgradeAssessments.find((assessment) => assessment.slug === assessmentSlug),
-    [assessmentSlug, versionUpgradeAssessments]
-  );
 
   const selectedRequestAssessment = useMemo(() => {
     if (usingCustomAssessment) return null;
     return requestableAssessments.find((assessment) => assessment.slug === assessmentSlug) ?? null;
   }, [assessmentSlug, requestableAssessments, usingCustomAssessment]);
-
-  const currentVersion =
-    (selectedVersionAssessment as { maxVersion?: string } | undefined)?.maxVersion ?? "1.0.0";
-
-  const versionOptions = useMemo(() => {
-    if (!selectedVersionAssessment) return [];
-    const available = assessmentVersions[selectedVersionAssessment.slug] ?? [];
-    const sorted = [...available].sort((a, b) => compareVersions(a.version, b.version));
-    const newer = sorted.filter((option) => compareVersions(option.version, currentVersion) > 0);
-    return newer.length > 0 ? newer : sorted;
-  }, [currentVersion, assessmentVersions, selectedVersionAssessment]);
-
-  useEffect(() => {
-    if (!open || requestType !== "assessment_version") return;
-    void fetch("/api/client/assessment-versions", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((body) => setAssessmentVersions(body.data ?? {}))
-      .catch(() => setAssessmentVersions({}));
-  }, [open, requestType]);
 
   useEffect(() => {
     if (!open) return;
@@ -146,26 +88,17 @@ export function ClientUpgradeRequestDialog({
     setSeatNotes("");
     setCustomAssessmentName("");
     setNewAssessmentNotes("");
-    setVersionNotes("");
     setFieldError(null);
 
     if (requestType === "new_assessment") {
       setAssessmentSlug(requestableAssessments[0]?.slug ?? "");
-    } else if (requestType === "assessment_version") {
-      setAssessmentSlug(versionUpgradeAssessments[0]?.slug ?? "");
     }
   }, [
     open,
     currentSeats,
     requestType,
     requestableAssessments,
-    versionUpgradeAssessments,
   ]);
-
-  useEffect(() => {
-    const next = versionOptions.find((option) => compareVersions(option.version, currentVersion) > 0);
-    setRequestedVersion(next?.version ?? versionOptions.at(-1)?.version ?? currentVersion);
-  }, [assessmentSlug, currentVersion, versionOptions]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -219,25 +152,6 @@ export function ClientUpgradeRequestDialog({
             notes: newAssessmentNotes.trim(),
           });
         }
-      }
-
-      if (requestType === "assessment_version") {
-        if (!selectedVersionAssessment) {
-          setFieldError("Choose an assessment to upgrade.");
-          return;
-        }
-        if (!requestedVersion || requestedVersion === currentVersion) {
-          setFieldError("Choose a version higher than your current access.");
-          return;
-        }
-        await onSubmit({
-          type: "assessment_version",
-          assessmentSlug: selectedVersionAssessment.slug,
-          assessmentLabel: selectedVersionAssessment.title,
-          currentVersion,
-          requestedVersion,
-          notes: versionNotes.trim() || undefined,
-        });
       }
 
       onOpenChange(false);
@@ -354,59 +268,6 @@ export function ClientUpgradeRequestDialog({
                   onChange={(event) => setNewAssessmentNotes(event.target.value)}
                   placeholder="Describe the role, campaign, or business need (min. 20 characters)"
                   rows={4}
-                  className="resize-none rounded-xl"
-                />
-              </div>
-            </>
-          )}
-
-          {requestType === "assessment_version" && (
-            <>
-              <div className="space-y-2">
-                <Label>Assessment</Label>
-                <Select value={assessmentSlug} onValueChange={setAssessmentSlug}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Select assessment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {versionUpgradeAssessments.map((assessment) => (
-                      <SelectItem key={assessment.slug} value={assessment.slug}>
-                        {assessment.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm dark:border-white/5">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Current max version
-                </p>
-                <p className="mt-1 font-semibold text-foreground">v{currentVersion}</p>
-              </div>
-              <div className="space-y-2">
-                <Label>Requested max version</Label>
-                <Select value={requestedVersion} onValueChange={setRequestedVersion}>
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Select version" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {versionOptions.map((option) => (
-                      <SelectItem key={option.version} value={option.version}>
-                        Up to v{option.version}
-                        {option.title ? ` · ${option.title}` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="version-notes">Additional context (optional)</Label>
-                <Textarea
-                  id="version-notes"
-                  value={versionNotes}
-                  onChange={(event) => setVersionNotes(event.target.value)}
-                  placeholder="Campaign timing or rollout notes"
-                  rows={3}
                   className="resize-none rounded-xl"
                 />
               </div>

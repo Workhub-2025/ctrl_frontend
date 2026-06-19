@@ -12,7 +12,10 @@ export async function GET() {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
     const entitlements = await getClientEntitlementsBundle();
-    const slugs = entitlements.versionUpgradeAssessments.map((assessment) => assessment.slug);
+    const slugs = [
+      ...(entitlements?.defaultAssessments ?? []).map((assessment) => assessment.slug),
+      ...(entitlements?.additionalAssessments ?? []).map((assessment) => assessment.slug),
+    ];
     const data = await getAdminAssessmentVersions(slugs, strapiJwt).catch(() => ({}));
     return NextResponse.json({ data });
   } catch (error) {

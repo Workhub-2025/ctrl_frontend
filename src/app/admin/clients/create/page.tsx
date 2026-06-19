@@ -85,26 +85,17 @@ export default function CreateClientPage() {
   const [activationSent, setActivationSent] = useState(false);
   const [sendingActivation, setSendingActivation] = useState(false);
 
-  const seatCount = useMemo(() => Number.parseInt(form.seatCount, 10), [form.seatCount]);
+  const seatCount = CONTRACT_TIERS[form.contractTier].minimumSeats;
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
   const updateContractTier = (tier: ContractTier) => {
-    setForm((current) => {
-      const minimumSeats = CONTRACT_TIERS[tier].minimumSeats;
-      const currentSeats = Number.parseInt(current.seatCount, 10);
-      return {
-        ...current,
-        contractTier: tier,
-        seatCount: String(
-          Number.isInteger(currentSeats) && currentSeats >= minimumSeats
-            ? currentSeats
-            : minimumSeats
-        ),
-      };
-    });
+    setForm((current) => ({
+      ...current,
+      contractTier: tier,
+    }));
   };
 
   const submit = async () => {
@@ -470,7 +461,7 @@ export default function CreateClientPage() {
               description="Seat count is set now. Contract dates begin only after the client pays the activation invoice."
             />
             <div className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className={portalLabelClass}>Contract type</Label>
                   <Select
@@ -489,21 +480,7 @@ export default function CreateClientPage() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {CONTRACT_TIERS[form.contractTier].description}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="seats" className={portalLabelClass}>Hiring manager seats</Label>
-                  <Input
-                    id="seats"
-                    type="number"
-                    min={CONTRACT_TIERS[form.contractTier].minimumSeats}
-                    value={form.seatCount}
-                    onChange={(event) => updateField("seatCount", event.target.value)}
-                    className={cn(portalInputClass, "h-10")}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Minimum {CONTRACT_TIERS[form.contractTier].minimumSeats} for this contract.
+                    {CONTRACT_TIERS[form.contractTier].description} (minimum {CONTRACT_TIERS[form.contractTier].minimumSeats} seat{CONTRACT_TIERS[form.contractTier].minimumSeats === 1 ? "" : "s"} included)
                   </p>
                 </div>
               </div>

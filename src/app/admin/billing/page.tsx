@@ -457,33 +457,19 @@ export default function AdminBillingPage() {
                       </div>
                     </div>
                     <div className="grid gap-4 md:grid-cols-2">
-                      <PoundField
-                        label="Annual contract"
-                        pence={tierPricing.basePlatformYearlyPence}
-                        onChangePence={(value) =>
-                          updateContractPrice(tier, "basePlatformYearlyPence", value)
-                        }
-                        compact
-                      />
-                      <PoundField
-                        label="Extra HM seat"
-                        pence={tierPricing.seatUpgradePence}
-                        onChangePence={(value) => updateContractPrice(tier, "seatUpgradePence", value)}
-                        icon={Users}
-                        compact
-                      />
-                      <PoundField
-                        label="Add-on assessment"
-                        pence={tierPricing.assessmentAddonPence}
-                        onChangePence={(value) => updateContractPrice(tier, "assessmentAddonPence", value)}
-                        compact
-                      />
-                      <PoundField
-                        label="Version upgrade"
-                        pence={tierPricing.versionUpgradePence}
-                        onChangePence={(value) => updateContractPrice(tier, "versionUpgradePence", value)}
-                        compact
-                      />
+                      <div className="space-y-1">
+                        <PoundField
+                          label="Annual contract"
+                          pence={tierPricing.basePlatformYearlyPence}
+                          onChangePence={(value) =>
+                            updateContractPrice(tier, "basePlatformYearlyPence", value)
+                          }
+                          compact
+                        />
+                        <p className="text-[11px] text-muted-foreground pl-1">
+                          Equivalent monthly fee: {formatMoney(Math.round(tierPricing.basePlatformYearlyPence / 12), pricing.currency)}/month
+                        </p>
+                      </div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-3">
                       <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -586,13 +572,13 @@ export default function AdminBillingPage() {
               </span>
               <AdminSectionHeader
                 className="flex-1 sm:items-start"
-                title="One-off upgrade fees"
-                description="Single payments — not recurring. Charged when a client upgrade request is invoiced."
+                title="Standard upgrade pricing"
+                description="Global standard charges for platform seat increases and new assessments."
               />
             </div>
             <div className="grid gap-5 md:grid-cols-2">
               <PoundField
-                label="Extra HM seat (one-off per seat)"
+                label="Extra HM seat (monthly recurring cost)"
                 pence={pricing.seatOneOffPence}
                 onChangePence={(value) =>
                   setPricing((current) => ({ ...current, seatOneOffPence: value }))
@@ -600,19 +586,11 @@ export default function AdminBillingPage() {
                 icon={Users}
               />
               <PoundField
-                label="Add-on assessment"
+                label="Add-on assessment (one-off cost)"
                 pence={pricing.assessmentAddonPence}
                 onChangePence={(value) =>
                   setPricing((current) => ({ ...current, assessmentAddonPence: value }))
                 }
-              />
-              <PoundField
-                label="Assessment version upgrade"
-                pence={pricing.versionUpgradePence}
-                onChangePence={(value) =>
-                  setPricing((current) => ({ ...current, versionUpgradePence: value }))
-                }
-                icon={TrendingUp}
               />
             </div>
           </AdminPanel>

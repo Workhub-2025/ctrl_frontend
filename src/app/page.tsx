@@ -262,7 +262,7 @@ function SectionHeading({
 }: {
   eyebrow: string;
   title: React.ReactNode;
-  body: React.ReactNode;
+  body?: React.ReactNode;
   centered?: boolean;
   accent?: Accent;
 }) {
@@ -286,9 +286,11 @@ function SectionHeading({
         <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-slate-900 dark:text-white text-balance font-display">
           {title}
         </h2>
-        <p className={cn("mt-6 text-lg leading-relaxed text-slate-600 dark:text-slate-400 font-light", centered && "mx-auto")}>
-          {body}
-        </p>
+        {body && (
+          <p className={cn("mt-6 text-lg leading-relaxed text-slate-600 dark:text-slate-400 font-light", centered && "mx-auto")}>
+            {body}
+          </p>
+        )}
       </div>
     </Reveal>
   );
@@ -629,7 +631,6 @@ export default function Home() {
                   eyebrow="Core Engine"
                   accent="cyan"
                   title={<>Assess Skills. <GradientText accent="cyan">Simulate Reality.</GradientText></>}
-                  body={<>Four assessment formats — call simulation, prioritisation, situational judgement and typing — work together to measure not just what candidates know, but how they think, prioritise and respond under real operational pressure.</>}
                   centered
                 />
               </div>
@@ -839,7 +840,6 @@ export default function Home() {
                   eyebrow="For Hiring Teams"
                   accent="blue"
                   title={<>Build Stronger Talent Pipelines with <GradientText accent="blue">Confidence</GradientText></>}
-                  body="CTRL helps organisations identify high-potential candidates earlier in the recruitment process, using behavioural insight and realistic performance data to support smarter, more informed hiring decisions."
                   centered
                 />
               </div>
@@ -881,7 +881,6 @@ export default function Home() {
                   eyebrow="For Candidates"
                   accent="emerald"
                   title={<>Where Capability <GradientText accent="emerald">Speaks for Itself</GradientText></>}
-                  body="Show how you think, respond and perform when faced with realistic operational challenges, helping organisations see your potential with greater clarity and confidence."
                   centered
                 />
               </div>
@@ -923,7 +922,6 @@ export default function Home() {
                   eyebrow="Outcomes & Assurance"
                   accent="violet"
                   title={<>Built for <GradientText accent="violet">high-trust decisions.</GradientText></>}
-                  body="CTRL helps teams run structured assessments, protect candidate integrity, and review evidence with confidence, without turning recruitment into guesswork."
                   centered
                 />
               </div>
@@ -979,19 +977,7 @@ export default function Home() {
                   </Reveal>
                 </div>
 
-                <Reveal variant="zoom">
-                  <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Button asChild className="group h-12 rounded-full bg-slate-900 px-8 text-sm font-medium text-white shadow-lg transition-colors hover:bg-slate-800 focus-visible:ring-2 dark:bg-white dark:text-black dark:hover:bg-slate-200 md:h-14 md:text-base">
-                      <Link href="#contact" onClick={(e) => { e.preventDefault(); scrollToAnchor("contact"); }} className="flex items-center justify-center">
-                        Request a Demo
-                        <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-                      </Link>
-                    </Button>
-                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("contracts")} className="h-12 rounded-full border border-slate-200 bg-transparent px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white md:h-14 md:text-base">
-                      View Packages
-                    </Button>
-                  </div>
-                </Reveal>
+
               </div>
             </section>
 
@@ -1001,7 +987,6 @@ export default function Home() {
                   eyebrow="Contract Options"
                   accent="cyan"
                   title={<>Choose the contract that fits your <GradientText accent="cyan">hiring rhythm</GradientText></>}
-                  body="Packages are shown as entitlement structures only. Final commercial pricing stays with the CTRL team and is attached by admins when a client account is created."
                   centered
                 />
               </div>
@@ -1107,11 +1092,7 @@ export default function Home() {
                   </span>
                 </h2>
 
-                <p className="mx-auto mt-7 max-w-xl text-lg font-light leading-relaxed text-slate-600 dark:text-slate-400 md:text-xl">
-                  See how CTRL helps you identify high-potential candidates, reduce recruitment risk
-                  and make more confident hiring decisions through realistic assessment and immersive
-                  simulation.
-                </p>
+
 
                 <div className="mt-11 flex flex-col items-center justify-center gap-4 sm:flex-row">
                   <Button asChild className="group h-12 rounded-full bg-slate-900 px-9 text-sm font-medium text-white shadow-lg shadow-slate-900/10 transition-colors hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400 dark:bg-white dark:text-black dark:shadow-white/10 dark:hover:bg-slate-200 dark:focus-visible:ring-white/50 md:h-14 md:text-base">

@@ -147,7 +147,7 @@ export async function POST(
     const currency = String(pricing.currency ?? "gbp");
     const stripe = getStripeClient();
     const checkoutSession = await stripe.checkout.sessions.create({
-      mode: "payment",
+      mode: "subscription",
       success_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
       line_items: [
@@ -155,10 +155,13 @@ export async function POST(
           quantity: 1,
           price_data: {
             currency,
-            unit_amount: amountPence,
+            unit_amount: Math.round(amountPence / 12),
+            recurring: {
+              interval: "month",
+            },
             product_data: {
               name: subject,
-              description: `Initial platform contract · ${contract.seatCount ?? 1} hiring manager seats · 1 year from payment`,
+              description: `Initial platform contract · ${contract.seatCount ?? 1} hiring manager seats · 1 year from payment (paid monthly)`,
             },
           },
         },

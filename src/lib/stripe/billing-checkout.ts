@@ -35,7 +35,6 @@ function computeBundleLineItemsFromPricing(
 
   const seatPrice = Number(pricing.seatOneOffPence ?? pricing.seatMonthlyPence ?? 0);
   const addonPrice = Number(pricing.assessmentAddonPence ?? 0);
-  const versionPrice = Number(pricing.versionUpgradePence ?? 0);
   const featurePrices =
     pricing.featurePrices && typeof pricing.featurePrices === "object"
       ? (pricing.featurePrices as Record<string, number>)
@@ -76,13 +75,6 @@ function computeBundleLineItemsFromPricing(
           unitAmountPence: addonPrice,
         });
         break;
-      case "assessment_version":
-        lineItems.push({
-          label: `${item.assessmentLabel} version upgrade (up to v${item.requestedVersion})`,
-          quantity: 1,
-          unitAmountPence: versionPrice,
-        });
-        break;
       default:
         break;
     }
@@ -120,9 +112,9 @@ export function computeUpgradeAmountPence(
       );
     case "new_assessment":
       return Number(pricing.assessmentAddonPence ?? 0);
-    case "assessment_version":
-      return Number(pricing.versionUpgradePence ?? 0);
     case "contract_extension":
+      return Number(pricing.basePlatformYearlyPence ?? pricing.basePlatformMonthlyPence ?? 0);
+    case "contract_activation":
       return Number(pricing.basePlatformYearlyPence ?? pricing.basePlatformMonthlyPence ?? 0);
     default:
       return 0;
@@ -136,16 +128,21 @@ function buildStripeLineItems(
   currency: string
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
   const snapshottedAmount = (billingRequest as any).amountDuePence;
+  const isSubscription = payload.type === "contract_activation" || payload.type === "contract_extension";
+
   if (typeof snapshottedAmount === "number" && snapshottedAmount > 0) {
     return [
       {
         quantity: 1,
         price_data: {
           currency,
-          unit_amount: snapshottedAmount,
+          unit_amount: isSubscription ? Math.round(snapshottedAmount / 12) : snapshottedAmount,
+          recurring: isSubscription ? { interval: "month" } : undefined,
           product_data: {
             name: billingRequest.subject ?? "CTRL platform upgrade",
-            description: billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request",
+            description: isSubscription
+              ? `Annual platform contract · paid monthly via Direct Debit`
+              : (billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request"),
           },
         },
       },
@@ -181,10 +178,13 @@ function buildStripeLineItems(
       quantity: 1,
       price_data: {
         currency,
-        unit_amount: amountPence,
+        unit_amount: isSubscription ? Math.round(amountPence / 12) : amountPence,
+        recurring: isSubscription ? { interval: "month" } : undefined,
         product_data: {
           name: billingRequest.subject ?? "CTRL platform upgrade",
-          description: billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request",
+          description: isSubscription
+            ? `Annual platform contract · paid monthly via Direct Debit`
+            : (billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request"),
         },
       },
     },
@@ -217,9 +217,10 @@ export async function createBillingCheckoutSession(
   }
 
   const requestKind = billingRequest.requestKind ?? "client_upgrade";
+  const isSubscription = payload.type === "contract_activation" || payload.type === "contract_extension";
   const stripe = getStripeClient();
   const checkoutSession = await stripe.checkout.sessions.create({
-    mode: "payment",
+    mode: isSubscription ? "subscription" : "payment",
     success_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
     line_items: buildStripeLineItems(billingRequest, payload, pricing, currency),

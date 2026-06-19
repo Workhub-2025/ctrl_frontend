@@ -8,7 +8,6 @@ import {
   Minus,
   Plus,
   Send,
-  TrendingUp,
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -40,27 +39,13 @@ import {
   computeLineItems,
   computePendingChanges,
   createEmptyUpgradeDraft,
-  getCustomVersionPlaceholder,
   sumLineItems,
-  type ClientEntitlementAssessment,
   type ClientUpgradeDraft,
   type ClientUpgradePricing,
 } from "@/lib/client/upgrade-bundle";
-import { CUSTOM_ASSESSMENT_VERSION } from "@/lib/client/entitlements";
 import { formatMoney } from "@/lib/money";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 import { cn } from "@/lib/utils";
-
-function compareVersions(a: string, b: string) {
-  const left = a.split(".").map((part) => Number.parseInt(part, 10) || 0);
-  const right = b.split(".").map((part) => Number.parseInt(part, 10) || 0);
-  const length = Math.max(left.length, right.length, 3);
-  for (let index = 0; index < length; index += 1) {
-    const diff = (left[index] ?? 0) - (right[index] ?? 0);
-    if (diff !== 0) return diff;
-  }
-  return 0;
-}
 
 function getActiveDeliveryFeatures(entitlements: ClientEntitlements | null) {
   const fromDelivery = entitlements?.deliveryFeatures ?? {};
@@ -69,33 +54,6 @@ function getActiveDeliveryFeatures(entitlements: ClientEntitlements | null) {
     deliveryRemote: fromDelivery.deliveryRemote === true || fromPlatform.deliveryRemote === true,
     deliveryHybrid: fromDelivery.deliveryHybrid === true || fromPlatform.deliveryHybrid === true,
   } satisfies Record<ClientDeliveryFeatureKey, boolean>;
-}
-
-function getVersionAssessments(entitlements: ClientEntitlements | null): ClientEntitlementAssessment[] {
-  const combined = [
-    ...(entitlements?.defaultAssessments ?? []),
-    ...(entitlements?.additionalAssessments ?? []),
-  ];
-
-  if (combined.length > 0) {
-    return combined.map((assessment) => ({
-      slug: assessment.slug,
-      title: assessment.title,
-      maxVersion: assessment.maxVersion,
-      summary: "summary" in assessment ? assessment.summary : null,
-      availableVersions: assessment.availableVersions ?? [],
-      upgradeableVersions: assessment.upgradeableVersions ?? [],
-    }));
-  }
-
-  return (entitlements?.versionUpgradeAssessments ?? []).map((assessment) => ({
-    slug: assessment.slug,
-    title: assessment.title,
-    maxVersion: assessment.maxVersion,
-    summary: assessment.summary,
-    availableVersions: assessment.availableVersions ?? [],
-    upgradeableVersions: assessment.upgradeableVersions ?? [],
-  }));
 }
 
 export function ClientUpgradeBuilder({
@@ -111,7 +69,6 @@ export function ClientUpgradeBuilder({
 }) {
   const currentSeats = entitlements?.contract?.seatCount ?? 0;
   const activeDeliveryFeatures = getActiveDeliveryFeatures(entitlements);
-  const versionAssessments = useMemo(() => getVersionAssessments(entitlements), [entitlements]);
   const requestableAssessments = entitlements?.requestableAssessments ?? [];
 
   const [draft, setDraft] = useState<ClientUpgradeDraft>(() => createEmptyUpgradeDraft(currentSeats));
@@ -151,9 +108,9 @@ export function ClientUpgradeBuilder({
         draft,
         currentSeats,
         activeDeliveryFeatures,
-        assessments: versionAssessments,
+        assessments: [],
       }),
-    [draft, currentSeats, activeDeliveryFeatures, versionAssessments]
+    [draft, currentSeats, activeDeliveryFeatures]
   );
 
   const bundleItems = useMemo(
@@ -162,9 +119,9 @@ export function ClientUpgradeBuilder({
         draft,
         currentSeats,
         activeDeliveryFeatures,
-        assessments: versionAssessments,
+        assessments: [],
       }),
-    [draft, currentSeats, activeDeliveryFeatures, versionAssessments]
+    [draft, currentSeats, activeDeliveryFeatures]
   );
 
   const discountPercent = entitlements?.contract?.grandfatherDiscountPercent ?? undefined;
@@ -215,15 +172,6 @@ export function ClientUpgradeBuilder({
       return;
     }
 
-    for (const assessment of versionAssessments) {
-      if (draft.assessmentVersions[assessment.slug] !== CUSTOM_ASSESSMENT_VERSION) continue;
-      const brief = draft.customVersionNotes[assessment.slug]?.trim() ?? "";
-      if (brief.length > 0 && brief.length < 20) {
-        setFieldError(`Describe your custom ${assessment.title} content pack (at least 20 characters).`);
-        return;
-      }
-    }
-
     try {
       await onSubmit({
         type: "upgrade_bundle",
@@ -231,7 +179,7 @@ export function ClientUpgradeBuilder({
           draft,
           currentSeats,
           activeDeliveryFeatures,
-          assessments: versionAssessments,
+          assessments: [],
         }),
         notes: draft.notes.trim() || undefined,
         lineItems: lineItems.length > 0 ? lineItems : undefined,
@@ -249,7 +197,7 @@ export function ClientUpgradeBuilder({
         title="Build your upgrade"
         description={
           canRequestUpgrades
-            ? "Stage seats, delivery methods, assessment versions, and add-ons in one billing request."
+            ? "Stage seats, delivery methods, and add-ons in one billing request."
             : "Upgrade requests will be available once your organisation has a contract on file."
         }
       />
@@ -262,185 +210,90 @@ export function ClientUpgradeBuilder({
 
       <div className={cn("space-y-5", !canRequestUpgrades && "pointer-events-none opacity-60")}>
         <div className="grid gap-4 md:grid-cols-2">
-        <section className={cn(portalPanelClass, "space-y-3 p-4")}>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Users className="h-4 w-4" aria-hidden="true" />
-            Hiring manager seats
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              className="h-9 w-9 rounded-xl"
-              disabled={draft.requestedSeats <= Math.max(currentSeats, 1)}
-              onClick={() =>
-                updateDraft({ requestedSeats: Math.max(currentSeats, draft.requestedSeats - 1) })
-              }
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <Input
-              type="number"
-              min={Math.max(currentSeats, 1)}
-              value={draft.requestedSeats}
-              onChange={(event) => {
-                const next = Number(event.target.value);
-                updateDraft({
-                  requestedSeats: Number.isFinite(next)
-                    ? Math.max(currentSeats, next)
-                    : Math.max(currentSeats, 1),
-                });
-              }}
-              className="rounded-xl text-center"
-            />
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              className="h-9 w-9 rounded-xl"
-              onClick={() => updateDraft({ requestedSeats: draft.requestedSeats + 1 })}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Current allocation: {currentSeats} seat{currentSeats === 1 ? "" : "s"}
-            {draft.requestedSeats <= currentSeats ? " · no seat change staged" : ""}
-          </p>
-        </section>
+          <section className={cn(portalPanelClass, "space-y-3 p-4")}>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Users className="h-4 w-4" aria-hidden="true" />
+              Hiring manager seats
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-xl"
+                disabled={draft.requestedSeats <= Math.max(currentSeats, 1)}
+                onClick={() =>
+                  updateDraft({ requestedSeats: Math.max(currentSeats, draft.requestedSeats - 1) })
+                }
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <Input
+                type="number"
+                min={Math.max(currentSeats, 1)}
+                value={draft.requestedSeats}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  updateDraft({
+                    requestedSeats: Number.isFinite(next)
+                      ? Math.max(currentSeats, next)
+                      : Math.max(currentSeats, 1),
+                  });
+                }}
+                className="rounded-xl text-center"
+              />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-xl"
+                onClick={() => updateDraft({ requestedSeats: draft.requestedSeats + 1 })}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Current allocation: {currentSeats} seat{currentSeats === 1 ? "" : "s"}
+              {draft.requestedSeats <= currentSeats ? " · no seat change staged" : ""}
+            </p>
+          </section>
 
-        <section className={cn(portalPanelClass, "space-y-3 p-4")}>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <TrendingUp className="h-4 w-4" aria-hidden="true" />
-            Delivery methods
-          </div>
-          <ul className="space-y-2">
-            {CLIENT_DELIVERY_FEATURES.map((feature) => {
-              const active = activeDeliveryFeatures[feature.key];
-              const queued = draft.deliveryFeatures[feature.key];
-              return (
-                <li key={feature.key} className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{feature.label}</p>
-                    <p className="text-xs text-muted-foreground">{feature.group}</p>
-                  </div>
-                  {active ? (
-                    <Badge variant="outline" className={cn("rounded-lg text-[10px] font-semibold", portalBadgeClass)}>
-                      Active
-                    </Badge>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={queued ? "default" : "outline"}
-                      className="rounded-xl"
-                      onClick={() => toggleDeliveryFeature(feature.key)}
-                    >
-                      {queued ? "Queued" : "Add"}
-                    </Button>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-        </div>
-
-        <section className={cn(portalPanelClass, "space-y-4 p-4")}>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <TrendingUp className="h-4 w-4" aria-hidden="true" />
-            Assessment versions
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            {versionAssessments.map((assessment) => {
-              const options =
-                (assessment.upgradeableVersions?.length ?? 0) > 0
-                  ? assessment.upgradeableVersions ?? []
-                  : (assessment.availableVersions ?? []).filter(
-                      (option) => compareVersions(option.version, assessment.maxVersion) > 0
-                    );
-              const selected =
-                draft.assessmentVersions[assessment.slug] ?? assessment.maxVersion;
-              const isCustom = selected === CUSTOM_ASSESSMENT_VERSION;
-
-              return (
-                <div key={assessment.slug} className="rounded-xl border border-border/50 p-4 dark:border-white/5">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
+          <section className={cn(portalPanelClass, "space-y-3 p-4")}>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Users className="h-4 w-4" aria-hidden="true" />
+              Delivery methods
+            </div>
+            <ul className="space-y-2">
+              {CLIENT_DELIVERY_FEATURES.map((feature) => {
+                const active = activeDeliveryFeatures[feature.key];
+                const queued = draft.deliveryFeatures[feature.key];
+                return (
+                  <li key={feature.key} className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
-                      <p className="text-xs text-muted-foreground">Current access: up to v{assessment.maxVersion}</p>
+                      <p className="text-sm font-semibold text-foreground">{feature.label}</p>
+                      <p className="text-xs text-muted-foreground">{feature.group}</p>
                     </div>
-                    {options.length === 0 && !isCustom ? (
-                      <Badge variant="outline" className="rounded-lg text-[10px] font-semibold">
-                        Custom pack available
+                    {active ? (
+                      <Badge variant="outline" className={cn("rounded-lg text-[10px] font-semibold", portalBadgeClass)}>
+                        Active
                       </Badge>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    <Label className="text-xs text-muted-foreground">Requested access</Label>
-                    <Select
-                      value={selected}
-                      onValueChange={(value) => {
-                        setDraft((current) => ({
-                          ...current,
-                          assessmentVersions: {
-                            ...current.assessmentVersions,
-                            [assessment.slug]: value,
-                          },
-                        }));
-                      }}
-                    >
-                      <SelectTrigger className="rounded-xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={assessment.maxVersion}>
-                          Keep v{assessment.maxVersion} (no change)
-                        </SelectItem>
-                        {options.map((option) => (
-                          <SelectItem key={option.version} value={option.version}>
-                            Up to v{option.version}
-                            {option.title ? ` · ${option.title}` : ""}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value={CUSTOM_ASSESSMENT_VERSION}>
-                          Custom content pack
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {isCustom ? (
-                    <div className="mt-3 space-y-2">
-                      <Label htmlFor={`custom-version-${assessment.slug}`} className="text-xs">
-                        Custom content brief
-                      </Label>
-                      <Textarea
-                        id={`custom-version-${assessment.slug}`}
-                        value={draft.customVersionNotes[assessment.slug] ?? ""}
-                        onChange={(event) =>
-                          setDraft((current) => ({
-                            ...current,
-                            customVersionNotes: {
-                              ...current.customVersionNotes,
-                              [assessment.slug]: event.target.value,
-                            },
-                          }))
-                        }
-                        placeholder={getCustomVersionPlaceholder(assessment.slug)}
-                        rows={3}
-                        className="resize-none rounded-xl text-sm"
-                      />
-                      <p className="text-[11px] text-muted-foreground">
-                        For example: bespoke typing passages, a tailored PJA/SJA scenario pack, or organisation-specific wording.
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                    ) : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={queued ? "default" : "outline"}
+                        className="rounded-xl"
+                        onClick={() => toggleDeliveryFeature(feature.key)}
+                      >
+                        {queued ? "Queued" : "Add"}
+                      </Button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>
 
         <section className={cn(portalPanelClass, "space-y-3 p-4")}>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">

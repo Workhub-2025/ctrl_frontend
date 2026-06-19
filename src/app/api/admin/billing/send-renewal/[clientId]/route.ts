@@ -94,7 +94,8 @@ export async function POST(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
-    const amountPence = resolveAnnualContractPrice(pricing, contract.tier);
+    const nextTier = contract.tier === "grandfather" ? "grandfather_founders" : contract.tier;
+    const amountPence = resolveAnnualContractPrice(pricing, nextTier);
 
     if (amountPence <= 0) {
       return NextResponse.json(
@@ -145,7 +146,7 @@ export async function POST(
     const currency = String(pricing.currency ?? "gbp");
     const stripe = getStripeClient();
     const checkoutSession = await stripe.checkout.sessions.create({
-      mode: "payment",
+      mode: "subscription",
       success_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
       line_items: [
@@ -153,10 +154,13 @@ export async function POST(
           quantity: 1,
           price_data: {
             currency,
-            unit_amount: amountPence,
+            unit_amount: Math.round(amountPence / 12),
+            recurring: {
+              interval: "month",
+            },
             product_data: {
               name: subject,
-              description: `Annual platform renewal · extends contract to ${newEndDate}`,
+              description: `Annual platform renewal · extends contract to ${newEndDate} (paid monthly)`,
             },
           },
         },
