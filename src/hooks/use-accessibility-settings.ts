@@ -67,27 +67,38 @@ function sanitiseSettings(input: Partial<AccessibilitySettings>): AccessibilityS
   return next;
 }
 
+function readStoredSettings(): AccessibilitySettings {
+  if (typeof window === "undefined") return defaultAccessibilitySettings;
+
+  try {
+    const raw = window.localStorage.getItem(ACCESSIBILITY_STORAGE_KEY);
+    if (!raw) return defaultAccessibilitySettings;
+    return sanitiseSettings(JSON.parse(raw) as Partial<AccessibilitySettings>);
+  } catch {
+    return defaultAccessibilitySettings;
+  }
+}
+
 export function useAccessibilitySettings(options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
   const [settings, setSettings] = useState<AccessibilitySettings>(defaultAccessibilitySettings);
+  const [storageReady, setStorageReady] = useState(false);
   const prefersReducedMotion = useReducedMotion();
   const reduceMotion = settings.motion === "reduced" || !!prefersReducedMotion;
   const prevThemeRef = useRef<AccessibilitySettings["theme"] | null>(null);
 
   useEffect(() => {
-    if (!enabled) return;
-
-    try {
-      const raw = window.localStorage.getItem(ACCESSIBILITY_STORAGE_KEY);
-      if (!raw) return;
-      setSettings(sanitiseSettings(JSON.parse(raw) as Partial<AccessibilitySettings>));
-    } catch {
-      setSettings(defaultAccessibilitySettings);
+    if (!enabled) {
+      setStorageReady(false);
+      return;
     }
+
+    setSettings(readStoredSettings());
+    setStorageReady(true);
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !storageReady) return;
 
     window.localStorage.setItem(ACCESSIBILITY_STORAGE_KEY, JSON.stringify(settings));
 
@@ -133,7 +144,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
       });
       return () => window.cancelAnimationFrame(id);
     }
-  }, [enabled, settings, reduceMotion]);
+  }, [enabled, storageReady, settings, reduceMotion]);
 
   // Handle Speech Hover Reader
   useEffect(() => {
@@ -193,7 +204,10 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
     settings,
     updateSettings: (patch: Partial<AccessibilitySettings>) =>
       setSettings((current) => sanitiseSettings({ ...current, ...patch })),
-    resetSettings: () => setSettings(defaultAccessibilitySettings),
+    resetSettings: () => {
+      setStorageReady(true);
+      setSettings(defaultAccessibilitySettings);
+    },
     reduceMotion,
     themeClassName: accessibilityThemeClassName[settings.theme],
   };

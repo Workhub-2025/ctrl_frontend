@@ -53,6 +53,7 @@ function UnifiedAuthContent() {
     accessibilitySettings.theme === "soft-cream" || accessibilitySettings.theme === "light-blue"
       ? "light-panel"
       : "dark-panel";
+  const isLightAuthTheme = submitPanelVariant === "light-panel";
   
   const [formData, setFormData] = useState<SignUpData>({
     firstName: "",
@@ -152,11 +153,16 @@ function UnifiedAuthContent() {
 
   const inputClassName = useCallback(
     (field: AuthField, extra?: string) => cn(
-      "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-[border-color,box-shadow] focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50",
-      hasInvalidField(field) && "border-red-500/80 bg-red-950/15 focus-visible:border-red-400/80 focus-visible:ring-red-400/40",
+      isLightAuthTheme
+        ? "h-12 rounded-xl border-slate-300 bg-white text-slate-950 placeholder:text-slate-400 shadow-sm transition-[border-color,box-shadow] focus-visible:border-sky-500/60 focus-visible:ring-1 focus-visible:ring-sky-500/30"
+        : "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-[border-color,box-shadow] focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50",
+      hasInvalidField(field) &&
+        (isLightAuthTheme
+          ? "border-red-500/80 bg-red-50 focus-visible:border-red-500/80 focus-visible:ring-red-500/30"
+          : "border-red-500/80 bg-red-950/15 focus-visible:border-red-400/80 focus-visible:ring-red-400/40"),
       extra
     ),
-    [hasInvalidField]
+    [hasInvalidField, isLightAuthTheme]
   );
 
   const handleInputChange = useCallback(
@@ -314,7 +320,12 @@ function UnifiedAuthContent() {
               <div
                 role="tablist"
                 aria-label="Authentication mode"
-                className="mb-8 grid grid-cols-2 gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1"
+                className={cn(
+                  "mb-8 grid grid-cols-2 gap-1 rounded-full border p-1",
+                  isLightAuthTheme
+                    ? "border-slate-200 bg-white/80 shadow-sm"
+                    : "border-white/10 bg-white/[0.03]"
+                )}
               >
                 <button
                   type="button"
@@ -325,8 +336,12 @@ function UnifiedAuthContent() {
                   className={cn(
                     "rounded-full py-2.5 text-sm font-medium transition-all duration-300",
                     isLoginView
-                      ? "bg-white text-black shadow-sm"
-                      : "text-slate-400 hover:text-white",
+                      ? isLightAuthTheme
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "bg-white text-black shadow-sm"
+                      : isLightAuthTheme
+                        ? "text-slate-600 hover:text-slate-950"
+                        : "text-slate-400 hover:text-white",
                     isAuthBusy && "cursor-not-allowed opacity-60"
                   )}
                 >
@@ -341,8 +356,12 @@ function UnifiedAuthContent() {
                   className={cn(
                     "rounded-full py-2.5 text-sm font-medium transition-all duration-300",
                     !isLoginView
-                      ? "bg-white text-black shadow-sm"
-                      : "text-slate-400 hover:text-white",
+                      ? isLightAuthTheme
+                        ? "bg-slate-900 text-white shadow-sm"
+                        : "bg-white text-black shadow-sm"
+                      : isLightAuthTheme
+                        ? "text-slate-600 hover:text-slate-950"
+                        : "text-slate-400 hover:text-white",
                     isAuthBusy && "cursor-not-allowed opacity-60"
                   )}
                 >
@@ -352,10 +371,10 @@ function UnifiedAuthContent() {
 
               {/* Header Text */}
               <div className="mb-8 space-y-2">
-                <h1 className="text-3xl font-semibold tracking-tight text-white">
+                <h1 className={cn("text-3xl font-semibold tracking-tight", isLightAuthTheme ? "text-slate-950" : "text-white")}>
                   {isLoginView ? "Welcome back" : "Join the platform"}
                 </h1>
-                <p className="text-sm text-slate-400">
+                <p className={cn("text-sm", isLightAuthTheme ? "text-slate-600" : "text-slate-400")}>
                   {isLoginView
                     ? "Enter your credentials to securely access your workspace."
                     : "Use your agency access code to configure your new account."}
@@ -367,12 +386,13 @@ function UnifiedAuthContent() {
                   initialEmail={initialLoginEmail}
                   disabled={isAuthBusy}
                   panelVariant={submitPanelVariant}
+                  inputVariant={isLightAuthTheme ? "light" : "dark"}
                   onSubmit={handleLogin}
                 />
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Email Address *</Label>
+                    <Label htmlFor="email" className={cn("block text-xs font-semibold uppercase tracking-wider", isLightAuthTheme ? "text-slate-600" : "text-slate-400")}>Email Address *</Label>
                     <Input
                       id="email"
                       type="email"
@@ -387,7 +407,7 @@ function UnifiedAuthContent() {
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">First Name *</Label>
+                      <Label htmlFor="firstName" className={cn("block text-xs font-semibold uppercase tracking-wider", isLightAuthTheme ? "text-slate-600" : "text-slate-400")}>First Name *</Label>
                       <Input
                         id="firstName"
                         type="text"
@@ -400,7 +420,7 @@ function UnifiedAuthContent() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Last Name *</Label>
+                      <Label htmlFor="lastName" className={cn("block text-xs font-semibold uppercase tracking-wider", isLightAuthTheme ? "text-slate-600" : "text-slate-400")}>Last Name *</Label>
                       <Input
                         id="lastName"
                         type="text"
@@ -416,7 +436,7 @@ function UnifiedAuthContent() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Password *</Label>
+                      <Label htmlFor="password" className={cn("block text-xs font-semibold uppercase tracking-wider", isLightAuthTheme ? "text-slate-600" : "text-slate-400")}>Password *</Label>
                       <div className="relative">
                         <Input
                           id="password"
@@ -432,7 +452,12 @@ function UnifiedAuthContent() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
+                          className={cn(
+                            "absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0",
+                            isLightAuthTheme
+                              ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                              : "text-slate-400 hover:bg-white/5 hover:text-white"
+                          )}
                           onClick={() => setShowPassword(!showPassword)}
                           disabled={isAuthBusy}
                         >
@@ -441,7 +466,7 @@ function UnifiedAuthContent() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword" className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">Confirm Password *</Label>
+                      <Label htmlFor="confirmPassword" className={cn("block text-xs font-semibold uppercase tracking-wider", isLightAuthTheme ? "text-slate-600" : "text-slate-400")}>Confirm Password *</Label>
                       <div className="relative">
                         <Input
                           id="confirmPassword"
@@ -457,7 +482,12 @@ function UnifiedAuthContent() {
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
+                          className={cn(
+                            "absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0",
+                            isLightAuthTheme
+                              ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                              : "text-slate-400 hover:bg-white/5 hover:text-white"
+                          )}
                           onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                           disabled={isAuthBusy}
                         >
@@ -467,9 +497,14 @@ function UnifiedAuthContent() {
                     </div>
                   </div>
 
-                  <div className="mt-2 rounded-2xl border border-white/5 bg-white/[0.01] p-5 shadow-inner">
+                  <div className={cn(
+                    "mt-2 rounded-2xl border p-5",
+                    isLightAuthTheme
+                      ? "border-slate-200 bg-white/70 shadow-sm"
+                      : "border-white/5 bg-white/[0.01] shadow-inner"
+                  )}>
                     <div className="space-y-3">
-                      <Label htmlFor="accessCode" className="text-xs font-semibold uppercase tracking-wider text-cyan-400 block">Access Code *</Label>
+                      <Label htmlFor="accessCode" className={cn("block text-xs font-semibold uppercase tracking-wider", isLightAuthTheme ? "text-sky-700" : "text-cyan-400")}>Access Code *</Label>
                       <div className="relative">
                         <KeyRound className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
                         <Input
@@ -480,10 +515,16 @@ function UnifiedAuthContent() {
                           onChange={(e) => handleInputChange("accessCode", e.target.value)}
                           required
                           disabled={isAuthBusy}
-                          className={inputClassName("accessCode", "bg-[#050505] pl-12 text-lg font-medium uppercase tracking-[0.2em]")}
+                          className={inputClassName(
+                            "accessCode",
+                            cn(
+                              "pl-12 text-lg font-medium uppercase tracking-[0.2em]",
+                              !isLightAuthTheme && "bg-[#050505]"
+                            )
+                          )}
                         />
                       </div>
-                      <p className="text-xs leading-relaxed text-slate-500 font-light">
+                      <p className={cn("text-xs leading-relaxed font-light", isLightAuthTheme ? "text-slate-600" : "text-slate-500")}>
                         Your code assigns you to the correct agency workspace.
                       </p>
                     </div>
@@ -505,7 +546,9 @@ function UnifiedAuthContent() {
                         )}
                       />
                       <Label htmlFor="agreeToTerms" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
-                        I agree to the <Link href="/terms-conditions" target="_blank" className="text-white hover:text-cyan-300 underline decoration-white/30 transition-colors">Terms & Conditions</Link> *
+                        <span className={isLightAuthTheme ? "text-slate-700" : undefined}>
+                          I agree to the <Link href="/terms-conditions" target="_blank" className={cn("underline transition-colors", isLightAuthTheme ? "text-slate-950 decoration-slate-400 hover:text-sky-800" : "text-white decoration-white/30 hover:text-cyan-300")}>Terms & Conditions</Link> *
+                        </span>
                       </Label>
                     </div>
                     <div className={cn(
@@ -523,7 +566,9 @@ function UnifiedAuthContent() {
                         )}
                       />
                       <Label htmlFor="agreeToDataPrivacyPolicy" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
-                        I agree to the <Link href="/privacy-policy" target="_blank" className="text-white hover:text-cyan-300 underline decoration-white/30 transition-colors">Data Privacy Policy</Link> *
+                        <span className={isLightAuthTheme ? "text-slate-700" : undefined}>
+                          I agree to the <Link href="/privacy-policy" target="_blank" className={cn("underline transition-colors", isLightAuthTheme ? "text-slate-950 decoration-slate-400 hover:text-sky-800" : "text-white decoration-white/30 hover:text-cyan-300")}>Data Privacy Policy</Link> *
+                        </span>
                       </Label>
                     </div>
                   </div>

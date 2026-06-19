@@ -11,11 +11,14 @@ import { Label } from "@/components/ui/label";
 
 const AUTH_INPUT_CLASS =
   "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-[border-color,box-shadow] focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50";
+const AUTH_INPUT_LIGHT_CLASS =
+  "h-12 rounded-xl border-slate-300 bg-white text-slate-950 placeholder:text-slate-400 shadow-sm transition-[border-color,box-shadow] focus-visible:border-sky-500/60 focus-visible:ring-1 focus-visible:ring-sky-500/30";
 
 type AuthLoginFormProps = {
   initialEmail?: string;
   disabled?: boolean;
   panelVariant?: SubmitButtonPanelVariant;
+  inputVariant?: "dark" | "light";
   onSubmit: (credentials: { email: string; password: string }) => Promise<void>;
 };
 
@@ -23,6 +26,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
   initialEmail = "",
   disabled = false,
   panelVariant = "dark-panel",
+  inputVariant = "dark",
   onSubmit,
 }: AuthLoginFormProps) {
   const [email, setEmail] = useState(initialEmail);
@@ -50,12 +54,14 @@ export const AuthLoginForm = memo(function AuthLoginForm({
   const inputClassName = useCallback(
     (field: "loginEmail" | "loginPassword", extra?: string) =>
       cn(
-        AUTH_INPUT_CLASS,
+        inputVariant === "light" ? AUTH_INPUT_LIGHT_CLASS : AUTH_INPUT_CLASS,
         invalidFields.includes(field) &&
-          "border-red-500/80 bg-red-950/15 focus-visible:border-red-400/80 focus-visible:ring-red-400/40",
+          (inputVariant === "light"
+            ? "border-red-500/80 bg-red-50 focus-visible:border-red-500/80 focus-visible:ring-red-500/30"
+            : "border-red-500/80 bg-red-950/15 focus-visible:border-red-400/80 focus-visible:ring-red-400/40"),
         extra
       ),
-    [invalidFields]
+    [inputVariant, invalidFields]
   );
 
   const showFieldErrors = useCallback((fields: Array<"loginEmail" | "loginPassword">) => {
@@ -103,7 +109,10 @@ export const AuthLoginForm = memo(function AuthLoginForm({
       <div className="space-y-2">
         <Label
           htmlFor="login-email"
-          className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+          className={cn(
+            "block text-xs font-semibold uppercase tracking-wider",
+            inputVariant === "light" ? "text-slate-600" : "text-slate-400"
+          )}
         >
           Email Address
         </Label>
@@ -129,13 +138,21 @@ export const AuthLoginForm = memo(function AuthLoginForm({
         <div className="flex items-center justify-between">
           <Label
             htmlFor="login-password"
-            className="block text-xs font-semibold uppercase tracking-wider text-slate-400"
+            className={cn(
+              "block text-xs font-semibold uppercase tracking-wider",
+              inputVariant === "light" ? "text-slate-600" : "text-slate-400"
+            )}
           >
             Password
           </Label>
           <Link
             href="/auth/forgot-password"
-            className="text-xs font-medium text-cyan-400 transition-colors hover:text-cyan-300"
+            className={cn(
+              "text-xs font-medium transition-colors",
+              inputVariant === "light"
+                ? "text-sky-700 hover:text-sky-900"
+                : "text-cyan-400 hover:text-cyan-300"
+            )}
           >
             Forgot Password?
           </Link>
@@ -161,7 +178,12 @@ export const AuthLoginForm = memo(function AuthLoginForm({
             type="button"
             variant="ghost"
             size="sm"
-            className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-slate-400 hover:bg-white/5 hover:text-white"
+            className={cn(
+              "absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0",
+              inputVariant === "light"
+                ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                : "text-slate-400 hover:bg-white/5 hover:text-white"
+            )}
             onClick={() => setShowPassword((current) => !current)}
             disabled={disabled || submitStatus === "loading"}
             tabIndex={-1}

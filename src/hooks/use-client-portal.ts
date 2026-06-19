@@ -410,10 +410,16 @@ export function useClientPortalState(): ClientPortalContextValue {
   const updateApprovalMode = async (checked: boolean) => {
     setApprovalModeBusy(true);
     try {
+      const clientDocumentId = summary?.client?.documentId;
+      if (!clientDocumentId) {
+        throw new Error("Client account could not be resolved");
+      }
+
+      const mode = checked ? "auto_approve" : "require_approval";
       const response = await fetch("/api/client/approval-mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ requireApproval: checked }),
+        body: JSON.stringify({ mode, clientDocumentId }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
