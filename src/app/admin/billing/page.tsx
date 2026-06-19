@@ -52,6 +52,82 @@ type PricingForm = {
   assessmentAddonPence: number;
   versionUpgradePence: number;
   featurePrices: Record<string, number>;
+  grandfatherOfferExpiresAt: string | null;
+  defaultGrandfatherDiscountPercent: number;
+  contractTypePrices: Record<ContractTier, ContractTierPricing>;
+};
+
+type ContractTier = "minimum" | "professional" | "grandfather" | "grandfather_founders";
+
+type ContractTierPricing = {
+  label: string;
+  basePlatformYearlyPence: number;
+  includedSeatCount: number;
+  seatUpgradePence: number;
+  assessmentAddonPence: number;
+  versionUpgradePence: number;
+  deliveryRemoteIncluded: boolean;
+  deliveryHybridIncluded: boolean;
+  futurePaidFeaturesIncludedDuringFirstYear: boolean;
+  discountPercent: number;
+};
+
+const CONTRACT_TIER_ORDER: ContractTier[] = [
+  "minimum",
+  "professional",
+  "grandfather",
+  "grandfather_founders",
+];
+
+const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = {
+  minimum: {
+    label: "Minimum",
+    basePlatformYearlyPence: 0,
+    includedSeatCount: 1,
+    seatUpgradePence: 0,
+    assessmentAddonPence: 0,
+    versionUpgradePence: 0,
+    deliveryRemoteIncluded: false,
+    deliveryHybridIncluded: false,
+    futurePaidFeaturesIncludedDuringFirstYear: false,
+    discountPercent: 0,
+  },
+  professional: {
+    label: "Professional",
+    basePlatformYearlyPence: 0,
+    includedSeatCount: 3,
+    seatUpgradePence: 0,
+    assessmentAddonPence: 0,
+    versionUpgradePence: 0,
+    deliveryRemoteIncluded: false,
+    deliveryHybridIncluded: false,
+    futurePaidFeaturesIncludedDuringFirstYear: false,
+    discountPercent: 0,
+  },
+  grandfather: {
+    label: "Grandfather",
+    basePlatformYearlyPence: 0,
+    includedSeatCount: 3,
+    seatUpgradePence: 0,
+    assessmentAddonPence: 0,
+    versionUpgradePence: 0,
+    deliveryRemoteIncluded: true,
+    deliveryHybridIncluded: true,
+    futurePaidFeaturesIncludedDuringFirstYear: true,
+    discountPercent: 30,
+  },
+  grandfather_founders: {
+    label: "Grandfather - Founders",
+    basePlatformYearlyPence: 0,
+    includedSeatCount: 3,
+    seatUpgradePence: 0,
+    assessmentAddonPence: 0,
+    versionUpgradePence: 0,
+    deliveryRemoteIncluded: false,
+    deliveryHybridIncluded: false,
+    futurePaidFeaturesIncludedDuringFirstYear: false,
+    discountPercent: 30,
+  },
 };
 
 type ExpiringContract = {
@@ -77,6 +153,39 @@ function expiryDetailClass(days: number | null) {
   return "text-muted-foreground";
 }
 
+function normalizeContractTypePrices(raw: unknown): Record<ContractTier, ContractTierPricing> {
+  const source = raw && typeof raw === "object" && !Array.isArray(raw)
+    ? (raw as Partial<Record<ContractTier, Partial<ContractTierPricing>>>)
+    : {};
+
+  return CONTRACT_TIER_ORDER.reduce((acc, tier) => {
+    const defaults = DEFAULT_CONTRACT_TYPE_PRICES[tier];
+    const value = source[tier] ?? {};
+    acc[tier] = {
+      label: String(value.label ?? defaults.label),
+      basePlatformYearlyPence: Number(value.basePlatformYearlyPence ?? defaults.basePlatformYearlyPence) || 0,
+      includedSeatCount: Number(value.includedSeatCount ?? defaults.includedSeatCount) || 0,
+      seatUpgradePence: Number(value.seatUpgradePence ?? defaults.seatUpgradePence) || 0,
+      assessmentAddonPence: Number(value.assessmentAddonPence ?? defaults.assessmentAddonPence) || 0,
+      versionUpgradePence: Number(value.versionUpgradePence ?? defaults.versionUpgradePence) || 0,
+      deliveryRemoteIncluded:
+        typeof value.deliveryRemoteIncluded === "boolean"
+          ? value.deliveryRemoteIncluded
+          : defaults.deliveryRemoteIncluded,
+      deliveryHybridIncluded:
+        typeof value.deliveryHybridIncluded === "boolean"
+          ? value.deliveryHybridIncluded
+          : defaults.deliveryHybridIncluded,
+      futurePaidFeaturesIncludedDuringFirstYear:
+        typeof value.futurePaidFeaturesIncludedDuringFirstYear === "boolean"
+          ? value.futurePaidFeaturesIncludedDuringFirstYear
+          : defaults.futurePaidFeaturesIncludedDuringFirstYear,
+      discountPercent: Number(value.discountPercent ?? defaults.discountPercent) || 0,
+    };
+    return acc;
+  }, {} as Record<ContractTier, ContractTierPricing>);
+}
+
 export default function AdminBillingPage() {
   const [pricing, setPricing] = useState<PricingForm>({
     currency: "gbp",
@@ -85,6 +194,9 @@ export default function AdminBillingPage() {
     assessmentAddonPence: 0,
     versionUpgradePence: 0,
     featurePrices: {},
+    grandfatherOfferExpiresAt: null,
+    defaultGrandfatherDiscountPercent: 30,
+    contractTypePrices: DEFAULT_CONTRACT_TYPE_PRICES,
   });
   const [expiring, setExpiring] = useState<ExpiringContract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,11 +221,15 @@ export default function AdminBillingPage() {
             assessmentAddonPence: 0,
             versionUpgradePence: 0,
             featurePrices: {},
+            grandfatherOfferExpiresAt: null,
+            defaultGrandfatherDiscountPercent: 30,
+            contractTypePrices: DEFAULT_CONTRACT_TYPE_PRICES,
           },
           force,
           allowEmpty: true,
           transform: (body) => {
             const data = (body as { data?: Record<string, unknown> }).data ?? {};
+            const contractTypePrices = normalizeContractTypePrices(data.contractTypePrices);
             return {
               currency: String(data.currency ?? "gbp"),
               basePlatformYearlyPence: Number(
@@ -123,6 +239,12 @@ export default function AdminBillingPage() {
               assessmentAddonPence: Number(data.assessmentAddonPence ?? 0),
               versionUpgradePence: Number(data.versionUpgradePence ?? 0),
               featurePrices: (data.featurePrices as Record<string, number>) ?? {},
+              grandfatherOfferExpiresAt: data.grandfatherOfferExpiresAt
+                ? String(data.grandfatherOfferExpiresAt)
+                : null,
+              defaultGrandfatherDiscountPercent:
+                Number(data.defaultGrandfatherDiscountPercent ?? 30) || 30,
+              contractTypePrices,
             };
           },
         }),
@@ -142,6 +264,9 @@ export default function AdminBillingPage() {
         assessmentAddonPence: pricing.assessmentAddonPence,
         versionUpgradePence: pricing.versionUpgradePence,
         featurePrices: pricing.featurePrices,
+        grandfatherOfferExpiresAt: pricing.grandfatherOfferExpiresAt,
+        defaultGrandfatherDiscountPercent: pricing.defaultGrandfatherDiscountPercent,
+        contractTypePrices: pricing.contractTypePrices,
       });
       setExpiring(expiringContracts);
     } catch (err) {
@@ -174,6 +299,23 @@ export default function AdminBillingPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const updateContractPrice = (
+    tier: ContractTier,
+    key: keyof ContractTierPricing,
+    value: string | number | boolean
+  ) => {
+    setPricing((current) => ({
+      ...current,
+      contractTypePrices: {
+        ...current.contractTypePrices,
+        [tier]: {
+          ...current.contractTypePrices[tier],
+          [key]: value,
+        },
+      },
+    }));
   };
 
   const sendRenewal = async (clientDocumentId: string) => {
@@ -242,9 +384,12 @@ export default function AdminBillingPage() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         <AdminStatTile
-          label="Annual platform fee"
-          value={formatMoney(pricing.basePlatformYearlyPence, pricing.currency)}
-          detail="Charged once per contract year on renewal"
+          label="Professional annual fee"
+          value={formatMoney(
+            pricing.contractTypePrices.professional.basePlatformYearlyPence,
+            pricing.currency
+          )}
+          detail="Default annual contract charge"
           icon={CalendarClock}
         />
         <AdminStatTile
@@ -273,17 +418,165 @@ export default function AdminBillingPage() {
               </span>
               <AdminSectionHeader
                 className="flex-1 sm:items-start"
-                title="Annual platform fee"
-                description="Yearly contract charge — applied when admin sends a renewal invoice."
+                title="Contract pricing"
+                description="Set the annual charge and upgrade pricing attached to each contract type."
               />
             </div>
-            <PoundField
-              label="Base platform (per contract year)"
-              pence={pricing.basePlatformYearlyPence}
-              onChangePence={(value) =>
-                setPricing((current) => ({ ...current, basePlatformYearlyPence: value }))
-              }
+            <div className="grid gap-4 xl:grid-cols-2">
+              {CONTRACT_TIER_ORDER.map((tier) => {
+                const tierPricing = pricing.contractTypePrices[tier];
+                return (
+                  <div
+                    key={tier}
+                    className="space-y-4 rounded-lg border border-border/60 bg-background/45 p-4 dark:border-white/8"
+                  >
+                    <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+                      <div className="space-y-2">
+                        <Label className={portalLabelClass}>Contract label</Label>
+                        <Input
+                          value={tierPricing.label}
+                          onChange={(event) => updateContractPrice(tier, "label", event.target.value)}
+                          className={cn(portalInputClass, "h-10")}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className={portalLabelClass}>Included seats</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={tierPricing.includedSeatCount}
+                          onChange={(event) =>
+                            updateContractPrice(
+                              tier,
+                              "includedSeatCount",
+                              Number(event.target.value) || DEFAULT_CONTRACT_TYPE_PRICES[tier].includedSeatCount
+                            )
+                          }
+                          className={cn(portalInputClass, "h-10")}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <PoundField
+                        label="Annual contract"
+                        pence={tierPricing.basePlatformYearlyPence}
+                        onChangePence={(value) =>
+                          updateContractPrice(tier, "basePlatformYearlyPence", value)
+                        }
+                        compact
+                      />
+                      <PoundField
+                        label="Extra HM seat"
+                        pence={tierPricing.seatUpgradePence}
+                        onChangePence={(value) => updateContractPrice(tier, "seatUpgradePence", value)}
+                        icon={Users}
+                        compact
+                      />
+                      <PoundField
+                        label="Add-on assessment"
+                        pence={tierPricing.assessmentAddonPence}
+                        onChangePence={(value) => updateContractPrice(tier, "assessmentAddonPence", value)}
+                        compact
+                      />
+                      <PoundField
+                        label="Version upgrade"
+                        pence={tierPricing.versionUpgradePence}
+                        onChangePence={(value) => updateContractPrice(tier, "versionUpgradePence", value)}
+                        compact
+                      />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={tierPricing.deliveryRemoteIncluded}
+                          onChange={(event) =>
+                            updateContractPrice(tier, "deliveryRemoteIncluded", event.target.checked)
+                          }
+                        />
+                        Remote included
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={tierPricing.deliveryHybridIncluded}
+                          onChange={(event) =>
+                            updateContractPrice(tier, "deliveryHybridIncluded", event.target.checked)
+                          }
+                        />
+                        Hybrid included
+                      </label>
+                      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={tierPricing.futurePaidFeaturesIncludedDuringFirstYear}
+                          onChange={(event) =>
+                            updateContractPrice(
+                              tier,
+                              "futurePaidFeaturesIncludedDuringFirstYear",
+                              event.target.checked
+                            )
+                          }
+                        />
+                        First-year paid features
+                      </label>
+                    </div>
+                    <div className="max-w-40 space-y-2">
+                      <Label className={portalLabelClass}>Discount %</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={tierPricing.discountPercent}
+                        onChange={(event) =>
+                          updateContractPrice(tier, "discountPercent", Number(event.target.value) || 0)
+                        }
+                        className={cn(portalInputClass, "h-10")}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </AdminPanel>
+
+          <AdminPanel className="space-y-5">
+            <AdminSectionHeader
+              title="Grandfather availability"
+              description="Controls whether the public pricing page can show the Grandfather contract option."
             />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label className={portalLabelClass}>Offer expiry date</Label>
+                <Input
+                  type="date"
+                  value={pricing.grandfatherOfferExpiresAt ?? ""}
+                  onChange={(event) =>
+                    setPricing((current) => ({
+                      ...current,
+                      grandfatherOfferExpiresAt: event.target.value || null,
+                    }))
+                  }
+                  className={cn(portalInputClass, "h-10")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={portalLabelClass}>Default founders discount %</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={pricing.defaultGrandfatherDiscountPercent}
+                  onChange={(event) =>
+                    setPricing((current) => ({
+                      ...current,
+                      defaultGrandfatherDiscountPercent: Number(event.target.value) || 0,
+                    }))
+                  }
+                  className={cn(portalInputClass, "h-10")}
+                />
+              </div>
+            </div>
           </AdminPanel>
 
           <AdminPanel className="space-y-6">

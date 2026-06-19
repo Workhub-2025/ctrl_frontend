@@ -239,8 +239,12 @@ export type AdminClientCreateInput = {
   timeZone?: string;
   campaignApprovalMode: "auto_approve" | "require_approval";
   contract: {
+    tier: "minimum" | "professional" | "grandfather";
     seatCount: number;
     notes?: string;
+    grandfatherStartedAt?: string | null;
+    grandfatherEndsAt?: string | null;
+    grandfatherDiscountPercent?: number | null;
   };
   issueAccessCode?: boolean;
 };

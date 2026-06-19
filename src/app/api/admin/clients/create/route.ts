@@ -19,6 +19,7 @@ function validatePayload(body: unknown):
 
   const value = body as Partial<AdminClientCreateInput>;
   const seatCount = Number(value.contract?.seatCount);
+  const tier = value.contract?.tier ?? "professional";
 
   if (!value.name?.trim()) return { valid: false, error: "Client name is required" };
   if (
@@ -30,6 +31,9 @@ function validatePayload(body: unknown):
   const campaignApprovalMode = value.campaignApprovalMode;
   if (!["auto_approve", "require_approval"].includes(campaignApprovalMode ?? "")) {
     return { valid: false, error: "Campaign approval mode is invalid" };
+  }
+  if (!["minimum", "professional", "grandfather"].includes(tier)) {
+    return { valid: false, error: "Contract tier is invalid" };
   }
   if (!Number.isInteger(seatCount) || seatCount < 1) {
     return { valid: false, error: "Hiring manager seats must be at least 1" };
@@ -50,8 +54,12 @@ function validatePayload(body: unknown):
       timeZone: value.timeZone?.trim() || undefined,
       campaignApprovalMode: campaignApprovalMode as "auto_approve" | "require_approval",
       contract: {
+        tier: tier as "minimum" | "professional" | "grandfather",
         seatCount,
         notes: value.contract?.notes?.trim() || undefined,
+        grandfatherStartedAt: value.contract?.grandfatherStartedAt ?? null,
+        grandfatherEndsAt: value.contract?.grandfatherEndsAt ?? null,
+        grandfatherDiscountPercent: value.contract?.grandfatherDiscountPercent ?? null,
       },
       issueAccessCode: Boolean(value.issueAccessCode),
     },

@@ -34,6 +34,29 @@ type CreatedClientResponse = {
   };
 };
 
+type ContractTier = "minimum" | "professional" | "grandfather";
+
+const CONTRACT_TIERS: Record<
+  ContractTier,
+  { label: string; minimumSeats: number; description: string }
+> = {
+  minimum: {
+    label: "Minimum",
+    minimumSeats: 1,
+    description: "1 HM slot, core assessments, in-person delivery",
+  },
+  professional: {
+    label: "Professional",
+    minimumSeats: 3,
+    description: "3 HM slots, core assessments, in-person delivery",
+  },
+  grandfather: {
+    label: "Grandfather",
+    minimumSeats: 3,
+    description: "3 HM slots, remote and hybrid delivery, first-year paid features",
+  },
+};
+
 export default function CreateClientPage() {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -48,7 +71,8 @@ export default function CreateClientPage() {
     zipCode: "",
     timeZone: "Europe/London",
     campaignApprovalMode: "require_approval" as "auto_approve" | "require_approval",
-    seatCount: "2",
+    contractTier: "professional" as ContractTier,
+    seatCount: "3",
     notes: "",
     issueAccessCode: true,
   });
@@ -67,6 +91,22 @@ export default function CreateClientPage() {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
+  const updateContractTier = (tier: ContractTier) => {
+    setForm((current) => {
+      const minimumSeats = CONTRACT_TIERS[tier].minimumSeats;
+      const currentSeats = Number.parseInt(current.seatCount, 10);
+      return {
+        ...current,
+        contractTier: tier,
+        seatCount: String(
+          Number.isInteger(currentSeats) && currentSeats >= minimumSeats
+            ? currentSeats
+            : minimumSeats
+        ),
+      };
+    });
+  };
+
   const submit = async () => {
     setError(null);
     setCreated(null);
@@ -77,6 +117,11 @@ export default function CreateClientPage() {
     }
     if (!Number.isInteger(seatCount) || seatCount < 1) {
       setError("Hiring manager seats must be at least 1.");
+      return;
+    }
+    const tierMinimumSeats = CONTRACT_TIERS[form.contractTier].minimumSeats;
+    if (seatCount < tierMinimumSeats) {
+      setError(`${CONTRACT_TIERS[form.contractTier].label} contracts require at least ${tierMinimumSeats} hiring manager seats.`);
       return;
     }
 
@@ -98,6 +143,7 @@ export default function CreateClientPage() {
           timeZone: form.timeZone,
           campaignApprovalMode: form.campaignApprovalMode,
           contract: {
+            tier: form.contractTier,
             seatCount,
             notes: form.notes,
           },
@@ -417,15 +463,39 @@ export default function CreateClientPage() {
             <div className="space-y-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
+                  <Label className={portalLabelClass}>Contract type</Label>
+                  <Select
+                    value={form.contractTier}
+                    onValueChange={(value) => updateContractTier(value as ContractTier)}
+                  >
+                    <SelectTrigger className={cn(portalInputClass, "h-10")}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CONTRACT_TIERS).map(([tier, meta]) => (
+                        <SelectItem key={tier} value={tier}>
+                          {meta.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    {CONTRACT_TIERS[form.contractTier].description}
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="seats" className={portalLabelClass}>Hiring manager seats</Label>
                   <Input
                     id="seats"
                     type="number"
-                    min={1}
+                    min={CONTRACT_TIERS[form.contractTier].minimumSeats}
                     value={form.seatCount}
                     onChange={(event) => updateField("seatCount", event.target.value)}
                     className={cn(portalInputClass, "h-10")}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Minimum {CONTRACT_TIERS[form.contractTier].minimumSeats} for this contract.
+                  </p>
                 </div>
               </div>
               <div className="space-y-2">
@@ -464,6 +534,7 @@ export default function CreateClientPage() {
               <span className={portalIconWrapLgClass}>
                 <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
               </span>
+              {CONTRACT_TIERS[form.contractTier].label} contract with{" "}
               {Number.isInteger(seatCount) && seatCount > 0 ? seatCount : 0} hiring manager seats
             </div>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-3.5 transition-colors hover:bg-muted/30 dark:border-white/8">

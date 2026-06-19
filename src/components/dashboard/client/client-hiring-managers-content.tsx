@@ -94,8 +94,28 @@ export function ClientHiringManagersContent() {
   };
 
   const handleRelease = async (manager: ClientHiringManagerSeat) => {
-    await releaseHiringManager(manager);
-    setSelectedSeat(null);
+    const result = await releaseHiringManager(manager);
+    const releasedCode = result?.releasedSeatCode;
+    if (releasedCode) {
+      const emptySlot: SeatSlot = {
+        type: "empty",
+        label: releasedCode.seatLabel || `Seat ${releasedCode.seatNumber}`,
+        seatNumber: releasedCode.seatNumber,
+        accessCode: {
+          documentId: releasedCode.documentId,
+          code: releasedCode.code,
+          expiresAt: releasedCode.expiresAt,
+          status: releasedCode.status,
+          targetRole: releasedCode.targetRole,
+          invitedEmail: releasedCode.invitedEmail,
+          seatNumber: releasedCode.seatNumber,
+          seatLabel: releasedCode.seatLabel,
+        },
+      };
+      setSelectedSeat(emptySlot);
+    } else {
+      setSelectedSeat(null);
+    }
   };
 
   const handleSendInvite = async (seat: Extract<SeatSlot, { type: "empty" }>) => {

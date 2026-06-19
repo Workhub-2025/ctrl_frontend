@@ -70,7 +70,7 @@ type ClientPortalContextValue = {
   generateSeatCode: (seatLabel: string) => Promise<void>;
   refreshSeatCode: (seatLabel: string, refreshCodeDocumentId: string) => Promise<void>;
   sendSeatInvite: (seatLabel: string, email: string, accessCodeDocumentId?: string) => Promise<void>;
-  releaseHiringManager: (manager: ClientHiringManagerSeat) => Promise<void>;
+  releaseHiringManager: (manager: ClientHiringManagerSeat) => Promise<any>;
   updateApprovalMode: (checked: boolean) => Promise<void>;
 };
 
@@ -442,8 +442,10 @@ export function useClientPortalState(): ClientPortalContextValue {
         const body = await response.json().catch(() => ({}));
         throw new Error((body as { error?: string }).error || "Hiring manager could not be released");
       }
+      const data = await response.json();
       invalidateClientOverviewCache();
       await loadOverview(true);
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Hiring manager could not be released");
     } finally {

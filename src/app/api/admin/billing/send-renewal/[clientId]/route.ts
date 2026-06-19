@@ -21,6 +21,7 @@ type AdminClientRecord = {
     endDate?: string;
     seatCount?: number;
     status?: string;
+    tier?: string;
   }>;
 };
 
@@ -32,6 +33,22 @@ function getActiveContract(client: AdminClientRecord) {
   const today = new Date().toISOString().split("T")[0];
   return (client.contracts ?? []).find(
     (contract) => contract.status === "active" && contract.endDate && contract.endDate >= today
+  );
+}
+
+function resolveAnnualContractPrice(
+  pricing: Record<string, unknown>,
+  tier?: string
+) {
+  const contractTypePrices =
+    pricing.contractTypePrices && typeof pricing.contractTypePrices === "object"
+      ? (pricing.contractTypePrices as Record<string, { basePlatformYearlyPence?: number }>)
+      : {};
+  return Number(
+    (tier ? contractTypePrices[tier]?.basePlatformYearlyPence : undefined) ??
+      pricing.basePlatformYearlyPence ??
+      pricing.basePlatformMonthlyPence ??
+      0
   );
 }
 
@@ -73,13 +90,11 @@ export async function POST(
       return NextResponse.json({ error: "No active contract found for this client" }, { status: 400 });
     }
 
-    const pricingResponse = await strapiRequest<{ data?: Record<string, number | string> }>(
+    const pricingResponse = await strapiRequest<{ data?: Record<string, unknown> }>(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
-    const amountPence = Number(
-      pricing.basePlatformYearlyPence ?? pricing.basePlatformMonthlyPence ?? 0
-    );
+    const amountPence = resolveAnnualContractPrice(pricing, contract.tier);
 
     if (amountPence <= 0) {
       return NextResponse.json(

@@ -21,6 +21,7 @@ type AdminClientRecord = {
     seatCount?: number;
     status?: string;
     paymentStatus?: string;
+    tier?: string;
   }>;
 };
 
@@ -31,6 +32,22 @@ function getAppUrl() {
 function getPendingContract(client: AdminClientRecord) {
   return (client.contracts ?? []).find(
     (contract) => contract.status === "active" && contract.paymentStatus === "pending"
+  );
+}
+
+function resolveAnnualContractPrice(
+  pricing: Record<string, unknown>,
+  tier?: string
+) {
+  const contractTypePrices =
+    pricing.contractTypePrices && typeof pricing.contractTypePrices === "object"
+      ? (pricing.contractTypePrices as Record<string, { basePlatformYearlyPence?: number }>)
+      : {};
+  return Number(
+    (tier ? contractTypePrices[tier]?.basePlatformYearlyPence : undefined) ??
+      pricing.basePlatformYearlyPence ??
+      pricing.basePlatformMonthlyPence ??
+      0
   );
 }
 
@@ -75,13 +92,11 @@ export async function POST(
       );
     }
 
-    const pricingResponse = await strapiRequest<{ data?: Record<string, number | string> }>(
+    const pricingResponse = await strapiRequest<{ data?: Record<string, unknown> }>(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
-    const amountPence = Number(
-      pricing.basePlatformYearlyPence ?? pricing.basePlatformMonthlyPence ?? 0
-    );
+    const amountPence = resolveAnnualContractPrice(pricing, contract.tier);
 
     if (amountPence <= 0) {
       return NextResponse.json(
