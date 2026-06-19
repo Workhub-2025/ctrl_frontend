@@ -25,24 +25,34 @@ export async function initAssessmentSession<T = typeof EMPTY_SESSION>(
 
   await getActionAuthContext(`initAssessmentSession:${slug}`);
 
+  let response;
   try {
     const client = await getServerStrapiClient();
-    const response = await client.fetch(plugin.strapiSessionPath, {
+    response = await client.fetch(plugin.strapiSessionPath, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ candidateSessionDocumentId }),
     });
-
-    if (!response.ok) {
-      console.error(
-        `[initAssessmentSession:${slug}] Strapi responded ${response.status} — using fallback`,
-      );
-      return EMPTY_SESSION as T;
-    }
-
-    return (await response.json()) as T;
   } catch (err) {
     console.error(`[initAssessmentSession:${slug}] Network error — using fallback`, err);
     return EMPTY_SESSION as T;
   }
+
+  if (!response.ok) {
+    console.error(
+      `[initAssessmentSession:${slug}] Strapi responded ${response.status}`
+    );
+    let errorMessage = 'Failed to load assessment';
+    try {
+      const errorData = await response.json();
+      if (errorData?.error?.message) {
+        errorMessage = errorData.error.message;
+      } else if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      }
+    } catch { /* ignore */ }
+    throw new Error(errorMessage);
+  }
+
+  return (await response.json()) as T;
 }

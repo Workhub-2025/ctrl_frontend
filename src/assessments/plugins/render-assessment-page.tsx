@@ -19,11 +19,13 @@ export async function renderAssessmentPage(
   const candidateSessionDocumentId = params?.candidateSessionDocumentId ?? null;
 
   if (plugin.requiresServerInit && slug === "typing") {
-    const session = await initTypingSession(candidateSessionDocumentId).catch(() => null);
+    const session = await initTypingSession(candidateSessionDocumentId).catch((err: any) => ({
+      error: err.message || 'Failed to initialize session',
+    }));
 
     return (
       <TypingTestClient
-        initialSession={session}
+        initialSession={session as any}
         candidateSessionDocumentId={candidateSessionDocumentId}
       />
     );

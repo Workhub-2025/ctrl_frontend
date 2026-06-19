@@ -17,19 +17,34 @@ export async function initTypingSession(
 ): Promise<TypingSessionData> {
   await getActionAuthContext('initTypingSession');
 
+  let response;
   try {
     const client = await getServerStrapiClient();
-    const response = await client.fetch('/assessment/typing/session', {
+    response = await client.fetch('/assessment/typing/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ candidateSessionDocumentId }),
     });
+  } catch (err) {
+    console.error('[initTypingSession] Network error — using fallback', err);
+    return FALLBACK_SESSION;
+  }
 
-    if (!response.ok) {
-      console.error(`[initTypingSession] Strapi responded ${response.status} — using fallback`);
-      return FALLBACK_SESSION;
-    }
+  if (!response.ok) {
+    console.error(`[initTypingSession] Strapi responded ${response.status}`);
+    let errorMessage = 'Failed to load assessment';
+    try {
+      const errorData = await response.json();
+      if (errorData?.error?.message) {
+        errorMessage = errorData.error.message;
+      } else if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      }
+    } catch { /* ignore */ }
+    throw new Error(errorMessage);
+  }
 
+  try {
     const body = (await response.json()) as {
       sessionId: string | null;
       assessmentId: string;
@@ -53,7 +68,7 @@ export async function initTypingSession(
       },
     };
   } catch (err) {
-    console.error('[initTypingSession] Network error — using fallback', err);
+    console.error('[initTypingSession] Response parsing error — using fallback', err);
     return FALLBACK_SESSION;
   }
 }
