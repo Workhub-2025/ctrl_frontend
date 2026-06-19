@@ -54,7 +54,7 @@ function validatePayload(body: unknown):
       timeZone: value.timeZone?.trim() || undefined,
       campaignApprovalMode: campaignApprovalMode as "auto_approve" | "require_approval",
       contract: {
-        tier: tier as "minimum" | "professional" | "grandfather",
+        tier: tier as AdminClientCreateInput["contract"]["tier"],
         seatCount,
         notes: value.contract?.notes?.trim() || undefined,
         grandfatherStartedAt: value.contract?.grandfatherStartedAt ?? null,

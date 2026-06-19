@@ -10,6 +10,13 @@ import {
   updateAdminClient,
 } from "@/services/admin-platform.service";
 
+const CONTRACT_STATUSES = ["active", "soft_locked", "pending_deletion"] as const;
+type ContractStatus = (typeof CONTRACT_STATUSES)[number];
+
+function isContractStatus(value: unknown): value is ContractStatus {
+  return CONTRACT_STATUSES.includes(value as ContractStatus);
+}
+
 async function requireAdmin(request?: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -72,6 +79,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "seatCount must be at least 1" }, { status: 400 });
     }
 
+    const status =
+      body?.contract && "status" in body.contract
+        ? body.contract.status
+        : undefined;
+
+    if (status !== undefined && !isContractStatus(status)) {
+      return NextResponse.json(
+        { error: "contract status must be active, soft_locked, or pending_deletion" },
+        { status: 400 }
+      );
+    }
+
     const updated = await updateAdminClient(
       clientDocumentId,
       {
@@ -80,13 +99,14 @@ export async function PATCH(request: NextRequest) {
             ? body.features
             : undefined,
         contract:
-          seatCount !== undefined
+          seatCount !== undefined || status !== undefined
             ? {
                 seatCount,
                 notes:
                   typeof body?.contract?.notes === "string"
                     ? body.contract.notes
                     : undefined,
+                status,
               }
             : undefined,
       },

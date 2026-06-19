@@ -72,6 +72,10 @@ export type AdminAssessmentVersionOption = {
   description: string | null;
 };
 
+type ContractStatus = "active" | "soft_locked" | "pending_deletion";
+type ContractTier = "minimum" | "professional" | "professional_gf" | "grandfather" | "grandfather_founders";
+type CreatableContractTier = "minimum" | "professional" | "grandfather";
+
 type RawUser = {
   id?: number;
   documentId?: string;
@@ -90,11 +94,11 @@ type RawUser = {
 type RawContract = {
   documentId?: string;
   seatCount?: number;
-  status?: "active" | "soft_locked" | "pending_deletion";
+  status?: ContractStatus;
   startDate?: string | null;
   endDate?: string | null;
   paymentStatus?: "not_required" | "pending" | "paid" | "failed";
-  tier?: "minimum" | "professional" | "grandfather" | "grandfather_founders" | "professional_gf" | string;
+  tier?: ContractTier | string;
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -240,7 +244,7 @@ export type AdminClientCreateInput = {
   timeZone?: string;
   campaignApprovalMode: "auto_approve" | "require_approval";
   contract: {
-    tier: "minimum" | "professional" | "grandfather";
+    tier: CreatableContractTier;
     seatCount: number;
     notes?: string;
     grandfatherStartedAt?: string | null;
@@ -497,7 +501,8 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
   const row = normalizeClient(client);
   const activeContract = getActiveContract(client);
   const pendingContract = getPendingContract(client);
-  const displayContract = activeContract ?? pendingContract;
+  const latestContract = getLatestContract(client);
+  const displayContract = activeContract ?? pendingContract ?? latestContract;
 
   return {
     ...row,
@@ -545,7 +550,8 @@ function normalizeClientEntitlement(client: RawClient): AdminClientEntitlementRo
   const row = normalizeClient(client);
   const activeContract = getActiveContract(client);
   const pendingContract = getPendingContract(client);
-  const displayContract = activeContract ?? pendingContract;
+  const latestContract = getLatestContract(client);
+  const displayContract = activeContract ?? pendingContract ?? latestContract;
 
   return {
     ...row,
@@ -945,6 +951,11 @@ export async function updateAdminClient(
     contract?: {
       seatCount?: number;
       notes?: string | null;
+      status?: ContractStatus;
+      tier?: ContractTier | string;
+      grandfatherStartedAt?: string | null;
+      grandfatherEndsAt?: string | null;
+      grandfatherDiscountPercent?: number | null;
     };
   },
   authToken?: string | null

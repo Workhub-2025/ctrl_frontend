@@ -203,7 +203,7 @@ export function ClientUpgradeContent() {
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <ClientPageHeader
         title="Upgrade requests"
-        description="Review your contract entitlements and submit one structured billing request for seats, delivery methods, versions, or add-ons."
+        description="Review your contract entitlements and submit one structured billing request for seats, delivery methods, or assessment add-ons."
         notice={
           error ? (
             <ClientErrorBanner message={error} />

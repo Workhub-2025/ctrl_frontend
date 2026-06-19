@@ -33,7 +33,7 @@ export function ClientMessagesContent() {
         <PortalSectionHeader
           eyebrow="Get help"
           title="Choose the right channel"
-          description="Use upgrade requests for seats, assessments, or version changes. Raise a ticket here for platform issues or account questions."
+          description="Use upgrade requests for seats, delivery methods, or assessment add-ons. Raise a ticket here for platform issues or account questions."
         />
 
         <div className="grid gap-4 md:grid-cols-2">

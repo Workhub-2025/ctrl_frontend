@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowUpRight, CheckCircle2, Loader2, Minus, Plus, Search, Users } from "lucide-react";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
 import { PORTAL_CACHE_TTL_MS } from "@/lib/portal-fetch-cache";
@@ -42,13 +49,31 @@ type EntitlementClient = {
   } | null;
 };
 
+type ContractStatus = "active" | "soft_locked" | "pending_deletion";
+
+const CONTRACT_STATUS_OPTIONS: Array<{ value: ContractStatus; label: string }> = [
+  { value: "active", label: "Active" },
+  { value: "soft_locked", label: "Soft locked" },
+  { value: "pending_deletion", label: "Pending deletion" },
+];
+
 const FEATURES = [
   { key: "deliveryRemote", label: "Remote delivery", group: "Delivery" },
   { key: "deliveryHybrid", label: "Hybrid delivery", group: "Delivery" },
   { key: "assessmentRecovery", label: "Assessment recovery audit", group: "Recovery" },
 ] as const;
 
-type DraftState = Record<string, { seatCount: string; features: Record<string, any>; notes: string }>;
+type DraftState = Record<
+  string,
+  { seatCount: string; features: Record<string, any>; notes: string; status: ContractStatus }
+>;
+
+function normalizeContractStatus(status?: string | null): ContractStatus {
+  if (CONTRACT_STATUS_OPTIONS.some((option) => option.value === status)) {
+    return status as ContractStatus;
+  }
+  return "active";
+}
 
 function initialSeatCount(client: EntitlementClient) {
   return String(Math.max(1, client.activeContract?.seatCount ?? client.seatsAllowed, client.seatsUsed));
@@ -103,6 +128,7 @@ export default function UpgradeRequestsPage() {
               ),
             },
             notes: client.activeContract?.notes ?? "",
+            status: normalizeContractStatus(client.activeContract?.status),
           },
         ])
       )
@@ -159,6 +185,14 @@ export default function UpgradeRequestsPage() {
       changes.push("Update entitlement notes");
     }
 
+    const currentStatus = normalizeContractStatus(selectedClient.activeContract?.status);
+    if (selectedClient.activeContract && selectedDraft.status !== currentStatus) {
+      const label =
+        CONTRACT_STATUS_OPTIONS.find((option) => option.value === selectedDraft.status)?.label ??
+        selectedDraft.status;
+      changes.push(`Contract status: ${currentStatus.replace(/_/g, " ")} -> ${label}`);
+    }
+
     return changes;
   }, [selectedClient, selectedDraft]);
 
@@ -195,12 +229,23 @@ export default function UpgradeRequestsPage() {
     }));
   };
 
+  const updateStatusDraft = (clientId: string, status: ContractStatus) => {
+    setDrafts((current) => ({
+      ...current,
+      [clientId]: {
+        ...current[clientId],
+        status,
+      },
+    }));
+  };
+
   const stageCurrentSetup = (client: EntitlementClient) => {
     setDrafts((current) => ({
       ...current,
       [client.id]: {
         ...current[client.id],
         seatCount: initialSeatCount(client),
+        status: normalizeContractStatus(current[client.id]?.status),
         notes: current[client.id]?.notes ||
           `Generated from current client setup: ${client.seatsUsed} active HM occupant${client.seatsUsed === 1 ? "" : "s"}.`,
       },
@@ -233,6 +278,7 @@ export default function UpgradeRequestsPage() {
           contract: {
             seatCount,
             notes: selectedDraft.notes,
+            status: selectedDraft.status,
           },
         }),
       });
@@ -362,7 +408,7 @@ export default function UpgradeRequestsPage() {
                 )}
               </div>
               <div className="space-y-6 p-6">
-                <div className="grid gap-4 md:grid-cols-[200px_minmax(0,1fr)]">
+                <div className="grid gap-4 lg:grid-cols-[200px_220px_minmax(0,1fr)]">
                   <div className="space-y-2">
                     <Label htmlFor="hmSeatCount" className="text-xs font-bold text-slate-400 uppercase tracking-wider">HM seats</Label>
                     <div className="relative">
@@ -378,6 +424,28 @@ export default function UpgradeRequestsPage() {
                     </div>
                     <p className="text-[10px] text-muted-foreground/80">
                       Cannot go below {selectedClient.seatsUsed} active occupants.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contractStatus" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contract status</Label>
+                    <Select
+                      value={selectedDraft.status}
+                      onValueChange={(value) => updateStatusDraft(selectedClient.id, value as ContractStatus)}
+                      disabled={!selectedClient.activeContract}
+                    >
+                      <SelectTrigger id="contractStatus" className="rounded-xl border-border/70 dark:border-white/10 focus:ring-primary">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTRACT_STATUS_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground/80">
+                      {selectedClient.activeContract ? "Updates the selected contract record." : "Available after a contract exists."}
                     </p>
                   </div>
                   <div className="space-y-2">
