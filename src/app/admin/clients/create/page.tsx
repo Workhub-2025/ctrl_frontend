@@ -34,26 +34,26 @@ type CreatedClientResponse = {
   };
 };
 
-type ContractTier = "minimum" | "professional" | "grandfather";
+type ContractTier = "essential" | "professional" | "founder";
 
 const CONTRACT_TIERS: Record<
   ContractTier,
   { label: string; minimumSeats: number; description: string }
 > = {
-  minimum: {
-    label: "Minimum",
+  essential: {
+    label: "Essential",
     minimumSeats: 1,
     description: "1 HM slot, core assessments, in-person delivery",
   },
   professional: {
     label: "Professional",
     minimumSeats: 3,
-    description: "3 HM slots, core assessments, in-person delivery",
+    description: "3 HM slots, core assessments, in-person, remote and hybrid delivery",
   },
-  grandfather: {
-    label: "Grandfather",
+  founder: {
+    label: "Founder",
     minimumSeats: 3,
-    description: "3 HM slots, remote and hybrid delivery, first-year paid features",
+    description: "3 HM slots, free delivery methods, 33% discount on upgrades",
   },
 };
 

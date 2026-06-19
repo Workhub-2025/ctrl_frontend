@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getStripeClient } from "@/lib/stripe/server";
 import { getStrapiClient } from "@/lib/strapi";
 
 type PublicContractTierPricing = {
@@ -11,7 +12,7 @@ type PublicContractTierPricing = {
 };
 
 type PublicContractOption = {
-  tier: "minimum" | "professional" | "grandfather";
+  tier: "essential" | "professional" | "founder";
   label: string;
   includedSeats: number;
   deliveryModes: string[];
@@ -31,26 +32,17 @@ export async function GET() {
     const body = await response.json().catch(() => ({}));
     const pricing = body.data || {};
 
-    const grandfatherOfferExpiresAt = pricing.grandfatherOfferExpiresAt || null;
-    const defaultGrandfatherDiscountPercent = pricing.defaultGrandfatherDiscountPercent ?? 30;
+    const defaultFounderDiscountPercent = pricing.defaultGrandfatherDiscountPercent ?? 33;
     const contractTypePrices =
       pricing.contractTypePrices && typeof pricing.contractTypePrices === "object"
         ? (pricing.contractTypePrices as Record<string, PublicContractTierPricing>)
         : ({} as Record<string, PublicContractTierPricing>);
 
-    let grandfatherAvailable = false;
-    if (grandfatherOfferExpiresAt) {
-      const today = new Date().toISOString().split("T")[0];
-      grandfatherAvailable = today <= grandfatherOfferExpiresAt;
-    } else {
-      grandfatherAvailable = true;
-    }
-
     const options: PublicContractOption[] = [
       {
-        tier: "minimum" as const,
-        label: contractTypePrices.minimum?.label ?? "Minimum",
-        includedSeats: contractTypePrices.minimum?.includedSeatCount ?? 1,
+        tier: "essential" as const,
+        label: contractTypePrices.essential?.label ?? "Essential",
+        includedSeats: contractTypePrices.essential?.includedSeatCount ?? 1,
         deliveryModes: ["in_person"],
         includesCoreAssessments: true,
       },
@@ -58,32 +50,32 @@ export async function GET() {
         tier: "professional" as const,
         label: contractTypePrices.professional?.label ?? "Professional",
         includedSeats: contractTypePrices.professional?.includedSeatCount ?? 3,
-        deliveryModes: ["in_person"],
-        includesCoreAssessments: true,
-      },
-    ];
-
-    if (grandfatherAvailable) {
-      options.push({
-        tier: "grandfather" as const,
-        label: contractTypePrices.grandfather?.label ?? "Grandfather",
-        includedSeats: contractTypePrices.grandfather?.includedSeatCount ?? 3,
         deliveryModes: [
           "in_person",
-          ...(contractTypePrices.grandfather?.deliveryRemoteIncluded ? ["remote"] : []),
-          ...(contractTypePrices.grandfather?.deliveryHybridIncluded ? ["hybrid"] : []),
+          ...(contractTypePrices.professional?.deliveryRemoteIncluded ? ["remote"] : []),
+          ...(contractTypePrices.professional?.deliveryHybridIncluded ? ["hybrid"] : []),
+        ],
+        includesCoreAssessments: true,
+      },
+      {
+        tier: "founder" as const,
+        label: contractTypePrices.founder?.label ?? "Founder",
+        includedSeats: contractTypePrices.founder?.includedSeatCount ?? 3,
+        deliveryModes: [
+          "in_person",
+          ...(contractTypePrices.founder?.deliveryRemoteIncluded ? ["remote"] : []),
+          ...(contractTypePrices.founder?.deliveryHybridIncluded ? ["hybrid"] : []),
         ],
         includesCoreAssessments: true,
         includesPaidFutureFeaturesDuringFirstYear:
-          contractTypePrices.grandfather?.futurePaidFeaturesIncludedDuringFirstYear ?? true,
-        discountPercent: contractTypePrices.grandfather?.discountPercent ?? defaultGrandfatherDiscountPercent,
-      });
-    }
+          contractTypePrices.founder?.futurePaidFeaturesIncludedDuringFirstYear ?? true,
+        discountPercent: contractTypePrices.founder?.discountPercent ?? defaultFounderDiscountPercent,
+      },
+    ];
 
     return NextResponse.json({
       data: {
-        grandfatherAvailable,
-        grandfatherOfferExpiresAt,
+        grandfatherAvailable: true,
         options,
       }
     });

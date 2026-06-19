@@ -103,6 +103,13 @@ export function OptionalDateField({
           min={min}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
+          onClick={(event) => {
+            if (!disabled) {
+              try {
+                event.currentTarget.showPicker();
+              } catch (e) {}
+            }
+          }}
           className={cn(
             "absolute inset-0 h-full w-full cursor-pointer opacity-0",
             "[color-scheme:dark]"
@@ -161,6 +168,13 @@ function NativeTimeField({
         step={step}
         disabled={disabled}
         onChange={(event) => onChange(normalizeTimeValue(event.target.value))}
+        onClick={(event) => {
+          if (!disabled) {
+            try {
+              event.currentTarget.showPicker();
+            } catch (e) {}
+          }
+        }}
         className={cn(
           "absolute inset-0 h-full w-full cursor-pointer opacity-0",
           "[color-scheme:dark]"

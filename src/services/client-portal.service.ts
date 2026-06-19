@@ -252,6 +252,25 @@ export async function updateClientCampaignApprovalMode(
   return response.data;
 }
 
+export async function updateClientAutoRenew(
+  clientDocumentId: string,
+  autoRenew: boolean
+) {
+  if (!clientDocumentId) {
+    throw new Error("Client account could not be resolved");
+  }
+
+  const response = await strapiRequest<StrapiSingleResponse<any>>(
+    `/clients/${encodeURIComponent(clientDocumentId)}/auto-renew`,
+    {
+      method: "POST",
+      body: JSON.stringify({ autoRenew }),
+    }
+  );
+
+  return response.data;
+}
+
 export async function getClientOverview(): Promise<ClientOverviewData> {
   const summary = await getClientDashboardSummary();
   const clientDocumentId = summary?.client?.documentId;

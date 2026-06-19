@@ -32,7 +32,7 @@ function validatePayload(body: unknown):
   if (!["auto_approve", "require_approval"].includes(campaignApprovalMode ?? "")) {
     return { valid: false, error: "Campaign approval mode is invalid" };
   }
-  if (!["minimum", "professional", "grandfather"].includes(tier)) {
+  if (!["essential", "professional", "founder"].includes(tier)) {
     return { valid: false, error: "Contract tier is invalid" };
   }
   if (!Number.isInteger(seatCount) || seatCount < 1) {

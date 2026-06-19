@@ -72,6 +72,8 @@ type ClientPortalContextValue = {
   sendSeatInvite: (seatLabel: string, email: string, accessCodeDocumentId?: string) => Promise<void>;
   releaseHiringManager: (manager: ClientHiringManagerSeat) => Promise<any>;
   updateApprovalMode: (checked: boolean) => Promise<void>;
+  updateAutoRenew: (checked: boolean) => Promise<void>;
+  autoRenewBusy: boolean;
 };
 
 export type ClientOverviewData = {
@@ -142,6 +144,7 @@ export function useClientPortalState(): ClientPortalContextValue {
   const [inviteBusy, setInviteBusy] = useState<string | null>(null);
   const [releasingManagerId, setReleasingManagerId] = useState<string | null>(null);
   const [approvalModeBusy, setApprovalModeBusy] = useState(false);
+  const [autoRenewBusy, setAutoRenewBusy] = useState(false);
   const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const entitlementsLoadIdRef = useRef(0);
@@ -480,6 +483,32 @@ export function useClientPortalState(): ClientPortalContextValue {
     }
   };
 
+  const updateAutoRenew = async (checked: boolean) => {
+    setAutoRenewBusy(true);
+    try {
+      const clientDocumentId = summary?.client?.documentId || entitlements?.client?.documentId;
+      if (!clientDocumentId) {
+        throw new Error("Client account could not be resolved");
+      }
+
+      const response = await fetch("/api/client/auto-renew", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoRenew: checked }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Auto-renew could not be updated");
+      }
+      invalidatePortalCache("client:entitlements");
+      await loadEntitlements(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Auto-renew could not be updated");
+    } finally {
+      setAutoRenewBusy(false);
+    }
+  };
+
   const submitUpgradeRequest = async (input: {
     payload: ClientUpgradeRequestPayload;
     priority?: "low" | "normal" | "high" | "urgent";
@@ -546,5 +575,7 @@ export function useClientPortalState(): ClientPortalContextValue {
     sendSeatInvite,
     releaseHiringManager,
     updateApprovalMode,
+    updateAutoRenew,
+    autoRenewBusy,
   };
 }

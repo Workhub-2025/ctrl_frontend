@@ -14,6 +14,8 @@ import {
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { formatDate } from "@/components/dashboard/client/client-portal-utils";
 import { ClientUpgradeBuilder } from "@/components/dashboard/client/client-upgrade-builder";
 import {
@@ -77,6 +79,8 @@ export function ClientUpgradeContent() {
     loadUpgradeRequests,
     markUpgradeRequestPaid,
     submitUpgradeRequest,
+    updateAutoRenew,
+    autoRenewBusy,
   } = useClientPortal();
 
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
@@ -278,33 +282,53 @@ export function ClientUpgradeContent() {
             />
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className={cn(portalPanelClass, "p-4")}>
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <CalendarRange className="h-4 w-4" aria-hidden="true" />
-                  Contract period
+              <div className={cn(portalPanelClass, "p-4 flex flex-col justify-between")}>
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <CalendarRange className="h-4 w-4" aria-hidden="true" />
+                    Contract period
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-foreground">
+                    {contract?.startDate && contract?.endDate
+                      ? `${formatDate(contract.startDate)} – ${formatDate(contract.endDate)}`
+                      : "Pending activation — term starts on payment"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Billing: {entitlements?.contractActive ? "Active" : "Inactive or payment pending"} ·{" "}
+                    {entitlements?.contract?.paymentStatus?.replace(/_/g, " ") ?? "not required"}
+                    {entitlements?.contract?.daysUntilExpiry != null ? (
+                      <>
+                        {" "}
+                        ·{" "}
+                        {entitlements.contract.daysUntilExpiry <= 30 ? (
+                          <span className="font-medium text-foreground">
+                            {entitlements.contract.daysUntilExpiry} days until renewal
+                          </span>
+                        ) : (
+                          <span>{entitlements.contract.daysUntilExpiry} days remaining</span>
+                        )}
+                      </>
+                    ) : null}
+                  </p>
                 </div>
-                <p className="mt-3 text-sm font-semibold text-foreground">
-                  {contract?.startDate && contract?.endDate
-                    ? `${formatDate(contract.startDate)} – ${formatDate(contract.endDate)}`
-                    : "Pending activation — term starts on payment"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Billing: {entitlements?.contractActive ? "Active" : "Inactive or payment pending"} ·{" "}
-                  {entitlements?.contract?.paymentStatus?.replace(/_/g, " ") ?? "not required"}
-                  {entitlements?.contract?.daysUntilExpiry != null ? (
-                    <>
-                      {" "}
-                      ·{" "}
-                      {entitlements.contract.daysUntilExpiry <= 30 ? (
-                        <span className="font-medium text-foreground">
-                          {entitlements.contract.daysUntilExpiry} days until renewal
-                        </span>
-                      ) : (
-                        <span>{entitlements.contract.daysUntilExpiry} days remaining</span>
-                      )}
-                    </>
-                  ) : null}
-                </p>
+                {contract && (
+                  <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3 dark:border-white/5">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="auto-renew" className="text-xs font-semibold text-foreground">
+                        Auto-renew contract
+                      </Label>
+                      <p className="text-[10px] text-muted-foreground">
+                        Automatically renew contract and keep features active.
+                      </p>
+                    </div>
+                    <Switch
+                      id="auto-renew"
+                      checked={entitlements?.client?.autoRenew ?? false}
+                      onCheckedChange={(checked) => void updateAutoRenew(checked)}
+                      disabled={autoRenewBusy}
+                    />
+                  </div>
+                )}
               </div>
               <div className={cn(portalPanelClass, "p-4")}>
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">

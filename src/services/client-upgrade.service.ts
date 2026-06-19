@@ -20,6 +20,7 @@ export type BackendClientEntitlements = {
     documentId?: string;
     name?: string;
     billingStatus?: string;
+    autoRenew?: boolean;
   };
   contractActive: boolean;
   contract: {

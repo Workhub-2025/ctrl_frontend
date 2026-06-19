@@ -151,7 +151,7 @@ const candidateWorkflowSteps: {
 ];
 
 type ContractOption = {
-  tier: "minimum" | "professional" | "grandfather";
+  tier: "essential" | "professional" | "founder";
   label: string;
   includedSeats: number;
   deliveryModes: string[];
@@ -171,8 +171,8 @@ const fallbackContractOptions: ContractOptionsData = {
   grandfatherOfferExpiresAt: null,
   options: [
     {
-      tier: "minimum",
-      label: "Minimum",
+      tier: "essential",
+      label: "Essential",
       includedSeats: 1,
       deliveryModes: ["in_person"],
       includesCoreAssessments: true,
@@ -181,17 +181,17 @@ const fallbackContractOptions: ContractOptionsData = {
       tier: "professional",
       label: "Professional",
       includedSeats: 3,
-      deliveryModes: ["in_person"],
+      deliveryModes: ["in_person", "remote", "hybrid"],
       includesCoreAssessments: true,
     },
     {
-      tier: "grandfather",
-      label: "Grandfather",
+      tier: "founder",
+      label: "Founder",
       includedSeats: 3,
       deliveryModes: ["in_person", "remote", "hybrid"],
       includesCoreAssessments: true,
       includesPaidFutureFeaturesDuringFirstYear: true,
-      discountPercent: 30,
+      discountPercent: 33,
     },
   ],
 };
@@ -200,7 +200,7 @@ const contractDetails: Record<
   ContractOption["tier"],
   { accent: Accent; summary: string; badge: string; footnote: string }
 > = {
-  minimum: {
+  essential: {
     accent: "cyan",
     summary: "For smaller teams running secure in-person assessment sessions.",
     badge: "Starter",
@@ -210,13 +210,13 @@ const contractDetails: Record<
     accent: "blue",
     summary: "For active hiring teams that need three manager seats from day one.",
     badge: "Standard",
-    footnote: "In-person delivery only",
+    footnote: "In-person, remote and hybrid delivery",
   },
-  grandfather: {
+  founder: {
     accent: "emerald",
     summary: "Launch-window contract with wider delivery modes and founder loyalty benefits.",
     badge: "Launch only",
-    footnote: "Moves to Grandfather - Founders after year one",
+    footnote: "Founder tier remains active",
   },
 };
 
@@ -995,18 +995,19 @@ export default function Home() {
                 {contractData.options.map((option) => {
                   const details = contractDetails[option.tier];
                   const accent = accentStyles[details.accent];
-                  const deliveryModes = option.deliveryModes.map((mode) =>
-                    mode.replace("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())
-                  );
                   const features = [
                     `${option.includedSeats} hiring manager ${option.includedSeats === 1 ? "seat" : "seats"}`,
-                    "4 core assessments with version selection",
-                    `${deliveryModes.join(", ")} delivery`,
-                    option.tier === "grandfather" && option.includesPaidFutureFeaturesDuringFirstYear
+                    "All Core released and future assessments",
+                    option.tier === "essential"
+                      ? "In-person delivery only"
+                      : option.tier === "professional"
+                      ? "In-person, remote and hybrid delivery"
+                      : "In-person, remote and hybrid delivery (included free)",
+                    option.tier === "founder" && option.includesPaidFutureFeaturesDuringFirstYear
                       ? "Paid feature and assessment upgrades included in year one"
                       : null,
-                    option.tier === "grandfather" && option.discountPercent
-                      ? `${option.discountPercent}% loyalty discount on future upgrades after year one`
+                    option.tier === "founder" && option.discountPercent
+                      ? `${option.discountPercent}% discount on upgrades/assessments`
                       : null,
                   ].filter((feature): feature is string => Boolean(feature));
 
@@ -1047,7 +1048,7 @@ export default function Home() {
               {contractData.grandfatherOfferExpiresAt ? (
                 <Reveal variant="fade-up">
                   <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Grandfather availability is controlled by the platform expiry date and is currently listed until{" "}
+                    Founder availability is controlled by the platform expiry date and is currently listed until{" "}
                     {new Date(contractData.grandfatherOfferExpiresAt).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
