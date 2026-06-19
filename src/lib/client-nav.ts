@@ -7,6 +7,7 @@ import {
   TrendingUp,
   UserCheck,
   Users,
+  ScrollText,
 } from "lucide-react";
 
 export type ClientNavItem = {
@@ -35,6 +36,13 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
         hint: "Seats, approvals, activity",
         icon: Home,
         isActive: (pathname) => normalizePath(pathname) === "/client-dashboard",
+      },
+      {
+        href: "/client-dashboard/activity-logs",
+        label: "Activity logs",
+        hint: "Audit and session integrity events",
+        icon: ScrollText,
+        isActive: (pathname) => pathname.startsWith("/client-dashboard/activity-logs"),
       },
     ],
   },
@@ -109,6 +117,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   progressed: "Campaign approvals",
   "upgrade-requests": "Upgrade requests",
   "assessment-recovery": "Assessment recovery",
+  "activity-logs": "Activity logs",
   messages: "Messages",
 };
 

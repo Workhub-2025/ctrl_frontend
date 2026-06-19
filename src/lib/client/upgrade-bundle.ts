@@ -5,6 +5,7 @@ import {
   type ClientUpgradeBundleItem,
   type ClientUpgradeBundleLineItem,
 } from "@/lib/client/entitlements";
+export type { ClientUpgradeBundleItem, ClientUpgradeBundleLineItem };
 
 export type ClientUpgradePricing = {
   currency?: string;
