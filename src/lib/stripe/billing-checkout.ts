@@ -48,10 +48,16 @@ function computeBundleLineItemsFromPricing(
       case "seat_increase": {
         const additional = Math.max(0, item.requestedSeats - item.currentSeats);
         if (additional > 0) {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = now.getMonth();
+          const totalDays = new Date(year, month + 1, 0).getDate();
+          const remainingDays = totalDays - now.getDate() + 1;
+          const unitAmountPence = Math.round((seatPrice / totalDays) * remainingDays);
           lineItems.push({
-            label: `${additional} additional HM seat${additional === 1 ? "" : "s"}`,
+            label: `${additional} additional HM seat${additional === 1 ? "" : "s"} (pro-rated for ${remainingDays}/${totalDays} days)`,
             quantity: additional,
-            unitAmountPence: seatPrice,
+            unitAmountPence,
           });
         }
         break;

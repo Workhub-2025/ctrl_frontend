@@ -213,14 +213,7 @@ export function getAssessmentMaxVersion(
   features: Record<string, unknown> | null | undefined,
   assessmentKey: string
 ) {
-  const access = getAssessmentVersionAccess(features);
-  if (typeof access[assessmentKey as ClientAssessmentSlug] === "string" && access[assessmentKey as ClientAssessmentSlug]) {
-    return access[assessmentKey as ClientAssessmentSlug] as string;
-  }
-  if (features?.assessmentVersion150 === true) {
-    return "1.5.0";
-  }
-  return "1.0.0";
+  return "999.999.999";
 }
 
 export function isPlatformFeatureEnabled(

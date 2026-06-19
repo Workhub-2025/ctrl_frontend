@@ -109,6 +109,7 @@ export default function ClientDetailPage() {
     error: loadError,
     loading,
     mutate: mutateClient,
+    refetch: refetchClient,
   } = useAdminResource<ClientDetails | null>(
     `admin:client:${clientId}`,
     `/api/admin/clients/${encodeURIComponent(clientId)}`,
@@ -127,6 +128,12 @@ export default function ClientDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [sendingActivation, setSendingActivation] = useState(false);
   const [activationNotice, setActivationNotice] = useState<string | null>(null);
+  const [downgradeSeatInfo, setDowngradeSeatInfo] = useState<{
+    managerDocumentId?: string;
+    accessCodeDocumentId?: string;
+    name: string;
+  } | null>(null);
+  const [downgradingSeat, setDowngradingSeat] = useState(false);
 
   const isPendingContract = client?.activeContract?.paymentStatus === "pending";
 
@@ -141,6 +148,38 @@ export default function ClientDetailPage() {
       setInviteEmail(client.primaryContactEmail);
     }
   }, [client?.primaryContactEmail]);
+
+  const executeSeatDowngrade = async () => {
+    if (!client || !downgradeSeatInfo) return;
+    setDowngradingSeat(true);
+    setActionError(null);
+    try {
+      const response = await fetch(
+        `/api/admin/clients/${encodeURIComponent(client.id)}/downgrade-seat`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            managerDocumentId: downgradeSeatInfo.managerDocumentId,
+            accessCodeDocumentId: downgradeSeatInfo.accessCodeDocumentId,
+          }),
+        }
+      );
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(body.error || "Seat could not be downgraded");
+
+      invalidateAdminResource(`admin:client:${client.id}`);
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
+      await refetchClient();
+      setDowngradeSeatInfo(null);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Seat could not be downgraded");
+    } finally {
+      setDowngradingSeat(false);
+    }
+  };
 
   const generateClientCode = async () => {
     setGeneratingCode(true);
@@ -381,6 +420,37 @@ export default function ClientDetailPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            <AlertDialog open={Boolean(downgradeSeatInfo)} onOpenChange={(open) => !open && setDowngradeSeatInfo(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Downgrade Seat Capacity?</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+                    <p>
+                      Warning: all campaigns, candidate sessions, attempts, and results associated with this seat
+                      (<strong className="text-foreground">{downgradeSeatInfo?.name}</strong>) will be deleted.
+                    </p>
+                    <p className="font-semibold text-amber-500">
+                      Important: Candidate user accounts themselves will NOT be deleted, as they may be registered in other campaigns.
+                    </p>
+                    <p>
+                      This action will decrease the client's total contract seat count by 1. This change cannot be undone.
+                    </p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={downgradingSeat}>Cancel</AlertDialogCancel>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={executeSeatDowngrade}
+                    disabled={downgradingSeat}
+                  >
+                    {downgradingSeat && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Confirm Downgrade
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         }
       />
@@ -585,6 +655,21 @@ export default function ClientDetailPage() {
                   secondary: user.email,
                   badge: user.status,
                 }))}
+              actions={(row) => (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
+                  onClick={() =>
+                    setDowngradeSeatInfo({
+                      managerDocumentId: row.id,
+                      name: row.primary,
+                    })
+                  }
+                >
+                  Downgrade seat
+                </Button>
+              )}
             />
             <SimpleList
               title="Previous hiring-manager records"
@@ -627,6 +712,26 @@ export default function ClientDetailPage() {
               secondary: `Expires ${formatDate(code.expiresAt)}`,
               badge: code.status,
             }))}
+            actions={(row) => {
+              if (row.primary === "hiring_manager" && row.badge === "available") {
+                return (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive font-semibold"
+                    onClick={() =>
+                      setDowngradeSeatInfo({
+                        accessCodeDocumentId: row.id,
+                        name: `Unused Seat Invite (${row.id.substring(0, 8)})`,
+                      })
+                    }
+                  >
+                    Downgrade seat
+                  </Button>
+                );
+              }
+              return null;
+            }}
           />
         </TabsContent>
 
@@ -744,11 +849,13 @@ function SimpleList({
   description,
   empty,
   rows,
+  actions,
 }: {
   title: string;
   description: string;
   empty: string;
   rows: Array<{ id: string; primary: string; secondary: string; badge: string }>;
+  actions?: (row: { id: string; primary: string; secondary: string; badge: string }) => React.ReactNode;
 }) {
   return (
     <AdminPanel>
@@ -759,13 +866,16 @@ function SimpleList({
         ) : (
           rows.map((row) => (
             <div key={row.id} className={cn(portalPanelClass, "flex items-center justify-between gap-4 p-3")}>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-foreground">{row.primary}</p>
                 <p className="truncate text-xs text-muted-foreground">{row.secondary}</p>
               </div>
-              <Badge variant="outline" className={cn(statusClass(row.badge), "pointer-events-none rounded-md px-2 py-0.5 text-xs font-semibold")}>
-                {row.badge}
-              </Badge>
+              <div className="flex items-center gap-3">
+                <Badge variant="outline" className={cn(statusClass(row.badge), "pointer-events-none rounded-md px-2 py-0.5 text-xs font-semibold")}>
+                  {row.badge}
+                </Badge>
+                {actions && actions(row)}
+              </div>
             </div>
           ))
         )}
