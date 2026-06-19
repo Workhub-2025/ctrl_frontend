@@ -31,7 +31,8 @@ export async function renderAssessmentPage(
 
   return (
     <AssessmentShellPage
-      plugin={plugin}
+      assessmentSlug={plugin.slug}
+      assessmentName={plugin.shellTitle ?? plugin.title}
       candidateSessionDocumentId={candidateSessionDocumentId}
     />
   );

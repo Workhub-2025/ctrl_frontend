@@ -2,23 +2,32 @@
 
 import { SecureAssessmentShell } from "@/components/assessment";
 import { useSecureExit } from "@/hooks/use-secure-exit";
-import type { AssessmentUiPlugin } from "./types";
+import { getAssessmentUiPlugin } from "./registry";
 
 type AssessmentShellPageProps = {
-  plugin: AssessmentUiPlugin;
+  assessmentSlug: string;
+  assessmentName: string;
   candidateSessionDocumentId: string | null;
 };
 
 export function AssessmentShellPage({
-  plugin,
+  assessmentSlug,
+  assessmentName,
   candidateSessionDocumentId,
 }: AssessmentShellPageProps) {
   const { handleExit } = useSecureExit(candidateSessionDocumentId);
+  const plugin = getAssessmentUiPlugin(assessmentSlug);
+
+  if (!plugin) {
+    return null;
+  }
+
   const AssessmentComponent = plugin.component;
 
   return (
     <SecureAssessmentShell
-      assessmentName={plugin.shellTitle ?? plugin.title}
+      assessmentName={assessmentName}
+      assessmentType={assessmentSlug}
       timerLabel="In Progress"
       secureModeActive
       warningsCount={0}
