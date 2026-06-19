@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   BrainCircuit,
   Headphones,
+  FileText,
   Lock,
   Unlock,
   Save,
@@ -108,6 +109,11 @@ function getVersionOptions(assessment: HiringManagerAssessment) {
     : [{ version: DEFAULT_ASSESSMENT_VERSION, title: `v${DEFAULT_ASSESSMENT_VERSION}`, description: null }];
 }
 
+function getSelectedVersionOption(assessment: HiringManagerAssessment, selectedVersion: string) {
+  return getVersionOptions(assessment).find((version) => version.version === selectedVersion)
+    ?? getVersionOptions(assessment)[0];
+}
+
 function removeRecordKey<T>(record: Record<string, T>, key: string) {
   const next = { ...record };
   delete next[key];
@@ -127,6 +133,65 @@ function formatTotalDuration(seconds: number): string {
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
   return remaining ? `${hours} hr ${remaining} min` : `${hours} hr`;
+}
+
+function VersionPreviewPanel({
+  assessment,
+  version,
+}: {
+  assessment: HiringManagerAssessment;
+  version: ReturnType<typeof getSelectedVersionOption>;
+}) {
+  const samples = version?.previewSamples?.filter(Boolean).slice(0, 3) ?? [];
+  const audioPreview = version?.audioPreview;
+
+  if (samples.length === 0 && !audioPreview && !version?.description) {
+    return (
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 text-xs leading-5 text-slate-500">
+        Preview content is not available for this version yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-white/10 bg-black/20 p-3">
+      <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+        Quick preview
+      </div>
+      {version?.description ? (
+        <p className="mb-2 text-xs leading-5 text-slate-400">{version.description}</p>
+      ) : null}
+      {samples.length > 0 ? (
+        <div className="space-y-2">
+          {samples.map((sample, index) => (
+            <p
+              key={`${assessment.slug}-${version?.version}-sample-${index}`}
+              className="rounded-md border border-white/8 bg-white/[0.025] px-3 py-2 text-xs leading-5 text-slate-300"
+            >
+              {sample}
+            </p>
+          ))}
+        </div>
+      ) : null}
+      {audioPreview?.src ? (
+        <div className="mt-3 rounded-md border border-cyan-400/20 bg-cyan-400/10 p-2.5">
+          <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+            <Headphones className="h-3.5 w-3.5" aria-hidden="true" />
+            {audioPreview.label}
+          </div>
+          <audio
+            controls
+            preload="metadata"
+            src={`${audioPreview.src}#t=${audioPreview.startSeconds},${audioPreview.startSeconds + audioPreview.durationSeconds}`}
+            className="h-8 w-full"
+          >
+            Audio preview is not supported by this browser.
+          </audio>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function toStartDateTime(value: string) {
@@ -708,7 +773,10 @@ export function HiringManagerCampaignBuilder({
                     Select at least one assessment from the stack on the left.
                   </p>
                 ) : (
-                  selectedAssessments.map((assessment, index) => (
+                  selectedAssessments.map((assessment, index) => {
+                    const selectedVersion = draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION;
+                    const selectedVersionOption = getSelectedVersionOption(assessment, selectedVersion);
+                    return (
                     <div
                       key={assessment.slug}
                       className="rounded-xl border border-white/10 bg-white/[0.01] px-3 py-3"
@@ -761,7 +829,7 @@ export function HiringManagerCampaignBuilder({
                           Data version
                         </Label>
                         <Select
-                          value={draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION}
+                          value={selectedVersion}
                           onValueChange={(value) =>
                             setDraft((current) => ({
                               ...current,
@@ -783,6 +851,7 @@ export function HiringManagerCampaignBuilder({
                             ))}
                           </SelectContent>
                         </Select>
+                        <VersionPreviewPanel assessment={assessment} version={selectedVersionOption} />
                       </div>
                       {assessment.slug === "prioritisation" && (
                         <div className="mt-3 space-y-2">
@@ -864,7 +933,8 @@ export function HiringManagerCampaignBuilder({
                         </div>
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

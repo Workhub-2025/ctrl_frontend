@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Building2,
+  CalendarClock,
   KeyRound,
   Loader2,
   Mail,
@@ -13,6 +14,7 @@ import {
   Trash2,
   CheckCircle2,
   Clock3,
+  FolderPlus,
   SlidersHorizontal,
 } from "lucide-react";
 import {
@@ -444,6 +446,33 @@ export default function ClientDetailPage() {
                   title="Client contact"
                   detail={client.hasClientContact ? "Active user linked" : "Waiting for registration"}
                 />
+              </div>
+            </AdminPanel>
+
+            <AdminPanel>
+              <AdminSectionHeader
+                title="Launch workflow"
+                description="Move from account setup into the first campaign and session."
+              />
+              <div className="mt-4 space-y-3">
+                <Button asChild className="h-10 w-full justify-start rounded-lg">
+                  <Link href="/hiring-manager-dashboard/campaigns/create">
+                    <FolderPlus className="mr-2 h-4 w-4" />
+                    Create campaign
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="h-10 w-full justify-start rounded-lg">
+                  <Link href="/hiring-manager-dashboard/sessions">
+                    <CalendarClock className="mr-2 h-4 w-4" />
+                    Create session
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="h-10 w-full justify-start rounded-lg">
+                  <Link href={`/admin/upgrade-requests?client=${encodeURIComponent(client.id)}`}>
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Review entitlements
+                  </Link>
+                </Button>
               </div>
             </AdminPanel>
 

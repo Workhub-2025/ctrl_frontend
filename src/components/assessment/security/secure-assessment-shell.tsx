@@ -242,38 +242,53 @@ export function SecureAssessmentShell({
       </a>
 
       {/* Secure Header */}
-      <header className="fixed inset-x-0 top-0 z-30 border-b border-border dark:border-white/5 bg-background/95 backdrop-blur-xl flex h-16 items-center justify-between px-6">
-        <div className="flex-1 flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-green-500" aria-hidden="true" />
-          <span className="text-sm font-semibold tracking-wide">{assessmentName}</span>
+      <header className="fixed inset-x-0 top-0 z-30 flex min-h-[72px] items-center justify-between border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur-xl dark:border-white/8 sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Secure assessment
+            </p>
+            <p className="truncate text-sm font-semibold text-foreground">{assessmentName}</p>
+          </div>
         </div>
 
-        <div className="flex justify-center flex-1">
+        <div className="hidden flex-1 justify-center md:flex">
           <img
             src="/assets/newlogo.svg"
             alt="CTRL Logo"
-            className="h-8 w-8 object-contain scale-125 hue-rotate-[60deg] logo-adaptive-filter pointer-events-none"
+            className="pointer-events-none h-8 w-8 scale-125 object-contain logo-adaptive-filter"
           />
         </div>
 
         {/* Security Warnings Count Indicator */}
         {secureModeActive && integrityEvents.length > 0 && (
-          <div className="absolute left-1/2 top-14 -translate-x-1/2 rounded-b-lg border-b border-l border-r border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-600 dark:text-red-400 flex items-center gap-1.5 shadow-sm">
+          <div className="absolute left-1/2 top-full -translate-x-1/2 rounded-b-lg border-b border-l border-r border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-600 shadow-sm dark:text-red-400">
             <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
-            {integrityEvents.length} Integrity Violation{integrityEvents.length > 1 ? "s" : ""} Audited
+            {integrityEvents.length} integrity event{integrityEvents.length > 1 ? "s" : ""} audited
           </div>
         )}
 
-        <div className="flex items-center justify-end flex-1 gap-3">
+        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3">
+          <div className="hidden min-w-[112px] rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-right sm:block">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Time</p>
+            <p className="font-mono text-sm font-semibold text-foreground">{timerLabel}</p>
+          </div>
+          <div className="hidden rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-right lg:block">
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Audit</p>
+            <p className="font-mono text-sm font-semibold text-foreground">{warningsCount}</p>
+          </div>
           {showPauseButton && (
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none border-border/80"
+              className="h-10 gap-2 rounded-lg border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => setIsPaused(true)}
             >
               <Pause className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Pause Session</span>
+              <span className="hidden sm:inline">Pause</span>
             </Button>
           )}
           <DropdownMenu>
@@ -281,7 +296,7 @@ export function SecureAssessmentShell({
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none border-border/80"
+                className="h-10 gap-2 rounded-lg border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
                 <Settings className="h-4 w-4" aria-hidden="true" />
                 <span className="hidden sm:inline">Options</span>
@@ -302,31 +317,51 @@ export function SecureAssessmentShell({
       </header>
 
       {/* Main Assessment Content */}
-      <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden pt-16 pb-12 bg-background">
+      <main
+        id="main-content"
+        className="flex-1 overflow-y-auto overflow-x-hidden bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.28)_100%)] pb-14 pt-20"
+      >
         <div className="mx-auto w-full max-w-[1680px] px-4 py-6 md:px-6">
           {needsFullscreenActivation && secureModeActive ? (
             <div className="flex min-h-[520px] items-center justify-center py-12">
-              <div className={cn(portalPanelClass, "w-full max-w-xl p-6 text-center shadow-2xl")}>
-                <div className="space-y-4 pb-4">
-                  <div className={cn(portalIconWrapLgClass, "mx-auto mb-4 h-16 w-16 rounded-2xl")}>
+              <div className={cn(portalPanelClass, "grid w-full max-w-3xl overflow-hidden p-0 shadow-2xl md:grid-cols-[0.9fr_1.1fr]")}>
+                <div className="border-b border-border/60 bg-muted/30 p-6 md:border-b-0 md:border-r">
+                  <div className={cn(portalIconWrapLgClass, "mb-5 h-14 w-14 rounded-lg")}>
                     <Monitor className="h-8 w-8" aria-hidden="true" />
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground">Secure Fullscreen Required</h2>
-                  <p className="text-sm text-muted-foreground">
-                    To maintain test integrity, this assessment must be executed in fullscreen mode.
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                    Ready check
                   </p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-normal text-foreground">Enter secure mode</h2>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    Fullscreen keeps the assessment focused and records any integrity events while you work.
+                  </p>
+                  <div className="mt-5 grid grid-cols-2 gap-2 text-left">
+                    <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Timer</p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-foreground">{timerLabel}</p>
+                    </div>
+                    <div className="rounded-lg border border-border/60 bg-background/60 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">Audit</p>
+                      <p className="mt-1 font-mono text-sm font-semibold text-foreground">{warningsCount}</p>
+                    </div>
+                  </div>
                 </div>
-                <div className={cn(portalPanelClass, "space-y-3 p-4 text-left")}>
-                  <p className="text-sm font-semibold text-foreground">Lockdown rules in effect:</p>
-                  <ul className="list-disc space-y-2 pl-4 text-xs text-muted-foreground">
-                    <li>Exiting fullscreen will automatically pause the test countdown.</li>
-                    <li>Tab switching, window blurring, and screenshot shortcuts are disabled and logged.</li>
-                    <li>Copying, pasting, and right-clicks are locked.</li>
-                  </ul>
-                </div>
-                <div className="pt-6">
-                  <Button onClick={enterFullscreen} size="lg" className="w-full font-bold">
-                    Launch Fullscreen Session
+                <div className="space-y-5 p-6">
+                  <div className="space-y-3 text-left">
+                    {[
+                      "Exiting fullscreen pauses the assessment timer.",
+                      "Tab switching and window changes are recorded.",
+                      "Copy, paste, right-click, save, print, and refresh shortcuts are locked.",
+                    ].map((rule) => (
+                      <div key={rule} className="flex gap-3 rounded-lg border border-border/60 bg-background/55 p-3 text-sm text-muted-foreground">
+                        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" aria-hidden="true" />
+                        <span>{rule}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Button onClick={enterFullscreen} size="lg" className="h-12 w-full rounded-lg font-bold">
+                    Launch fullscreen session
                   </Button>
                 </div>
               </div>
@@ -338,11 +373,10 @@ export function SecureAssessmentShell({
       </main>
 
       {/* Secure Footer */}
-      <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-border dark:border-white/5 bg-background/95 backdrop-blur-xl flex h-12 items-center justify-between px-6">
-        <div className="flex-1"></div>
-        <div className="flex items-center gap-2 text-green-600 dark:text-green-500">
-          <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-          <span className="text-xs font-semibold tracking-wide uppercase">Secured Session Mode</span>
+      <footer className="fixed inset-x-0 bottom-0 z-30 flex h-12 items-center justify-center border-t border-border/70 bg-background/95 px-4 backdrop-blur-xl dark:border-white/8">
+        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+          <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.55)] motion-safe:animate-pulse"></div>
+          <span className="text-xs font-bold uppercase tracking-[0.16em]">Secured session mode</span>
         </div>
       </footer>
 

@@ -89,6 +89,13 @@ export type AssessmentVersionOption = {
   version: string;
   title: string;
   description: string | null;
+  previewSamples?: string[];
+  audioPreview?: {
+    label: string;
+    src: string;
+    startSeconds: number;
+    durationSeconds: number;
+  } | null;
 };
 
 export type HiringManagerAssessment = {
