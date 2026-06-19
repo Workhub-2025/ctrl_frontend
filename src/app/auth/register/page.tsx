@@ -276,7 +276,7 @@ function UnifiedAuthContent() {
 
   return (
     <div className={cn("relative flex min-h-[100svh] w-full ctrl-landing-page", bgColor)}>
-      <AuthBrandingPane />
+      <AuthBrandingPane isLightTheme={isLightAuthTheme} />
       <div className="relative flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-12 xl:px-24">
         {/* Accessibility Dropdown at Top Right */}
         <div className="absolute top-6 right-6 lg:top-8 lg:right-8 z-50">
@@ -533,7 +533,8 @@ function UnifiedAuthContent() {
                   <div className="space-y-4 pt-2">
                     <div className={cn(
                       "flex items-center space-x-3 rounded-lg border border-transparent p-1 transition-colors",
-                      hasInvalidField("terms") && "border-red-500/40 bg-red-950/10"
+                      hasInvalidField("terms") &&
+                        (isLightAuthTheme ? "border-red-500/40 bg-red-50" : "border-red-500/40 bg-red-950/10")
                     )}>
                       <Checkbox
                         id="agreeToTerms"
@@ -541,7 +542,9 @@ function UnifiedAuthContent() {
                         onCheckedChange={(checked) => handleInputChange("agreeToTerms", !!checked)}
                         disabled={isAuthBusy}
                         className={cn(
-                          "border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500",
+                          isLightAuthTheme
+                            ? "border-slate-400 data-[state=checked]:border-sky-700 data-[state=checked]:bg-sky-700"
+                            : "border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500",
                           hasInvalidField("terms") && "border-red-500"
                         )}
                       />
@@ -553,7 +556,8 @@ function UnifiedAuthContent() {
                     </div>
                     <div className={cn(
                       "flex items-center space-x-3 rounded-lg border border-transparent p-1 transition-colors",
-                      hasInvalidField("privacy") && "border-red-500/40 bg-red-950/10"
+                      hasInvalidField("privacy") &&
+                        (isLightAuthTheme ? "border-red-500/40 bg-red-50" : "border-red-500/40 bg-red-950/10")
                     )}>
                       <Checkbox
                         id="agreeToDataPrivacyPolicy"
@@ -561,7 +565,9 @@ function UnifiedAuthContent() {
                         onCheckedChange={(checked) => handleInputChange("agreeToDataPrivacyPolicy", !!checked)}
                         disabled={isAuthBusy}
                         className={cn(
-                          "border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500",
+                          isLightAuthTheme
+                            ? "border-slate-400 data-[state=checked]:border-sky-700 data-[state=checked]:bg-sky-700"
+                            : "border-slate-600 data-[state=checked]:border-cyan-500 data-[state=checked]:bg-cyan-500",
                           hasInvalidField("privacy") && "border-red-500"
                         )}
                       />
