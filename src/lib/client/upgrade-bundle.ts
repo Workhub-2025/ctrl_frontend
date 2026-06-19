@@ -200,7 +200,9 @@ export function buildUpgradeBundleItems(input: {
 
 export function computeLineItems(
   items: ClientUpgradeBundleItem[],
-  pricing: ClientUpgradePricing
+  pricing: ClientUpgradePricing,
+  discountPercent?: number,
+  isGrandfatherActive?: boolean
 ): ClientUpgradeBundleLineItem[] {
   const lineItems: ClientUpgradeBundleLineItem[] = [];
 
@@ -209,40 +211,59 @@ export function computeLineItems(
       case "seat_increase": {
         const additional = Math.max(0, item.requestedSeats - item.currentSeats);
         if (additional > 0) {
+          let unitAmountPence = seatOneOffPrice(pricing);
+          if (discountPercent) {
+            unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
+          }
           lineItems.push({
             label: `${additional} additional HM seat${additional === 1 ? "" : "s"}`,
             quantity: additional,
-            unitAmountPence: seatOneOffPrice(pricing),
+            unitAmountPence,
           });
         }
         break;
       }
-      case "delivery_feature":
+      case "delivery_feature": {
+        let unitAmountPence = isGrandfatherActive ? 0 : pricing.featurePrices?.[item.featureKey] ?? 0;
+        if (!isGrandfatherActive && discountPercent) {
+          unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
+        }
         lineItems.push({
           label:
             CLIENT_DELIVERY_FEATURES.find((feature) => feature.key === item.featureKey)?.label ??
             item.featureKey,
           quantity: 1,
-          unitAmountPence: pricing.featurePrices?.[item.featureKey] ?? 0,
+          unitAmountPence,
         });
         break;
-      case "new_assessment":
+      }
+      case "new_assessment": {
+        let unitAmountPence = isGrandfatherActive ? 0 : pricing.assessmentAddonPence ?? 0;
+        if (!isGrandfatherActive && discountPercent) {
+          unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
+        }
         lineItems.push({
           label: `Add-on assessment: ${item.assessmentLabel}`,
           quantity: 1,
-          unitAmountPence: pricing.assessmentAddonPence ?? 0,
+          unitAmountPence,
         });
         break;
-      case "assessment_version":
+      }
+      case "assessment_version": {
+        let unitAmountPence = isGrandfatherActive ? 0 : pricing.versionUpgradePence ?? 0;
+        if (!isGrandfatherActive && discountPercent) {
+          unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
+        }
         lineItems.push({
           label:
             item.requestedVersion === CUSTOM_ASSESSMENT_VERSION
               ? `Custom content pack: ${item.assessmentLabel}`
               : `${item.assessmentLabel} version upgrade (up to v${item.requestedVersion})`,
           quantity: 1,
-          unitAmountPence: pricing.versionUpgradePence ?? 0,
+          unitAmountPence,
         });
         break;
+      }
       default:
         break;
     }

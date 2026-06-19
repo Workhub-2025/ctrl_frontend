@@ -87,8 +87,17 @@ function computeBundleLineItemsFromPricing(
 
 export function computeUpgradeAmountPence(
   payload: ClientUpgradeRequestPayload,
-  pricing: Record<string, number | string>
+  pricing: Record<string, number | string>,
+  billingRequest?: BillingRequestCheckoutRow
 ): number {
+  if (
+    billingRequest &&
+    typeof (billingRequest as any).amountDuePence === "number" &&
+    (billingRequest as any).amountDuePence > 0
+  ) {
+    return (billingRequest as any).amountDuePence;
+  }
+
   switch (payload.type) {
     case "upgrade_bundle":
       return sumLineItems(computeBundleLineItemsFromPricing(payload, pricing));
@@ -120,6 +129,23 @@ function buildStripeLineItems(
   pricing: Record<string, number | string>,
   currency: string
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  const snapshottedAmount = (billingRequest as any).amountDuePence;
+  if (typeof snapshottedAmount === "number" && snapshottedAmount > 0) {
+    return [
+      {
+        quantity: 1,
+        price_data: {
+          currency,
+          unit_amount: snapshottedAmount,
+          product_data: {
+            name: billingRequest.subject ?? "CTRL platform upgrade",
+            description: billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request",
+          },
+        },
+      },
+    ];
+  }
+
   if (payload.type === "upgrade_bundle") {
     const bundleLineItems = computeBundleLineItemsFromPricing(payload, pricing);
     if (bundleLineItems.length === 0) {
@@ -139,7 +165,7 @@ function buildStripeLineItems(
     }));
   }
 
-  const amountPence = computeUpgradeAmountPence(payload, pricing);
+  const amountPence = computeUpgradeAmountPence(payload, pricing, billingRequest);
   if (amountPence <= 0) {
     throw new Error("Pricing is not configured for this upgrade type. Set prices in Admin → Billing.");
   }
@@ -173,7 +199,7 @@ export async function createBillingCheckoutSession(
     throw new Error("Billing request payload is missing");
   }
 
-  const amountPence = computeUpgradeAmountPence(payload, pricing);
+  const amountPence = computeUpgradeAmountPence(payload, pricing, billingRequest);
   if (amountPence <= 0) {
     throw new Error("Pricing is not configured for this upgrade type. Set prices in Admin → Billing.");
   }

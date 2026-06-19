@@ -167,9 +167,20 @@ export function ClientUpgradeBuilder({
     [draft, currentSeats, activeDeliveryFeatures, versionAssessments]
   );
 
+  const discountPercent = entitlements?.contract?.grandfatherDiscountPercent ?? undefined;
+
+  const isGrandfatherActive = useMemo(() => {
+    if (!entitlements?.contract || entitlements.contract.tier !== "grandfather") return false;
+    const today = new Date().toISOString().split("T")[0];
+    const start = entitlements.contract.grandfatherStartedAt;
+    const end = entitlements.contract.grandfatherEndsAt;
+    if (!start || !end) return false;
+    return today >= start && today <= end;
+  }, [entitlements?.contract]);
+
   const lineItems = useMemo(
-    () => (pricing ? computeLineItems(bundleItems, pricing) : []),
-    [bundleItems, pricing]
+    () => (pricing ? computeLineItems(bundleItems, pricing, discountPercent, isGrandfatherActive) : []),
+    [bundleItems, pricing, discountPercent, isGrandfatherActive]
   );
 
   const estimatedTotal = useMemo(() => sumLineItems(lineItems), [lineItems]);
@@ -547,6 +558,16 @@ export function ClientUpgradeBuilder({
 
           {lineItems.length > 0 ? (
             <div className="space-y-2 border-t border-border/50 pt-4 dark:border-white/5">
+              {isGrandfatherActive && (
+                <div className="mb-3 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
+                  Active Grandfather Plan: Platform upgrades are included at £0.
+                </div>
+              )}
+              {discountPercent && !isGrandfatherActive && (
+                <div className="mb-3 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-500 dark:bg-emerald-500/20">
+                  Loyalty Benefit: {discountPercent}% discount applied to all upgrades.
+                </div>
+              )}
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Estimated cost
               </p>

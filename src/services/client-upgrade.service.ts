@@ -31,6 +31,10 @@ export type BackendClientEntitlements = {
     paymentStatus?: string;
     paidAt?: string | null;
     daysUntilExpiry?: number | null;
+    tier?: string;
+    grandfatherStartedAt?: string | null;
+    grandfatherEndsAt?: string | null;
+    grandfatherDiscountPercent?: number | null;
   } | null;
   platformFeatures: Record<string, boolean>;
   deliveryFeatures?: Record<string, boolean>;
