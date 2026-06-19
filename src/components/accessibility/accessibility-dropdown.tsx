@@ -15,10 +15,10 @@ const themeOptions: {
   value: AccessibilitySettings["theme"];
   swatch: string;
 }[] = [
-    { label: "Dark blue", value: "dark-blue", swatch: "bg-[#02040a] border border-white/10" },
+    { label: "Dark blue", value: "dark-blue", swatch: "bg-[#080c16] border border-white/10" },
     { label: "Black", value: "black", swatch: "bg-black border border-white/10" },
-    { label: "Soft cream", value: "soft-cream", swatch: "bg-[#fdfaf2] border border-black/10" },
-    { label: "Light blue", value: "light-blue", swatch: "bg-[#eaf6ff] border border-black/10" },
+    { label: "Soft cream", value: "soft-cream", swatch: "bg-[#fdf7ec] border border-black/10" },
+    { label: "Light blue", value: "light-blue", swatch: "bg-[#eef5fc] border border-black/10" },
   ];
 
 const dropdownThemeClassName: Record<AccessibilitySettings["theme"], string> = {
@@ -318,25 +318,21 @@ export function AccessibilityDropdown({
           onChange: (value) => updateSettings({ lineSpacing: value as AccessibilitySettings["lineSpacing"] }),
         })}
 
-        {/* Advanced Assistive Controls */}
+        {/* Font Preference */}
+        {renderOptionGroup({
+          label: "Font Preference",
+          value: settings.fontFamily,
+          options: [
+            { label: "Default", value: "default" },
+            { label: "Reading", value: "reading" },
+            { label: "Dyslexic", value: "dyslexia" },
+          ],
+          onChange: (value) => updateSettings({ fontFamily: value as AccessibilitySettings["fontFamily"] }),
+        })}
+
+        {/* Cognitive & Focus Aids */}
         <div className="space-y-2.5">
           {sectionLabel("Cognitive & Focus Aids")}
-
-          {renderToggle({
-            label: "Dyslexia Font",
-            description: "Asymmetric letter shapes for readability.",
-            checked: settings.dyslexiaFont,
-            onChange: (checked) => updateSettings({ dyslexiaFont: checked }),
-            icon: Type,
-          })}
-
-          {renderToggle({
-            label: "Reading Guide Ruler",
-            description: "Line highlighter overlay tracking mouse.",
-            checked: settings.focusRuler,
-            onChange: (checked) => updateSettings({ focusRuler: checked }),
-            icon: Ruler,
-          })}
 
           {renderToggle({
             label: "Hover Speech Reader",

@@ -36,7 +36,6 @@ import {
   ZoomOnScroll,
   Parallax,
 } from "@/components/landing/scroll-effects";
-import { PortalShowcase } from "@/components/landing/portal-showcase";
 import {
   WorkflowVisual,
   type WorkflowVisualVariant,
@@ -826,21 +825,83 @@ export default function Home() {
               </div>
             </section>
 
-            {/* Platform Overview — looping portal walkthrough video */}
-            <section id="solutions" className="w-full">
-              <div className="mb-16">
+            {/* Outcomes & Assurance Section (Replaces Platform Overview) */}
+            <section id="solutions" className="w-full relative py-20">
+              <div className="text-center mb-16 max-w-3xl mx-auto">
                 <SectionHeading
-                  eyebrow="Platform Overview"
+                  eyebrow="Outcomes & Assurance"
                   accent="violet"
-                  title={<>See <CtrlText className="h-[0.9em]" /> <GradientText accent="violet">in action.</GradientText></>}
-                  body="A quick walkthrough across all three portals — Candidate, Hiring Manager and Client — showing how CTRL works end to end."
+                  title={<>Built for <GradientText accent="violet">high-trust decisions.</GradientText></>}
+                  body="CTRL helps teams run structured assessments, protect candidate integrity, and review evidence with confidence, without turning recruitment into guesswork."
                   centered
                 />
               </div>
 
-              <ZoomOnScroll from={0.82}>
-                <PortalShowcase reduceMotion={reduceMotion} />
-              </ZoomOnScroll>
+              <div className="mx-auto w-full max-w-6xl px-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                  <Reveal variant="fade-up">
+                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
+                        <Scale className="h-6 w-6" aria-hidden="true" />
+                      </div>
+                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">Evidence-Led Hiring</h4>
+                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
+                        Assess practical judgement, typing speed, and situational performance. Base recruitment on structured, reviewable data rather than intuition.
+                      </p>
+                    </div>
+                  </Reveal>
+
+                  <Reveal variant="fade-up">
+                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
+                        <ListChecks className="h-6 w-6" aria-hidden="true" />
+                      </div>
+                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">Controlled Delivery</h4>
+                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
+                        Support both remote and proctored in-person assessment flows. Session isolation, heartbeat checks, and timed submissions prevent external interference.
+                      </p>
+                    </div>
+                  </Reveal>
+
+                  <Reveal variant="fade-up">
+                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
+                        <Activity className="h-6 w-6" aria-hidden="true" />
+                      </div>
+                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">Decision Support</h4>
+                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
+                        Detailed performance breakdowns and comparative metrics for hiring managers. Align candidates by clear operational criteria.
+                      </p>
+                    </div>
+                  </Reveal>
+
+                  <Reveal variant="fade-up">
+                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
+                        <KeyRound className="h-6 w-6" aria-hidden="true" />
+                      </div>
+                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">High-Trust Workflows</h4>
+                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
+                        Tenant-isolated candidate records, secure access codes, and auditable action trails preserve organizational compliance and user privacy.
+                      </p>
+                    </div>
+                  </Reveal>
+                </div>
+
+                <Reveal variant="zoom">
+                  <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <Button asChild className="group h-12 rounded-full bg-slate-900 px-8 text-sm font-medium text-white shadow-lg transition-colors hover:bg-slate-800 focus-visible:ring-2 dark:bg-white dark:text-black dark:hover:bg-slate-200 md:h-14 md:text-base">
+                      <Link href="#contact" onClick={(e) => { e.preventDefault(); scrollToAnchor("contact"); }} className="flex items-center justify-center">
+                        Request a Demo
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                      </Link>
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("contact")} className="h-12 rounded-full border border-slate-200 bg-transparent px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white md:h-14 md:text-base">
+                      View Packages
+                    </Button>
+                  </div>
+                </Reveal>
+              </div>
             </section>
 
           </div>

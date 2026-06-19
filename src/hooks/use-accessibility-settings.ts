@@ -12,9 +12,7 @@ export type AccessibilitySettings = {
   contrast: "default" | "high";
   motion: "full" | "reduced";
   enhancedFocus: boolean;
-  readingFont: boolean;
-  dyslexiaFont: boolean;
-  focusRuler: boolean;
+  fontFamily: "default" | "reading" | "dyslexia";
   hoverReader: boolean;
   grayscale: boolean;
   underlineLinks: boolean;
@@ -28,9 +26,7 @@ export const defaultAccessibilitySettings: AccessibilitySettings = {
   contrast: "default",
   motion: "full",
   enhancedFocus: false,
-  readingFont: false,
-  dyslexiaFont: false,
-  focusRuler: false,
+  fontFamily: "default",
   hoverReader: false,
   grayscale: false,
   underlineLinks: false,
@@ -38,14 +34,31 @@ export const defaultAccessibilitySettings: AccessibilitySettings = {
 };
 
 export const accessibilityThemeClassName: Record<AccessibilitySettings["theme"], string> = {
-  "dark-blue": "bg-[#02040a]",
+  "dark-blue": "bg-[#080c16]",
   black: "bg-black",
-  "soft-cream": "bg-[#fdfaf2]",
-  "light-blue": "bg-[#eaf6ff]",
+  "soft-cream": "bg-[#fdf7ec]",
+  "light-blue": "bg-[#eef5fc]",
 };
 
 function sanitiseSettings(input: Partial<AccessibilitySettings>): AccessibilitySettings {
-  const next = { ...defaultAccessibilitySettings, ...input };
+  // Graceful migration from older boolean flags to fontFamily enum
+  let migratedFontFamily = input.fontFamily;
+  if (!migratedFontFamily) {
+    const oldInput = input as any;
+    if (oldInput.dyslexiaFont) {
+      migratedFontFamily = "dyslexia";
+    } else if (oldInput.readingFont) {
+      migratedFontFamily = "reading";
+    } else {
+      migratedFontFamily = "default";
+    }
+  }
+
+  const next = {
+    ...defaultAccessibilitySettings,
+    ...input,
+    fontFamily: migratedFontFamily,
+  } as AccessibilitySettings;
 
   if (!(next.theme in accessibilityThemeClassName)) {
     next.theme = defaultAccessibilitySettings.theme;
@@ -94,8 +107,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
     root.dataset.ctrlContrast = settings.contrast;
     root.dataset.ctrlMotion = reduceMotion ? "reduced" : "full";
     root.dataset.ctrlFocus = settings.enhancedFocus ? "enhanced" : "default";
-    root.dataset.ctrlReadingFont = settings.readingFont ? "enabled" : "default";
-    root.dataset.ctrlDyslexiaFont = settings.dyslexiaFont ? "enabled" : "default";
+    root.dataset.ctrlFontFamily = settings.fontFamily;
     root.dataset.ctrlGrayscale = settings.grayscale ? "enabled" : "default";
     root.dataset.ctrlUnderlineLinks = settings.underlineLinks ? "enabled" : "default";
     root.dataset.ctrlSaturation = settings.saturation;
@@ -122,49 +134,6 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
       return () => window.cancelAnimationFrame(id);
     }
   }, [enabled, settings, reduceMotion]);
-
-  // Handle Focus Ruler
-  useEffect(() => {
-    if (!enabled) return;
-
-    if (settings.focusRuler) {
-      let ruler = document.getElementById("ctrl-reading-guide-ruler");
-      if (!ruler) {
-        ruler = document.createElement("div");
-        ruler.id = "ctrl-reading-guide-ruler";
-        ruler.style.position = "fixed";
-        ruler.style.left = "0";
-        ruler.style.right = "0";
-        ruler.style.height = "26px";
-        ruler.style.backgroundColor = "rgba(59, 130, 246, 0.12)";
-        ruler.style.borderTop = "2px solid rgba(59, 130, 246, 0.35)";
-        ruler.style.borderBottom = "2px solid rgba(59, 130, 246, 0.35)";
-        ruler.style.pointerEvents = "none";
-        ruler.style.zIndex = "999999";
-        ruler.style.transform = "translateY(-50%)";
-        ruler.style.top = "50%";
-        ruler.style.transition = "top 0.04s ease-out";
-        document.body.appendChild(ruler);
-      }
-
-      const handleMouseMove = (e: MouseEvent) => {
-        const currentRuler = document.getElementById("ctrl-reading-guide-ruler");
-        if (currentRuler) {
-          currentRuler.style.top = `${e.clientY}px`;
-        }
-      };
-
-      window.addEventListener("mousemove", handleMouseMove);
-      return () => {
-        window.removeEventListener("mousemove", handleMouseMove);
-        const currentRuler = document.getElementById("ctrl-reading-guide-ruler");
-        if (currentRuler) currentRuler.remove();
-      };
-    } else {
-      const currentRuler = document.getElementById("ctrl-reading-guide-ruler");
-      if (currentRuler) currentRuler.remove();
-    }
-  }, [enabled, settings.focusRuler]);
 
   // Handle Speech Hover Reader
   useEffect(() => {
