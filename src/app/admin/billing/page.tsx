@@ -56,7 +56,7 @@ type PricingForm = {
   contractTypePrices: Record<ContractTier, ContractTierPricing>;
 };
 
-type ContractTier = "minimum" | "professional" | "professional_gf" | "grandfather" | "grandfather_founders";
+type ContractTier = "essential" | "professional" | "founder";
 
 type ContractTierPricing = {
   label: string;
@@ -69,16 +69,14 @@ type ContractTierPricing = {
 };
 
 const CONTRACT_TIER_ORDER: ContractTier[] = [
-  "minimum",
+  "essential",
   "professional",
-  "professional_gf",
-  "grandfather",
-  "grandfather_founders",
+  "founder",
 ];
 
 const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = {
-  minimum: {
-    label: "Minimum",
+  essential: {
+    label: "Essential",
     basePlatformYearlyPence: 0,
     includedSeatCount: 1,
     deliveryRemoteIncluded: false,
@@ -90,37 +88,19 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     label: "Professional",
     basePlatformYearlyPence: 0,
     includedSeatCount: 3,
-    deliveryRemoteIncluded: false,
-    deliveryHybridIncluded: false,
+    deliveryRemoteIncluded: true,
+    deliveryHybridIncluded: true,
     futurePaidFeaturesIncludedDuringFirstYear: false,
     discountPercent: 0,
   },
-  professional_gf: {
-    label: "Professional (GF)",
-    basePlatformYearlyPence: 0,
-    includedSeatCount: 3,
-    deliveryRemoteIncluded: false,
-    deliveryHybridIncluded: false,
-    futurePaidFeaturesIncludedDuringFirstYear: false,
-    discountPercent: 0,
-  },
-  grandfather: {
-    label: "Grandfather",
+  founder: {
+    label: "Founder",
     basePlatformYearlyPence: 0,
     includedSeatCount: 3,
     deliveryRemoteIncluded: true,
     deliveryHybridIncluded: true,
-    futurePaidFeaturesIncludedDuringFirstYear: true,
-    discountPercent: 30,
-  },
-  grandfather_founders: {
-    label: "Grandfather - Founders",
-    basePlatformYearlyPence: 0,
-    includedSeatCount: 3,
-    deliveryRemoteIncluded: false,
-    deliveryHybridIncluded: false,
     futurePaidFeaturesIncludedDuringFirstYear: false,
-    discountPercent: 30,
+    discountPercent: 33,
   },
 };
 
@@ -186,7 +166,7 @@ export default function AdminBillingPage() {
     assessmentAddonPence: 0,
     featurePrices: {},
     grandfatherOfferExpiresAt: null,
-    defaultGrandfatherDiscountPercent: 30,
+    defaultGrandfatherDiscountPercent: 33,
     contractTypePrices: DEFAULT_CONTRACT_TYPE_PRICES,
   });
   const [expiring, setExpiring] = useState<ExpiringContract[]>([]);
@@ -212,7 +192,7 @@ export default function AdminBillingPage() {
             assessmentAddonPence: 0,
             featurePrices: {},
             grandfatherOfferExpiresAt: null,
-            defaultGrandfatherDiscountPercent: 30,
+            defaultGrandfatherDiscountPercent: 33,
             contractTypePrices: DEFAULT_CONTRACT_TYPE_PRICES,
           },
           force,
@@ -232,7 +212,7 @@ export default function AdminBillingPage() {
                 ? String(data.grandfatherOfferExpiresAt)
                 : null,
               defaultGrandfatherDiscountPercent:
-                Number(data.defaultGrandfatherDiscountPercent ?? 30) || 30,
+                Number(data.defaultGrandfatherDiscountPercent ?? 33) || 33,
               contractTypePrices,
             };
           },
@@ -516,8 +496,8 @@ export default function AdminBillingPage() {
 
           <AdminPanel className="space-y-5">
             <AdminSectionHeader
-              title="Grandfather availability"
-              description="Controls whether the public pricing page can show the Grandfather contract option."
+              title="Founder availability"
+              description="Controls whether the public pricing page can show the Founder contract option."
             />
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -535,7 +515,7 @@ export default function AdminBillingPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className={portalLabelClass}>Default founders discount %</Label>
+                <Label className={portalLabelClass}>Default founder discount %</Label>
                 <Input
                   type="number"
                   min={0}
