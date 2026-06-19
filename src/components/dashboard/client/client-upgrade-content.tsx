@@ -106,7 +106,6 @@ export function ClientUpgradeContent() {
       maxVersion: "1.0.0",
       includedByDefault: true,
       availableVersions: [],
-      upgradeableVersions: [],
     }));
 
   const deliveryFeatures = useMemo(() => {
@@ -360,14 +359,7 @@ export function ClientUpgradeContent() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
-                          {(assessment.upgradeableVersions?.length ?? 0) > 0 ? (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              Upgrades:{" "}
-                              {assessment.upgradeableVersions?.map((v) => `v${v.version}`).join(", ")}
-                            </p>
-                          ) : (
-                            <p className="mt-1 text-xs text-muted-foreground">Included on platform</p>
-                          )}
+                          <p className="mt-1 text-xs text-muted-foreground">Included on platform</p>
                         </div>
                         <Badge variant="outline" className="shrink-0 rounded-lg text-[10px] font-semibold">
                           v{assessment.maxVersion}

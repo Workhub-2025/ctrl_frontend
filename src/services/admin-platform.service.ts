@@ -94,6 +94,7 @@ type RawContract = {
   startDate?: string | null;
   endDate?: string | null;
   paymentStatus?: "not_required" | "pending" | "paid" | "failed";
+  tier?: "minimum" | "professional" | "grandfather" | "grandfather_founders" | "professional_gf" | string;
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -351,6 +352,31 @@ function getActiveContract(client: RawClient) {
   return (client.contracts ?? []).find(isActiveContract) ?? null;
 }
 
+function getLatestContract(client: RawClient) {
+  return [...(client.contracts ?? [])].sort((a, b) => {
+    const aTime = new Date(a.endDate ?? a.updatedAt ?? a.createdAt ?? 0).getTime();
+    const bTime = new Date(b.endDate ?? b.updatedAt ?? b.createdAt ?? 0).getTime();
+    return bTime - aTime;
+  })[0] ?? null;
+}
+
+function contractTierLabel(tier?: RawContract["tier"]) {
+  switch (tier) {
+    case "minimum":
+      return "Minimum";
+    case "professional":
+      return "Professional";
+    case "grandfather":
+      return "Grandfather";
+    case "grandfather_founders":
+      return "Grandfather - Founders";
+    case "professional_gf":
+      return "Professional (GF)";
+    default:
+      return "No contract";
+  }
+}
+
 function getLatestAccessCode(
   codes: RawClient["access_codes"],
   targetRole: "client" | "hiring_manager" | "candidate"
@@ -394,6 +420,8 @@ function relativeDate(value?: string) {
 function normalizeClient(client: RawClient): AdminClientRow {
   const activeContract = getActiveContract(client);
   const pendingContract = getPendingContract(client);
+  const latestContract = getLatestContract(client);
+  const displayContract = activeContract ?? pendingContract ?? latestContract;
   const contractForSeats = activeContract ?? pendingContract;
   const hasActiveContract = isActiveContract(activeContract ?? undefined);
   const seatsAllowed = contractForSeats?.seatCount ?? 0;
@@ -438,7 +466,7 @@ function normalizeClient(client: RawClient): AdminClientRow {
     id: client.documentId ?? String(client.id ?? `client-${client.name ?? "unknown"}`),
     name: client.name ?? "Unnamed client",
     status,
-    plan: seatsAllowed >= 10 ? "Enterprise" : seatsAllowed >= 3 ? "Professional" : "Standard",
+    plan: contractTierLabel(displayContract?.tier),
     seatsUsed,
     seatsAllowed,
     enabledAssessments: ["Typing", "SJT", "Prioritisation", "Call Simulation"],

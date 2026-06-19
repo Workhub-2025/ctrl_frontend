@@ -185,20 +185,6 @@ export type ClientUpgradeRequestRecord = {
   clientName?: string;
 };
 
-export function getAssessmentVersionAccess(features?: Record<string, unknown> | null) {
-  const access = features?.assessmentVersionAccess;
-  return access && typeof access === "object" && !Array.isArray(access)
-    ? (access as Partial<Record<ClientAssessmentSlug, string>>)
-    : {};
-}
-
-export function getAssessmentMaxVersion(
-  features: Record<string, unknown> | null | undefined,
-  assessmentKey: string
-) {
-  return "999.999.999";
-}
-
 export function isPlatformFeatureEnabled(
   features: Record<string, unknown> | null | undefined,
   featureKey: (typeof CLIENT_PLATFORM_FEATURES)[number]["key"]

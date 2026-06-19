@@ -50,22 +50,18 @@ type PricingForm = {
   basePlatformYearlyPence: number;
   seatOneOffPence: number;
   assessmentAddonPence: number;
-  versionUpgradePence: number;
   featurePrices: Record<string, number>;
   grandfatherOfferExpiresAt: string | null;
   defaultGrandfatherDiscountPercent: number;
   contractTypePrices: Record<ContractTier, ContractTierPricing>;
 };
 
-type ContractTier = "minimum" | "professional" | "grandfather" | "grandfather_founders";
+type ContractTier = "minimum" | "professional" | "professional_gf" | "grandfather" | "grandfather_founders";
 
 type ContractTierPricing = {
   label: string;
   basePlatformYearlyPence: number;
   includedSeatCount: number;
-  seatUpgradePence: number;
-  assessmentAddonPence: number;
-  versionUpgradePence: number;
   deliveryRemoteIncluded: boolean;
   deliveryHybridIncluded: boolean;
   futurePaidFeaturesIncludedDuringFirstYear: boolean;
@@ -75,6 +71,7 @@ type ContractTierPricing = {
 const CONTRACT_TIER_ORDER: ContractTier[] = [
   "minimum",
   "professional",
+  "professional_gf",
   "grandfather",
   "grandfather_founders",
 ];
@@ -84,9 +81,6 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     label: "Minimum",
     basePlatformYearlyPence: 0,
     includedSeatCount: 1,
-    seatUpgradePence: 0,
-    assessmentAddonPence: 0,
-    versionUpgradePence: 0,
     deliveryRemoteIncluded: false,
     deliveryHybridIncluded: false,
     futurePaidFeaturesIncludedDuringFirstYear: false,
@@ -96,9 +90,15 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     label: "Professional",
     basePlatformYearlyPence: 0,
     includedSeatCount: 3,
-    seatUpgradePence: 0,
-    assessmentAddonPence: 0,
-    versionUpgradePence: 0,
+    deliveryRemoteIncluded: false,
+    deliveryHybridIncluded: false,
+    futurePaidFeaturesIncludedDuringFirstYear: false,
+    discountPercent: 0,
+  },
+  professional_gf: {
+    label: "Professional (GF)",
+    basePlatformYearlyPence: 0,
+    includedSeatCount: 3,
     deliveryRemoteIncluded: false,
     deliveryHybridIncluded: false,
     futurePaidFeaturesIncludedDuringFirstYear: false,
@@ -108,9 +108,6 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     label: "Grandfather",
     basePlatformYearlyPence: 0,
     includedSeatCount: 3,
-    seatUpgradePence: 0,
-    assessmentAddonPence: 0,
-    versionUpgradePence: 0,
     deliveryRemoteIncluded: true,
     deliveryHybridIncluded: true,
     futurePaidFeaturesIncludedDuringFirstYear: true,
@@ -120,9 +117,6 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     label: "Grandfather - Founders",
     basePlatformYearlyPence: 0,
     includedSeatCount: 3,
-    seatUpgradePence: 0,
-    assessmentAddonPence: 0,
-    versionUpgradePence: 0,
     deliveryRemoteIncluded: false,
     deliveryHybridIncluded: false,
     futurePaidFeaturesIncludedDuringFirstYear: false,
@@ -163,11 +157,9 @@ function normalizeContractTypePrices(raw: unknown): Record<ContractTier, Contrac
     const value = source[tier] ?? {};
     acc[tier] = {
       label: String(value.label ?? defaults.label),
-      basePlatformYearlyPence: Number(value.basePlatformYearlyPence ?? defaults.basePlatformYearlyPence) || 0,
+      basePlatformYearlyPence:
+        Number(value.basePlatformYearlyPence ?? defaults.basePlatformYearlyPence) || 0,
       includedSeatCount: Number(value.includedSeatCount ?? defaults.includedSeatCount) || 0,
-      seatUpgradePence: Number(value.seatUpgradePence ?? defaults.seatUpgradePence) || 0,
-      assessmentAddonPence: Number(value.assessmentAddonPence ?? defaults.assessmentAddonPence) || 0,
-      versionUpgradePence: Number(value.versionUpgradePence ?? defaults.versionUpgradePence) || 0,
       deliveryRemoteIncluded:
         typeof value.deliveryRemoteIncluded === "boolean"
           ? value.deliveryRemoteIncluded
@@ -192,7 +184,6 @@ export default function AdminBillingPage() {
     basePlatformYearlyPence: 0,
     seatOneOffPence: 0,
     assessmentAddonPence: 0,
-    versionUpgradePence: 0,
     featurePrices: {},
     grandfatherOfferExpiresAt: null,
     defaultGrandfatherDiscountPercent: 30,
@@ -219,7 +210,6 @@ export default function AdminBillingPage() {
             basePlatformYearlyPence: 0,
             seatOneOffPence: 0,
             assessmentAddonPence: 0,
-            versionUpgradePence: 0,
             featurePrices: {},
             grandfatherOfferExpiresAt: null,
             defaultGrandfatherDiscountPercent: 30,
@@ -237,7 +227,6 @@ export default function AdminBillingPage() {
               ),
               seatOneOffPence: Number(data.seatOneOffPence ?? data.seatMonthlyPence ?? 0),
               assessmentAddonPence: Number(data.assessmentAddonPence ?? 0),
-              versionUpgradePence: Number(data.versionUpgradePence ?? 0),
               featurePrices: (data.featurePrices as Record<string, number>) ?? {},
               grandfatherOfferExpiresAt: data.grandfatherOfferExpiresAt
                 ? String(data.grandfatherOfferExpiresAt)
@@ -262,7 +251,6 @@ export default function AdminBillingPage() {
         basePlatformYearlyPence: pricing.basePlatformYearlyPence,
         seatOneOffPence: pricing.seatOneOffPence,
         assessmentAddonPence: pricing.assessmentAddonPence,
-        versionUpgradePence: pricing.versionUpgradePence,
         featurePrices: pricing.featurePrices,
         grandfatherOfferExpiresAt: pricing.grandfatherOfferExpiresAt,
         defaultGrandfatherDiscountPercent: pricing.defaultGrandfatherDiscountPercent,
@@ -419,7 +407,7 @@ export default function AdminBillingPage() {
               <AdminSectionHeader
                 className="flex-1 sm:items-start"
                 title="Contract pricing"
-                description="Set the annual charge and upgrade pricing attached to each contract type."
+                description="Set the annual charge attached to each contract type."
               />
             </div>
             <div className="grid gap-4 xl:grid-cols-2">

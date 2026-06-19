@@ -46,7 +46,7 @@ type AdminUpgradeRequest = {
 const UPGRADE_TYPE_LABELS: Record<string, string> = {
   seat_increase: "Seat increase",
   new_assessment: "New assessment",
-  assessment_version: "Version upgrade",
+  assessment_version: "Assessment",
   delivery_feature: "Delivery feature",
   upgrade_bundle: "Bundled upgrade",
   contract_extension: "Contract renewal",
@@ -218,7 +218,7 @@ export default function AdminUpgradeRequestsPage() {
     <div className="space-y-8 pb-6">
       <AdminPageHeader
         title="Upgrade requests"
-        description="Client-submitted seat, assessment, and version upgrades — tracked separately from support tickets."
+        description="Client-submitted seat, assessment, and feature upgrades — tracked separately from support tickets."
         notice={
           error ? (
             <AdminAlert>{error}</AdminAlert>

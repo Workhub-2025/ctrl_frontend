@@ -7,7 +7,6 @@ const mockPricing: ClientUpgradePricing = {
   seatOneOffPence: 1000,
   seatMonthlyPence: 100,
   assessmentAddonPence: 5000,
-  versionUpgradePence: 2000,
   featurePrices: {
     deliveryRemote: 3000,
     deliveryHybrid: 4000,

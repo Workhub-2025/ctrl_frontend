@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminPageHeader, AdminTableShell } from "@/components/admin/admin-portal-ui";
+import { AssessmentAbandonedActions } from "@/components/dashboard/assessment-abandoned-actions";
 import { portalBadgeClass } from "@/components/dashboard/portal/portal-ui";
 import { formatAbandonSnapshotSummary } from "@/lib/assessment-abandon-summary";
 import { formatAssessmentSlugLabel } from "@/lib/assessment-result-status";
@@ -133,48 +134,87 @@ export function AssessmentRecoveryWorkspace({
                   <th className="px-4 py-3 font-medium">Campaign</th>
                   <th className="px-4 py-3 font-medium">Abandoned</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {attempts.map((attempt) => (
-                  <tr
-                    key={attempt.documentId ?? `${attempt.candidateSessionDocumentId}-${attempt.assessmentSlug}`}
-                    className="border-b border-border/40 last:border-0"
-                  >
-                    <td className="px-4 py-4">
-                      <div className="font-medium text-foreground">{candidateLabel(attempt)}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {attempt.users_permissions_user?.email ?? "No email"}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4">
-                      {formatAssessmentSlugLabel(attempt.assessmentSlug ?? "unknown")}
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground">
-                      {formatAbandonSnapshotSummary(
-                        attempt.assessmentSlug ?? "",
-                        attempt.snapshot,
-                        attempt.contentVersion
-                      )}
-                      {attempt.abandonReason ? (
-                        <div className="mt-1">
-                          <Badge className={portalBadgeClass}>
-                            {attempt.abandonReason.replace(/_/g, " ")}
-                          </Badge>
+                {attempts.map((attempt) => {
+                  const candidateName = candidateLabel(attempt);
+                  const candidateEmail = attempt.users_permissions_user?.email ?? null;
+                  const campaignName = attempt.candidateSession?.campaign?.name ?? "Unknown campaign";
+                  const candidateSessionDocumentId =
+                    attempt.candidateSessionDocumentId ?? attempt.candidateSession?.documentId ?? "";
+                  const assessmentSlug = attempt.assessmentSlug ?? "";
+                  const assessmentLabel = formatAssessmentSlugLabel(assessmentSlug || "unknown");
+
+                  return (
+                    <tr
+                      key={attempt.documentId ?? `${candidateSessionDocumentId}-${assessmentSlug}`}
+                      className="border-b border-border/40 last:border-0"
+                    >
+                      <td className="px-4 py-4">
+                        <div className="font-medium text-foreground">{candidateName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {candidateEmail ?? "No email"}
                         </div>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground">
-                      {attempt.candidateSession?.campaign?.name ?? "Unknown campaign"}
-                    </td>
-                    <td className="px-4 py-4 text-muted-foreground">
-                      {relativeTime(attempt.abandonedAt ?? attempt.lastHeartbeatAt)}
-                    </td>
-                    <td className="px-4 py-4">
-                      <Badge className={portalBadgeClass}>Abandoned</Badge>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-4">
+                        {assessmentLabel}
+                      </td>
+                      <td className="px-4 py-4 text-muted-foreground">
+                        {formatAbandonSnapshotSummary(
+                          assessmentSlug,
+                          attempt.snapshot,
+                          attempt.contentVersion
+                        )}
+                        {attempt.abandonReason ? (
+                          <div className="mt-1">
+                            <Badge className={portalBadgeClass}>
+                              {attempt.abandonReason.replace(/_/g, " ")}
+                            </Badge>
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-4 text-muted-foreground">
+                        {campaignName}
+                      </td>
+                      <td className="px-4 py-4 text-muted-foreground">
+                        {relativeTime(attempt.abandonedAt ?? attempt.lastHeartbeatAt)}
+                      </td>
+                      <td className="px-4 py-4">
+                        <Badge className={portalBadgeClass}>Abandoned</Badge>
+                      </td>
+                      <td className="px-4 py-4">
+                        {candidateSessionDocumentId && assessmentSlug ? (
+                          <AssessmentAbandonedActions
+                            candidateSessionDocumentId={candidateSessionDocumentId}
+                            assessmentSlug={assessmentSlug}
+                            assessmentLabel={assessmentLabel}
+                            candidateName={candidateName}
+                            candidateEmail={candidateEmail}
+                            campaignName={campaignName}
+                            snapshot={attempt.snapshot}
+                            contentVersion={attempt.contentVersion}
+                            abandonReason={attempt.abandonReason}
+                            abandonedAt={attempt.abandonedAt}
+                            compact
+                            onRecovered={() => void loadAttempts(searchQuery)}
+                            recoverFn={
+                              scope === "admin"
+                                ? AssessmentAttemptService.adminRecover.bind(AssessmentAttemptService)
+                                : undefined
+                            }
+                            versionsUrl={scope === "admin" ? "/api/admin/assessment-versions" : undefined}
+                          />
+                        ) : (
+                          <Badge variant="outline" className="rounded-lg text-[10px] font-semibold text-muted-foreground">
+                            Missing session
+                          </Badge>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

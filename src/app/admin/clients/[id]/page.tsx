@@ -10,6 +10,7 @@ import {
   Loader2,
   Mail,
   Phone,
+  RotateCcw,
   Trash2,
   CheckCircle2,
   Clock3,
@@ -128,6 +129,7 @@ export default function ClientDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [sendingActivation, setSendingActivation] = useState(false);
   const [activationNotice, setActivationNotice] = useState<string | null>(null);
+  const [reactivatingClient, setReactivatingClient] = useState(false);
   const [downgradeSeatInfo, setDowngradeSeatInfo] = useState<{
     managerDocumentId?: string;
     accessCodeDocumentId?: string;
@@ -136,6 +138,7 @@ export default function ClientDetailPage() {
   const [downgradingSeat, setDowngradingSeat] = useState(false);
 
   const isPendingContract = client?.activeContract?.paymentStatus === "pending";
+  const canReactivateClient = Boolean(client && !client.activeContract);
 
   const canDelete = useMemo(
     () => Boolean(client?.name && confirmName.trim() === client.name.trim()),
@@ -237,6 +240,56 @@ export default function ClientDetailPage() {
       setActionError(err instanceof Error ? err.message : "Activation invoice could not be sent");
     } finally {
       setSendingActivation(false);
+    }
+  };
+
+  const reactivateClient = async () => {
+    if (!client) return;
+    setReactivatingClient(true);
+    setActionError(null);
+    setActivationNotice(null);
+    try {
+      const response = await fetch(
+        `/api/admin/clients/${encodeURIComponent(client.id)}/reactivate`,
+        { method: "POST" }
+      );
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error || "Client could not be reactivated");
+      }
+
+      let invoiceSent = false;
+      try {
+        const invoiceResponse = await fetch(
+          `/api/admin/billing/send-activation/${encodeURIComponent(client.id)}`,
+          { method: "POST" }
+        );
+        const invoiceBody = await invoiceResponse.json().catch(() => ({}));
+        if (!invoiceResponse.ok) {
+          throw new Error(invoiceBody.error || "Activation invoice could not be sent");
+        }
+        invoiceSent = true;
+      } catch (invoiceError) {
+        setActionError(
+          `Client reactivated, but activation invoice could not be sent: ${
+            invoiceError instanceof Error ? invoiceError.message : "Unknown invoice error"
+          }`
+        );
+      }
+
+      invalidateAdminResource(`admin:client:${client.id}`);
+      invalidateAdminResource("admin:clients");
+      invalidateAdminResource("admin:overview");
+      invalidateAdminResource("admin:upgrades");
+      await refetchClient();
+
+      if (invoiceSent) {
+        setActivationNotice("Client reactivated and activation invoice sent to the primary contact.");
+      }
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Client could not be reactivated");
+    } finally {
+      setReactivatingClient(false);
     }
   };
 
@@ -430,6 +483,10 @@ export default function ClientDetailPage() {
                       (<strong className="text-foreground">{downgradeSeatInfo?.name}</strong>) will be deleted.
                     </p>
                     <p className="font-semibold text-amber-500">
+                      Export the affected candidates, campaigns, sessions, and scoring details before confirming.
+                      This data will be permanently removed.
+                    </p>
+                    <p className="font-semibold text-amber-500">
                       Important: Candidate user accounts themselves will NOT be deleted, as they may be registered in other campaigns.
                     </p>
                     <p>
@@ -563,6 +620,28 @@ export default function ClientDetailPage() {
                 description="Seat allocation and contract dates. Term dates are set when activation payment is received."
               />
               <div className="flex flex-wrap gap-2 shrink-0">
+                {canReactivateClient ? (
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-[34px]"
+                    disabled={reactivatingClient}
+                    onClick={() => void reactivateClient()}
+                  >
+                    {reactivatingClient ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Reactivating…
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Reactivate Client
+                      </>
+                    )}
+                  </Button>
+                ) : null}
                 {isPendingContract ? (
                   <Button
                     type="button"

@@ -12,6 +12,7 @@ import {
 } from "@/lib/assessment-abandon-summary";
 import {
   AssessmentAttemptService,
+  type AssessmentRecoveryMode,
   type CandidateAssessmentAttempt,
 } from "@/services/assessment-attempt.service";
 
@@ -28,6 +29,13 @@ type AssessmentAbandonedActionsProps = {
   abandonedAt?: string | null;
   compact?: boolean;
   onRecovered?: () => void;
+  recoverFn?: (input: {
+    candidateSessionDocumentId: string;
+    assessmentSlug: string;
+    action: AssessmentRecoveryMode;
+    contentVersion?: string | null;
+  }) => Promise<CandidateAssessmentAttempt>;
+  versionsUrl?: string;
 };
 
 export function AssessmentAbandonedActions({
@@ -43,6 +51,8 @@ export function AssessmentAbandonedActions({
   abandonedAt,
   compact = false,
   onRecovered,
+  recoverFn = AssessmentAttemptService.recover.bind(AssessmentAttemptService),
+  versionsUrl = "/api/assessment/versions",
 }: AssessmentAbandonedActionsProps) {
   const [recoverOpen, setRecoverOpen] = useState(false);
 
@@ -100,8 +110,8 @@ export function AssessmentAbandonedActions({
         open={recoverOpen}
         onOpenChange={setRecoverOpen}
         onRecovered={onRecovered}
-        recoverFn={AssessmentAttemptService.recover.bind(AssessmentAttemptService)}
-        versionsUrl="/api/assessment/versions"
+        recoverFn={recoverFn}
+        versionsUrl={versionsUrl}
       />
     </div>
   );

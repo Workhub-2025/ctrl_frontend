@@ -11,7 +11,6 @@ export type ClientUpgradePricing = {
   seatOneOffPence?: number;
   seatMonthlyPence?: number;
   assessmentAddonPence?: number;
-  versionUpgradePence?: number;
   featurePrices?: Record<string, number>;
 };
 
@@ -31,7 +30,6 @@ export type ClientEntitlementAssessment = {
   maxVersion: string;
   summary?: string | null;
   availableVersions?: Array<{ version: string; title: string; description: string | null }>;
-  upgradeableVersions?: Array<{ version: string; title: string; description: string | null }>;
 };
 
 export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraft {
