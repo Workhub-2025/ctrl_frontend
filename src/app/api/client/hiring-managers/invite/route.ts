@@ -11,6 +11,14 @@ import {
 
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+
+function parseSeatNumber(value: unknown) {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) return value;
+  if (typeof value !== "string") return undefined;
+  const numeric = Number(value.match(/\d+/)?.[0] ?? value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
+}
+
 export async function POST(request: NextRequest) {
   try {
     await requireClientSession();
@@ -39,6 +47,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const email = typeof body?.email === "string" ? body.email.trim() : "";
+    const seatNumber = parseSeatNumber(body?.seatNumber ?? body?.seatLabel);
+    const seatLabel = typeof body?.seatLabel === "string" ? body.seatLabel : undefined;
 
     if (!email) {
       return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
@@ -61,6 +71,8 @@ export async function POST(request: NextRequest) {
         typeof body?.accessCodeDocumentId === "string"
           ? body.accessCodeDocumentId
           : undefined,
+      seatNumber,
+      seatLabel,
     });
 
     return NextResponse.json({ data: result }, { status: 201 });

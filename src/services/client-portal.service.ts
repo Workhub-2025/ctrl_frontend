@@ -109,6 +109,8 @@ export type ClientAccessCode = {
   createdAt?: string;
   updatedAt?: string;
   invitedEmail?: string | null;
+  seatNumber?: number | null;
+  seatLabel?: string | null;
 };
 
 export type ClientHiringManagerSeat = {
@@ -117,6 +119,9 @@ export type ClientHiringManagerSeat = {
   email: string;
   status: "active" | "previous";
   createdAt?: string;
+  seatNumber?: number | null;
+  seatLabel?: string | null;
+  accessCodeDocumentId?: string | null;
   candidatesOnboarded: number;
   campaigns: Array<{
     documentId: string;
@@ -296,21 +301,40 @@ export async function getClientAccessCodes() {
   return response.data ?? [];
 }
 
-export async function generateHiringManagerAccessCode() {
+export async function generateHiringManagerAccessCode(input?: {
+  seatNumber?: number;
+  seatLabel?: string;
+}) {
   const response = await strapiRequest<{ data?: ClientAccessCode }>(
     "/access-codes/generate",
-    { method: "POST" }
+    {
+      method: "POST",
+      body: JSON.stringify({
+        seatNumber: input?.seatNumber,
+        seatLabel: input?.seatLabel,
+      }),
+    }
   );
 
   return response.data;
 }
 
-export async function refreshHiringManagerAccessCode(refreshCodeDocumentId: string) {
+export async function refreshHiringManagerAccessCode(
+  refreshCodeDocumentId: string,
+  input?: {
+    seatNumber?: number;
+    seatLabel?: string;
+  }
+) {
   const response = await strapiRequest<{ data?: ClientAccessCode }>(
     "/access-codes/generate",
     {
       method: "POST",
-      body: JSON.stringify({ refreshCodeDocumentId }),
+      body: JSON.stringify({
+        refreshCodeDocumentId,
+        seatNumber: input?.seatNumber,
+        seatLabel: input?.seatLabel,
+      }),
     }
   );
 
@@ -321,6 +345,8 @@ export async function inviteHiringManagerByEmail(input: {
   clientDocumentId: string;
   email: string;
   accessCodeDocumentId?: string;
+  seatNumber?: number;
+  seatLabel?: string;
 }) {
   const response = await strapiRequest<{ data?: ClientAccessCode & { invitedEmail?: string } }>(
     `/clients/${encodeURIComponent(input.clientDocumentId)}/hiring-manager-invites`,
@@ -329,6 +355,8 @@ export async function inviteHiringManagerByEmail(input: {
       body: JSON.stringify({
         email: input.email,
         accessCodeDocumentId: input.accessCodeDocumentId,
+        seatNumber: input.seatNumber,
+        seatLabel: input.seatLabel,
       }),
     }
   );
@@ -345,6 +373,9 @@ export async function getClientHiringManagers(clientDocumentId: string) {
     email?: string | null;
     status?: "active" | "previous";
     createdAt?: string;
+    seatNumber?: number | null;
+    seatLabel?: string | null;
+    accessCodeDocumentId?: string | null;
     candidatesOnboarded?: number;
     campaigns?: Array<{
       documentId?: string;
@@ -365,6 +396,9 @@ export async function getClientHiringManagers(clientDocumentId: string) {
       email: manager.email || "No email recorded",
       status: manager.status ?? "active",
       createdAt: manager.createdAt,
+      seatNumber: manager.seatNumber ?? null,
+      seatLabel: manager.seatLabel ?? null,
+      accessCodeDocumentId: manager.accessCodeDocumentId ?? null,
       candidatesOnboarded: manager.candidatesOnboarded ?? 0,
       campaigns: (manager.campaigns ?? []).map((campaign) => ({
         documentId: campaign.documentId ?? campaign.name ?? "campaign",

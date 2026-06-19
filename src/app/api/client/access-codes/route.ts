@@ -7,6 +7,14 @@ import {
 
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+
+function parseSeatNumber(value: unknown) {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) return value;
+  if (typeof value !== "string") return undefined;
+  const numeric = Number(value.match(/\d+/)?.[0] ?? value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
+}
+
 export async function GET() {
   try {
     await requireClientSession();
@@ -27,9 +35,17 @@ export async function POST(request: Request) {
     await requireClientSession();
 
     const body = await request.json().catch(() => ({}));
+    const seatNumber = parseSeatNumber(body?.seatNumber ?? body?.seatLabel);
+    const seatLabel = typeof body?.seatLabel === "string" ? body.seatLabel : undefined;
     const code = body?.refreshCodeDocumentId
-      ? await refreshHiringManagerAccessCode(String(body.refreshCodeDocumentId))
-      : await generateHiringManagerAccessCode();
+      ? await refreshHiringManagerAccessCode(String(body.refreshCodeDocumentId), {
+          seatNumber,
+          seatLabel,
+        })
+      : await generateHiringManagerAccessCode({
+          seatNumber,
+          seatLabel,
+        });
 
     return NextResponse.json({ data: code }, { status: 201 });
   } catch (error) {

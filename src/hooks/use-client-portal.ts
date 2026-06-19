@@ -21,8 +21,8 @@ import {
 } from "@/lib/portal-fetch-cache";
 
 export type SeatSlot =
-  | { type: "occupied"; label: string; manager: ClientHiringManagerSeat }
-  | { type: "empty"; label: string; accessCode?: ClientAccessCode };
+  | { type: "occupied"; label: string; seatNumber: number; manager: ClientHiringManagerSeat }
+  | { type: "empty"; label: string; seatNumber: number; accessCode?: ClientAccessCode };
 
 export type ClientEntitlements = BackendClientEntitlements;
 
@@ -102,6 +102,13 @@ function applyOverview(state: ClientOverviewData) {
   };
 }
 
+function parseSeatNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value) && value > 0) return value;
+  if (typeof value !== "string") return null;
+  const numeric = Number(value.match(/\d+/)?.[0] ?? value);
+  return Number.isInteger(numeric) && numeric > 0 ? numeric : null;
+}
+
 async function fetchOverviewCached(force = false) {
   return fetchPortalJson<ClientOverviewData>({
     key: "client:overview",
@@ -161,18 +168,48 @@ export function useClientPortalState(): ClientPortalContextValue {
   );
 
   const seatSlots = useMemo<SeatSlot[]>(() => {
-    const occupied = activeHiringManagers.map((manager, index) => ({
-      type: "occupied" as const,
-      label: `Seat ${index + 1}`,
-      manager,
-    }));
-    const emptyCount = Math.max(0, (summary?.seats.limit ?? 0) - occupied.length);
-    const empty = Array.from({ length: emptyCount }, (_, index) => ({
-      type: "empty" as const,
-      label: `Seat ${occupied.length + index + 1}`,
-      accessCode: accessCodes[index],
-    }));
-    return [...occupied, ...empty];
+    const limit = summary?.seats.limit ?? 0;
+    const numberedManagers = new Map<number, ClientHiringManagerSeat>();
+    const legacyManagers: ClientHiringManagerSeat[] = [];
+    const numberedCodes = new Map<number, ClientAccessCode>();
+    const legacyCodes: ClientAccessCode[] = [];
+
+    for (const manager of activeHiringManagers) {
+      const seatNumber = parseSeatNumber(manager.seatNumber ?? manager.seatLabel);
+      if (seatNumber) {
+        numberedManagers.set(seatNumber, manager);
+      } else {
+        legacyManagers.push(manager);
+      }
+    }
+
+    for (const code of accessCodes) {
+      const seatNumber = parseSeatNumber(code.seatNumber ?? code.seatLabel);
+      if (seatNumber) {
+        numberedCodes.set(seatNumber, code);
+      } else {
+        legacyCodes.push(code);
+      }
+    }
+
+    let legacyManagerIndex = 0;
+    let legacyCodeIndex = 0;
+
+    return Array.from({ length: limit }, (_, index) => {
+      const seatNumber = index + 1;
+      const label = `Seat ${seatNumber}`;
+      const manager = numberedManagers.get(seatNumber)
+        ?? legacyManagers[legacyManagerIndex];
+
+      if (manager) {
+        if (!numberedManagers.has(seatNumber)) legacyManagerIndex += 1;
+        return { type: "occupied", label, seatNumber, manager } as const;
+      }
+
+      const accessCode = numberedCodes.get(seatNumber) ?? legacyCodes[legacyCodeIndex];
+      if (!numberedCodes.has(seatNumber) && accessCode) legacyCodeIndex += 1;
+      return { type: "empty", label, seatNumber, accessCode } as const;
+    });
   }, [accessCodes, activeHiringManagers, summary?.seats.limit]);
 
   const loadOverview = useCallback(async (force = false) => {
@@ -328,7 +365,7 @@ export function useClientPortalState(): ClientPortalContextValue {
       const response = await fetch("/api/client/access-codes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seatLabel }),
+        body: JSON.stringify({ seatLabel, seatNumber: parseSeatNumber(seatLabel) }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -348,6 +385,8 @@ export function useClientPortalState(): ClientPortalContextValue {
     try {
       const response = await fetch(`/api/client/access-codes/${refreshCodeDocumentId}/refresh`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seatLabel, seatNumber: parseSeatNumber(seatLabel) }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -372,7 +411,12 @@ export function useClientPortalState(): ClientPortalContextValue {
       const response = await fetch("/api/client/hiring-managers/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, accessCodeDocumentId }),
+        body: JSON.stringify({
+          email,
+          accessCodeDocumentId,
+          seatLabel,
+          seatNumber: parseSeatNumber(seatLabel),
+        }),
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));

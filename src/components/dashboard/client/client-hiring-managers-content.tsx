@@ -186,7 +186,14 @@ export function ClientHiringManagersContent() {
                   <button
                     key={manager.documentId}
                     type="button"
-                    onClick={() => setSelectedSeat({ type: "occupied", label: "Previous", manager })}
+                    onClick={() =>
+                      setSelectedSeat({
+                        type: "occupied",
+                        label: manager.seatLabel ?? "Previous",
+                        seatNumber: manager.seatNumber ?? 0,
+                        manager,
+                      })
+                    }
                     className={cn(portalPanelClass, "p-4 text-left transition-colors hover:border-primary/30")}
                   >
                     <div className="flex items-start justify-between gap-3">
