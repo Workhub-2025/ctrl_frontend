@@ -32,7 +32,7 @@ export async function GET() {
     const body = await response.json().catch(() => ({}));
     const pricing = body.data || {};
 
-    const defaultFounderDiscountPercent = pricing.defaultGrandfatherDiscountPercent ?? 33;
+    const defaultFounderDiscountPercent = pricing.defaultFounderDiscountPercent ?? 33;
     const contractTypePrices =
       pricing.contractTypePrices && typeof pricing.contractTypePrices === "object"
         ? (pricing.contractTypePrices as Record<string, PublicContractTierPricing>)

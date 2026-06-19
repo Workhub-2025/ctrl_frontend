@@ -44,6 +44,7 @@ import {
   invalidatePortalCache,
 } from "@/lib/portal-fetch-cache";
 import { cn } from "@/lib/utils";
+import { ContractTier, ContractTierPricing } from "@/types";
 
 type PricingForm = {
   currency: string;
@@ -56,17 +57,7 @@ type PricingForm = {
   contractTypePrices: Record<ContractTier, ContractTierPricing>;
 };
 
-type ContractTier = "essential" | "professional" | "founder";
 
-type ContractTierPricing = {
-  label: string;
-  basePlatformYearlyPence: number;
-  includedSeatCount: number;
-  deliveryRemoteIncluded: boolean;
-  deliveryHybridIncluded: boolean;
-  futurePaidFeaturesIncludedDuringFirstYear: boolean;
-  discountPercent: number;
-};
 
 const CONTRACT_TIER_ORDER: ContractTier[] = [
   "essential",
@@ -208,11 +199,8 @@ export default function AdminBillingPage() {
               seatOneOffPence: Number(data.seatOneOffPence ?? data.seatMonthlyPence ?? 0),
               assessmentAddonPence: Number(data.assessmentAddonPence ?? 0),
               featurePrices: (data.featurePrices as Record<string, number>) ?? {},
-              founderOfferExpiresAt: data.founderOfferExpiresAt ?? data.grandfatherOfferExpiresAt
-                ? String(data.founderOfferExpiresAt ?? data.grandfatherOfferExpiresAt)
-                : null,
-              defaultFounderDiscountPercent:
-                Number(data.defaultFounderDiscountPercent ?? data.defaultGrandfatherDiscountPercent ?? 33) || 33,
+              founderOfferExpiresAt: data.founderOfferExpiresAt ? String(data.founderOfferExpiresAt) : null,
+              defaultFounderDiscountPercent: Number(data.defaultFounderDiscountPercent ?? 33) || 33,
               contractTypePrices,
             };
           },

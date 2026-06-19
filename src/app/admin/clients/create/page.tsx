@@ -20,6 +20,7 @@ import { invalidateAdminResource } from "@/lib/admin-resource-cache";
 import { AdminAlert, AdminPageHeader, AdminPanel, AdminSectionHeader } from "@/components/admin/admin-portal-ui";
 import { portalIconWrapLgClass, portalInputClass, portalLabelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { ContractTier } from "@/types";
 
 type CreatedClientResponse = {
   client?: {
@@ -34,7 +35,6 @@ type CreatedClientResponse = {
   };
 };
 
-type ContractTier = "essential" | "professional" | "founder";
 
 const CONTRACT_TIERS: Record<
   ContractTier,

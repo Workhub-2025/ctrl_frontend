@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
+import { ContractTier, ContractStatus } from "@/types";
 
 class AdminStrapiRequestError extends Error {
   status: number;
@@ -72,9 +73,6 @@ export type AdminAssessmentVersionOption = {
   description: string | null;
 };
 
-type ContractStatus = "active" | "soft_locked" | "pending_deletion";
-type ContractTier = "minimum" | "professional" | "professional_gf" | "grandfather" | "grandfather_founders";
-type CreatableContractTier = "minimum" | "professional" | "grandfather";
 
 type RawUser = {
   id?: number;
@@ -244,7 +242,7 @@ export type AdminClientCreateInput = {
   timeZone?: string;
   campaignApprovalMode: "auto_approve" | "require_approval";
   contract: {
-    tier: CreatableContractTier;
+    tier: ContractTier;
     seatCount: number;
     notes?: string;
   };
