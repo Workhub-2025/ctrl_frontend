@@ -247,9 +247,6 @@ export type AdminClientCreateInput = {
     tier: CreatableContractTier;
     seatCount: number;
     notes?: string;
-    grandfatherStartedAt?: string | null;
-    grandfatherEndsAt?: string | null;
-    grandfatherDiscountPercent?: number | null;
   };
   issueAccessCode?: boolean;
 };
@@ -953,9 +950,6 @@ export async function updateAdminClient(
       notes?: string | null;
       status?: ContractStatus;
       tier?: ContractTier | string;
-      grandfatherStartedAt?: string | null;
-      grandfatherEndsAt?: string | null;
-      grandfatherDiscountPercent?: number | null;
     };
   },
   authToken?: string | null

@@ -51,8 +51,8 @@ type PricingForm = {
   seatOneOffPence: number;
   assessmentAddonPence: number;
   featurePrices: Record<string, number>;
-  grandfatherOfferExpiresAt: string | null;
-  defaultGrandfatherDiscountPercent: number;
+  founderOfferExpiresAt: string | null;
+  defaultFounderDiscountPercent: number;
   contractTypePrices: Record<ContractTier, ContractTierPricing>;
 };
 
@@ -165,8 +165,8 @@ export default function AdminBillingPage() {
     seatOneOffPence: 0,
     assessmentAddonPence: 0,
     featurePrices: {},
-    grandfatherOfferExpiresAt: null,
-    defaultGrandfatherDiscountPercent: 33,
+    founderOfferExpiresAt: null,
+    defaultFounderDiscountPercent: 33,
     contractTypePrices: DEFAULT_CONTRACT_TYPE_PRICES,
   });
   const [expiring, setExpiring] = useState<ExpiringContract[]>([]);
@@ -191,8 +191,8 @@ export default function AdminBillingPage() {
             seatOneOffPence: 0,
             assessmentAddonPence: 0,
             featurePrices: {},
-            grandfatherOfferExpiresAt: null,
-            defaultGrandfatherDiscountPercent: 33,
+            founderOfferExpiresAt: null,
+            defaultFounderDiscountPercent: 33,
             contractTypePrices: DEFAULT_CONTRACT_TYPE_PRICES,
           },
           force,
@@ -208,11 +208,11 @@ export default function AdminBillingPage() {
               seatOneOffPence: Number(data.seatOneOffPence ?? data.seatMonthlyPence ?? 0),
               assessmentAddonPence: Number(data.assessmentAddonPence ?? 0),
               featurePrices: (data.featurePrices as Record<string, number>) ?? {},
-              grandfatherOfferExpiresAt: data.grandfatherOfferExpiresAt
-                ? String(data.grandfatherOfferExpiresAt)
+              founderOfferExpiresAt: data.founderOfferExpiresAt ?? data.grandfatherOfferExpiresAt
+                ? String(data.founderOfferExpiresAt ?? data.grandfatherOfferExpiresAt)
                 : null,
-              defaultGrandfatherDiscountPercent:
-                Number(data.defaultGrandfatherDiscountPercent ?? 33) || 33,
+              defaultFounderDiscountPercent:
+                Number(data.defaultFounderDiscountPercent ?? data.defaultGrandfatherDiscountPercent ?? 33) || 33,
               contractTypePrices,
             };
           },
@@ -232,8 +232,8 @@ export default function AdminBillingPage() {
         seatOneOffPence: pricing.seatOneOffPence,
         assessmentAddonPence: pricing.assessmentAddonPence,
         featurePrices: pricing.featurePrices,
-        grandfatherOfferExpiresAt: pricing.grandfatherOfferExpiresAt,
-        defaultGrandfatherDiscountPercent: pricing.defaultGrandfatherDiscountPercent,
+        founderOfferExpiresAt: pricing.founderOfferExpiresAt,
+        defaultFounderDiscountPercent: pricing.defaultFounderDiscountPercent,
         contractTypePrices: pricing.contractTypePrices,
       });
       setExpiring(expiringContracts);
@@ -504,11 +504,11 @@ export default function AdminBillingPage() {
                 <Label className={portalLabelClass}>Offer expiry date</Label>
                 <Input
                   type="date"
-                  value={pricing.grandfatherOfferExpiresAt ?? ""}
+                  value={pricing.founderOfferExpiresAt || ""}
                   onChange={(event) =>
                     setPricing((current) => ({
                       ...current,
-                      grandfatherOfferExpiresAt: event.target.value || null,
+                      founderOfferExpiresAt: event.target.value || null,
                     }))
                   }
                   className={cn(portalInputClass, "h-10")}
@@ -520,11 +520,11 @@ export default function AdminBillingPage() {
                   type="number"
                   min={0}
                   max={100}
-                  value={pricing.defaultGrandfatherDiscountPercent}
+                  value={pricing.defaultFounderDiscountPercent}
                   onChange={(event) =>
                     setPricing((current) => ({
                       ...current,
-                      defaultGrandfatherDiscountPercent: Number(event.target.value) || 0,
+                      defaultFounderDiscountPercent: Number(event.target.value) || 0,
                     }))
                   }
                   className={cn(portalInputClass, "h-10")}
