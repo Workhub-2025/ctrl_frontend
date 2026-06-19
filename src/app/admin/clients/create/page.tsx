@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CalendarClock, CheckCircle2, FolderPlus, KeyRound, Loader2, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, KeyRound, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -308,18 +308,6 @@ export default function CreateClientPage() {
                         View clients
                       </Button>
                     )}
-                    <Button type="button" variant="outline" asChild className="h-9 rounded-lg text-xs font-semibold">
-                      <Link href="/hiring-manager-dashboard/campaigns/create">
-                        <FolderPlus className="mr-2 h-4 w-4" />
-                        Create campaign
-                      </Link>
-                    </Button>
-                    <Button type="button" variant="outline" asChild className="h-9 rounded-lg text-xs font-semibold">
-                      <Link href="/hiring-manager-dashboard/sessions">
-                        <CalendarClock className="mr-2 h-4 w-4" />
-                        Create session
-                      </Link>
-                    </Button>
                     <Button type="button" variant="outline" onClick={() => setCreated(null)} className="h-9 rounded-lg text-xs font-semibold">
                       Create another
                     </Button>

@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, WifiOff } from "lucide-react";
+import { Loader2, LogOut, WifiOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type AssessmentReconnectOverlayProps = {
@@ -64,12 +65,22 @@ export function AssessmentPausedScreen({ className }: { className?: string }) {
         Assessment paused
       </h1>
       <p className="mt-4 max-w-lg text-sm leading-6 text-muted-foreground">
-        Your session was saved because the connection could not be restored. Please contact your
-        hiring team so they can review what happened and help you continue.
+        Your session was marked as abandoned because the connection could not be restored. Any
+        available progress snapshot has been saved for audit review.
       </p>
       <p className="mt-3 max-w-lg text-xs text-muted-foreground">
-        After your hiring team confirms the next step, refresh this page to continue.
+        You can close this assessment and return to your assessment list.
       </p>
+      <Button
+        type="button"
+        className="mt-6 rounded-lg"
+        onClick={() => {
+          window.location.href = "/candidate-dashboard/my-assessments";
+        }}
+      >
+        <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
+        Close assessment
+      </Button>
     </div>
   );
 }

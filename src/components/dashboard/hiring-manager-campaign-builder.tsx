@@ -40,10 +40,6 @@ import { OptionalDateField } from "@/components/dashboard/portal/optional-dateti
 
 interface CampaignBuilderProps {
   assessments: HiringManagerAssessment[];
-  allowExtremePja?: boolean;
-  allowAdvancedPja?: boolean;
-  allowTypingIntermediate?: boolean;
-  allowTypingExtreme?: boolean;
   allowRemoteDelivery?: boolean;
   allowHybridDelivery?: boolean;
   mode?: "create" | "edit-stack";
@@ -83,7 +79,7 @@ type CampaignDraft = {
   assessmentWeights: Record<string, number>;
   assessmentVersions: Record<string, string>;
   typingDifficulty: "Base" | "Intermediate" | "Extreme";
-  prioritisationScoringMode: "Basic" | "Advanced" | "Extreme";
+  prioritisationScoringMode: "Basic" | "Advanced";
 };
 
 const emptyDraft: CampaignDraft = {
@@ -147,50 +143,66 @@ function VersionPreviewPanel({
 
   if (samples.length === 0 && !audioPreview && !version?.description) {
     return (
-      <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 text-xs leading-5 text-slate-500">
-        Preview content is not available for this version yet.
-      </div>
+      <details className="group rounded-lg border border-white/10 bg-white/[0.02] text-xs text-slate-500">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-slate-400 marker:hidden">
+          <span className="flex items-center gap-2">
+            <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+            Quick preview
+          </span>
+          <span className="text-[10px] text-slate-500 group-open:hidden">Show</span>
+          <span className="hidden text-[10px] text-slate-500 group-open:inline">Hide</span>
+        </summary>
+        <div className="border-t border-white/10 px-3 py-3 leading-5">
+          Preview content is not available for this version yet.
+        </div>
+      </details>
     );
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-black/20 p-3">
-      <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-        <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-        Quick preview
-      </div>
-      {version?.description ? (
-        <p className="mb-2 text-xs leading-5 text-slate-400">{version.description}</p>
-      ) : null}
-      {samples.length > 0 ? (
-        <div className="space-y-2">
-          {samples.map((sample, index) => (
-            <p
-              key={`${assessment.slug}-${version?.version}-sample-${index}`}
-              className="rounded-md border border-white/8 bg-white/[0.025] px-3 py-2 text-xs leading-5 text-slate-300"
-            >
-              {sample}
-            </p>
-          ))}
-        </div>
-      ) : null}
-      {audioPreview?.src ? (
-        <div className="mt-3 rounded-md border border-cyan-400/20 bg-cyan-400/10 p-2.5">
-          <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
-            <Headphones className="h-3.5 w-3.5" aria-hidden="true" />
-            {audioPreview.label}
+    <details className="group rounded-lg border border-white/10 bg-black/20 text-xs text-slate-400">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-slate-400 marker:hidden">
+        <span className="flex items-center gap-2">
+          <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+          Quick preview
+        </span>
+        <span className="text-[10px] text-slate-500 group-open:hidden">Show</span>
+        <span className="hidden text-[10px] text-slate-500 group-open:inline">Hide</span>
+      </summary>
+      <div className="space-y-3 border-t border-white/10 p-3">
+        {version?.description ? (
+          <p className="text-xs leading-5 text-slate-400">{version.description}</p>
+        ) : null}
+        {samples.length > 0 ? (
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {samples.map((sample, index) => (
+              <p
+                key={`${assessment.slug}-${version?.version}-sample-${index}`}
+                className="rounded-md border border-white/8 bg-white/[0.025] px-3 py-2 text-xs leading-5 text-slate-300"
+              >
+                {sample}
+              </p>
+            ))}
           </div>
-          <audio
-            controls
-            preload="metadata"
-            src={`${audioPreview.src}#t=${audioPreview.startSeconds},${audioPreview.startSeconds + audioPreview.durationSeconds}`}
-            className="h-8 w-full"
-          >
-            Audio preview is not supported by this browser.
-          </audio>
-        </div>
-      ) : null}
-    </div>
+        ) : null}
+        {audioPreview?.src ? (
+          <div className="rounded-md border border-cyan-400/20 bg-cyan-400/10 p-2.5">
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+              <Headphones className="h-3.5 w-3.5" aria-hidden="true" />
+              {audioPreview.label}
+            </div>
+            <audio
+              controls
+              preload="metadata"
+              src={`${audioPreview.src}#t=${audioPreview.startSeconds},${audioPreview.startSeconds + audioPreview.durationSeconds}`}
+              className="h-8 w-full"
+            >
+              Audio preview is not supported by this browser.
+            </audio>
+          </div>
+        ) : null}
+      </div>
+    </details>
   );
 }
 
@@ -212,10 +224,6 @@ function buildEqualWeights(slugs: string[]) {
 
 export function HiringManagerCampaignBuilder({
   assessments,
-  allowExtremePja = true,
-  allowAdvancedPja = false,
-  allowTypingIntermediate = true,
-  allowTypingExtreme = false,
   allowRemoteDelivery = false,
   allowHybridDelivery = false,
   mode = "create",
@@ -548,8 +556,8 @@ export function HiringManagerCampaignBuilder({
   };
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="space-y-5 xl:sticky xl:top-24 self-start max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
+    <div className="space-y-5">
+      <div className="space-y-5">
         {!isEditStackMode ? (
         <Card className={portalHeroPanelClass}>
           <CardHeader className="border-b border-white/5 p-5">
@@ -704,8 +712,8 @@ export function HiringManagerCampaignBuilder({
         </Card>
       </div>
 
-      <aside className="space-y-4">
-        <Card className={cn(portalHeroPanelClass, "sticky top-24")}>
+      <section className="space-y-4">
+        <Card className={portalHeroPanelClass}>
           <CardHeader className="border-b border-white/5 p-5">
             <CardTitle className="text-base font-bold text-white">
               {isEditStackMode ? "Update campaign setup" : "Campaign review"}
@@ -767,10 +775,10 @@ export function HiringManagerCampaignBuilder({
                   </Button>
                 )}
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 {selectedAssessments.length === 0 ? (
                   <p className="text-xs leading-normal text-slate-500 italic">
-                    Select at least one assessment from the stack on the left.
+                    Select at least one assessment from the stack above.
                   </p>
                 ) : (
                   selectedAssessments.map((assessment, index) => {
@@ -799,25 +807,19 @@ export function HiringManagerCampaignBuilder({
                           </Label>
                           <div className="mt-2 grid gap-1.5">
                             {(["Base", "Intermediate", "Extreme"] as const).map((level) => {
-                              const isIntermediate = level === "Intermediate";
-                              const isExtreme = level === "Extreme";
-                              const isDisabled = (isIntermediate && !allowTypingIntermediate) || (isExtreme && !allowTypingExtreme);
                               const isActive = draft.typingDifficulty === level;
                               return (
                                 <button
                                   key={level}
                                   type="button"
-                                  disabled={isDisabled}
-                                  onClick={() => !isDisabled && updateDraft("typingDifficulty", level)}
+                                  onClick={() => updateDraft("typingDifficulty", level)}
                                   className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
-                                    isDisabled
-                                      ? "border-white/5 bg-white/[0.01] text-slate-600 cursor-not-allowed"
-                                      : isActive
+                                    isActive
                                       ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
                                       : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
                                   }`}
                                 >
-                                  {level} {isDisabled && "🔒"}
+                                  {level}
                                 </button>
                               );
                             })}
@@ -859,26 +861,20 @@ export function HiringManagerCampaignBuilder({
                             Scoring Mode
                           </Label>
                           <div className="mt-2 grid gap-1.5">
-                            {(["Basic", "Advanced", "Extreme"] as const).map((mode) => {
-                              const isAdvanced = mode === "Advanced";
-                              const isExtreme = mode === "Extreme";
-                              const isDisabled = (isAdvanced && !allowAdvancedPja) || (isExtreme && !allowExtremePja);
+                            {(["Basic", "Advanced"] as const).map((mode) => {
                               const isActive = draft.prioritisationScoringMode === mode;
                               return (
                                 <button
                                   key={mode}
                                   type="button"
-                                  disabled={isDisabled}
-                                  onClick={() => !isDisabled && updateDraft("prioritisationScoringMode", mode)}
+                                  onClick={() => updateDraft("prioritisationScoringMode", mode)}
                                   className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
-                                    isDisabled
-                                      ? "border-white/5 bg-white/[0.01] text-slate-600 cursor-not-allowed"
-                                      : isActive
+                                    isActive
                                       ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
                                       : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
                                   }`}
                                 >
-                                  {mode} {isDisabled && "🔒"}
+                                  {mode}
                                 </button>
                               );
                             })}
@@ -1004,7 +1000,7 @@ export function HiringManagerCampaignBuilder({
 
           </CardContent>
         </Card>
-      </aside>
+      </section>
     </div>
   );
 }

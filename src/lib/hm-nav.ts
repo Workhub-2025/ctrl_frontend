@@ -5,7 +5,6 @@ import {
   Headset,
   LayoutDashboard,
   Layers3,
-  ShieldAlert,
   Users,
 } from "lucide-react";
 
@@ -64,13 +63,6 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
         hint: "Assessment library",
         icon: BookOpenCheck,
         isActive: (p) => p.startsWith("/hiring-manager-dashboard/assessments"),
-      },
-      {
-        href: "/hiring-manager-dashboard/assessment-recovery",
-        label: "Assessment recovery",
-        hint: "Abandoned attempts and unlocks",
-        icon: ShieldAlert,
-        isActive: (p) => p.startsWith("/hiring-manager-dashboard/assessment-recovery"),
       },
     ],
   },

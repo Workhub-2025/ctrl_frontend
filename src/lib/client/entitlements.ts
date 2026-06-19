@@ -3,13 +3,9 @@ export const CLIENT_DELIVERY_FEATURES = [
   { key: "deliveryHybrid", label: "Hybrid delivery", group: "Delivery" },
 ] as const;
 
-/** @deprecated Billable client upgrades use CLIENT_DELIVERY_FEATURES only. Difficulty options are not features. */
 export const CLIENT_PLATFORM_FEATURES = [
   ...CLIENT_DELIVERY_FEATURES,
-  { key: "advancedPja", label: "Advanced PJA scoring", group: "Prioritisation" },
-  { key: "extremePja", label: "Extreme PJA scoring", group: "Prioritisation" },
-  { key: "typingIntermediate", label: "Intermediate typing", group: "Typing" },
-  { key: "typingExtreme", label: "Extreme typing", group: "Typing" },
+  { key: "assessmentRecovery", label: "Assessment recovery audit", group: "Recovery" },
 ] as const;
 
 export const DEFAULT_PLATFORM_ASSESSMENT_SLUGS = [

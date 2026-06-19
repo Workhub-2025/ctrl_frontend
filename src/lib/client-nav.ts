@@ -3,7 +3,6 @@ import {
   ClipboardCheck,
   Home,
   MessageSquare,
-  ShieldAlert,
   TrendingUp,
   UserCheck,
   Users,
@@ -73,13 +72,6 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
         isActive: (pathname) =>
           pathname.startsWith("/client-dashboard/client-approved-candidates") ||
           pathname.startsWith("/client-dashboard/candidate-approvals"),
-      },
-      {
-        href: "/client-dashboard/assessment-recovery",
-        label: "Assessment recovery",
-        hint: "Abandoned attempts and unlocks",
-        icon: ShieldAlert,
-        isActive: (pathname) => pathname.startsWith("/client-dashboard/assessment-recovery"),
       },
     ],
   },

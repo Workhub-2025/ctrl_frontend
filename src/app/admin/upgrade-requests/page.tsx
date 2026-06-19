@@ -55,10 +55,7 @@ type EntitlementClient = {
 const FEATURES = [
   { key: "deliveryRemote", label: "Remote delivery", group: "Delivery" },
   { key: "deliveryHybrid", label: "Hybrid delivery", group: "Delivery" },
-  { key: "advancedPja", label: "Advanced PJA scoring", group: "Prioritisation" },
-  { key: "extremePja", label: "Extreme PJA scoring", group: "Prioritisation" },
-  { key: "typingIntermediate", label: "Intermediate typing", group: "Typing" },
-  { key: "typingExtreme", label: "Extreme typing", group: "Typing" },
+  { key: "assessmentRecovery", label: "Assessment recovery audit", group: "Recovery" },
 ] as const;
 
 const ASSESSMENT_VERSION_ENTITLEMENTS = [

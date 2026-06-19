@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AdminPageHeader, AdminTableShell } from "@/components/admin/admin-portal-ui";
 import { portalBadgeClass } from "@/components/dashboard/portal/portal-ui";
-import { AssessmentRecoveryDialog } from "@/components/assessment/shared";
 import { formatAbandonSnapshotSummary } from "@/lib/assessment-abandon-summary";
 import { formatAssessmentSlugLabel } from "@/lib/assessment-result-status";
 import {
@@ -21,7 +20,6 @@ type AssessmentRecoveryWorkspaceProps = {
   description?: string;
   scope?: "admin" | "portal";
   showSearch?: boolean;
-  showForceAbandon?: boolean;
 };
 
 function relativeTime(dateStr?: string | null): string {
@@ -46,14 +44,11 @@ export function AssessmentRecoveryWorkspace({
   description = "Review abandoned assessment snapshots and unlock candidates to resume or restart.",
   scope = "portal",
   showSearch = false,
-  showForceAbandon = false,
 }: AssessmentRecoveryWorkspaceProps) {
   const [attempts, setAttempts] = useState<CandidateAssessmentAttempt[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selected, setSelected] = useState<CandidateAssessmentAttempt | null>(null);
-  const [recoverOpen, setRecoverOpen] = useState(false);
 
   const loadAttempts = useCallback(async (query?: string) => {
     try {
@@ -75,25 +70,8 @@ export function AssessmentRecoveryWorkspace({
     void loadAttempts();
   }, [loadAttempts]);
 
-  const openRecover = (attempt: CandidateAssessmentAttempt) => {
-    setSelected(attempt);
-    setRecoverOpen(true);
-  };
-
   const handleSearch = () => {
     void loadAttempts(searchQuery);
-  };
-
-  const handleForceAbandon = async (attempt: CandidateAssessmentAttempt) => {
-    if (!attempt.candidateSessionDocumentId || !attempt.assessmentSlug) return;
-    if (!window.confirm("Force abandon this assessment attempt?")) return;
-
-    await AssessmentAttemptService.adminForceAbandon({
-      candidateSessionDocumentId: attempt.candidateSessionDocumentId,
-      assessmentSlug: attempt.assessmentSlug,
-      reason: "admin_force_abandon",
-    });
-    await loadAttempts(searchQuery);
   };
 
   return (
@@ -154,7 +132,7 @@ export function AssessmentRecoveryWorkspace({
                   <th className="px-4 py-3 font-medium">Snapshot</th>
                   <th className="px-4 py-3 font-medium">Campaign</th>
                   <th className="px-4 py-3 font-medium">Abandoned</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -193,20 +171,7 @@ export function AssessmentRecoveryWorkspace({
                       {relativeTime(attempt.abandonedAt ?? attempt.lastHeartbeatAt)}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <Button size="sm" onClick={() => openRecover(attempt)}>
-                          Recover
-                        </Button>
-                        {showForceAbandon ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => void handleForceAbandon(attempt)}
-                          >
-                            Force abandon
-                          </Button>
-                        ) : null}
-                      </div>
+                      <Badge className={portalBadgeClass}>Abandoned</Badge>
                     </td>
                   </tr>
                 ))}
@@ -216,18 +181,6 @@ export function AssessmentRecoveryWorkspace({
         )}
       </AdminTableShell>
 
-      <AssessmentRecoveryDialog
-        attempt={selected}
-        open={recoverOpen}
-        onOpenChange={setRecoverOpen}
-        onRecovered={() => void loadAttempts(searchQuery)}
-        recoverFn={
-          scope === "admin"
-            ? AssessmentAttemptService.adminRecover.bind(AssessmentAttemptService)
-            : AssessmentAttemptService.recover.bind(AssessmentAttemptService)
-        }
-        versionsUrl={scope === "admin" ? "/api/admin/assessment-versions" : "/api/assessment/versions"}
-      />
     </div>
   );
 }

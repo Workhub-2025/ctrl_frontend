@@ -32,10 +32,6 @@ function deliveryModeFromCampaign(
 type HiringManagerCampaignEditViewProps = {
   campaignId: string;
   assessments: HiringManagerAssessment[];
-  allowExtremePja?: boolean;
-  allowAdvancedPja?: boolean;
-  allowTypingIntermediate?: boolean;
-  allowTypingExtreme?: boolean;
   allowRemoteDelivery?: boolean;
   allowHybridDelivery?: boolean;
 };
@@ -65,16 +61,15 @@ function buildInitialStackDraft(campaign: HiringManagerCampaignDetail) {
       : "Base";
 
   const prioritisationConfig = settings.prioritisation;
-  const prioritisationScoringMode =
+  const rawPrioritisationScoringMode =
     prioritisationConfig &&
     typeof prioritisationConfig === "object" &&
     "scoringMode" in prioritisationConfig &&
     typeof (prioritisationConfig as { scoringMode?: unknown }).scoringMode === "string"
-      ? ((prioritisationConfig as { scoringMode: string }).scoringMode as
-          | "Basic"
-          | "Advanced"
-          | "Extreme")
+      ? (prioritisationConfig as { scoringMode: string }).scoringMode
       : "Basic";
+  const prioritisationScoringMode: "Basic" | "Advanced" =
+    rawPrioritisationScoringMode === "Advanced" ? "Advanced" : "Basic";
 
   return {
     assessmentSlugs,
@@ -97,10 +92,6 @@ function buildInitialStackDraft(campaign: HiringManagerCampaignDetail) {
 export function HiringManagerCampaignEditView({
   campaignId,
   assessments,
-  allowExtremePja = false,
-  allowAdvancedPja = false,
-  allowTypingIntermediate = true,
-  allowTypingExtreme = false,
   allowRemoteDelivery = false,
   allowHybridDelivery = false,
 }: HiringManagerCampaignEditViewProps) {
@@ -207,10 +198,6 @@ export function HiringManagerCampaignEditView({
           campaignId={campaignId}
           initialStackDraft={initialStackDraft}
           assessments={assessments}
-          allowExtremePja={allowExtremePja}
-          allowAdvancedPja={allowAdvancedPja}
-          allowTypingIntermediate={allowTypingIntermediate}
-          allowTypingExtreme={allowTypingExtreme}
           allowRemoteDelivery={allowRemoteDelivery}
           allowHybridDelivery={allowHybridDelivery}
         />

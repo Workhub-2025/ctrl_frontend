@@ -15,10 +15,6 @@ export default async function HiringManagerCampaignEditPage({
   const { campaignId } = await params;
   const { assessments, error } = await getHiringManagerAssessments();
 
-  let allowExtremePja = false;
-  let allowAdvancedPja = false;
-  let allowTypingIntermediate = false;
-  let allowTypingExtreme = false;
   let allowRemoteDelivery = false;
   let allowHybridDelivery = false;
 
@@ -29,10 +25,6 @@ export default async function HiringManagerCampaignEditPage({
     if (meResponse.ok) {
       const userData = await meResponse.json();
       const features = userData?.client?.features ?? {};
-      allowExtremePja = features.extremePja === true;
-      allowAdvancedPja = features.advancedPja === true;
-      allowTypingIntermediate = features.typingIntermediate === true;
-      allowTypingExtreme = features.typingExtreme === true || features.typingAdvanced === true;
       allowRemoteDelivery = features.deliveryRemote === true;
       allowHybridDelivery = features.deliveryHybrid === true;
     }
@@ -52,10 +44,6 @@ export default async function HiringManagerCampaignEditPage({
     <HiringManagerCampaignEditView
       campaignId={campaignId}
       assessments={assessments}
-      allowExtremePja={allowExtremePja}
-      allowAdvancedPja={allowAdvancedPja}
-      allowTypingIntermediate={allowTypingIntermediate}
-      allowTypingExtreme={allowTypingExtreme}
       allowRemoteDelivery={allowRemoteDelivery}
       allowHybridDelivery={allowHybridDelivery}
     />

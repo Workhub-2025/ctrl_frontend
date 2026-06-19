@@ -45,6 +45,7 @@ const navItems = [
   { label: "Disciplines", href: "#disciplines" },
   { label: "Hiring Workflow", href: "#workflow" },
   { label: "Candidate Workflow", href: "#candidate-experience" },
+  { label: "Contracts", href: "#contracts" },
 ];
 
 const disciplines: { label: string; icon: typeof Siren; tint: DisciplineTint }[] = [
@@ -149,6 +150,76 @@ const candidateWorkflowSteps: {
   },
 ];
 
+type ContractOption = {
+  tier: "minimum" | "professional" | "grandfather";
+  label: string;
+  includedSeats: number;
+  deliveryModes: string[];
+  includesCoreAssessments: boolean;
+  includesPaidFutureFeaturesDuringFirstYear?: boolean;
+  discountPercent?: number;
+};
+
+type ContractOptionsData = {
+  grandfatherAvailable: boolean;
+  grandfatherOfferExpiresAt: string | null;
+  options: ContractOption[];
+};
+
+const fallbackContractOptions: ContractOptionsData = {
+  grandfatherAvailable: true,
+  grandfatherOfferExpiresAt: null,
+  options: [
+    {
+      tier: "minimum",
+      label: "Minimum",
+      includedSeats: 1,
+      deliveryModes: ["in_person"],
+      includesCoreAssessments: true,
+    },
+    {
+      tier: "professional",
+      label: "Professional",
+      includedSeats: 3,
+      deliveryModes: ["in_person"],
+      includesCoreAssessments: true,
+    },
+    {
+      tier: "grandfather",
+      label: "Grandfather",
+      includedSeats: 3,
+      deliveryModes: ["in_person", "remote", "hybrid"],
+      includesCoreAssessments: true,
+      includesPaidFutureFeaturesDuringFirstYear: true,
+      discountPercent: 30,
+    },
+  ],
+};
+
+const contractDetails: Record<
+  ContractOption["tier"],
+  { accent: Accent; summary: string; badge: string; footnote: string }
+> = {
+  minimum: {
+    accent: "cyan",
+    summary: "For smaller teams running secure in-person assessment sessions.",
+    badge: "Starter",
+    footnote: "In-person delivery only",
+  },
+  professional: {
+    accent: "blue",
+    summary: "For active hiring teams that need three manager seats from day one.",
+    badge: "Standard",
+    footnote: "In-person delivery only",
+  },
+  grandfather: {
+    accent: "emerald",
+    summary: "Launch-window contract with wider delivery modes and founder loyalty benefits.",
+    badge: "Launch only",
+    footnote: "Moves to Grandfather - Founders after year one",
+  },
+};
+
 type Accent = "cyan" | "blue" | "violet" | "emerald";
 
 const accentStyles: Record<Accent, { text: string; dot: string; gradient: string }> = {
@@ -249,6 +320,7 @@ export default function Home() {
   const [navHeight, setNavHeight] = useState(96);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
+  const [contractData, setContractData] = useState<ContractOptionsData>(fallbackContractOptions);
   const {
     settings: accessibilitySettings,
     updateSettings: updateAccessibilitySettings,
@@ -268,6 +340,25 @@ export default function Home() {
     offset: ["start center", "end center"]
   });
   const candidateHeight = useTransform(candidateProgress, [0, 1], ["0%", "100%"]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch("/api/public/contract-options", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Contract options unavailable"))))
+      .then((body) => {
+        if (!cancelled && body?.data?.options?.length) {
+          setContractData(body.data as ContractOptionsData);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setContractData(fallbackContractOptions);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -896,12 +987,91 @@ export default function Home() {
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                       </Link>
                     </Button>
-                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("contact")} className="h-12 rounded-full border border-slate-200 bg-transparent px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white md:h-14 md:text-base">
+                    <Button type="button" variant="ghost" onClick={() => scrollToAnchor("contracts")} className="h-12 rounded-full border border-slate-200 bg-transparent px-8 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white md:h-14 md:text-base">
                       View Packages
                     </Button>
                   </div>
                 </Reveal>
               </div>
+            </section>
+
+            <section id="contracts" className="w-full">
+              <div className="text-center mb-14 max-w-3xl mx-auto">
+                <SectionHeading
+                  eyebrow="Contract Options"
+                  accent="cyan"
+                  title={<>Choose the contract that fits your <GradientText accent="cyan">hiring rhythm</GradientText></>}
+                  body="Packages are shown as entitlement structures only. Final commercial pricing stays with the CTRL team and is attached by admins when a client account is created."
+                  centered
+                />
+              </div>
+
+              <RevealGroup stagger={0.12} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                {contractData.options.map((option) => {
+                  const details = contractDetails[option.tier];
+                  const accent = accentStyles[details.accent];
+                  const deliveryModes = option.deliveryModes.map((mode) =>
+                    mode.replace("_", " ").replace(/\b\w/g, (char) => char.toUpperCase())
+                  );
+                  const features = [
+                    `${option.includedSeats} hiring manager ${option.includedSeats === 1 ? "seat" : "seats"}`,
+                    "4 core assessments with version selection",
+                    `${deliveryModes.join(", ")} delivery`,
+                    option.tier === "grandfather" && option.includesPaidFutureFeaturesDuringFirstYear
+                      ? "Paid feature and assessment upgrades included in year one"
+                      : null,
+                    option.tier === "grandfather" && option.discountPercent
+                      ? `${option.discountPercent}% loyalty discount on future upgrades after year one`
+                      : null,
+                  ].filter((feature): feature is string => Boolean(feature));
+
+                  return (
+                    <RevealItem key={option.tier} variant="fade-up" className="h-full">
+                      <article className="flex h-full flex-col rounded-lg border border-slate-200 bg-white/75 p-6 shadow-sm transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <span className={cn("font-mono text-[10px] font-semibold uppercase tracking-[0.2em]", accent.text)}>
+                              {details.badge}
+                            </span>
+                            <h3 className="mt-3 font-display text-2xl font-medium tracking-tight text-slate-900 dark:text-white">
+                              {option.label}
+                            </h3>
+                          </div>
+                          <span className={cn("mt-1 h-2 w-2 rounded-full", accent.dot)} aria-hidden="true" />
+                        </div>
+                        <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                          {details.summary}
+                        </p>
+                        <ul className="mt-6 space-y-3">
+                          {features.map((feature) => (
+                            <li key={feature} className="flex gap-3 text-sm leading-5 text-slate-700 dark:text-slate-300">
+                              <CheckCircle2 className={cn("mt-0.5 h-4 w-4 shrink-0", accent.text)} aria-hidden="true" />
+                              <span>{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-auto pt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                          {details.footnote}
+                        </p>
+                      </article>
+                    </RevealItem>
+                  );
+                })}
+              </RevealGroup>
+
+              {contractData.grandfatherOfferExpiresAt ? (
+                <Reveal variant="fade-up">
+                  <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    Grandfather availability is controlled by the platform expiry date and is currently listed until{" "}
+                    {new Date(contractData.grandfatherOfferExpiresAt).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                    .
+                  </p>
+                </Reveal>
+              ) : null}
             </section>
 
           </div>
