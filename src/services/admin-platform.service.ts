@@ -2,6 +2,7 @@ import "server-only";
 
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 import { ContractTier, ContractStatus } from "@/types";
+import { resolveEffectiveAnnualPlatformPence } from "@/lib/billing/contract-pricing-lock";
 
 class AdminStrapiRequestError extends Error {
   status: number;
@@ -97,9 +98,33 @@ type RawContract = {
   endDate?: string | null;
   paymentStatus?: "not_required" | "pending" | "paid" | "failed";
   tier?: ContractTier | string;
+  lockedAnnualPlatformPence?: number | null;
+  pricingLockedUntil?: string | null;
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
+};
+
+type RawPlatformPricing = {
+  currency?: string;
+  basePlatformYearlyPence?: number;
+  contractTypePrices?: Record<string, { basePlatformYearlyPence?: number; label?: string }>;
+};
+
+type RawBillingRequest = {
+  documentId?: string;
+  id?: string;
+  requestNumber?: string;
+  clientDocumentId?: string;
+  clientName?: string | null;
+  requestKind?: "client_upgrade" | "contract_renewal" | "contract_activation" | string;
+  upgradeType?: string;
+  subject?: string;
+  billingStatus?: "requested" | "invoice_sent" | "paid" | "failed" | string;
+  amountDuePence?: number | null;
+  currency?: string;
+  paidAt?: string | null;
+  createdAt?: string;
 };
 
 type RawClient = {
@@ -175,6 +200,62 @@ export type AdminOverview = {
     id: string;
     title: string;
     detail: string;
+  }>;
+};
+
+export type AdminRevenueAnalytics = {
+  generatedAt: string;
+  currency: string;
+  summary: {
+    annualRecurringPence: number;
+    monthlyRecurringPence: number;
+    collectedThisMonthPence: number;
+    collectedYearToDatePence: number;
+    outstandingInvoicePence: number;
+    requestedPipelinePence: number;
+    renewalPipelinePence: number;
+    activeContracts: number;
+    activeClients: number;
+    activeSeats: number;
+    averageRevenuePerClientPence: number;
+  };
+  byTier: Array<{
+    tier: string;
+    label: string;
+    clients: number;
+    seats: number;
+    annualRecurringPence: number;
+    sharePercent: number;
+  }>;
+  pipeline: Array<{
+    status: string;
+    label: string;
+    amountPence: number;
+    count: number;
+  }>;
+  monthlyRevenue: Array<{
+    month: string;
+    label: string;
+    paidPence: number;
+    invoiceSentPence: number;
+    requestedPence: number;
+  }>;
+  topClients: Array<{
+    clientId: string;
+    clientName: string;
+    tier: string;
+    seats: number;
+    annualRecurringPence: number;
+    contractEndDate: string | null;
+  }>;
+  recentPayments: Array<{
+    id: string;
+    requestNumber: string;
+    clientName: string;
+    subject: string;
+    amountPence: number;
+    paidAt: string | null;
+    requestKind: string;
   }>;
 };
 
@@ -727,6 +808,184 @@ function normalizeAuditLog(log: RawAuditLog): AdminAuditLogRow {
   };
 }
 
+function asPence(value: unknown) {
+  const amount = Number(value ?? 0);
+  return Number.isFinite(amount) && amount > 0 ? Math.round(amount) : 0;
+}
+
+function parseTime(value?: string | null) {
+  if (!value) return null;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) ? time : null;
+}
+
+function monthKey(date: Date) {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function monthLabel(key: string) {
+  const [year, month] = key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "short",
+    year: "2-digit",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+function lastTwelveMonthKeys() {
+  const start = new Date();
+  start.setUTCDate(1);
+  start.setUTCHours(0, 0, 0, 0);
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const date = new Date(start);
+    date.setUTCMonth(start.getUTCMonth() - (11 - index));
+    return monthKey(date);
+  });
+}
+
+function requestAmount(request: RawBillingRequest) {
+  return asPence(request.amountDuePence);
+}
+
+function statusLabel(status: string) {
+  switch (status) {
+    case "paid":
+      return "Paid";
+    case "invoice_sent":
+      return "Invoice sent";
+    case "requested":
+      return "Requested";
+    case "failed":
+      return "Failed";
+    default:
+      return humanize(status);
+  }
+}
+
+function analyticsTierLabel(tier?: string | null, pricing?: RawPlatformPricing) {
+  const normalized = (tier || "unknown").toLowerCase();
+  const configured = pricing?.contractTypePrices?.[normalized]?.label;
+  if (configured) return configured;
+  if (normalized === "essential") return "Essential";
+  if (normalized === "professional") return "Professional";
+  if (normalized === "founder") return "Founder";
+  return humanize(normalized);
+}
+
+async function getPlatformPricing(authToken?: string | null) {
+  try {
+    const response = await adminStrapiRequest<{ data?: RawPlatformPricing }>(
+      "/platform-pricing",
+      undefined,
+      authToken
+    );
+    return response.data ?? {};
+  } catch {
+    return {};
+  }
+}
+
+async function getRawBillingRequests(authToken?: string | null) {
+  const response = await adminStrapiRequest<StrapiListResponse<RawBillingRequest>>(
+    "/admin/billing/upgrade-requests",
+    undefined,
+    authToken
+  );
+
+  return response.data ?? [];
+}
+
+function resolveContractAnnualPence(contract: RawContract, pricing: RawPlatformPricing) {
+  return asPence(
+    resolveEffectiveAnnualPlatformPence(
+      {
+        tier: contract.tier,
+        lockedAnnualPlatformPence: contract.lockedAnnualPlatformPence,
+        pricingLockedUntil: contract.pricingLockedUntil,
+      },
+      pricing
+    )
+  );
+}
+
+function requestDateForGrouping(request: RawBillingRequest) {
+  return request.billingStatus === "paid"
+    ? request.paidAt ?? request.createdAt
+    : request.createdAt;
+}
+
+function buildMonthlyRevenue(requests: RawBillingRequest[]) {
+  const keys = lastTwelveMonthKeys();
+  const rows = new Map(
+    keys.map((key) => [
+      key,
+      {
+        month: key,
+        label: monthLabel(key),
+        paidPence: 0,
+        invoiceSentPence: 0,
+        requestedPence: 0,
+      },
+    ])
+  );
+
+  for (const request of requests) {
+    const amount = requestAmount(request);
+    if (!amount) continue;
+
+    const dateValue = requestDateForGrouping(request);
+    const time = parseTime(dateValue);
+    if (!time) continue;
+
+    const key = monthKey(new Date(time));
+    const row = rows.get(key);
+    if (!row) continue;
+
+    if (request.billingStatus === "paid") {
+      row.paidPence += amount;
+    } else if (request.billingStatus === "invoice_sent") {
+      row.invoiceSentPence += amount;
+    } else if (request.billingStatus === "requested") {
+      row.requestedPence += amount;
+    }
+  }
+
+  return Array.from(rows.values());
+}
+
+function buildPipeline(requests: RawBillingRequest[]) {
+  const order = ["requested", "invoice_sent", "paid", "failed"];
+  const buckets = new Map(
+    order.map((status) => [
+      status,
+      {
+        status,
+        label: statusLabel(status),
+        amountPence: 0,
+        count: 0,
+      },
+    ])
+  );
+
+  for (const request of requests) {
+    const status = request.billingStatus || "requested";
+    const amount = requestAmount(request);
+    const bucket =
+      buckets.get(status) ??
+      {
+        status,
+        label: statusLabel(status),
+        amountPence: 0,
+        count: 0,
+      };
+    bucket.amountPence += amount;
+    bucket.count += 1;
+    buckets.set(status, bucket);
+  }
+
+  return Array.from(buckets.values()).filter((bucket) => bucket.count > 0 || order.includes(bucket.status));
+}
+
 export async function getAdminAuditLogs(
   authToken?: string | null
 ): Promise<AdminAuditLogRow[]> {
@@ -915,6 +1174,172 @@ export async function getAdminOverview(authToken?: string | null): Promise<Admin
           }]
         : []),
     ],
+  };
+}
+
+export async function getAdminRevenueAnalytics(
+  authToken?: string | null
+): Promise<AdminRevenueAnalytics> {
+  const [rawClients, pricing, billingRequests] = await Promise.all([
+    getRawClientsWithUsers(authToken),
+    getPlatformPricing(authToken),
+    getRawBillingRequests(authToken),
+  ]);
+
+  const currency =
+    pricing.currency ||
+    billingRequests.find((request) => request.currency)?.currency ||
+    "gbp";
+
+  const activeContractRows: Array<{
+    client: RawClient;
+    contract: RawContract;
+    annualRecurringPence: number;
+  }> = [];
+
+  for (const client of rawClients) {
+    const contract = getActiveContract(client);
+    if (!contract) continue;
+    activeContractRows.push({
+      client,
+      contract,
+      annualRecurringPence: resolveContractAnnualPence(contract, pricing),
+    });
+  }
+
+  const annualRecurringPence = activeContractRows.reduce(
+    (total, row) => total + row.annualRecurringPence,
+    0
+  );
+  const activeSeats = activeContractRows.reduce(
+    (total, row) => total + Number(row.contract.seatCount ?? 0),
+    0
+  );
+
+  const tierBuckets = new Map<
+    string,
+    {
+      tier: string;
+      label: string;
+      clients: number;
+      seats: number;
+      annualRecurringPence: number;
+      sharePercent: number;
+    }
+  >();
+
+  for (const row of activeContractRows) {
+    const tier = String(row.contract.tier ?? "unknown");
+    const bucket =
+      tierBuckets.get(tier) ??
+      {
+        tier,
+        label: analyticsTierLabel(tier, pricing),
+        clients: 0,
+        seats: 0,
+        annualRecurringPence: 0,
+        sharePercent: 0,
+      };
+    bucket.clients += 1;
+    bucket.seats += Number(row.contract.seatCount ?? 0);
+    bucket.annualRecurringPence += row.annualRecurringPence;
+    tierBuckets.set(tier, bucket);
+  }
+
+  const byTier = Array.from(tierBuckets.values())
+    .map((bucket) => ({
+      ...bucket,
+      sharePercent: annualRecurringPence
+        ? Math.round((bucket.annualRecurringPence / annualRecurringPence) * 100)
+        : 0,
+    }))
+    .sort((a, b) => b.annualRecurringPence - a.annualRecurringPence);
+
+  const now = new Date();
+  const monthStart = new Date(now);
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+
+  const paidRequests = billingRequests.filter((request) => request.billingStatus === "paid");
+  const collectedThisMonthPence = paidRequests.reduce((total, request) => {
+    const paidTime = parseTime(request.paidAt ?? request.createdAt);
+    return paidTime && paidTime >= monthStart.getTime()
+      ? total + requestAmount(request)
+      : total;
+  }, 0);
+  const collectedYearToDatePence = paidRequests.reduce((total, request) => {
+    const paidTime = parseTime(request.paidAt ?? request.createdAt);
+    return paidTime && paidTime >= yearStart.getTime()
+      ? total + requestAmount(request)
+      : total;
+  }, 0);
+
+  const outstandingInvoicePence = billingRequests.reduce(
+    (total, request) =>
+      request.billingStatus === "invoice_sent" ? total + requestAmount(request) : total,
+    0
+  );
+  const requestedPipelinePence = billingRequests.reduce(
+    (total, request) =>
+      request.billingStatus === "requested" ? total + requestAmount(request) : total,
+    0
+  );
+  const renewalPipelinePence = billingRequests.reduce(
+    (total, request) =>
+      request.requestKind === "contract_renewal" &&
+      (request.billingStatus === "requested" || request.billingStatus === "invoice_sent")
+        ? total + requestAmount(request)
+        : total,
+    0
+  );
+
+  return {
+    generatedAt: new Date().toISOString(),
+    currency,
+    summary: {
+      annualRecurringPence,
+      monthlyRecurringPence: Math.round(annualRecurringPence / 12),
+      collectedThisMonthPence,
+      collectedYearToDatePence,
+      outstandingInvoicePence,
+      requestedPipelinePence,
+      renewalPipelinePence,
+      activeContracts: activeContractRows.length,
+      activeClients: new Set(
+        activeContractRows.map((row) => row.client.documentId ?? String(row.client.id ?? ""))
+      ).size,
+      activeSeats,
+      averageRevenuePerClientPence: activeContractRows.length
+        ? Math.round(annualRecurringPence / activeContractRows.length)
+        : 0,
+    },
+    byTier,
+    pipeline: buildPipeline(billingRequests),
+    monthlyRevenue: buildMonthlyRevenue(billingRequests),
+    topClients: activeContractRows
+      .map((row) => ({
+        clientId: row.client.documentId ?? String(row.client.id ?? row.client.name ?? "client"),
+        clientName: row.client.name ?? "Unnamed client",
+        tier: analyticsTierLabel(row.contract.tier, pricing),
+        seats: Number(row.contract.seatCount ?? 0),
+        annualRecurringPence: row.annualRecurringPence,
+        contractEndDate: row.contract.endDate ?? null,
+      }))
+      .sort((a, b) => b.annualRecurringPence - a.annualRecurringPence)
+      .slice(0, 8),
+    recentPayments: paidRequests
+      .map((request) => ({
+        id: request.documentId ?? String(request.id ?? request.requestNumber ?? "billing-request"),
+        requestNumber: request.requestNumber ?? request.documentId ?? "Billing request",
+        clientName: request.clientName || "Unknown client",
+        subject: request.subject ?? statusLabel(request.requestKind ?? "Billing"),
+        amountPence: requestAmount(request),
+        paidAt: request.paidAt ?? request.createdAt ?? null,
+        requestKind: request.requestKind ?? "billing",
+      }))
+      .sort((a, b) => (parseTime(b.paidAt) ?? 0) - (parseTime(a.paidAt) ?? 0))
+      .slice(0, 6),
   };
 }
 

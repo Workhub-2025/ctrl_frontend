@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   ArrowUpRight,
+  BarChart3,
   Building2,
   CreditCard,
   History,
@@ -88,6 +89,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         isActive: (pathname) => pathname.startsWith("/admin/billing/requests"),
       },
       {
+        href: "/admin/analytics",
+        label: "Analytics",
+        hint: "Revenue and pipeline",
+        icon: BarChart3,
+        isActive: (pathname) => pathname.startsWith("/admin/analytics"),
+      },
+      {
         href: "/admin/upgrade-requests",
         label: "Entitlements",
         hint: "Manual seats and features",
@@ -162,6 +170,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   clients: "Clients",
   create: "Add client",
   billing: "Pricing & invoices",
+  analytics: "Analytics",
   requests: "Upgrade requests",
   "upgrade-requests": "Entitlements",
   users: "Users",
@@ -191,6 +200,12 @@ export function getAdminBreadcrumbs(pathname: string): AdminBreadcrumb[] {
   if (path.startsWith("/admin/billing/requests")) {
     crumbs.push({ label: "Billing & access", href: "/admin/billing" });
     crumbs.push({ label: "Upgrade requests" });
+    return crumbs;
+  }
+
+  if (path.startsWith("/admin/analytics")) {
+    crumbs.push({ label: "Billing & access", href: "/admin/billing" });
+    crumbs.push({ label: "Analytics" });
     return crumbs;
   }
 
