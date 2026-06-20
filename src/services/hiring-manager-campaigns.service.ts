@@ -15,6 +15,24 @@ import {
   TYPING_WPM_THRESHOLD,
   inferTypingPass,
 } from "@/lib/assessment-catalog-defaults";
+import type {
+  HiringManagerAssessmentResult,
+  HiringManagerCampaignDetail,
+  HiringManagerCampaignListItem,
+  HiringManagerCandidateReport,
+  HiringManagerResolvedStackSummary,
+  HiringManagerSessionListItem,
+} from "@/types/hiring-manager.types";
+
+export type {
+  HiringManagerAssessmentResult,
+  HiringManagerCampaignDetail,
+  HiringManagerCampaignListItem,
+  HiringManagerCandidateReport,
+  HiringManagerResolvedStackItem,
+  HiringManagerResolvedStackSummary,
+  HiringManagerSessionListItem,
+} from "@/types/hiring-manager.types";
 
 async function getJwt() {
   return getServerStrapiJwt();
@@ -96,6 +114,7 @@ type RawCandidateSession = {
   id?: number;
   documentId?: string;
   candidateCode?: string;
+  sessionCode?: string;
   mode?: "in_person" | "remote";
   sessionStatus?: "pending" | "active" | "completed" | "locked" | "expired";
   expiresAt?: string | null;
@@ -114,6 +133,11 @@ type RawCandidateSession = {
     email?: string;
   }>;
   assessment_results?: RawAssessmentResult[];
+  assessment_session?: {
+    documentId?: string;
+    name?: string;
+    startsAt?: string | null;
+  } | null;
 };
 
 type RawAssessmentSession = {
@@ -162,58 +186,6 @@ export type HiringManagerCampaignCreateInput = {
   assessmentSettings?: Record<string, unknown>;
 };
 
-export type HiringManagerCampaignListItem = {
-  id: string;
-  documentId?: string;
-  name: string;
-  role: string;
-  status: "Live" | "Configured" | "Draft" | "Closed" | "Archived";
-  approvalStatus?: "Pending approval" | "Approved" | "Rejected";
-  deliveryMode: "In-person" | "Remote" | "Hybrid";
-  candidateCount: number;
-  sessions: number;
-  assessmentStack: string[];
-  assessmentSettings?: Record<string, unknown> | null;
-  nextMilestone: string;
-};
-
-export type HiringManagerAssessmentResult = {
-  id: string;
-  assessment: string;
-  score: string;
-  numericScore: number | null;
-  assessmentStatus?: string | null;
-  passed?: boolean | null;
-  completedAt?: string | null;
-  wpm?: number | null;
-  accuracy?: number | null;
-  mistakeCount?: number | null;
-  durationSeconds?: number | null;
-  metrics?: Record<string, unknown> | null;
-  rawData?: Record<string, any> | null;
-};
-
-export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
-  startDate: string;
-  endDate: string;
-  location: string;
-  linkedAssessmentSlugs: string[];
-  assessmentSessions: HiringManagerSessionListItem[];
-  joinedCandidates: Array<{
-    id: string;
-    name: string;
-    email?: string;
-    status?: string;
-    inviteStatus?: "invited" | "registered" | "started" | null;
-    hmDecision?: "pending" | "approved" | "rejected" | null;
-    sessionName?: string;
-    campaignId?: string;
-    campaignName?: string;
-    assessmentStack?: string[];
-    results: HiringManagerAssessmentResult[];
-  }>;
-};
-
 function getSessionPendingInvites(candidateSessions: RawCandidateSession[] = []) {
   return candidateSessions
     .filter((session) => {
@@ -231,38 +203,46 @@ function getSessionPendingInvites(candidateSessions: RawCandidateSession[] = [])
     }));
 }
 
-export type HiringManagerSessionListItem = {
-  id: string;
-  documentId?: string;
-  campaign: string;
-  type: "In-person" | "Remote";
-  status: "Upcoming" | "Live" | "Closed" | "Cancelled";
-  date: string;
-  startsAt?: string | null;
-  location: string;
-  candidateCount: number;
-  candidateLimit: number;
-  accessMode: string;
-  accessValue: string;
-  pendingInvites: Array<{
-    id: string;
-    email: string;
-    inviteStatus: "invited" | "registered" | "started";
-    candidateCode?: string;
-    mode?: "in_person" | "remote";
-  }>;
-  candidates: Array<{
-    id: string;
-    name: string;
-    email?: string;
-    status?: string;
-    hasStartedAssessment?: boolean;
-    results: HiringManagerAssessmentResult[];
-  }>;
-};
-
 export type HiringManagerCampaignCreateResult = {
   campaign: HiringManagerCampaignListItem;
+};
+
+type RawResolvedStackSummary = {
+  assessments?: Array<{
+    documentId?: string;
+    slug?: string;
+    displayName?: string;
+    weight?: number;
+  }>;
+  weightsTotal?: number;
+  resolvedAt?: string;
+};
+
+type RawHmCandidateReport = {
+  session?: RawCandidateSession;
+  candidate?: {
+    documentId?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null;
+  campaign?: {
+    documentId?: string;
+    name?: string;
+    jobRole?: string;
+    assessmentSettings?: Record<string, unknown> | null;
+    resolvedStackSummary?: RawResolvedStackSummary | null;
+  };
+  assessmentSession?: {
+    documentId?: string;
+    name?: string;
+    startsAt?: string | null;
+  } | null;
+  results?: RawAssessmentResult[];
+  compositeScore?: number | null;
+  hmDecision?: "pending" | "approved" | "rejected" | null;
+  hmDecisionAt?: string | null;
+  hmDecisionNote?: string | null;
 };
 
 export type HiringManagerAssessmentSessionCreateInput = {
@@ -703,6 +683,114 @@ export async function updateHiringManagerCampaignAssessmentStack(
       body: JSON.stringify(input),
     }
   );
+}
+
+function normalizeResolvedStackSummary(
+  summary?: RawResolvedStackSummary | null
+): HiringManagerResolvedStackSummary | null {
+  if (!summary || !Array.isArray(summary.assessments) || summary.assessments.length === 0) {
+    return null;
+  }
+
+  const assessments = summary.assessments
+    .map((item) => ({
+      documentId: item.documentId ?? item.slug ?? "assessment",
+      slug: item.slug ?? item.documentId ?? "assessment",
+      displayName: item.displayName ?? item.slug ?? "Assessment",
+      weight: numberOrNull(item.weight) ?? 0,
+    }))
+    .filter((item) => Boolean(item.slug));
+
+  if (assessments.length === 0) return null;
+
+  const weightsTotal =
+    numberOrNull(summary.weightsTotal) ??
+    assessments.reduce((sum, item) => sum + item.weight, 0);
+
+  return {
+    assessments,
+    weightsTotal,
+    resolvedAt: summary.resolvedAt ?? new Date().toISOString(),
+  };
+}
+
+function normalizeHmCandidateReport(raw: RawHmCandidateReport): HiringManagerCandidateReport {
+  const session = raw.session ?? {};
+  const sessionId =
+    session.documentId ?? String(session.id ?? session.candidateCode ?? "session");
+  const candidateUser = raw.candidate ?? null;
+  const candidateName = candidateUser
+    ? [candidateUser.firstName, candidateUser.lastName].filter(Boolean).join(" ").trim() ||
+      candidateUser.email?.trim() ||
+      "Candidate"
+    : session.invitedEmail?.trim() || session.candidateCode || "Candidate";
+  const resolvedStackSummary = normalizeResolvedStackSummary(
+    raw.campaign?.resolvedStackSummary
+  );
+  const assessmentStack =
+    resolvedStackSummary?.assessments.map((item) => item.displayName) ?? [];
+  const assessmentSessionRaw =
+    raw.assessmentSession ?? session.assessment_session ?? null;
+
+  return {
+    sessionId,
+    candidate: {
+      documentId: candidateUser?.documentId ?? null,
+      name: candidateName,
+      email: candidateUser?.email ?? session.invitedEmail ?? undefined,
+    },
+    campaign: {
+      documentId: raw.campaign?.documentId ?? "campaign",
+      name: raw.campaign?.name ?? "Untitled campaign",
+      role: raw.campaign?.jobRole ?? "Role not set",
+      assessmentSettings: raw.campaign?.assessmentSettings ?? null,
+      resolvedStackSummary,
+      assessmentStack,
+    },
+    assessmentSession: assessmentSessionRaw?.documentId
+      ? {
+          documentId: assessmentSessionRaw.documentId,
+          name: assessmentSessionRaw.name ?? "Assessment session",
+          startsAt: assessmentSessionRaw.startsAt ?? null,
+        }
+      : null,
+    results: (raw.results ?? []).map((result) => normalizeAssessmentResult(result, sessionId)),
+    compositeScore: numberOrNull(raw.compositeScore),
+    hmDecision: raw.hmDecision ?? session.hmDecision ?? "pending",
+    hmDecisionAt: raw.hmDecisionAt ?? null,
+    hmDecisionNote: raw.hmDecisionNote ?? null,
+  };
+}
+
+export async function getHiringManagerCandidateReport(
+  candidateSessionDocumentId: string
+): Promise<{
+  report: HiringManagerCandidateReport | null;
+  error: string | null;
+}> {
+  try {
+    const response = await strapiRequest<StrapiSingleResponse<RawHmCandidateReport>>(
+      `/hiring-manager/candidate-sessions/${candidateSessionDocumentId}/report`
+    );
+
+    if (!response.data) {
+      return { report: null, error: "Candidate report could not be found." };
+    }
+
+    return {
+      report: normalizeHmCandidateReport(response.data),
+      error: null,
+    };
+  } catch (error) {
+    console.error("[getHiringManagerCandidateReport] Failed to load report", error);
+    return {
+      report: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Candidate report could not be loaded.",
+    };
+  }
 }
 
 export async function inviteCandidatesToSession(

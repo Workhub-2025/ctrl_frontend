@@ -668,7 +668,6 @@ export function CandidateResultsDialog({
         <div className="relative z-10">
           <HiringManagerCandidateReport
             candidateId={resultsDialog.candidateId}
-            campaignId={resultsDialog.campaignId}
             candidateSessionId={resultsDialog.candidateSessionId}
             embedded
           />

@@ -26,7 +26,7 @@ import {
 import {
   HiringManagerPortalClientService,
   type HiringManagerAssessmentResult,
-  type HiringManagerCampaignDetail,
+  type HiringManagerCandidateReport,
 } from "@/services/hiring-manager-portal-client.service";
 import {
   portalAlertErrorClass,
@@ -49,14 +49,8 @@ import {
 
 type CandidateReportProps = {
   candidateId: string;
-  campaignId?: string;
   candidateSessionId?: string;
   embedded?: boolean;
-};
-
-type CandidateReportData = {
-  candidate: HiringManagerCampaignDetail["joinedCandidates"][number];
-  campaign: HiringManagerCampaignDetail;
 };
 
 type AssessmentReportRow = {
@@ -67,36 +61,28 @@ type AssessmentReportRow = {
   contribution: number;
 };
 
-function buildEqualWeights(assessmentStack: string[]) {
-  if (assessmentStack.length === 0) return {};
-  const baseWeight = Math.floor(100 / assessmentStack.length);
-  const remainder = 100 - baseWeight * assessmentStack.length;
-  return assessmentStack.reduce<Record<string, number>>((weights, name, index) => {
-    weights[name] = baseWeight + (index < remainder ? 1 : 0);
-    return weights;
-  }, {});
-}
+function buildAssessmentRows(report: HiringManagerCandidateReport): AssessmentReportRow[] {
+  const { results, campaign } = report;
+  const stackItems = campaign.resolvedStackSummary?.assessments ?? [];
+  if (stackItems.length === 0) return [];
 
-function getCampaignWeights(
-  assessmentStack: string[],
-  assessmentSettings?: Record<string, unknown> | null
-) {
-  const rawWeights =
-    assessmentSettings &&
-    typeof assessmentSettings.weights === "object" &&
-    assessmentSettings.weights !== null &&
-    !Array.isArray(assessmentSettings.weights)
-      ? (assessmentSettings.weights as Record<string, unknown>)
-      : null;
+  return stackItems.map(({ displayName: name, slug, weight }) => {
+    const result =
+      results.find((candidateResult) => {
+        const resultKey = getAssessmentKey(candidateResult.assessment);
+        if (slug && resultKey) return slug === resultKey;
+        return isSameAssessment(name, candidateResult.assessment);
+      }) ?? null;
+    const score = result?.numericScore ?? null;
 
-  if (!rawWeights) return buildEqualWeights(assessmentStack);
-
-  return assessmentStack.reduce<Record<string, number>>((weights, assessmentName) => {
-    const matchedEntry = Object.entries(rawWeights).find(([key]) => isSameAssessment(assessmentName, key));
-    const numericValue = matchedEntry ? Number(matchedEntry[1]) : Number.NaN;
-    weights[assessmentName] = Number.isFinite(numericValue) ? numericValue : 0;
-    return weights;
-  }, {});
+    return {
+      name,
+      weight,
+      result,
+      score,
+      contribution: score === null ? 0 : Number(((score * weight) / 100).toFixed(2)),
+    };
+  });
 }
 
 function isSameAssessment(expectedName?: string | null, resultName?: string | null) {
@@ -107,7 +93,7 @@ function isSameAssessment(expectedName?: string | null, resultName?: string | nu
 
   const expected = normalizeAssessmentSlugInput(expectedName);
   const result = normalizeAssessmentSlugInput(resultName);
-  return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
+  return expected && result ? expected.includes(result) || result.includes(expected) : false;
 }
 
 function getAssessmentKey(value?: string | null) {
@@ -143,34 +129,6 @@ function getRating(overallScore: number) {
     tone: "text-red-400",
     badge: "bg-red-500/10 text-red-400 border-red-500/25 shadow-[0_0_15px_rgba(239,68,68,0.06)]"
   };
-}
-
-function buildAssessmentRows(
-  assessmentStack: string[],
-  results: HiringManagerAssessmentResult[] = [],
-  assessmentSettings?: Record<string, unknown> | null
-): AssessmentReportRow[] {
-  const expectedAssessments = assessmentStack.length
-    ? assessmentStack
-    : results.map((result) => result.assessment);
-  const weights = getCampaignWeights(expectedAssessments, assessmentSettings);
-
-  return expectedAssessments.map((name) => {
-    const result =
-      results.find((candidateResult) =>
-        isSameAssessment(name, candidateResult.assessment)
-      ) ?? null;
-    const score = result?.numericScore ?? null;
-    const weight = weights[name] ?? 0;
-
-    return {
-      name,
-      weight,
-      result,
-      score,
-      contribution: score === null ? 0 : Number(((score * weight) / 100).toFixed(2)),
-    };
-  });
 }
 
 function formatPercent(value: number) {
@@ -217,8 +175,8 @@ function getHmDecisionLabel(decision: "approved" | "rejected") {
 }
 
 
-export function HiringManagerCandidateReport({ candidateId, campaignId, candidateSessionId, embedded = false }: CandidateReportProps) {
-  const [reportData, setReportData] = useState<CandidateReportData | null>(null);
+export function HiringManagerCandidateReport({ candidateId, candidateSessionId, embedded = false }: CandidateReportProps) {
+  const [reportData, setReportData] = useState<HiringManagerCandidateReport | null>(null);
   const [hmDecision, setHmDecision] = useState<"pending" | "approved" | "rejected" | null>(null);
   const [decisionSubmitting, setDecisionSubmitting] = useState<"approve" | "reject" | null>(null);
   const [decisionError, setDecisionError] = useState<string | null>(null);
@@ -227,38 +185,32 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
   const [openBreakdownKey, setOpenBreakdownKey] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
 
+  const resolvedSessionId = candidateSessionId ?? candidateId;
+
   useEffect(() => {
     let cancelled = false;
 
     async function loadReport() {
+      if (!resolvedSessionId) {
+        setReportData(null);
+        setLoadError("Candidate report could not be found.");
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       setLoadError(null);
       setDecisionError(null);
       try {
-        const campaigns = campaignId
-          ? [
-              await HiringManagerPortalClientService.getCampaignDetail(campaignId),
-            ].filter(Boolean) as HiringManagerCampaignDetail[]
-          : await HiringManagerPortalClientService.getCampaignDetails();
-        const matched = campaigns
-          .flatMap((campaign) =>
-            campaign.joinedCandidates.map((candidate) => ({ candidate, campaign }))
-          )
-          .find((item) =>
-            candidateSessionId
-              ? item.candidate.id === candidateSessionId
-              : item.candidate.id === candidateId
-          );
+        const report = await HiringManagerPortalClientService.getCandidateReport(resolvedSessionId);
 
         if (!cancelled) {
-          setReportData(matched ?? null);
-          setHmDecision(matched?.candidate.hmDecision ?? "pending");
-          if (!matched) {
-            setLoadError("Candidate report could not be found.");
-          }
+          setReportData(report);
+          setHmDecision(report.hmDecision ?? "pending");
         }
       } catch (loadError) {
         if (!cancelled) {
+          setReportData(null);
           setLoadError(
             loadError instanceof Error
               ? loadError.message
@@ -275,20 +227,21 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
     return () => {
       cancelled = true;
     };
-  }, [candidateId, campaignId, candidateSessionId, reloadTick]);
+  }, [resolvedSessionId, reloadTick]);
 
   const rows = useMemo(() => {
     if (!reportData) return [];
-    return buildAssessmentRows(
-      reportData.candidate.assessmentStack ?? reportData.campaign.assessmentStack,
-      reportData.candidate.results,
-      reportData.campaign.assessmentSettings
-    );
+    return buildAssessmentRows(reportData);
   }, [reportData]);
 
   const completedRows = rows.filter((row) => row.score !== null);
   const allAssessmentsCompleted = rows.length > 0 && completedRows.length === rows.length;
-  const overallScore = Math.round(rows.reduce((total, row) => total + row.contribution, 0));
+  const overallScore =
+    reportData?.compositeScore !== null &&
+    reportData?.compositeScore !== undefined &&
+    Number.isFinite(reportData.compositeScore)
+      ? Math.round(reportData.compositeScore)
+      : 0;
   const rating = getRating(overallScore);
   const displayedRating = allAssessmentsCompleted
     ? rating
@@ -298,19 +251,19 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
         badge: "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-none"
       };
 
-  const resolvedSessionId = candidateSessionId ?? reportData?.candidate.id ?? null;
+  const resolvedSessionIdForActions = reportData?.sessionId ?? resolvedSessionId;
   const decisionPending = !hmDecision || hmDecision === "pending";
-  const canRecordDecision = allAssessmentsCompleted && decisionPending && Boolean(resolvedSessionId);
+  const canRecordDecision = allAssessmentsCompleted && decisionPending && Boolean(resolvedSessionIdForActions);
 
   async function handleDecision(decision: "approve" | "reject") {
-    if (!resolvedSessionId || decisionSubmitting) return;
+    if (!resolvedSessionIdForActions || decisionSubmitting) return;
 
     setDecisionSubmitting(decision);
     setDecisionError(null);
 
     try {
       const result = await HiringManagerPortalClientService.submitCandidateDecision({
-        candidateSessionId: resolvedSessionId,
+        candidateSessionId: resolvedSessionIdForActions,
         decision,
       });
       setHmDecision(result.hmDecision);
@@ -378,7 +331,12 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
     );
   }
 
-  const { candidate, campaign } = reportData;
+  const { candidate, campaign, assessmentSession } = reportData;
+
+  const sessionLabel = assessmentSession?.name?.trim() || null;
+  const sessionSchedule = assessmentSession?.startsAt
+    ? formatCompletion(assessmentSession.startsAt)
+    : null;
 
   return (
     <div className="max-w-full overflow-x-hidden space-y-6">
@@ -419,10 +377,16 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                 </h1>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
                   <span>Campaign: <strong className="text-slate-200">{campaign.name}</strong></span>
-                  {candidate.sessionName && (
+                  {sessionLabel && (
                     <>
                       <span className="text-slate-600">•</span>
-                      <span>Session Date: <strong className="text-slate-200">{candidate.sessionName}</strong></span>
+                      <span>Session: <strong className="text-slate-200">{sessionLabel}</strong></span>
+                    </>
+                  )}
+                  {sessionSchedule && (
+                    <>
+                      <span className="text-slate-600">•</span>
+                      <span>Scheduled: <strong className="text-slate-200">{sessionSchedule}</strong></span>
                     </>
                   )}
                   {campaign.role && (
@@ -587,9 +551,9 @@ export function HiringManagerCandidateReport({ candidateId, campaignId, candidat
                             )
                           : `Completed: ${formatCompletion(row.result?.completedAt)}`}
                       </p>
-                      {isAbandoned && resolvedSessionId && key ? (
+                      {isAbandoned && resolvedSessionIdForActions && key ? (
                         <AssessmentAbandonedActions
-                          candidateSessionDocumentId={resolvedSessionId}
+                          candidateSessionDocumentId={resolvedSessionIdForActions}
                           assessmentSlug={key}
                           assessmentLabel={row.name}
                           candidateName={candidate.name}

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getServerStrapiClient } from "@/lib/strapi";
 import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  getHiringManagerCandidateReport,
+} from "@/services/hiring-manager-campaigns.service";
 
 export async function GET(
   _request: NextRequest,
@@ -11,20 +13,13 @@ export async function GET(
     await requireHmSession();
     const { candidateSessionId } = await context.params;
 
-    const client = await getServerStrapiClient();
-    const response = await client.fetch(
-      `/hiring-manager/candidate-sessions/${candidateSessionId}/report`
-    );
-    const payload = await response.json();
+    const result = await getHiringManagerCandidateReport(candidateSessionId);
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: payload?.error?.message ?? "Candidate report could not be loaded" },
-        { status: response.status }
-      );
+    if (result.error) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
-    return NextResponse.json({ data: payload.data ?? null });
+    return NextResponse.json({ data: result.report });
   } catch (error) {
     return handleBffRouteError(error, "Candidate report could not be loaded");
   }
