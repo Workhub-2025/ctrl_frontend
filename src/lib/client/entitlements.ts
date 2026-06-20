@@ -126,6 +126,7 @@ export type ClientUpgradeBundleLineItem = {
 
 export type ClientInitiatedUpgradeType =
   | "seat_increase"
+  | "seat_decrease"
   | "new_assessment"
   | "delivery_feature"
   | "upgrade_bundle";
@@ -140,6 +141,13 @@ export type ClientUpgradeRequestPayload =
       type: "seat_increase";
       currentSeats: number;
       requestedSeats: number;
+      notes?: string;
+    }
+  | {
+      type: "seat_decrease";
+      currentSeats: number;
+      requestedSeats: number;
+      seatNumbersToRemove: number[];
       notes?: string;
     }
   | {
@@ -242,6 +250,8 @@ export function buildUpgradeRequestSubject(payload: ClientUpgradeRequestPayload)
       return buildBundleSubject(payload.items);
     case "seat_increase":
       return `Upgrade request: ${payload.requestedSeats} hiring manager seats`;
+    case "seat_decrease":
+      return `Seat reduction request: ${payload.requestedSeats} hiring manager seats`;
     case "delivery_feature":
       return `Upgrade request: ${
         CLIENT_DELIVERY_FEATURES.find((feature) => feature.key === payload.featureKey)?.label ??
@@ -308,6 +318,13 @@ Seats on renewal: ${payload.seatCount}`.trim();
 Current contracted seats: ${payload.currentSeats}
 Requested seats: ${payload.requestedSeats}
 Additional seats requested: ${Math.max(0, payload.requestedSeats - payload.currentSeats)}
+
+${payload.notes?.trim() ? `Additional context:\n${payload.notes.trim()}` : ""}`.trim();
+    case "seat_decrease":
+      return `${header}Request type: Hiring manager seat reduction
+Current contracted seats: ${payload.currentSeats}
+Requested seats: ${payload.requestedSeats}
+Seats to remove: ${payload.seatNumbersToRemove.map((seat) => `Seat ${seat}`).join(", ")}
 
 ${payload.notes?.trim() ? `Additional context:\n${payload.notes.trim()}` : ""}`.trim();
     case "new_assessment": {

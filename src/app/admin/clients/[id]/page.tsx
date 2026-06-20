@@ -40,6 +40,7 @@ import {
   AdminSectionHeader,
   AdminStatTile,
 } from "@/components/admin/admin-portal-ui";
+import { AdminSeatDowngradePanel } from "@/components/admin/admin-seat-downgrade-panel";
 import {
   portalBadgeClass,
   portalLabelClass,
@@ -699,6 +700,20 @@ export default function ClientDetailPage() {
                 }
               />
               <Detail label="Seats" value={String(client.activeContract?.seatCount ?? 0)} />
+              <div className="md:col-span-2 xl:col-span-4">
+                {client.activeContract ? (
+                  <AdminSeatDowngradePanel
+                    clientId={client.id}
+                    currentSeatCount={client.activeContract.seatCount}
+                    onCompleted={async () => {
+                      invalidateAdminResource(`admin:client:${client.id}`);
+                      invalidateAdminResource("admin:clients");
+                      invalidateAdminResource("admin:upgrades");
+                      await refetchClient();
+                    }}
+                  />
+                ) : null}
+              </div>
               <div className={cn(portalPanelClass, "p-4 md:col-span-2 xl:col-span-4")}>
                 <p className={portalLabelClass}>Notes</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{client.activeContract?.notes || "No notes recorded"}</p>

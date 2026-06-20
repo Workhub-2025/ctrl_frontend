@@ -8,6 +8,7 @@ import {
   RefreshCw,
   RotateCw,
   Send,
+  TrendingDown,
   TrendingUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ type AdminUpgradeRequest = {
 
 const UPGRADE_TYPE_LABELS: Record<string, string> = {
   seat_increase: "Seat increase",
+  seat_decrease: "Seat reduction",
   new_assessment: "New assessment",
   assessment_version: "Assessment",
   delivery_feature: "Delivery feature",
@@ -75,6 +77,7 @@ export default function AdminUpgradeRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -176,6 +179,36 @@ export default function AdminUpgradeRequestsPage() {
       setError(err instanceof Error ? err.message : "Invoice could not be sent");
     } finally {
       setSendingId(null);
+    }
+  };
+
+  const processSeatDecrease = async (requestId: string) => {
+    setProcessingId(requestId);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/admin/billing/process-seat-decrease/${encodeURIComponent(requestId)}`,
+        { method: "POST" }
+      );
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Seat reduction could not be processed");
+
+      setRequests((current) =>
+        current.map((request) =>
+          request.id === requestId
+            ? { ...request, billingStatus: "paid", amountDuePence: 0 }
+            : request
+        )
+      );
+      setMessage("Seat reduction processed — export emailed and contract updated.");
+      invalidatePortalCache("admin:billing:upgrade-requests");
+      void load(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Seat reduction could not be processed");
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -299,7 +332,23 @@ export default function AdminUpgradeRequestsPage() {
                           {formatMoney(request.amountDuePence, request.currency ?? "gbp")}
                         </p>
                       ) : null}
-                      {stage.key === "requested" ? (
+                      {stage.key === "requested" && request.upgradeType === "seat_decrease" ? (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="w-full rounded-xl gap-2"
+                          disabled={processingId === request.id}
+                          onClick={() => void processSeatDecrease(request.id)}
+                        >
+                          {processingId === request.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4" />
+                          )}
+                          Process downgrade
+                        </Button>
+                      ) : null}
+                      {stage.key === "requested" && request.upgradeType !== "seat_decrease" ? (
                         <Button
                           size="sm"
                           className="w-full rounded-xl gap-2"
@@ -314,7 +363,7 @@ export default function AdminUpgradeRequestsPage() {
                           Send invoice
                         </Button>
                       ) : null}
-                      {stage.key === "invoice_sent" ? (
+                      {stage.key === "invoice_sent" && request.upgradeType !== "seat_decrease" ? (
                         <Button
                           size="sm"
                           variant="outline"

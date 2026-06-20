@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { formatDate } from "@/components/dashboard/client/client-portal-utils";
 import { ClientUpgradeBuilder } from "@/components/dashboard/client/client-upgrade-builder";
+import { ClientSeatDecreasePanel } from "@/components/dashboard/client/client-seat-decrease-panel";
 import {
   ClientErrorBanner,
   ClientPageHeader,
@@ -44,6 +45,7 @@ import { cn } from "@/lib/utils";
 
 const UPGRADE_TYPE_LABELS: Record<ClientUpgradeRequestType, string> = {
   seat_increase: "Seat increase",
+  seat_decrease: "Seat reduction",
   new_assessment: "New assessment",
   delivery_feature: "Delivery feature",
   upgrade_bundle: "Bundled upgrade",
@@ -58,6 +60,15 @@ const BILLING_STATUS_LABELS: Record<string, string> = {
   failed: "Payment failed",
 };
 
+function billingStatusLabel(request: { upgradeType: string; billingStatus?: string }) {
+  const status = request.billingStatus ?? "requested";
+  if (request.upgradeType === "seat_decrease") {
+    if (status === "requested") return "Awaiting processing";
+    if (status === "paid") return "Processed";
+  }
+  return BILLING_STATUS_LABELS[status] ?? "Requested";
+}
+
 const BILLING_STATUS_CLASSES: Record<string, string> = {
   requested: portalBadgeClass,
   invoice_sent: portalBadgeClass,
@@ -70,6 +81,7 @@ export function ClientUpgradeContent() {
     summary,
     entitlements,
     upgradeRequests,
+    seatSlots,
     entitlementsLoading,
     upgradeRequestsLoading,
     submittingUpgrade,
@@ -318,7 +330,9 @@ export function ClientUpgradeContent() {
                         Auto-renew contract
                       </Label>
                       <p className="text-[10px] text-muted-foreground">
-                        Renews automatically before expiry using current renewal pricing.
+                        When enabled, we&apos;ll email you 30 days before your contract ends with a
+                        link to set up Direct Debit for the next year. You won&apos;t be charged
+                        until your renewal starts.
                       </p>
                     </div>
                     <Switch
@@ -433,6 +447,20 @@ export function ClientUpgradeContent() {
           </div>
         </PortalPanel>
 
+        <PortalPanel>
+          <div className="p-6">
+            <ClientSeatDecreasePanel
+              currentSeats={contract?.seatCount ?? seats?.limit ?? 0}
+              seatSlots={seatSlots}
+              canRequestUpgrades={canRequestUpgrades}
+              submitting={submittingUpgrade}
+              onSubmit={async (payload) => {
+                await submitUpgradeRequest({ payload });
+              }}
+            />
+          </div>
+        </PortalPanel>
+
         <div id="upgrade-request-history">
           <PortalPanel>
             <div className="space-y-5 p-6">
@@ -472,7 +500,7 @@ export function ClientUpgradeContent() {
                                   BILLING_STATUS_CLASSES.requested
                               )}
                             >
-                              {BILLING_STATUS_LABELS[request.billingStatus ?? "requested"] ?? "Requested"}
+                              {billingStatusLabel(request)}
                             </Badge>
                           </div>
                           <p className="font-mono text-xs font-semibold text-muted-foreground">
@@ -482,7 +510,8 @@ export function ClientUpgradeContent() {
                           <p className="text-xs text-muted-foreground">
                             Submitted {formatDate(request.createdAt)}
                           </p>
-                          {request.billingStatus === "invoice_sent" ? (
+                          {request.billingStatus === "invoice_sent" &&
+                          request.upgradeType !== "seat_decrease" ? (
                             <p className="text-xs font-medium text-muted-foreground">
                               Invoice ready
                               {request.amountDuePence
@@ -491,7 +520,8 @@ export function ClientUpgradeContent() {
                             </p>
                           ) : null}
                         </div>
-                        {request.billingStatus === "invoice_sent" ? (
+                        {request.billingStatus === "invoice_sent" &&
+                        request.upgradeType !== "seat_decrease" ? (
                           <Button
                             size="sm"
                             className="rounded-xl gap-2"
