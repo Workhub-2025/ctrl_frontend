@@ -156,7 +156,6 @@ type ContractOption = {
   includedSeats: number;
   deliveryModes: string[];
   includesCoreAssessments: boolean;
-  includesPaidFutureFeaturesDuringFirstYear?: boolean;
   discountPercent?: number;
 };
 
@@ -190,7 +189,6 @@ const fallbackContractOptions: ContractOptionsData = {
       includedSeats: 3,
       deliveryModes: ["in_person", "remote", "hybrid"],
       includesCoreAssessments: true,
-      includesPaidFutureFeaturesDuringFirstYear: true,
       discountPercent: 33,
     },
   ],
@@ -1003,11 +1001,8 @@ export default function Home() {
                       : option.tier === "professional"
                       ? "In-person, remote and hybrid delivery"
                       : "In-person, remote and hybrid delivery (included free)",
-                    option.tier === "founder" && option.includesPaidFutureFeaturesDuringFirstYear
-                      ? "Paid feature and assessment upgrades included in year one"
-                      : null,
                     option.tier === "founder" && option.discountPercent
-                      ? `${option.discountPercent}% discount on upgrades/assessments`
+                      ? `${option.discountPercent}% discount on upgrades and add-on assessments`
                       : null,
                   ].filter((feature): feature is string => Boolean(feature));
 

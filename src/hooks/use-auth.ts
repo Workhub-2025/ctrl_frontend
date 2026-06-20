@@ -109,6 +109,14 @@ export function useAuth() {
                 throw new Error(body.error ?? 'Authentication failed: wrong user or password');
             }
 
+            if (body.data?.requiresTotp) {
+                return {
+                    success: true,
+                    requiresTotp: true,
+                    redirectPath: body.data?.redirectPath as string | undefined,
+                };
+            }
+
             const userData = body.data?.user;
             const redirectPath = body.data?.redirectPath as string | undefined;
 
@@ -144,6 +152,57 @@ export function useAuth() {
             if (error instanceof Error && error.name === 'TimeoutError') {
                 throw new Error('Login timed out. Check your connection and try again.');
             }
+            throw error;
+        }
+    };
+
+    const verifyTotpLogin = async (code: string) => {
+        const VERIFY_TIMEOUT_MS = 30_000;
+
+        try {
+            setStatus('loading');
+            const response = await fetch('/api/auth/totp/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({ code }),
+                credentials: 'same-origin',
+                signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
+            });
+
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                if (response.status === 429) {
+                    throw new Error(body.error ?? 'Too many verification attempts. Please try again later.');
+                }
+                throw new Error(body.error ?? 'Invalid verification code');
+            }
+
+            const userData = body.data?.user;
+            const redirectPath = body.data?.redirectPath as string | undefined;
+
+            if (userData) {
+                const nextSession: ClientAuthSession = {
+                    user: userData,
+                    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                };
+                primeClientSession(nextSession);
+                setSession(nextSession);
+                setStatus('authenticated');
+                setUserProfile(userData as IUser);
+                const destination = redirectPath || routeForRole(userData.role);
+                window.location.assign(destination);
+            } else if (redirectPath) {
+                window.location.assign(redirectPath);
+            } else {
+                throw new Error('Verification succeeded but the session could not be established');
+            }
+
+            return { success: true };
+        } catch (error) {
+            setStatus('unauthenticated');
             throw error;
         }
     };
@@ -236,6 +295,7 @@ export function useAuth() {
 
         // Auth methods
         login,
+        verifyTotpLogin,
         register,
         logout,
         updateProfile,

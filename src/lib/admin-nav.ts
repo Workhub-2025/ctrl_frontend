@@ -8,6 +8,7 @@ import {
   Mail,
   PlusCircle,
   RotateCcw,
+  ShieldCheck,
   Ticket,
   TrendingUp,
   Users,
@@ -132,6 +133,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "System",
     items: [
       {
+        href: "/admin/settings",
+        label: "Security",
+        hint: "Admin two-factor authentication",
+        icon: ShieldCheck,
+        isActive: (pathname) => pathname.startsWith("/admin/settings"),
+      },
+      {
         href: "/admin/audit-logs",
         label: "Audit log",
         hint: "Platform activity history",
@@ -160,6 +168,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   comms: "Operational email",
   tickets: "Support tickets",
   "assessment-recovery": "Assessment recovery",
+  settings: "Security",
   "audit-logs": "Audit log",
 };
 

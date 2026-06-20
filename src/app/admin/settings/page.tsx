@@ -1,15 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { AdminTotpSecurityPanel } from "@/components/admin/admin-totp-security-panel";
 
-/** Legacy bookmark — settings removed; send to overview. */
-export default function AdminSettingsRedirect() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/admin");
-  }, [router]);
-
-  return null;
+export default function AdminSecuritySettingsPage() {
+  return <AdminTotpSecurityPanel />;
 }

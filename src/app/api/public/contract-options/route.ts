@@ -7,8 +7,6 @@ type PublicContractTierPricing = {
   includedSeatCount?: number;
   deliveryRemoteIncluded?: boolean;
   deliveryHybridIncluded?: boolean;
-  futurePaidFeaturesIncludedDuringFirstYear?: boolean;
-  discountPercent?: number;
 };
 
 type PublicContractOption = {
@@ -17,7 +15,6 @@ type PublicContractOption = {
   includedSeats: number;
   deliveryModes: string[];
   includesCoreAssessments: boolean;
-  includesPaidFutureFeaturesDuringFirstYear?: boolean;
   discountPercent?: number;
 };
 
@@ -67,9 +64,7 @@ export async function GET() {
           ...(contractTypePrices.founder?.deliveryHybridIncluded ? ["hybrid"] : []),
         ],
         includesCoreAssessments: true,
-        includesPaidFutureFeaturesDuringFirstYear:
-          contractTypePrices.founder?.futurePaidFeaturesIncludedDuringFirstYear ?? true,
-        discountPercent: contractTypePrices.founder?.discountPercent ?? defaultFounderDiscountPercent,
+        discountPercent: defaultFounderDiscountPercent,
       },
     ];
 

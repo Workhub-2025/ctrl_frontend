@@ -11,6 +11,11 @@ import {
   getAuthRequestContext,
 } from "@/lib/auth/session-config";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
+import { isAdminRole } from "@/lib/auth/role-model";
+import {
+  attachTotpPendingCookie,
+  encodeTotpPendingToken,
+} from "@/lib/auth/totp-pending-cookie";
 
 const wantsJsonResponse = (request: Request) =>
   request.headers.get("accept")?.includes("application/json") ?? false;
@@ -82,6 +87,48 @@ export async function POST(request: Request) {
     });
 
     const callbackPath = resolveCallbackPath(formData.get("callbackUrl"), role);
+    const publicUser = buildPublicUser(authResponse.user!, role);
+
+    if (isAdminRole(role) && (authResponse.user as { totpEnabled?: boolean })?.totpEnabled === true) {
+      const pendingToken = await encodeTotpPendingToken({
+        id: authResponse.user!.id,
+        email: authResponse.user!.email,
+        firstName: authResponse.user!.firstName,
+        lastName: authResponse.user!.lastName,
+        role,
+        jwt: authResponse.jwt!,
+        organization:
+          typeof authResponse.user!.organization === "string"
+            ? authResponse.user!.organization
+            : undefined,
+        phone:
+          typeof authResponse.user!.phone === "string" ? authResponse.user!.phone : undefined,
+        equalityMonitoring: authResponse.user!.equalityMonitoring,
+        agreeToMarketing: authResponse.user!.agreeToMarketing ?? undefined,
+        agreeToTerms: authResponse.user!.agreeToTerms ?? undefined,
+        agreeToDataPrivacyPolicy: authResponse.user!.agreeToDataPrivacyPolicy ?? undefined,
+        redirectPath: callbackPath,
+      });
+
+      if (jsonResponse) {
+        const response = NextResponse.json({
+          data: {
+            requiresTotp: true,
+            redirectPath: callbackPath,
+          },
+        });
+        attachTotpPendingCookie(response, pendingToken);
+        return response;
+      }
+
+      const totpUrl = new URL("/auth/register", request.url);
+      totpUrl.searchParams.set("mode", "login");
+      totpUrl.searchParams.set("totp", "1");
+      const response = NextResponse.redirect(totpUrl, 303);
+      attachTotpPendingCookie(response, pendingToken);
+      return response;
+    }
+
     const token = await encodeSessionToken({
       id: authResponse.user!.id,
       email: authResponse.user!.email,
@@ -100,8 +147,6 @@ export async function POST(request: Request) {
       agreeToTerms: authResponse.user!.agreeToTerms ?? undefined,
       agreeToDataPrivacyPolicy: authResponse.user!.agreeToDataPrivacyPolicy ?? undefined,
     });
-
-    const publicUser = buildPublicUser(authResponse.user!, role);
 
     if (jsonResponse) {
       const response = NextResponse.json({

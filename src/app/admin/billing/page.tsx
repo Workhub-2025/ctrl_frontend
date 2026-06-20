@@ -72,8 +72,6 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     includedSeatCount: 1,
     deliveryRemoteIncluded: false,
     deliveryHybridIncluded: false,
-    futurePaidFeaturesIncludedDuringFirstYear: false,
-    discountPercent: 0,
   },
   professional: {
     label: "Professional",
@@ -81,8 +79,6 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     includedSeatCount: 3,
     deliveryRemoteIncluded: true,
     deliveryHybridIncluded: true,
-    futurePaidFeaturesIncludedDuringFirstYear: false,
-    discountPercent: 0,
   },
   founder: {
     label: "Founder",
@@ -90,8 +86,6 @@ const DEFAULT_CONTRACT_TYPE_PRICES: Record<ContractTier, ContractTierPricing> = 
     includedSeatCount: 3,
     deliveryRemoteIncluded: true,
     deliveryHybridIncluded: true,
-    futurePaidFeaturesIncludedDuringFirstYear: false,
-    discountPercent: 33,
   },
 };
 
@@ -139,11 +133,6 @@ function normalizeContractTypePrices(raw: unknown): Record<ContractTier, Contrac
         typeof value.deliveryHybridIncluded === "boolean"
           ? value.deliveryHybridIncluded
           : defaults.deliveryHybridIncluded,
-      futurePaidFeaturesIncludedDuringFirstYear:
-        typeof value.futurePaidFeaturesIncludedDuringFirstYear === "boolean"
-          ? value.futurePaidFeaturesIncludedDuringFirstYear
-          : defaults.futurePaidFeaturesIncludedDuringFirstYear,
-      discountPercent: Number(value.discountPercent ?? defaults.discountPercent) || 0,
     };
     return acc;
   }, {} as Record<ContractTier, ContractTierPricing>);
@@ -427,7 +416,7 @@ export default function AdminBillingPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                         <input
                           type="checkbox"
@@ -448,33 +437,6 @@ export default function AdminBillingPage() {
                         />
                         Hybrid included
                       </label>
-                      <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        <input
-                          type="checkbox"
-                          checked={tierPricing.futurePaidFeaturesIncludedDuringFirstYear}
-                          onChange={(event) =>
-                            updateContractPrice(
-                              tier,
-                              "futurePaidFeaturesIncludedDuringFirstYear",
-                              event.target.checked
-                            )
-                          }
-                        />
-                        First-year paid features
-                      </label>
-                    </div>
-                    <div className="max-w-40 space-y-2">
-                      <Label className={portalLabelClass}>Discount %</Label>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={tierPricing.discountPercent}
-                        onChange={(event) =>
-                          updateContractPrice(tier, "discountPercent", Number(event.target.value) || 0)
-                        }
-                        className={cn(portalInputClass, "h-10")}
-                      />
                     </div>
                   </div>
                 );
@@ -485,7 +447,7 @@ export default function AdminBillingPage() {
           <AdminPanel className="space-y-5">
             <AdminSectionHeader
               title="Founder availability"
-              description="Controls whether the public pricing page can show the Founder contract option."
+              description="Controls public Founder visibility and the upgrade discount applied to all Founder contracts."
             />
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">

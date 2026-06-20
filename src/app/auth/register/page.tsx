@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { AnimatedSubmitButton, ButtonState } from "@/components/ui/animated-submit-button";
 import { AuthBrandingPane } from "@/components/auth/auth-branding-pane";
 import { AuthLoginForm } from "@/components/auth/auth-login-form";
+import { AuthTotpForm } from "@/components/auth/auth-totp-form";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,7 @@ function UnifiedAuthContent() {
   });
 
   const [isLoginView, setIsLoginView] = useState(false);
+  const [totpStep, setTotpStep] = useState(false);
   const [initialLoginEmail, setInitialLoginEmail] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
@@ -78,7 +80,7 @@ function UnifiedAuthContent() {
   const [submitStatus, setSubmitStatus] = useState<ButtonState>("idle");
   const [invalidFields, setInvalidFields] = useState<AuthField[]>([]);
   const invalidResetTimer = useRef<number | null>(null);
-  const { register: registerUser, login } = useAuth();
+  const { register: registerUser, login, verifyTotpLogin } = useAuth();
   // Only disable while a login/register submit is in flight — not during background session bootstrap.
   const isAuthBusy = authAction !== null;
 
@@ -97,6 +99,11 @@ function UnifiedAuthContent() {
 
     if (mode === "login" || mode === "signin" || authError) {
       setIsLoginView(true);
+    }
+
+    if (searchParams.get("totp") === "1") {
+      setIsLoginView(true);
+      setTotpStep(true);
     }
 
     if (mode === "register" || mode === "signup") {
@@ -123,6 +130,7 @@ function UnifiedAuthContent() {
     if (authAction) return;
 
     setIsLoginView(nextIsLoginView);
+    setTotpStep(false);
     setError("");
     setInvalidFields([]);
     setSuccess(false);
@@ -183,7 +191,11 @@ function UnifiedAuthContent() {
     async ({ email, password }: { email: string; password: string }) => {
       setAuthAction("login");
       try {
-        await login(email, password);
+        const result = await login(email, password);
+        if (result?.requiresTotp) {
+          setTotpStep(true);
+          return;
+        }
       } catch (err) {
         throw err;
       } finally {
@@ -191,6 +203,18 @@ function UnifiedAuthContent() {
       }
     },
     [login]
+  );
+
+  const handleTotpVerify = useCallback(
+    async (code: string) => {
+      setAuthAction("login");
+      try {
+        await verifyTotpLogin(code);
+      } finally {
+        setAuthAction(null);
+      }
+    },
+    [verifyTotpLogin]
   );
 
   const validateForm = (): AuthField[] => {
@@ -372,16 +396,26 @@ function UnifiedAuthContent() {
               {/* Header Text */}
               <div className="mb-8 space-y-2">
                 <h1 className={cn("text-3xl font-semibold tracking-tight", isLightAuthTheme ? "text-slate-950" : "text-white")}>
-                  {isLoginView ? "Welcome back" : "Join the platform"}
+                  {totpStep ? "Verify your sign-in" : isLoginView ? "Welcome back" : "Join the platform"}
                 </h1>
                 <p className={cn("text-sm", isLightAuthTheme ? "text-slate-600" : "text-slate-400")}>
-                  {isLoginView
+                  {totpStep
+                    ? "Enter the code from your authenticator app to finish signing in."
+                    : isLoginView
                     ? "Enter your credentials to securely access your workspace."
                     : "Use your agency access code to configure your new account."}
                 </p>
               </div>
 
-              {isLoginView ? (
+              {isLoginView && totpStep ? (
+                <AuthTotpForm
+                  disabled={isAuthBusy}
+                  panelVariant={submitPanelVariant}
+                  inputVariant={isLightAuthTheme ? "light" : "dark"}
+                  onSubmit={handleTotpVerify}
+                  onCancel={() => setTotpStep(false)}
+                />
+              ) : isLoginView ? (
                 <AuthLoginForm
                   initialEmail={initialLoginEmail}
                   disabled={isAuthBusy}

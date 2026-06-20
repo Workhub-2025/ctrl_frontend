@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { updateHiringManagerCampaignAssessmentStack } from "@/services/hiring-manager-campaigns.service";
+import { validateAssessmentStackPayload } from "@/lib/hiring-manager/campaign-assessment-settings";
 
 import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
@@ -46,12 +47,22 @@ export async function PUT(
         return NextResponse.json({ error: "At least one assessment is required" }, { status: 400 });
       }
 
+      const assessmentSettings =
+        body?.assessmentSettings && typeof body.assessmentSettings === "object"
+          ? body.assessmentSettings
+          : undefined;
+
+      const weightError = validateAssessmentStackPayload({
+        assessmentDocumentIds,
+        assessmentSettings,
+      });
+      if (weightError) {
+        return NextResponse.json({ error: weightError }, { status: 400 });
+      }
+
       await updateHiringManagerCampaignAssessmentStack(campaignId, {
         assessmentDocumentIds,
-        assessmentSettings:
-          body?.assessmentSettings && typeof body.assessmentSettings === "object"
-            ? body.assessmentSettings
-            : undefined,
+        assessmentSettings,
         assessmentMode:
           body?.assessmentMode === "remote" ||
           body?.assessmentMode === "hybrid" ||

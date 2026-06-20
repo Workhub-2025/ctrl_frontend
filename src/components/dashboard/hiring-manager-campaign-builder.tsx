@@ -441,13 +441,6 @@ export function HiringManagerCampaignBuilder({
           settings[assessment.slug] = {
             version,
             difficulty: assessment.slug === "typing" ? draft.typingDifficulty : "Base",
-            ...(assessment.slug === "typing"
-              ? {
-                  durationSeconds: 60,
-                  practiceRuns: 1,
-                  assessmentRuns: 3,
-                }
-              : {}),
             ...(assessment.slug === "prioritisation"
               ? {
                   scoringMode: draft.prioritisationScoringMode,

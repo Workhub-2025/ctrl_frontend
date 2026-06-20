@@ -8,6 +8,4 @@ export interface ContractTierPricing {
   includedSeatCount: number;
   deliveryRemoteIncluded: boolean;
   deliveryHybridIncluded: boolean;
-  futurePaidFeaturesIncludedDuringFirstYear: boolean;
-  discountPercent: number;
 }
