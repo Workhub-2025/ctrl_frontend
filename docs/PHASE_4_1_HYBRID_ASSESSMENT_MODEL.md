@@ -1,5 +1,7 @@
 # Phase 4.1 - Hybrid Assessment Domain Alignment
 
+> **⚠️ Deprecated (2026-06-20):** The hybrid assessment model, types, services, and `/api/assessment/hybrid-summary` route were **removed** in beta legacy cleanup. Per-assessment plugin scoring and HM/client reports are the current model. See `CTRL/05-Operations/API-Contract-Map.md` and `CTRL/Changelog.md`.
+
 This phase introduces a unified evidence-led assessment model while preserving all existing assessment flows.
 
 ## What was added

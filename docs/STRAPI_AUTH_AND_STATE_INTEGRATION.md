@@ -1,5 +1,7 @@
 # Integración Strapi Auth + Estado Global — `ctrl-frontend-hybrid`
 
+> **Historical branch doc (April 2026).** Current auth: JSON login via `POST /api/auth/login`, Strapi JWT in httpOnly cookie only, browser calls via `/api/strapi-proxy` allowlist. See `CTRL/02-Security/Auth-Architecture.md` and `FrontEnd/README.md`.
+
 > Análisis y plan de tareas para la rama `ctrl-frontend-hybrid`  
 > Última actualización: abril 2026
 

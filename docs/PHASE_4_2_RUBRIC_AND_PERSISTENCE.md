@@ -1,5 +1,7 @@
 # Phase 4.2 - Rubric Linked Scoring + Persistence
 
+> **⚠️ Deprecated (2026-06-20):** The hybrid summary API, `hybrid-assessment.service.ts`, and related types were **removed**. Typing progress now persists via `POST /api/assessment/attempt/progress` → Strapi `candidate-assessment-attempt`. See `CTRL/05-Operations/API-Contract-Map.md`.
+
 This phase moves hybrid assessment from local-only heuristic aggregation to rubric-linked scoring and backend persistence hooks.
 
 ## What changed

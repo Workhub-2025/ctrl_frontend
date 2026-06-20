@@ -1,8 +1,11 @@
 # ctrl_frontend
 
-Next.js 15 frontend for the **CTRL Assessment Platform**. Provides the candidate assessment experience, hiring-manager and client portals, admin tooling, and the authentication layer connecting to `ctrl_backend` (Strapi v5).
+Next.js 15 frontend for the **CTRL Assessment Platform** — candidate assessments, hiring-manager and client portals, admin tooling, and the BFF layer to `ctrl_backend` (Strapi v5).
 
-**Tech stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · NextAuth.js v4 · `@strapi/client` · Firebase (media) · Genkit AI · Stripe (billing)
+**Branch tip:** `afaf508` on `codex/ctrl-mihir-dev`  
+**Tech stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · NextAuth.js v4 · Stripe · Vitest · Playwright
+
+Vault docs: `CTRL/01-Platform/Project-Brain-Frontend.md` · `CTRL/05-Operations/API-Contract-Map.md`
 
 ---
 
@@ -10,171 +13,106 @@ Next.js 15 frontend for the **CTRL Assessment Platform**. Provides the candidate
 
 ```
 src/
-├── app/                    # Next.js App Router pages and API routes
+├── app/
 │   ├── api/
-│   │   ├── assessment/     # Assessment submission endpoints
-│   │   ├── auth/           # JSON login/logout/register + NextAuth handler
-│   │   ├── strapi-proxy/   # Browser → Strapi BFF (JWT never in client session)
-│   │   └── client/         # Client billing, entitlements, upgrades
-│   ├── assessment/         # Candidate assessment screens
+│   │   ├── assessment/[slug]/submit/   # Unified submit for all registered slugs
+│   │   ├── assessment/attempt/         # Progress, heartbeat, recovery
+│   │   ├── auth/                       # JSON login/logout/register + NextAuth
+│   │   ├── strapi-proxy/               # Browser → Strapi BFF (JWT server-side only)
+│   │   ├── client/                     # Client portal BFF (entitlements, notes, billing)
+│   │   ├── hiring-manager/             # HM portal BFF (sessions, reports, notes)
+│   │   ├── candidate/                  # Candidate workspace + join
+│   │   └── admin/                      # Admin billing, comms, seat management
+│   ├── assessment/[slug]/              # Dynamic assessment UI (5 registered slugs)
 │   ├── candidate-dashboard/
 │   ├── hiring-manager-dashboard/
 │   ├── client-dashboard/
-│   ├── auth/               # Login / register pages
-│   ├── profile/            # Shared profile (PortalMinimalShell)
-│   ├── results/            # Post-assessment confirmation (PortalMinimalShell)
 │   └── admin/
-├── components/
-│   └── dashboard/portal/   # Shared portal shell, tokens, UI primitives
-├── hooks/                  # React hooks (use-auth, accessibility, etc.)
-├── lib/
-│   ├── auth/               # NextAuth, credential-auth, strapi-jwt, session-config
-│   ├── fetch-client.ts     # Browser → BFF; server → Strapi with server JWT
-│   ├── security/           # Rate limits, CSP, origin guard, audit log, lockout
-│   └── stripe/             # Checkout + webhook fulfillment
-├── services/               # Domain service classes
-├── store/                  # Zustand stores
-└── middleware.ts           # Route protection (NextAuth withAuth)
+├── assessments/plugins/                # Plugin registry, submit handlers, report breakdowns
+├── components/dashboard/               # Portal shells + role-specific views
+├── lib/                                # Auth, security, fetch-client, Stripe, entitlements
+├── services/                           # BFF bridge services (no direct browser Strapi JWT)
+└── middleware.ts                       # Route protection
 ```
 
 ---
 
 ## Auth & roles
 
-Authentication uses **NextAuth.js v4** against Strapi `users-permissions`, with a **JSON login path** as the primary client flow.
+Primary login: `hooks/use-auth.ts` → `POST /api/auth/login` with `Accept: application/json` (not NextAuth `signIn()`).
 
-| Role | Dashboard | Can do |
-|---|---|---|
-| `candidate` | `/candidate-dashboard` | Take assessments, view own progress |
-| `hiring_manager` | `/hiring-manager-dashboard` | Review campaigns, candidates, reports |
-| `client` | `/client-dashboard` | Company entitlements, billing, HM management |
-| `admin` | `/admin` | Full admin panel access |
+| Role | Dashboard |
+|---|---|
+| `candidate` | `/candidate-dashboard` |
+| `hiring_manager` | `/hiring-manager-dashboard` |
+| `client` | `/client-dashboard` |
+| `admin` | `/admin` |
 
-### Session model
+- Strapi JWT lives in the httpOnly NextAuth token — **never** exposed to browser JS.
+- Browser Strapi calls → `fetchClient()` → `/api/strapi-proxy` (allowlist: `support-tickets`, `candidate-sessions`, `users-permissions`).
+- Assessment progress → BFF `/api/assessment/attempt/progress` (not strapi-proxy).
+- Server routes → `getServerStrapiJwt(request)` from the session cookie.
 
-- **Browser session** exposes user id, email, name, and role — **not** the Strapi JWT.
-- **Server routes** read the Strapi JWT from the encrypted NextAuth token via `getServerStrapiJwt(request)`.
-- **Browser → Strapi** calls go through `/api/strapi-proxy/[...path]` with an httpOnly session cookie.
-
-Active login flow:
-
-```ts
-// hooks/use-auth.ts → POST /api/auth/login (Accept: application/json)
-// Returns { data: { user, redirectPath } } and sets the session cookie.
-```
-
-Shared credential validation lives in `lib/auth/credential-auth.ts` (used by both the JSON login route and NextAuth `authorize()`).
+See `CTRL/02-Security/Auth-Architecture.md`.
 
 ---
 
-## Key patterns
+## Key BFF patterns
 
-### Server-side Strapi access
+### Server-side Strapi
 
 ```ts
 import { getServerStrapiJwt } from '@/lib/auth/strapi-jwt';
 
-export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  const strapiJwt = await getServerStrapiJwt(request);
-
-  if (!session?.user?.id || !strapiJwt) {
-    return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-  }
-
-  const response = await fetch(`${strapiBaseUrl}/client/entitlements`, {
-    headers: { Authorization: `Bearer ${strapiJwt}` },
-  });
-}
+const strapiJwt = await getServerStrapiJwt(request);
+const response = await fetch(`${strapiBaseUrl}/client/entitlements`, {
+  headers: { Authorization: `Bearer ${strapiJwt}` },
+});
 ```
 
-### Browser-side Strapi access
+### Browser-side Strapi (allowlisted paths only)
 
 ```ts
 import { fetchClient } from '@/lib/fetch-client';
 
-// Routes through /api/strapi-proxy — allowed paths are whitelisted in the proxy route.
 const data = await fetchClient('/support-tickets', { method: 'GET' });
 ```
 
-### Admin / bootstrap Strapi client
+### Assessment submit & progress
 
-```ts
-import { getStrapiClient } from '@/lib/strapi';
+| Flow | BFF route | Strapi |
+|---|---|---|
+| Submit any slug | `POST /api/assessment/[slug]/submit` | `POST /assessment/:slug/results` |
+| Typing auto-save | `POST /api/assessment/attempt/progress` | `POST /candidate-assessment-attempts/progress` |
+| Candidate portal | `GET /api/candidate/workspace` | `GET /candidate/workspace` |
 
-// Server-only API token (no user context)
-const client = getStrapiClient();
-```
+### Shared-candidate notes (client + HM)
 
-`STRAPI_API_URL` is server-side; `NEXT_PUBLIC_STRAPI_API_URL` is the browser-reachable Strapi `/api` base (include `/api` in the value).
+| Action | BFF |
+|---|---|
+| List/create | `GET/POST /api/{client\|hiring-manager}/shared-candidates/[id]/notes` |
+| Delete | `DELETE /api/{client\|hiring-manager}/notes/[noteId]` |
 
-### Portal UI
-
-Shared design tokens live in `components/dashboard/portal/portal-design-tokens.ts`. Each role portal uses `PortalShell`; standalone pages (`/profile`, `/results`) use `PortalMinimalShell`.
-
-### Security helpers
-
-```ts
-import { rejectCrossOriginRequest } from '@/lib/security/origin-guard';
-import { applyRateLimit } from '@/lib/security/api-rate-limit';
-import { recordLoginFailure, clearLoginFailures } from '@/lib/security/login-attempt-guard';
-```
-
-Production CSP is built in `lib/security/content-security-policy.ts` and applied via `next.config.ts` headers.
-
-### strapi-proxy BFF
-
-Browser-authenticated Strapi calls use `/api/strapi-proxy/[...path]` with a path whitelist, per-IP rate limiting, origin checks on writes, and a 2MB body limit. See `CTRL/System-Security-Integrity.md`.
+UI: `components/dashboard/shared-candidate-notes-panel.tsx`
 
 ---
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local`. Never commit `.env.local`.
+Copy `.env.example` to `.env.local`. Never commit secrets.
 
-> **`NEXT_PUBLIC_`** exposes a variable to browser bundles. API tokens and secrets must **never** use this prefix.
-
-### NextAuth (Vercel / FrontEnd)
-
-| Variable | Required | Description |
+| Variable | Required | Notes |
 |---|---|---|
-| `NEXTAUTH_URL` | ✅ | Canonical app origin (must match browser URL in production) |
-| `NEXTAUTH_SECRET` | ✅ | NextAuth cookie signing key (`openssl rand -base64 32`) |
-| `UPSTASH_REDIS_REST_URL` | Prod recommended | Shared login lockout, rate limits, audit persistence |
-| `UPSTASH_REDIS_REST_TOKEN` | Prod recommended | Pair with `UPSTASH_REDIS_REST_URL` |
-| `SESSION_IDLE_MAX_AGE_SECONDS` | Optional | Default 7-day idle timeout |
+| `NEXTAUTH_SECRET`, `NEXTAUTH_URL` | ✅ | Session cookie signing |
+| `STRAPI_API_URL` | ✅ | Server-side Strapi base (include `/api`) |
+| `STRAPI_API_FULL_ACCESS_TOKEN` | ✅ | Server bootstrap / admin BFF |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | ✅ | Billing |
+| `BILLING_INTERNAL_SECRET` | ✅ | Must match Strapi |
+| `UPSTASH_REDIS_REST_*` | Prod | Distributed rate limits + lockout |
 
-`JWT_SECRET` and `CSRF_SECRET` are **Strapi-only** (`ctrl_backend` `.env`) — do not set on Vercel.
+`JWT_SECRET` and `CSRF_SECRET` are **Strapi-only** — do not set on Vercel.
 
-### Strapi backend
-
-| Variable | Side | Required | Description |
-|---|---|---|---|
-| `STRAPI_API_URL` | Server only | ✅ | Internal Strapi API base including `/api` |
-| `NEXT_PUBLIC_STRAPI_API_URL` | Browser + server | ✅ | Public Strapi API URL reachable from users' browsers |
-
-### Strapi API tokens (server-only)
-
-Generate in **Strapi Admin → Settings → API Tokens**.
-
-| Variable | Description |
-|---|---|
-| `STRAPI_API_FULL_ACCESS_TOKEN` | Admin/bootstrap operations via `getStrapiClient()` |
-| `STRAPI_API_READONLY_TOKEN` | Read-only fallback for assessment content services |
-
-### Stripe (client billing)
-
-| Variable | Description |
-|---|---|
-| `STRIPE_SECRET_KEY` | Server-side Stripe API |
-| `STRIPE_WEBHOOK_SECRET` | Webhook signature verification |
-| `BILLING_INTERNAL_SECRET` | Shared secret for Strapi internal fulfill endpoint |
-
-### Deployment flags
-
-| Variable | Description |
-|---|---|
-| `CLOUDFLARE_PAGES` | `"true"` → static export + unoptimized images |
+Full matrix: `CTRL/05-Operations/Deployment-Env.md`
 
 ---
 
@@ -183,40 +121,59 @@ Generate in **Strapi Admin → Settings → API Tokens**.
 ```bash
 npm install
 cp .env.example .env.local
-# Fill NEXTAUTH_SECRET, Strapi URLs/tokens, optional Upstash
-
-npm run dev          # http://localhost:3000 (Turbopack)
+npm run dev          # http://localhost:3000
 npm run typecheck
+npm test             # vitest (35 tests)
 npm run lint
 ```
 
-Ensure `ctrl_backend` is running (see `ctrl_deploy/` or BackEnd README).
+Ensure `ctrl_backend` is running. See `BackEnd/ctrl_backend/README.md`.
+
+### E2E (optional)
+
+```bash
+npm run test:e2e     # portal-smoke + api-contract specs
+```
+
+Requires `E2E_BASE_URL` and role credentials — see `CTRL/05-Operations/Deployment-Env.md#E2E`.
 
 ---
 
 ## Deployment
 
-| Target | Config | Notes |
-|---|---|---|
-| Cloudflare Pages | `wrangler.toml` | Set `CLOUDFLARE_PAGES=true` — static export, no Node runtime |
-| Firebase App Hosting | `apphosting.yaml` | Standalone Next.js container |
-| Docker | `Dockerfile` | Standalone output |
+| Target | Notes |
+|---|---|
+| **Vercel** | Primary production target (Node runtime, BFF routes) |
+| Docker | `Dockerfile` — standalone Next.js output |
+| Firebase App Hosting | `apphosting.yaml` |
 
-### Production checklist
+Production checklist:
 
-- [ ] `NEXTAUTH_URL` matches the public origin exactly
-- [ ] `NEXTAUTH_SECRET` is a strong random value
-- [ ] `UPSTASH_REDIS_REST_*` configured for lockout + audit persistence
-- [ ] Strapi `JWT_SECRET` + `CSRF_SECRET` on backend only
-- [ ] `STRAPI_API_URL` uses internal hostname; `NEXT_PUBLIC_STRAPI_API_URL` is public
-- [ ] `STRAPI_API_FULL_ACCESS_TOKEN` from production Strapi instance
-- [ ] Stripe keys + `BILLING_INTERNAL_SECRET` aligned between FrontEnd and Strapi
-- [ ] `CLOUDFLARE_PAGES` unset unless targeting static export
+- [ ] `NEXTAUTH_URL` matches public origin exactly
+- [ ] `STRAPI_API_URL` reachable from Vercel (public URL, not LAN)
+- [ ] `BILLING_INTERNAL_SECRET` matches Strapi
+- [ ] `UPSTASH_REDIS_REST_*` configured
+- [ ] Stripe webhook + keys aligned
+
+---
+
+## Removed legacy (2026-06-20)
+
+Do not reintroduce without vault review:
+
+- Slug-specific submit aliases (`/api/assessment/typing/submit`, etc.)
+- Legacy Strapi collection services (`company`, `question`, `audio-call`, `hybrid-assessment`, `assessment-progress`)
+- `assessment-progress` in strapi-proxy allowlist
+- Hybrid assessment summary route (`/api/assessment/hybrid-summary`)
 
 ---
 
 ## Related docs
 
-- `CTRL/Auth-Architecture.md` — vault auth architecture
-- `CTRL/Known-Gaps.md` — tracked limitations
-- `CTRL/Deployment-Env.md` — full env matrix
+| Doc | Path |
+|---|---|
+| Vault frontend brain | `CTRL/01-Platform/Project-Brain-Frontend.md` |
+| API contract map | `CTRL/05-Operations/API-Contract-Map.md` |
+| Auth architecture | `CTRL/02-Security/Auth-Architecture.md` |
+| Assessment plugins | `CTRL/05-Operations/Assessment-Plugin-Migration-Plan.md` |
+| Deprecated hybrid phase docs | `docs/PHASE_4_1_*`, `docs/PHASE_4_2_*` (historical) |
