@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,8 @@ type CandidateEmailInvitesPanelProps = {
   className?: string;
 };
 
+const RESEND_BUTTON_LOCK_MS = 15 * 1000;
+
 export function CandidateEmailInvitesPanel({
   sessionId,
   deliveryMode,
@@ -44,9 +46,19 @@ export function CandidateEmailInvitesPanel({
   const [isSendingInvites, setIsSendingInvites] = useState(false);
   const [inviteFeedback, setInviteFeedback] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [resendingInviteId, setResendingInviteId] = useState<string | null>(null);
+  const [lockedResendInviteIds, setLockedResendInviteIds] = useState<Record<string, true>>({});
+  const resendUnlockTimeoutsRef = useRef<Record<string, number>>({});
 
   const remainingSeats = Math.max(0, candidateLimit - candidateCount);
   const maxBatchSize = Math.min(25, remainingSeats);
+
+  useEffect(() => {
+    const timeouts = resendUnlockTimeoutsRef.current;
+    return () => {
+      Object.values(timeouts).forEach((timeoutId) => window.clearTimeout(timeoutId));
+    };
+  }, []);
 
   const addInviteEmails = (raw: string) => {
     const parsed = raw
@@ -96,6 +108,37 @@ export function CandidateEmailInvitesPanel({
       );
     } finally {
       setIsSendingInvites(false);
+    }
+  };
+
+  const resendCandidateInvite = async (invite: PendingInvite) => {
+    if (disabled || resendingInviteId) return;
+    if (lockedResendInviteIds[invite.id]) return;
+
+    setResendingInviteId(invite.id);
+    setInviteFeedback(null);
+    setInviteError(null);
+
+    try {
+      await HiringManagerPortalClientService.resendCandidateInvite(invite.id);
+      setLockedResendInviteIds((current) => ({ ...current, [invite.id]: true }));
+      window.clearTimeout(resendUnlockTimeoutsRef.current[invite.id]);
+      resendUnlockTimeoutsRef.current[invite.id] = window.setTimeout(() => {
+        setLockedResendInviteIds((current) => {
+          const next = { ...current };
+          delete next[invite.id];
+          return next;
+        });
+        delete resendUnlockTimeoutsRef.current[invite.id];
+      }, RESEND_BUTTON_LOCK_MS);
+      setInviteFeedback(`Resent invite to ${invite.email}.`);
+      await onInvitesSent?.();
+    } catch (error) {
+      setInviteError(
+        error instanceof Error ? error.message : "Candidate invite could not be resent."
+      );
+    } finally {
+      setResendingInviteId(null);
     }
   };
 
@@ -198,18 +241,47 @@ export function CandidateEmailInvitesPanel({
                 <th className="p-3">Email</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Code</th>
+                <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-slate-200">
-              {pendingInvites.map((invite) => (
-                <tr key={invite.id}>
-                  <td className="p-3">{invite.email}</td>
-                  <td className="p-3 capitalize">{invite.inviteStatus}</td>
-                  <td className="p-3 font-mono text-[11px] text-slate-400">
-                    {invite.candidateCode ?? "—"}
-                  </td>
-                </tr>
-              ))}
+              {pendingInvites.map((invite) => {
+                const isResending = resendingInviteId === invite.id;
+                const isLocked = Boolean(lockedResendInviteIds[invite.id]);
+
+                return (
+                  <tr key={invite.id}>
+                    <td className="p-3">{invite.email}</td>
+                    <td className="p-3 capitalize">{invite.inviteStatus}</td>
+                    <td className="p-3 font-mono text-[11px] text-slate-400">
+                      {invite.candidateCode ?? "—"}
+                    </td>
+                    <td className="p-3 text-right">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 min-w-[8rem] rounded-lg border-white/10 bg-white/[0.02] px-2.5 text-xs text-slate-200 hover:bg-white/[0.06] hover:text-white"
+                        onClick={() => void resendCandidateInvite(invite)}
+                        disabled={
+                          disabled
+                          || Boolean(resendingInviteId)
+                          || isLocked
+                        }
+                      >
+                        <RefreshCw
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            isResending ? "motion-safe:animate-spin" : ""
+                          )}
+                          aria-hidden="true"
+                        />
+                        {isResending ? "Resending" : "Resend"}
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

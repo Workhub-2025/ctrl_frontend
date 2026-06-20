@@ -448,4 +448,16 @@ export class HiringManagerPortalClientService {
       return false;
     }
   }
+
+  static async resendCandidateInvite(candidateSessionId: string): Promise<void> {
+    const response = await fetch(
+      `/api/hiring-manager/candidate-sessions/${encodeURIComponent(candidateSessionId)}/resend`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    await readJson<{ data?: unknown; error?: string }>(response);
+    this.invalidate();
+  }
 }
