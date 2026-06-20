@@ -17,6 +17,7 @@ import {
 } from "@/components/dashboard/portal/portal-ui";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { ClientCandidateOutreachDialog } from "@/components/dashboard/client/client-candidate-outreach-dialog";
+import { SharedCandidateNotesPanel } from "@/components/dashboard/shared-candidate-notes-panel";
 import type { ClientSharedCandidate } from "@/services/client-portal.service";
 import { cn } from "@/lib/utils";
 
@@ -40,8 +41,10 @@ export function ClientCandidateApprovalsContent() {
     sharedCandidates,
     sharedLoading,
     error,
+    reviewingCandidateId,
     loadOverview,
     loadSharedCandidates,
+    updateSharedCandidateStatus,
   } = useClientPortal();
 
   useEffect(() => {
@@ -125,7 +128,46 @@ export function ClientCandidateApprovalsContent() {
                         {candidate.role} · Recommended by {candidate.hiringManagerName}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-start">
+                    <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-start">
+                      <div className="flex flex-wrap gap-2">
+                        {candidate.reviewStatus === "pending_review" ? (
+                          <>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="rounded-xl font-semibold"
+                              disabled={reviewingCandidateId === candidate.documentId}
+                              onClick={() =>
+                                void updateSharedCandidateStatus(candidate.documentId, "reviewed")
+                              }
+                            >
+                              Mark reviewed
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="rounded-xl font-semibold"
+                              disabled={reviewingCandidateId === candidate.documentId}
+                              onClick={() =>
+                                void updateSharedCandidateStatus(candidate.documentId, "progressed")
+                              }
+                            >
+                              Progress
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-xl font-semibold"
+                              disabled={reviewingCandidateId === candidate.documentId}
+                              onClick={() =>
+                                void updateSharedCandidateStatus(candidate.documentId, "rejected")
+                              }
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        ) : null}
+                      </div>
                       <ClientCandidateOutreachDialog candidate={candidate}>
                         <Button
                           variant="outline"
@@ -138,6 +180,11 @@ export function ClientCandidateApprovalsContent() {
                       </ClientCandidateOutreachDialog>
                     </div>
                   </div>
+                  <SharedCandidateNotesPanel
+                    sharedCandidateDocumentId={candidate.documentId}
+                    portal="client"
+                    className="mt-4"
+                  />
                 </li>
               ))}
             </ul>

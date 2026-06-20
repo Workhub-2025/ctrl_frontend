@@ -46,6 +46,7 @@ import {
   AssessmentAbandonedActions,
   formatAbandonedAssessmentSummary,
 } from "@/components/dashboard/assessment-abandoned-actions";
+import { SharedCandidateNotesPanel } from "@/components/dashboard/shared-candidate-notes-panel";
 
 type CandidateReportProps = {
   candidateId: string;
@@ -666,6 +667,12 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
         </CardContent>
       </Card>
 
+      {reportData.sharedCandidateDocumentId ? (
+        <SharedCandidateNotesPanel
+          sharedCandidateDocumentId={reportData.sharedCandidateDocumentId}
+          portal="hiring_manager"
+        />
+      ) : null}
 
     </div>
   );

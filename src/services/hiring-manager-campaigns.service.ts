@@ -243,6 +243,7 @@ type RawHmCandidateReport = {
   hmDecision?: "pending" | "approved" | "rejected" | null;
   hmDecisionAt?: string | null;
   hmDecisionNote?: string | null;
+  sharedCandidateDocumentId?: string | null;
 };
 
 export type HiringManagerAssessmentSessionCreateInput = {
@@ -759,6 +760,7 @@ function normalizeHmCandidateReport(raw: RawHmCandidateReport): HiringManagerCan
     hmDecision: raw.hmDecision ?? session.hmDecision ?? "pending",
     hmDecisionAt: raw.hmDecisionAt ?? null,
     hmDecisionNote: raw.hmDecisionNote ?? null,
+    sharedCandidateDocumentId: raw.sharedCandidateDocumentId ?? null,
   };
 }
 

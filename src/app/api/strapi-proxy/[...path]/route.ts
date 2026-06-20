@@ -12,7 +12,6 @@ const MAX_PROXY_BODY_BYTES = 2 * 1024 * 1024;
 const ALLOWED_PREFIXES = [
   "support-tickets",
   "candidate-sessions",
-  "assessment-progress",
   "users-permissions",
 ];
 

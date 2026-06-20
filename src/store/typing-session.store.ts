@@ -50,7 +50,7 @@ export const DEFAULT_TYPING_CONFIG: TypingConfig = {
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 interface TypingSessionState {
-    /** documentId del assessment-progress creado por sessionInit */
+    /** Attempt document id returned by session init (legacy typing store field name). */
     sessionId: string | null;
     /** documentId del assessment definition (para relacionar el resultado final) */
     assessmentId: string | null;

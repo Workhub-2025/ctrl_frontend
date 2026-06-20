@@ -120,4 +120,5 @@ export type HiringManagerCandidateReport = {
   hmDecision: "pending" | "approved" | "rejected" | null;
   hmDecisionAt?: string | null;
   hmDecisionNote?: string | null;
+  sharedCandidateDocumentId?: string | null;
 };
