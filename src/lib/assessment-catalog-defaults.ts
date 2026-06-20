@@ -4,6 +4,7 @@
  * Single source of truth for fallback config used when Strapi is unavailable
  * or session init fails. Keep aligned with:
  *   BackEnd/ctrl_backend/src/api/assessment/plugins/register-all.ts (buildCatalogueSeed)
+ *   BackEnd/ctrl_backend/src/components/assessment-config/*.json (runtime settings)
  *   BackEnd/ctrl_backend/src/api/assessment/services/typing-scoring.ts (thresholds)
  *
  * Operators: see CTRL/05-Operations/Assessment-Content-Guide.md

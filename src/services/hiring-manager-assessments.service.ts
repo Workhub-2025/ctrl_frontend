@@ -5,12 +5,13 @@ import {
   CALL_SIMULATION_CALL_COUNT,
   PJA_ROUND_COUNT,
   SJT_QUESTION_COUNT,
-  STM_TIME_LIMIT_SECONDS,
+  STM_INFORMATION_SECONDS,
+  STM_DISTRACTION_SECONDS,
+  STM_RECALL_SECONDS,
   STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
   TYPING_ACCURACY_THRESHOLD,
   TYPING_ROUND_COUNT,
   TYPING_TIME_LIMIT_PER_ROUND_SECONDS,
-  TYPING_TIME_LIMIT_SECONDS,
   TYPING_WPM_THRESHOLD,
 } from "@/lib/assessment-catalog-defaults";
 import { getEntitledAssessmentSlugs } from "@/lib/client/entitlements";
@@ -78,14 +79,34 @@ type AssessmentConfig = {
   __component?: string;
   roundCount?: number;
   timeLimitPerRound?: number;
+  timeLimitSeconds?: number;
   minWpm?: number;
   minAccuracy?: number;
   questionCount?: number;
-  passingPercentage?: number;
   passingScore?: number;
   callCount?: number;
+  informationSeconds?: number;
+  distractionSeconds?: number;
+  recallSeconds?: number;
   evaluationRubric?: string | null;
 };
+
+function resolvePassingScore(
+  config: AssessmentConfig | null,
+  assessment: StrapiAssessment,
+): number | null {
+  if (typeof config?.passingScore === "number") {
+    return config.passingScore;
+  }
+  if (typeof assessment.passingScore === "number") {
+    return assessment.passingScore;
+  }
+  const slug = assessment.slug?.trim() as keyof typeof ASSESSMENT_CATALOGUE_DEFAULTS | undefined;
+  if (slug && ASSESSMENT_CATALOGUE_DEFAULTS[slug]) {
+    return ASSESSMENT_CATALOGUE_DEFAULTS[slug].passingScore;
+  }
+  return null;
+}
 
 export type AssessmentVersionOption = {
   version: string;
@@ -191,8 +212,6 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       "Measures transcription speed and accuracy using one practice run and three scored typing runs.",
     isActive: true,
     order: 1,
-    timeLimitSeconds: TYPING_TIME_LIMIT_SECONDS,
-    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS.typing.passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.typing",
@@ -200,6 +219,7 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       timeLimitPerRound: TYPING_TIME_LIMIT_PER_ROUND_SECONDS,
       minWpm: TYPING_WPM_THRESHOLD,
       minAccuracy: TYPING_ACCURACY_THRESHOLD,
+      passingScore: ASSESSMENT_CATALOGUE_DEFAULTS.typing.passingScore,
     },
   },
   {
@@ -209,13 +229,12 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
     description: "Measures behavioural judgement using best/worst responses across realistic workplace scenarios.",
     isActive: true,
     order: 2,
-    timeLimitSeconds: STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
-    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS["situational-judgement"].passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.situational-judgement",
       questionCount: SJT_QUESTION_COUNT,
-      passingPercentage: ASSESSMENT_CATALOGUE_DEFAULTS["situational-judgement"].passingScore,
+      timeLimitSeconds: STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
+      passingScore: ASSESSMENT_CATALOGUE_DEFAULTS["situational-judgement"].passingScore,
     },
   },
   {
@@ -226,12 +245,11 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       "Measures risk-aware incident prioritisation using six-incident ranking sets.",
     isActive: true,
     order: 3,
-    timeLimitSeconds: STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
-    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS.prioritisation.passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.prioritisation",
       roundCount: PJA_ROUND_COUNT,
+      timeLimitSeconds: STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
       passingScore: ASSESSMENT_CATALOGUE_DEFAULTS.prioritisation.passingScore,
     },
   },
@@ -243,11 +261,11 @@ const platformAssessmentFallbacks: StrapiAssessment[] = [
       "Assesses call handling, listening accuracy, and structured information capture.",
     isActive: true,
     order: 4,
-    passingScore: ASSESSMENT_CATALOGUE_DEFAULTS["call-simulation"].passingScore,
     maxAttempts: 1,
     config: {
       __component: "assessment-config.call-simulation",
       callCount: CALL_SIMULATION_CALL_COUNT,
+      passingScore: ASSESSMENT_CATALOGUE_DEFAULTS["call-simulation"].passingScore,
       evaluationRubric: "",
     },
   },
@@ -287,6 +305,10 @@ function inferDurationSeconds(
   assessment: StrapiAssessment,
   config: AssessmentConfig | null
 ): number | null {
+  if (typeof config?.timeLimitSeconds === "number" && config.timeLimitSeconds > 0) {
+    return config.timeLimitSeconds;
+  }
+
   if (assessment.timeLimitSeconds && assessment.timeLimitSeconds > 0) {
     return assessment.timeLimitSeconds;
   }
@@ -303,8 +325,12 @@ function inferDurationSeconds(
       return STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;
     case "assessment-config.call-simulation":
       return config.callCount ? config.callCount * 240 : null;
-    case "assessment-config.short-term-memory":
-      return STM_TIME_LIMIT_SECONDS;
+    case "assessment-config.short-term-memory": {
+      const informationSeconds = config.informationSeconds ?? STM_INFORMATION_SECONDS;
+      const distractionSeconds = config.distractionSeconds ?? STM_DISTRACTION_SECONDS;
+      const recallSeconds = config.recallSeconds ?? STM_RECALL_SECONDS;
+      return informationSeconds + distractionSeconds + recallSeconds + 30;
+    }
     default:
       return null;
   }
@@ -337,7 +363,7 @@ function normalizeAssessment(item: unknown): HiringManagerAssessment | null {
     iconKey: meta.iconKey,
     configType: config?.__component ?? "assessment-config.unknown",
     isActive: assessment.isActive ?? true,
-    passingScore: assessment.passingScore ?? null,
+    passingScore: resolvePassingScore(config, assessment),
     maxAttempts: assessment.maxAttempts ?? null,
     availableVersions: [{ version: "1.0.0", title: "v1.0.0", description: null }],
   };
