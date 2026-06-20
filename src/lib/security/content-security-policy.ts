@@ -35,6 +35,7 @@ export function buildContentSecurityPolicy(): string {
     "worker-src": ["'self'", "blob:"],
     "manifest-src": ["'self'"],
     "img-src": ["'self'", "data:", "blob:", strapiOrigin, "https://placehold.co"],
+    "media-src": ["'self'", "blob:", strapiOrigin],
     "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
     "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
     "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
