@@ -122,6 +122,8 @@ export type ClientUpgradeBundleLineItem = {
   label: string;
   quantity: number;
   unitAmountPence: number;
+  /** Monthly recurring DD charge vs one-time unlock fee */
+  billingInterval?: "month" | "once";
 };
 
 export type ClientInitiatedUpgradeType =

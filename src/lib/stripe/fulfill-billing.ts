@@ -30,6 +30,8 @@ export async function fulfillBillingRequest(input: {
   billingRequestDocumentId: string;
   stripeCheckoutSessionId: string;
   stripeInvoiceId?: string;
+  stripeSubscriptionId?: string;
+  stripeCustomerId?: string;
 }): Promise<FulfillBillingResult> {
   const secret = process.env.BILLING_INTERNAL_SECRET;
   if (!secret) {

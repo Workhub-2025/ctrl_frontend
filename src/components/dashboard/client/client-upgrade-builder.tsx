@@ -42,6 +42,7 @@ import {
   type ClientUpgradeDraft,
   type ClientUpgradePricing,
 } from "@/lib/client/upgrade-bundle";
+import { BILLING_CYCLE_PRO_RATA_HINT } from "@/lib/stripe/subscription-checkout";
 import { formatMoney } from "@/lib/money";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 import { cn } from "@/lib/utils";
@@ -145,6 +146,16 @@ export function ClientUpgradeBuilder({
   );
 
   const estimatedTotal = useMemo(() => sumLineItems(lineItems), [lineItems]);
+  const monthlyRecurringTotal = useMemo(
+    () =>
+      sumLineItems(lineItems.filter((item) => item.billingInterval === "month")),
+    [lineItems]
+  );
+  const oneTimeTotal = useMemo(
+    () =>
+      sumLineItems(lineItems.filter((item) => item.billingInterval !== "month")),
+    [lineItems]
+  );
 
   const updateDraft = (patch: Partial<ClientUpgradeDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -397,17 +408,43 @@ export function ClientUpgradeBuilder({
                   <li key={item.label} className="flex items-center justify-between gap-3 text-xs">
                     <span className="text-muted-foreground">
                       {item.label} × {item.quantity}
+                      {item.billingInterval === "month" ? " / month" : ""}
                     </span>
                     <span className="font-semibold text-foreground">
                       {formatMoney(item.quantity * item.unitAmountPence, pricing?.currency ?? "gbp")}
+                      {item.billingInterval === "month" ? "/mo" : ""}
                     </span>
                   </li>
                 ))}
               </ul>
+              {monthlyRecurringTotal > 0 && oneTimeTotal > 0 ? (
+                <div className="space-y-2 border-t border-border/50 pt-3 text-sm dark:border-white/5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Monthly recurring (Direct Debit)</span>
+                    <span className="font-semibold text-foreground">
+                      {formatMoney(monthlyRecurringTotal, pricing?.currency ?? "gbp")}/mo
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">One-time due on first invoice</span>
+                    <span className="font-semibold text-foreground">
+                      {formatMoney(oneTimeTotal, pricing?.currency ?? "gbp")}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
               <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3 text-sm font-semibold dark:border-white/5">
-                <span>Total</span>
-                <span>{formatMoney(estimatedTotal, pricing?.currency ?? "gbp")}</span>
+                <span>{monthlyRecurringTotal > 0 && oneTimeTotal === 0 ? "Monthly total" : "Total"}</span>
+                <span>
+                  {formatMoney(estimatedTotal, pricing?.currency ?? "gbp")}
+                  {monthlyRecurringTotal > 0 && oneTimeTotal === 0 ? "/mo" : ""}
+                </span>
               </div>
+              {monthlyRecurringTotal > 0 ? (
+                <p className="text-[11px] text-muted-foreground">
+                  {BILLING_CYCLE_PRO_RATA_HINT} Stripe Checkout shows the exact amount due today.
+                </p>
+              ) : null}
             </div>
           ) : pricingLoading ? (
             <p className="text-xs text-muted-foreground">Loading indicative pricing…</p>

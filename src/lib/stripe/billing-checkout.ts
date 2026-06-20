@@ -5,6 +5,13 @@ import type {
   ClientUpgradeBundleLineItem,
   ClientUpgradeRequestPayload,
 } from "@/lib/client/entitlements";
+import {
+  isRecurringUpgradeItemType,
+  monthlyAssessmentAddonPence,
+  monthlySeatPricePence,
+  payloadUsesSubscriptionCheckout,
+} from "@/lib/stripe/billing-recurring";
+import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
 import { getStripeClient } from "@/lib/stripe/server";
 
 export type BillingRequestCheckoutRow = {
@@ -15,6 +22,7 @@ export type BillingRequestCheckoutRow = {
   requestKind?: string;
   upgradeType?: string;
   payload?: ClientUpgradeRequestPayload;
+  amountDuePence?: number;
 };
 
 export function getStripeAppUrl() {
@@ -33,8 +41,8 @@ function computeBundleLineItemsFromPricing(
     return payload.lineItems;
   }
 
-  const seatPrice = Number(pricing.seatOneOffPence ?? pricing.seatMonthlyPence ?? 0);
-  const addonPrice = Number(pricing.assessmentAddonPence ?? 0);
+  const seatPrice = monthlySeatPricePence(pricing);
+  const addonPrice = monthlyAssessmentAddonPence(pricing);
   const featurePrices =
     pricing.featurePrices && typeof pricing.featurePrices === "object"
       ? (pricing.featurePrices as Record<string, number>)
@@ -47,16 +55,11 @@ function computeBundleLineItemsFromPricing(
       case "seat_increase": {
         const additional = Math.max(0, item.requestedSeats - item.currentSeats);
         if (additional > 0) {
-          const now = new Date();
-          const year = now.getFullYear();
-          const month = now.getMonth();
-          const totalDays = new Date(year, month + 1, 0).getDate();
-          const remainingDays = totalDays - now.getDate() + 1;
-          const unitAmountPence = Math.round((seatPrice / totalDays) * remainingDays);
           lineItems.push({
-            label: `${additional} additional HM seat${additional === 1 ? "" : "s"} (pro-rated for ${remainingDays}/${totalDays} days)`,
+            label: `${additional} additional HM seat${additional === 1 ? "" : "s"}`,
             quantity: additional,
-            unitAmountPence,
+            unitAmountPence: seatPrice,
+            billingInterval: "month",
           });
         }
         break;
@@ -66,6 +69,7 @@ function computeBundleLineItemsFromPricing(
           label: item.featureKey === "deliveryRemote" ? "Remote delivery" : "Hybrid delivery",
           quantity: 1,
           unitAmountPence: featurePrices[item.featureKey] ?? 0,
+          billingInterval: "once",
         });
         break;
       case "new_assessment":
@@ -73,6 +77,7 @@ function computeBundleLineItemsFromPricing(
           label: `Add-on assessment: ${item.assessmentLabel}`,
           quantity: 1,
           unitAmountPence: addonPrice,
+          billingInterval: "month",
         });
         break;
       default:
@@ -90,10 +95,10 @@ export function computeUpgradeAmountPence(
 ): number {
   if (
     billingRequest &&
-    typeof (billingRequest as any).amountDuePence === "number" &&
-    (billingRequest as any).amountDuePence > 0
+    typeof billingRequest.amountDuePence === "number" &&
+    billingRequest.amountDuePence > 0
   ) {
-    return (billingRequest as any).amountDuePence;
+    return billingRequest.amountDuePence;
   }
 
   switch (payload.type) {
@@ -101,8 +106,7 @@ export function computeUpgradeAmountPence(
       return sumLineItems(computeBundleLineItemsFromPricing(payload, pricing));
     case "seat_increase":
       return (
-        Math.max(0, payload.requestedSeats - payload.currentSeats) *
-        Number(pricing.seatOneOffPence ?? pricing.seatMonthlyPence ?? 0)
+        Math.max(0, payload.requestedSeats - payload.currentSeats) * monthlySeatPricePence(pricing)
       );
     case "delivery_feature":
       return Number(
@@ -111,7 +115,7 @@ export function computeUpgradeAmountPence(
           : 0
       );
     case "new_assessment":
-      return Number(pricing.assessmentAddonPence ?? 0);
+      return monthlyAssessmentAddonPence(pricing);
     case "contract_extension":
       return Number(pricing.basePlatformYearlyPence ?? pricing.basePlatformMonthlyPence ?? 0);
     case "contract_activation":
@@ -121,33 +125,57 @@ export function computeUpgradeAmountPence(
   }
 }
 
+function mapLineItemToStripe(
+  item: ClientUpgradeBundleLineItem,
+  currency: string,
+  fallbackDescription: string
+): Stripe.Checkout.SessionCreateParams.LineItem {
+  const isMonthly = item.billingInterval === "month";
+
+  return {
+    quantity: item.quantity,
+    price_data: {
+      currency,
+      unit_amount: item.unitAmountPence,
+      recurring: isMonthly ? { interval: "month" } : undefined,
+      product_data: {
+        name: item.label,
+        description: isMonthly
+          ? `${item.label} · paid monthly via Direct Debit`
+          : fallbackDescription,
+      },
+    },
+  };
+}
+
 function buildStripeLineItems(
   billingRequest: BillingRequestCheckoutRow,
   payload: ClientUpgradeRequestPayload,
   pricing: Record<string, number | string>,
   currency: string
 ): Stripe.Checkout.SessionCreateParams.LineItem[] {
-  const snapshottedAmount = (billingRequest as any).amountDuePence;
-  const isSubscription = payload.type === "contract_activation" || payload.type === "contract_extension";
+  const snapshottedAmount = billingRequest.amountDuePence;
+  const isContractCheckout =
+    payload.type === "contract_activation" || payload.type === "contract_extension";
 
-  if (typeof snapshottedAmount === "number" && snapshottedAmount > 0) {
+  if (typeof snapshottedAmount === "number" && snapshottedAmount > 0 && isContractCheckout) {
     return [
       {
         quantity: 1,
         price_data: {
           currency,
-          unit_amount: isSubscription ? Math.round(snapshottedAmount / 12) : snapshottedAmount,
-          recurring: isSubscription ? { interval: "month" } : undefined,
+          unit_amount: Math.round(snapshottedAmount / 12),
+          recurring: { interval: "month" },
           product_data: {
             name: billingRequest.subject ?? "CTRL platform upgrade",
-            description: isSubscription
-              ? `Annual platform contract · paid monthly via Direct Debit`
-              : (billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request"),
+            description: "Annual platform contract · paid monthly via Direct Debit",
           },
         },
       },
     ];
   }
+
+  const fallbackDescription = billingRequest.subject ?? "CTRL platform upgrade";
 
   if (payload.type === "upgrade_bundle") {
     const bundleLineItems = computeBundleLineItemsFromPricing(payload, pricing);
@@ -155,17 +183,42 @@ function buildStripeLineItems(
       throw new Error("No billable line items found for this upgrade bundle");
     }
 
-    return bundleLineItems.map((item) => ({
-      quantity: item.quantity,
-      price_data: {
-        currency,
-        unit_amount: item.unitAmountPence,
-        product_data: {
-          name: item.label,
-          description: billingRequest.subject ?? "CTRL platform upgrade",
+    return bundleLineItems.map((item) => mapLineItemToStripe(item, currency, fallbackDescription));
+  }
+
+  if (payload.type === "seat_increase") {
+    const additional = Math.max(0, payload.requestedSeats - payload.currentSeats);
+    if (additional <= 0) {
+      throw new Error("No additional seats to bill");
+    }
+
+    return [
+      mapLineItemToStripe(
+        {
+          label: `${additional} additional HM seat${additional === 1 ? "" : "s"}`,
+          quantity: additional,
+          unitAmountPence: monthlySeatPricePence(pricing),
+          billingInterval: "month",
         },
-      },
-    }));
+        currency,
+        fallbackDescription
+      ),
+    ];
+  }
+
+  if (payload.type === "new_assessment") {
+    return [
+      mapLineItemToStripe(
+        {
+          label: `Add-on assessment: ${payload.assessmentLabel}`,
+          quantity: 1,
+          unitAmountPence: monthlyAssessmentAddonPence(pricing),
+          billingInterval: "month",
+        },
+        currency,
+        fallbackDescription
+      ),
+    ];
   }
 
   const amountPence = computeUpgradeAmountPence(payload, pricing, billingRequest);
@@ -173,17 +226,19 @@ function buildStripeLineItems(
     throw new Error("Pricing is not configured for this upgrade type. Set prices in Admin → Billing.");
   }
 
+  const usesSubscription = payloadUsesSubscriptionCheckout(payload);
+
   return [
     {
       quantity: 1,
       price_data: {
         currency,
-        unit_amount: isSubscription ? Math.round(amountPence / 12) : amountPence,
-        recurring: isSubscription ? { interval: "month" } : undefined,
+        unit_amount: usesSubscription ? Math.round(amountPence / 12) : amountPence,
+        recurring: usesSubscription ? { interval: "month" } : undefined,
         product_data: {
           name: billingRequest.subject ?? "CTRL platform upgrade",
-          description: isSubscription
-            ? `Annual platform contract · paid monthly via Direct Debit`
+          description: usesSubscription
+            ? "Annual platform contract · paid monthly via Direct Debit"
             : (billingRequest.upgradeType?.replace(/_/g, " ") ?? "Upgrade request"),
         },
       },
@@ -193,7 +248,8 @@ function buildStripeLineItems(
 
 export async function createBillingCheckoutSession(
   billingRequest: BillingRequestCheckoutRow,
-  pricing: Record<string, number | string>
+  pricing: Record<string, number | string>,
+  options?: { stripeCustomerId?: string | null }
 ): Promise<{
   checkoutSession: Stripe.Checkout.Session;
   amountPence: number;
@@ -217,10 +273,13 @@ export async function createBillingCheckoutSession(
   }
 
   const requestKind = billingRequest.requestKind ?? "client_upgrade";
-  const isSubscription = payload.type === "contract_activation" || payload.type === "contract_extension";
+  const usesSubscription = payloadUsesSubscriptionCheckout(payload);
+  const stripeCustomerId = options?.stripeCustomerId?.trim();
   const stripe = getStripeClient();
   const checkoutSession = await stripe.checkout.sessions.create({
-    mode: isSubscription ? "subscription" : "payment",
+    mode: usesSubscription ? "subscription" : "payment",
+    ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
+    ...(usesSubscription ? { subscription_data: buildStripeSubscriptionCheckoutData() } : {}),
     success_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
     line_items: buildStripeLineItems(billingRequest, payload, pricing, currency),
@@ -234,3 +293,5 @@ export async function createBillingCheckoutSession(
 
   return { checkoutSession, amountPence, currency, requestDocumentId };
 }
+
+export { isRecurringUpgradeItemType, payloadUsesSubscriptionCheckout };

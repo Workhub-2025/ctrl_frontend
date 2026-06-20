@@ -504,7 +504,7 @@ export default function AdminBillingPage() {
                 icon={Users}
               />
               <PoundField
-                label="Add-on assessment (one-off cost)"
+                label="Add-on assessment (monthly recurring cost)"
                 pence={pricing.assessmentAddonPence}
                 onChangePence={(value) =>
                   setPricing((current) => ({ ...current, assessmentAddonPence: value }))

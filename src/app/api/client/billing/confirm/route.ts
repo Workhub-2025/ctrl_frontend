@@ -107,6 +107,14 @@ export async function POST(request: NextRequest) {
         stripeCheckoutSessionId: checkoutSession.id,
         stripeInvoiceId:
           typeof checkoutSession.invoice === "string" ? checkoutSession.invoice : undefined,
+        stripeSubscriptionId:
+          typeof checkoutSession.subscription === "string"
+            ? checkoutSession.subscription
+            : checkoutSession.subscription?.id,
+        stripeCustomerId:
+          typeof checkoutSession.customer === "string"
+            ? checkoutSession.customer
+            : checkoutSession.customer?.id,
       });
 
       return NextResponse.json({

@@ -42,7 +42,7 @@ export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraf
   };
 }
 
-function seatOneOffPrice(pricing: ClientUpgradePricing) {
+function seatMonthlyPrice(pricing: ClientUpgradePricing) {
   return pricing.seatOneOffPence ?? pricing.seatMonthlyPence ?? 0;
 }
 
@@ -123,7 +123,7 @@ export function computeLineItems(
       case "seat_increase": {
         const additional = Math.max(0, item.requestedSeats - item.currentSeats);
         if (additional > 0) {
-          let unitAmountPence = seatOneOffPrice(pricing);
+          let unitAmountPence = seatMonthlyPrice(pricing);
           if (discountPercent) {
             unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
           }
@@ -131,6 +131,7 @@ export function computeLineItems(
             label: `${additional} additional HM seat${additional === 1 ? "" : "s"}`,
             quantity: additional,
             unitAmountPence,
+            billingInterval: "month",
           });
         }
         break;
@@ -146,6 +147,7 @@ export function computeLineItems(
             item.featureKey,
           quantity: 1,
           unitAmountPence,
+          billingInterval: "once",
         });
         break;
       }
@@ -158,6 +160,7 @@ export function computeLineItems(
           label: `Add-on assessment: ${item.assessmentLabel}`,
           quantity: 1,
           unitAmountPence,
+          billingInterval: "month",
         });
         break;
       }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
+import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
 import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import {
   addOneYearToDate,
@@ -160,6 +161,7 @@ export async function POST(
     const stripe = getStripeClient();
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
+      subscription_data: buildStripeSubscriptionCheckoutData(),
       success_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
       line_items: [

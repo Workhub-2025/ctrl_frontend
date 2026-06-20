@@ -41,6 +41,12 @@ export async function POST(request: Request) {
       billingRequestDocumentId: metadata.billingRequestDocumentId,
       stripeCheckoutSessionId: session.id,
       stripeInvoiceId: typeof session.invoice === "string" ? session.invoice : undefined,
+      stripeSubscriptionId:
+        typeof session.subscription === "string"
+          ? session.subscription
+          : session.subscription?.id,
+      stripeCustomerId:
+        typeof session.customer === "string" ? session.customer : session.customer?.id,
     });
 
     return NextResponse.json({
