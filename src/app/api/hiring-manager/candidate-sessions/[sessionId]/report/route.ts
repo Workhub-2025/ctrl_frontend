@@ -7,13 +7,13 @@ import {
 
 export async function GET(
   _request: NextRequest,
-  context: { params: Promise<{ candidateSessionId: string }> }
+  context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     await requireHmSession();
-    const { candidateSessionId } = await context.params;
+    const { sessionId } = await context.params;
 
-    const result = await getHiringManagerCandidateReport(candidateSessionId);
+    const result = await getHiringManagerCandidateReport(sessionId);
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: 400 });
