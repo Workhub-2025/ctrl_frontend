@@ -1,14 +1,13 @@
 /**
  * Assessment Progress Service
- * Handles auto-save and resume functionality for assessment tests
+ * @deprecated Progress is stored on CandidateAssessmentAttempt. Keep this
+ * compatibility wrapper until legacy server actions are removed.
  */
 
-import { fetchClient } from '@/lib/fetch-client';
+import { AssessmentAttemptService } from '@/services/assessment-attempt.service';
 import { AssessmentProgress } from '@/types/assessments-progress.types';
 
 export class AssessmentProgressService {
-    private static readonly BASE_PATH = '/assessment-progress';
-
     /**
      * Save assessment progress
      */
@@ -17,18 +16,13 @@ export class AssessmentProgressService {
         sessionId?: string | null,
         candidateSessionDocumentId?: string | null
     ): Promise<void> {
+        void sessionId;
         try {
-            // Strapi controller expects payload shape: { testType, progressData, status }
-            // sessionId (documentId of existing assessment-progress) triggers upsert instead of create
-            await fetchClient(`${this.BASE_PATH}/save`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    assessmentSlug: (progress as any).testType,
-                    progressData: progress,
-                    status: (progress as any).status,
-                    ...(candidateSessionDocumentId ? { candidateSessionDocumentId } : {}),
-                    ...(sessionId ? { documentId: sessionId } : {}),
-                }),
+            if (!candidateSessionDocumentId) return;
+            await AssessmentAttemptService.saveProgress({
+                candidateSessionDocumentId,
+                assessmentSlug: (progress as any).testType,
+                progressData: progress as unknown as Record<string, unknown>,
             });
         } catch (error) {
             // Log at debug level to avoid noisy error stacks for background auto-save failures
@@ -45,24 +39,8 @@ export class AssessmentProgressService {
         candidateSessionDocumentId?: string | null
     ): Promise<T | null> {
         try {
-            const query = new URLSearchParams({ assessmentSlug: testType });
-            if (candidateSessionDocumentId) {
-                query.set('candidateSessionDocumentId', candidateSessionDocumentId);
-            }
-
-            const response = await fetchClient(
-                `${this.BASE_PATH}/resume?${query.toString()}`,
-                {
-                    method: 'GET',
-                }
-            );
-
-            if (response.ok) {
-                const data = await response.json();
-                return data.data as T;
-            }
-
-            return null;
+            if (!candidateSessionDocumentId) return null;
+            return AssessmentAttemptService.resumeProgress<T>(candidateSessionDocumentId, testType);
         } catch (error) {
             console.error('Error resuming assessment progress:', error);
             return null;
@@ -77,14 +55,8 @@ export class AssessmentProgressService {
         candidateSessionDocumentId?: string | null
     ): Promise<void> {
         try {
-            const query = new URLSearchParams({ assessmentSlug: testType });
-            if (candidateSessionDocumentId) {
-                query.set('candidateSessionDocumentId', candidateSessionDocumentId);
-            }
-
-            await fetchClient(`${this.BASE_PATH}/clear?${query.toString()}`, {
-                method: 'DELETE',
-            });
+            if (!candidateSessionDocumentId) return;
+            await AssessmentAttemptService.clearProgress(candidateSessionDocumentId, testType);
         } catch (error) {
             console.error('Error clearing assessment progress:', error);
         }

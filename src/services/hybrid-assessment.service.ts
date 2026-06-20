@@ -1,25 +1,15 @@
 import type { HybridAssessmentSummary } from "@/types/hybrid-assessment.types";
 
+/**
+ * @deprecated The `/api/assessment/hybrid-summary` BFF route was never shipped.
+ * Keep this module only as a marker for legacy callers until the hybrid flow is
+ * redesigned around the current assessment-result / candidate-attempt contract.
+ */
 export const HybridAssessmentService = {
   async persistSummary(summary: HybridAssessmentSummary) {
-    const response = await fetch("/api/assessment/hybrid-summary", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(summary),
-    });
-
-    if (!response.ok) {
-      const fallbackError = "Failed to persist hybrid summary";
-      try {
-        const payload = await response.json();
-        throw new Error(payload?.error || fallbackError);
-      } catch {
-        throw new Error(fallbackError);
-      }
-    }
-
-    return response.json();
+    void summary;
+    throw new Error(
+      "Hybrid summary persistence is deprecated: /api/assessment/hybrid-summary is not available."
+    );
   },
 };

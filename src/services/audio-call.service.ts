@@ -1,5 +1,8 @@
 /**
  * Audio Calls Service for Server Actions
+ * @deprecated The legacy `a-audio-calls` collection is no longer present.
+ * Assessment audio/call simulation content now comes from the active
+ * assessment-content-bank/platform sync flow.
  * Uses @strapi/client for all Strapi CMS interactions.
  */
 import { getServerStrapiClient } from '@/lib/strapi';

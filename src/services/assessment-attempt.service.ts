@@ -8,6 +8,7 @@ export type CandidateAssessmentAttempt = {
   contentVersion?: string | null;
   attemptStatus?: AssessmentAttemptStatus;
   recoveryMode?: AssessmentRecoveryMode | null;
+  progressData?: Record<string, unknown> | null;
   snapshot?: Record<string, unknown> | null;
   abandonReason?: string | null;
   attemptNumber?: number;
@@ -69,6 +70,55 @@ export class AssessmentAttemptService {
       })
     );
     return body.data;
+  }
+
+  static async saveProgress(input: {
+    candidateSessionDocumentId: string;
+    assessmentSlug: string;
+    progressData: Record<string, unknown> | null;
+    contentVersion?: string | null;
+  }): Promise<CandidateAssessmentAttempt> {
+    const body = await readJson<{ data: CandidateAssessmentAttempt }>(
+      await fetch("/api/assessment/attempt/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      })
+    );
+    return body.data;
+  }
+
+  static async resumeProgress<T extends Record<string, unknown>>(
+    candidateSessionDocumentId: string,
+    assessmentSlug: string
+  ): Promise<T | null> {
+    const query = new URLSearchParams({
+      candidateSessionDocumentId,
+      assessmentSlug,
+    });
+    const body = await readJson<{
+      data?: { progressData?: T | null } | null;
+    }>(
+      await fetch(`/api/assessment/attempt/progress?${query.toString()}`, {
+        cache: "no-store",
+      })
+    );
+    return body.data?.progressData ?? null;
+  }
+
+  static async clearProgress(
+    candidateSessionDocumentId: string,
+    assessmentSlug: string
+  ): Promise<void> {
+    const query = new URLSearchParams({
+      candidateSessionDocumentId,
+      assessmentSlug,
+    });
+    await readJson(
+      await fetch(`/api/assessment/attempt/progress?${query.toString()}`, {
+        method: "DELETE",
+      })
+    );
   }
 
   static async abandon(input: {

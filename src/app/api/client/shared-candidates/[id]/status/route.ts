@@ -11,8 +11,8 @@ export async function POST(
   try {
     await requireClientSession();
 
-  const crossOriginResponse = rejectMutatingCrossOrigin(request);
-  if (crossOriginResponse) return crossOriginResponse;
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
 
     const { id } = await context.params;
     const body = (await request.json().catch(() => ({}))) as {
@@ -27,6 +27,5 @@ export async function POST(
     return NextResponse.json({ data });
   } catch (error) {
     return handleBffRouteError(error, "Review status could not be updated");
-  
   }
 }

@@ -1,5 +1,7 @@
 /**
  * Questions Service for Server Actions
+ * @deprecated The legacy `a-sja-questions` collection is no longer present.
+ * Assessment content now lives in assessment-content-bank/platform sync flows.
  * Uses @strapi/client for all Strapi CMS interactions.
  */
 import { getServerStrapiClient } from '@/lib/strapi';

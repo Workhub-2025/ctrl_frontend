@@ -1,7 +1,7 @@
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 
 type HiringManagerCandidateReportPageProps = {
-  params: Promise<{ candidateId: string }>;
+  params: Promise<{ candidateSessionId: string }>;
   searchParams: Promise<{ candidateSessionId?: string }>;
 };
 
@@ -9,12 +9,14 @@ export default async function HiringManagerCandidateReportPage({
   params,
   searchParams,
 }: HiringManagerCandidateReportPageProps) {
-  const { candidateId } = await params;
+  const { candidateSessionId: candidateSessionIdParam } = await params;
   const { candidateSessionId } = await searchParams;
+  const resolvedCandidateSessionId = candidateSessionId ?? candidateSessionIdParam;
+
   return (
     <HiringManagerCandidateReport
-      candidateId={candidateId}
-      candidateSessionId={candidateSessionId}
+      candidateId={resolvedCandidateSessionId}
+      candidateSessionId={resolvedCandidateSessionId}
     />
   );
 }

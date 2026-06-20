@@ -22,7 +22,6 @@ import { AssessmentGameShell, AssessmentFlowStepper, AssessmentReconnectOverlay,
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { AssessmentProgressService } from '@/services/assessment-progress.service';
 import type { TypingTestProgress } from '@/types/assessments-progress.types';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
@@ -287,15 +286,13 @@ export default function TypingTest({
 }: Readonly<TypingTestProps>) {
   const router = useRouter();
   const storeRuns = useTypingSessionStore((s) => s.runs);
-  const sessionId = useTypingSessionStore((s) => s.sessionId);
   const assessmentId = useTypingSessionStore((s) => s.assessmentId);
   const config = useTypingSessionStore((s) => s.config);
   const setSubmissionStatus = useTypingSessionStore((s) => s.setSubmissionStatus);
   const clearSession = useTypingSessionStore((s) => s.clearSession);
 
-  // Refs for stable closure access (config/sessionId are set once per session)
+  // Refs for stable closure access (config/assessmentId are set once per session)
   const configRef = useRef(config);
-  const sessionIdRef = useRef(sessionId);
   const assessmentIdRef = useRef(assessmentId);
 
   const [phase, setPhase] = useState<TestPhase>('landing');
@@ -436,9 +433,8 @@ export default function TypingTest({
     statusChecked,
   ]);
 
-  // Keep config and sessionId refs in sync so closures always have current values
+  // Keep config and assessmentId refs in sync so closures always have current values
   useEffect(() => { configRef.current = config; }, [config]);
-  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
   useEffect(() => { assessmentIdRef.current = assessmentId; }, [assessmentId]);
 
   const currentText = useMemo(() => {
@@ -499,11 +495,16 @@ export default function TypingTest({
       results: { wpm: latest.wpm, accuracy: latest.accuracy },
       status: 'in-progress',
     };
-    void AssessmentProgressService.saveProgress(
-      progress,
-      sessionIdRef.current,
-      candidateSessionDocumentId
-    );
+    if (candidateSessionDocumentId) {
+      void AssessmentAttemptService.saveProgress({
+        candidateSessionDocumentId,
+        assessmentSlug: 'typing',
+        progressData: progress as unknown as Record<string, unknown>,
+        contentVersion: configRef.current?.version ?? null,
+      }).catch((error) => {
+        console.debug('Error saving typing attempt progress (auto-save):', error);
+      });
+    }
   }, [candidateSessionDocumentId, enableAutoSave, results]);
 
   // Clear saved progress once the assessment is fully submitted. Keep the
@@ -512,7 +513,9 @@ export default function TypingTest({
   // a false "Failed to load assessment" error.
   useEffect(() => {
     if (phase !== 'submitted') return;
-    void AssessmentProgressService.clearProgress('typing', candidateSessionDocumentId);
+    if (candidateSessionDocumentId) {
+      void AssessmentAttemptService.clearProgress(candidateSessionDocumentId, 'typing');
+    }
   }, [candidateSessionDocumentId, phase]);
 
   const resetTypedState = useCallback((_runIndex: number) => {
@@ -631,11 +634,16 @@ export default function TypingTest({
           timeLeft: Math.max(Math.ceil((endTime - Date.now()) / 1000), 0),
           status: 'in-progress',
         };
-        void AssessmentProgressService.saveProgress(
-          progress,
-          sessionIdRef.current,
-          candidateSessionDocumentId
-        );
+        if (candidateSessionDocumentId) {
+          void AssessmentAttemptService.saveProgress({
+            candidateSessionDocumentId,
+            assessmentSlug: 'typing',
+            progressData: progress as unknown as Record<string, unknown>,
+            contentVersion: configRef.current?.version ?? null,
+          }).catch((error) => {
+            console.debug('Error saving typing attempt progress (auto-save):', error);
+          });
+        }
       }, 15_000);
     }
 

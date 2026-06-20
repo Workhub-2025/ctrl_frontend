@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
 import { getStrapiErrorStatus } from "@/services/admin-platform.service";
+import { getAdminClientStrapiUrl } from "@/lib/admin-client-routes";
 
 type RouteContext = { params: Promise<{ clientId: string }> };
 
@@ -39,9 +40,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { clientId } = await context.params;
     const body = await request.json().catch(() => ({}));
-    const BACKEND_URL = process.env.STRAPI_API_URL || "http://localhost:1337";
     const res = await fetch(
-      `${BACKEND_URL}/api/admin/clients/${encodeURIComponent(clientId)}/downgrade-seats`,
+      getAdminClientStrapiUrl(clientId, "downgrade-seats"),
       {
         method: "POST",
         headers: {

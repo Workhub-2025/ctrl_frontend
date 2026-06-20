@@ -19,6 +19,7 @@ import {
   invalidatePortalCache,
   PORTAL_CACHE_TTL_MS,
 } from "@/lib/portal-fetch-cache";
+import { getClientSharedCandidateStatusBffPath } from "@/lib/client-shared-candidate-routes";
 
 export type SeatSlot =
   | { type: "occupied"; label: string; seatNumber: number; manager: ClientHiringManagerSeat }
@@ -344,8 +345,8 @@ export function useClientPortalState(): ClientPortalContextValue {
   ) => {
     setReviewingCandidateId(id);
     try {
-      const response = await fetch(`/api/client/shared-candidates/${id}`, {
-        method: "PATCH",
+      const response = await fetch(getClientSharedCandidateStatusBffPath(id), {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reviewStatus }),
       });

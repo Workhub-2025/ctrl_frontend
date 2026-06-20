@@ -1,5 +1,8 @@
 /**
  * Company Service for Server Actions
+ * @deprecated The `companies` Strapi collection is no longer present. Use the
+ * client/admin client services instead; keep this file only for legacy audit
+ * visibility until removal is explicitly approved.
  * Uses @strapi/client for all Strapi CMS interactions.
  */
 import { getServerStrapiClient } from '@/lib/strapi';

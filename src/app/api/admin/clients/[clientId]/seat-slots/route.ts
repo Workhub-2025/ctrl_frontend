@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { isAdminRole } from "@/lib/auth/role-model";
 import { getStrapiErrorStatus } from "@/services/admin-platform.service";
+import { getAdminClientStrapiUrl } from "@/lib/admin-client-routes";
 
 type RouteContext = { params: Promise<{ clientId: string }> };
 
@@ -32,11 +33,6 @@ async function requireAdmin(request?: NextRequest) {
   return { ok: true as const, strapiJwt };
 }
 
-function backendUrl(path: string) {
-  const base = process.env.STRAPI_API_URL || "http://localhost:1337";
-  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
-}
-
 async function forwardStrapi(
   request: NextRequest,
   clientId: string,
@@ -47,7 +43,7 @@ async function forwardStrapi(
   const auth = await requireAdmin(request);
   if (!auth.ok) return auth.response;
 
-  const res = await fetch(backendUrl(`/api/admin/clients/${encodeURIComponent(clientId)}/${suffix}`), {
+  const res = await fetch(getAdminClientStrapiUrl(clientId, suffix), {
     method,
     headers: {
       "Content-Type": "application/json",
