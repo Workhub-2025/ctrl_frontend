@@ -53,6 +53,7 @@ export function TypingTestClient({
     <SecureAssessmentShell
       assessmentName="Typing Speed & Accuracy Test"
       assessmentType="typing"
+      candidateSessionDocumentId={candidateSessionDocumentId}
       timerLabel="In Progress"
       secureModeActive={true}
       warningsCount={0}

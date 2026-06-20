@@ -25,6 +25,8 @@ export type HiringManagerAssessmentResult = {
   accuracy?: number | null;
   mistakeCount?: number | null;
   durationSeconds?: number | null;
+  integrityScore?: number | null;
+  integrityEventCount?: number | null;
   metrics?: Record<string, unknown> | null;
   rawData?: Record<string, any> | null;
 };

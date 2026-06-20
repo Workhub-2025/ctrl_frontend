@@ -5,22 +5,7 @@ import {
   requireCandidateSession,
 } from "@/lib/auth/bff-session";
 
-export async function GET(request: NextRequest) {
-  try {
-    const { strapiJwt } = await requireCandidateSession();
-    const client = getStrapiClient(strapiJwt);
-    const query = request.nextUrl.searchParams.toString();
-    const path = `/candidate-sessions/me${query ? `?${query}` : ""}`;
-
-    const response = await client.fetch(path, { method: "GET" });
-    const body = await response.json().catch(() => ({}));
-
-    return NextResponse.json(body, { status: response.status });
-  } catch (error) {
-    return handleBffRouteError(error, "Applications could not be loaded");
-  }
-}
-
+/** Join a candidate application via access code. List applications via GET /api/candidate/workspace. */
 export async function POST(request: NextRequest) {
   try {
     const { strapiJwt } = await requireCandidateSession();

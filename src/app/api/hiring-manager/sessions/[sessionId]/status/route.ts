@@ -5,12 +5,14 @@ import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
+import { getHmAssessmentSessionCloseStrapiPath } from "@/lib/hiring-manager-session-routes";
 
 import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<any> }
+  context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
     await requireHmSession();
@@ -19,7 +21,6 @@ export async function POST(
     if (crossOriginResponse) return crossOriginResponse;
 
     const { sessionId } = await context.params;
-    const id = sessionId;
     const session = await getServerSession(authOptions);
     const strapiJwt = await getServerStrapiJwt(request);
     const limiter = await applyRateLimit({
@@ -53,18 +54,16 @@ export async function POST(
       }
 
       const strapiRes = await fetch(
-        joinStrapiApiPath(getStrapiApiBaseUrl(), `/assessment-sessions/${encodeURIComponent(id)}`),
+        joinStrapiApiPath(
+          getStrapiApiBaseUrl(),
+          getHmAssessmentSessionCloseStrapiPath(sessionId)
+        ),
         {
-          method: "PUT",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${strapiJwt}`,
           },
-          body: JSON.stringify({
-            data: {
-              sessionStatus: status,
-            },
-          }),
         }
       );
 

@@ -1,25 +1,33 @@
-import type { IntegrityEventType } from "@/app/api/assessment/integrity-events/route";
+import type { IntegrityEventType } from "@/lib/integrity-events";
 
 interface TrackIntegrityEventOptions {
-  assessmentType: string;
+  candidateSessionDocumentId: string;
+  assessmentSlug: string;
   eventType: IntegrityEventType;
   metadata?: Record<string, unknown>;
 }
 
 export class AssessmentIntegrityService {
   static async trackEvent({
-    assessmentType,
+    candidateSessionDocumentId,
+    assessmentSlug,
     eventType,
     metadata,
   }: TrackIntegrityEventOptions): Promise<boolean> {
+    if (!candidateSessionDocumentId?.trim()) {
+      console.warn("[AssessmentIntegrityService] Missing candidateSessionDocumentId");
+      return false;
+    }
+
     try {
-      const response = await fetch("/api/assessment/integrity-events", {
+      const response = await fetch("/api/assessment/attempt/integrity-event", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          assessmentType,
+          candidateSessionDocumentId,
+          assessmentSlug,
           eventType,
           metadata,
           occurredAt: new Date().toISOString(),
@@ -35,3 +43,4 @@ export class AssessmentIntegrityService {
   }
 }
 
+export type { IntegrityEventType };

@@ -114,17 +114,7 @@ export const fetchClient = async (
         let cacheOption = options.cache || undefined;
 
         if (method === 'get') {
-            const isStaticResource =
-                url.includes('/a-typing-text') ||
-                url.includes('/a-sja-question') ||
-                url.includes('/a-pja-question') ||
-                url.includes('/a-audio-call') ||
-                url.includes('/question');
-
-            if (isStaticResource) {
-                // Cache static test content for 5 minutes by default
-                nextOptions = { revalidate: 300, ...nextOptions };
-            } else if (url.includes('/candidate/workspace')) {
+            if (url.includes('/candidate/workspace')) {
                 // Align with portal in-memory cache (90s)
                 nextOptions = { revalidate: 90, ...nextOptions };
             }

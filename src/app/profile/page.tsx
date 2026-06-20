@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { UserProfileService } from "@/services/user-profile.service";
 import {
   Card,
   CardContent,
@@ -57,7 +58,7 @@ export default function ProfilePage() {
     isLoading: authLoading,
     isAuthenticated,
   } = useAuth();
-  const { userProfile } = useAuthStore();
+  const { userProfile, setUserProfile } = useAuthStore();
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: "",
     lastName: "",
@@ -66,12 +67,48 @@ export default function ProfilePage() {
     phone: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const userIsAdmin = isAdminRole(user?.role);
   const returnPath = routeForRole(user?.role);
 
-  // Initialize profile data — prefer Zustand store (fresh from Strapi) over session
+  // Load fresh profile from BFF (phone, privacy, equality fields)
   useEffect(() => {
+    if (authLoading || !isAuthenticated) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadProfile = async () => {
+      setIsProfileLoading(true);
+      const profile = await UserProfileService.getProfile();
+      if (cancelled) return;
+
+      if (profile) {
+        setUserProfile(profile as IUser);
+        setProfileData({
+          firstName: profile.firstName || "",
+          lastName: profile.lastName || "",
+          email: profile.email || "",
+          organization: profile.organization || "",
+          phone: profile.phone || "",
+        });
+      }
+      setIsProfileLoading(false);
+    };
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated, setUserProfile]);
+
+  // Fallback when store/session updates before BFF fetch completes
+  useEffect(() => {
+    if (isProfileLoading) return;
+
     const source = userProfile || user;
     if (source) {
       setProfileData({
@@ -79,10 +116,10 @@ export default function ProfilePage() {
         lastName: source.lastName || "",
         email: source.email || "",
         organization: source.organization || "",
-        phone: (source as any).phone || "",
+        phone: (source as IUser).phone || "",
       });
     }
-  }, [userProfile, user]);
+  }, [userProfile, user, isProfileLoading]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -164,7 +201,7 @@ export default function ProfilePage() {
     });
   };
 
-  if (authLoading) {
+  if (authLoading || isProfileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -356,14 +393,14 @@ export default function ProfilePage() {
                       variant="outline"
                       className="rounded-xl px-5"
                       onClick={() => {
-                        // Reset to original values
-                        if (user) {
+                        const source = userProfile || user;
+                        if (source) {
                           setProfileData({
-                            firstName: user.firstName || "",
-                            lastName: user.lastName || "",
-                            email: user.email || "",
-                            organization: user.organization || "",
-                            phone: user.phone || "",
+                            firstName: source.firstName || "",
+                            lastName: source.lastName || "",
+                            email: source.email || "",
+                            organization: source.organization || "",
+                            phone: (source as IUser).phone || "",
                           });
                           setHasUnsavedChanges(false);
                         }
@@ -431,7 +468,9 @@ export default function ProfilePage() {
                     <p className="flex items-center gap-2">
                       <span className="text-primary font-bold">•</span> Marketing communications:{" "}
                       <Badge variant="outline" className="ml-1 bg-background text-xs py-0 px-2 rounded-md">
-                        {user?.agreeToMarketing ? "Enabled" : "Disabled"}
+                        {userProfile?.agreeToMarketing ?? user?.agreeToMarketing
+                          ? "Enabled"
+                          : "Disabled"}
                       </Badge>
                     </p>
                   </div>

@@ -2,16 +2,19 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { AssessmentIntegrityService } from "@/services/assessment-integrity.service";
+import type { IntegrityEventType } from "@/lib/integrity-events";
 
 interface UseAssessmentIntegrityOptions {
-  assessmentType: string;
+  assessmentSlug: string;
+  candidateSessionDocumentId?: string | null;
   enabled?: boolean;
   heartbeatMs?: number;
   metadataProvider?: () => Record<string, unknown>;
 }
 
 export function useAssessmentIntegrity({
-  assessmentType,
+  assessmentSlug,
+  candidateSessionDocumentId,
   enabled = true,
   heartbeatMs = 30000,
   metadataProvider,
@@ -25,21 +28,22 @@ export function useAssessmentIntegrity({
   }, [metadataProvider]);
 
   const emit = useCallback(
-    (eventType: Parameters<typeof AssessmentIntegrityService.trackEvent>[0]["eventType"]) => {
-      if (!enabled) return;
+    (eventType: IntegrityEventType) => {
+      if (!enabled || !candidateSessionDocumentId) return;
 
       const metadata = metadataProviderRef.current?.() ?? {};
       void AssessmentIntegrityService.trackEvent({
-        assessmentType,
+        candidateSessionDocumentId,
+        assessmentSlug,
         eventType,
         metadata,
       });
     },
-    [assessmentType, enabled]
+    [assessmentSlug, candidateSessionDocumentId, enabled]
   );
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !candidateSessionDocumentId) return;
 
     emit("assessment_started");
 
@@ -77,6 +81,5 @@ export function useAssessmentIntegrity({
       window.clearInterval(heartbeat);
       emit("assessment_completed");
     };
-  }, [emit, enabled, heartbeatMs]);
+  }, [candidateSessionDocumentId, emit, enabled, heartbeatMs]);
 }
-

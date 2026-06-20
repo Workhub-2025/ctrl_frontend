@@ -28,6 +28,7 @@ export function AssessmentShellPage({
     <SecureAssessmentShell
       assessmentName={assessmentName}
       assessmentType={assessmentSlug}
+      candidateSessionDocumentId={candidateSessionDocumentId}
       timerLabel="In Progress"
       secureModeActive
       warningsCount={0}

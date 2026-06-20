@@ -581,7 +581,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                     </div>
                   </div>
 
-                  <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[320px]">
+                  <div className="grid gap-2 sm:grid-cols-2 lg:min-w-[420px] lg:grid-cols-3">
                     <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
                       <p className="text-xs text-slate-500 font-medium">Assessment Score</p>
                       <p className="mt-1 text-lg font-bold text-white">
@@ -594,6 +594,27 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                       <p className="mt-1 text-lg font-bold text-indigo-400">
                         {row.score === null ? "Pending" : formatPercent(row.contribution)}
                       </p>
+                    </div>
+
+                    <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3">
+                      <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" />
+                        Session Integrity
+                      </p>
+                      {row.result?.integrityScore != null ? (
+                        <>
+                          <p className="mt-1 text-lg font-bold text-white">
+                            {Math.round(row.result.integrityScore)}%
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-slate-500">
+                            {(row.result.integrityEventCount ?? 0) === 0
+                              ? "No flagged events during attempt"
+                              : `${row.result.integrityEventCount} flagged event${row.result.integrityEventCount === 1 ? "" : "s"} during attempt`}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-1 text-lg font-bold text-slate-500">—</p>
+                      )}
                     </div>
                   </div>
                 </div>

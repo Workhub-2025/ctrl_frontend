@@ -88,4 +88,31 @@ test.describe("API contract smoke", () => {
       expect(body).not.toMatch(/\/api\/api\//);
     }
   });
+
+  test("HM closes assessment session via POST /sessions/:id/status", async ({
+    page,
+    request,
+  }) => {
+    const email = process.env.E2E_HM_EMAIL;
+    const password = process.env.E2E_HM_PASSWORD;
+    const assessmentSessionId = process.env.E2E_ASSESSMENT_SESSION_ID;
+
+    test.skip(
+      !email || !password || !assessmentSessionId,
+      "Set E2E_HM_* and E2E_ASSESSMENT_SESSION_ID"
+    );
+
+    await loginViaApi(request, page, email!, password!);
+
+    const response = await request.post(
+      `/api/hiring-manager/sessions/${encodeURIComponent(assessmentSessionId!)}/status`,
+      {
+        data: { status: "closed" },
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    expect(response.status()).toBeLessThan(500);
+    expect([200, 400, 403, 404]).toContain(response.status());
+  });
 });

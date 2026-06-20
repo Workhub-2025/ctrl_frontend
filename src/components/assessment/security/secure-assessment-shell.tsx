@@ -30,7 +30,9 @@ type SecureAssessmentShellProps = {
   showPauseButton?: boolean;
   enableFocusMonitoring?: boolean;
   integrityMonitoringActive?: boolean;
+  /** Catalogue slug, e.g. `typing` — used for attempt-scoped integrity events. */
   assessmentType?: string;
+  candidateSessionDocumentId?: string | null;
 };
 
 export function SecureAssessmentShell({
@@ -44,6 +46,7 @@ export function SecureAssessmentShell({
   enableFocusMonitoring = true,
   integrityMonitoringActive = true,
   assessmentType,
+  candidateSessionDocumentId = null,
 }: Readonly<SecureAssessmentShellProps>) {
   const integrityEvents = useAssessmentStore((s) => s.integrityEvents);
   const addIntegrityEvent = useAssessmentStore((s) => s.addIntegrityEvent);
@@ -148,9 +151,10 @@ export function SecureAssessmentShell({
       setIsFullscreen(active);
       if (!active) {
         // Log integrity violation for leaving fullscreen
-        if (assessmentType) {
+        if (assessmentType && candidateSessionDocumentId) {
           void AssessmentIntegrityService.trackEvent({
-            assessmentType,
+            candidateSessionDocumentId,
+            assessmentSlug: assessmentType,
             eventType: "fullscreen_exit",
             metadata: { occurredAt: new Date().toISOString() },
           });
@@ -168,7 +172,7 @@ export function SecureAssessmentShell({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
     };
-  }, [secureModeActive, assessmentType, addIntegrityEvent]);
+  }, [secureModeActive, assessmentType, candidateSessionDocumentId, addIntegrityEvent]);
 
   // --- WINDOW FOCUS & VISIBILITY MONITORING ---
   useEffect(() => {
@@ -176,9 +180,10 @@ export function SecureAssessmentShell({
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        if (assessmentType) {
+        if (assessmentType && candidateSessionDocumentId) {
           void AssessmentIntegrityService.trackEvent({
-            assessmentType,
+            candidateSessionDocumentId,
+            assessmentSlug: assessmentType,
             eventType: "tab_hidden",
             metadata: { occurredAt: new Date().toISOString() },
           });
@@ -192,9 +197,10 @@ export function SecureAssessmentShell({
       // Delay check slightly to prevent false positives during fullscreen transitions
       setTimeout(() => {
         if (!document.hasFocus()) {
-          if (assessmentType) {
+          if (assessmentType && candidateSessionDocumentId) {
             void AssessmentIntegrityService.trackEvent({
-              assessmentType,
+              candidateSessionDocumentId,
+              assessmentSlug: assessmentType,
               eventType: "window_blur",
               metadata: { occurredAt: new Date().toISOString() },
             });
@@ -217,7 +223,7 @@ export function SecureAssessmentShell({
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [addIntegrityEvent, assessmentType, enableFocusMonitoring, integrityMonitoringActive, secureModeActive]);
+  }, [addIntegrityEvent, assessmentType, candidateSessionDocumentId, enableFocusMonitoring, integrityMonitoringActive, secureModeActive]);
 
   // Cryptographic token validation to check popout integrity on start
   useEffect(() => {

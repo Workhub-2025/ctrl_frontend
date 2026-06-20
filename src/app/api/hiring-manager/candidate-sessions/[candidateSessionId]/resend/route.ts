@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { requireRoleSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import { getHmCandidateSessionResendStrapiPath } from "@/lib/hiring-manager-session-routes";
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 export async function POST(
@@ -32,7 +33,7 @@ export async function POST(
     const strapiRes = await fetch(
       joinStrapiApiPath(
         getStrapiApiBaseUrl(),
-        `/candidate-sessions/${encodeURIComponent(candidateSessionId)}/resend`
+        getHmCandidateSessionResendStrapiPath(candidateSessionId)
       ),
       {
         method: "POST",

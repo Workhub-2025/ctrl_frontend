@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
-import { updateCurrentUserAction } from '@/app/actions/users.actions';
+import { UserProfileService } from '@/services/user-profile.service';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 import { clearClientSessionCache, getClientSession, primeClientSession, type ClientAuthSession } from '@/lib/auth/client-session';
 import { useAuthStore } from '@/store/auth.store';
@@ -11,7 +11,7 @@ export function useAuth() {
     const [session, setSession] = useState<ClientAuthSession>(null);
     const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
     const router = useRouter();
-    const { setUserProfile, clearUserProfile } = useAuthStore();
+    const { setUserProfile, clearUserProfile, userProfile } = useAuthStore();
 
     const isLoading = status === 'loading';
     const isAuthenticated = status === 'authenticated';
@@ -277,22 +277,39 @@ export function useAuth() {
 
     const updateProfile = async (updateData: Partial<IUser>) => {
         try {
-            const userId = user?.id || session?.user?.id;
-            if (!userId) {
+            if (!user?.id && !session?.user?.id) {
                 throw new Error('User not authenticated');
             }
 
-            // Bypass strict type checking to allow nullable fields mapped from Partial<IUser>
-            const response = await updateCurrentUserAction(userId, updateData as any);
+            const updatedProfile = await UserProfileService.updateProfile(updateData);
 
-            if (!response.success || !response.data) {
-                throw new Error(response.error || 'Profile update failed');
+            const mergedUser = {
+                ...(userProfile ?? user ?? {}),
+                ...updatedProfile,
+            } as IUser;
+
+            setUserProfile(mergedUser);
+
+            if (session?.user) {
+                const nextSession: ClientAuthSession = {
+                    ...session,
+                    user: {
+                        ...session.user,
+                        firstName: updatedProfile.firstName ?? session.user.firstName,
+                        lastName: updatedProfile.lastName ?? session.user.lastName,
+                        organization: updatedProfile.organization ?? session.user.organization,
+                        phone: updatedProfile.phone ?? session.user.phone,
+                        agreeToMarketing:
+                            updatedProfile.agreeToMarketing ?? session.user.agreeToMarketing,
+                        equalityMonitoring:
+                            updatedProfile.equalityMonitoring ?? session.user.equalityMonitoring,
+                    },
+                };
+                primeClientSession(nextSession);
+                setSession(nextSession);
             }
 
-            const updatedUser = response.data;
-            // Sync updated profile into Zustand store
-            setUserProfile(updatedUser as IUser);
-            return updatedUser;
+            return mergedUser;
         } catch (error) {
             console.error('Profile update error:', error);
             throw error;

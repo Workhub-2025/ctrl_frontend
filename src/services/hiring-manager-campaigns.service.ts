@@ -105,6 +105,7 @@ type RawAssessmentResult = {
   accuracy?: number | string | null;
   mistakeCount?: number | string | null;
   durationSeconds?: number | string | null;
+  integrityScore?: number | string | null;
   metrics?: Record<string, unknown> | null;
   rawData?: Record<string, any> | null;
   assessment?: RawAssessment;
@@ -332,6 +333,10 @@ function normalizeAssessmentResult(
     : numberOrNull(result.score) ?? computeFallbackTypingScore(result);
   const wpm = numberOrNull(result.wpm);
   const accuracy = numberOrNull(result.accuracy);
+  const integrityScore = numberOrNull(result.integrityScore);
+  const integrityEventCount =
+    numberOrNull(result.metrics?.integrityEventCount as number | string | null | undefined) ??
+    null;
 
   return {
     id:
@@ -354,6 +359,8 @@ function normalizeAssessmentResult(
     accuracy,
     mistakeCount: numberOrNull(result.mistakeCount),
     durationSeconds: numberOrNull(result.durationSeconds),
+    integrityScore,
+    integrityEventCount,
     metrics: result.metrics ?? null,
     rawData: result.rawData ?? null,
   };
