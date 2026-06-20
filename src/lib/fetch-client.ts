@@ -194,10 +194,19 @@ export const fetchClient = async (
         }
 
         return response;
-    } catch (error: any) {
-        // Re-throw with consistent error handling
-        console.error(`💥 [${typeof window === 'undefined' ? 'SERVER' : 'CLIENT'}] Fetch error:`, error.message);
-        throw new Error(error.message || 'Request failed');
+    } catch (error: unknown) {
+        const message =
+            error instanceof Error
+                ? error.name === 'TimeoutError' || error.name === 'AbortError'
+                    ? 'Request timeout'
+                    : error.message
+                : 'Request failed';
+
+        console.error(
+            `💥 [${typeof window === 'undefined' ? 'SERVER' : 'CLIENT'}] Fetch error:`,
+            message
+        );
+        throw new Error(message || 'Request failed');
     }
 };
 

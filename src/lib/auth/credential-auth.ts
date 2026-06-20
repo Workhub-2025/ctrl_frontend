@@ -9,6 +9,7 @@ import {
   recordFailedLoginAttempt,
 } from "@/lib/security/login-attempt-guard";
 import type { getAuthRequestContext } from "@/lib/auth/session-config";
+import { isFetchTimeoutError } from "@/lib/strapi-connectivity";
 
 const LOGIN_RATE_LIMIT = 20;
 const LOGIN_RATE_WINDOW_MS = 60_000;
@@ -23,7 +24,7 @@ export type CredentialAuthResult = {
 };
 
 export class CredentialAuthError extends Error {
-  code: "LOCKED" | "INVALID" | "RATE_LIMITED";
+  code: "LOCKED" | "INVALID" | "RATE_LIMITED" | "UNAVAILABLE";
   retryAfterSeconds?: number;
 
   constructor(
@@ -116,14 +117,12 @@ export async function authenticateCredentials(params: {
     return { authResponse, role };
   } catch (error) {
     const message = error instanceof Error ? error.message.trim() : "";
-    const isStrapiRejection =
-      message.length > 0 &&
-      message !== "Invalid Strapi auth response" &&
-      message !== "Login failed" &&
-      message !== "Request timeout" &&
-      message !== "Request failed";
+    const isStrapiTimeout =
+      isFetchTimeoutError(error) ||
+      message === "Request timeout" ||
+      message.toLowerCase().includes("timeout");
 
-    if (message === "Request timeout") {
+    if (isStrapiTimeout) {
       logAuthAuditEvent("login_failure", {
         email,
         ipAddress,
@@ -131,10 +130,16 @@ export async function authenticateCredentials(params: {
         reason: "strapi_timeout",
       });
       throw new CredentialAuthError(
-        "INVALID",
-        "Authentication service timed out. Check STRAPI_API_URL is reachable from the server."
+        "UNAVAILABLE",
+        "Authentication service timed out. On Vercel, set STRAPI_API_URL=https://be.ctrl-assess.co.uk/api (not a private LAN IP)."
       );
     }
+
+    const isStrapiRejection =
+      message.length > 0 &&
+      message !== "Invalid Strapi auth response" &&
+      message !== "Login failed" &&
+      message !== "Request failed";
 
     if (isStrapiRejection) {
       logAuthAuditEvent("login_failure", {

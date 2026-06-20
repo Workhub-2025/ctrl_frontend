@@ -106,6 +106,12 @@ export function useAuth() {
                         body.error ?? 'Too many login attempts. Please try again later.'
                     );
                 }
+                if (response.status === 503) {
+                    throw new Error(
+                        body.error ??
+                            'Authentication service is unavailable. Check server configuration (STRAPI_API_URL).'
+                    );
+                }
                 throw new Error(body.error ?? 'Authentication failed: wrong user or password');
             }
 

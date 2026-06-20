@@ -16,6 +16,7 @@ import {
   attachTotpPendingCookie,
   encodeTotpPendingToken,
 } from "@/lib/auth/totp-pending-cookie";
+import { checkStrapiReachability } from "@/lib/strapi-connectivity";
 
 const wantsJsonResponse = (request: Request) =>
   request.headers.get("accept")?.includes("application/json") ?? false;
@@ -76,6 +77,18 @@ export async function POST(request: Request) {
     const loginUrl = new URL("/auth/register", request.url);
     loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
+    return NextResponse.redirect(loginUrl, 303);
+  }
+
+  const strapiIssue = await checkStrapiReachability();
+  if (strapiIssue) {
+    if (jsonResponse) {
+      return NextResponse.json({ error: strapiIssue.message }, { status: 503 });
+    }
+    const loginUrl = new URL("/auth/register", request.url);
+    loginUrl.searchParams.set("mode", "login");
+    loginUrl.searchParams.set("error", "CredentialsSignin");
+    loginUrl.searchParams.set("message", strapiIssue.message);
     return NextResponse.redirect(loginUrl, 303);
   }
 
@@ -203,6 +216,17 @@ export async function POST(request: Request) {
       if (error.code === "INVALID") {
         if (jsonResponse) {
           return NextResponse.json({ error: error.message }, { status: 401 });
+        }
+        const loginUrl = new URL("/auth/register", request.url);
+        loginUrl.searchParams.set("mode", "login");
+        loginUrl.searchParams.set("error", "CredentialsSignin");
+        loginUrl.searchParams.set("message", error.message);
+        return NextResponse.redirect(loginUrl, 303);
+      }
+
+      if (error.code === "UNAVAILABLE") {
+        if (jsonResponse) {
+          return NextResponse.json({ error: error.message }, { status: 503 });
         }
         const loginUrl = new URL("/auth/register", request.url);
         loginUrl.searchParams.set("mode", "login");
