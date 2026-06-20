@@ -10,7 +10,7 @@ import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ sessionId: string }> }
+  context: { params: Promise<{ candidateSessionId: string }> }
 ) {
   try {
     await requireHmSession();
@@ -18,7 +18,7 @@ export async function POST(
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    const { sessionId } = await context.params;
+    const { candidateSessionId } = await context.params;
     const session = await getServerSession(authOptions);
     const strapiJwt = await getServerStrapiJwt(request);
     const limiter = await applyRateLimit({
@@ -59,7 +59,7 @@ export async function POST(
 
     try {
       const strapiRes = await fetch(
-        joinStrapiApiPath(getStrapiApiBaseUrl(), `/hiring-manager/candidate-sessions/${encodeURIComponent(sessionId)}/decision`),
+        joinStrapiApiPath(getStrapiApiBaseUrl(), `/hiring-manager/candidate-sessions/${encodeURIComponent(candidateSessionId)}/decision`),
         {
           method: "POST",
           headers: {

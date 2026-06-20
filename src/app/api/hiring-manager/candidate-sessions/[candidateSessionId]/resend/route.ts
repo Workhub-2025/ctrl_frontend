@@ -7,7 +7,7 @@ import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ sessionId: string }> }
+  context: { params: Promise<{ candidateSessionId: string }> }
 ) {
   try {
     const { session, strapiJwt } = await requireRoleSession("hiring_manager", "admin");
@@ -15,7 +15,7 @@ export async function POST(
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    const { sessionId } = await context.params;
+    const { candidateSessionId } = await context.params;
     const limiter = await applyRateLimit({
       key: `hm-candidate-resend:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
       limit: 10,
@@ -32,7 +32,7 @@ export async function POST(
     const strapiRes = await fetch(
       joinStrapiApiPath(
         getStrapiApiBaseUrl(),
-        `/candidate-sessions/${encodeURIComponent(sessionId)}/resend`
+        `/candidate-sessions/${encodeURIComponent(candidateSessionId)}/resend`
       ),
       {
         method: "POST",
