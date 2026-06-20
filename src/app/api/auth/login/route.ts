@@ -79,17 +79,27 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl, 303);
   }
 
+  const loginStartedAt = Date.now();
+  const logLoginTiming = (step: string) => {
+    if (process.env.NODE_ENV === "development") {
+      console.info(`[auth/login] ${step} +${Date.now() - loginStartedAt}ms`);
+    }
+  };
+
   try {
+    logLoginTiming("start");
     const { authResponse, role } = await authenticateCredentials({
       email,
       password,
       context,
     });
+    logLoginTiming("authenticateCredentials done");
 
     const callbackPath = resolveCallbackPath(formData.get("callbackUrl"), role);
     const publicUser = buildPublicUser(authResponse.user!, role);
 
     if (isAdminRole(role) && (authResponse.user as { totpEnabled?: boolean })?.totpEnabled === true) {
+      logLoginTiming("totp branch");
       const pendingToken = await encodeTotpPendingToken({
         id: authResponse.user!.id,
         email: authResponse.user!.email,
@@ -129,6 +139,7 @@ export async function POST(request: Request) {
       return response;
     }
 
+    logLoginTiming("encodeSessionToken start");
     const token = await encodeSessionToken({
       id: authResponse.user!.id,
       email: authResponse.user!.email,
@@ -148,6 +159,8 @@ export async function POST(request: Request) {
       agreeToDataPrivacyPolicy: authResponse.user!.agreeToDataPrivacyPolicy ?? undefined,
     });
 
+    logLoginTiming("encodeSessionToken done");
+
     if (jsonResponse) {
       const response = NextResponse.json({
         data: {
@@ -156,6 +169,7 @@ export async function POST(request: Request) {
         },
       });
       attachSessionCookie(response, token);
+      logLoginTiming("json response ready");
       return response;
     }
 

@@ -123,6 +123,19 @@ export async function authenticateCredentials(params: {
       message !== "Request timeout" &&
       message !== "Request failed";
 
+    if (message === "Request timeout") {
+      logAuthAuditEvent("login_failure", {
+        email,
+        ipAddress,
+        userAgent,
+        reason: "strapi_timeout",
+      });
+      throw new CredentialAuthError(
+        "INVALID",
+        "Authentication service timed out. Check STRAPI_API_URL is reachable from the server."
+      );
+    }
+
     if (isStrapiRejection) {
       logAuthAuditEvent("login_failure", {
         email,

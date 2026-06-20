@@ -105,25 +105,21 @@ export class AuthAPI {
                 return response;
             }
 
-            // Fallback when backend role populate is unavailable (older Strapi builds).
-            const userResponse = await fetchApi.get<StrapiAuthResponse['user']>('/users/me?populate=role', {
-                headers: {
-                    Authorization: `Bearer ${response.jwt}`,
-                },
-            });
+            // Single server-side fallback (API token). Avoid /users/me here — it previously
+            // triggered getServerSession during login and could hang the BFF for ~30s.
+            const serverRoleUser = await fetchUserWithRoleFromServer(response.user.id);
+            if (serverRoleUser?.role) {
+                return {
+                    jwt: response.jwt,
+                    user: {
+                        ...response.user,
+                        ...serverRoleUser,
+                        role: serverRoleUser.role,
+                    },
+                };
+            }
 
-            const serverRoleUser = hasRole(userResponse)
-                ? null
-                : await fetchUserWithRoleFromServer(userResponse.id ?? response.user?.id);
-
-            return {
-                jwt: response.jwt,
-                user: {
-                    ...userResponse,
-                    ...(serverRoleUser ?? {}),
-                    role: serverRoleUser?.role ?? userResponse.role,
-                },
-            };
+            return response;
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : 'Login failed';
             throw new Error(errorMessage);

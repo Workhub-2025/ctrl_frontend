@@ -69,13 +69,6 @@ const getSessionContext = async (): Promise<SessionContext> => {
     }
 };
 
-// Helper function to create timeout promise
-const createTimeoutPromise = (timeout: number): Promise<never> => {
-    return new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout')), timeout);
-    });
-};
-
 // Enhanced fetch function with interceptor-like functionality
 export const fetchClient = async (
     url: string,
@@ -105,23 +98,24 @@ export const fetchClient = async (
         }
 
         const method = (options.method || 'GET').toLowerCase();
+        const hasAuthorizationHeader =
+            typeof headerRecord.Authorization === 'string' ||
+            typeof headerRecord.authorization === 'string';
         const isAuthEndpoint =
             url.includes('/auth/local') ||
             url.includes('/access-code/register') ||
-            url.includes('/users-permissions/');
+            url.includes('/users-permissions/') ||
+            url.includes('/users/me');
 
-        // Auth calls (e.g. login route → Strapi) must not await getServerSession — avoids hangs in route handlers.
+        // Auth / JWT-bootstrap calls must not await getServerSession — it can hang inside route handlers.
+        const skipSessionContext = isAuthEndpoint || hasAuthorizationHeader;
         let authToken: string | null = null;
         let tenant: string | null = null;
-        if (!isAuthEndpoint) {
+        if (!skipSessionContext) {
             const sessionContext = await getSessionContext();
             authToken = sessionContext.jwt;
             tenant = sessionContext.tenant;
         }
-
-        const hasAuthorizationHeader =
-            typeof headerRecord.Authorization === 'string' ||
-            typeof headerRecord.authorization === 'string';
 
         if (authToken && !isAuthEndpoint && !hasAuthorizationHeader) {
             headerRecord['Authorization'] = `Bearer ${authToken}`;
@@ -162,11 +156,11 @@ export const fetchClient = async (
             ...(nextOptions ? { next: nextOptions } as any : {}),
         };
 
-        // Make request with timeout
-        const fetchPromise = fetch(fullUrl, fetchOptions);
-        const timeoutPromise = createTimeoutPromise(TIMEOUT);
-
-        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        // Make request with timeout (AbortSignal aborts the underlying fetch)
+        const response = await fetch(fullUrl, {
+            ...fetchOptions,
+            signal: fetchOptions.signal ?? AbortSignal.timeout(TIMEOUT),
+        });
 
         // Handle response errors
         if (!response.ok) {
