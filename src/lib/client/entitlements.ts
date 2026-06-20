@@ -75,10 +75,23 @@ export function getClientAdditionalAssessmentSlugs(features?: Record<string, unk
   return raw.filter((item): item is string => typeof item === "string" && item.length > 0);
 }
 
-export function getEntitledAssessmentSlugs(features?: Record<string, unknown> | null) {
-  return [...DEFAULT_PLATFORM_ASSESSMENT_SLUGS, ...getClientAdditionalAssessmentSlugs(features)];
-}
+export type EntitlementAwareAssessment = {
+  slug?: string | null;
+  entitlementTier?: string | null;
+};
 
+/** Mirrors BackEnd `isAssessmentIncludedForClient()` — use with catalogue `entitlementTier`. */
+export function isAssessmentEntitledForClient(
+  assessment: EntitlementAwareAssessment,
+  features?: Record<string, unknown> | null,
+) {
+  const slug = assessment.slug;
+  if (!slug) return false;
+  if (assessment.entitlementTier === "core" || isDefaultPlatformAssessment(slug)) {
+    return true;
+  }
+  return getClientAdditionalAssessmentSlugs(features).includes(slug);
+}
 export function resolveAssessmentLabel(slug: string, title?: string) {
   const known = DEFAULT_PLATFORM_ASSESSMENTS.find((assessment) => assessment.key === slug);
   return title || known?.title || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -100,7 +113,7 @@ export type ClientUpgradeBundleItem =
       type: "new_assessment";
       assessmentSlug: string;
       assessmentLabel: string;
-      notes: string;
+      notes?: string;
     };
 
 export const CUSTOM_ASSESSMENT_VERSION = "custom";
@@ -137,7 +150,7 @@ export type ClientUpgradeRequestPayload =
       type: "new_assessment";
       assessmentSlug: string;
       assessmentLabel: string;
-      notes: string;
+      notes?: string;
     }
   | {
       type: "upgrade_bundle";
@@ -250,8 +263,12 @@ function describeBundleItem(item: ClientUpgradeBundleItem, index: number) {
         CLIENT_DELIVERY_FEATURES.find((feature) => feature.key === item.featureKey)?.label ??
         item.featureKey
       }`;
-    case "new_assessment":
-      return `${index}. Add assessment: ${item.assessmentLabel} (${item.assessmentSlug})\n   Business case: ${item.notes.trim()}`;
+    case "new_assessment": {
+      const businessCase = item.notes?.trim();
+      return businessCase
+        ? `${index}. Add assessment: ${item.assessmentLabel} (${item.assessmentSlug})\n   Business case: ${businessCase}`
+        : `${index}. Add assessment: ${item.assessmentLabel} (${item.assessmentSlug})`;
+    }
     default:
       return `${index}. Entitlement change`;
   }
@@ -293,12 +310,17 @@ Requested seats: ${payload.requestedSeats}
 Additional seats requested: ${Math.max(0, payload.requestedSeats - payload.currentSeats)}
 
 ${payload.notes?.trim() ? `Additional context:\n${payload.notes.trim()}` : ""}`.trim();
-    case "new_assessment":
-      return `${header}Request type: New assessment entitlement
-Assessment: ${payload.assessmentLabel} (${payload.assessmentSlug})
-
-Business case:
-${payload.notes.trim()}`.trim();
+    case "new_assessment": {
+      const businessCase = payload.notes?.trim();
+      const lines = [
+        `${header}Request type: New assessment entitlement`,
+        `Assessment: ${payload.assessmentLabel} (${payload.assessmentSlug})`,
+      ];
+      if (businessCase) {
+        lines.push("", "Business case:", businessCase);
+      }
+      return lines.join("\n").trim();
+    }
     default:
       return header.trim();
   }

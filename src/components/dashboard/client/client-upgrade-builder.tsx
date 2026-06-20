@@ -142,8 +142,6 @@ export function ClientUpgradeBuilder({
 
   const estimatedTotal = useMemo(() => sumLineItems(lineItems), [lineItems]);
 
-  const usingCustomAssessment = requestableAssessments.length === 0;
-
   const updateDraft = (patch: Partial<ClientUpgradeDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
   };
@@ -159,16 +157,28 @@ export function ClientUpgradeBuilder({
     }));
   };
 
+  const toggleQueuedAssessment = () => {
+    if (draft.queuedAddonAssessment) {
+      updateDraft({ queuedAddonAssessment: null });
+      return;
+    }
+
+    const slug = draft.selectedAddonSlug;
+    if (!slug) return;
+
+    const match = requestableAssessments.find((assessment) => assessment.slug === slug);
+    if (!match) return;
+
+    updateDraft({
+      queuedAddonAssessment: { slug: match.slug, label: match.title },
+    });
+  };
+
   const handleSubmit = async () => {
     setFieldError(null);
 
     if (bundleItems.length === 0) {
       setFieldError("Add at least one change to your upgrade request.");
-      return;
-    }
-
-    if (draft.addonAssessmentSlug && draft.addonNotes.trim().length < 20) {
-      setFieldError("Explain why you need the add-on assessment (at least 20 characters).");
       return;
     }
 
@@ -295,78 +305,50 @@ export function ClientUpgradeBuilder({
           </section>
         </div>
 
-        <section className={cn(portalPanelClass, "space-y-3 p-4")}>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <BookOpenCheck className="h-4 w-4" aria-hidden="true" />
-            Add-on assessment
-          </div>
-          {usingCustomAssessment ? (
-            <div className="space-y-2">
-              <Label htmlFor="custom-addon-name">Assessment to add</Label>
-              <Input
-                id="custom-addon-name"
-                value={draft.customAddonName}
-                onChange={(event) =>
-                  updateDraft({
-                    customAddonName: event.target.value,
-                    addonAssessmentSlug: event.target.value.trim() ? "custom-request" : null,
-                    addonAssessmentLabel: event.target.value.trim() || null,
-                  })
-                }
-                placeholder="Name of the assessment you want to add"
-                className="rounded-xl"
-              />
+        {requestableAssessments.length > 0 ? (
+          <section className={cn(portalPanelClass, "space-y-3 p-4")}>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <BookOpenCheck className="h-4 w-4" aria-hidden="true" />
+              Add-on assessment
             </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Add-on assessment</Label>
-              <Select
-                value={draft.addonAssessmentSlug ?? "none"}
-                onValueChange={(value) => {
-                  if (value === "none") {
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1 space-y-2">
+                <Label>Add-on assessment</Label>
+                <Select
+                  value={draft.selectedAddonSlug ?? "none"}
+                  onValueChange={(value) => {
                     updateDraft({
-                      addonAssessmentSlug: null,
-                      addonAssessmentLabel: null,
-                      addonNotes: "",
+                      selectedAddonSlug: value === "none" ? null : value,
+                      queuedAddonAssessment: null,
                     });
-                    return;
-                  }
-                  const match = requestableAssessments.find((assessment) => assessment.slug === value);
-                  updateDraft({
-                    addonAssessmentSlug: value,
-                    addonAssessmentLabel: match?.title ?? value,
-                  });
-                }}
+                  }}
+                >
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Select assessment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Select assessment</SelectItem>
+                    {requestableAssessments.map((assessment) => (
+                      <SelectItem key={assessment.slug} value={assessment.slug}>
+                        {assessment.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={draft.queuedAddonAssessment ? "default" : "outline"}
+                className="rounded-xl sm:mb-0.5"
+                disabled={!draft.selectedAddonSlug && !draft.queuedAddonAssessment}
+                onClick={toggleQueuedAssessment}
               >
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Optional add-on" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {requestableAssessments.map((assessment) => (
-                    <SelectItem key={assessment.slug} value={assessment.slug}>
-                      {assessment.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {draft.queuedAddonAssessment ? "Queued" : "Add"}
+              </Button>
             </div>
-          )}
-
-          {(draft.addonAssessmentSlug || draft.customAddonName.trim()) ? (
-            <div className="space-y-2">
-              <Label htmlFor="addon-notes">Why do you need this assessment?</Label>
-              <Textarea
-                id="addon-notes"
-                value={draft.addonNotes}
-                onChange={(event) => updateDraft({ addonNotes: event.target.value })}
-                placeholder="Describe the role, campaign, or business need (min. 20 characters)"
-                rows={3}
-                className="resize-none rounded-xl"
-              />
-            </div>
-          ) : null}
-        </section>
+          </section>
+        ) : null}
 
         <section className={cn(portalPanelClass, "space-y-3 p-4")}>
           <Label htmlFor="upgrade-notes">Additional context (optional)</Label>

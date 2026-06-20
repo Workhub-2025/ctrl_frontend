@@ -71,23 +71,17 @@ export function ClientUpgradeRequestDialog({
   const [requestedSeats, setRequestedSeats] = useState(String((currentSeats ?? 1) + 1));
   const [seatNotes, setSeatNotes] = useState("");
   const [assessmentSlug, setAssessmentSlug] = useState("");
-  const [customAssessmentName, setCustomAssessmentName] = useState("");
-  const [newAssessmentNotes, setNewAssessmentNotes] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const usingCustomAssessment = requestableAssessments.length === 0;
-
-  const selectedRequestAssessment = useMemo(() => {
-    if (usingCustomAssessment) return null;
-    return requestableAssessments.find((assessment) => assessment.slug === assessmentSlug) ?? null;
-  }, [assessmentSlug, requestableAssessments, usingCustomAssessment]);
+  const selectedRequestAssessment = useMemo(
+    () => requestableAssessments.find((assessment) => assessment.slug === assessmentSlug) ?? null,
+    [assessmentSlug, requestableAssessments]
+  );
 
   useEffect(() => {
     if (!open) return;
     setRequestedSeats(String(Math.max((currentSeats ?? 1) + 1, 2)));
     setSeatNotes("");
-    setCustomAssessmentName("");
-    setNewAssessmentNotes("");
     setFieldError(null);
 
     if (requestType === "new_assessment") {
@@ -124,34 +118,19 @@ export function ClientUpgradeRequestDialog({
       }
 
       if (requestType === "new_assessment") {
-        if (newAssessmentNotes.trim().length < 20) {
-          setFieldError("Explain why you need this assessment (at least 20 characters).");
+        if (requestableAssessments.length === 0) {
+          setFieldError("No add-on assessments are available to request.");
           return;
         }
-
-        if (usingCustomAssessment) {
-          if (customAssessmentName.trim().length < 3) {
-            setFieldError("Enter the assessment name you want to add.");
-            return;
-          }
-          await onSubmit({
-            type: "new_assessment",
-            assessmentSlug: "custom-request",
-            assessmentLabel: customAssessmentName.trim(),
-            notes: newAssessmentNotes.trim(),
-          });
-        } else {
-          if (!selectedRequestAssessment) {
-            setFieldError("Choose an assessment to request.");
-            return;
-          }
-          await onSubmit({
-            type: "new_assessment",
-            assessmentSlug: selectedRequestAssessment.slug,
-            assessmentLabel: selectedRequestAssessment.title,
-            notes: newAssessmentNotes.trim(),
-          });
+        if (!selectedRequestAssessment) {
+          setFieldError("Choose an assessment to request.");
+          return;
         }
+        await onSubmit({
+          type: "new_assessment",
+          assessmentSlug: selectedRequestAssessment.slug,
+          assessmentLabel: selectedRequestAssessment.title,
+        });
       }
 
       onOpenChange(false);
@@ -213,7 +192,7 @@ export function ClientUpgradeRequestDialog({
             </>
           )}
 
-          {requestType === "new_assessment" && (
+          {requestType === "new_assessment" && requestableAssessments.length > 0 && (
             <>
               <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm dark:border-white/5">
                 <p className="text-xs leading-relaxed text-muted-foreground">
@@ -222,57 +201,35 @@ export function ClientUpgradeRequestDialog({
                 </p>
               </div>
 
-              {usingCustomAssessment ? (
-                <div className="space-y-2">
-                  <Label htmlFor="custom-assessment-name">Assessment to add</Label>
-                  <Input
-                    id="custom-assessment-name"
-                    value={customAssessmentName}
-                    onChange={(event) => setCustomAssessmentName(event.target.value)}
-                    placeholder="Name of the assessment you want to add"
-                    className="rounded-xl"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    No add-on assessments are listed in the catalogue yet. Describe the assessment
-                    you need and our team will confirm availability.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label>Add-on assessment</Label>
-                  <Select value={assessmentSlug} onValueChange={setAssessmentSlug}>
-                    <SelectTrigger className="rounded-xl">
-                      <SelectValue placeholder="Select assessment" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {requestableAssessments.map((assessment) => (
-                        <SelectItem key={assessment.slug} value={assessment.slug}>
-                          {assessment.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedRequestAssessment?.summary ? (
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      {selectedRequestAssessment.summary}
-                    </p>
-                  ) : null}
-                </div>
-              )}
-
               <div className="space-y-2">
-                <Label htmlFor="new-assessment-notes">Why do you need this assessment?</Label>
-                <Textarea
-                  id="new-assessment-notes"
-                  value={newAssessmentNotes}
-                  onChange={(event) => setNewAssessmentNotes(event.target.value)}
-                  placeholder="Describe the role, campaign, or business need (min. 20 characters)"
-                  rows={4}
-                  className="resize-none rounded-xl"
-                />
+                <Label>Add-on assessment</Label>
+                <Select value={assessmentSlug} onValueChange={setAssessmentSlug}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Select assessment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {requestableAssessments.map((assessment) => (
+                      <SelectItem key={assessment.slug} value={assessment.slug}>
+                        {assessment.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedRequestAssessment?.summary ? (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {selectedRequestAssessment.summary}
+                  </p>
+                ) : null}
               </div>
             </>
           )}
+
+          {requestType === "new_assessment" && requestableAssessments.length === 0 ? (
+            <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground dark:border-white/5">
+              All available add-on assessments are already on your account, or none are listed in
+              the catalogue yet.
+            </p>
+          ) : null}
 
           {fieldError ? (
             <p className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -280,7 +237,14 @@ export function ClientUpgradeRequestDialog({
             </p>
           ) : null}
 
-          <Button type="submit" disabled={submitting} className="h-11 w-full rounded-xl font-semibold">
+          <Button
+            type="submit"
+            disabled={
+              submitting ||
+              (requestType === "new_assessment" && requestableAssessments.length === 0)
+            }
+            className="h-11 w-full rounded-xl font-semibold"
+          >
             {submitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />

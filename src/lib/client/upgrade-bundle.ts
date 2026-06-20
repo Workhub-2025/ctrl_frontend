@@ -17,10 +17,8 @@ export type ClientUpgradePricing = {
 export type ClientUpgradeDraft = {
   requestedSeats: number;
   deliveryFeatures: Record<ClientDeliveryFeatureKey, boolean>;
-  addonAssessmentSlug: string | null;
-  addonAssessmentLabel: string | null;
-  addonNotes: string;
-  customAddonName: string;
+  selectedAddonSlug: string | null;
+  queuedAddonAssessment: { slug: string; label: string } | null;
   notes: string;
 };
 
@@ -40,10 +38,8 @@ export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraf
       deliveryRemote: false,
       deliveryHybrid: false,
     },
-    addonAssessmentSlug: null,
-    addonAssessmentLabel: null,
-    addonNotes: "",
-    customAddonName: "",
+    selectedAddonSlug: null,
+    queuedAddonAssessment: null,
     notes: "",
   };
 }
@@ -72,10 +68,8 @@ export function computePendingChanges(input: {
     }
   }
 
-  if (input.draft.addonAssessmentSlug && input.draft.addonNotes.trim().length >= 20) {
-    changes.push(
-      `Add assessment: ${input.draft.addonAssessmentLabel ?? input.draft.customAddonName.trim()}`
-    );
+  if (input.draft.queuedAddonAssessment) {
+    changes.push(`Add assessment: ${input.draft.queuedAddonAssessment.label}`);
   }
 
   return changes;
@@ -107,15 +101,11 @@ export function buildUpgradeBundleItems(input: {
     }
   }
 
-  if (input.draft.addonAssessmentSlug && input.draft.addonNotes.trim().length >= 20) {
+  if (input.draft.queuedAddonAssessment) {
     items.push({
       type: "new_assessment",
-      assessmentSlug: input.draft.addonAssessmentSlug,
-      assessmentLabel:
-        input.draft.addonAssessmentLabel ??
-        input.draft.customAddonName.trim() ??
-        input.draft.addonAssessmentSlug,
-      notes: input.draft.addonNotes.trim(),
+      assessmentSlug: input.draft.queuedAddonAssessment.slug,
+      assessmentLabel: input.draft.queuedAddonAssessment.label,
     });
   }
 

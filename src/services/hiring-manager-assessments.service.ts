@@ -14,7 +14,7 @@ import {
   TYPING_TIME_LIMIT_PER_ROUND_SECONDS,
   TYPING_WPM_THRESHOLD,
 } from "@/lib/assessment-catalog-defaults";
-import { getEntitledAssessmentSlugs } from "@/lib/client/entitlements";
+import { isAssessmentEntitledForClient } from "@/lib/client/entitlements";
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 type StrapiAssessmentResponse = {
@@ -65,6 +65,7 @@ type StrapiAssessment = {
   documentId?: string;
   displayName?: string;
   slug?: string;
+  entitlementTier?: "core" | "premium" | string | null;
   description?: string | null;
   isActive?: boolean;
   order?: number | null;
@@ -384,17 +385,30 @@ async function getAssessmentVersions(slug: string): Promise<AssessmentVersionOpt
     : [{ version: "1.0.0", title: "v1.0.0", description: null }];
 }
 
-async function getClientEntitledAssessmentSlugs(): Promise<Set<string> | null> {
+async function getClientFeatures(): Promise<Record<string, unknown> | null> {
   try {
     const response = await fetchStrapi<{ client?: { features?: Record<string, unknown> } }>(
       "/users/me?populate=client",
     );
-    const features = response?.client?.features;
-    return new Set(getEntitledAssessmentSlugs(features));
+    return response?.client?.features ?? {};
   } catch (error) {
     console.warn("[getHiringManagerAssessments] Failed to load client entitlements", error);
     return null;
   }
+}
+
+function isAssessmentEntitledForHiringManager(
+  item: unknown,
+  clientFeatures: Record<string, unknown> | null,
+) {
+  const assessment = getAssessmentAttributes(item);
+  return isAssessmentEntitledForClient(
+    {
+      slug: assessment.slug,
+      entitlementTier: assessment.entitlementTier,
+    },
+    clientFeatures ?? {},
+  );
 }
 
 export async function getHiringManagerAssessments(): Promise<{
@@ -405,16 +419,14 @@ export async function getHiringManagerAssessments(): Promise<{
     const response = await fetchStrapi<StrapiAssessmentResponse>(
       "/assessments?populate[config][populate]=*&filters[isActive][$eq]=true&sort[0]=order:asc&sort[1]=displayName:asc"
     );
+    const clientFeatures = await getClientFeatures();
     const normalizedAssessments = (response.data ?? [])
+      .filter((item) => isAssessmentEntitledForHiringManager(item, clientFeatures))
       .map(normalizeAssessment)
       .filter((assessment): assessment is HiringManagerAssessment => Boolean(assessment));
 
-    const entitledSlugs = await getClientEntitledAssessmentSlugs();
-
     const assessments = await Promise.all(
-      normalizedAssessments
-        .filter((assessment) => !entitledSlugs || entitledSlugs.has(assessment.slug))
-        .map(async (assessment) => {
+      normalizedAssessments.map(async (assessment) => {
         try {
           return {
             ...assessment,
