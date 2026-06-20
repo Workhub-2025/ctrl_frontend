@@ -1,6 +1,7 @@
 import {
   CallSimulationTest,
   PrioritisationTest,
+  ShortTermMemoryTest,
   SituationalJudgementTest,
   TypingTest,
 } from "@/components/assessment";
@@ -12,9 +13,11 @@ import { PrioritisationReportBreakdown } from "./report/prioritisation-breakdown
 import {
   hasCallSimulationReportBreakdown,
   hasPrioritisationReportBreakdown,
+  hasShortTermMemoryReportBreakdown,
   hasSituationalJudgementReportBreakdown,
   hasTypingReportBreakdown,
 } from "./report/shared";
+import { ShortTermMemoryReportBreakdown } from "./report/short-term-memory-breakdown";
 import { SituationalJudgementReportBreakdown } from "./report/situational-judgement-breakdown";
 import { TypingReportBreakdown } from "./report/typing-breakdown";
 import type { AssessmentUiPlugin } from "./types";
@@ -59,6 +62,15 @@ const pluginRuntimeBySlug: Record<
     shellTitle: "Prioritisation Judgement Assessment",
     reportBreakdown: PrioritisationReportBreakdown,
     hasReportBreakdown: hasPrioritisationReportBreakdown,
+  },
+  "short-term-memory": {
+    timed: true,
+    supportsHeartbeat: true,
+    strapiSessionPath: "/assessment/short-term-memory/session",
+    component: ShortTermMemoryTest,
+    shellTitle: "Short-Term Memory Test",
+    reportBreakdown: ShortTermMemoryReportBreakdown,
+    hasReportBreakdown: hasShortTermMemoryReportBreakdown,
   },
 };
 

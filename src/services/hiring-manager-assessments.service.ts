@@ -5,6 +5,7 @@ import {
   CALL_SIMULATION_CALL_COUNT,
   PJA_ROUND_COUNT,
   SJT_QUESTION_COUNT,
+  STM_TIME_LIMIT_SECONDS,
   STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS,
   TYPING_ACCURACY_THRESHOLD,
   TYPING_ROUND_COUNT,
@@ -12,6 +13,7 @@ import {
   TYPING_TIME_LIMIT_SECONDS,
   TYPING_WPM_THRESHOLD,
 } from "@/lib/assessment-catalog-defaults";
+import { getEntitledAssessmentSlugs } from "@/lib/client/entitlements";
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 type StrapiAssessmentResponse = {
@@ -109,7 +111,7 @@ export type HiringManagerAssessment = {
   skills: string[];
   whyItMatters: string;
   videoLabel: string;
-  iconKey: "typing" | "call-simulation" | "situational-judgement" | "prioritisation" | "default";
+  iconKey: "typing" | "call-simulation" | "situational-judgement" | "prioritisation" | "short-term-memory" | "default";
   configType: string;
   isActive: boolean;
   passingScore: number | null;
@@ -159,6 +161,15 @@ const configMeta: Record<
     whyItMatters:
       "Shows whether candidates can identify urgency, sequence work sensibly, and make defensible operational decisions.",
     videoLabel: "Prioritisation assessment demo",
+  },
+  "assessment-config.short-term-memory": {
+    iconKey: "short-term-memory",
+    skills: ["Memory", "Information retention", "Attention under distraction"],
+    fallbackSummary:
+      "Measure immediate recall of operational details after a timed distraction task.",
+    whyItMatters:
+      "Shows whether candidates can retain and accurately recall critical information under realistic working-memory pressure.",
+    videoLabel: "Short-term memory assessment demo",
   },
 };
 
@@ -292,6 +303,8 @@ function inferDurationSeconds(
       return STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;
     case "assessment-config.call-simulation":
       return config.callCount ? config.callCount * 240 : null;
+    case "assessment-config.short-term-memory":
+      return STM_TIME_LIMIT_SECONDS;
     default:
       return null;
   }
@@ -345,6 +358,19 @@ async function getAssessmentVersions(slug: string): Promise<AssessmentVersionOpt
     : [{ version: "1.0.0", title: "v1.0.0", description: null }];
 }
 
+async function getClientEntitledAssessmentSlugs(): Promise<Set<string> | null> {
+  try {
+    const response = await fetchStrapi<{ client?: { features?: Record<string, unknown> } }>(
+      "/users/me?populate=client",
+    );
+    const features = response?.client?.features;
+    return new Set(getEntitledAssessmentSlugs(features));
+  } catch (error) {
+    console.warn("[getHiringManagerAssessments] Failed to load client entitlements", error);
+    return null;
+  }
+}
+
 export async function getHiringManagerAssessments(): Promise<{
   assessments: HiringManagerAssessment[];
   error: string | null;
@@ -357,8 +383,12 @@ export async function getHiringManagerAssessments(): Promise<{
       .map(normalizeAssessment)
       .filter((assessment): assessment is HiringManagerAssessment => Boolean(assessment));
 
+    const entitledSlugs = await getClientEntitledAssessmentSlugs();
+
     const assessments = await Promise.all(
-      normalizedAssessments.map(async (assessment) => {
+      normalizedAssessments
+        .filter((assessment) => !entitledSlugs || entitledSlugs.has(assessment.slug))
+        .map(async (assessment) => {
         try {
           return {
             ...assessment,

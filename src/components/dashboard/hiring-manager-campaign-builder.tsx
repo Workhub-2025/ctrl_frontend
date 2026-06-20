@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Brain,
   BrainCircuit,
   Headphones,
   FileText,
@@ -64,6 +65,7 @@ const iconByKey = {
   "call-simulation": Headphones,
   "situational-judgement": SlidersHorizontal,
   prioritisation: BrainCircuit,
+  "short-term-memory": Brain,
   default: BrainCircuit,
 } satisfies Record<HiringManagerAssessment["iconKey"], typeof BrainCircuit>;
 

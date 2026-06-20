@@ -58,6 +58,18 @@ export function formatAbandonSnapshotSummary(
     }
   }
 
+  if (canonicalSlug === "short-term-memory") {
+    const questionIndex =
+      typeof snapshot.questionIndex === "number" ? snapshot.questionIndex + 1 : null;
+    const phase = typeof snapshot.phase === "string" ? snapshot.phase : null;
+    if (questionIndex !== null && phase === "recall") {
+      return `${slugLabel}: recall question ${questionIndex}${versionSuffix}${recoveryPath}`;
+    }
+    if (phase) {
+      return `${slugLabel}: ${phase} phase${versionSuffix}${recoveryPath}`;
+    }
+  }
+
   if (canonicalSlug === "call-simulation") {
     const runIndex = typeof snapshot.currentRunIndex === "number" ? snapshot.currentRunIndex + 1 : null;
     if (runIndex !== null) {

@@ -1,5 +1,6 @@
 import { callSimulationSubmitHandler } from "./call-simulation";
 import { prioritisationSubmitHandler } from "./prioritisation";
+import { shortTermMemorySubmitHandler } from "./short-term-memory";
 import { situationalJudgementSubmitHandler } from "./situational-judgement";
 import { typingSubmitHandler } from "./typing";
 import type { AssessmentSubmitHandler } from "./types";
@@ -9,6 +10,7 @@ const submitHandlers = new Map<string, AssessmentSubmitHandler>([
   ["call-simulation", callSimulationSubmitHandler as AssessmentSubmitHandler],
   ["situational-judgement", situationalJudgementSubmitHandler as AssessmentSubmitHandler],
   ["prioritisation", prioritisationSubmitHandler as AssessmentSubmitHandler],
+  ["short-term-memory", shortTermMemorySubmitHandler as AssessmentSubmitHandler],
 ]);
 
 export function getAssessmentSubmitHandler(slug: string): AssessmentSubmitHandler | undefined {

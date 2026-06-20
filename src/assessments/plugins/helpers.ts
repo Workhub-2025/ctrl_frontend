@@ -15,6 +15,7 @@ export function isPlatformAssessmentSlug(slug: string): slug is PlatformAssessme
     slug === "typing" ||
     slug === "call-simulation" ||
     slug === "situational-judgement" ||
-    slug === "prioritisation"
+    slug === "prioritisation" ||
+    slug === "short-term-memory"
   );
 }

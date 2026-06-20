@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Brain,
   BrainCircuit,
   Headphones,
   PlayCircle,
@@ -40,6 +41,7 @@ const iconByKey = {
   "call-simulation": Headphones,
   "situational-judgement": SlidersHorizontal,
   prioritisation: BrainCircuit,
+  "short-term-memory": Brain,
   default: BrainCircuit,
 } satisfies Record<HiringManagerAssessment["iconKey"], typeof BrainCircuit>;
 

@@ -1,4 +1,5 @@
 import {
+  Brain,
   ClipboardCheck,
   Keyboard,
   ListOrdered,
@@ -57,6 +58,15 @@ export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
     href: getAssessmentPagePath("prioritisation"),
     duration: getAssessmentCardDuration("prioritisation"),
     icon: ListOrdered,
+  },
+  {
+    slug: "short-term-memory",
+    title: "Short-Term Memory Test",
+    description:
+      "Study operational details, complete a distraction task, then recall key information from memory.",
+    href: getAssessmentPagePath("short-term-memory"),
+    duration: getAssessmentCardDuration("short-term-memory"),
+    icon: Brain,
   },
 ];
 

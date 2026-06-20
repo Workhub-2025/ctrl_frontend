@@ -20,6 +20,11 @@ export const PJA_ROUND_COUNT = 15;
 export const PJA_INCIDENTS_PER_ROUND = 6;
 export const CALL_SIMULATION_CALL_COUNT = 2;
 export const CALL_SIMULATION_REVIEW_SECONDS = 60;
+export const STM_INFORMATION_SECONDS = 45;
+export const STM_DISTRACTION_SECONDS = 45;
+export const STM_RECALL_SECONDS = 180;
+export const STM_TIME_LIMIT_SECONDS =
+  STM_INFORMATION_SECONDS + STM_DISTRACTION_SECONDS + STM_RECALL_SECONDS + 30;
 
 /** Standard live-assessment time limit shared by SJT and prioritisation. */
 export const STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS = 20 * 60;
@@ -59,6 +64,11 @@ export const ASSESSMENT_CATALOGUE_DEFAULTS: Record<
     timeLimitSeconds: null,
     estimatedCompletionTime: "20-25",
   },
+  "short-term-memory": {
+    passingScore: 70,
+    timeLimitSeconds: STM_TIME_LIMIT_SECONDS,
+    estimatedCompletionTime: "5-8",
+  },
 };
 
 /** Formats an estimated-completion range ("20-25") into a card label ("20-25 min"). */
@@ -75,6 +85,9 @@ export function getAssessmentCardDuration(slug: PlatformAssessmentSlug): string 
     ASSESSMENT_CATALOGUE_DEFAULTS[slug];
   if (slug === "situational-judgement" || slug === "prioritisation") {
     return `${Math.round((timeLimitSeconds ?? STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS) / 60)} min`;
+  }
+  if (slug === "short-term-memory") {
+    return `${Math.round((timeLimitSeconds ?? STM_TIME_LIMIT_SECONDS) / 60)} min`;
   }
   return `${estimatedCompletionTime} min`;
 }

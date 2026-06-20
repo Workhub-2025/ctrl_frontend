@@ -526,6 +526,14 @@ export function HiringManagerCandidatesView() {
                               metricsContent = (
                                 <span>Band: {m.decisionBand ?? "—"} · Flags: {Number(m.materialRiskFlagCount ?? 0) + Number(m.moderateRiskFlagCount ?? 0)}</span>
                               );
+                            } else if (key === "short-term-memory" && matchedResult.metrics) {
+                              const m = matchedResult.metrics as Record<string, unknown>;
+                              metricsContent = (
+                                <span>
+                                  Recall: {Math.round((m.factRecallAccuracy as number) ?? 0)}% · Critical:{" "}
+                                  {Math.round((m.criticalFactAccuracy as number) ?? 0)}%
+                                </span>
+                              );
                             } else if (key === "call-simulation" && typeof matchedResult.durationSeconds === 'number') {
                               metricsContent = (
                                 <span>Duration: {Math.round(matchedResult.durationSeconds / 60)}m {matchedResult.durationSeconds % 60}s</span>

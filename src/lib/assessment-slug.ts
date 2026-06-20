@@ -4,7 +4,8 @@ export type PlatformAssessmentSlug =
   | "typing"
   | "situational-judgement"
   | "prioritisation"
-  | "call-simulation";
+  | "call-simulation"
+  | "short-term-memory";
 
 export function normalizeAssessmentSlugInput(value?: string | null): string {
   return (value ?? "")
@@ -31,9 +32,13 @@ export function resolveAssessmentSlug(
   if (normalized.includes("typing")) {
     return "typing";
   }
+  if (normalized.includes("shorttermmemory") || normalized === "stm") {
+    return "short-term-memory";
+  }
 
   if (result?.metrics) {
     const metrics = result.metrics;
+    if (metrics.factRecallAccuracy !== undefined) return "short-term-memory";
     if (metrics.highPriorityAccuracy !== undefined) return "prioritisation";
     if (metrics.correct !== undefined) return "situational-judgement";
     if (metrics.averageWpm !== undefined) return "typing";
@@ -55,6 +60,7 @@ export function isKnownAssessmentSlug(value: string): value is PlatformAssessmen
     || value === "situational-judgement"
     || value === "prioritisation"
     || value === "call-simulation"
+    || value === "short-term-memory"
   );
 }
 
@@ -73,4 +79,5 @@ export const TIMED_ASSESSMENT_SLUGS: ReadonlySet<string> = new Set([
   "situational-judgement",
   "prioritisation",
   "call-simulation",
+  "short-term-memory",
 ]);

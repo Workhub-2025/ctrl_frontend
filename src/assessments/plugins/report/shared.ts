@@ -32,6 +32,10 @@ export function hasSituationalJudgementReportBreakdown(result: HiringManagerAsse
   return Boolean(result?.metrics && result.numericScore !== null);
 }
 
+export function hasShortTermMemoryReportBreakdown(result: HiringManagerAssessmentResult | null): boolean {
+  return Boolean(result?.metrics && (result.metrics as Record<string, unknown>).factRecallAccuracy !== undefined);
+}
+
 export function hasCallSimulationReportBreakdown(result: HiringManagerAssessmentResult | null): boolean {
   return Boolean(result?.metrics && result.numericScore !== null);
 }

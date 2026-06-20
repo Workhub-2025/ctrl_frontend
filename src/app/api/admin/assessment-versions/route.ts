@@ -14,6 +14,7 @@ const ASSESSMENT_SLUGS = [
   "typing",
   "prioritisation",
   "call-simulation",
+  "short-term-memory",
 ];
 
 async function requireAdmin(request?: NextRequest) {

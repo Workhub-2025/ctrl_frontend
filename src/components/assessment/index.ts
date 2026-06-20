@@ -7,4 +7,5 @@ export {
   PrioritisationTest as PrioritizationTest,
 } from './prioritisation';
 export { SituationalJudgementTest } from './situational-judgement';
+export { ShortTermMemoryTest } from './short-term-memory';
 export { SimulatedAssessmentPlaceholder } from './placeholder';

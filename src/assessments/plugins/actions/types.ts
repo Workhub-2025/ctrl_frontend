@@ -65,3 +65,50 @@ export type CallSimulationSessionData = {
     difficulty?: string;
   };
 };
+
+export type StmRecallQuestion = {
+  id: string;
+  factKey?: string;
+  type: 'short_text' | 'multiple_choice';
+  prompt: string;
+  options?: Array<{ id: string; label: string }>;
+};
+
+export type StmRound = {
+  id: string;
+  information?: {
+    modality?: string;
+    displaySeconds?: number;
+    prompt?: string;
+    audioSrc?: string | null;
+    facts?: Array<{
+      key: string;
+      label: string;
+      weight?: number;
+      category?: string;
+      critical?: boolean;
+    }>;
+  } | null;
+  distraction?: {
+    type?: string;
+    durationSeconds?: number;
+    items?: Array<{ id: string; prompt: string }>;
+  } | null;
+  recallQuestions?: StmRecallQuestion[];
+};
+
+export type StmSessionData = {
+  sessionId: string | null;
+  assessmentId: string | null;
+  runs: StmRound[];
+  config?: {
+    roundCount?: number;
+    informationSeconds?: number;
+    distractionSeconds?: number;
+    recallSeconds?: number;
+    timeLimitSeconds?: number;
+    passingScore?: number;
+    version?: string;
+    difficulty?: string;
+  };
+};

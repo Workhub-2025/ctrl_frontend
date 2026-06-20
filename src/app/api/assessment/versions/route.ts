@@ -10,6 +10,7 @@ const ASSESSMENT_SLUGS = [
   "typing",
   "prioritisation",
   "call-simulation",
+  "short-term-memory",
 ];
 
 export async function GET(request: NextRequest) {
