@@ -270,6 +270,17 @@ const formatTime = (seconds: number) => {
   return `${minutes}:${remainingSeconds}`;
 };
 
+const resolveFrontendAudioUrl = (src: string | null | undefined): string => {
+  if (!src) return '';
+  if (src.startsWith('http') || src.startsWith('data:')) return src;
+  if (src.startsWith('/uploads/') || src.startsWith('/assets/call-simulation/')) {
+    const strapiBaseUrl = process.env.NEXT_PUBLIC_STRAPI_API_URL?.replace('/api', '') || 'http://localhost:1337';
+    const baseUrl = strapiBaseUrl.endsWith('/') ? strapiBaseUrl.slice(0, -1) : strapiBaseUrl;
+    return `${baseUrl}${src}`;
+  }
+  return src;
+};
+
 // ─── Accordion Section ────────────────────────────────────────────────────────
 
 type SectionId = 'caller' | 'system' | 'suspect' | 'location' | 'incident';
@@ -861,7 +872,7 @@ export default function CallSimulationTest({
           <audio
             ref={audioRef}
             preload="metadata"
-            src={currentRun.audioSrc}
+            src={resolveFrontendAudioUrl(currentRun.audioSrc)}
             onLoadedMetadata={(event) => setAudioDuration(event.currentTarget.duration)}
             onTimeUpdate={(event) => setAudioCurrentTime(event.currentTarget.currentTime)}
             onEnded={handleAudioEnded}
