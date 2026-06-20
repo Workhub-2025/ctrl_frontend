@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({ code }),
       cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
     },
   );
 

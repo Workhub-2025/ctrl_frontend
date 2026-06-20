@@ -2,95 +2,22 @@ import { fetchApi } from '@/lib/fetch-client';
 import { IUser, StrapiAuthResponse, LoginUserData } from '@/types/users.types';
 import { IRole } from '@/types/role.types';
 
-const normalizeApiBaseUrl = (value: string | undefined, fallback: string) => {
-    const trimmed = value?.trim() || fallback;
-    const withoutTrailingSlash = trimmed.replace(/\/+$/, '');
-
-    return withoutTrailingSlash.endsWith('/api')
-        ? withoutTrailingSlash
-        : `${withoutTrailingSlash}/api`;
-};
-
-const getServerStrapiBaseUrl = () =>
-    normalizeApiBaseUrl(
-        process.env.STRAPI_API_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL,
-        'http://strapi:1337/api'
-    );
-
-const getServerApiToken = () =>
-    process.env.STRAPI_API_FULL_ACCESS_TOKEN ||
-    process.env.STRAPI_API_FULL_ACCCESS_TOKEN ||
-    process.env.STRAPI_API_TOKEN ||
-    undefined;
-
-const hasRole = (user: StrapiAuthResponse['user'] | undefined) =>
-    Boolean(user?.role && typeof user.role === 'object');
-
-async function fetchUserWithRoleFromServer(userId: string | number) {
-    if (typeof window !== 'undefined') return null;
-
-    const token = getServerApiToken();
-    if (!token) return null;
-
-    const response = await fetch(
-        `${getServerStrapiBaseUrl()}/users/${encodeURIComponent(String(userId))}?populate=role`,
-        {
-            cache: 'no-store',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-            signal: AbortSignal.timeout(10_000),
-        }
-    );
-
-    if (!response.ok) return null;
-    return response.json() as Promise<StrapiAuthResponse['user']>;
-}
-
 export class AuthAPI {
     /**
-     * Register a new user
+     * Register a new user — browser must use POST /api/auth/register.
      */
-    static async register(userData: Partial<IUser>): Promise<StrapiAuthResponse> {
-        try {
-            console.log('🚀 AuthAPI.register called with data:', {
-                ...userData,
-                password: userData.password ? '[HIDDEN]' : 'NOT SET',
-                roleId: userData.role,
-                fieldsCount: Object.keys(userData).length
-            });
-
-            const response = await fetchApi.post<StrapiAuthResponse>(
-                '/access-code/register',
-                userData
-            );
-
-            console.log('✅ Strapi registration response:', {
-                success: !!response,
-                hasJWT: !!response.jwt,
-                hasUser: !!response.user,
-                userId: response.user?.id,
-                userEmail: response.user?.email,
-                userRole: response.user?.role,
-                jwtPreview: response.jwt ? `${response.jwt.substring(0, 20)}...` : 'NO JWT'
-            });
-
-            return response;
-        } catch (error: any) {
-            console.error('❌ AuthAPI.register failed:', {
-                message: error.message,
-                status: error.status,
-                stack: error.stack
-            });
-            const errorMessage = error.message || 'Registration failed';
-            throw new Error(errorMessage);
-        }
+    static async register(_userData: Partial<IUser>): Promise<StrapiAuthResponse> {
+        throw new Error('Use POST /api/auth/register from the browser');
     }
 
     /**
-     * Login user (for direct API usage, not NextAuth)
+     * Login user — browser must use POST /api/auth/login (debug page only).
      */
     static async login(credentials: LoginUserData): Promise<StrapiAuthResponse> {
+        if (typeof window === 'undefined') {
+            throw new Error('Use loginWithStrapiCredentials in server route handlers');
+        }
+
         try {
             const response = await fetchApi.post<StrapiAuthResponse>(
                 '/auth/local',
@@ -99,24 +26,6 @@ export class AuthAPI {
 
             if (!response.jwt || !response.user) {
                 throw new Error('Invalid Strapi auth response');
-            }
-
-            if (hasRole(response.user)) {
-                return response;
-            }
-
-            // Single server-side fallback (API token). Avoid /users/me here — it previously
-            // triggered getServerSession during login and could hang the BFF for ~30s.
-            const serverRoleUser = await fetchUserWithRoleFromServer(response.user.id);
-            if (serverRoleUser?.role) {
-                return {
-                    jwt: response.jwt,
-                    user: {
-                        ...response.user,
-                        ...serverRoleUser,
-                        role: serverRoleUser.role,
-                    },
-                };
             }
 
             return response;
@@ -132,16 +41,13 @@ export class AuthAPI {
     static async forgotPassword(email: string): Promise<{ ok: boolean }> {
         try {
             const normalizedEmail = email.trim().toLowerCase();
-            const endpoint =
-                typeof window === 'undefined'
-                    ? `${getServerStrapiBaseUrl()}/auth/forgot-password`
-                    : '/api/auth/forgot-password';
 
-            const response = await fetch(endpoint, {
+            const response = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: normalizedEmail }),
                 cache: 'no-store',
+                signal: AbortSignal.timeout(15_000),
             });
 
             if (!response.ok) {
@@ -157,7 +63,7 @@ export class AuthAPI {
     }
 
     /**
-     * Reset password with code (for direct API usage)
+     * Reset password with code
      */
     static async resetPassword(
         code: string,
@@ -165,16 +71,12 @@ export class AuthAPI {
         passwordConfirmation: string
     ): Promise<{ ok: boolean }> {
         try {
-            const endpoint =
-                typeof window === 'undefined'
-                    ? `${getServerStrapiBaseUrl()}/auth/reset-password`
-                    : '/api/auth/reset-password';
-
-            const response = await fetch(endpoint, {
+            const response = await fetch('/api/auth/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code, password, passwordConfirmation }),
                 cache: 'no-store',
+                signal: AbortSignal.timeout(15_000),
             });
 
             if (!response.ok) {
@@ -218,12 +120,10 @@ export class AuthAPI {
         try {
             const response = await fetchApi.get<{ roles: IRole[] } | IRole[]>('/users-permissions/roles');
 
-            // Handle both response formats: {roles: Array} or direct Array
             if (response && typeof response === 'object' && 'roles' in response) {
                 return response.roles;
             }
 
-            // If it's already an array, return it directly
             if (Array.isArray(response)) {
                 return response;
             }

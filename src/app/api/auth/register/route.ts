@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AuthAPI } from "@/services/auth-api";
+import { registerWithStrapi } from "@/lib/auth/strapi-auth-server";
 import { inferDevSeededRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import {
@@ -13,6 +13,7 @@ import {
   getAuthRequestContext,
 } from "@/lib/auth/session-config";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
+import { checkStrapiReachability } from "@/lib/strapi-connectivity";
 
 export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
@@ -32,6 +33,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const strapiIssue = await checkStrapiReachability();
+  if (strapiIssue) {
+    return NextResponse.json({ error: strapiIssue.message }, { status: 503 });
+  }
+
   try {
     await enforceRegisterRateLimit(context);
 
@@ -41,7 +47,7 @@ export async function POST(request: Request) {
       userAgent: context.userAgent,
     });
 
-    const authResponse = await AuthAPI.register({
+    const authResponse = await registerWithStrapi({
       ...body,
       email,
       username: body?.username || email,

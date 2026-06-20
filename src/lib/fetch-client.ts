@@ -39,34 +39,18 @@ interface SessionContext {
     tenant: string | null;
 }
 
-// Function to get auth + tenant context from NextAuth session
+// Browser-only session context. Server callers must pass tenant via headers or use API routes.
 const getSessionContext = async (): Promise<SessionContext> => {
-    // Server-side: try to get token from NextAuth session
     if (typeof window === 'undefined') {
-        try {
-            const { getServerSession } = await import('next-auth/next');
-            const { authOptions } = await import('@/lib/auth/next-auth-options');
-            const session = await getServerSession(authOptions);
-
-            return {
-                jwt: null,
-                tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
-            };
-        } catch (error: unknown) {
-            console.error(
-                '🔐 [SERVER] Failed to get server session:',
-                error instanceof Error ? error.message : error
-            );
-            return { jwt: null, tenant: null };
-        }
-    } else {
-        const session = await getClientSession();
-
-        return {
-            jwt: null,
-            tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
-        };
+        return { jwt: null, tenant: null };
     }
+
+    const session = await getClientSession();
+
+    return {
+        jwt: null,
+        tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
+    };
 };
 
 // Enhanced fetch function with interceptor-like functionality

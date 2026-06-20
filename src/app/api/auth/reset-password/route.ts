@@ -3,6 +3,7 @@ import { postStrapiAuth } from "@/lib/auth/strapi-public-auth";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
+import { checkStrapiReachability } from "@/lib/strapi-connectivity";
 
 export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
@@ -45,6 +46,11 @@ export async function POST(request: Request) {
   }
   if (password !== passwordConfirmation) {
     return NextResponse.json({ error: "Passwords do not match" }, { status: 400 });
+  }
+
+  const strapiIssue = await checkStrapiReachability();
+  if (strapiIssue) {
+    return NextResponse.json({ error: strapiIssue.message }, { status: 503 });
   }
 
   const result = await postStrapiAuth("auth/reset-password", {

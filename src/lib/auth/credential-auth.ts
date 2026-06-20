@@ -1,4 +1,4 @@
-import { AuthAPI } from "@/services/auth-api";
+import { loginWithStrapiCredentials } from "@/lib/auth/strapi-auth-server";
 import { inferDevSeededRole, normalizeRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { applyRateLimit } from "@/lib/security/api-rate-limit";
@@ -31,7 +31,7 @@ const REGISTER_RATE_WINDOW_MS = 60_000;
 export type AuthContext = ReturnType<typeof getAuthRequestContext>;
 
 export type CredentialAuthResult = {
-  authResponse: Awaited<ReturnType<typeof AuthAPI.login>>;
+  authResponse: Awaited<ReturnType<typeof loginWithStrapiCredentials>>;
   role: string;
 };
 
@@ -103,7 +103,7 @@ export async function authenticateCredentials(params: {
   });
 
   try {
-    const authResponse = await AuthAPI.login({
+    const authResponse = await loginWithStrapiCredentials({
       identifier: email,
       password: params.password,
     });
