@@ -1,9 +1,35 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans, Outfit, JetBrains_Mono, Atkinson_Hyperlegible } from "next/font/google";
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { StoreHydration } from "@/components/providers/store-hydration";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  weight: ["400", "500", "700"],
+});
+
+const atkinsonHyperlegible = Atkinson_Hyperlegible({
+  subsets: ["latin"],
+  variable: "--font-atkinson",
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+});
 
 export const metadata: Metadata = {
   title: { default: "CTRL Assessment", template: "%s | CTRL Assessment" },
@@ -16,19 +42,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      className={cn(
+        "dark",
+        plusJakartaSans.variable,
+        outfit.variable,
+        jetBrainsMono.variable,
+        atkinsonHyperlegible.variable
+      )}
+      suppressHydrationWarning
+    >
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased transition-colors duration-300"

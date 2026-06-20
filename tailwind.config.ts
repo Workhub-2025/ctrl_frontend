@@ -20,10 +20,10 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "sans-serif"],
-        headline: ["Plus Jakarta Sans", "sans-serif"],
-        display: ["Outfit", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ["var(--font-sans)", ...fontFamily.sans],
+        headline: ["var(--font-sans)", ...fontFamily.sans],
+        display: ["var(--font-display)", ...fontFamily.sans],
+        mono: ["var(--font-mono)", ...fontFamily.mono],
       },
       colors: {
         border: 'hsl(var(--border))',

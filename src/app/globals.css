@@ -653,7 +653,7 @@ html[data-ctrl-font-family="reading"] .ctrl-portal,
 html[data-ctrl-font-family="reading"] .ctrl-landing-page,
 html[data-ctrl-font-family="reading"] body,
 html[data-ctrl-font-family="reading"] * {
-  font-family: 'Atkinson Hyperlegible', Arial, Verdana, system-ui, sans-serif !important;
+  font-family: var(--font-atkinson), Arial, Verdana, system-ui, sans-serif !important;
 }
 
 html[data-ctrl-font-family="dyslexia"] .ctrl-portal,
@@ -1266,7 +1266,7 @@ html[data-ctrl-font-family="reading"] .ctrl-landing-page h1,
 html[data-ctrl-font-family="reading"] .ctrl-landing-page h2,
 html[data-ctrl-font-family="reading"] .ctrl-landing-page h3,
 html[data-ctrl-font-family="reading"] .ctrl-landing-page h4 {
-  font-family: 'Atkinson Hyperlegible', Arial, Verdana, system-ui, sans-serif !important;
+  font-family: var(--font-atkinson), Arial, Verdana, system-ui, sans-serif !important;
   font-feature-settings: normal;
 }
 
