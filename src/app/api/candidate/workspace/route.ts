@@ -1,13 +1,18 @@
-import { NextResponse } from "next/server";
-import { getServerStrapiClient } from "@/lib/strapi";
+import { NextRequest, NextResponse } from "next/server";
+import { getStrapiClient } from "@/lib/strapi";
 import { requireCandidateSession, handleBffRouteError } from "@/lib/auth/bff-session";
 
-export async function GET() {
-  try {
-    await requireCandidateSession();
+async function fetchCandidateWorkspace(client: ReturnType<typeof getStrapiClient>, query: string) {
+  return client.fetch(`/candidate/workspace${query ? `?${query}` : ""}`, { method: "GET" });
+}
 
-    const client = await getServerStrapiClient();
-    const response = await client.fetch("/candidate/workspace");
+export async function GET(request: NextRequest) {
+  try {
+    const { strapiJwt } = await requireCandidateSession();
+    const client = getStrapiClient(strapiJwt);
+    const query = request.nextUrl.searchParams.toString();
+
+    const response = await fetchCandidateWorkspace(client, query);
     const payload = await response.json();
 
     if (!response.ok) {

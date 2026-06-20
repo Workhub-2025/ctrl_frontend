@@ -73,6 +73,7 @@ function isApplicationsErrorEmpty(message: string) {
 }
 
 export class CandidateSessionService {
+  private static readonly WORKSPACE_PATH = "/api/candidate/workspace";
   private static readonly APPLICATIONS_PATH = "/api/candidate/applications";
 
   static hasFreshApplicationsCache() {
@@ -122,8 +123,8 @@ export class CandidateSessionService {
     }
 
     const path = options?.force
-      ? `${this.APPLICATIONS_PATH}?_t=${Date.now()}`
-      : this.APPLICATIONS_PATH;
+      ? `${this.WORKSPACE_PATH}?_t=${Date.now()}`
+      : this.WORKSPACE_PATH;
 
     myApplicationsInFlight = fetchApi
       .get<CandidateApplicationsResponse>(path, {

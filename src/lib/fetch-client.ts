@@ -124,7 +124,7 @@ export const fetchClient = async (
             if (isStaticResource) {
                 // Cache static test content for 5 minutes by default
                 nextOptions = { revalidate: 300, ...nextOptions };
-            } else if (url.includes('/candidate-sessions/me')) {
+            } else if (url.includes('/candidate/workspace')) {
                 // Align with portal in-memory cache (90s)
                 nextOptions = { revalidate: 90, ...nextOptions };
             }
