@@ -19,7 +19,9 @@ type AuthLoginFormProps = {
   disabled?: boolean;
   panelVariant?: SubmitButtonPanelVariant;
   inputVariant?: "dark" | "light";
-  onSubmit: (credentials: { email: string; password: string }) => Promise<void>;
+  onSubmit: (
+    credentials: { email: string; password: string }
+  ) => Promise<void | { requiresTotp?: boolean }>;
 };
 
 export const AuthLoginForm = memo(function AuthLoginForm({
@@ -96,8 +98,12 @@ export const AuthLoginForm = memo(function AuthLoginForm({
 
     try {
       setSubmitStatus("loading");
-      await onSubmit({ email, password });
-      setSubmitStatus("success");
+      const result = await onSubmit({ email, password });
+      if (!result?.requiresTotp) {
+        setSubmitStatus("success");
+      } else {
+        setSubmitStatus("idle");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Credentials not verified.");
       setSubmitStatus("error");

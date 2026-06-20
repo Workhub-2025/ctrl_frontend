@@ -110,6 +110,8 @@ export function useAuth() {
             }
 
             if (body.data?.requiresTotp) {
+                // Keep session bootstrap idle — password step succeeded but session is not established yet.
+                setStatus('unauthenticated');
                 return {
                     success: true,
                     requiresTotp: true,
@@ -149,8 +151,13 @@ export function useAuth() {
         } catch (error) {
             console.error('Login error:', error);
             setStatus('unauthenticated');
-            if (error instanceof Error && error.name === 'TimeoutError') {
-                throw new Error('Login timed out. Check your connection and try again.');
+            if (
+                error instanceof Error &&
+                (error.name === 'TimeoutError' || error.name === 'AbortError')
+            ) {
+                throw new Error(
+                    'Login timed out. Check your connection and that the Strapi backend is reachable.'
+                );
             }
             throw error;
         }

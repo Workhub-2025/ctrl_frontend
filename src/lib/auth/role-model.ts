@@ -20,6 +20,8 @@ const ROLE_ALIASES: Record<string, AppRole> = {
   buyer: "client",
   admin: "admin",
   administrator: "admin",
+  ctrl_admin: "admin",
+  super_admin: "admin",
 };
 
 export const normalizeRoleLabel = (value: string) =>

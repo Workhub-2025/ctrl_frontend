@@ -39,6 +39,7 @@ async function fetchUserWithRoleFromServer(userId: string | number) {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
+            signal: AbortSignal.timeout(10_000),
         }
     );
 

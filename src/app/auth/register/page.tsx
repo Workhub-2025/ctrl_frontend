@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { AnimatedSubmitButton, ButtonState } from "@/components/ui/animated-submit-button";
@@ -43,6 +43,7 @@ type AuthField =
   | "privacy";
 
 function UnifiedAuthContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const {
     settings: accessibilitySettings,
@@ -194,7 +195,11 @@ function UnifiedAuthContent() {
         const result = await login(email, password);
         if (result?.requiresTotp) {
           setTotpStep(true);
-          return;
+          const nextParams = new URLSearchParams(searchParams.toString());
+          nextParams.set("mode", "login");
+          nextParams.set("totp", "1");
+          router.replace(`/auth/register?${nextParams.toString()}`);
+          return { requiresTotp: true };
         }
       } catch (err) {
         throw err;
@@ -202,7 +207,7 @@ function UnifiedAuthContent() {
         setAuthAction(null);
       }
     },
-    [login]
+    [login, router, searchParams]
   );
 
   const handleTotpVerify = useCallback(
