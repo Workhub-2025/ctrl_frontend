@@ -19,7 +19,6 @@ export type ClientUpgradeDraft = {
   deliveryFeatures: Record<ClientDeliveryFeatureKey, boolean>;
   selectedAddonSlug: string | null;
   queuedAddonAssessment: { slug: string; label: string } | null;
-  notes: string;
 };
 
 export type ClientEntitlementAssessment = {
@@ -40,7 +39,6 @@ export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraf
     },
     selectedAddonSlug: null,
     queuedAddonAssessment: null,
-    notes: "",
   };
 }
 

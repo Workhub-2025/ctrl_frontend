@@ -9,6 +9,10 @@ import {
   buildUpgradeRequestSubject,
   type ClientUpgradeRequestPayload,
 } from "@/lib/client/entitlements";
+import {
+  normalizeContractTierForLock,
+  resolveEffectiveAnnualPlatformPence,
+} from "@/lib/billing/contract-pricing-lock";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
 type AdminClientRecord = {
@@ -22,6 +26,8 @@ type AdminClientRecord = {
     status?: string;
     paymentStatus?: string;
     tier?: string;
+    lockedAnnualPlatformPence?: number | null;
+    pricingLockedUntil?: string | null;
   }>;
 };
 
@@ -36,15 +42,22 @@ function getPendingContract(client: AdminClientRecord) {
 }
 
 function resolveAnnualContractPrice(
-  pricing: Record<string, unknown>,
-  tier?: string
+  contract: NonNullable<AdminClientRecord["contracts"]>[number],
+  pricing: Record<string, unknown>
 ) {
+  const asOfDate = new Date().toISOString().split("T")[0];
+  const effective = resolveEffectiveAnnualPlatformPence(contract, pricing, asOfDate);
+  if (effective && effective > 0) {
+    return effective;
+  }
+
+  const tier = normalizeContractTierForLock(contract.tier);
   const contractTypePrices =
     pricing.contractTypePrices && typeof pricing.contractTypePrices === "object"
       ? (pricing.contractTypePrices as Record<string, { basePlatformYearlyPence?: number }>)
       : {};
   return Number(
-    (tier ? contractTypePrices[tier]?.basePlatformYearlyPence : undefined) ??
+    contractTypePrices[tier]?.basePlatformYearlyPence ??
       pricing.basePlatformYearlyPence ??
       pricing.basePlatformMonthlyPence ??
       0
@@ -96,7 +109,7 @@ export async function POST(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
-    const amountPence = resolveAnnualContractPrice(pricing, contract.tier);
+    const amountPence = resolveAnnualContractPrice(contract, pricing);
 
     if (amountPence <= 0) {
       return NextResponse.json(

@@ -318,7 +318,7 @@ export function ClientUpgradeContent() {
                         Auto-renew contract
                       </Label>
                       <p className="text-[10px] text-muted-foreground">
-                        Automatically renew contract and keep features active.
+                        Renews automatically before expiry using current renewal pricing.
                       </p>
                     </div>
                     <Switch

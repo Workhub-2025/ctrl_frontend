@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Loader2, Mail, Send } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Mail, Send, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,11 +18,12 @@ import { toast } from "@/hooks/use-toast";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
   ADMIN_BROADCAST_AUDIENCE_OPTIONS,
+  ADMIN_BROADCAST_CONTRACT_TIER_OPTIONS,
   ADMIN_BROADCAST_PREFILLS,
   ADMIN_BROADCAST_TEMPLATE_OPTIONS,
   resolveBroadcastRequestBody,
-  type AdminBroadcastAudience,
-  type AdminBroadcastRole,
+  type AdminBroadcastAudienceMode,
+  type AdminBroadcastContractTier,
   type AdminBroadcastTemplateKey,
 } from "@/lib/admin-comms-templates";
 import {
@@ -37,13 +39,6 @@ type AdminClientOption = {
   id: string;
   name: string;
 };
-
-const ROLE_OPTIONS: Array<{ value: AdminBroadcastRole; label: string }> = [
-  { value: "client", label: "Client contact" },
-  { value: "hiring_manager", label: "Hiring manager" },
-  { value: "admin", label: "CTRL admin" },
-  { value: "candidate", label: "Candidate" },
-];
 
 function escapeHtml(value: string) {
   return value
@@ -68,8 +63,12 @@ function previewBodyHtml(body: string) {
 }
 
 export default function AdminCommsPage() {
-  const [audienceMode, setAudienceMode] = useState<AdminBroadcastAudience | "staff">("staff");
-  const [role, setRole] = useState<AdminBroadcastRole>("client");
+  const [audienceMode, setAudienceMode] = useState<AdminBroadcastAudienceMode>("staff");
+  const [contractTiers, setContractTiers] = useState<AdminBroadcastContractTier[]>([
+    "essential",
+    "professional",
+    "founder",
+  ]);
   const [clientDocumentId, setClientDocumentId] = useState("");
   const [email, setEmail] = useState("");
   const [templateKey, setTemplateKey] = useState<AdminBroadcastTemplateKey>("maintenance");
@@ -77,6 +76,17 @@ export default function AdminCommsPage() {
   const [body, setBody] = useState(ADMIN_BROADCAST_PREFILLS.maintenance.body);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recipientCount, setRecipientCount] = useState<number | null>(null);
+  const [exceedsBatchLimit, setExceedsBatchLimit] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [personalizedPreview, setPersonalizedPreview] = useState(false);
+  const [samplePreview, setSamplePreview] = useState<{
+    clientName: string;
+    endDate: string;
+    renewalPrice: string;
+    recipientEmail: string;
+  } | null>(null);
 
   const { data: clients } = useAdminResource<AdminClientOption[]>(
     "admin:clients:list",
@@ -89,6 +99,91 @@ export default function AdminCommsPage() {
     [audienceMode]
   );
 
+  const previewPayload = useMemo(
+    () =>
+      resolveBroadcastRequestBody({
+        audienceMode,
+        role: "client",
+        clientDocumentId,
+        email,
+        subject,
+        body,
+        templateKey,
+        contractTiers,
+      }),
+    [audienceMode, clientDocumentId, contractTiers, email, subject, body, templateKey]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      setPreviewLoading(true);
+      setPreviewError(null);
+
+      try {
+        if (previewPayload.audience === "client" && !previewPayload.clientDocumentId) {
+          if (!cancelled) {
+            setRecipientCount(null);
+            setExceedsBatchLimit(false);
+            setPreviewError("Select a client organisation to preview recipients.");
+          }
+          return;
+        }
+        if (previewPayload.audience === "user" && !previewPayload.email) {
+          if (!cancelled) {
+            setRecipientCount(null);
+            setExceedsBatchLimit(false);
+            setPreviewError("Enter an email address to preview recipients.");
+          }
+          return;
+        }
+        if (previewPayload.audience === "clients" && !previewPayload.contractTiers?.length) {
+          if (!cancelled) {
+            setRecipientCount(null);
+            setExceedsBatchLimit(false);
+            setPreviewError("Select at least one contract tier.");
+          }
+          return;
+        }
+
+        const response = await fetch("/api/admin/comms/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(previewPayload),
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error ?? "Recipient preview could not be resolved");
+        }
+
+        if (!cancelled) {
+          setRecipientCount(result.data?.recipientCount ?? 0);
+          setExceedsBatchLimit(Boolean(result.data?.exceedsBatchLimit));
+          setPersonalizedPreview(Boolean(result.data?.personalized));
+          setSamplePreview(result.data?.samplePreview ?? null);
+          setPreviewError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setRecipientCount(null);
+          setExceedsBatchLimit(false);
+          setPersonalizedPreview(false);
+          setSamplePreview(null);
+          setPreviewError(err instanceof Error ? err.message : "Recipient preview could not be resolved");
+        }
+      } finally {
+        if (!cancelled) {
+          setPreviewLoading(false);
+        }
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [previewPayload]);
+
   const applyTemplate = (nextKey: AdminBroadcastTemplateKey) => {
     setTemplateKey(nextKey);
     const prefill = ADMIN_BROADCAST_PREFILLS[nextKey];
@@ -98,6 +193,15 @@ export default function AdminCommsPage() {
     }
   };
 
+  const toggleContractTier = (tier: AdminBroadcastContractTier, checked: boolean) => {
+    setContractTiers((current) => {
+      if (checked) {
+        return current.includes(tier) ? current : [...current, tier];
+      }
+      return current.filter((value) => value !== tier);
+    });
+  };
+
   const handleSend = async () => {
     setSending(true);
     setError(null);
@@ -105,12 +209,13 @@ export default function AdminCommsPage() {
     try {
       const payload = resolveBroadcastRequestBody({
         audienceMode,
-        role,
+        role: "client",
         clientDocumentId,
         email,
         subject,
         body,
         templateKey,
+        contractTiers,
       });
 
       if (payload.audience === "client" && !payload.clientDocumentId) {
@@ -119,11 +224,17 @@ export default function AdminCommsPage() {
       if (payload.audience === "user" && !payload.email) {
         throw new Error("Enter an email address");
       }
+      if (payload.audience === "clients" && !payload.contractTiers?.length) {
+        throw new Error("Select at least one contract tier");
+      }
       if (!payload.subject.trim() && templateKey === "custom") {
         throw new Error("Subject is required");
       }
       if (!payload.body.trim() && templateKey === "custom") {
         throw new Error("Body is required");
+      }
+      if (exceedsBatchLimit) {
+        throw new Error("Recipient count exceeds the batch limit. Narrow your audience and try again.");
       }
 
       const response = await fetch("/api/admin/comms/send", {
@@ -177,7 +288,7 @@ export default function AdminCommsPage() {
               <Label className={portalLabelClass}>Audience</Label>
               <Select
                 value={audienceMode}
-                onValueChange={(value) => setAudienceMode(value as AdminBroadcastAudience | "staff")}
+                onValueChange={(value) => setAudienceMode(value as AdminBroadcastAudienceMode)}
               >
                 <SelectTrigger className={portalInputClass}>
                   <SelectValue placeholder="Select audience" />
@@ -193,21 +304,28 @@ export default function AdminCommsPage() {
               {audienceHint ? <p className="text-xs text-muted-foreground">{audienceHint}</p> : null}
             </div>
 
-            {audienceMode === "role" ? (
+            {audienceMode === "clients" ? (
               <div className="grid gap-2">
-                <Label className={portalLabelClass}>Role</Label>
-                <Select value={role} onValueChange={(value) => setRole(value as AdminBroadcastRole)}>
-                  <SelectTrigger className={portalInputClass}>
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className={portalLabelClass}>Contract tiers</Label>
+                <div className="grid gap-2 rounded-lg border border-border/60 bg-muted/20 p-3">
+                  {ADMIN_BROADCAST_CONTRACT_TIER_OPTIONS.map((option) => (
+                    <label
+                      key={option.value}
+                      className="flex cursor-pointer items-center gap-3 text-sm text-foreground"
+                    >
+                      <Checkbox
+                        checked={contractTiers.includes(option.value)}
+                        onCheckedChange={(checked) =>
+                          toggleContractTier(option.value, checked === true)
+                        }
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Targets client contact users on active contracts in the selected tiers.
+                </p>
               </div>
             ) : null}
 
@@ -245,6 +363,30 @@ export default function AdminCommsPage() {
               </div>
             ) : null}
 
+            <div className="rounded-lg border border-border/60 bg-muted/10 px-3 py-2.5">
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                {previewLoading ? (
+                  <span className="text-muted-foreground">Counting recipients…</span>
+                ) : recipientCount !== null ? (
+                  <span>
+                    <span className="font-semibold">{recipientCount}</span> recipient
+                    {recipientCount === 1 ? "" : "s"} will receive this email
+                    {personalizedPreview ? " (each with a personalized end date and renewal price)" : ""}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">Recipient count unavailable</span>
+                )}
+              </div>
+              {previewError ? (
+                <p className="mt-1 text-xs text-destructive">{previewError}</p>
+              ) : exceedsBatchLimit ? (
+                <p className="mt-1 text-xs text-destructive">
+                  Recipient count exceeds the 500-recipient batch limit. Narrow your audience.
+                </p>
+              ) : null}
+            </div>
+
             <div className="grid gap-2">
               <Label className={portalLabelClass}>Template</Label>
               <Select value={templateKey} onValueChange={(value) => applyTemplate(value as AdminBroadcastTemplateKey)}>
@@ -259,6 +401,12 @@ export default function AdminCommsPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {templateKey === "renewal-price-increase" ? (
+                <p className="text-xs text-muted-foreground">
+                  Keep {"{endDate}"} and {"{renewalPrice}"} placeholders in the template — each recipient
+                  receives their active contract end date and current catalogue renewal price for their tier.
+                </p>
+              ) : null}
             </div>
 
             <div className="grid gap-2">
@@ -288,7 +436,10 @@ export default function AdminCommsPage() {
             </div>
 
             <div className="flex justify-end">
-              <Button onClick={() => void handleSend()} disabled={sending}>
+              <Button
+                onClick={() => void handleSend()}
+                disabled={sending || previewLoading || exceedsBatchLimit}
+              >
                 {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                 Send broadcast
               </Button>
@@ -298,6 +449,15 @@ export default function AdminCommsPage() {
 
         <AdminPanel>
           <AdminSectionHeader title="Preview" description="Approximate rendering of the message body." />
+          {samplePreview ? (
+            <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+              <p className="mb-1 font-medium text-foreground">Sample recipient merge</p>
+              <p>{samplePreview.clientName} · {samplePreview.recipientEmail}</p>
+              <p>
+                {"{endDate}"} → {samplePreview.endDate} · {"{renewalPrice}"} → {samplePreview.renewalPrice}
+              </p>
+            </div>
+          ) : null}
           <div className="rounded-lg border bg-muted/20 p-4">
             <p className="mb-3 text-sm font-semibold text-foreground">
               {subject.trim() || "Subject preview"}

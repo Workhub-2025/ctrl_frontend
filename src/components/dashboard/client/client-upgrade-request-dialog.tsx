@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import type { ClientInitiatedUpgradeType, ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
 import type { ClientEntitlements } from "@/hooks/use-client-portal";
 
@@ -69,7 +68,6 @@ export function ClientUpgradeRequestDialog({
   );
 
   const [requestedSeats, setRequestedSeats] = useState(String((currentSeats ?? 1) + 1));
-  const [seatNotes, setSeatNotes] = useState("");
   const [assessmentSlug, setAssessmentSlug] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
 
@@ -81,7 +79,6 @@ export function ClientUpgradeRequestDialog({
   useEffect(() => {
     if (!open) return;
     setRequestedSeats(String(Math.max((currentSeats ?? 1) + 1, 2)));
-    setSeatNotes("");
     setFieldError(null);
 
     if (requestType === "new_assessment") {
@@ -113,7 +110,6 @@ export function ClientUpgradeRequestDialog({
           type: "seat_increase",
           currentSeats,
           requestedSeats: seats,
-          notes: seatNotes.trim() || undefined,
         });
       }
 
@@ -176,17 +172,6 @@ export function ClientUpgradeRequestDialog({
                   value={requestedSeats}
                   onChange={(event) => setRequestedSeats(event.target.value)}
                   className="rounded-xl"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="seat-notes">Additional context (optional)</Label>
-                <Textarea
-                  id="seat-notes"
-                  value={seatNotes}
-                  onChange={(event) => setSeatNotes(event.target.value)}
-                  placeholder="Timeline, rollout plans, or commercial context"
-                  rows={3}
-                  className="resize-none rounded-xl"
                 />
               </div>
             </>

@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   PortalSectionHeader,
 } from "@/components/dashboard/portal/portal-ui";
@@ -69,6 +68,11 @@ export function ClientUpgradeBuilder({
 }) {
   const currentSeats = entitlements?.contract?.seatCount ?? 0;
   const activeDeliveryFeatures = getActiveDeliveryFeatures(entitlements);
+  const requestableDeliveryFeatures = useMemo(
+    () => CLIENT_DELIVERY_FEATURES.filter((feature) => !activeDeliveryFeatures[feature.key]),
+    [activeDeliveryFeatures]
+  );
+  const showDeliverySection = requestableDeliveryFeatures.length > 0;
   const requestableAssessments = entitlements?.requestableAssessments ?? [];
 
   const [draft, setDraft] = useState<ClientUpgradeDraft>(() => createEmptyUpgradeDraft(currentSeats));
@@ -191,7 +195,6 @@ export function ClientUpgradeBuilder({
           activeDeliveryFeatures,
           assessments: [],
         }),
-        notes: draft.notes.trim() || undefined,
         lineItems: lineItems.length > 0 ? lineItems : undefined,
       });
       setDraft(createEmptyUpgradeDraft(currentSeats));
@@ -219,7 +222,7 @@ export function ClientUpgradeBuilder({
       ) : null}
 
       <div className={cn("space-y-5", !canRequestUpgrades && "pointer-events-none opacity-60")}>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className={cn("grid gap-4", showDeliverySection ? "md:grid-cols-2" : "md:grid-cols-1")}>
           <section className={cn(portalPanelClass, "space-y-3 p-4")}>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <Users className="h-4 w-4" aria-hidden="true" />
@@ -268,26 +271,21 @@ export function ClientUpgradeBuilder({
             </p>
           </section>
 
-          <section className={cn(portalPanelClass, "space-y-3 p-4")}>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <Users className="h-4 w-4" aria-hidden="true" />
-              Delivery methods
-            </div>
-            <ul className="space-y-2">
-              {CLIENT_DELIVERY_FEATURES.map((feature) => {
-                const active = activeDeliveryFeatures[feature.key];
-                const queued = draft.deliveryFeatures[feature.key];
-                return (
-                  <li key={feature.key} className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{feature.label}</p>
-                      <p className="text-xs text-muted-foreground">{feature.group}</p>
-                    </div>
-                    {active ? (
-                      <Badge variant="outline" className={cn("rounded-lg text-[10px] font-semibold", portalBadgeClass)}>
-                        Active
-                      </Badge>
-                    ) : (
+          {showDeliverySection ? (
+            <section className={cn(portalPanelClass, "space-y-3 p-4")}>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Users className="h-4 w-4" aria-hidden="true" />
+                Delivery methods
+              </div>
+              <ul className="space-y-2">
+                {requestableDeliveryFeatures.map((feature) => {
+                  const queued = draft.deliveryFeatures[feature.key];
+                  return (
+                    <li key={feature.key} className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{feature.label}</p>
+                        <p className="text-xs text-muted-foreground">{feature.group}</p>
+                      </div>
                       <Button
                         type="button"
                         size="sm"
@@ -297,12 +295,12 @@ export function ClientUpgradeBuilder({
                       >
                         {queued ? "Queued" : "Add"}
                       </Button>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
         </div>
 
         {requestableAssessments.length > 0 ? (
@@ -349,18 +347,6 @@ export function ClientUpgradeBuilder({
             </div>
           </section>
         ) : null}
-
-        <section className={cn(portalPanelClass, "space-y-3 p-4")}>
-          <Label htmlFor="upgrade-notes">Additional context (optional)</Label>
-          <Textarea
-            id="upgrade-notes"
-            value={draft.notes}
-            onChange={(event) => updateDraft({ notes: event.target.value })}
-            placeholder="Timeline, rollout plans, or commercial context"
-            rows={3}
-            className="resize-none rounded-xl"
-          />
-        </section>
 
         <section className={cn(portalPanelClass, "space-y-4 p-4")}>
           <div className="flex items-center justify-between gap-3">
