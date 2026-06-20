@@ -9,9 +9,21 @@ import {
   recordFailedLoginAttempt,
 } from "@/lib/security/login-attempt-guard";
 import type { getAuthRequestContext } from "@/lib/auth/session-config";
-import { isFetchTimeoutError } from "@/lib/strapi-connectivity";
 
 const LOGIN_RATE_LIMIT = 20;
+
+function isFetchTimeoutError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  if (error.name === "TimeoutError" || error.name === "AbortError") {
+    return true;
+  }
+
+  const message = error.message.toLowerCase();
+  return message.includes("timeout") || message.includes("aborted");
+}
 const LOGIN_RATE_WINDOW_MS = 60_000;
 const REGISTER_RATE_LIMIT = 10;
 const REGISTER_RATE_WINDOW_MS = 60_000;
