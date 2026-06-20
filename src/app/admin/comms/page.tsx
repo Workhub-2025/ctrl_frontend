@@ -19,7 +19,6 @@ import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
   ADMIN_BROADCAST_AUDIENCE_OPTIONS,
   ADMIN_BROADCAST_CONTRACT_TIER_OPTIONS,
-  ADMIN_BROADCAST_PREFILLS,
   ADMIN_BROADCAST_TEMPLATE_OPTIONS,
   resolveBroadcastRequestBody,
   type AdminBroadcastAudienceMode,
@@ -72,8 +71,24 @@ export default function AdminCommsPage() {
   const [clientDocumentId, setClientDocumentId] = useState("");
   const [email, setEmail] = useState("");
   const [templateKey, setTemplateKey] = useState<AdminBroadcastTemplateKey>("maintenance");
-  const [subject, setSubject] = useState(ADMIN_BROADCAST_PREFILLS.maintenance.subject);
-  const [body, setBody] = useState(ADMIN_BROADCAST_PREFILLS.maintenance.body);
+  const [prefills, setPrefills] = useState<Record<AdminBroadcastTemplateKey, { subject: string; body: string }> | null>(null);
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/comms/templates")
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.data) {
+          setPrefills(result.data);
+          setSubject(result.data.maintenance?.subject ?? "");
+          setBody(result.data.maintenance?.body ?? "");
+        }
+      })
+      .catch(() => {
+        // Non-critical — admin can still compose manually
+      });
+  }, []);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
@@ -186,10 +201,9 @@ export default function AdminCommsPage() {
 
   const applyTemplate = (nextKey: AdminBroadcastTemplateKey) => {
     setTemplateKey(nextKey);
-    const prefill = ADMIN_BROADCAST_PREFILLS[nextKey];
-    if (nextKey !== "custom") {
-      setSubject(prefill.subject);
-      setBody(prefill.body);
+    if (nextKey !== "custom" && prefills) {
+      setSubject(prefills[nextKey]?.subject ?? "");
+      setBody(prefills[nextKey]?.body ?? "");
     }
   };
 

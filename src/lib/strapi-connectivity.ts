@@ -78,6 +78,11 @@ function isFrontendAppUrl(apiUrl: string) {
 }
 
 export function validateStrapiApiUrlForServerless(): StrapiConnectivityIssue | null {
+  // In local development private/localhost URLs are expected — skip the serverless checks.
+  if (process.env.NODE_ENV === "development") {
+    return null;
+  }
+
   const configured =
     process.env.STRAPI_API_URL?.trim() ||
     process.env.NEXT_PUBLIC_STRAPI_API_URL?.trim() ||

@@ -7,7 +7,7 @@ async function loginViaApi(
   password: string
 ) {
   const loginResponse = await request.post("/api/auth/login", {
-    data: { email, password },
+    multipart: { email, password },
     headers: { Accept: "application/json" },
   });
   expect(loginResponse.ok()).toBeTruthy();
@@ -114,5 +114,44 @@ test.describe("API contract smoke", () => {
 
     expect(response.status()).toBeLessThan(500);
     expect([200, 400, 403, 404]).toContain(response.status());
+  });
+
+  // ── Problem-3 coverage: admin-comms templates endpoint ──────────────────
+
+  test("GET /api/admin/comms/templates returns 401 when unauthenticated", async ({
+    request,
+  }) => {
+    const response = await request.get("/api/admin/comms/templates");
+    expect(response.status()).toBe(401);
+  });
+
+  test("GET /api/admin/comms/templates returns canonical template shape for admin", async ({
+    page,
+    request,
+  }) => {
+    const email = process.env.E2E_ADMIN_EMAIL;
+    const password = process.env.E2E_ADMIN_PASSWORD;
+
+    test.skip(!email || !password, "Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD");
+
+    await loginViaApi(request, page, email!, password!);
+
+    const response = await request.get("/api/admin/comms/templates");
+    expect(response.ok()).toBeTruthy();
+
+    const body = await response.json();
+    expect(body.data).toBeTruthy();
+
+    // verify canonical keys exist — backend is the single source of truth
+    const keys = Object.keys(body.data as Record<string, unknown>);
+    expect(keys).toContain("maintenance");
+    expect(keys).toContain("site-down");
+
+    // every template must have subject and body strings
+    for (const key of keys) {
+      const tpl = (body.data as Record<string, unknown>)[key] as Record<string, unknown>;
+      expect(typeof tpl.subject).toBe("string");
+      expect(typeof tpl.body).toBe("string");
+    }
   });
 });
