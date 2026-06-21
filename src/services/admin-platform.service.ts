@@ -2,7 +2,6 @@ import "server-only";
 
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 import { ContractTier, ContractStatus } from "@/types";
-import { resolveEffectiveAnnualPlatformPence } from "@/lib/billing/contract-pricing-lock";
 
 class AdminStrapiRequestError extends Error {
   status: number;
@@ -594,14 +593,14 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
     updatedAt: client.updatedAt ?? null,
     activeContract: displayContract
       ? {
-          documentId: displayContract.documentId ?? "",
-          status: displayContract.status ?? "unknown",
-          startDate: displayContract.startDate ?? null,
-          endDate: displayContract.endDate ?? null,
-          seatCount: displayContract.seatCount ?? 0,
-          notes: displayContract.notes ?? "",
-          paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
-        }
+        documentId: displayContract.documentId ?? "",
+        status: displayContract.status ?? "unknown",
+        startDate: displayContract.startDate ?? null,
+        endDate: displayContract.endDate ?? null,
+        seatCount: displayContract.seatCount ?? 0,
+        notes: displayContract.notes ?? "",
+        paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
+      }
       : null,
     users: (client.users ?? []).map(normalizeUser),
     campaigns: (client.campaigns ?? []).map((campaign) => ({
@@ -633,14 +632,14 @@ function normalizeClientEntitlement(client: RawClient): AdminClientEntitlementRo
     ...row,
     activeContract: displayContract
       ? {
-          documentId: displayContract.documentId ?? "",
-          status: displayContract.status ?? "unknown",
-          startDate: displayContract.startDate ?? null,
-          endDate: displayContract.endDate ?? null,
-          seatCount: displayContract.seatCount ?? 0,
-          notes: displayContract.notes ?? "",
-          paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
-        }
+        documentId: displayContract.documentId ?? "",
+        status: displayContract.status ?? "unknown",
+        startDate: displayContract.startDate ?? null,
+        endDate: displayContract.endDate ?? null,
+        seatCount: displayContract.seatCount ?? 0,
+        notes: displayContract.notes ?? "",
+        paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
+      }
       : null,
     features: client.features ?? null,
   };
@@ -660,7 +659,7 @@ function clientMatchesUser(client: RawClient, user: RawUser) {
   if (!user.client) return false;
   return Boolean(
     (client.documentId && user.client.documentId === client.documentId) ||
-      (client.name && user.client.name === client.name)
+    (client.name && user.client.name === client.name)
   );
 }
 
@@ -896,15 +895,20 @@ async function getRawBillingRequests(authToken?: string | null) {
 }
 
 function resolveContractAnnualPence(contract: RawContract, pricing: RawPlatformPricing) {
+  const today = new Date().toISOString().split("T")[0];
+  if (
+    contract.lockedAnnualPlatformPence &&
+    contract.lockedAnnualPlatformPence > 0 &&
+    contract.pricingLockedUntil &&
+    contract.pricingLockedUntil >= today
+  ) {
+    return asPence(contract.lockedAnnualPlatformPence);
+  }
+  const tier = (contract.tier ?? "").toLowerCase();
+  const contractTypePrices = pricing.contractTypePrices ?? {};
   return asPence(
-    resolveEffectiveAnnualPlatformPence(
-      {
-        tier: contract.tier,
-        lockedAnnualPlatformPence: contract.lockedAnnualPlatformPence,
-        pricingLockedUntil: contract.pricingLockedUntil,
-      },
-      pricing
-    )
+    contractTypePrices[tier]?.basePlatformYearlyPence ??
+    pricing.basePlatformYearlyPence
   );
 }
 
@@ -1102,10 +1106,10 @@ export async function createAdminClient(
       campaigns: createdClient?.campaigns ?? [],
       access_codes: response.data?.accessCode
         ? [{
-            status: response.data.accessCode.status,
-            targetRole: response.data.accessCode.targetRole,
-            expiresAt: response.data.accessCode.expiresAt,
-          }]
+          status: response.data.accessCode.status,
+          targetRole: response.data.accessCode.targetRole,
+          expiresAt: response.data.accessCode.expiresAt,
+        }]
         : createdClient?.access_codes ?? [],
     }),
     contract: response.data?.contract,
@@ -1161,17 +1165,17 @@ export async function getAdminOverview(authToken?: string | null): Promise<Admin
     attentionRequired: [
       ...(pendingCampaignApprovals
         ? [{
-            id: "campaign-approvals",
-            title: `${pendingCampaignApprovals} campaign approval${pendingCampaignApprovals === 1 ? "" : "s"} pending`,
-            detail: "Clients need to review hiring-manager campaign requests.",
-          }]
+          id: "campaign-approvals",
+          title: `${pendingCampaignApprovals} campaign approval${pendingCampaignApprovals === 1 ? "" : "s"} pending`,
+          detail: "Clients need to review hiring-manager campaign requests.",
+        }]
         : []),
       ...(maxedClient
         ? [{
-            id: `maxed-seats-${maxedClient.id}`,
-            title: `${maxedClient.name} has used all seats`,
-            detail: `${maxedClient.seatsUsed}/${maxedClient.seatsAllowed} hiring-manager seats are occupied.`,
-          }]
+          id: `maxed-seats-${maxedClient.id}`,
+          title: `${maxedClient.name} has used all seats`,
+          detail: `${maxedClient.seatsUsed}/${maxedClient.seatsAllowed} hiring-manager seats are occupied.`,
+        }]
         : []),
     ],
   };
@@ -1288,7 +1292,7 @@ export async function getAdminRevenueAnalytics(
   const renewalPipelinePence = billingRequests.reduce(
     (total, request) =>
       request.requestKind === "contract_renewal" &&
-      (request.billingStatus === "requested" || request.billingStatus === "invoice_sent")
+        (request.billingStatus === "requested" || request.billingStatus === "invoice_sent")
         ? total + requestAmount(request)
         : total,
     0

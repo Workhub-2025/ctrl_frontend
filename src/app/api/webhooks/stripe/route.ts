@@ -1,3 +1,18 @@
+/**
+ * @deprecated Tarea 2.3 — This route is superseded by the backend Stripe webhook endpoint.
+ *
+ * The Stripe webhook is now handled directly by Strapi at:
+ *   POST /api/stripe/webhook   (ctrl_backend)
+ *
+ * This file is kept temporarily as a fallback while the Stripe Dashboard is
+ * updated to point to the new backend endpoint. Once confirmed, remove this
+ * file along with:
+ *   - ctrl_frontend/src/lib/stripe/fulfill-billing.ts
+ *   - BILLING_INTERNAL_SECRET from frontend env vars
+ *   - The frontend webhook entry in Stripe Dashboard
+ *
+ * See: ctrl_docs/stripe/STRIPE_BACKEND_MIGRATION_TASKS.md — Tarea 2.3
+ */
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getStripeClient } from "@/lib/stripe/server";
