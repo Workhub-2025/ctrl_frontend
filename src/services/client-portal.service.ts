@@ -56,6 +56,8 @@ export type ClientDashboardSummary = {
     name?: string;
     campaignApprovalMode?: "auto_approve" | "require_approval";
     features?: Record<string, unknown> | null;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
   };
   seats: {
     limit: number;

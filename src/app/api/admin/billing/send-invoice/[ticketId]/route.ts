@@ -1,15 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import {
-  createBillingCheckoutSession,
-  type BillingRequestCheckoutRow,
-} from "@/lib/stripe/billing-checkout";
 import { isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-
-type BillingRequestRow = BillingRequestCheckoutRow & {
-  billingStatus?: string;
-};
 
 export async function POST(
   _request: Request,
@@ -19,7 +11,6 @@ export async function POST(
   if ("error" in auth) {
     return auth.error;
   }
-  const strapiJwt = auth.strapiJwt;
 
   if (!isStripeCheckoutConfigured()) {
     return NextResponse.json(
@@ -34,53 +25,13 @@ export async function POST(
   const { ticketId: requestId } = await params;
 
   try {
-    const requestResponse = await strapiRequest<{ data?: BillingRequestRow }>(
-      `/admin/billing/requests/${encodeURIComponent(requestId)}`
-    );
-    const billingRequest = requestResponse.data;
-
-    if (!billingRequest?.payload) {
-      return NextResponse.json({ error: "Billing request not found" }, { status: 404 });
-    }
-
-    if (billingRequest.billingStatus === "paid") {
-      return NextResponse.json({ error: "This request is already paid" }, { status: 400 });
-    }
-
-    if (billingRequest.billingStatus === "invoice_sent") {
-      return NextResponse.json({ error: "Invoice has already been sent for this request" }, { status: 400 });
-    }
-
-    const pricingResponse = await strapiRequest<{ data?: Record<string, number | string> }>(
-      "/platform-pricing"
-    );
-    const pricing = pricingResponse.data ?? {};
-
-    const { checkoutSession, amountPence, currency, requestDocumentId } =
-      await createBillingCheckoutSession(billingRequest, pricing);
-
-    await strapiRequest(
-      `/admin/billing/requests/${encodeURIComponent(requestDocumentId)}/invoice-sent`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          stripeCheckoutSessionId: checkoutSession.id,
-          amountDuePence: amountPence,
-          currency,
-          checkoutUrl: checkoutSession.url,
-        }),
-      }
+    const response = await strapiRequest<{ data?: Record<string, unknown> }>(
+      `/admin/billing/requests/${encodeURIComponent(requestId)}/create-checkout`,
+      { method: "POST" }
     );
 
     return NextResponse.json({
-      data: {
-        billingRequestDocumentId: requestDocumentId,
-        checkoutSessionId: checkoutSession.id,
-        checkoutUrl: checkoutSession.url,
-        amountDuePence: amountPence,
-        currency,
-        billingStatus: "invoice_sent",
-      },
+      data: response.data,
     });
   } catch (error) {
     return NextResponse.json(

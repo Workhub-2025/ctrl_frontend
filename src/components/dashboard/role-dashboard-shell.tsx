@@ -161,7 +161,7 @@ function RoleDashboardFrame({
     settings: accessibilitySettings,
     updateSettings: updateAccessibilitySettings,
     resetSettings: resetAccessibilitySettings,
-    backgroundClassName: accessibilityBackgroundClassName,
+    themeClassName: accessibilityBackgroundClassName,
   } = useAccessibilitySettings({ enabled: true });
   const contentWidthClass =
     contentWidth === "full"

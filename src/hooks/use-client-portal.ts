@@ -75,6 +75,7 @@ type ClientPortalContextValue = {
   updateApprovalMode: (checked: boolean) => Promise<void>;
   updateAutoRenew: (checked: boolean) => Promise<void>;
   autoRenewBusy: boolean;
+  redirectToBillingPortal: () => Promise<void>;
 };
 
 export type ClientOverviewData = {
@@ -510,6 +511,25 @@ export function useClientPortalState(): ClientPortalContextValue {
     }
   };
 
+  const redirectToBillingPortal = async () => {
+    try {
+      const response = await fetch("/api/client/billing/portal", {
+        method: "POST",
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error((body as { error?: string }).error || "Could not load billing portal");
+      }
+      if (body.data?.url) {
+        window.location.href = body.data.url;
+      } else {
+        throw new Error("Billing portal URL was not returned");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load billing portal");
+    }
+  };
+
   const submitUpgradeRequest = async (input: {
     payload: ClientUpgradeRequestPayload;
     priority?: "low" | "normal" | "high" | "urgent";
@@ -578,5 +598,6 @@ export function useClientPortalState(): ClientPortalContextValue {
     updateApprovalMode,
     updateAutoRenew,
     autoRenewBusy,
+    redirectToBillingPortal,
   };
 }

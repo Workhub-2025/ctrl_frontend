@@ -61,5 +61,31 @@ export async function fulfillBillingRequest(input: {
   return data ?? {};
 }
 
+export async function syncStripeSubscription(
+  subscription: Stripe.Subscription
+): Promise<{ success: boolean; clientDocumentId?: string; contractDocumentId?: string }> {
+  const secret = process.env.BILLING_INTERNAL_SECRET;
+  if (!secret) {
+    throw new Error("BILLING_INTERNAL_SECRET is not configured");
+  }
+
+  const response = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), "/internal/billing/sync-subscription"), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-internal-billing-secret": secret,
+    },
+    body: JSON.stringify({ subscription }),
+  });
+
+  const responseBody = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(extractStrapiErrorMessage(responseBody) ?? "Subscription sync failed");
+  }
+
+  return responseBody;
+}
+
 // Keep Stripe import referenced for re-export consumers that typed against this module.
 export type StripeCheckoutSession = Stripe.Checkout.Session;

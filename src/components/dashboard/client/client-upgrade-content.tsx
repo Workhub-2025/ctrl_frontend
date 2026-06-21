@@ -84,21 +84,30 @@ export function ClientUpgradeContent() {
     seatSlots,
     entitlementsLoading,
     upgradeRequestsLoading,
-    submittingUpgrade,
     error,
     setError,
     loadEntitlements,
     loadUpgradeRequests,
     markUpgradeRequestPaid,
-    submitUpgradeRequest,
     updateAutoRenew,
     autoRenewBusy,
+    redirectToBillingPortal,
   } = useClientPortal();
 
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
   const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [billingPortalLoading, setBillingPortalLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const handleOpenBillingPortal = async () => {
+    setBillingPortalLoading(true);
+    try {
+      await redirectToBillingPortal();
+    } finally {
+      setBillingPortalLoading(false);
+    }
+  };
 
   const contract = entitlements?.contract ?? summary?.activeContract ?? null;
   const seats = summary?.seats;
@@ -435,29 +444,31 @@ export function ClientUpgradeContent() {
         </PortalPanel>
 
         <PortalPanel>
-          <div className="p-6">
-            <ClientUpgradeBuilder
-              entitlements={entitlements}
-              canRequestUpgrades={canRequestUpgrades}
-              submitting={submittingUpgrade}
-              onSubmit={async (payload) => {
-                await submitUpgradeRequest({ payload });
-              }}
+          <div className="p-6 space-y-4">
+            <PortalSectionHeader
+              eyebrow="Billing & Plan"
+              title="Manage subscription and seat allocations"
+              description="Adjust your plan tier, seat limits, view invoices, and manage payment methods directly through Stripe."
             />
-          </div>
-        </PortalPanel>
-
-        <PortalPanel>
-          <div className="p-6">
-            <ClientSeatDecreasePanel
-              currentSeats={contract?.seatCount ?? seats?.limit ?? 0}
-              seatSlots={seatSlots}
-              canRequestUpgrades={canRequestUpgrades}
-              submitting={submittingUpgrade}
-              onSubmit={async (payload) => {
-                await submitUpgradeRequest({ payload });
-              }}
-            />
+            <div className="pt-2">
+              <Button
+                onClick={handleOpenBillingPortal}
+                disabled={billingPortalLoading}
+                className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold px-6 py-2 rounded-xl transition-all shadow-lg"
+              >
+                {billingPortalLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Opening Billing Portal...
+                  </>
+                ) : (
+                  <>
+                    Manage Subscription & Seats
+                    <ArrowUpRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </PortalPanel>
 
