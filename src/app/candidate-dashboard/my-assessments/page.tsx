@@ -1,17 +1,5 @@
-import { Suspense } from "react";
-import {
-  CandidateAssessmentsLoadingSkeleton,
-  CandidateDashboardContent,
-} from "@/components/dashboard/candidate-dashboard-content";
-
-export const metadata = {
-  title: "My Assessments",
-};
+import { redirect } from "next/navigation";
 
 export default function MyAssessmentsPage() {
-  return (
-    <Suspense fallback={<CandidateAssessmentsLoadingSkeleton />}>
-      <CandidateDashboardContent />
-    </Suspense>
-  );
+  redirect("/candidate-dashboard");
 }

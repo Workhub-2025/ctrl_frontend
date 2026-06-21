@@ -62,6 +62,8 @@ import {
   formatDateTime,
   getApplicationKey,
   getOutcomeGuidance,
+  isActiveStatus,
+  pickPrioritySession,
   sortApplications,
   statusBadgeClassName,
   type AssessmentSortOption,
@@ -511,6 +513,12 @@ export function CandidateDashboardContent() {
       !applications.some((app) => app.key === selectedApplicationKey)
     ) {
       updateSelection(null);
+    } else if (!selectedApplicationKey && applications.length > 0) {
+      const activeApps = applications.filter((app) => isActiveStatus(app.status));
+      const priorityApp = pickPrioritySession(activeApps) ?? applications[0];
+      if (priorityApp) {
+        updateSelection(priorityApp.key);
+      }
     }
   }, [applications, isLoading, selectedApplicationKey, updateSelection]);
 

@@ -19,17 +19,12 @@ export const CANDIDATE_NAV_GROUPS: CandidateNavGroup[] = [
     items: [
       {
         href: "/candidate-dashboard",
-        label: "Overview",
-        hint: "Progress and access codes",
-        icon: LayoutDashboard,
-        isActive: (p) => normalizePath(p) === "/candidate-dashboard",
-      },
-      {
-        href: "/candidate-dashboard/my-assessments",
         label: "My assessments",
         hint: "Tasks and sessions",
         icon: BriefcaseBusiness,
-        isActive: (p) => p.startsWith("/candidate-dashboard/my-assessments"),
+        isActive: (p) =>
+          normalizePath(p) === "/candidate-dashboard" ||
+          p.startsWith("/candidate-dashboard/my-assessments"),
       },
     ],
   },
