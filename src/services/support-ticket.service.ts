@@ -56,6 +56,9 @@ export type SupportTicket = {
     firstName?: string;
     lastName?: string;
   } | null;
+  escalatedTo?: "ops" | "billing" | null;
+  escalatedAt?: string | null;
+  escalationNote?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -258,5 +261,17 @@ export class SupportTicketService {
     const result = await readJson<{ data: SupportTicket }>(response);
     this.invalidateMyTickets();
     return result.data;
+  }
+
+  static async escalateTicket(
+    id: string,
+    data: { target: "ops" | "billing"; note?: string },
+  ): Promise<SupportTicket> {
+    const response = await fetchClient(`/support-tickets/${id}/escalate`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    const body = await readJson<{ data: SupportTicket }>(response);
+    return body.data;
   }
 }

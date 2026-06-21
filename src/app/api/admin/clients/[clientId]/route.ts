@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { isAdminRole } from "@/lib/auth/role-model";
+import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
 import {
   deleteAdminClient,
   getAdminClientDetails,
@@ -14,38 +11,14 @@ type RouteContext = {
   params: Promise<any>;
 };
 
-async function requireAdmin(request?: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: "Authentication required" }, { status: 401 }),
-    };
-  }
-  if (!isAdminRole(session.user.role)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: "Administrator access required" }, { status: 403 }),
-    };
-  }
-  const strapiJwt = await getServerStrapiJwt(request);
-  if (!strapiJwt) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: "Authentication required" }, { status: 401 }),
-    };
-  }
-  return { ok: true as const, session, strapiJwt };
-}
-
 async function getClientId(context: RouteContext) {
   const params = await context.params;
   return params.clientId;
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const auth = await requireAdmin(request);
-  if (!auth.ok) return auth.response;
+  const auth = await requireAdminApiAccess('clients.read');
+  if ("error" in auth) return auth.error;
 
   try {
     const client = await getAdminClientDetails(await getClientId(context), auth.strapiJwt);
@@ -63,8 +36,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const auth = await requireAdmin(request);
-  if (!auth.ok) return auth.response;
+  const auth = await requireAdminApiAccess('clients.read');
+  if ("error" in auth) return auth.error;
 
   try {
     const body = await request.json().catch(() => ({}));
@@ -90,8 +63,8 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-    const auth = await requireAdmin(request);
-    if (!auth.ok) return auth.response;
+    const auth = await requireAdminApiAccess('clients.read');
+    if ("error" in auth) return auth.error;
 
     try {
         const body = await request.json().catch(() => ({}));

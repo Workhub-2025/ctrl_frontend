@@ -1,12 +1,12 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
-import { AppRole, isAdminRole, normalizeRole } from "@/lib/auth/role-model";
+import { AppRole, AdminPortalRoleType, isAdminRole, resolveSessionRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { resolveCorrelationId } from "@/lib/observability/server-observability";
 
 export interface ActionAuthContext {
   userId: number;
-  role: AppRole;
+  role: AppRole | AdminPortalRoleType;
   organization: string | null;
   correlationId: string;
 }
@@ -41,7 +41,7 @@ export const getActionAuthContext = async (
 
   return {
     userId,
-    role: normalizeRole(session.user.role),
+    role: resolveSessionRole(session.user.role) as AppRole | AdminPortalRoleType,
     organization:
       typeof session.user.organization === "string" &&
       session.user.organization.trim().length > 0

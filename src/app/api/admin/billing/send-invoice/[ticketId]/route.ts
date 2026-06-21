@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { isAdminRole } from "@/lib/auth/role-model";
+import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
 import {
   createBillingCheckoutSession,
   type BillingRequestCheckoutRow,
@@ -18,14 +15,12 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ ticketId: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  const strapiJwt = await getServerStrapiJwt();
-  if (!session?.user?.id || !strapiJwt) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  const auth = await requireAdminApiAccess('billing.write');
+  if ("error" in auth) {
+    return auth.error;
   }
-  if (!isAdminRole(session.user.role)) {
-    return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
-  }
+  const strapiJwt = auth.strapiJwt;
+
   if (!isStripeCheckoutConfigured()) {
     return NextResponse.json(
       {

@@ -1,16 +1,16 @@
 import { NextResponse } from "next/server";
-import type { AppRole } from "@/lib/auth/role-model";
-import { resolveAppRole } from "@/lib/auth/role-model";
+import type { AppRole, AdminPortalRoleType } from "@/lib/auth/role-model";
+import { isAdminPortalRole, resolveAppRole } from "@/lib/auth/role-model";
 
 type PortalApiRule = {
   prefix: string;
-  role: AppRole;
+  role: AppRole | AdminPortalRoleType | "admin_portal";
 };
 
 const PORTAL_API_RULES: PortalApiRule[] = [
   { prefix: "/api/hiring-manager", role: "hiring_manager" },
   { prefix: "/api/client", role: "client" },
-  { prefix: "/api/admin", role: "admin" },
+  { prefix: "/api/admin", role: "admin_portal" },
   { prefix: "/api/candidate", role: "candidate" },
 ];
 
@@ -32,6 +32,13 @@ export function guardPortalApiRoute(
 
   if (!role) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
+  if (rule.role === "admin_portal") {
+    if (!isAdminPortalRole(tokenRole)) {
+      return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
+    }
+    return null;
   }
 
   if (role !== rule.role) {

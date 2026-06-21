@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { isAdminRole } from "@/lib/auth/role-model";
+import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
 import {
   generateAdminClientAccessCode,
   getStrapiErrorStatus,
@@ -11,22 +8,14 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const auth = await requireAdminApiAccess('clients.write');
+    if ("error" in auth) {
+      return auth.error;
     }
-    if (!isAdminRole(session.user.role)) {
-      return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
-    }
-
+    const strapiJwt = auth.strapiJwt;
     const body = await request.json().catch(() => ({}));
     if (!body?.clientDocumentId || typeof body.clientDocumentId !== "string") {
       return NextResponse.json({ error: "clientDocumentId is required" }, { status: 400 });
-    }
-
-    const strapiJwt = await getServerStrapiJwt(request);
-    if (!strapiJwt) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
     const result = await generateAdminClientAccessCode(

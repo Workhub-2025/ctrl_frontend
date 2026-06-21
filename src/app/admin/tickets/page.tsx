@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ import {
   type TicketStats,
 } from "@/services/support-ticket.service";
 import { AdminPageHeader, AdminStatTile, AdminTableShell } from "@/components/admin/admin-portal-ui";
+import { hasAdminPermission } from "@/lib/auth/admin-portal-permissions";
 
 /* ── helpers ─────────────────────────────────────────────── */
 
@@ -152,6 +154,10 @@ function TicketDetailDialog({
   const [reply, setReply] = useState("");
   const [isInternal, setIsInternal] = useState(false);
   const [sending, setSending] = useState(false);
+  const [escalationNote, setEscalationNote] = useState("");
+  const [escalating, setEscalating] = useState<"ops" | "billing" | null>(null);
+  const { data: session } = useSession();
+  const canEscalate = hasAdminPermission(session?.user?.role, "tickets.escalate");
 
   const ticketId = ticket?.documentId || ticket?.id;
 
@@ -175,6 +181,7 @@ function TicketDetailDialog({
       setSaveError("");
       setReply("");
       setIsInternal(false);
+      setEscalationNote("");
     }
   }, [ticket]);
 
@@ -225,6 +232,27 @@ function TicketDetailDialog({
       );
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleEscalate = async (target: "ops" | "billing") => {
+    if (!ticketId) return;
+    setEscalating(target);
+    setSaveError("");
+    try {
+      await SupportTicketService.escalateTicket(ticketId, {
+        target,
+        note: escalationNote.trim() || undefined,
+      });
+      setEscalationNote("");
+      await loadMessages();
+      onUpdated();
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to escalate ticket",
+      );
+    } finally {
+      setEscalating(null);
     }
   };
 
@@ -434,6 +462,58 @@ function TicketDetailDialog({
             <p className="text-xs font-bold uppercase tracking-wider text-primary">
               Admin Actions
             </p>
+
+            {ticket.escalatedTo ? (
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Badge variant="outline">
+                  Escalated to {ticket.escalatedTo === "billing" ? "Billing" : "Operations"}
+                </Badge>
+                {ticket.escalatedAt ? (
+                  <span className="text-xs text-muted-foreground">
+                    {formatDateTime(ticket.escalatedAt)}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+
+            {canEscalate && canReply ? (
+              <div className="space-y-3 rounded-lg border border-dashed border-primary/20 p-3">
+                <p className="text-xs font-semibold text-slate-400">
+                  Escalate to another queue
+                </p>
+                <Textarea
+                  value={escalationNote}
+                  onChange={(event) => setEscalationNote(event.target.value)}
+                  placeholder="Optional handoff note for ops or billing…"
+                  rows={2}
+                  className="rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary resize-none"
+                />
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void handleEscalate("ops")}
+                    disabled={escalating !== null}
+                  >
+                    {escalating === "ops" ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Escalate to ops
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void handleEscalate("billing")}
+                    disabled={escalating !== null}
+                  >
+                    {escalating === "billing" ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    Escalate to billing
+                  </Button>
+                </div>
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-400">

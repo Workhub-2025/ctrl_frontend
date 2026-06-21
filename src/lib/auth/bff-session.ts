@@ -3,7 +3,7 @@ import "server-only";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { resolveAppRole, type AppRole } from "@/lib/auth/role-model";
+import { resolveAppRole, isAdminPortalRole, type AppRole, type AdminPortalRoleType } from "@/lib/auth/role-model";
 import { BffAuthError } from "@/lib/auth/bff-route-errors";
 
 export { BffAuthError } from "@/lib/auth/bff-route-errors";
@@ -20,12 +20,16 @@ export async function requireAuthenticatedSession() {
   return { session, strapiJwt };
 }
 
-export async function requireRoleSession(...roles: AppRole[]) {
+export async function requireRoleSession(...roles: (AppRole | AdminPortalRoleType)[]) {
   const context = await requireAuthenticatedSession();
   const role = resolveAppRole(context.session.user.role);
 
   if (!role) {
     throw new BffAuthError("Authentication required", 401);
+  }
+
+  if (roles.includes("admin") && isAdminPortalRole(context.session.user.role)) {
+    return context;
   }
 
   if (!roles.includes(role)) {

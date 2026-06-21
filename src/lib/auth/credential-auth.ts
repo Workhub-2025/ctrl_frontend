@@ -1,5 +1,5 @@
 import { loginWithStrapiCredentials } from "@/lib/auth/strapi-auth-server";
-import { inferDevSeededRole, normalizeRole } from "@/lib/auth/role-model";
+import { inferDevSeededRole, resolveSessionRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { applyRateLimit } from "@/lib/security/api-rate-limit";
 import {
@@ -116,7 +116,7 @@ export async function authenticateCredentials(params: {
 
     const userRole = authResponse.user.role;
     const fallbackDevRole = inferDevSeededRole(authResponse.user.email || email);
-    const role = userRole ? normalizeRole(userRole) : fallbackDevRole ?? "candidate";
+    const role = userRole ? resolveSessionRole(userRole) : fallbackDevRole ?? 'candidate';
 
     logAuthAuditEvent("login_success", {
       email,

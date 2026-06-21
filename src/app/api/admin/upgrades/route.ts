@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { isAdminRole } from "@/lib/auth/role-model";
+import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
 import {
   getAdminClientEntitlements,
   getStrapiErrorStatus,
@@ -17,33 +14,9 @@ function isContractStatus(value: unknown): value is ContractStatus {
   return CONTRACT_STATUSES.includes(value as ContractStatus);
 }
 
-async function requireAdmin(request?: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: "Authentication required" }, { status: 401 }),
-    };
-  }
-  if (!isAdminRole(session.user.role)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: "Administrator access required" }, { status: 403 }),
-    };
-  }
-  const strapiJwt = await getServerStrapiJwt(request);
-  if (!strapiJwt) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: "Authentication required" }, { status: 401 }),
-    };
-  }
-  return { ok: true as const, session, strapiJwt };
-}
-
 export async function GET() {
-  const auth = await requireAdmin();
-  if (!auth.ok) return auth.response;
+  const auth = await requireAdminApiAccess('entitlements.write');
+  if ("error" in auth) return auth.error;
 
   try {
     const clients = await getAdminClientEntitlements(auth.strapiJwt);
@@ -58,8 +31,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: NextRequest) {
-  const auth = await requireAdmin(request);
-  if (!auth.ok) return auth.response;
+  const auth = await requireAdminApiAccess('entitlements.write');
+  if ("error" in auth) return auth.error;
 
   try {
     const body = await request.json().catch(() => ({}));

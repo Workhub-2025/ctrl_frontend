@@ -5,7 +5,7 @@ import {
     guardAuthenticatedApiRoute,
     guardPortalApiRoute,
 } from "@/lib/auth/bff-api-middleware";
-import { isAdminRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
+import { isAdminPortalRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
 
 export default withAuth(
     function middleware(req) {
@@ -36,7 +36,7 @@ export default withAuth(
                 return NextResponse.redirect(loginUrl);
             }
 
-            if (!isAdminRole(token?.role)) {
+            if (!isAdminPortalRole(token?.role)) {
                 // Redirect authenticated non-admin users to their dashboard.
                 return NextResponse.redirect(new URL(routeForRole(token?.role), req.url));
             }

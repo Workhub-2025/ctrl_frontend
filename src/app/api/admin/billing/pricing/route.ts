@@ -1,27 +1,13 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { isAdminRole } from "@/lib/auth/role-model";
+import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
-async function requireAdminStrapiSession() {
-  const session = await getServerSession(authOptions);
-  const strapiJwt = await getServerStrapiJwt();
-  if (!session?.user?.id || !strapiJwt) {
-    return { error: NextResponse.json({ error: "Authentication required" }, { status: 401 }) };
-  }
-  if (!isAdminRole(session.user.role)) {
-    return { error: NextResponse.json({ error: "Administrator access required" }, { status: 403 }) };
-  }
-  return { session };
-}
-
 export async function GET() {
-  const auth = await requireAdminStrapiSession();
+  const auth = await requireAdminApiAccess('billing.read');
   if ("error" in auth) {
     return auth.error;
   }
+  const strapiJwt = auth.strapiJwt;
 
   try {
     const response = await strapiRequest<{ data?: Record<string, unknown> }>("/platform-pricing");
@@ -35,10 +21,11 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const auth = await requireAdminStrapiSession();
+  const auth = await requireAdminApiAccess('billing.write');
   if ("error" in auth) {
     return auth.error;
   }
+  const strapiJwt = auth.strapiJwt;
 
   try {
     const body = await request.json();

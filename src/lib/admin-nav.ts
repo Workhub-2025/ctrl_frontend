@@ -12,8 +12,11 @@ import {
   ShieldCheck,
   Ticket,
   TrendingUp,
+  UserPlus,
   Users,
 } from "lucide-react";
+import type { AdminPermission } from "@/lib/auth/admin-portal-permissions";
+import { hasAdminPermission } from "@/lib/auth/admin-portal-permissions";
 
 export type AdminNavItem = {
   href: string;
@@ -21,6 +24,7 @@ export type AdminNavItem = {
   /** Short helper shown under the label in the sidebar */
   hint?: string;
   icon: LucideIcon;
+  permission: AdminPermission;
   isActive: (pathname: string) => boolean;
 };
 
@@ -41,6 +45,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Overview",
         hint: "Metrics and alerts",
         icon: LayoutDashboard,
+        permission: "platform.overview",
         isActive: (pathname) => normalizePath(pathname) === "/admin",
       },
     ],
@@ -53,6 +58,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "All clients",
         hint: "Contracts and invites",
         icon: Building2,
+        permission: "clients.read",
         isActive: (pathname) => {
           const path = normalizePath(pathname);
           return (
@@ -66,6 +72,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Add client",
         hint: "New organisation setup",
         icon: PlusCircle,
+        permission: "clients.write",
         isActive: (pathname) => normalizePath(pathname) === "/admin/clients/create",
       },
     ],
@@ -78,6 +85,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Pricing & invoices",
         hint: "Stripe pricing and renewals",
         icon: CreditCard,
+        permission: "billing.read",
         isActive: (pathname) =>
           pathname.startsWith("/admin/billing") && !pathname.startsWith("/admin/billing/requests"),
       },
@@ -86,6 +94,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Upgrade requests",
         hint: "Requested · invoiced · paid",
         icon: TrendingUp,
+        permission: "billing.read",
         isActive: (pathname) => pathname.startsWith("/admin/billing/requests"),
       },
       {
@@ -93,6 +102,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Analytics",
         hint: "Revenue and pipeline",
         icon: BarChart3,
+        permission: "analytics.read",
         isActive: (pathname) => pathname.startsWith("/admin/analytics"),
       },
       {
@@ -100,6 +110,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Entitlements",
         hint: "Manual seats and features",
         icon: ArrowUpRight,
+        permission: "entitlements.write",
         isActive: (pathname) => pathname.startsWith("/admin/upgrade-requests"),
       },
     ],
@@ -112,13 +123,24 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Users",
         hint: "Directory across all roles",
         icon: Users,
-        isActive: (pathname) => pathname.startsWith("/admin/users"),
+        permission: "users.read",
+        isActive: (pathname) =>
+          pathname.startsWith("/admin/users") && !pathname.startsWith("/admin/users/invite"),
+      },
+      {
+        href: "/admin/users/invite",
+        label: "Invite admin",
+        hint: "Create scoped admin accounts",
+        icon: UserPlus,
+        permission: "admins.manage",
+        isActive: (pathname) => pathname.startsWith("/admin/users/invite"),
       },
       {
         href: "/admin/comms",
         label: "Operational email",
         hint: "Broadcast platform updates",
         icon: Mail,
+        permission: "comms.send",
         isActive: (pathname) => pathname.startsWith("/admin/comms"),
       },
       {
@@ -126,6 +148,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Support tickets",
         hint: "IT and platform issues",
         icon: Ticket,
+        permission: "tickets.read",
         isActive: (pathname) => pathname.startsWith("/admin/tickets"),
       },
       {
@@ -133,6 +156,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Assessment recovery",
         hint: "Abandoned attempts and unlocks",
         icon: RotateCcw,
+        permission: "recovery.read",
         isActive: (pathname) => pathname.startsWith("/admin/assessment-recovery"),
       },
     ],
@@ -145,6 +169,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Security",
         hint: "Admin two-factor authentication",
         icon: ShieldCheck,
+        permission: "security.manage",
         isActive: (pathname) => pathname.startsWith("/admin/settings"),
       },
       {
@@ -152,6 +177,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         label: "Audit log",
         hint: "Platform activity history",
         icon: History,
+        permission: "audit.read",
         isActive: (pathname) => pathname.startsWith("/admin/audit-logs"),
       },
     ],
@@ -159,6 +185,49 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
 ];
 
 export const ADMIN_NAV_ITEMS = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
+
+export function filterAdminNavGroups(role: unknown): AdminNavGroup[] {
+  return ADMIN_NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => hasAdminPermission(role, item.permission)),
+  })).filter((group) => group.items.length > 0);
+}
+
+const ROUTE_PERMISSIONS: Array<{ prefix: string; permission: AdminPermission; exact?: boolean }> = [
+  { prefix: "/admin/users/invite", permission: "admins.manage" },
+  { prefix: "/admin/clients/create", permission: "clients.write" },
+  { prefix: "/admin/billing/requests", permission: "billing.read" },
+  { prefix: "/admin/analytics", permission: "analytics.read" },
+  { prefix: "/admin/upgrade-requests", permission: "entitlements.write" },
+  { prefix: "/admin/comms", permission: "comms.send" },
+  { prefix: "/admin/tickets", permission: "tickets.read" },
+  { prefix: "/admin/assessment-recovery", permission: "recovery.read" },
+  { prefix: "/admin/settings", permission: "security.manage" },
+  { prefix: "/admin/audit-logs", permission: "audit.read" },
+  { prefix: "/admin/users", permission: "users.read" },
+  { prefix: "/admin/billing", permission: "billing.read" },
+  { prefix: "/admin/clients", permission: "clients.read" },
+  { prefix: "/admin", permission: "platform.overview", exact: true },
+];
+
+export function getAdminRoutePermission(pathname: string): AdminPermission | null {
+  const path = normalizePath(pathname);
+  for (const rule of ROUTE_PERMISSIONS) {
+    if (rule.exact) {
+      if (path === rule.prefix) return rule.permission;
+      continue;
+    }
+    if (path === rule.prefix || path.startsWith(`${rule.prefix}/`)) {
+      return rule.permission;
+    }
+  }
+  return null;
+}
+
+export function getDefaultAdminRoute(role: unknown): string {
+  const groups = filterAdminNavGroups(role);
+  return groups[0]?.items[0]?.href ?? "/admin/tickets";
+}
 
 export type AdminBreadcrumb = {
   label: string;
@@ -174,6 +243,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   requests: "Upgrade requests",
   "upgrade-requests": "Entitlements",
   users: "Users",
+  invite: "Invite admin",
   comms: "Operational email",
   tickets: "Support tickets",
   "assessment-recovery": "Assessment recovery",
@@ -194,6 +264,12 @@ export function getAdminBreadcrumbs(pathname: string): AdminBreadcrumb[] {
   if (path.startsWith("/admin/clients/create")) {
     crumbs.push({ label: "Clients", href: "/admin/clients" });
     crumbs.push({ label: "Add client" });
+    return crumbs;
+  }
+
+  if (path.startsWith("/admin/users/invite")) {
+    crumbs.push({ label: "Users", href: "/admin/users" });
+    crumbs.push({ label: "Invite admin" });
     return crumbs;
   }
 
