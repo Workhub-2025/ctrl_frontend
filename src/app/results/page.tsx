@@ -96,7 +96,7 @@ function ResultsContent() {
 
           <CardFooter className="relative px-0 pt-6">
             <Button asChild className={cn(portalPrimaryButtonClass, 'h-11 w-full font-bold')} size="lg">
-              <Link href="/candidate-dashboard/my-assessments/">Return to My Assessments</Link>
+              <Link href="/candidate-dashboard">Return to My Assessments</Link>
             </Button>
           </CardFooter>
         </Card>

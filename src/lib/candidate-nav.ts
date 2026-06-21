@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BriefcaseBusiness, HelpCircle, LayoutDashboard } from "lucide-react";
+import { BriefcaseBusiness, HelpCircle } from "lucide-react";
 
 export type CandidateNavItem = {
   href: string;
@@ -46,7 +46,7 @@ export const CANDIDATE_NAV_ITEMS = CANDIDATE_NAV_GROUPS.flatMap((g) => g.items);
 
 export function getCandidateBreadcrumbs(pathname: string) {
   const path = normalizePath(pathname);
-  if (path === "/candidate-dashboard") return [{ label: "Overview" }];
+  if (path === "/candidate-dashboard") return [{ label: "My assessments" }];
   const crumbs: Array<{ label: string; href?: string }> = [
     { label: "Candidate", href: "/candidate-dashboard" },
   ];

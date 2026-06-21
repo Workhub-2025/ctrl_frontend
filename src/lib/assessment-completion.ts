@@ -47,10 +47,10 @@ export function getCandidateAssessmentsReturnPath(
   candidateSessionDocumentId?: string | null,
 ): string {
   if (!candidateSessionDocumentId) {
-    return "/candidate-dashboard/my-assessments";
+    return "/candidate-dashboard";
   }
 
-  return `/candidate-dashboard/my-assessments?session=${encodeURIComponent(candidateSessionDocumentId)}`;
+  return `/candidate-dashboard?session=${encodeURIComponent(candidateSessionDocumentId)}`;
 }
 
 export function closeAssessmentWindow(

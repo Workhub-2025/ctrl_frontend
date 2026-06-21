@@ -75,7 +75,7 @@ export function AssessmentPausedScreen({ className }: { className?: string }) {
         type="button"
         className="mt-6 rounded-lg"
         onClick={() => {
-          window.location.href = "/candidate-dashboard/my-assessments";
+          window.location.href = "/candidate-dashboard";
         }}
       >
         <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
