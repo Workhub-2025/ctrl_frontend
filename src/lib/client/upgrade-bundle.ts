@@ -113,8 +113,7 @@ export function buildUpgradeBundleItems(input: {
 export function computeLineItems(
   items: ClientUpgradeBundleItem[],
   pricing: ClientUpgradePricing,
-  discountPercent?: number,
-  isFounderFirstYearActive?: boolean
+  discountPercent?: number
 ): ClientUpgradeBundleLineItem[] {
   const lineItems: ClientUpgradeBundleLineItem[] = [];
 
@@ -138,8 +137,8 @@ export function computeLineItems(
         break;
       }
       case "delivery_feature": {
-        let unitAmountPence = isFounderFirstYearActive ? 0 : pricing.featurePrices?.[item.featureKey] ?? 0;
-        if (!isFounderFirstYearActive && discountPercent) {
+        let unitAmountPence = pricing.featurePrices?.[item.featureKey] ?? 0;
+        if (discountPercent) {
           unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
         }
         lineItems.push({
@@ -154,8 +153,8 @@ export function computeLineItems(
         break;
       }
       case "new_assessment": {
-        let unitAmountPence = isFounderFirstYearActive ? 0 : pricing.assessmentAddonPence ?? 0;
-        if (!isFounderFirstYearActive && discountPercent) {
+        let unitAmountPence = pricing.assessmentAddonPence ?? 0;
+        if (discountPercent) {
           unitAmountPence = Math.round(unitAmountPence * (1 - discountPercent / 100));
         }
         lineItems.push({

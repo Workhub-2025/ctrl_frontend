@@ -16,22 +16,13 @@ export function getContractTierLabel(tier?: string | null): string {
   return TIER_LABELS[normalizeContractTierForLock(tier)];
 }
 
+const CANONICAL_TIERS: NormalizedContractTier[] = ["essential", "professional", "founder"];
+
 export function normalizeContractTierForLock(tier?: string | null): NormalizedContractTier {
-  switch (tier) {
-    case "minimum":
-    case "essential":
-    case "essentials":
-      return "essential";
-    case "grandfather":
-    case "grandfather_founders":
-    case "founder":
-    case "founders":
-      return "founder";
-    case "professional_gf":
-    case "professional":
-    default:
-      return "professional";
+  if (tier && CANONICAL_TIERS.includes(tier as NormalizedContractTier)) {
+    return tier as NormalizedContractTier;
   }
+  return "professional";
 }
 
 export function addOneDayToDate(dateStr: string): string {

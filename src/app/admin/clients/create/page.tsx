@@ -53,7 +53,7 @@ const CONTRACT_TIERS: Record<
   founder: {
     label: "Founder",
     minimumSeats: 3,
-    description: "3 HM slots, free delivery methods, 33% discount on upgrades",
+    description: "3 HM slots, remote and hybrid delivery included, 33% discount on upgrades",
   },
 };
 

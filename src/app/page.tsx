@@ -213,7 +213,7 @@ const contractDetails: Record<
   },
   founder: {
     accent: "emerald",
-    summary: "Launch-window contract with wider delivery modes and founder loyalty benefits.",
+    summary: "Launch-window contract with wider delivery modes and a permanent founder upgrade discount.",
     badge: "Launch only",
     footnote: "Founder tier remains active",
   },
@@ -1001,7 +1001,7 @@ export default function Home() {
                       ? "In-person delivery only"
                       : option.tier === "professional"
                       ? "In-person, remote and hybrid delivery"
-                      : "In-person, remote and hybrid delivery (included free)",
+                      : "In-person, remote and hybrid delivery",
                     option.tier === "founder" && option.discountPercent
                       ? `${option.discountPercent}% discount on upgrades and add-on assessments`
                       : null,
