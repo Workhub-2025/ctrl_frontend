@@ -45,9 +45,6 @@ export const DEFAULT_PLATFORM_ASSESSMENTS = [
   },
 ] as const;
 
-/** @deprecated Use DEFAULT_PLATFORM_ASSESSMENTS */
-export const CLIENT_ASSESSMENT_ENTITLEMENTS = DEFAULT_PLATFORM_ASSESSMENTS;
-
 export const DEFAULT_PLATFORM_ASSESSMENT_VERSION_ENTITLEMENTS = DEFAULT_PLATFORM_ASSESSMENTS.map(
   (assessment) => ({
     key: assessment.key,
@@ -96,10 +93,6 @@ export function isAssessmentEntitledForClient(
     return true;
   }
   return getClientAdditionalAssessmentSlugs(features).includes(slug);
-}
-export function resolveAssessmentLabel(slug: string, title?: string) {
-  const known = DEFAULT_PLATFORM_ASSESSMENTS.find((assessment) => assessment.key === slug);
-  return title || known?.title || slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export type ClientDeliveryFeatureKey = (typeof CLIENT_DELIVERY_FEATURES)[number]["key"];

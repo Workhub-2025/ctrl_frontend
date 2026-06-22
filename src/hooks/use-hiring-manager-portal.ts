@@ -7,6 +7,7 @@ import {
   invalidatePortalCache,
   PORTAL_CACHE_TTL_MS,
 } from "@/lib/portal-fetch-cache";
+import { syncHiringManagerOverviewCache } from "@/services/hiring-manager-portal-client.service";
 import type {
   HiringManagerCampaignDetail,
   HiringManagerCampaignListItem,
@@ -56,6 +57,7 @@ export function useHiringManagerPortal() {
     setError(null);
     try {
       const data = await fetchOverviewCached(force);
+      syncHiringManagerOverviewCache(data);
       setOverview(data);
       setLastRefreshAt(getPortalCacheUpdatedAt(HM_OVERVIEW_CACHE_KEY));
     } catch (loadError) {

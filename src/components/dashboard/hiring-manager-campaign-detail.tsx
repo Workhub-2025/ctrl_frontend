@@ -46,6 +46,7 @@ import {
   CandidateResultsDialog,
   type ResultsDialogState,
 } from "@/components/dashboard/hiring-manager-session-details-dialog";
+import { getAssessmentSettingsSummary } from "@/lib/hiring-manager/assessment-settings-display";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
@@ -54,26 +55,6 @@ import {
 type HiringManagerCampaignDetailProps = {
   campaignId: string;
 };
-
-function getAssessmentVersionSummary(settings?: Record<string, unknown> | null) {
-  if (!settings || typeof settings !== "object") return [];
-
-  return Object.entries(settings)
-    .filter(([key, value]) => key !== "weights" && value && typeof value === "object")
-    .map(([key, value]) => {
-      const config = value as { version?: unknown; difficulty?: unknown; scoringMode?: unknown };
-      const label = key.replace(/-/g, " ");
-      const detail = [
-        config.difficulty ? String(config.difficulty) : null,
-        config.scoringMode ? `${String(config.scoringMode)} scoring` : null,
-      ].filter(Boolean).join(" · ");
-      return {
-        key,
-        label: `${label} v${String(config.version ?? "1.0.0")}`,
-        detail,
-      };
-    });
-}
 
 export function HiringManagerCampaignDetailView({
   campaignId,
@@ -287,7 +268,7 @@ export function HiringManagerCampaignDetailView({
               <p className="text-xs text-slate-500 italic">No assessments linked.</p>
             ) : (
               (() => {
-                const versionSummary = getAssessmentVersionSummary(campaign.assessmentSettings);
+                const versionSummary = getAssessmentSettingsSummary(campaign.assessmentSettings);
                 return campaign.assessmentStack.map((assessment) => {
                   const Icon = getAssessmentCatalogueIcon(assessment);
                   const matchedVersion = versionSummary.find((v) =>

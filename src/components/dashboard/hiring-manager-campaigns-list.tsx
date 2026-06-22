@@ -21,20 +21,7 @@ import { portalAlertErrorClass, portalBadgeClass, portalPrimaryButtonClass } fro
 import { cn } from "@/lib/utils";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
-
-function getAssessmentVersionSummary(settings?: Record<string, unknown> | null) {
-  if (!settings || typeof settings !== "object") return [];
-
-  return Object.entries(settings)
-    .filter(([key, value]) => key !== "weights" && value && typeof value === "object")
-    .map(([key, value]) => {
-      const config = value as { version?: unknown };
-      return {
-        key,
-        label: `${key.replace(/-/g, " ")} v${String(config.version ?? "1.0.0")}`,
-      };
-    });
-}
+import { getAssessmentSettingsSummary } from "@/lib/hiring-manager/assessment-settings-display";
 
 export function HiringManagerCampaignsList() {
   const { campaigns, error, lastRefreshAt, loading, loadOverview } = useHiringManagerPortal();
@@ -157,7 +144,7 @@ export function HiringManagerCampaignsList() {
                   <span className="text-[10px] text-muted-foreground font-medium">{campaign.assessmentStack.length} assessment{campaign.assessmentStack.length === 1 ? "" : "s"}</span>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     {(() => {
-                      const versionSummary = getAssessmentVersionSummary(campaign.assessmentSettings);
+                      const versionSummary = getAssessmentSettingsSummary(campaign.assessmentSettings);
                       const maxVisible = 3;
                       const visibleStack = campaign.assessmentStack.slice(0, maxVisible);
                       const hiddenCount = campaign.assessmentStack.length - maxVisible;

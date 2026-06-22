@@ -3,7 +3,6 @@
 import { getActionAuthContext } from '@/lib/auth/server-action-auth';
 import { getServerStrapiClient } from '@/lib/strapi';
 import { getAssessmentUiPlugin } from '@/assessments/plugins/registry';
-import type { TypingSessionData } from '@/store/typing-session.store';
 
 const EMPTY_SESSION = {
   sessionId: null,
@@ -65,11 +64,4 @@ export async function initAssessmentSession<T = typeof EMPTY_SESSION>(
     console.error(`[initAssessmentSession:${slug}] Response parsing error — using fallback`, err);
     return fallback;
   }
-}
-
-/** @deprecated Use initAssessmentSession('typing', candidateSessionDocumentId) */
-export async function initTypingSession(
-  candidateSessionDocumentId?: string | null,
-): Promise<TypingSessionData> {
-  return initAssessmentSession<TypingSessionData>('typing', candidateSessionDocumentId);
 }

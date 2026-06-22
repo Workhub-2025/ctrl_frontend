@@ -14,7 +14,7 @@ import {
   ThumbsUp,
   ClipboardList,
 } from "lucide-react";
-import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
+import { getAssessmentCatalogueIcon, getAssessmentCatalogueTitle } from "@/assessments/plugins/display";
 import { AssessmentCompletionTag } from "@/assessments/plugins/report/completion-tag";
 import {
   AssessmentReportBreakdown,
@@ -461,6 +461,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
         <CardContent className="space-y-5 p-5">
           {rows.map((row) => {
             const key = getAssessmentKey(row.name);
+            const displayName = getAssessmentCatalogueTitle(key || row.name, row.name);
             const Icon = getAssessmentCatalogueIcon(key || row.name, row.result);
             const statusLabel = getAssessmentStatusLabel(row);
             const scoreValue = row.score ?? 0;
@@ -481,7 +482,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="break-words text-base font-semibold text-foreground">
-                          {row.name}
+                          {displayName}
                         </h3>
                         <Badge
                           className={cn(

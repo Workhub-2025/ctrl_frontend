@@ -23,8 +23,3 @@ export function isStripeCheckoutConfigured() {
 export function isStripeWebhookConfigured() {
   return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
 }
-
-/** @deprecated Prefer isStripeCheckoutConfigured or isStripeWebhookConfigured */
-export function isStripeConfigured() {
-  return isStripeCheckoutConfigured();
-}

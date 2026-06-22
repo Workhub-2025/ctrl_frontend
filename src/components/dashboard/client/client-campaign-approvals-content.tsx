@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle2, ClipboardCheck, RefreshCw, XCircle } from "l
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { getAssessmentSettingSummary } from "@/components/dashboard/client/client-portal-utils";
 import {
   ClientErrorBanner,
@@ -142,14 +143,18 @@ export function ClientCampaignApprovalsContent() {
                         {campaign.assessmentStack.length === 0 ? (
                           <span className="text-xs text-muted-foreground">No assessments attached</span>
                         ) : (
-                          campaign.assessmentStack.map((assessment) => (
+                          campaign.assessmentStack.map((assessment) => {
+                            const Icon = getAssessmentCatalogueIcon(assessment);
+                            return (
                             <span
                               key={assessment}
-                              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground dark:border-white/5 dark:bg-white/[0.04]"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground dark:border-white/5 dark:bg-white/[0.04]"
                             >
+                              <Icon className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
                               {assessment}
                             </span>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                       {getAssessmentSettingSummary(campaign.assessmentSettings).length > 0 && (
