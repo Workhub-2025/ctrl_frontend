@@ -17,10 +17,13 @@ export async function GET() {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    return NextResponse.json(
-      { error: (payload as { error?: string }).error ?? "Roles could not be loaded" },
-      { status: response.status },
-    );
+    const message =
+      (payload as { error?: { message?: string } }).error?.message
+      ?? (typeof (payload as { error?: unknown }).error === "string"
+        ? (payload as { error: string }).error
+        : null)
+      ?? "Roles could not be loaded";
+    return NextResponse.json({ error: message }, { status: response.status });
   }
 
   return NextResponse.json(payload);
