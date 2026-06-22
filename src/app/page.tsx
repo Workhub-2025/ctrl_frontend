@@ -40,6 +40,7 @@ import {
   WorkflowVisual,
   type WorkflowVisualVariant,
 } from "@/components/landing/workflow-visuals";
+import { UK_LEGAL_FOOTER_LINKS } from "@/lib/legal/uk-compliance";
 
 const navItems = [
   { label: "Disciplines", href: "#disciplines" },
@@ -1119,7 +1120,7 @@ export default function Home() {
 
             <Reveal variant="fade-up">
               <div className="mx-auto max-w-[1440px] px-6">
-                <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4 lg:gap-8 mb-12">
+                <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5 lg:gap-8 mb-12">
                   <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
                     <BrandLogo layout="stacked" className="h-14 w-[6.25rem] self-start" />
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light">
@@ -1152,13 +1153,27 @@ export default function Home() {
 
                   <div className="flex flex-col gap-4">
                     <h4 className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-slate-900 dark:text-white">
+                      <span className="h-1 w-1 rounded-full bg-sky-500" /> Legal
+                    </h4>
+                    {UK_LEGAL_FOOTER_LINKS.map((l) => (
+                      <Link
+                        key={l.href}
+                        href={l.href}
+                        className="group flex items-center gap-1.5 text-sm font-light text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                      >
+                        {l.label}
+                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
+                      </Link>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    <h4 className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-slate-900 dark:text-white">
                       <span className="h-1 w-1 rounded-full bg-sky-500" /> Access
                     </h4>
                     {[
                       { label: "Get Started", href: "/auth/register?mode=register" },
                       { label: "Log in", href: "/auth/register?mode=login" },
-                      { label: "Privacy Policy", href: "/privacy-policy" },
-                      { label: "Terms", href: "/terms-conditions" },
                     ].map((l) => (
                       <Link
                         key={l.label}

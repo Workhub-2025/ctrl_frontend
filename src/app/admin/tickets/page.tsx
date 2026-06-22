@@ -74,6 +74,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   feature_request: "Feature",
   access_issue: "Access",
   assessment_issue: "Assessment",
+  reasonable_adjustment: "Adjustment",
   general: "General",
   contact: "Contact",
 };
@@ -98,6 +99,7 @@ const CATEGORY_OPTIONS = [
   "feature_request",
   "access_issue",
   "assessment_issue",
+  "reasonable_adjustment",
   "general",
   "contact",
 ];

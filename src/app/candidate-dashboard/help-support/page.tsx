@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { LifeBuoy, Ticket } from "lucide-react";
+import { LifeBuoy, Ticket, Accessibility } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -28,11 +28,17 @@ function HelpSupportContent() {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(
     () => searchParams.get("action") === "new-ticket"
   );
+  const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(
+    () => searchParams.get("action") === "reasonable-adjustment"
+  );
   const [ticketRefreshKey, setTicketRefreshKey] = useState(0);
 
   useEffect(() => {
     if (searchParams.get("action") === "new-ticket") {
       setTicketDialogOpen(true);
+    }
+    if (searchParams.get("action") === "reasonable-adjustment") {
+      setAdjustmentDialogOpen(true);
     }
   }, [searchParams]);
 
@@ -66,7 +72,8 @@ function HelpSupportContent() {
           description="IT tickets are for platform issues. For role, scheduling, or process questions, open a session in My Assessments and use Message hiring team."
         />
 
-        <CandidatePanel className="flex max-w-xl flex-col">
+        <div className="grid gap-4 lg:grid-cols-2">
+        <CandidatePanel className="flex max-w-xl flex-col lg:max-w-none">
           <div className="flex flex-1 flex-col gap-4 p-6">
             <div className={portalIconWrapLgClass}>
               <Ticket className="h-5 w-5" aria-hidden="true" />
@@ -97,6 +104,38 @@ function HelpSupportContent() {
             </div>
           </div>
         </CandidatePanel>
+
+        <CandidatePanel className="flex flex-col">
+          <div className="flex flex-1 flex-col gap-4 p-6">
+            <div className={portalIconWrapLgClass}>
+              <Accessibility className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="space-y-1.5">
+              <CandidateEyebrow>Equality Act</CandidateEyebrow>
+              <h2 className="font-display text-lg font-semibold">Request a reasonable adjustment</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                Extra time, alternative formats, or assistive support — we will coordinate with your
+                recruiting organisation.
+              </p>
+            </div>
+            <div className="mt-auto pt-2">
+              <CreateTicketDialog
+                open={adjustmentDialogOpen}
+                onOpenChange={setAdjustmentDialogOpen}
+                onSuccess={handleTicketCreated}
+                defaultCategory="reasonable_adjustment"
+                defaultSubject="Reasonable adjustment request"
+                defaultDescription="Please describe the adjustment you need for your assessment (for example extra time, screen reader support, or an alternative format)."
+              >
+                <Button variant="outline" className="h-10 w-full gap-2 rounded-xl font-semibold sm:w-auto">
+                  <Accessibility className="h-4 w-4" aria-hidden="true" />
+                  Request adjustment
+                </Button>
+              </CreateTicketDialog>
+            </div>
+          </div>
+        </CandidatePanel>
+        </div>
       </section>
 
       <CandidateTicketHistory refreshKey={ticketRefreshKey} />

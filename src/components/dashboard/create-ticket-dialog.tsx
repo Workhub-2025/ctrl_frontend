@@ -49,6 +49,7 @@ const CATEGORIES = [
   { value: "feature_request", label: "Feature Request" },
   { value: "access_issue", label: "Access Issue" },
   { value: "assessment_issue", label: "Assessment Issue" },
+  { value: "reasonable_adjustment", label: "Reasonable Adjustment" },
   { value: "general", label: "General" },
 ];
 
