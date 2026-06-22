@@ -108,6 +108,27 @@ export async function upstashLlen(key: string): Promise<number> {
   }
 }
 
+export async function upstashLtrim(
+  key: string,
+  start: number,
+  stop: number
+): Promise<boolean> {
+  if (!isUpstashConfigured()) {
+    return false;
+  }
+
+  try {
+    const response = await upstashFetch(
+      `${UPSTASH_URL}/ltrim/${encodeURIComponent(key)}/${start}/${stop}`,
+      { method: "POST", headers: baseHeaders() }
+    );
+    const json = (await response.json()) as { result?: string };
+    return json.result === "OK";
+  } catch {
+    return false;
+  }
+}
+
 export async function upstashLrange(key: string, start: number, stop: number): Promise<string[]> {
   if (!isUpstashConfigured()) {
     return [];

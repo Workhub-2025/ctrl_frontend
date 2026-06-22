@@ -355,7 +355,7 @@ export function HiringManagerSessionsList() {
   return (
     <div className="space-y-5">
       {/* Active Sessions Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4 dark:border-white/5">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-foreground">Active Sessions</h2>
@@ -371,7 +371,7 @@ export function HiringManagerSessionsList() {
             variant="outline"
             onClick={() => loadSessions(true)}
             disabled={isRefreshing}
-            className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:text-slate-300 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+            className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -775,7 +775,7 @@ export function HiringManagerSessionsList() {
         <TabsList className="mb-4 h-10 rounded-xl border border-border bg-muted/40 p-1 dark:border-white/10 dark:bg-white/[0.02]">
           <TabsTrigger value="all" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
             All
-            <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
+            <Badge variant="secondary" className={cn("ml-1.5 rounded-full border-none px-1.5 py-0", portalBadgeClass)}>
               {sessions.length}
             </Badge>
           </TabsTrigger>
@@ -823,7 +823,7 @@ export function HiringManagerSessionsList() {
             >
               <CardContent className="space-y-4 p-5 pl-7">
                 {/* Header row: Badges on left, Candidates count with progress bar on right */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-3.5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-3.5 dark:border-white/5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className={[
                       "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
@@ -831,7 +831,7 @@ export function HiringManagerSessionsList() {
                     ].join(" ")}>
                       {session.status}
                     </Badge>
-                    <Badge className="rounded-md border-border/55 bg-muted/40 text-[10px] font-semibold text-muted-foreground hover:bg-muted/40 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.03]">
+                    <Badge className={cn(portalBadgeClass, "text-[10px] font-semibold hover:bg-muted/40")}>
                       {session.type}
                     </Badge>
                   </div>

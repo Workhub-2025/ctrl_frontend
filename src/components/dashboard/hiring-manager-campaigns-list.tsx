@@ -57,7 +57,7 @@ export function HiringManagerCampaignsList() {
   return (
     <div className="space-y-5">
       {/* Active Campaigns Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/5 pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4 dark:border-white/5">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-foreground">Active Campaigns</h2>
@@ -73,7 +73,7 @@ export function HiringManagerCampaignsList() {
             variant="outline"
             onClick={() => void handleRefresh(true)}
             disabled={isRefreshing}
-            className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:text-slate-300 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+            className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -114,7 +114,7 @@ export function HiringManagerCampaignsList() {
                     <Badge className={`${getStatusTone(campaign.status)} pointer-events-none`}>
                       {campaign.status}
                     </Badge>
-                    <Badge className="pointer-events-none rounded-md border-border/55 bg-muted/40 text-xs text-muted-foreground hover:bg-muted/40 dark:border-white/5 dark:bg-white/[0.03] dark:text-slate-300 dark:hover:bg-white/[0.03]">
+                    <Badge className={cn(portalBadgeClass, "pointer-events-none text-xs hover:bg-muted/40")}>
                       {campaign.deliveryMode}
                     </Badge>
                     {campaign.approvalStatus && (
@@ -160,14 +160,14 @@ export function HiringManagerCampaignsList() {
                               ? `${item} v${String((matchedVersion.label.match(/v(.+)$/)?.[1]) ?? "1")}`
                               : item;
                             return (
-                              <span key={item} className="inline-flex items-center gap-1 rounded-md border border-border/55 bg-muted/40 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground dark:border-white/5 dark:bg-white/[0.02] dark:text-slate-300">
+                              <span key={item} className={cn(portalBadgeClass, "inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-semibold")}>
                                 <Icon className="h-3 w-3 text-primary/75 shrink-0" />
                                 {displayLabel}
                               </span>
                             );
                           })}
                           {hiddenCount > 0 && (
-                            <span className="rounded-md border border-border/40 bg-muted/30 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground dark:border-white/5 dark:bg-white/[0.02]">
+                            <span className={cn(portalBadgeClass, "px-2 py-0.5 text-[10px] font-semibold")}>
                               +{hiddenCount} more
                             </span>
                           )}
@@ -180,7 +180,7 @@ export function HiringManagerCampaignsList() {
                 <div className="flex justify-end pt-2">
                   <Button
                     variant="outline"
-                    className="group h-9 rounded-md border-border bg-background/50 px-3.5 text-xs font-medium text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-100 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+                    className="group h-9 rounded-md border-border bg-background/50 px-3.5 text-xs font-medium text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:border-white/10 dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
                     asChild
                   >
                     <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}>
