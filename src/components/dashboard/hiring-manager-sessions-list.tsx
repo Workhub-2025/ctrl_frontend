@@ -47,7 +47,9 @@ import {
   portalBadgeClass,
   portalDialogShellClass,
   portalIconWrapLgClass,
+  portalLabelClass,
   portalPanelClass,
+  portalPanelNestedClass,
   portalPrimaryButtonClass,
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
@@ -423,11 +425,11 @@ export function HiringManagerSessionsList() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-[#080c16]/55 p-[18px] text-center shadow-sm">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <div className={cn(portalPanelNestedClass, "p-[18px] text-center")}>
+                <p className={portalLabelClass}>
                   Access Code
                 </p>
-                <p className="mt-2 font-mono text-2xl font-black text-white tracking-widest break-all bg-black/45 py-2.5 px-4 rounded-lg border border-white/5">
+                <p className="mt-2 break-all rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 font-mono text-2xl font-bold tracking-widest text-foreground dark:border-white/10 dark:bg-black/30">
                   {createdSession.accessValue}
                 </p>
                 

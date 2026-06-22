@@ -1,4 +1,10 @@
 import { portalProgressBarClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
+import {
+  BreakdownSection,
+  BreakdownSectionTitle,
+  BreakdownStatTile,
+} from "./breakdown-ui";
 import { AssessmentCompletionTag } from "./completion-tag";
 import type { AssessmentReportBreakdownProps } from "./types";
 
@@ -24,44 +30,34 @@ export function SituationalJudgementReportBreakdown({ result }: AssessmentReport
         <AssessmentCompletionTag metrics={sjtMetrics} />
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
-          <p className="text-xs text-slate-500 font-medium">Decision Band</p>
-          <p
-            className={`mt-1.5 text-2xl font-black ${
-              sjtMetrics.decisionBand === "GREEN"
-                ? "text-emerald-400"
-                : sjtMetrics.decisionBand === "AMBER"
-                  ? "text-amber-400"
-                  : "text-rose-400"
-            }`}
-          >
-            {(sjtMetrics.decisionBand as string) ?? "—"}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
-          <p className="text-xs text-slate-500 font-medium">Material Risk Flags</p>
-          <p
-            className={`mt-1.5 text-2xl font-black ${
-              ((sjtMetrics.materialRiskFlagCount as number) ?? 0) > 0
-                ? "text-rose-400 font-bold"
-                : "text-white"
-            }`}
-          >
-            {(sjtMetrics.materialRiskFlagCount as number) ?? 0}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
-          <p className="text-xs text-slate-500 font-medium">Moderate Risk Flags</p>
-          <p className="mt-1.5 text-2xl font-black text-white">
-            {(sjtMetrics.moderateRiskFlagCount as number) ?? 0}
-          </p>
-        </div>
+        <BreakdownStatTile
+          label="Decision Band"
+          value={(sjtMetrics.decisionBand as string) ?? "—"}
+          valueClassName={cn(
+            sjtMetrics.decisionBand === "GREEN"
+              ? "text-emerald-600 dark:text-emerald-400"
+              : sjtMetrics.decisionBand === "AMBER"
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-destructive"
+          )}
+        />
+        <BreakdownStatTile
+          label="Material Risk Flags"
+          value={(sjtMetrics.materialRiskFlagCount as number) ?? 0}
+          valueClassName={
+            ((sjtMetrics.materialRiskFlagCount as number) ?? 0) > 0
+              ? "text-destructive"
+              : undefined
+          }
+        />
+        <BreakdownStatTile
+          label="Moderate Risk Flags"
+          value={(sjtMetrics.moderateRiskFlagCount as number) ?? 0}
+        />
       </div>
 
       <div className="space-y-3">
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-          Competency Scores
-        </p>
+        <BreakdownSectionTitle>Competency scores</BreakdownSectionTitle>
         <div className="grid gap-3 sm:grid-cols-2">
           {Object.entries(competencyScores).map(([key, score]) => {
             const label = competencyLabels[key] || key;
@@ -69,34 +65,41 @@ export function SituationalJudgementReportBreakdown({ result }: AssessmentReport
             const isBelowFloor = score < floor;
 
             return (
-              <div
-                key={key}
-                className="rounded-lg border border-white/5 bg-white/[0.01] p-3 space-y-2"
-              >
-                <div className="flex justify-between items-start text-xs">
-                  <span className="text-slate-300 font-medium line-clamp-1" title={label}>
+              <BreakdownSection key={key} className="space-y-2 p-3">
+                <div className="flex items-start justify-between gap-3 text-xs">
+                  <span className="line-clamp-1 font-medium text-foreground" title={label}>
                     {label}
                   </span>
-                  <span className={`font-bold ${isBelowFloor ? "text-red-400" : "text-white"}`}>
+                  <span
+                    className={cn(
+                      "shrink-0 font-semibold tabular-nums",
+                      isBelowFloor ? "text-destructive" : "text-foreground"
+                    )}
+                  >
                     {Math.round(score)}%
                   </span>
                 </div>
-                <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden relative">
+                <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/40 dark:bg-white/10">
                   <div
-                    className={`h-full rounded-full ${isBelowFloor ? "bg-red-500" : "bg-primary"}`}
+                    className={cn(
+                      "h-full rounded-full",
+                      isBelowFloor ? "bg-destructive" : portalProgressBarClass
+                    )}
                     style={{ width: `${score}%` }}
                   />
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-red-400/50"
+                    className="absolute bottom-0 top-0 w-0.5 bg-destructive/50"
                     style={{ left: `${floor}%` }}
                     title={`Safety Floor: ${floor}%`}
                   />
                 </div>
-                <div className="flex justify-between items-center text-[10px] text-slate-500">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                   <span>Floor: {floor}%</span>
-                  {isBelowFloor && <span className="text-red-400 font-semibold">Below Floor</span>}
+                  {isBelowFloor ? (
+                    <span className="font-semibold text-destructive">Below floor</span>
+                  ) : null}
                 </div>
-              </div>
+              </BreakdownSection>
             );
           })}
         </div>

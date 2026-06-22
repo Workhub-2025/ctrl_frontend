@@ -1,4 +1,6 @@
 import { Badge } from "@/components/ui/badge";
+import { portalBadgeClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 import { getAssessmentCompletionLabel } from "@/lib/assessment-completion-status";
 
 function readCompletionProgress(metrics: Record<string, unknown>): string | null {
@@ -30,13 +32,14 @@ export function AssessmentCompletionTag({
   const progress = metrics ? readCompletionProgress(metrics) : null;
   const displayLabel = progress ? `${label} · ${progress}` : label;
 
-  const className =
-    label === "Timeout"
-      ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
-      : "border-slate-500/30 bg-slate-500/10 text-slate-300";
-
   return (
-    <Badge variant="outline" className={className}>
+    <Badge
+      variant="outline"
+      className={cn(
+        portalBadgeClass,
+        label === "Timeout" && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+      )}
+    >
       {displayLabel}
     </Badge>
   );

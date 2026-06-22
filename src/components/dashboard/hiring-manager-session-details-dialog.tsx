@@ -47,6 +47,7 @@ import {
   portalPanelNestedClass,
   portalProgressBarClass,
   portalStatTileClass,
+  portalTooltipContentClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus, isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
@@ -63,7 +64,6 @@ import {
   isCandidateJoined,
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
-import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 
 type SessionCandidate = HiringManagerSessionListItem["candidates"][number];
@@ -331,38 +331,52 @@ function HiringManagerSessionWorkspace({
               {session.status === "Live" &&
               session.candidateCount > 0 &&
               onUpdateSessionStatus ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={
-                            updatingSessionId === session.id ||
-                            !areAllSessionCandidatesComplete(
-                              session.candidates,
-                              expectedAssessmentCount
-                            )
-                          }
-                          onClick={() => onUpdateSessionStatus(session.id, "closed")}
-                          className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {updatingSessionId === session.id ? "Closing…" : "Close session"}
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {!areAllSessionCandidatesComplete(
-                      session.candidates,
-                      expectedAssessmentCount
-                    ) ? (
-                      <TooltipContent className="max-w-xs">
-                        All candidates must complete their assessments before closing this session.
-                      </TooltipContent>
-                    ) : null}
-                  </Tooltip>
-                </TooltipProvider>
+                (() => {
+                  const allCandidatesComplete = areAllSessionCandidatesComplete(
+                    session.candidates,
+                    expectedAssessmentCount
+                  );
+                  const isClosing = updatingSessionId === session.id;
+
+                  if (allCandidatesComplete) {
+                    return (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isClosing}
+                        onClick={() => onUpdateSessionStatus(session.id, "closed")}
+                        className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isClosing ? "Closing…" : "Close session"}
+                      </Button>
+                    );
+                  }
+
+                  return (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex cursor-not-allowed">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled
+                              className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Close session
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent className={cn(portalTooltipContentClass, "max-w-xs")}>
+                          All candidates must complete their assessments before you can close this
+                          session.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })()
               ) : null}
             </>
           }
@@ -504,11 +518,6 @@ function HiringManagerSessionWorkspace({
                         }));
 
                       const stackForWeights = assessmentStack || finalDisplayList.map((i) => i.name);
-                      const weightedStack = stackForWeights.map((name) => ({
-                        displayName: name,
-                        weight: stackForWeights.length > 0 ? 100 / stackForWeights.length : 0,
-                      }));
-                      const overallScore = computeWeightedCompositeScore(weightedStack, candidate.results ?? []);
                       const inviteLabel = formatInviteStatusLabel(candidate.inviteStatus);
                       const hasJoined = isCandidateJoined(candidate.inviteStatus);
                       const sessionStartsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
@@ -536,7 +545,12 @@ function HiringManagerSessionWorkspace({
                           {/* Row header */}
                           <div
                             onClick={() => toggleCandidateExpand(candidate.id)}
-                            className="grid cursor-pointer select-none gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_140px_auto] sm:items-center"
+                            className={cn(
+                              "grid cursor-pointer select-none gap-4 p-4 sm:items-center",
+                              showUnlockControl
+                                ? "sm:grid-cols-[minmax(0,1fr)_140px_auto]"
+                                : "sm:grid-cols-[minmax(0,1fr)_auto]"
+                            )}
                           >
                             <div className="flex min-w-0 items-center gap-3">
                               <span className={cn(portalIconWrapLgClass, "relative text-xs font-semibold uppercase")}>
@@ -584,8 +598,8 @@ function HiringManagerSessionWorkspace({
                               </div>
                             </div>
 
-                            <div className="flex min-h-10 items-center justify-center sm:justify-self-center">
-                              {showUnlockControl ? (
+                            {showUnlockControl ? (
+                              <div className="flex min-h-10 items-center justify-center sm:justify-self-center">
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -608,15 +622,13 @@ function HiringManagerSessionWorkspace({
                                     <><LockOpen className="mr-1.5 h-3.5 w-3.5" /> Unlock</>
                                   )}
                                 </Button>
-                              ) : (
-                                <ScoreRing value={overallScore} />
-                              )}
-                            </div>
+                              </div>
+                            ) : null}
 
                             {/* Right: stats + actions */}
                             <div className="flex items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
                               {!showUnlockControl ? (
-                                <div className="hidden min-w-[130px] border-r border-border/50 pr-4 dark:border-white/10 sm:block">
+                                <div className="min-w-[130px] border-r border-border/50 pr-4 dark:border-white/10">
                                   <div className="text-right">
                                     <p className={portalLabelClass}>Overall score</p>
                                     <div className="mt-1 flex justify-end">
@@ -788,49 +800,6 @@ export function CandidateResultsDialog({
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function ScoreRing({ value }: { value: number | null }) {
-  const normalizedValue =
-    typeof value === "number" && Number.isFinite(value)
-      ? Math.max(0, Math.min(100, value))
-      : null;
-  const radius = 25;
-  const circumference = 2 * Math.PI * radius;
-  const progress = normalizedValue === null ? 0 : normalizedValue / 100;
-
-  return (
-    <div className="flex items-center justify-center">
-      <div className="relative h-16 w-16">
-        <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64" aria-hidden="true">
-          <circle
-            cx="32"
-            cy="32"
-            r={radius}
-            fill="none"
-            className="stroke-muted/50"
-            strokeWidth="6"
-          />
-          <circle
-            cx="32"
-            cy="32"
-            r={radius}
-            fill="none"
-            className="stroke-primary"
-            strokeLinecap="round"
-            strokeWidth="6"
-            strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - progress)}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-base font-semibold leading-none tabular-nums text-foreground">
-            {normalizedValue === null ? "-" : normalizedValue}
-          </span>
-        </div>
-      </div>
-    </div>
   );
 }
 

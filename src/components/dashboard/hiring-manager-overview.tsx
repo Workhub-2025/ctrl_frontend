@@ -231,7 +231,7 @@ export function HiringManagerOverview() {
                 <Link
                   key={campaign.id}
                   href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}
-                  className={cn(portalPanelClass, "block p-4 transition-colors hover:border-primary/30")}
+                  className={cn(portalPanelClass, "block p-4")}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">

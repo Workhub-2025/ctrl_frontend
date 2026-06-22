@@ -14,6 +14,7 @@ import {
   PortalPanel,
   PortalSectionHeader,
   portalBadgeClass,
+  portalCardClass,
 } from "@/components/dashboard/portal/portal-ui";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { ClientCandidateOutreachDialog } from "@/components/dashboard/client/client-candidate-outreach-dialog";
@@ -106,7 +107,7 @@ export function ClientCandidateApprovalsContent() {
               {sharedCandidates.map((candidate) => (
                 <li
                   key={candidate.documentId}
-                  className="rounded-xl border border-border/60 bg-background/30 p-5 shadow-sm dark:border-white/5 dark:bg-[#0b1220]/25"
+                  className={cn(portalCardClass, "p-5")}
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 space-y-2">

@@ -31,8 +31,11 @@ import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
 import {
   portalAlertErrorClass,
   portalBadgeClass,
+  portalCardClass,
+  portalEmptyPanelClass,
   portalIconWrapLgClass,
-  portalPanelClass,
+  portalInputClass,
+  portalLabelClass,
   portalPanelElevatedClass,
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
@@ -267,20 +270,20 @@ export function HiringManagerCandidatesView() {
       </div>
 
       {/* Unified Search & Filters Card */}
-      <Card className={cn(portalPanelElevatedClass, "border-white/10")}>
+      <Card className={portalPanelElevatedClass}>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             {/* Search Input */}
             <div className="flex-1 space-y-2">
-              <p className="text-xs font-semibold uppercase text-slate-500 tracking-wider">Search</p>
+              <p className={portalLabelClass}>Search</p>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   placeholder="Search candidate by name or email..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-9 pr-4 rounded-md border border-white/10 bg-white/[0.03] text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-colors"
+                  className={cn(portalInputClass, "h-10 w-full pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground")}
                 />
               </div>
             </div>
@@ -363,8 +366,8 @@ export function HiringManagerCandidatesView() {
       {/* Candidate List Container */}
       <div className="grid gap-4">
         {filteredCandidates.length === 0 ? (
-          <Card className="rounded-[1.25rem] border border-dashed border-border bg-card shadow-sm dark:border-white/10 dark:bg-[#080c16]/50 dark:shadow-none">
-            <CardContent className="p-6 text-sm text-center leading-6 text-muted-foreground">
+          <Card className={portalEmptyPanelClass}>
+            <CardContent className="p-0 leading-6">
               {candidates.length === 0
                 ? "No candidates have joined a campaign session yet."
                 : "No candidate sessions match the current filters."}
@@ -374,7 +377,7 @@ export function HiringManagerCandidatesView() {
           filteredCandidates.map((candidate) => (
             <Card
               key={`${candidate.campaignId}-${candidate.candidateSessionId}`}
-              className={cn(portalPanelClass, "rounded-2xl shadow-lg transition-all duration-300 hover:border-primary/30")}
+              className={portalCardClass}
             >
               <CardContent className="p-5 space-y-5">
                 {/* Top Section: Avatar, Meta Info, and Actions */}

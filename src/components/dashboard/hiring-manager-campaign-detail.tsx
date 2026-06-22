@@ -30,9 +30,13 @@ import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
 import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
 import {
+  portalAlertErrorClass,
   portalPanelElevatedClass,
   portalPanelNestedClass,
   portalBadgeClass,
+  portalTableHeaderClass,
+  portalTableRowClass,
+  portalTableShellClass,
   portalTooltipContentClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import {
@@ -141,7 +145,7 @@ export function HiringManagerCampaignDetailView({
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-white/10 bg-[#0b1220] p-6 text-sm text-slate-300">
+      <div className={cn(portalPanelNestedClass, "p-6 text-sm text-muted-foreground")}>
         Loading campaign...
       </div>
     );
@@ -150,17 +154,13 @@ export function HiringManagerCampaignDetailView({
   if (!campaign) {
     return (
       <div className="space-y-4">
-        <Button
-          variant="outline"
-          className="h-9 rounded-md border-white/10 bg-white/[0.02] px-3 text-sm text-slate-100 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
-          asChild
-        >
+        <Button variant="outline" className="h-9 rounded-lg" asChild>
           <Link href="/hiring-manager-dashboard/campaigns/">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to campaigns
           </Link>
         </Button>
-        <div className="rounded-lg border border-red-400/20 bg-red-400/10 p-6 text-sm text-red-100">
+        <div className={cn(portalAlertErrorClass, "text-sm")}>
           {error || "Campaign could not be loaded."}
         </div>
       </div>
@@ -333,7 +333,7 @@ export function HiringManagerCampaignDetailView({
         </Card>
       </div>
 
-      <Card className={cn(portalPanelElevatedClass, "rounded-xl shadow-lg")}>
+      <Card className={portalPanelElevatedClass}>
         <CardHeader className="border-b border-white/10 p-4">
           <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider">Sessions</CardTitle>
         </CardHeader>
@@ -397,17 +397,17 @@ export function HiringManagerCampaignDetailView({
               No candidates have joined sessions for this campaign yet.
             </p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-white/10 bg-[#080c16]/30">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-white/10 bg-white/[0.02] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+            <div className={portalTableShellClass}>
+              <table className="w-full border-collapse text-left text-xs text-foreground">
+                <thead className={portalTableHeaderClass}>
+                  <tr className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     <th className="p-3">Candidate</th>
                     <th className="p-3">Session</th>
                     <th className="p-3">Overall score</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-slate-200">
+                <tbody>
                   {campaign.joinedCandidates.map((candidate) => {
                     const results = candidate.results ?? [];
                     const assessmentStack = candidate.assessmentStack ?? campaign.assessmentStack;
@@ -415,7 +415,7 @@ export function HiringManagerCampaignDetailView({
                     const hasJoined = isCandidateJoined(candidate.inviteStatus);
 
                     return (
-                      <tr key={candidate.id} className="hover:bg-white/[0.01] transition-colors">
+                      <tr key={candidate.id} className={portalTableRowClass}>
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {hasJoined ? (
@@ -430,18 +430,18 @@ export function HiringManagerCampaignDetailView({
                             ) : null}
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="font-semibold text-white">{candidate.name}</span>
+                                <span className="font-semibold text-foreground">{candidate.name}</span>
                                 {inviteLabel ? (
                                   <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold capitalize", portalBadgeClass)}>
                                     {inviteLabel}
                                   </Badge>
                                 ) : null}
                               </div>
-                              <div className="text-[10px] text-slate-400 mt-0.5">{candidate.email}</div>
+                              <div className="mt-0.5 text-[10px] text-muted-foreground">{candidate.email}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="p-3 text-slate-300">
+                        <td className="p-3 text-muted-foreground">
                           {candidate.sessionName ?? "Main Session"}
                         </td>
                         <td className="p-3">

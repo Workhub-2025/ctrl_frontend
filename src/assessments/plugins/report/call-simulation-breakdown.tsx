@@ -2,11 +2,24 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  portalCodeSurfaceClass,
-  portalProgressBarClass,
-} from "@/components/dashboard/portal/portal-design-tokens";
+import { portalBadgeClass, portalProgressBarClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { cn } from "@/lib/utils";
 import type { HiringManagerAssessmentResult } from "@/services/hiring-manager-portal-client.service";
+import {
+  BreakdownMetricRow,
+  BreakdownProgressTrack,
+  BreakdownSection,
+  BreakdownSectionTitle,
+  BreakdownStatTile,
+  BreakdownTable,
+  BreakdownTableBody,
+  BreakdownTableCell,
+  BreakdownTableHead,
+  BreakdownTableHeaderCell,
+  BreakdownTableHeaderRow,
+  BreakdownTableRow,
+  BreakdownTableShell,
+} from "./breakdown-ui";
 import type { AssessmentReportBreakdownProps } from "./types";
 
 type CallSimulationRun = {
@@ -90,8 +103,8 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
   return (
     <div className="space-y-5">
       {finalRuns.length > 1 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-white/5 pb-3">
-          <span className="text-xs font-semibold text-slate-400 mr-2">Select Call:</span>
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border/50 pb-3 dark:border-white/10">
+          <span className="mr-2 text-xs font-semibold text-muted-foreground">Select call</span>
           {finalRuns.map((run, idx) => {
             const runMetrics = run.metrics as Record<string, unknown> | undefined;
             const isSelected = activeRunIndex === run.runIndex;
@@ -101,11 +114,7 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
                 type="button"
                 variant={isSelected ? "default" : "outline"}
                 onClick={() => setSelectedCallRunIndex(run.runIndex)}
-                className={`h-7 px-3 text-[11px] font-bold rounded-lg transition-all ${
-                  isSelected
-                    ? "bg-primary text-white shadow-lg"
-                    : "text-slate-300 hover:text-white hover:bg-white/5 border-white/10"
-                }`}
+                className="h-7 rounded-lg px-3 text-[11px] font-semibold"
               >
                 Call {idx + 1} {runMetrics?.passed ? " (Pass)" : " (Review)"}
               </Button>
@@ -115,43 +124,32 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
       )}
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
-          <p className="text-xs text-slate-500 font-medium">Scoring Outcome</p>
-          <p
-            className={`mt-1.5 text-2xl font-black ${
-              activeMetrics.passed ? "text-emerald-400" : "text-rose-400"
-            }`}
-          >
-            {activeMetrics.passed ? "PASSED" : "FAILED"}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
-          <p className="text-xs text-slate-500 font-medium">Critical Errors</p>
-          <p
-            className={`mt-1.5 text-2xl font-black ${
-              ((activeMetrics.criticalErrorsCount as number) ?? 0) > 0
-                ? "text-rose-400 font-bold"
-                : "text-white"
-            }`}
-          >
-            {(activeMetrics.criticalErrorsCount as number) ?? 0}
-          </p>
-        </div>
-        <div className="rounded-lg border border-white/5 bg-white/[0.01] p-3.5">
-          <p className="text-xs text-slate-500 font-medium">Marks Awarded</p>
-          <p className="mt-1.5 text-2xl font-black text-white">
-            {(activeMetrics.totalEarnedScore as string | number) ?? "0"}{" "}
-            <span className="text-xs font-semibold text-slate-400">
-              / {(activeMetrics.maxScore as string | number) ?? "5.0"}
-            </span>
-          </p>
-        </div>
+        <BreakdownStatTile
+          label="Scoring Outcome"
+          value={activeMetrics.passed ? "PASSED" : "FAILED"}
+          valueClassName={
+            activeMetrics.passed
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-destructive"
+          }
+        />
+        <BreakdownStatTile
+          label="Critical Errors"
+          value={(activeMetrics.criticalErrorsCount as number) ?? 0}
+          valueClassName={
+            ((activeMetrics.criticalErrorsCount as number) ?? 0) > 0
+              ? "text-destructive"
+              : undefined
+          }
+        />
+        <BreakdownStatTile
+          label="Marks Awarded"
+          value={(activeMetrics.totalEarnedScore as string | number) ?? "0"}
+          suffix={`/ ${(activeMetrics.maxScore as string | number) ?? "5.0"}`}
+        />
       </div>
 
-      <div className="space-y-3.5 rounded-lg border border-white/5 bg-white/[0.01] p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-          Section Performance Breakdown
-        </p>
+      <BreakdownSection title="Section performance breakdown">
         <div className="grid gap-4 sm:grid-cols-2">
           {SECTION_KEYS.map((secKey) => {
             const sections = activeMetrics.sections as Record<string, { score: number; max: number }> | undefined;
@@ -160,84 +158,74 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
 
             return (
               <div key={secKey} className="space-y-1.5">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-300 font-medium">
-                    {SECTION_LABELS[secKey] || secKey}
-                  </span>
-                  <span className="font-bold text-white">
-                    {sec.score} / {sec.max} ({pct}%)
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
-                  <div className={portalProgressBarClass} style={{ width: `${pct}%` }} />
-                </div>
+                <BreakdownMetricRow
+                  label={SECTION_LABELS[secKey] || secKey}
+                  value={`${sec.score} / ${sec.max} (${pct}%)`}
+                />
+                <BreakdownProgressTrack value={pct} className={portalProgressBarClass} />
               </div>
             );
           })}
         </div>
-      </div>
+      </BreakdownSection>
 
       {criteriaList.length > 0 && (
         <div className="space-y-2.5">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Field scores
-          </p>
-          <div className={portalCodeSurfaceClass}>
-            <table className="w-full max-w-full table-fixed text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-white/15 bg-white/[0.03] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="p-3">Field</th>
+          <BreakdownSectionTitle>Field scores</BreakdownSectionTitle>
+          <BreakdownTableShell>
+            <BreakdownTable>
+              <BreakdownTableHead>
+                <BreakdownTableHeaderRow>
+                  <BreakdownTableHeaderCell>Field</BreakdownTableHeaderCell>
                   {finalRuns.length > 1 ? (
                     finalRuns.map((run, idx) => (
-                      <th key={run.runIndex} className="p-3 text-right">
+                      <BreakdownTableHeaderCell key={run.runIndex} align="right">
                         Call {idx + 1}
-                      </th>
+                      </BreakdownTableHeaderCell>
                     ))
                   ) : (
-                    <th className="p-3 text-right">Score</th>
+                    <BreakdownTableHeaderCell align="right">Score</BreakdownTableHeaderCell>
                   )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5 text-slate-200 font-medium">
+                </BreakdownTableHeaderRow>
+              </BreakdownTableHead>
+              <BreakdownTableBody>
                 {criteriaList.map((crit) => (
-                  <tr key={crit.key} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="p-3 text-slate-300">
-                      <div className="font-bold flex items-center gap-1.5">
+                  <BreakdownTableRow key={crit.key}>
+                    <BreakdownTableCell>
+                      <div className="flex items-center gap-1.5 font-semibold">
                         {crit.displayName}
-                        {crit.critical && (
-                          <span className="text-[9px] font-black uppercase bg-red-500/20 text-red-400 px-1 py-0.5 rounded border border-red-500/30">
-                            CRITICAL
+                        {crit.critical ? (
+                          <span className={cn(portalBadgeClass, "text-[9px] font-bold uppercase text-destructive")}>
+                            Critical
                           </span>
-                        )}
+                        ) : null}
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-0.5">
+                      <div className="mt-0.5 text-[10px] text-muted-foreground">
                         {SECTION_LABELS[crit.section] || crit.section}
                       </div>
-                    </td>
+                    </BreakdownTableCell>
                     {finalRuns.length > 1 ? (
                       finalRuns.map((run) => (
-                        <td key={run.runIndex} className="p-3 text-right text-white font-extrabold">
+                        <BreakdownTableCell key={run.runIndex} align="right" className="font-bold">
                           {getRunScore(finalRuns, run.runIndex, crit.key)}
-                        </td>
+                        </BreakdownTableCell>
                       ))
                     ) : (
-                      <td className="p-3 text-right text-white font-extrabold">
+                      <BreakdownTableCell align="right" className="font-bold">
                         {crit.score} / {crit.maxScore}
-                      </td>
+                      </BreakdownTableCell>
                     )}
-                  </tr>
+                  </BreakdownTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </BreakdownTableBody>
+            </BreakdownTable>
+          </BreakdownTableShell>
         </div>
       )}
 
       {activeMetrics.feedback && typeof activeMetrics.feedback === "object" ? (
         <div className="space-y-2.5">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Qualitative Feedback
-          </p>
+          <BreakdownSectionTitle>Qualitative feedback</BreakdownSectionTitle>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               { label: "Information Capture", key: "information_capture" },
@@ -246,15 +234,12 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
             ].map(({ label, key }) => {
               const feedback = activeMetrics.feedback as Record<string, string>;
               return (
-                <div
-                  key={key}
-                  className="rounded-lg border border-white/5 bg-white/[0.01] p-3"
-                >
-                  <p className="text-[10px] uppercase font-bold text-slate-500">{label}</p>
-                  <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                    {feedback[key]}
+                <BreakdownSection key={key} className="p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {label}
                   </p>
-                </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-foreground">{feedback[key]}</p>
+                </BreakdownSection>
               );
             })}
           </div>

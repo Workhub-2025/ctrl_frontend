@@ -16,7 +16,7 @@ import {
   PortalSectionHeader,
   portalBadgeClass,
 } from "@/components/dashboard/portal/portal-ui";
-import { portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalCardClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { cn } from "@/lib/utils";
 
@@ -111,10 +111,7 @@ export function ClientCampaignApprovalsContent() {
             pendingCampaigns.map((campaign) => (
               <div
                 key={campaign.id}
-                className={cn(
-                  portalPanelClass,
-                  "p-5 shadow-sm transition-[border-color,box-shadow] duration-300 hover:border-primary/30"
-                )}
+                className={cn(portalCardClass, "p-5")}
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
                   <div className="min-w-0 space-y-3">

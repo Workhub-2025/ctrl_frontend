@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HiringManagerCampaignBuilder } from "@/components/dashboard/hiring-manager-campaign-builder";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
-import { portalAlertErrorClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalAlertErrorClass, portalPanelNestedClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import {
@@ -137,7 +137,7 @@ export function HiringManagerCampaignEditView({
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-white/10 bg-[#0b1220] p-6 text-sm text-slate-300">
+      <div className={cn(portalPanelNestedClass, "p-6 text-sm text-muted-foreground")}>
         Loading campaign...
       </div>
     );

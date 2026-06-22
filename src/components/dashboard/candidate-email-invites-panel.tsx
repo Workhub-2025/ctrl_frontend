@@ -7,7 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Mail, Plus, RefreshCw, X } from "lucide-react";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
 import { cn } from "@/lib/utils";
-import { portalPanelClass, portalBadgeClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalBadgeClass,
+  portalPanelClass,
+  portalTableHeaderClass,
+  portalTableRowClass,
+  portalTableShellClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 
 type PendingInvite = {
   id: string;
@@ -234,26 +240,26 @@ export function CandidateEmailInvitesPanel({
       </div>
 
       {pendingInvites.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-white/10 bg-[#080c16]/30">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead>
-              <tr className="border-b border-white/10 bg-white/[0.02] text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+        <div className={portalTableShellClass}>
+          <table className="w-full border-collapse text-left text-xs text-foreground">
+            <thead className={portalTableHeaderClass}>
+              <tr className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="p-3">Email</th>
                 <th className="p-3">Status</th>
                 <th className="p-3">Code</th>
                 <th className="p-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-slate-200">
+            <tbody>
               {pendingInvites.map((invite) => {
                 const isResending = resendingInviteId === invite.id;
                 const isLocked = Boolean(lockedResendInviteIds[invite.id]);
 
                 return (
-                  <tr key={invite.id}>
+                  <tr key={invite.id} className={portalTableRowClass}>
                     <td className="p-3">{invite.email}</td>
                     <td className="p-3 capitalize">{invite.inviteStatus}</td>
-                    <td className="p-3 font-mono text-[11px] text-slate-400">
+                    <td className="p-3 font-mono text-[11px] text-muted-foreground">
                       {invite.candidateCode ?? "—"}
                     </td>
                     <td className="p-3 text-right">

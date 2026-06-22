@@ -34,7 +34,9 @@ import {
 } from "@/components/dashboard/portal/portal-ui";
 import {
   portalBadgeClass,
+  portalDialogShellClass,
   portalIconWrapClass,
+  portalCardClass,
   portalPanelClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { formatDateTime } from "@/components/dashboard/client/client-portal-utils";
@@ -214,7 +216,7 @@ export function ClientHiringManagersContent() {
                         manager,
                       })
                     }
-                    className={cn(portalPanelClass, "p-4 text-left transition-colors hover:border-primary/30")}
+                    className={cn(portalCardClass, "p-4 text-left")}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -238,7 +240,7 @@ export function ClientHiringManagersContent() {
       </PortalPanel>
 
       <Dialog open={Boolean(selectedSeat)} onOpenChange={(open) => !open && setSelectedSeat(null)}>
-        <DialogContent className="max-w-md rounded-[1.25rem] border border-border dark:border-white/10 dark:bg-[#0a0f1d]">
+        <DialogContent className={cn(portalDialogShellClass, "max-w-md")}>
           {selectedSeat?.type === "empty" && (
             <>
               <DialogHeader>
@@ -418,10 +420,10 @@ function SeatCard({
   return (
     <div
       className={cn(
-        "relative flex min-h-[200px] flex-col justify-between overflow-hidden rounded-2xl border p-5 shadow-sm transition-all duration-300 hover:scale-[1.01]",
+        "relative flex min-h-[200px] flex-col justify-between overflow-hidden p-5 transition-all duration-300 hover:scale-[1.01]",
         seat.type === "occupied"
-          ? cn(portalPanelClass, "hover:border-primary/30")
-          : "border-2 border-dashed border-border/80 bg-transparent hover:border-primary/40 dark:border-white/10 dark:hover:border-primary/45"
+          ? portalCardClass
+          : "rounded-2xl border-2 border-dashed border-border/80 bg-transparent shadow-none hover:border-primary/40 dark:border-white/10 dark:hover:border-primary/45"
       )}
     >
       {seat.type === "occupied" ? (

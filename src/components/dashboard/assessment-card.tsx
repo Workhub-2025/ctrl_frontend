@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { CheckCircle2 } from "lucide-react";
 import { SecurePreflightModal } from "@/components/assessment";
+import { cn } from "@/lib/utils";
+import { portalCardClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 type AssessmentCardProps = Readonly<{
   icon: React.ReactNode;
@@ -37,7 +39,11 @@ export function AssessmentCard({
 
   return (
     <>
-      <Card className={`flex flex-col rounded-3xl border-border dark:border-white/5 bg-card dark:bg-[#080c16]/50 shadow-sm dark:shadow-none transition-transform duration-300 ease-in-out hover:-translate-y-1 hover:bg-muted/50 dark:hover:bg-white/[0.02] ${isCompleted ? 'opacity-80' : ''}`}>
+      <Card className={cn(
+        portalCardClass,
+        "flex flex-col rounded-3xl transition-transform duration-300 ease-in-out hover:-translate-y-1",
+        isCompleted && "opacity-80"
+      )}>
       <CardHeader className="flex flex-row items-start gap-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           {icon}

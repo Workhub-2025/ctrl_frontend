@@ -29,6 +29,7 @@ import {
   portalBadgeClass,
   portalInputClass,
   portalPanelClass,
+  portalPanelNestedClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 
 type EntitlementClient = {
@@ -555,7 +556,7 @@ function FeatureList({
           <p className="p-2 text-xs text-muted-foreground/75 italic">{empty}</p>
         ) : (
           features.map((feature) => (
-            <div key={feature.key} className="flex items-center justify-between gap-3 rounded-xl border border-border/60 dark:border-white/5 bg-slate-50/50 dark:bg-[#0b1329]/30 p-3.5 hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-colors">
+            <div key={feature.key} className={cn(portalPanelNestedClass, "flex items-center justify-between gap-3 p-3.5")}>
               <div>
                 <p className="text-sm font-semibold text-foreground">{feature.label}</p>
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">{feature.group}</p>

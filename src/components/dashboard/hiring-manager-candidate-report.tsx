@@ -449,7 +449,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
         </Card>
       </div>
 
-      <Card className={cn(portalPanelElevatedClass, "rounded-2xl")}>
+      <Card className={portalPanelElevatedClass}>
         <CardHeader className="border-b border-border/50 p-5 dark:border-white/10">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <span className={portalIconWrapClass} aria-hidden="true">

@@ -1,19 +1,37 @@
 import { cn } from "@/lib/utils";
 
-/** Shared surface styles for every CTRL portal (admin, client, HM, candidate). */
-export const portalPanelClass =
-  "rounded-xl border border-border/60 bg-card/60 shadow-sm dark:border-white/8 dark:bg-[#0b1329]/30";
+/** Shared fill and border for every CTRL portal surface. */
+export const portalPanelBaseClass =
+  "border border-border/60 bg-card/60 dark:border-white/8 dark:bg-[#0b1329]/30";
+
+/**
+ * Standard portal panel/card — light-theme elevation so surfaces stand off the page.
+ * Used for list cards, sections, and primary panels across admin, client, HM, and candidate portals.
+ */
+export const portalPanelClass = cn(
+  portalPanelBaseClass,
+  "rounded-xl shadow-lg transition-all duration-300 hover:border-primary/30 dark:shadow-none dark:hover:border-white/12"
+);
+
+/** Primary list / content cards — same elevation with larger radius. */
+export const portalCardClass = cn(portalPanelClass, "rounded-2xl");
 
 /** Stronger panel surface for hero cards and primary sections. */
 export const portalPanelElevatedClass = cn(
-  portalPanelClass,
-  "backdrop-blur-md shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/45"
+  portalCardClass,
+  "backdrop-blur-md shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/45 dark:shadow-2xl dark:hover:border-primary/30"
 );
 
-/** Nested panel surface inside elevated cards. */
+/** Nested panel surface inside elevated cards — flat, no extra shadow. */
 export const portalPanelNestedClass = cn(
-  portalPanelClass,
-  "dark:border-white/10 dark:bg-[#0b1329]/20"
+  portalPanelBaseClass,
+  "rounded-xl shadow-none transition-colors hover:border-border/60 dark:border-white/10 dark:bg-[#0b1329]/20 dark:hover:border-white/10"
+);
+
+/** Dashed empty-state surface for lists and filter results. */
+export const portalEmptyPanelClass = cn(
+  portalPanelNestedClass,
+  "rounded-[1.25rem] border-dashed p-6 text-center text-sm text-muted-foreground"
 );
 
 /** Gradient hero card used on report and campaign headers. */

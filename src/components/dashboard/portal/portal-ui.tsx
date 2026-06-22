@@ -16,6 +16,8 @@ import {
   portalLabelClass,
   portalPageHeaderClass,
   portalPanelClass,
+  portalCardClass,
+  portalEmptyPanelClass,
   portalStatTileClass,
   portalStatusBadge,
   portalTableHeaderClass,
@@ -26,6 +28,8 @@ import {
 
 export {
   portalPanelClass,
+  portalCardClass,
+  portalEmptyPanelClass,
   portalStatTileClass,
   portalBadgeClass,
   portalStatusBadge,
