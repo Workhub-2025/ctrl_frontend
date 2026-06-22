@@ -33,6 +33,7 @@ import {
   portalIconWrapLgClass,
   portalPageHeaderClass,
   portalScoreMeterClass,
+  portalPanelBorderClass,
   portalPanelClass,
   portalPanelElevatedClass,
   portalPanelNestedClass,
@@ -420,7 +421,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                             "h-2.5 w-7 rounded-full border transition-colors",
                             isDone
                               ? "border-primary/40 bg-primary"
-                              : "border-border/60 bg-muted/30 dark:border-white/10 dark:bg-white/[0.04]"
+                              : cn("border bg-muted/30 dark:bg-white/[0.04]", portalPanelBorderClass)
                           )}
                         />
                       );
@@ -450,7 +451,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
       </div>
 
       <Card className={portalPanelElevatedClass}>
-        <CardHeader className="border-b border-border/50 p-5 dark:border-white/10">
+        <CardHeader className={cn("border-b p-5", portalPanelBorderClass)}>
           <CardTitle className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <span className={portalIconWrapClass} aria-hidden="true">
               <ClipboardList className="h-4 w-4" />
@@ -569,7 +570,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                   </div>
                 </div>
 
-                <div className="grid gap-4 border-t border-border/50 pt-3 md:grid-cols-12 dark:border-white/10">
+                <div className={cn("grid gap-4 border-t pt-3 md:grid-cols-12", portalPanelBorderClass)}>
                   <div className={cn(portalPanelNestedClass, "space-y-2 p-3 md:col-span-8")}>
                     <div className="flex items-center justify-between gap-3 text-xs">
                       <span className="font-medium text-muted-foreground">Score against assessment weighting</span>

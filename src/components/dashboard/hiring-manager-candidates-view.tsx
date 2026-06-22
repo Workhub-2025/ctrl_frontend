@@ -37,6 +37,7 @@ import {
   portalIconWrapLgClass,
   portalInputClass,
   portalLabelClass,
+  portalPanelBorderClass,
   portalPanelElevatedClass,
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
@@ -541,7 +542,10 @@ export function HiringManagerCandidatesView() {
                           return (
                             <div
                               key={`${stackName}-${idx}`}
-                              className="relative group flex-1 h-full overflow-visible rounded-full border border-border/60 bg-muted/30 dark:border-white/10 dark:bg-white/[0.04]"
+                              className={cn(
+                                "relative group flex-1 h-full overflow-visible rounded-full border bg-muted/30 dark:bg-white/[0.04]",
+                                portalPanelBorderClass
+                              )}
                             >
                               {/* Inner filled score bar */}
                               <div

@@ -29,6 +29,7 @@ import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-d
 import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
 import {
   portalAlertErrorClass,
+  portalBadgeClass,
   portalIconWrapLgClass,
   portalPanelClass,
   portalProgressBarClass,
@@ -186,7 +187,7 @@ export function HiringManagerOverview() {
                     </div>
                     {/* Meta row */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="rounded-md border-border/40 bg-background/50 px-1.5 py-0 text-[10px] font-semibold text-muted-foreground dark:border-white/5 dark:bg-white/[0.02] pointer-events-none gap-1">
+                      <Badge variant="outline" className={cn(portalBadgeClass, "pointer-events-none gap-1 px-1.5 py-0 text-[10px] font-semibold")}>
                         {isRemote ? <Globe className="h-3 w-3" /> : <Building className="h-3 w-3" />}
                         {isRemote ? "Remote" : "In-Person"}
                       </Badge>
@@ -195,7 +196,7 @@ export function HiringManagerOverview() {
                           {countdown}
                         </span>
                       )}
-                      <span className="rounded border border-border/50 bg-muted/70 px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider text-muted-foreground dark:border-white/5 dark:bg-black/30 dark:text-slate-300">
+                      <span className={cn(portalBadgeClass, "px-1.5 py-0 font-mono text-[10px] font-bold tracking-wider")}>
                         {session.accessValue}
                       </span>
                       <Link

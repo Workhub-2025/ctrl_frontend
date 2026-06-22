@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
 import {
   portalAlertErrorClass,
+  portalPanelBorderClass,
   portalPanelElevatedClass,
   portalPanelNestedClass,
   portalBadgeClass,
@@ -323,7 +324,7 @@ export function HiringManagerCampaignDetailView({
       </div>
 
       <Card className={portalPanelElevatedClass}>
-        <CardHeader className="border-b border-border/60 p-4 dark:border-white/10">
+        <CardHeader className={cn("border-b p-4", portalPanelBorderClass)}>
           <CardTitle className={cn(portalLabelClass, "text-sm font-bold")}>Sessions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4">
@@ -372,7 +373,7 @@ export function HiringManagerCampaignDetailView({
 
       {/* Candidates in Campaign Section */}
       <Card className={cn(portalPanelElevatedClass, "rounded-xl")}>
-        <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 p-5 dark:border-white/10">
+        <CardHeader className={cn("flex flex-row items-center justify-between border-b p-5", portalPanelBorderClass)}>
           <CardTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <Users className="h-5 w-5 text-primary" /> Candidates in Campaign ({campaign.joinedCandidates.length})
           </CardTitle>

@@ -37,6 +37,7 @@ import {
   portalIconWrapClass,
   portalInputClass,
   portalLabelClass,
+  portalPanelBorderClass,
   portalPanelNestedClass,
   portalPrimaryButtonClass,
   portalAssessmentPreviewDetailsClass,
@@ -153,7 +154,7 @@ function VersionPreviewPanel({
           <span className="text-[10px] text-muted-foreground group-open:hidden">Show</span>
           <span className="hidden text-[10px] text-muted-foreground group-open:inline">Hide</span>
         </summary>
-        <div className="border-t border-border/60 px-3 py-3 leading-5 dark:border-white/10">
+        <div className={cn("border-t px-3 py-3 leading-5", portalPanelBorderClass)}>
           Preview content is not available for this version yet.
         </div>
       </details>
@@ -170,7 +171,7 @@ function VersionPreviewPanel({
         <span className="text-[10px] text-muted-foreground group-open:hidden">Show</span>
         <span className="hidden text-[10px] text-muted-foreground group-open:inline">Hide</span>
       </summary>
-      <div className="space-y-3 border-t border-border/60 p-3 dark:border-white/10">
+      <div className={cn("space-y-3 border-t p-3", portalPanelBorderClass)}>
         {version?.description ? (
           <p className="text-xs leading-5 text-muted-foreground">{version.description}</p>
         ) : null}

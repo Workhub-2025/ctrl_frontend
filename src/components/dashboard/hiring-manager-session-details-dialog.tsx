@@ -43,6 +43,7 @@ import {
   portalIconWrapClass,
   portalIconWrapLgClass,
   portalLabelClass,
+  portalPanelBorderClass,
   portalPanelElevatedClass,
   portalPanelNestedClass,
   portalProgressBarClass,
@@ -403,7 +404,7 @@ function HiringManagerSessionWorkspace({
                       <Copy className="h-4 w-4" />
                     </span>
                   </div>
-                  <div className="mt-2 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-2.5 py-1.5 dark:border-white/10 dark:bg-white/[0.03]">
+                  <div className={cn(portalPanelNestedClass, "mt-2 flex items-center gap-2 px-2.5 py-1.5")}>
                     <span className="flex-1 truncate font-mono text-sm font-semibold tracking-widest text-foreground">
                       {session.accessValue}
                     </span>
@@ -479,7 +480,7 @@ function HiringManagerSessionWorkspace({
 
               {/* Candidates */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-border/50 pb-3 dark:border-white/10">
+                <div className={cn("flex items-center justify-between border-b pb-3", portalPanelBorderClass)}>
                   <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                     <span className={portalIconWrapClass} aria-hidden="true">
                       <Users className="h-4 w-4" />
@@ -638,7 +639,7 @@ function HiringManagerSessionWorkspace({
                             {/* Right: stats + actions */}
                             <div className="flex items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
                               {!showUnlockControl ? (
-                                <div className="min-w-[130px] border-r border-border/50 pr-4 dark:border-white/10">
+                                <div className={cn("min-w-[130px] border-r pr-4", portalPanelBorderClass)}>
                                   <div className="text-right">
                                     <p className={portalLabelClass}>Overall score</p>
                                     <div className="mt-1 flex justify-end">
@@ -700,7 +701,7 @@ function HiringManagerSessionWorkspace({
 
                           {/* Accordion body — segment bars */}
                           {isExpanded ? (
-                            <div className="space-y-3 border-t border-border/50 p-4 dark:border-white/10">
+                            <div className={cn("space-y-3 border-t p-4", portalPanelBorderClass)}>
                               <div className="flex items-center justify-between text-sm text-muted-foreground">
                                 <span className="text-xs font-medium">Assessment breakdown</span>
                                 <span className="text-xs font-medium">{progress.completed}/{progress.total} completed</span>
@@ -713,7 +714,10 @@ function HiringManagerSessionWorkspace({
                                   return (
                                     <div
                                       key={`${item.name}-${idx}`}
-                                      className="relative h-full flex-1 overflow-hidden rounded-full border border-border/60 bg-muted/20 dark:border-white/10 dark:bg-white/[0.04]"
+                                      className={cn(
+                                        "relative h-full flex-1 overflow-hidden rounded-full border bg-muted/20 dark:bg-white/[0.04]",
+                                        portalPanelBorderClass
+                                      )}
                                       title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? `${scoreVal}%` : "Pending"}`}
                                     >
                                       <div

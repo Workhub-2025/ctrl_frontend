@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils";
 export const portalPanelBaseClass =
   "border border-border/60 bg-card/60 dark:border-white/8 dark:bg-[#0b1329]/30";
 
+/** Border colour for nested panels, card headers, and internal dividers. */
+export const portalPanelBorderClass = "border-border/60 dark:border-white/10";
+
 /** Subtle lift on dark portal backgrounds (~#080c16) — mirrors light `shadow-lg` without glow. */
 const portalDarkPanelShadowClass = "dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]";
 const portalDarkElevatedShadowClass = "dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)]";
