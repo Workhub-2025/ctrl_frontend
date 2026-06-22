@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { Shield, FileText, Eye, Database, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
 import { FormPageHeader } from './form-page-header';
+import { UK_LEGAL } from '@/lib/legal/uk-compliance';
 
 interface DataPrivacyTermsProps {
   onAccept: (consents: {
@@ -87,8 +88,12 @@ export default function DataPrivacyTerms({ onAccept, onDecline, onSkip, isLoadin
             <ScrollArea className="h-48 w-full rounded-md border p-4">
               <div className="space-y-4 text-sm">
                 <div>
-                  <h4 className="font-medium mb-2">1. Data Controller</h4>
-                  <p>Emergency Services Assessment Platform ("we", "us", "our") is the data controller for your personal information.</p>
+                  <h4 className="font-medium mb-2">1. Data controller</h4>
+                  <p>
+                    Your recruiting organisation is usually the data controller for assessment data.
+                    {UK_LEGAL.legalEntityName} (&quot;{UK_LEGAL.tradingName}&quot;) processes data as a
+                    processor on their instructions, and acts as controller for platform account data.
+                  </p>
                 </div>
                 
                 <div>
@@ -119,7 +124,7 @@ export default function DataPrivacyTerms({ onAccept, onDecline, onSkip, isLoadin
                 
                 <div>
                   <h4 className="font-medium mb-2">6. Contact Information</h4>
-                  <p>For data protection queries, contact us at privacy@emergencyassessment.co.uk</p>
+                  <p>For data protection queries, contact {UK_LEGAL.privacyEmail}</p>
                 </div>
               </div>
             </ScrollArea>
@@ -140,8 +145,9 @@ export default function DataPrivacyTerms({ onAccept, onDecline, onSkip, isLoadin
                 <div>
                   <p className="font-medium">Data Retention</p>
                   <p className="text-sm text-muted-foreground">
-                    Your assessment data will be retained for 7 years to comply with employment law requirements. 
-                    Equality monitoring data is anonymized after 12 months.
+                    Your assessment data will be retained for up to {UK_LEGAL.assessmentDataRetentionYears} years
+                    where required for recruitment and employment record-keeping. Equality monitoring data
+                    is anonymised after {UK_LEGAL.equalityMonitoringRetentionMonths} months.
                   </p>
                 </div>
               </div>
@@ -151,8 +157,9 @@ export default function DataPrivacyTerms({ onAccept, onDecline, onSkip, isLoadin
                 <div>
                   <p className="font-medium">Data Sharing</p>
                   <p className="text-sm text-muted-foreground">
-                    Assessment results may be shared with prospective employers upon your explicit consent. 
-                    Equality monitoring data is never shared and used only for statistical analysis.
+                    Assessment results are shared with the recruiting organisation that invited you and
+                    their authorised hiring managers as part of the recruitment process. Equality monitoring
+                    data is never shared with hiring decision-makers in identifiable form.
                   </p>
                 </div>
               </div>

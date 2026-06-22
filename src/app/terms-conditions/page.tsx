@@ -12,6 +12,7 @@ import { AccessibilityDropdown } from "@/components/accessibility/accessibility-
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { ArrowLeft, FileText, Scale } from "lucide-react";
 import Link from "next/link";
+import { UK_LEGAL, formatUkDate } from "@/lib/legal/uk-compliance";
 import { FormPageHeader } from "@/components/auth/form-page-header";
 
 export default function TermsConditionsPage() {
@@ -49,15 +50,12 @@ export default function TermsConditionsPage() {
                 icon={Scale}
                 color="blue"
                 title="Terms & Conditions"
-                description="Emergency Services Assessment Platform"
+                description={UK_LEGAL.tradingName}
               />
               <p className="text-sm text-muted-foreground mt-2">
-                Last updated:{" "}
-                {new Date().toLocaleDateString("en-GB", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                Last updated: {formatUkDate(UK_LEGAL.lastUpdated)}
+                <br />
+                Version: {UK_LEGAL.termsVersion}
               </p>
             </CardHeader>
 
@@ -70,9 +68,9 @@ export default function TermsConditionsPage() {
                       1. Introduction and Acceptance
                     </h3>
                     <p className="mb-3">
-                      Welcome to the Emergency Services Assessment Platform
-                      ("Platform", "Service", "we", "us", "our"). These Terms
-                      and Conditions ("Terms") govern your use of our assessment
+                      Welcome to {UK_LEGAL.tradingName} operated by {UK_LEGAL.legalEntityName}
+                      (&quot;Platform&quot;, &quot;Service&quot;, &quot;we&quot;, &quot;us&quot;, &quot;our&quot;). These Terms
+                      and Conditions (&quot;Terms&quot;) govern your use of our assessment
                       platform and services.
                     </p>
                     <p className="mb-3">
@@ -390,21 +388,19 @@ export default function TermsConditionsPage() {
                       <div className="bg-muted/50 p-4 rounded-lg">
                         <p>
                           <strong>Email:</strong>{" "}
-                          legal@emergencyassessment.co.uk
+                          {UK_LEGAL.legalEmail}
                         </p>
                         <p>
-                          <strong>Address:</strong> Emergency Services
-                          Assessment Platform
+                          <strong>Address:</strong> {UK_LEGAL.legalEntityName},{" "}
+                          {UK_LEGAL.registeredAddress}
                         </p>
-                        <p className="ml-16">Legal Department</p>
-                        <p className="ml-16">United Kingdom</p>
                       </div>
                     </div>
                   </section>
 
                   <div className="mt-8 p-4 border rounded-lg bg-muted/30">
                     <p className="text-xs text-muted-foreground">
-                      By using the Emergency Services Assessment Platform, you
+                      By using {UK_LEGAL.tradingName}, you
                       acknowledge that you have read, understood, and agree to
                       be bound by these Terms and Conditions.
                     </p>

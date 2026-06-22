@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { StoreHydration } from "@/components/providers/store-hydration";
+import { CookieBannerMount } from "@/components/legal/cookie-banner-mount";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -60,6 +61,7 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <StoreHydration>{children}</StoreHydration>
+          <CookieBannerMount />
           <Toaster />
         </ThemeProvider>
       </body>

@@ -81,18 +81,11 @@ export default function CookieBanner() {
   };
 
   const initializeCookieBasedServices = (prefs: CookiePreferences) => {
-    // Initialize services based on user preferences
-    if (prefs.analytics) {
-      // Initialize analytics (Google Analytics, etc.)
-      console.log('Analytics cookies enabled');
-    }
-    if (prefs.marketing) {
-      // Initialize marketing cookies
-      console.log('Marketing cookies enabled');
-    }
-    if (prefs.functional) {
-      // Initialize functional cookies
-      console.log('Functional cookies enabled');
+    // Gate third-party analytics/marketing until consent is granted.
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('ctrl:cookie-consent', { detail: prefs })
+      );
     }
   };
 

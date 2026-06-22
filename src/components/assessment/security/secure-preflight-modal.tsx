@@ -12,6 +12,7 @@ import {
   portalIconWrapClass,
   portalPanelClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { UK_LEGAL } from "@/lib/legal/uk-compliance";
 
 function CheckRow({
   label,
@@ -164,6 +165,18 @@ export function SecurePreflightModal({
               detail="Verify live connection is online to sync progress telemetry and integrity events."
               icon={Wifi}
             />
+          </div>
+
+          <div className={cn(portalAlertInfoClass, "flex items-start gap-3")}>
+            <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div className="space-y-1.5 text-xs leading-normal">
+              <p className="font-bold">Automated scoring (UK GDPR Article 22)</p>
+              <p className="text-muted-foreground">
+                This assessment is scored automatically. Results may be used by your recruiting
+                organisation in hiring decisions. You may request human review via your recruiter or{" "}
+                {UK_LEGAL.privacyEmail}.
+              </p>
+            </div>
           </div>
 
           <div className={cn(portalAlertInfoClass, "mt-4 flex items-start gap-3")}>

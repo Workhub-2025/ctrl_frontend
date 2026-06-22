@@ -14,6 +14,7 @@ import { AccessibilityDropdown } from "@/components/accessibility/accessibility-
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { ArrowLeft, Shield, Lock, Eye, Database, Clock } from "lucide-react";
 import Link from "next/link";
+import { UK_LEGAL, formatUkDate } from "@/lib/legal/uk-compliance";
 
 export default function PrivacyPolicyPage() {
   const {
@@ -53,17 +54,18 @@ export default function PrivacyPolicyPage() {
                 Data Privacy Policy
               </CardTitle>
               <CardDescription>
-                Emergency Services Assessment Platform
+                {UK_LEGAL.tradingName} — {UK_LEGAL.platformDescription}
               </CardDescription>
               <p className="text-sm text-muted-foreground mt-2">
-                Last updated:{" "}
-                {new Date().toLocaleDateString("en-GB", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                Last updated: {formatUkDate(UK_LEGAL.lastUpdated)}
                 <br />
-                Version: 1.0
+                Version: {UK_LEGAL.privacyPolicyVersion}
+                {UK_LEGAL.icoRegistrationNumber ? (
+                  <>
+                    <br />
+                    ICO registration: {UK_LEGAL.icoRegistrationNumber}
+                  </>
+                ) : null}
               </p>
             </CardHeader>
 
@@ -76,16 +78,19 @@ export default function PrivacyPolicyPage() {
                       1. Introduction
                     </h3>
                     <p className="mb-3">
-                      Emergency Services Assessment Platform ("we", "us", "our")
+                      {UK_LEGAL.legalEntityName} (&quot;{UK_LEGAL.tradingName}&quot;, &quot;we&quot;, &quot;us&quot;, &quot;our&quot;)
                       is committed to protecting your privacy and personal data.
                       This Data Privacy Policy explains how we collect, use,
                       store, and protect your personal information when you use
                       our assessment platform.
                     </p>
                     <p className="mb-3">
-                      We are the data controller for the personal information we
-                      process, and we comply with the UK General Data Protection
-                      Regulation (UK GDPR) and the Data Protection Act 2018.
+                      <strong>Data controller roles:</strong> For candidate assessment data,
+                      your recruiting organisation (the client that invited you) is usually the
+                      data controller and {UK_LEGAL.legalEntityName} acts as a data processor on
+                      their instructions. For our own platform accounts, billing, and support,
+                      {UK_LEGAL.legalEntityName} is the data controller. We comply with the UK
+                      General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.
                     </p>
                     <p>
                       This policy applies to all users of our platform,
@@ -278,9 +283,12 @@ export default function PrivacyPolicyPage() {
                         <strong>5.1 Prospective Employers:</strong>
                       </p>
                       <p className="mb-3">
-                        We may share your assessment results with prospective
-                        employers, but only with your explicit consent. You
-                        control which results are shared and with whom.
+                        Assessment results and performance data are shared with the
+                        recruiting organisation that invited you (and their authorised
+                        hiring managers) as part of the recruitment process. This sharing
+                        is based on the controller&apos;s lawful basis (typically contract
+                        or legitimate interests in recruitment). Optional equality monitoring
+                        data is never shared with hiring decision-makers in identifiable form.
                       </p>
 
                       <p>
@@ -288,8 +296,11 @@ export default function PrivacyPolicyPage() {
                       </p>
                       <p className="mb-3">
                         We work with trusted third-party service providers who
-                        help us operate the platform. These providers are bound
-                        by strict confidentiality agreements.
+                        help us operate the platform. A current list is published at{" "}
+                        <Link href="/sub-processors" className="text-primary hover:underline">
+                          /sub-processors
+                        </Link>
+                        . These providers are bound by appropriate data processing terms.
                       </p>
 
                       <p>
@@ -322,8 +333,10 @@ export default function PrivacyPolicyPage() {
                     </h3>
                     <div className="space-y-3">
                       <p>
-                        <strong>6.1 Assessment Data:</strong> Retained for 7
-                        years to comply with employment law requirements
+                        <strong>6.1 Assessment Data:</strong> Retained for up to{" "}
+                        {UK_LEGAL.assessmentDataRetentionYears} years where required for
+                        employment and recruitment record-keeping, unless a shorter period is
+                        agreed with the recruiting organisation or erasure applies
                       </p>
                       <p>
                         <strong>6.2 Account Information:</strong> Retained while
@@ -431,7 +444,7 @@ export default function PrivacyPolicyPage() {
                       <div className="bg-green-50 dark:bg-green-950/20 text-slate-800 dark:text-slate-300 p-4 rounded-lg mt-4">
                         <p className="text-sm">
                           <strong>To exercise your rights:</strong> Contact us
-                          at privacy@emergencyassessment.co.uk with your
+                          at {UK_LEGAL.privacyEmail} with your
                           request. We will respond within one month.
                         </p>
                       </div>
@@ -485,10 +498,14 @@ export default function PrivacyPolicyPage() {
                       10. International Transfers
                     </h3>
                     <p className="mb-3">
-                      Your personal data is processed and stored within the
-                      United Kingdom. If we need to transfer data
-                      internationally, we will ensure appropriate safeguards are
-                      in place and inform you of such transfers.
+                      Personal data is primarily processed in the United Kingdom and/or
+                      European Economic Area via our hosting providers. Where data is
+                      transferred internationally, we use appropriate safeguards (UK IDTA,
+                      UK Addendum to EU SCCs, or adequacy regulations). See our{" "}
+                      <Link href="/sub-processors" className="text-primary hover:underline">
+                        sub-processors list
+                      </Link>{" "}
+                      for details.
                     </p>
                   </section>
 
@@ -496,7 +513,32 @@ export default function PrivacyPolicyPage() {
 
                   <section>
                     <h3 className="text-lg font-semibold mb-3">
-                      11. Changes to This Policy
+                      11. Automated decision-making and profiling
+                    </h3>
+                    <div className="space-y-3">
+                      <p>
+                        Assessments are scored automatically against predefined criteria.
+                        Results may influence recruitment decisions made by the recruiting
+                        organisation. This constitutes automated processing with significant
+                        effects for candidates.
+                      </p>
+                      <p>
+                        You have the right to request human intervention, to express your point
+                        of view, and to contest a decision based solely on automated processing.
+                        Contact the recruiting organisation in the first instance, or email{" "}
+                        <a href={`mailto:${UK_LEGAL.privacyEmail}`} className="text-primary hover:underline">
+                          {UK_LEGAL.privacyEmail}
+                        </a>{" "}
+                        and we will assist the controller where required.
+                      </p>
+                    </div>
+                  </section>
+
+                  <Separator />
+
+                  <section>
+                    <h3 className="text-lg font-semibold mb-3">
+                      12. Changes to This Policy
                     </h3>
                     <p className="mb-3">
                       We may update this Data Privacy Policy from time to time
@@ -514,7 +556,7 @@ export default function PrivacyPolicyPage() {
 
                   <section>
                     <h3 className="text-lg font-semibold mb-3">
-                      12. Contact Us
+                      13. Contact Us
                     </h3>
                     <div className="space-y-3">
                       <p>
@@ -525,20 +567,20 @@ export default function PrivacyPolicyPage() {
                       <div className="bg-muted/50 p-4 rounded-lg space-y-2">
                         <p>
                           <strong>Data Protection Officer:</strong>{" "}
-                          privacy@emergencyassessment.co.uk
+                          {UK_LEGAL.dpoEmail}
                         </p>
                         <p>
                           <strong>General Inquiries:</strong>{" "}
-                          support@emergencyassessment.co.uk
+                          {UK_LEGAL.supportEmail}
                         </p>
                         <p>
                           <strong>Address:</strong>
                         </p>
                         <p className="ml-4">
-                          Emergency Services Assessment Platform
+                          {UK_LEGAL.legalEntityName}
                         </p>
                         <p className="ml-4">Data Protection Team</p>
-                        <p className="ml-4">United Kingdom</p>
+                        <p className="ml-4">{UK_LEGAL.registeredAddress}</p>
                       </div>
 
                       <p className="text-sm text-muted-foreground">
