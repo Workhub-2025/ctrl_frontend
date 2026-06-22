@@ -18,6 +18,7 @@ export const UK_LEGAL = {
   icoRegistrationUrl: "https://ico.org.uk/for-organisations/data-protection-fee/",
   privacyPolicyVersion: "2.0",
   termsVersion: "2.0",
+  cookiePolicyVersion: "1.0",
   /** ISO date string — update when policy text changes */
   lastUpdated: "2026-06-22",
   registeredAddress: "United Kingdom",
@@ -80,6 +81,7 @@ export const UK_SUB_PROCESSOR_CATEGORIES: SubProcessorEntry[] = [
 
 export const UK_LEGAL_FOOTER_LINKS = [
   { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Cookie Policy", href: "/cookie-policy" },
   { label: "Terms", href: "/terms-conditions" },
   { label: "Sub-processors", href: "/sub-processors" },
   { label: "Accessibility", href: "/accessibility-statement" },

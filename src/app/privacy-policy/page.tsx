@@ -483,10 +483,13 @@ export default function PrivacyPolicyPage() {
                       </div>
 
                       <p>
-                        You can manage your cookie preferences through our
-                        cookie banner when you first visit the site. Essential
-                        cookies cannot be disabled as they are necessary for the
-                        platform to function.
+                        You can manage your cookie preferences through our cookie banner when you
+                        first visit the site, or read our{" "}
+                        <Link href="/cookie-policy" className="text-primary hover:underline">
+                          Cookie Policy
+                        </Link>{" "}
+                        for full details. Essential cookies cannot be disabled as they are
+                        necessary for the platform to function.
                       </p>
                     </div>
                   </section>

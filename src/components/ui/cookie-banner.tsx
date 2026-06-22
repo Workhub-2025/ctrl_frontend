@@ -114,12 +114,16 @@ export default function CookieBanner() {
                   </p>
                   <p className="text-sm text-muted-foreground mt-2">
                     For more information, please read our{' '}
+                    <Link href="/cookie-policy" className="text-primary hover:underline">
+                      Cookie Policy
+                    </Link>
+                    ,{' '}
                     <Link href="/privacy-policy" className="text-primary hover:underline">
-                      Data Privacy Policy
+                      Privacy Policy
                     </Link>{' '}
                     and{' '}
                     <Link href="/terms-conditions" className="text-primary hover:underline">
-                      Terms & Conditions
+                      Terms &amp; Conditions
                     </Link>.
                   </p>
                 </div>
