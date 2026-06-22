@@ -27,6 +27,8 @@ type AssessmentAbandonedActionsProps = {
   contentVersion?: string | null;
   abandonReason?: string | null;
   abandonedAt?: string | null;
+  attemptDocumentId?: string | null;
+  attemptStatus?: CandidateAssessmentAttempt["attemptStatus"];
   compact?: boolean;
   onRecovered?: () => void;
   recoverFn?: (input: {
@@ -34,6 +36,7 @@ type AssessmentAbandonedActionsProps = {
     assessmentSlug: string;
     action: AssessmentRecoveryMode;
     contentVersion?: string | null;
+    attemptDocumentId?: string | null;
   }) => Promise<CandidateAssessmentAttempt>;
   versionsUrl?: string;
 };
@@ -49,6 +52,8 @@ export function AssessmentAbandonedActions({
   contentVersion,
   abandonReason,
   abandonedAt,
+  attemptDocumentId,
+  attemptStatus,
   compact = false,
   onRecovered,
   recoverFn = AssessmentAttemptService.recover.bind(AssessmentAttemptService),
@@ -57,14 +62,18 @@ export function AssessmentAbandonedActions({
   const [recoverOpen, setRecoverOpen] = useState(false);
 
   const attempt: CandidateAssessmentAttempt = {
+    documentId: attemptDocumentId ?? undefined,
     candidateSessionDocumentId,
     assessmentSlug,
     contentVersion,
     snapshot,
     abandonReason,
     abandonedAt,
+    attemptStatus,
     candidateSession: { campaign: { name: campaignName ?? undefined } },
   };
+
+  const canRecover = attemptStatus === "abandoned_locked" || !attemptStatus;
 
   const ticket = buildAssessmentRecoveryTicket({
     candidateName,
@@ -87,10 +96,12 @@ export function AssessmentAbandonedActions({
         <p className="text-xs text-orange-200/80">{summary}</p>
       ) : null}
       <div className="flex flex-wrap gap-2">
-        <Button size="sm" variant="secondary" onClick={() => setRecoverOpen(true)}>
-          <RotateCcw className="mr-2 h-3.5 w-3.5" />
-          Recover
-        </Button>
+        {canRecover ? (
+          <Button size="sm" variant="secondary" onClick={() => setRecoverOpen(true)}>
+            <RotateCcw className="mr-2 h-3.5 w-3.5" />
+            Recover
+          </Button>
+        ) : null}
         <CreateTicketDialog
           triggerLabel="Escalate to support"
           defaultSubject={ticket.subject}

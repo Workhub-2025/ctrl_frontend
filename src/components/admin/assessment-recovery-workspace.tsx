@@ -182,7 +182,11 @@ export function AssessmentRecoveryWorkspace({
                         {relativeTime(attempt.abandonedAt ?? attempt.lastHeartbeatAt)}
                       </td>
                       <td className="px-4 py-4">
-                        <Badge className={portalBadgeClass}>Abandoned</Badge>
+                        <Badge className={portalBadgeClass}>
+                          {attempt.attemptStatus === "abandoned_locked"
+                            ? "Abandoned"
+                            : attempt.attemptStatus?.replace(/_/g, " ") ?? "Unknown"}
+                        </Badge>
                       </td>
                       <td className="px-4 py-4">
                         {candidateSessionDocumentId && assessmentSlug ? (
@@ -197,6 +201,8 @@ export function AssessmentRecoveryWorkspace({
                             contentVersion={attempt.contentVersion}
                             abandonReason={attempt.abandonReason}
                             abandonedAt={attempt.abandonedAt}
+                            attemptDocumentId={attempt.documentId}
+                            attemptStatus={attempt.attemptStatus}
                             compact
                             onRecovered={() => void loadAttempts(searchQuery)}
                             recoverFn={

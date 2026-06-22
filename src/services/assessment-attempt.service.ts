@@ -31,9 +31,21 @@ export type CandidateAssessmentAttempt = {
 };
 
 async function readJson<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => ({}))) as T & { error?: string };
+  const body = (await response.json().catch(() => ({}))) as T & {
+    error?: string | { message?: string };
+    message?: string;
+  };
   if (!response.ok) {
-    throw new Error(body.error || `Request failed (${response.status})`);
+    const nestedError =
+      typeof body.error === "object" && body.error?.message
+        ? body.error.message
+        : null;
+    const message =
+      (typeof body.error === "string" ? body.error : null)
+      ?? nestedError
+      ?? body.message
+      ?? `Request failed (${response.status})`;
+    throw new Error(message);
   }
   return body;
 }
@@ -169,6 +181,7 @@ export class AssessmentAttemptService {
     assessmentSlug: string;
     action: AssessmentRecoveryMode;
     contentVersion?: string | null;
+    attemptDocumentId?: string | null;
   }): Promise<CandidateAssessmentAttempt> {
     const body = await readJson<{ data: CandidateAssessmentAttempt }>(
       await fetch("/api/admin/assessment-attempts/recover", {
@@ -185,6 +198,7 @@ export class AssessmentAttemptService {
     assessmentSlug: string;
     action: AssessmentRecoveryMode;
     contentVersion?: string | null;
+    attemptDocumentId?: string | null;
   }): Promise<CandidateAssessmentAttempt> {
     const body = await readJson<{ data: CandidateAssessmentAttempt }>(
       await fetch("/api/assessment/attempt/recover", {

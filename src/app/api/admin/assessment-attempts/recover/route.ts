@@ -8,7 +8,8 @@ export async function POST(request: NextRequest) {
     if ("error" in auth) {
       return auth.error;
     }
-    const strapiJwt = auth.strapiJwt;const payload = await request.json().catch(() => ({}));
+    const strapiJwt = auth.strapiJwt;
+    const payload = await request.json().catch(() => ({}));
     const { response, body } = await forwardAssessmentAttemptRequest(
       "/candidate-assessment-attempts/admin/recover",
       { method: "POST", body: JSON.stringify(payload) },

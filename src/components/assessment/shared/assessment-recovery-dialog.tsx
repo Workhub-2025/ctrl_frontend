@@ -45,6 +45,7 @@ type AssessmentRecoveryDialogProps = {
     assessmentSlug: string;
     action: AssessmentRecoveryMode;
     contentVersion?: string | null;
+    attemptDocumentId?: string | null;
   }) => Promise<CandidateAssessmentAttempt>;
   versionsUrl?: string;
 };
@@ -117,6 +118,7 @@ export function AssessmentRecoveryDialog({
           attempt.contentVersion,
           versionOptions,
         ),
+        attemptDocumentId: attempt.documentId ?? null,
       });
       onOpenChange(false);
       onRecovered?.();
