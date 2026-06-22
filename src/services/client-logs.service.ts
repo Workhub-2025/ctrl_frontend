@@ -17,6 +17,7 @@ export type ClientAuditLog = {
   clientDisplayName?: string | null;
   resourceDisplayName?: string | null;
   metadataResolved?: Record<string, string>;
+  summary?: string;
 };
 
 export type ClientIntegrityEvent = {

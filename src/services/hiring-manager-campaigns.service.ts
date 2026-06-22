@@ -48,6 +48,8 @@ class StrapiRequestError extends Error {
   }
 }
 
+export { StrapiRequestError };
+
 export async function strapiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   const jwt = await getJwt();
   if (!jwt) {

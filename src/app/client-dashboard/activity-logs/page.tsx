@@ -27,6 +27,7 @@ type AuditLogRow = {
   clientDisplayName?: string | null;
   resourceDisplayName?: string | null;
   metadataResolved?: Record<string, string>;
+  summary?: string;
 };
 
 type IntegrityEventRow = {
@@ -97,6 +98,7 @@ export default function ActivityLogsPage() {
         log.actionType,
         log.resource,
         log.resourceDisplayName,
+        log.summary,
         log.occurredAt,
         log.metadataResolved ? Object.values(log.metadataResolved).join(" ") : "",
       ]
@@ -134,13 +136,14 @@ export default function ActivityLogsPage() {
   const exportAuditCsv = () => {
     downloadCsv(
       `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Timestamp", "Actor", "Action", "Resource", "Resource Name", "Details"],
+      ["Timestamp", "Actor", "Action", "Resource", "Resource Name", "Summary", "Details"],
       filteredAuditLogs.map((log) => [
         new Date(log.occurredAt).toLocaleString(),
         log.actorDisplayName ?? log.actorUserId,
         log.actionType,
         log.resource,
         log.resourceDisplayName ?? log.resourceId ?? "",
+        log.summary ?? "",
         log.metadataResolved ? JSON.stringify(log.metadataResolved) : "",
       ])
     );
@@ -280,8 +283,11 @@ export default function ActivityLogsPage() {
                         {log.resourceDisplayName ? `: ${log.resourceDisplayName}` : ""}
                       </span>
                     </div>
-                    <div className="text-sm leading-relaxed text-foreground">
-                      {log.metadataResolved ? (
+                    <p className="text-sm leading-relaxed text-foreground">
+                      {log.summary ?? "Activity recorded."}
+                    </p>
+                    {log.metadataResolved && Object.keys(log.metadataResolved).length > 0 ? (
+                      <div className="text-sm leading-relaxed text-foreground">
                         <div className="flex flex-wrap gap-x-4 gap-y-1">
                           {Object.entries(log.metadataResolved).map(([k, v]) => (
                             <span key={k} className="text-xs">
@@ -289,10 +295,8 @@ export default function ActivityLogsPage() {
                             </span>
                           ))}
                         </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No extra details available</span>
-                      )}
-                    </div>
+                      </div>
+                    ) : null}
                   </div>
                   <time className="shrink-0 text-xs font-medium text-muted-foreground sm:text-right">
                     {new Date(log.occurredAt).toLocaleString()}

@@ -404,6 +404,7 @@ type RawAuditLog = {
   clientDisplayName?: string | null;
   resourceDisplayName?: string | null;
   metadataResolved?: Record<string, string>;
+  summary?: string;
 };
 
 function isActiveContract(contract?: RawContract) {
@@ -748,6 +749,10 @@ function humanize(value?: string) {
 }
 
 function formatAuditDetails(log: RawAuditLog): string {
+  if (log.summary?.trim()) {
+    return log.summary.trim();
+  }
+
   if (log.metadataResolved && Object.keys(log.metadataResolved).length > 0) {
     return Object.entries(log.metadataResolved)
       .map(([key, value]) => `${key}: ${value}`)
