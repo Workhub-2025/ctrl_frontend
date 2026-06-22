@@ -163,7 +163,7 @@ type AssessmentSessionConfig = {
   timeLimitSeconds?: number;
 };
 
-type Phase = 'landing' | 'rules' | 'scenario' | 'submitting' | 'submitted';
+type Phase = 'landing' | 'rules' | 'practice' | 'practice-complete' | 'scenario' | 'submitting' | 'submitted';
 
 type SjtResponse = {
   scenarioId: string;
@@ -210,6 +210,7 @@ export default function SituationalJudgementTest({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scenarioIndex, setScenarioIndex] = useState(0);
+  const [practiceIndex, setPracticeIndex] = useState(0);
   const [bestOptionId, setBestOptionId] = useState<string | null>(null);
   const [worstOptionId, setWorstOptionId] = useState<string | null>(null);
   const [responses, setResponses] = useState<SjtResponse[]>([]);
@@ -237,14 +238,19 @@ export default function SituationalJudgementTest({
   }, [content.sjaRounds]);
 
   const scenarios = finalScenarios;
+  const activePracticeScenario =
+    practiceScenarios[practiceIndex] ?? practiceScenarios[0] ?? null;
   const activeScenario = scenarios[scenarioIndex] ?? scenarios[0] ?? fallbackContent.sjaRounds[0];
   const progress = scenarios.length > 0 ? ((scenarioIndex + 1) / scenarios.length) * 100 : 0;
   const timeLimitLabel = formatAssessmentMinutes(timeLimitSeconds);
   const scenarioCountLabel = `${scenarios.length} live ${scenarios.length === 1 ? 'scenario' : 'scenarios'}`;
+  const practiceCountLabel = `${practiceScenarios.length} practice ${practiceScenarios.length === 1 ? 'scenario' : 'scenarios'}`;
   const timerProgress = timeLimitSeconds > 0
     ? ((timeLimitSeconds - timeRemaining) / timeLimitSeconds) * 100
     : 0;
   const timerTone = timeRemaining <= 300 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground';
+  const canSubmitPractice =
+    Boolean(bestOptionId && worstOptionId && bestOptionId !== worstOptionId);
   const canSubmitScenario =
     timeRemaining > 0 &&
     Boolean(bestOptionId && worstOptionId && bestOptionId !== worstOptionId);
@@ -336,6 +342,24 @@ export default function SituationalJudgementTest({
     setTimeRemaining(timeLimitSeconds);
     setPhase('scenario');
   }, [timeLimitSeconds]);
+
+  const startPractice = useCallback(() => {
+    if (practiceScenarios.length === 0) {
+      startAssessment();
+      return;
+    }
+    setPracticeIndex(0);
+    setBestOptionId(null);
+    setWorstOptionId(null);
+    setPhase('practice');
+  }, [practiceScenarios.length, startAssessment]);
+
+  const submitPracticeScenario = () => {
+    if (!canSubmitPractice) return;
+    setBestOptionId(null);
+    setWorstOptionId(null);
+    setPhase('practice-complete');
+  };
 
   const closeAssessment = useCallback(() => {
     closeAssessmentWindow(candidateSessionDocumentId);
@@ -560,7 +584,9 @@ export default function SituationalJudgementTest({
   const stepperStep = 
     phase === 'landing' || phase === 'rules'
       ? 'welcome'
-      : 'live';
+      : phase === 'practice' || phase === 'practice-complete'
+        ? 'practice'
+        : 'live';
 
   return (
     <AssessmentGameShell
@@ -572,9 +598,9 @@ export default function SituationalJudgementTest({
       <AssessmentReconnectOverlay open={isReconnecting} secondsRemaining={reconnectSecondsLeft ?? undefined} />
       <div className="flex flex-col w-full">
         {/* Visual Stepper Progress */}
-        {phase !== 'scenario' && phase !== 'submitting' && phase !== 'submitted' && (
+        {phase !== 'scenario' && phase !== 'practice' && phase !== 'submitting' && phase !== 'submitted' && (
           <div className="mb-6 w-full">
-            <AssessmentFlowStepper currentStep={stepperStep} hasPractice={false} />
+            <AssessmentFlowStepper currentStep={stepperStep} hasPractice={practiceScenarios.length > 0} />
           </div>
         )}
         {phase === 'landing' && (
@@ -715,7 +741,7 @@ export default function SituationalJudgementTest({
                   </div>
                   <h2 className="text-lg font-semibold text-foreground">Practice Questions</h2>
                 </div>
-                <p>The assessment opens with practice guidance so you can understand the best-and-worst format before the live questions. Practice is not scored and does not affect your final result.</p>
+                <p>The assessment opens with {practiceCountLabel} so you can understand the best-and-worst format before the live questions. Practice is not scored and does not affect your final result.</p>
               </div>
 
               <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
@@ -750,8 +776,8 @@ export default function SituationalJudgementTest({
           </div>
 
           <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
-            <Button size="lg" className="h-12" onClick={startAssessment}>
-              Begin scenarios
+            <Button size="lg" className="h-12" onClick={startPractice}>
+              {practiceScenarios.length > 0 ? 'Start practice scenario' : 'Begin scenarios'}
               <Play className="ml-2 h-4 w-4" aria-hidden="true" />
             </Button>
             <Button size="lg" variant="outline" className="h-12" onClick={() => setPhase('landing')}>
@@ -760,6 +786,72 @@ export default function SituationalJudgementTest({
           </div>
         </div>
       )}
+
+      {phase === 'practice' && activePracticeScenario ? (
+        <div className="mx-auto flex min-h-[560px] w-full flex-col justify-center py-6">
+          <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
+            <p className="font-semibold">Practice scenario — not scored</p>
+            <p className="mt-1 text-muted-foreground">
+              Use this to learn the format. You can close this window during practice without locking your assessment.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Practice {practiceIndex + 1}
+                </p>
+                <p className="mt-1 text-xl font-semibold text-foreground">{activePracticeScenario.title}</p>
+              </div>
+              <Badge variant="outline">Unscored</Badge>
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Situation
+            </p>
+            <p className="mt-3 text-lg leading-8 text-foreground">{activePracticeScenario.scenario}</p>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {activePracticeScenario.options.map(renderOption)}
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Select one most effective and one least effective response.
+            </p>
+            <Button onClick={submitPracticeScenario} disabled={!canSubmitPractice}>
+              Complete practice
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {phase === 'practice-complete' ? (
+        <div className="mx-auto flex min-h-[520px] w-full max-w-2xl flex-col justify-center py-6 text-center">
+          <div className="rounded-2xl border border-border bg-card p-8 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Practice complete
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-foreground">Ready for the live assessment?</p>
+            <p className="mt-4 text-sm leading-7 text-muted-foreground">
+              The {timeLimitLabel} timer starts when you begin the live scenarios. Closing the window before you start live questions will not lock your attempt.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button size="lg" className="h-12" onClick={startAssessment}>
+                Begin live scenarios
+                <Play className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Button>
+              <Button size="lg" variant="outline" className="h-12" onClick={() => setPhase('rules')}>
+                Review instructions
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {phase === 'scenario' && (
         <div className="mx-auto flex min-h-[560px] w-full flex-col justify-center py-6">

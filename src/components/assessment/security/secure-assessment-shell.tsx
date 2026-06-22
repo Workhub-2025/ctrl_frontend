@@ -35,7 +35,7 @@ export function SecureAssessmentShell({
   children,
   showPauseButton = true,
   enableFocusMonitoring = true,
-  integrityMonitoringActive = true,
+  integrityMonitoringActive = false,
   assessmentType,
   candidateSessionDocumentId = null,
 }: Readonly<SecureAssessmentShellProps>) {
@@ -133,7 +133,7 @@ export function SecureAssessmentShell({
 
   // --- FULLSCREEN MONITORING ---
   useEffect(() => {
-    if (!secureModeActive) return;
+    if (!secureModeActive || !integrityMonitoringActive) return;
 
     const handleFullscreenChange = () => {
       const active = checkIsFullscreen();
@@ -161,7 +161,7 @@ export function SecureAssessmentShell({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
     };
-  }, [secureModeActive, assessmentType, candidateSessionDocumentId, addIntegrityEvent]);
+  }, [secureModeActive, assessmentType, candidateSessionDocumentId, addIntegrityEvent, integrityMonitoringActive]);
 
   // --- WINDOW FOCUS & VISIBILITY MONITORING ---
   useEffect(() => {

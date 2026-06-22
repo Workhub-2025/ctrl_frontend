@@ -491,7 +491,7 @@ export default function TypingTest({
 
   // Auto-save after each completed run (results array grows by one element)
   useEffect(() => {
-    if (!enableAutoSave || results.length === 0) return;
+    if (!enableAutoSave || results.length === 0 || currentRunIndex < 1) return;
     const latest = results.at(-1)!;
     const progress: TypingTestProgress = {
       testType: 'typing',
@@ -628,7 +628,7 @@ export default function TypingTest({
 
     // Periodic auto-save every 15 s during a running phase
     let autoSaveIntervalId: ReturnType<typeof globalThis.setInterval> | undefined;
-    if (enableAutoSave) {
+    if (enableAutoSave && runIndexRef.current >= 1) {
       autoSaveIntervalId = globalThis.setInterval(() => {
         const latest = latestResultRef.current;
         const progress: TypingTestProgress = {

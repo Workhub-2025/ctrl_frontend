@@ -197,7 +197,12 @@ export function useAssessmentHeartbeat({
   }, [assessmentSlug, candidateSessionDocumentId, isLocked]);
 
   useEffect(() => {
-    if (!isActive || isLocked || !candidateSessionDocumentId) return;
+    if (!isActive || isLocked || !candidateSessionDocumentId) {
+      if (!isActive) {
+        startedRef.current = false;
+      }
+      return;
+    }
 
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       enterReconnectMode();
