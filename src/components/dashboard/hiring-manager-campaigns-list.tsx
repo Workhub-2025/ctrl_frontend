@@ -19,16 +19,8 @@ import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { portalAlertErrorClass, portalBadgeClass, portalPrimaryButtonClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
-
-function formatLastRefresh(value: number | null) {
-  if (!value) return "Not refreshed yet";
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(value));
-}
 
 function getAssessmentVersionSummary(settings?: Record<string, unknown> | null) {
   if (!settings || typeof settings !== "object") return [];
@@ -71,7 +63,7 @@ export function HiringManagerCampaignsList() {
   const isRefreshing = loading || isForceRefreshing;
 
   const refreshLabel = useMemo(
-    () => `Last refresh: ${formatLastRefresh(lastRefreshAt)}`,
+    () => formatPortalLastRefresh(lastRefreshAt),
     [lastRefreshAt]
   );
 

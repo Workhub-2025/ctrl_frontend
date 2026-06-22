@@ -20,9 +20,17 @@ export const portalPanelNestedClass = cn(
 export const portalHeroPanelClass =
   "relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md shadow-xl dark:border-white/10";
 
-/** Full-screen dialog / sheet shell for HM detail views. */
+/** Large portal dialog shell — theme-aware, matches default DialogContent + portal panels. */
 export const portalDialogShellClass =
-  "overflow-y-auto rounded-[1.5rem] border border-white/10 bg-gradient-to-b from-[#0e172e] to-[#080c16]/95 text-slate-100 shadow-2xl backdrop-blur-md dark:border-white/10";
+  "overflow-hidden rounded-[1.25rem] border border-border/60 bg-background/95 text-foreground shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#070b14]/90 dark:backdrop-blur-xl dark:shadow-[0_32px_96px_rgba(0,0,0,0.45)]";
+
+/** Layout helper for full-width HM detail dialogs. */
+export const portalDialogContentLayoutClass =
+  "flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none flex-col gap-0 p-0 [&>button]:hidden";
+
+/** Tooltip surface shared across portal score breakdowns and disabled controls. */
+export const portalTooltipContentClass =
+  "max-w-xs rounded-lg border border-border/60 bg-popover px-3 py-2.5 text-popover-foreground shadow-md dark:border-white/10";
 
 /** Progress bar fill used in occupancy and completion meters. */
 export const portalProgressBarClass =

@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PortalClock } from "@/components/dashboard/portal/portal-clock";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
@@ -72,6 +73,7 @@ function PortalMinimalHeader({
       )}
 
       <div className="flex shrink-0 items-center gap-1.5">
+        <PortalClock />
         <AccessibilityDropdown
           settings={accessibilitySettings}
           updateSettings={updateAccessibilitySettings}

@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Tooltip,
@@ -19,7 +17,6 @@ import {
   UserMinus,
   MoreVertical,
   CalendarClock,
-  MapPin,
   Globe,
   Building,
   Check,
@@ -27,8 +24,6 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
-  X,
-  ArrowLeft,
   Eye,
   LockOpen,
   RefreshCw,
@@ -45,12 +40,9 @@ import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-d
 import { areAllSessionCandidatesComplete } from "@/lib/hiring-manager/session-completion";
 import {
   portalBadgeClass,
-  portalDialogShellClass,
   portalIconWrapClass,
   portalIconWrapLgClass,
   portalLabelClass,
-  portalPageHeaderClass,
-  portalPanelClass,
   portalPanelElevatedClass,
   portalPanelNestedClass,
   portalProgressBarClass,
@@ -58,9 +50,20 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus, isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
-import { getAssessmentKey, isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
+import { isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
 import { CandidateEmailInvitesPanel } from "@/components/dashboard/candidate-email-invites-panel";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
+import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
+import {
+  PortalDetailHeader,
+  portalDetailDialogContentClass,
+} from "@/components/dashboard/portal/portal-dialog-ui";
+import {
+  formatInviteStatusLabel,
+  isCandidateJoined,
+} from "@/lib/hiring-manager/resolve-candidate-display-name";
+import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
+import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 
 type SessionCandidate = HiringManagerSessionListItem["candidates"][number];
@@ -86,7 +89,6 @@ type HiringManagerSessionDetailsDialogProps = {
   expectedAssessmentCount?: number;
   removingCandidateId?: string | null;
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
-  getResultsHref?: (candidate: SessionCandidate, session: HiringManagerSessionListItem) => string;
   onOpenResults?: (candidate: SessionCandidate) => void;
   assessmentStack?: string[];
   onUnlockCandidate?: (candidateSessionId: string) => void;
@@ -109,7 +111,6 @@ export function HiringManagerSessionDetailsDialog({
   expectedAssessmentCount,
   removingCandidateId,
   onKickCandidate,
-  getResultsHref,
   onOpenResults,
   assessmentStack,
   onUnlockCandidate,
@@ -194,12 +195,8 @@ export function HiringManagerSessionDetailsDialog({
         <DialogContent
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
-          className={cn(
-            portalDialogShellClass,
-            "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden p-0 [&>button]:hidden"
-          )}
+          className={portalDetailDialogContentClass}
         >
-          <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
           {workspace}
         </DialogContent>
       </Dialog>
@@ -265,122 +262,112 @@ function HiringManagerSessionWorkspace({
     session.location.toLowerCase().includes("http")
   );
 
+  const sessionDisplayName = getHmSessionDisplayName(session);
+
   return (
     <>
       <div className={cn("relative z-10 shrink-0", layout === "dialog" ? "px-6 pb-5 pt-6" : "pb-5")}>
-        <DialogHeader className={cn(portalPageHeaderClass, "mb-0 border-b-0 pb-0 text-left")}>
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-3.5">
-                    <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
-                      <CalendarClock className="h-5 w-5" />
-                    </span>
-                    <div className="min-w-0 space-y-1.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-                        Session workspace
-                      </p>
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <DialogTitle className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
-                          {campaignName || session.campaign}
-                        </DialogTitle>
-                        <Badge
-                          className={cn(
-                            "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
-                            getStatusTone(session.status)
-                          )}
+        <PortalDetailHeader
+          layout={layout}
+          eyebrow="Session workspace"
+          title={sessionDisplayName}
+          icon={CalendarClock}
+          badges={
+            <>
+              <Badge
+                className={cn(
+                  "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                  getStatusTone(session.status)
+                )}
+              >
+                {session.status}
+              </Badge>
+              <Badge
+                className={cn(
+                  "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                  portalBadgeClass
+                )}
+              >
+                {session.type}
+              </Badge>
+            </>
+          }
+          metadata={
+            <p className="max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
+              <span>{session.campaign}</span>
+              <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+              <span>{session.date}</span>
+              {session.startsAt &&
+              new Date(session.startsAt).getTime() > Date.now() &&
+              session.status === "Upcoming" ? (
+                <>
+                  <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+                  <span className={cn(portalBadgeClass, "inline-flex px-1.5 py-0 text-[10px] font-semibold normal-case tracking-normal")}>
+                    Scheduled
+                  </span>
+                </>
+              ) : null}
+              <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+              <span className="break-words">{session.location}</span>
+            </p>
+          }
+          onClose={onClose}
+          closeLabel="Close session workspace"
+          actions={
+            <>
+              {session.candidateCount === 0 && onDeleteSession ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={deletingSessionId === session.id}
+                  onClick={() => onDeleteSession(session.id)}
+                  className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50"
+                >
+                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                  {deletingSessionId === session.id ? "Deleting…" : "Delete session"}
+                </Button>
+              ) : null}
+              {session.status === "Live" &&
+              session.candidateCount > 0 &&
+              onUpdateSessionStatus ? (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            updatingSessionId === session.id ||
+                            !areAllSessionCandidatesComplete(
+                              session.candidates,
+                              expectedAssessmentCount
+                            )
+                          }
+                          onClick={() => onUpdateSessionStatus(session.id, "closed")}
+                          className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {session.status}
-                        </Badge>
-                        <Badge
-                          className={cn(
-                            "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
-                            portalBadgeClass
-                          )}
-                        >
-                          {session.type}
-                        </Badge>
-                      </div>
-                      <p className="max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
-                        <span>{session.date}</span>
-                        {session.startsAt &&
-                        new Date(session.startsAt).getTime() > Date.now() &&
-                        session.status === "Upcoming" ? (
-                          <>
-                            <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
-                            <span className={cn(portalBadgeClass, "inline-flex px-1.5 py-0 text-[10px] font-semibold normal-case tracking-normal")}>
-                              Scheduled
-                            </span>
-                          </>
-                        ) : null}
-                        <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
-                        <span className="break-words">{session.location}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex shrink-0 flex-wrap items-center gap-2">
-                    {session.candidateCount === 0 && onDeleteSession ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={deletingSessionId === session.id}
-                        onClick={() => onDeleteSession(session.id)}
-                        className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50"
-                      >
-                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                        {deletingSessionId === session.id ? "Deleting…" : "Delete session"}
-                      </Button>
+                          {updatingSessionId === session.id ? "Closing…" : "Close session"}
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!areAllSessionCandidatesComplete(
+                      session.candidates,
+                      expectedAssessmentCount
+                    ) ? (
+                      <TooltipContent className="max-w-xs">
+                        All candidates must complete their assessments before closing this session.
+                      </TooltipContent>
                     ) : null}
-                    {session.status === "Live" &&
-                    session.candidateCount > 0 &&
-                    onUpdateSessionStatus ? (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <span className="inline-flex">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                disabled={
-                                  updatingSessionId === session.id ||
-                                  !areAllSessionCandidatesComplete(
-                                    session.candidates,
-                                    expectedAssessmentCount
-                                  )
-                                }
-                                onClick={() => onUpdateSessionStatus(session.id, "closed")}
-                                className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                {updatingSessionId === session.id ? "Closing…" : "Close session"}
-                              </Button>
-                            </span>
-                          </TooltipTrigger>
-                          {!areAllSessionCandidatesComplete(
-                            session.candidates,
-                            expectedAssessmentCount
-                          ) ? (
-                            <TooltipContent className="max-w-xs">
-                              All candidates must complete their assessments before closing this session.
-                            </TooltipContent>
-                          ) : null}
-                        </Tooltip>
-                      </TooltipProvider>
-                    ) : null}
-                    {layout === "dialog" ? (
-                      <button
-                        type="button"
-                        onClick={onClose}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-white"
-                        aria-label="Close"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </DialogHeader>
-              </div>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : null}
+            </>
+          }
+        />
+      </div>
 
               <div className={cn("relative z-10 space-y-6", layout === "dialog" && "flex-1 overflow-y-auto px-6 pb-6")}>
               {/* Metric Cards */}
@@ -516,18 +503,14 @@ function HiringManagerSessionWorkspace({
                           result: r,
                         }));
 
-                      // Compute overall weighted score (equal weights)
                       const stackForWeights = assessmentStack || finalDisplayList.map((i) => i.name);
-                      const equalWeight = stackForWeights.length > 0 ? 100 / stackForWeights.length : 0;
-                      let overallScore = 0;
-                      stackForWeights.forEach((name) => {
-                        const matched = finalDisplayList.find((i) => i.name === name || isSameAssessment(name, i.name));
-                        if (matched?.status === "completed" && matched.result?.numericScore !== null && matched.result?.numericScore !== undefined) {
-                          overallScore += (matched.result.numericScore * equalWeight) / 100;
-                        }
-                      });
-                      const roundedOverall = Math.round(overallScore);
-                      const hasScore = progress.completed > 0;
+                      const weightedStack = stackForWeights.map((name) => ({
+                        displayName: name,
+                        weight: stackForWeights.length > 0 ? 100 / stackForWeights.length : 0,
+                      }));
+                      const overallScore = computeWeightedCompositeScore(weightedStack, candidate.results ?? []);
+                      const inviteLabel = formatInviteStatusLabel(candidate.inviteStatus);
+                      const hasJoined = isCandidateJoined(candidate.inviteStatus);
                       const sessionStartsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
                       const isUnlockWindowOpen =
                         !sessionStartsAtTime ||
@@ -556,7 +539,13 @@ function HiringManagerSessionWorkspace({
                             className="grid cursor-pointer select-none gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_140px_auto] sm:items-center"
                           >
                             <div className="flex min-w-0 items-center gap-3">
-                              <span className={cn(portalIconWrapLgClass, "text-xs font-semibold uppercase")}>
+                              <span className={cn(portalIconWrapLgClass, "relative text-xs font-semibold uppercase")}>
+                                {hasJoined ? (
+                                  <span
+                                    className="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.55)] ring-2 ring-emerald-400/25"
+                                    aria-hidden="true"
+                                  />
+                                ) : null}
                                 {initials}
                               </span>
                               <div className="min-w-0">
@@ -564,6 +553,16 @@ function HiringManagerSessionWorkspace({
                                   <h4 className="text-sm font-semibold leading-snug tracking-tight text-foreground">
                                     {candidate.name}
                                   </h4>
+                                  {inviteLabel ? (
+                                    <Badge
+                                      className={cn(
+                                        "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold capitalize",
+                                        portalBadgeClass
+                                      )}
+                                    >
+                                      {inviteLabel}
+                                    </Badge>
+                                  ) : null}
                                   <Badge
                                     className={cn(
                                       "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
@@ -610,7 +609,7 @@ function HiringManagerSessionWorkspace({
                                   )}
                                 </Button>
                               ) : (
-                                <ScoreRing value={hasScore ? roundedOverall : null} />
+                                <ScoreRing value={overallScore} />
                               )}
                             </div>
 
@@ -619,30 +618,13 @@ function HiringManagerSessionWorkspace({
                               {!showUnlockControl ? (
                                 <div className="hidden min-w-[130px] border-r border-border/50 pr-4 dark:border-white/10 sm:block">
                                   <div className="text-right">
-                                    <p className={portalLabelClass}>Progress</p>
-                                    <p className="text-sm font-semibold text-foreground tabular-nums">
-                                      {progress.completed}/{progress.total}
-                                    </p>
-                                  </div>
-                                  <div className="mt-2 flex justify-end gap-1">
-                                    {finalDisplayList.map((item, idx) => {
-                                      const isCompleted = item.status === "completed";
-                                      const isAbandoned = item.status === "abandoned";
-                                      return (
-                                        <span
-                                          key={`${item.name}-${idx}`}
-                                          title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? "Completed" : "Pending"}`}
-                                          className={cn(
-                                            "h-2.5 w-6 rounded-full border transition-colors",
-                                            isAbandoned
-                                              ? "border-border/60 bg-muted/50"
-                                              : isCompleted
-                                                ? "border-primary/40 bg-primary"
-                                                : "border-border/60 bg-muted/30 dark:border-white/10 dark:bg-white/[0.04]"
-                                          )}
-                                        />
-                                      );
-                                    })}
+                                    <p className={portalLabelClass}>Overall score</p>
+                                    <div className="mt-1 flex justify-end">
+                                      <AssessmentOverallScoreCell
+                                        assessmentStack={stackForWeights}
+                                        results={candidate.results ?? []}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
                               ) : null}
@@ -770,51 +752,31 @@ export function CandidateResultsDialog({
       <DialogContent
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
-        className={cn(
-          portalDialogShellClass,
-          "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden p-0 [&>button]:hidden"
-        )}
+        className={portalDetailDialogContentClass}
       >
-        <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-
         <div className="relative z-10 shrink-0 px-6 pb-5 pt-6">
-          <DialogHeader className={cn(portalPageHeaderClass, "mb-0 border-b-0 pb-0 text-left")}>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex min-w-0 items-start gap-3.5">
-                <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
-                  <BarChart3 className="h-5 w-5" />
-                </span>
-                <div className="min-w-0 space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-                    Candidate report
-                  </p>
-                  <DialogTitle className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
-                    {resultsDialog.candidateName}
-                  </DialogTitle>
-                  {metadataParts.length > 0 ? (
-                    <p className="max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
-                      {metadataParts.map((part, index) => (
-                        <span key={part}>
-                          {index > 0 ? (
-                            <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
-                          ) : null}
-                          {part}
-                        </span>
-                      ))}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-white"
-                aria-label="Close results"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </DialogHeader>
+          <PortalDetailHeader
+            layout="dialog"
+            eyebrow="Candidate report"
+            title={resultsDialog.candidateName}
+            icon={BarChart3}
+            onClose={onClose}
+            closeLabel="Close results"
+            metadata={
+              metadataParts.length > 0 ? (
+                <p className="max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
+                  {metadataParts.map((part, index) => (
+                    <span key={part}>
+                      {index > 0 ? (
+                        <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+                      ) : null}
+                      {part}
+                    </span>
+                  ))}
+                </p>
+              ) : null
+            }
+          />
         </div>
 
         <div className="relative z-10 flex-1 overflow-y-auto px-6 pb-6">

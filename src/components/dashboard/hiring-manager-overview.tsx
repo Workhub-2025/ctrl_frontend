@@ -33,16 +33,9 @@ import {
   portalPanelClass,
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
-
-function formatLastRefresh(value: number | null) {
-  if (!value) return "Not refreshed yet";
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(value));
-}
+import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
 
 export function HiringManagerOverview() {
   const {
@@ -157,7 +150,7 @@ export function HiringManagerOverview() {
         <DashboardInfoCard interactive={false}>
           <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
             <CardTitle className="text-base font-bold text-foreground">Session queue</CardTitle>
-            <p className="text-xs text-muted-foreground">{formatLastRefresh(lastRefreshAt)}</p>
+            <p className="text-xs text-muted-foreground">{formatPortalLastRefresh(lastRefreshAt)}</p>
           </CardHeader>
           <CardContent className="space-y-3 pt-5 pl-6">
             {upcomingSessions.length ? (
@@ -179,8 +172,8 @@ export function HiringManagerOverview() {
                   <div key={session.id} className={cn(portalPanelClass, "space-y-2 p-3")}>
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-foreground">{session.campaign}</p>
-                        <p className="truncate text-xs text-muted-foreground">{session.date} · {session.location}</p>
+                        <p className="truncate text-sm font-bold text-foreground">{getHmSessionDisplayName(session)}</p>
+                        <p className="truncate text-xs text-muted-foreground">{session.campaign} · {session.date} · {session.location}</p>
                       </div>
                       <span className={dashboardInfoMetaClassName}>{session.status}</span>
                     </div>
@@ -206,7 +199,7 @@ export function HiringManagerOverview() {
                         {session.accessValue}
                       </span>
                       <Link
-                        href="/hiring-manager-dashboard/sessions/"
+                        href={`/hiring-manager-dashboard/sessions/${session.id}`}
                         className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors"
                       >
                         View details

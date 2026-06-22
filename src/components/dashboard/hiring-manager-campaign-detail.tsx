@@ -26,22 +26,27 @@ import {
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
+import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
 import {
   portalPanelElevatedClass,
   portalPanelNestedClass,
+  portalBadgeClass,
+  portalTooltipContentClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import {
+  formatInviteStatusLabel,
+  isCandidateJoined,
+} from "@/lib/hiring-manager/resolve-candidate-display-name";
+import {
   CandidateResultsDialog,
-  HiringManagerSessionDetailsDialog,
   type ResultsDialogState,
 } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
 } from "@/services/hiring-manager-portal-client.service";
-
-type CampaignSession = HiringManagerCampaignDetail["assessmentSessions"][number];
 
 type HiringManagerCampaignDetailProps = {
   campaignId: string;
@@ -76,10 +81,7 @@ export function HiringManagerCampaignDetailView({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
-  const [selectedSession, setSelectedSession] = useState<CampaignSession | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
-  const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
 
   const loadCampaign = useCallback(async (force = false) => {
     const startTime = Date.now();
@@ -89,11 +91,6 @@ export function HiringManagerCampaignDetailView({
     try {
       const data = await HiringManagerPortalClientService.getCampaignDetail(campaignId, { force });
       setCampaign(data);
-      setSelectedSession((current) =>
-        current
-          ? data?.assessmentSessions.find((session) => session.id === current.id) ?? null
-          : null
-      );
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -142,50 +139,6 @@ export function HiringManagerCampaignDetailView({
     }
   };
 
-  const removeCandidate = async (sessionId: string, candidateSessionId: string) => {
-    const confirmed = window.confirm(
-      "Kick this candidate from the session? They will need a fresh invite to rejoin."
-    );
-    if (!confirmed) return;
-
-    setRemovingCandidateId(candidateSessionId);
-    setError(null);
-    try {
-      await HiringManagerPortalClientService.removeCandidateFromSession({
-        sessionId,
-        candidateSessionId,
-        reason: "Removed by hiring manager",
-      });
-      await loadCampaign(true);
-    } catch (removeError) {
-      setError(
-        removeError instanceof Error
-          ? removeError.message
-          : "Candidate could not be removed from the session."
-      );
-    } finally {
-      setRemovingCandidateId(null);
-    }
-  };
-
-  const handleUnlockCandidate = async (candidateSessionId: string) => {
-    setUnlockingCandidateId(candidateSessionId);
-    setError(null);
-    try {
-      await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
-      await loadCampaign(true);
-    } catch (err) {
-      console.error(err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Candidate session could not be unlocked."
-      );
-    } finally {
-      setUnlockingCandidateId(null);
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="rounded-lg border border-white/10 bg-[#0b1220] p-6 text-sm text-slate-300">
@@ -216,7 +169,7 @@ export function HiringManagerCampaignDetailView({
 
   const canEditAssessmentStack = campaign.sessions === 0;
   const editCampaignLockedReason =
-    "Delete all sessions before editing the assessment stack for this campaign.";
+    "Campaign cannot be edited after sessions have been created.";
 
   return (
     <div className="max-w-7xl space-y-6">
@@ -234,36 +187,38 @@ export function HiringManagerCampaignDetailView({
 
         <TooltipProvider>
           <div className="flex flex-wrap items-center gap-3">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    asChild={canEditAssessmentStack}
-                    disabled={!canEditAssessmentStack}
-                    className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {canEditAssessmentStack ? (
-                      <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
-                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                        Edit campaign
-                      </Link>
-                    ) : (
-                      <>
-                        <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                        Edit campaign
-                      </>
-                    )}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              {!canEditAssessmentStack ? (
-                <TooltipContent className="max-w-xs border-white/10 bg-slate-950 text-slate-100">
+            {canEditAssessmentStack ? (
+              <Button
+                type="button"
+                variant="outline"
+                asChild
+                className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+              >
+                <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                  Edit campaign
+                </Link>
+              </Button>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex cursor-not-allowed">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled
+                      className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                      Edit campaign
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className={portalTooltipContentClass}>
                   {editCampaignLockedReason}
                 </TooltipContent>
-              ) : null}
-            </Tooltip>
+              </Tooltip>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -401,22 +356,24 @@ export function HiringManagerCampaignDetailView({
                     ].join(" ")}>
                       {session.status}
                     </Badge>
-                    <span className="break-all text-sm font-semibold text-white">
-                      {session.accessValue}
+                    <span className="break-words text-sm font-semibold text-white">
+                      {getHmSessionDisplayName(session)}
                     </span>
                   </div>
                   <p className="mt-2 text-xs text-slate-400">
-                    {session.date} · {session.location}
+                    {session.campaign} · {session.date} · {session.location}
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
                   className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
-                  onClick={() => setSelectedSession(session)}
+                  asChild
                 >
-                  <Eye className="mr-1.5 h-3.5 w-3.5" />
-                  View details
+                  <Link href={`/hiring-manager-dashboard/sessions/${session.id}`}>
+                    <Eye className="mr-1.5 h-3.5 w-3.5" />
+                    View details
+                  </Link>
                 </Button>
               </div>
             ))
@@ -446,93 +403,52 @@ export function HiringManagerCampaignDetailView({
                   <tr className="border-b border-white/10 bg-white/[0.02] text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
                     <th className="p-3">Candidate</th>
                     <th className="p-3">Session</th>
-                    <th className="p-3">Assessments Progress</th>
+                    <th className="p-3">Overall score</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5 text-slate-200">
                   {campaign.joinedCandidates.map((candidate) => {
                     const results = candidate.results ?? [];
-                    const totalCount = Math.max(
-                      candidate.assessmentStack?.length ?? campaign.assessmentStack.length,
-                      results.length,
-                      1
-                    );
-                    const completedCount = results.filter(
-                      (r) => r.completedAt || r.numericScore !== null
-                    ).length;
-                    const completionPercent = Math.round((completedCount / totalCount) * 100);
-                    const progressStatus =
-                      completedCount >= totalCount
-                        ? "completed"
-                        : completedCount > 0
-                          ? "in_progress"
-                          : "not_started";
+                    const assessmentStack = candidate.assessmentStack ?? campaign.assessmentStack;
+                    const inviteLabel = formatInviteStatusLabel(candidate.inviteStatus);
+                    const hasJoined = isCandidateJoined(candidate.inviteStatus);
 
                     return (
                       <tr key={candidate.id} className="hover:bg-white/[0.01] transition-colors">
                         <td className="p-3">
-                          <div className="font-semibold text-white">{candidate.name}</div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">{candidate.email}</div>
-                          {candidate.inviteStatus ? (
-                            <Badge variant="outline" className="mt-1 rounded-md px-1.5 py-0 text-[10px] capitalize">
-                              {candidate.inviteStatus === "registered" ? "Joined" : candidate.inviteStatus}
-                            </Badge>
-                          ) : null}
+                          <div className="flex items-center gap-2">
+                            {hasJoined ? (
+                              <span
+                                className="relative flex h-2 w-2 shrink-0"
+                                title="Joined session"
+                                aria-hidden="true"
+                              >
+                                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400/30 blur-[2px]" />
+                                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400/80 shadow-[0_0_6px_rgba(52,211,153,0.55)]" />
+                              </span>
+                            ) : null}
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="font-semibold text-white">{candidate.name}</span>
+                                {inviteLabel ? (
+                                  <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold capitalize", portalBadgeClass)}>
+                                    {inviteLabel}
+                                  </Badge>
+                                ) : null}
+                              </div>
+                              <div className="text-[10px] text-slate-400 mt-0.5">{candidate.email}</div>
+                            </div>
+                          </div>
                         </td>
                         <td className="p-3 text-slate-300">
                           {candidate.sessionName ?? "Main Session"}
                         </td>
                         <td className="p-3">
-                          {completedCount >= totalCount ? (
-                            (() => {
-                              const results = candidate.results ?? [];
-                              const stack = candidate.assessmentStack ?? campaign.assessmentStack;
-                              const equalWeight = stack.length > 0 ? 100 / stack.length : 0;
-                              let oScore = 0;
-                              for (const r of results) {
-                                if ((r.completedAt || r.numericScore !== null) && r.numericScore !== null && r.numericScore !== undefined) {
-                                  oScore += (r.numericScore * equalWeight) / 100;
-                                }
-                              }
-                              const roundedScore = Math.round(oScore);
-                              const scoreHue = Math.round(roundedScore * 1.2);
-                              const circumference = 2 * Math.PI * 12;
-                              return (
-                                <div className="flex items-center gap-2">
-                                  <div className="relative h-8 w-8">
-                                    <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32" aria-hidden="true">
-                                      <circle cx="16" cy="16" r="12" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                                      <circle cx="16" cy="16" r="12" fill="none" stroke={`hsl(${scoreHue}, 72%, 58%)`} strokeLinecap="round" strokeWidth="3" strokeDasharray={circumference} strokeDashoffset={circumference * (1 - roundedScore / 100)} />
-                                    </svg>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                      <span className="text-[9px] font-black tabular-nums text-white">{roundedScore}</span>
-                                    </div>
-                                  </div>
-                                  <span className="text-xs font-bold text-muted-foreground">{roundedScore}%</span>
-                                </div>
-                              );
-                            })()
-                          ) : (
-                            <div className="flex items-center gap-3 max-w-[200px]">
-                              <div className="h-1.5 flex-1 rounded-full bg-white/10 overflow-hidden">
-                                <div
-                                  className={[
-                                    "h-full rounded-full transition-all duration-300",
-                                    progressStatus === "completed"
-                                      ? "bg-primary"
-                                      : progressStatus === "in_progress"
-                                        ? "bg-orange-400"
-                                        : "bg-slate-500"
-                                  ].join(" ")}
-                                  style={{ width: `${completionPercent}%` }}
-                                />
-                              </div>
-                              <span className="font-semibold shrink-0 text-slate-300">
-                                {completedCount}/{totalCount}
-                              </span>
-                            </div>
-                          )}
+                          <AssessmentOverallScoreCell
+                            assessmentStack={assessmentStack}
+                            results={results}
+                          />
                         </td>
                         <td className="p-3 text-right">
                           <Button
@@ -564,25 +480,6 @@ export function HiringManagerCampaignDetailView({
           )}
         </CardContent>
       </Card>
-
-      <HiringManagerSessionDetailsDialog
-        session={selectedSession}
-        open={Boolean(selectedSession)}
-        onOpenChange={(open) => !open && setSelectedSession(null)}
-        campaignName={campaign.name}
-        campaignRole={campaign.role}
-        campaignId={campaign.id}
-        expectedAssessmentCount={campaign.assessmentStack.length}
-        removingCandidateId={removingCandidateId}
-        onKickCandidate={removeCandidate}
-        getResultsHref={(candidate) =>
-          `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&candidateSessionId=${candidate.id}`
-        }
-        assessmentStack={campaign.assessmentStack}
-        onUnlockCandidate={handleUnlockCandidate}
-        unlockingCandidateId={unlockingCandidateId}
-        onInvitesSent={() => loadCampaign(true)}
-      />
 
       <CandidateResultsDialog
         resultsDialog={selectedReport}

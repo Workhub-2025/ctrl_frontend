@@ -11,12 +11,9 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import {
   PlayCircle,
-  X,
 } from "lucide-react";
 import { useState } from "react";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
@@ -26,12 +23,14 @@ import {
 } from "@/components/dashboard/dashboard-info-card";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import {
+  PortalDetailHeader,
+  portalDetailDialogContentClass,
+} from "@/components/dashboard/portal/portal-dialog-ui";
+import {
   portalAlertInfoClass,
   portalBadgeClass,
-  portalDialogShellClass,
   portalIconWrapLgClass,
   portalLabelClass,
-  portalPageHeaderClass,
   portalPanelClass,
   portalPanelNestedClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
@@ -111,68 +110,33 @@ export function HiringManagerAssessmentLibrary({
       </div>
 
       <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent
-          className={cn(
-            portalDialogShellClass,
-            "flex max-h-[min(86dvh,900px)] max-w-3xl flex-col gap-0 overflow-hidden p-0 [&>button]:hidden"
-          )}
-        >
+        <DialogContent className={cn(portalDetailDialogContentClass, "max-w-3xl")}>
           {selected ? (
             <>
-              <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-
               <div className="relative z-10 shrink-0 px-6 pb-5 pt-6">
-                <DialogHeader className={cn(portalPageHeaderClass, "mb-0 border-b-0 pb-0 text-left")}>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex min-w-0 items-start gap-3.5">
-                      {(() => {
-                        const Icon = getAssessmentCatalogueIcon(selected.slug);
-                        return (
-                          <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
-                            <Icon className="h-5 w-5" />
-                          </span>
-                        );
-                      })()}
-                      <div className="min-w-0 space-y-1.5">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-                          Assessment library
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <DialogTitle className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
-                            {selected.title}
-                          </DialogTitle>
-                          <Badge
-                            className={cn(
-                              "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
-                              portalBadgeClass
-                            )}
-                          >
-                            {selected.duration}
-                          </Badge>
-                          <Badge
-                            className={cn(
-                              "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
-                              portalBadgeClass
-                            )}
-                          >
-                            {selected.slug}
-                          </Badge>
-                        </div>
-                        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                          {selected.summary}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setSelected(null)}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-white"
-                      aria-label="Close assessment details"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </DialogHeader>
+                <PortalDetailHeader
+                  layout="dialog"
+                  eyebrow="Assessment library"
+                  title={selected.title}
+                  icon={getAssessmentCatalogueIcon(selected.slug)}
+                  onClose={() => setSelected(null)}
+                  closeLabel="Close assessment details"
+                  badges={
+                    <>
+                      <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold", portalBadgeClass)}>
+                        {selected.duration}
+                      </Badge>
+                      <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold", portalBadgeClass)}>
+                        {selected.slug}
+                      </Badge>
+                    </>
+                  }
+                  metadata={
+                    <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                      {selected.summary}
+                    </p>
+                  }
+                />
               </div>
 
               <div className="relative z-10 flex-1 space-y-5 overflow-y-auto px-6 pb-6">

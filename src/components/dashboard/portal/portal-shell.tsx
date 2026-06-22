@@ -33,6 +33,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { PortalClock } from "@/components/dashboard/portal/portal-clock";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
@@ -81,6 +82,7 @@ function PortalHeaderBar({
         <p className="truncate text-xs text-muted-foreground sm:hidden">{activeLabel}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
+        <PortalClock />
         <AccessibilityDropdown
           settings={accessibilitySettings}
           updateSettings={updateAccessibilitySettings}

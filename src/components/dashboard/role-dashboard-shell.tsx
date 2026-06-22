@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import type { AccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { useAuthStore } from "@/store/auth.store";
+import { PortalClock } from "@/components/dashboard/portal/portal-clock";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,6 +97,7 @@ function RoleDashboardHeader({
 
       {/* User Actions & Settings */}
       <div className="flex items-center gap-2">
+        <PortalClock />
         <AccessibilityDropdown
           settings={accessibilitySettings}
           updateSettings={updateAccessibilitySettings}

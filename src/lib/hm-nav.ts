@@ -88,7 +88,10 @@ export function getHmBreadcrumbs(pathname: string) {
   const crumbs: Array<{ label: string; href?: string }> = [
     { label: "Hiring manager", href: "/hiring-manager-dashboard" },
   ];
-  const segment = path.split("/").pop() ?? "";
+  const segments = path.split("/").filter(Boolean);
+  const hmIndex = segments.indexOf("hiring-manager-dashboard");
+  const routeSegments = hmIndex >= 0 ? segments.slice(hmIndex + 1) : segments;
+
   const labels: Record<string, string> = {
     campaigns: "Campaigns",
     sessions: "Sessions",
@@ -97,8 +100,24 @@ export function getHmBreadcrumbs(pathname: string) {
     "assessment-recovery": "Assessment recovery",
     support: "Help & support",
     create: "Create campaign",
+    edit: "Edit campaign",
   };
-  crumbs.push({ label: labels[segment] ?? segment });
+
+  if (routeSegments.length === 0) {
+    crumbs.push({ label: "Overview" });
+    return crumbs;
+  }
+
+  const [section, detailId] = routeSegments;
+  const sectionLabel = labels[section] ?? section;
+
+  if (detailId && (section === "sessions" || section === "campaigns" || section === "candidates")) {
+    crumbs.push({ label: sectionLabel, href: `/hiring-manager-dashboard/${section}` });
+    crumbs.push({ label: section === "sessions" ? "Session detail" : detailId });
+    return crumbs;
+  }
+
+  crumbs.push({ label: labels[section] ?? section });
   return crumbs;
 }
 

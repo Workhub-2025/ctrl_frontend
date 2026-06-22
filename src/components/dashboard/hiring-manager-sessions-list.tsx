@@ -61,14 +61,8 @@ import {
   type HiringManagerSessionListItem,
 } from "@/services/hiring-manager-portal-client.service";
 
-function formatLastRefresh(value: number | null) {
-  if (!value) return "Not refreshed yet";
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(value));
-}
+import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
+import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
 
 export function HiringManagerSessionsList() {
   const {
@@ -185,7 +179,7 @@ export function HiringManagerSessionsList() {
   const isRefreshing = loading || isForceRefreshing;
 
   const refreshLabel = useMemo(
-    () => `Last refresh: ${formatLastRefresh(lastRefreshAt)}`,
+    () => formatPortalLastRefresh(lastRefreshAt),
     [lastRefreshAt]
   );
 
@@ -423,9 +417,9 @@ export function HiringManagerSessionsList() {
                 <div className={cn(portalIconWrapLgClass, "mb-3 rounded-full")}>
                   <Check className="h-6 w-6" />
                 </div>
-                <h3 className="text-sm font-bold text-white">Ready for Candidates</h3>
+                <h3 className="text-sm font-bold text-white">{getHmSessionDisplayName(createdSession)}</h3>
                 <p className="mt-1 max-w-[240px] text-[11px] text-slate-400">
-                  Share this access code with candidates to allow them to take the assessments.
+                  Share the access code below so candidates can join this session.
                 </p>
               </div>
 
@@ -862,10 +856,10 @@ export function HiringManagerSessionsList() {
                   {/* Campaign Name & Details */}
                   <div className="space-y-1">
                     <h2 className="break-words text-base font-bold leading-snug text-foreground">
-                      {session.campaign}
+                      {getHmSessionDisplayName(session)}
                     </h2>
                     <p className="break-words text-xs font-medium leading-5 text-muted-foreground">
-                      {session.date} · {session.location}
+                      {session.campaign} · {session.date} · {session.location}
                     </p>
                   </div>
 
@@ -920,7 +914,7 @@ export function HiringManagerSessionsList() {
                           variant="outline"
                           size="sm"
                           disabled={deletingSessionId === session.id}
-                          onClick={() => deleteSession(session.id, session.campaign)}
+                          onClick={() => deleteSession(session.id, getHmSessionDisplayName(session))}
                           className="h-8 rounded-lg border-red-500/20 bg-transparent px-3 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
                         >
                           <Trash2 className="mr-1.5 h-3.5 w-3.5" />
