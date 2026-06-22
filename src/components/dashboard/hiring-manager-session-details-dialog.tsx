@@ -33,6 +33,7 @@ import {
   LockOpen,
   RefreshCw,
   Trash2,
+  BarChart3,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,13 +46,19 @@ import { areAllSessionCandidatesComplete } from "@/lib/hiring-manager/session-co
 import {
   portalBadgeClass,
   portalDialogShellClass,
+  portalIconWrapClass,
+  portalIconWrapLgClass,
+  portalLabelClass,
+  portalPageHeaderClass,
   portalPanelClass,
   portalPanelElevatedClass,
+  portalPanelNestedClass,
   portalProgressBarClass,
+  portalStatTileClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus, isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
-import { isKnownAssessmentSlug, normalizeAssessmentSlugInput, normalizeSlug, resolveAssessmentSlug } from "@/lib/assessment-slug";
+import { getAssessmentKey, isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
 import { CandidateEmailInvitesPanel } from "@/components/dashboard/candidate-email-invites-panel";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
@@ -72,6 +79,7 @@ type HiringManagerSessionDetailsDialogProps = {
   session: HiringManagerSessionListItem | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  layout?: "dialog" | "page";
   campaignName?: string;
   campaignRole?: string;
   campaignId?: string;
@@ -79,6 +87,7 @@ type HiringManagerSessionDetailsDialogProps = {
   removingCandidateId?: string | null;
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
   getResultsHref?: (candidate: SessionCandidate, session: HiringManagerSessionListItem) => string;
+  onOpenResults?: (candidate: SessionCandidate) => void;
   assessmentStack?: string[];
   onUnlockCandidate?: (candidateSessionId: string) => void;
   unlockingCandidateId?: string | null;
@@ -93,6 +102,7 @@ export function HiringManagerSessionDetailsDialog({
   session,
   open,
   onOpenChange,
+  layout = "dialog",
   campaignName,
   campaignRole,
   campaignId,
@@ -100,6 +110,7 @@ export function HiringManagerSessionDetailsDialog({
   removingCandidateId,
   onKickCandidate,
   getResultsHref,
+  onOpenResults,
   assessmentStack,
   onUnlockCandidate,
   unlockingCandidateId,
@@ -132,6 +143,10 @@ export function HiringManagerSessionDetailsDialog({
   };
 
   const handleOpenResults = (candidate: SessionCandidate) => {
+    if (onOpenResults) {
+      onOpenResults(candidate);
+      return;
+    }
     setResultsDialog({
       candidateId: candidate.id,
       campaignId: campaignId ?? "",
@@ -143,6 +158,36 @@ export function HiringManagerSessionDetailsDialog({
     });
   };
 
+  const workspace = session ? (
+    <HiringManagerSessionWorkspace
+      session={session}
+      layout={layout}
+      campaignName={campaignName}
+      expectedAssessmentCount={expectedAssessmentCount}
+      removingCandidateId={removingCandidateId}
+      onKickCandidate={onKickCandidate}
+      assessmentStack={assessmentStack}
+      onUnlockCandidate={onUnlockCandidate}
+      unlockingCandidateId={unlockingCandidateId}
+      onUpdateSessionStatus={onUpdateSessionStatus}
+      updatingSessionId={updatingSessionId}
+      onDeleteSession={onDeleteSession}
+      deletingSessionId={deletingSessionId}
+      onInvitesSent={onInvitesSent}
+      onClose={handleClose}
+      onOpenResults={handleOpenResults}
+      copiedCode={copiedCode}
+      setCopiedCode={setCopiedCode}
+      expandedCandidateId={expandedCandidateId}
+      toggleCandidateExpand={toggleCandidateExpand}
+      currentTime={currentTime}
+    />
+  ) : null;
+
+  if (layout === "page") {
+    return workspace;
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={() => { }}>
@@ -151,46 +196,136 @@ export function HiringManagerSessionDetailsDialog({
           onEscapeKeyDown={(e) => e.preventDefault()}
           className={cn(
             portalDialogShellClass,
-            "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-5 p-6 [&>button]:hidden"
+            "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden p-0 [&>button]:hidden"
           )}
         >
-          {/* Ambient glows */}
           <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-          <div className="pointer-events-none absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
+          {workspace}
+        </DialogContent>
+      </Dialog>
 
-          {session && (
-            <>
-              {/* Compute isInPerson for this session */}
-              {(() => {
-                const isInPerson = !(session.location.toLowerCase().includes('zoom') || session.location.toLowerCase().includes('remote') || session.location.toLowerCase().includes('http'));
-                return (
-                  <>
-              {/* Header */}
-              <DialogHeader className="relative z-10 flex flex-col gap-1.5 border-b border-white/5 pb-4 text-left">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Workspace</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2.5">
-                      <DialogTitle className="text-xl font-bold leading-snug text-white">
-                        {campaignName || session.campaign}
-                      </DialogTitle>
-                      <Badge className={[
-                        "rounded-md border-none text-[10px] font-bold px-2.5 py-1 uppercase tracking-wider shadow-sm shrink-0",
-                        getStatusTone(session.status)
-                      ].join(" ")}>
-                        {session.status}
-                      </Badge>
+      <CandidateResultsDialog
+        resultsDialog={resultsDialog}
+        onClose={() => setResultsDialog(null)}
+      />
+    </>
+  );
+}
+
+type HiringManagerSessionWorkspaceProps = {
+  session: HiringManagerSessionListItem;
+  layout: "dialog" | "page";
+  campaignName?: string;
+  expectedAssessmentCount?: number;
+  removingCandidateId?: string | null;
+  onKickCandidate?: (sessionId: string, candidateId: string) => void;
+  assessmentStack?: string[];
+  onUnlockCandidate?: (candidateSessionId: string) => void;
+  unlockingCandidateId?: string | null;
+  onUpdateSessionStatus?: (sessionId: string, status: "closed") => void;
+  updatingSessionId?: string | null;
+  onDeleteSession?: (sessionId: string) => void;
+  deletingSessionId?: string | null;
+  onInvitesSent?: () => void | Promise<void>;
+  onClose: () => void;
+  onOpenResults: (candidate: SessionCandidate) => void;
+  copiedCode: boolean;
+  setCopiedCode: (value: boolean) => void;
+  expandedCandidateId: string | null;
+  toggleCandidateExpand: (candidateId: string) => void;
+  currentTime: number;
+};
+
+function HiringManagerSessionWorkspace({
+  session,
+  layout,
+  campaignName,
+  expectedAssessmentCount,
+  removingCandidateId,
+  onKickCandidate,
+  assessmentStack,
+  onUnlockCandidate,
+  unlockingCandidateId,
+  onUpdateSessionStatus,
+  updatingSessionId,
+  onDeleteSession,
+  deletingSessionId,
+  onInvitesSent,
+  onClose,
+  onOpenResults,
+  copiedCode,
+  setCopiedCode,
+  expandedCandidateId,
+  toggleCandidateExpand,
+  currentTime,
+}: HiringManagerSessionWorkspaceProps) {
+  const isInPerson = !(
+    session.location.toLowerCase().includes("zoom") ||
+    session.location.toLowerCase().includes("remote") ||
+    session.location.toLowerCase().includes("http")
+  );
+
+  return (
+    <>
+      <div className={cn("relative z-10 shrink-0", layout === "dialog" ? "px-6 pb-5 pt-6" : "pb-5")}>
+        <DialogHeader className={cn(portalPageHeaderClass, "mb-0 border-b-0 pb-0 text-left")}>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3.5">
+                    <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
+                      <CalendarClock className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 space-y-1.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                        Session workspace
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <DialogTitle className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
+                          {campaignName || session.campaign}
+                        </DialogTitle>
+                        <Badge
+                          className={cn(
+                            "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                            getStatusTone(session.status)
+                          )}
+                        >
+                          {session.status}
+                        </Badge>
+                        <Badge
+                          className={cn(
+                            "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                            portalBadgeClass
+                          )}
+                        >
+                          {session.type}
+                        </Badge>
+                      </div>
+                      <p className="max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
+                        <span>{session.date}</span>
+                        {session.startsAt &&
+                        new Date(session.startsAt).getTime() > Date.now() &&
+                        session.status === "Upcoming" ? (
+                          <>
+                            <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+                            <span className={cn(portalBadgeClass, "inline-flex px-1.5 py-0 text-[10px] font-semibold normal-case tracking-normal")}>
+                              Scheduled
+                            </span>
+                          </>
+                        ) : null}
+                        <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+                        <span className="break-words">{session.location}</span>
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
                     {session.candidateCount === 0 && onDeleteSession ? (
                       <Button
                         type="button"
                         size="sm"
+                        variant="outline"
                         disabled={deletingSessionId === session.id}
                         onClick={() => onDeleteSession(session.id)}
-                        className="h-8 rounded-lg text-xs font-bold border border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/20 disabled:opacity-50 transition-all duration-300 cursor-pointer"
+                        className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50"
                       >
                         <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                         {deletingSessionId === session.id ? "Deleting…" : "Delete session"}
@@ -206,6 +341,7 @@ export function HiringManagerSessionDetailsDialog({
                               <Button
                                 type="button"
                                 size="sm"
+                                variant="outline"
                                 disabled={
                                   updatingSessionId === session.id ||
                                   !areAllSessionCandidatesComplete(
@@ -214,9 +350,9 @@ export function HiringManagerSessionDetailsDialog({
                                   )
                                 }
                                 onClick={() => onUpdateSessionStatus(session.id, "closed")}
-                                className="h-8 rounded-lg text-xs font-bold bg-red-600 hover:bg-red-700 text-white disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300"
+                                className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                               >
-                                {updatingSessionId === session.id ? "Closing..." : "Close Session"}
+                                {updatingSessionId === session.id ? "Closing…" : "Close session"}
                               </Button>
                             </span>
                           </TooltipTrigger>
@@ -224,45 +360,40 @@ export function HiringManagerSessionDetailsDialog({
                             session.candidates,
                             expectedAssessmentCount
                           ) ? (
-                            <TooltipContent className="max-w-xs border-white/10 bg-slate-950 text-slate-100">
+                            <TooltipContent className="max-w-xs">
                               All candidates must complete their assessments before closing this session.
                             </TooltipContent>
                           ) : null}
                         </Tooltip>
                       </TooltipProvider>
                     ) : null}
-                    <button
-                      type="button"
-                      onClick={handleClose}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-                      aria-label="Close"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                    {layout === "dialog" ? (
+                      <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-white"
+                        aria-label="Close"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    ) : null}
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5 font-medium">
-                  <CalendarClock className="h-3.5 w-3.5 text-slate-500" />
-                  <span>{session.date}</span>
-                  {session.startsAt && new Date(session.startsAt).getTime() > Date.now() && session.status === "Upcoming" && (
-                    <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-1.5 py-0.5 rounded ml-1 animate-pulse">
-                      Scheduled
-                    </span>
-                  )}
-                  <span className="text-slate-600">·</span>
-                  <MapPin className="h-3.5 w-3.5 text-slate-500" />
-                  <span className="truncate max-w-[220px]">{session.location}</span>
-                </p>
               </DialogHeader>
+              </div>
 
+              <div className={cn("relative z-10 space-y-6", layout === "dialog" && "flex-1 overflow-y-auto px-6 pb-6")}>
               {/* Metric Cards */}
-              <div className="grid gap-4 sm:grid-cols-3 relative z-10">
-                {/* Access Code */}
-                <div className={cn(portalPanelElevatedClass, "relative overflow-hidden p-4 shadow-sm")}>
-                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-indigo-500/10 blur-xl" />
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Session Code</p>
-                  <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-white/5 bg-black/30 px-2.5 py-1.5">
-                    <span className="flex-1 truncate font-mono text-sm font-bold tracking-widest text-white">
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className={portalStatTileClass}>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className={portalLabelClass}>Session code</p>
+                    <span className={portalIconWrapClass} aria-hidden="true">
+                      <Copy className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-2.5 py-1.5 dark:border-white/10 dark:bg-white/[0.03]">
+                    <span className="flex-1 truncate font-mono text-sm font-semibold tracking-widest text-foreground">
                       {session.accessValue}
                     </span>
                     <button
@@ -272,22 +403,26 @@ export function HiringManagerSessionDetailsDialog({
                         setCopiedCode(true);
                         setTimeout(() => setCopiedCode(false), 2000);
                       }}
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      aria-label="Copy session code"
                     >
                       {copiedCode ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Occupancy */}
-                <div className={cn(portalPanelElevatedClass, "relative overflow-hidden p-4 shadow-sm")}>
-                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-primary/10 blur-xl" />
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Occupancy</p>
-                  <div className="mt-2 flex items-baseline justify-between">
-                    <span className="text-2xl font-black text-white tabular-nums">{session.candidateCount}</span>
-                    <span className="text-xs text-slate-400 font-semibold">/ {session.candidateLimit} seats</span>
+                <div className={portalStatTileClass}>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className={portalLabelClass}>Occupancy</p>
+                    <span className={portalIconWrapClass} aria-hidden="true">
+                      <Users className="h-4 w-4" />
+                    </span>
                   </div>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/5">
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <span className="font-display text-2xl font-bold text-foreground tabular-nums">{session.candidateCount}</span>
+                    <span className="text-xs font-medium text-muted-foreground">/ {session.candidateLimit} seats</span>
+                  </div>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/40 dark:bg-white/10">
                     <div
                       className={portalProgressBarClass}
                       style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
@@ -295,21 +430,21 @@ export function HiringManagerSessionDetailsDialog({
                   </div>
                 </div>
 
-                {/* Delivery */}
-                <div className={cn(portalPanelClass, "relative overflow-hidden p-4 shadow-sm")}>
-                  <div className="pointer-events-none absolute right-0 top-0 translate-x-1/3 -translate-y-1/3 h-12 w-12 rounded-full bg-primary/10 blur-xl" />
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Delivery Type</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http")
-                      ? <Globe className="h-4 w-4 text-indigo-400" />
-                      : <Building className="h-4 w-4 text-slate-400" />}
-                    <span className="text-sm font-bold text-white">
+                <div className={portalStatTileClass}>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className={portalLabelClass}>Delivery type</p>
+                    <span className={portalIconWrapClass} aria-hidden="true">
                       {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http")
-                        ? "Virtual"
-                        : "In-Person"}
+                        ? <Globe className="h-4 w-4" />
+                        : <Building className="h-4 w-4" />}
                     </span>
                   </div>
-                  <p className="mt-1.5 truncate text-[11px] text-slate-400 font-medium">{session.location}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">
+                    {session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http")
+                      ? "Virtual"
+                      : "In-person"}
+                  </p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{session.location}</p>
                 </div>
               </div>
 
@@ -332,19 +467,26 @@ export function HiringManagerSessionDetailsDialog({
               />
 
               {/* Candidates */}
-              <div className="space-y-4 relative z-10">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-                    <Users className="h-4 w-4 text-primary" />
-                    Joined Candidates
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-border/50 pb-3 dark:border-white/10">
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <span className={portalIconWrapClass} aria-hidden="true">
+                      <Users className="h-4 w-4" />
+                    </span>
+                    Joined candidates
                   </h3>
-                  <Badge variant="secondary" className="rounded-full border-none bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary pointer-events-none">
+                  <Badge
+                    className={cn(
+                      "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                      portalBadgeClass
+                    )}
+                  >
                     {session.candidates.length}
                   </Badge>
                 </div>
 
                 {session.candidates.length === 0 ? (
-                  <div className="rounded-[1.25rem] border border-dashed border-white/10 bg-[#080c16]/50 p-6 text-sm text-center text-slate-400">
+                  <div className={cn(portalPanelNestedClass, "border-dashed p-6 text-center text-sm text-muted-foreground")}>
                     No candidates have joined this session yet.
                   </div>
                 ) : (
@@ -402,37 +544,44 @@ export function HiringManagerSessionDetailsDialog({
                       return (
                         <div
                           key={candidate.id}
-                          className={[
-                            "rounded-2xl border transition-all duration-300",
-                            isExpanded
-                              ? cn(portalPanelElevatedClass, "border-primary/30 shadow-[0_4px_20px_rgba(99,102,241,0.06)]")
-                              : cn(portalPanelElevatedClass, "border-white/10 hover:border-primary/20")
-                          ].join(" ")}
+                          className={cn(
+                            portalPanelElevatedClass,
+                            "rounded-xl transition-colors",
+                            isExpanded && "border-primary/20"
+                          )}
                         >
                           {/* Row header */}
                           <div
                             onClick={() => toggleCandidateExpand(candidate.id)}
                             className="grid cursor-pointer select-none gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_140px_auto] sm:items-center"
                           >
-                            {/* Left: avatar + info */}
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/25 to-indigo-500/25 border border-primary/20 text-xs font-black text-primary uppercase shadow-sm">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span className={cn(portalIconWrapLgClass, "text-xs font-semibold uppercase")}>
                                 {initials}
-                              </div>
+                              </span>
                               <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <h4 className="text-sm font-bold text-white tracking-tight leading-snug">{candidate.name}</h4>
-                                  <Badge className={cn(portalBadgeClass, "pointer-events-none border-none text-[10px] font-semibold")}>
+                                  <h4 className="text-sm font-semibold leading-snug tracking-tight text-foreground">
+                                    {candidate.name}
+                                  </h4>
+                                  <Badge
+                                    className={cn(
+                                      "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                                      portalBadgeClass
+                                    )}
+                                  >
                                     {candidate.status === "locked"
                                       ? "Locked"
                                       : progress.completed >= progress.total
                                         ? "Completed"
                                         : progress.completed > 0
-                                          ? "In Progress"
-                                          : "Not Started"}
+                                          ? "In progress"
+                                          : "Not started"}
                                   </Badge>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-0.5 break-all font-medium">{candidate.email || "No email provided"}</p>
+                                <p className="mt-0.5 break-all text-xs font-medium text-muted-foreground">
+                                  {candidate.email || "No email provided"}
+                                </p>
                               </div>
                             </div>
 
@@ -452,7 +601,7 @@ export function HiringManagerSessionDetailsDialog({
                                       ? "Unlock candidate"
                                       : "Unlock is available when the session starts"
                                   }
-                                  className="h-9 w-[112px] shrink-0 rounded-xl px-3 text-xs font-semibold transition-colors"
+                                  className="h-9 w-[112px] shrink-0 rounded-lg px-3 text-xs font-semibold"
                                 >
                                   {unlockingCandidateId === candidate.id ? (
                                     <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Unlocking</>
@@ -468,10 +617,10 @@ export function HiringManagerSessionDetailsDialog({
                             {/* Right: stats + actions */}
                             <div className="flex items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
                               {!showUnlockControl ? (
-                                <div className="hidden min-w-[130px] border-r border-white/5 pr-4 sm:block">
+                                <div className="hidden min-w-[130px] border-r border-border/50 pr-4 dark:border-white/10 sm:block">
                                   <div className="text-right">
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Progress</p>
-                                    <p className="text-sm font-extrabold text-white tabular-nums">
+                                    <p className={portalLabelClass}>Progress</p>
+                                    <p className="text-sm font-semibold text-foreground tabular-nums">
                                       {progress.completed}/{progress.total}
                                     </p>
                                   </div>
@@ -483,14 +632,14 @@ export function HiringManagerSessionDetailsDialog({
                                         <span
                                           key={`${item.name}-${idx}`}
                                           title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? "Completed" : "Pending"}`}
-                                          className={[
+                                          className={cn(
                                             "h-2.5 w-6 rounded-full border transition-colors",
                                             isAbandoned
-                                              ? "border-orange-400/40 bg-orange-500/70"
+                                              ? "border-border/60 bg-muted/50"
                                               : isCompleted
-                                              ? "border-primary/40 bg-primary shadow-[0_0_8px_rgba(99,102,241,0.24)]"
-                                              : "border-white/10 bg-white/[0.04]"
-                                          ].join(" ")}
+                                                ? "border-primary/40 bg-primary"
+                                                : "border-border/60 bg-muted/30 dark:border-white/10 dark:bg-white/[0.04]"
+                                          )}
                                         />
                                       );
                                     })}
@@ -501,41 +650,41 @@ export function HiringManagerSessionDetailsDialog({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleOpenResults(candidate)}
-                                className="h-9 rounded-xl border-white/10 bg-white/[0.02] px-4 text-xs font-semibold text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors hover:border-primary/30"
+                                onClick={() => onOpenResults(candidate)}
+                                className="h-9 rounded-lg px-4 text-xs font-semibold"
                               >
                                 <Eye className="mr-1.5 h-3.5 w-3.5" />
                                 View results
                               </Button>
 
-                              {onKickCandidate && (
+                              {onKickCandidate ? (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
                                     <Button
                                       variant="ghost"
                                       size="icon"
-                                      className="h-9 w-9 shrink-0 rounded-xl text-slate-400 hover:bg-white/[0.06] hover:text-white transition-colors"
+                                      className="h-9 w-9 shrink-0 rounded-lg text-muted-foreground"
                                     >
                                       <MoreVertical className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="border-white/10 bg-slate-900 text-slate-200">
+                                  <DropdownMenuContent align="end">
                                     <DropdownMenuItem
                                       disabled={Boolean(candidate.hasStartedAssessment) || removingCandidateId === candidate.id}
                                       onClick={() => onKickCandidate(session.id, candidate.id)}
-                                      className="flex items-center gap-2 text-red-400 focus:bg-red-500/10 focus:text-red-300 cursor-pointer"
+                                      className="text-destructive focus:text-destructive"
                                     >
                                       <UserMinus className="h-4 w-4" />
                                       {removingCandidateId === candidate.id ? "Removing…" : "Remove candidate"}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
-                              )}
+                              ) : null}
 
                               <button
                                 type="button"
                                 onClick={() => toggleCandidateExpand(candidate.id)}
-                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+                                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                 aria-label={isExpanded ? "Collapse candidate details" : "Expand candidate details"}
                               >
                                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -544,45 +693,45 @@ export function HiringManagerSessionDetailsDialog({
                           </div>
 
                           {/* Accordion body — segment bars */}
-                          {isExpanded && (
-                            <div className="border-t border-white/5 bg-black/10 p-4 animate-in fade-in slide-in-from-top-1 duration-200 space-y-3">
-                              <div className="flex items-center justify-between text-sm text-slate-400">
-                                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Assessment Breakdown</span>
-                                <span className="text-xs font-semibold text-slate-400">{progress.completed}/{progress.total} completed</span>
+                          {isExpanded ? (
+                            <div className="space-y-3 border-t border-border/50 p-4 dark:border-white/10">
+                              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                                <span className="text-xs font-medium">Assessment breakdown</span>
+                                <span className="text-xs font-medium">{progress.completed}/{progress.total} completed</span>
                               </div>
-                              {/* Segment bars */}
-                              <div className="h-4 w-full flex gap-1.5">
+                              <div className="flex h-4 w-full gap-1.5">
                                 {finalDisplayList.map((item, idx) => {
                                   const isCompleted = item.status === "completed";
                                   const isAbandoned = item.status === "abandoned";
                                   const scoreVal = item.result?.numericScore ?? 0;
-                                  const colorClass = isAbandoned ? "bg-orange-500" : "bg-primary";
                                   return (
                                     <div
                                       key={`${item.name}-${idx}`}
-                                      className="relative flex-1 h-full bg-white/[0.04] border border-white/10 rounded-full overflow-hidden"
+                                      className="relative h-full flex-1 overflow-hidden rounded-full border border-border/60 bg-muted/20 dark:border-white/10 dark:bg-white/[0.04]"
                                       title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? `${scoreVal}%` : "Pending"}`}
                                     >
                                       <div
-                                        className={`h-full ${colorClass} transition-all duration-500 rounded-full`}
+                                        className={cn(
+                                          "h-full rounded-full transition-all duration-500",
+                                          isAbandoned ? "bg-muted-foreground/40" : "bg-primary"
+                                        )}
                                         style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreVal : 0}%` }}
                                       />
                                     </div>
                                   );
                                 })}
                               </div>
-                              {/* Labels row */}
                               <div className="flex gap-1.5">
                                 {finalDisplayList.map((item, idx) => {
                                   const isCompleted = item.status === "completed";
                                   const isAbandoned = item.status === "abandoned";
                                   const scoreVal = item.result?.numericScore ?? 0;
                                   return (
-                                    <div key={idx} className="flex-1 flex flex-col items-center gap-0.5">
-                                      <span className="w-full truncate text-center text-sm font-bold tabular-nums text-slate-300">
+                                    <div key={idx} className="flex flex-1 flex-col items-center gap-0.5">
+                                      <span className="w-full truncate text-center text-sm font-semibold tabular-nums text-foreground">
                                         {isAbandoned ? "Abd." : isCompleted ? `${scoreVal}%` : "—"}
                                       </span>
-                                      <span className="w-full truncate text-center text-xs font-medium leading-tight text-slate-500">
+                                      <span className="w-full truncate text-center text-xs font-medium leading-tight text-muted-foreground">
                                         {item.name.split(" ")[0]}
                                       </span>
                                     </div>
@@ -590,25 +739,14 @@ export function HiringManagerSessionDetailsDialog({
                                 })}
                               </div>
                             </div>
-                          )}
+                          ) : null}
                         </div>
                       );
                     })}
                   </div>
                 )}
               </div>
-                  </>
-                );
-              })()}
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <CandidateResultsDialog
-        resultsDialog={resultsDialog}
-        onClose={() => setResultsDialog(null)}
-      />
+              </div>
     </>
   );
 }
@@ -621,9 +759,11 @@ export function CandidateResultsDialog({
   onClose: () => void;
 }) {
   if (!resultsDialog) return null;
-  const campaignRoleLabel = [resultsDialog.campaignName, resultsDialog.role]
-    .filter(Boolean)
-    .join(", ");
+  const metadataParts = [
+    resultsDialog.candidateEmail,
+    resultsDialog.campaignName,
+    resultsDialog.role,
+  ].filter(Boolean);
 
   return (
     <Dialog open={Boolean(resultsDialog)} onOpenChange={() => { }}>
@@ -632,40 +772,52 @@ export function CandidateResultsDialog({
         onEscapeKeyDown={(e) => e.preventDefault()}
         className={cn(
           portalDialogShellClass,
-          "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-x-hidden p-6 [&>button]:hidden"
+          "fixed left-1/2 top-1/2 flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-0 overflow-hidden p-0 [&>button]:hidden"
         )}
       >
         <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-24 -bottom-24 h-48 w-48 rounded-full bg-indigo-500/10 blur-3xl" />
 
-        <div className="absolute right-5 top-5 z-20">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Close results"
-          >
-            <X className="h-4 w-4" />
-          </button>
+        <div className="relative z-10 shrink-0 px-6 pb-5 pt-6">
+          <DialogHeader className={cn(portalPageHeaderClass, "mb-0 border-b-0 pb-0 text-left")}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3.5">
+                <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
+                  <BarChart3 className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                    Candidate report
+                  </p>
+                  <DialogTitle className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
+                    {resultsDialog.candidateName}
+                  </DialogTitle>
+                  {metadataParts.length > 0 ? (
+                    <p className="max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
+                      {metadataParts.map((part, index) => (
+                        <span key={part}>
+                          {index > 0 ? (
+                            <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+                          ) : null}
+                          {part}
+                        </span>
+                      ))}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-white"
+                aria-label="Close results"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </DialogHeader>
         </div>
 
-        <div className="relative z-10 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/5 pb-4 pr-12">
-          <DialogTitle className="truncate text-sm font-bold text-white">{resultsDialog.candidateName}</DialogTitle>
-          {resultsDialog.candidateEmail && (
-            <>
-              <span className="text-slate-600">·</span>
-              <span className="truncate text-xs font-medium text-slate-400">{resultsDialog.candidateEmail}</span>
-            </>
-          )}
-          {campaignRoleLabel && (
-            <>
-              <span className="text-slate-600">·</span>
-              <span className="truncate text-xs font-medium text-slate-300">{campaignRoleLabel}</span>
-            </>
-          )}
-        </div>
-
-        <div className="relative z-10">
+        <div className="relative z-10 flex-1 overflow-y-auto px-6 pb-6">
           <HiringManagerCandidateReport
             candidateId={resultsDialog.candidateId}
             candidateSessionId={resultsDialog.candidateSessionId}
@@ -685,9 +837,6 @@ function ScoreRing({ value }: { value: number | null }) {
   const radius = 25;
   const circumference = 2 * Math.PI * radius;
   const progress = normalizedValue === null ? 0 : normalizedValue / 100;
-  const scoreHue = Math.round((normalizedValue ?? 0) * 1.2);
-  const scoreColor =
-    normalizedValue === null ? "rgb(100 116 139)" : `hsl(${scoreHue}, 72%, 58%)`;
 
   return (
     <div className="flex items-center justify-center">
@@ -698,7 +847,7 @@ function ScoreRing({ value }: { value: number | null }) {
             cy="32"
             r={radius}
             fill="none"
-            stroke="rgba(255,255,255,0.1)"
+            className="stroke-muted/50"
             strokeWidth="6"
           />
           <circle
@@ -706,7 +855,7 @@ function ScoreRing({ value }: { value: number | null }) {
             cy="32"
             r={radius}
             fill="none"
-            stroke={scoreColor}
+            className="stroke-primary"
             strokeLinecap="round"
             strokeWidth="6"
             strokeDasharray={circumference}
@@ -714,7 +863,7 @@ function ScoreRing({ value }: { value: number | null }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-base font-black leading-none tabular-nums text-white">
+          <span className="text-base font-semibold leading-none tabular-nums text-foreground">
             {normalizedValue === null ? "-" : normalizedValue}
           </span>
         </div>
@@ -735,27 +884,4 @@ function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCou
   ).size;
   const total = Math.max(expectedAssessmentCount || 0, candidate.results.length, completed, 1);
   return { completed, total, percent: Math.round((completed / total) * 100) };
-}
-
-function getAssessmentKey(value?: string | null, result?: any) {
-  const slug = normalizeSlug(value);
-  if (isKnownAssessmentSlug(slug)) return slug;
-
-  const resolved = resolveAssessmentSlug(value, result);
-  if (resolved) return resolved;
-
-  if (result) {
-    if (typeof result.wpm === "number" || typeof result.accuracy === "number") return "typing";
-    if (typeof result.durationSeconds === "number") return "call-simulation";
-  }
-  return "";
-}
-
-function isSameAssessment(expectedName?: string | null, resultName?: string | null) {
-  const expectedKey = getAssessmentKey(expectedName);
-  const resultKey = getAssessmentKey(resultName);
-  if (expectedKey && resultKey) return expectedKey === resultKey;
-  const expected = normalizeAssessmentSlugInput(expectedName);
-  const result = normalizeAssessmentSlugInput(resultName);
-  return expected && result ? expected.includes(result) || result.includes(expected) : false;
 }

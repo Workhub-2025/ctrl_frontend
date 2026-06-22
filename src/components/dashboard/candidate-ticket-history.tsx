@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   AlertCircle,
@@ -14,12 +14,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  CandidateEyebrow,
-  CandidatePanel,
-  CandidateSectionHeader,
-} from "@/components/dashboard/candidate/candidate-portal-ui";
 import { TicketDetailDialog } from "@/components/dashboard/candidate/ticket-detail-dialog";
+import {
+  PortalEyebrow,
+  PortalPanel,
+  PortalSectionHeader,
+} from "@/components/dashboard/portal/portal-ui";
 import {
   SupportTicketService,
   type SupportTicket,
@@ -35,6 +35,31 @@ const STATUS_LABELS: Record<StatusKey, string> = {
   resolved: "Resolved",
   awaiting_user: "Awaiting confirmation",
   closed: "Closed",
+};
+
+export type TicketHistoryLabels = {
+  sectionEyebrow: string;
+  sectionTitle: string;
+  sectionDescriptionOpen: (openCount: number) => string;
+  sectionDescriptionEmpty: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  historyLabel: string;
+  contactBadgeLabel: string;
+};
+
+const DEFAULT_LABELS: TicketHistoryLabels = {
+  sectionEyebrow: "Your tickets",
+  sectionTitle: "Message & ticket history",
+  sectionDescriptionOpen: (count) =>
+    `${count} open item${count !== 1 ? "s" : ""} — tap any row for full details.`,
+  sectionDescriptionEmpty:
+    "All your IT tickets and hiring team messages in one place.",
+  emptyTitle: "No tickets yet",
+  emptyDescription:
+    "IT tickets and hiring team messages appear here with their status and any resolution notes.",
+  historyLabel: "History",
+  contactBadgeLabel: "Hiring team",
 };
 
 function normaliseStatus(status: string): StatusKey {
@@ -79,14 +104,18 @@ function StatusBadge({ status }: { status: string }) {
 function TicketRow({
   ticket,
   onSelect,
+  contactBadgeLabel,
+  showContactBadge,
 }: {
   ticket: SupportTicket;
   onSelect: () => void;
+  contactBadgeLabel: string;
+  showContactBadge: boolean;
 }) {
   const status = normaliseStatus(ticket.status);
   const isResolved = status === "resolved" || status === "closed";
   const isContact = ticket.category === "contact";
-  const created = formatDate(ticket.createdAt);
+  const lastUpdated = formatDate(ticket.updatedAt || ticket.createdAt);
 
   return (
     <li>
@@ -102,9 +131,9 @@ function TicketRow({
                 {ticket.ticketNumber || "CTRL-—"}
               </span>
               <StatusBadge status={ticket.status} />
-              {isContact ? (
+              {showContactBadge && isContact ? (
                 <Badge variant="outline" className="rounded-full text-[10px]">
-                  Hiring team
+                  {contactBadgeLabel}
                 </Badge>
               ) : null}
             </div>
@@ -112,10 +141,10 @@ function TicketRow({
               {ticket.subject}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {created ? (
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
+            {lastUpdated ? (
               <span className="text-[11px] font-medium text-muted-foreground">
-                {created}
+                Updated {lastUpdated}
               </span>
             ) : null}
             <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" aria-hidden="true" />
@@ -149,9 +178,17 @@ function TicketRow({
 
 export function CandidateTicketHistory({
   refreshKey,
+  labels: labelsProp,
+  headerActions,
+  showContactBadge = true,
 }: {
   refreshKey?: number;
+  labels?: Partial<TicketHistoryLabels>;
+  headerActions?: ReactNode;
+  showContactBadge?: boolean;
 } = {}) {
+  const labels = { ...DEFAULT_LABELS, ...labelsProp };
+
   const [tickets, setTickets] = useState<SupportTicket[]>(
     () => SupportTicketService.getCachedMyTickets() ?? []
   );
@@ -199,39 +236,43 @@ export function CandidateTicketHistory({
     (t) => normaliseStatus(t.status) === "open" || normaliseStatus(t.status) === "in_progress"
   ).length;
 
+  const sectionDescription =
+    openCount > 0
+      ? labels.sectionDescriptionOpen(openCount)
+      : labels.sectionDescriptionEmpty;
+
   return (
     <>
       <section className="space-y-4">
-        <CandidateSectionHeader
-          eyebrow="Your tickets"
-          title="Message & ticket history"
-          description={
-            openCount > 0
-              ? `${openCount} open item${openCount !== 1 ? "s" : ""} — tap any row for full details.`
-              : "All your IT tickets and hiring team messages in one place."
-          }
+        <PortalSectionHeader
+          eyebrow={labels.sectionEyebrow}
+          title={labels.sectionTitle}
+          description={sectionDescription}
           action={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void loadTickets({ force: true })}
-              disabled={isLoading}
-              className="h-9 gap-2 rounded-xl text-xs font-semibold"
-            >
-              <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "motion-safe:animate-spin")} />
-              Refresh
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              {headerActions}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void loadTickets({ force: true })}
+                disabled={isLoading}
+                className="h-9 gap-2 rounded-xl text-xs font-semibold"
+              >
+                <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "motion-safe:animate-spin")} />
+                Refresh
+              </Button>
+            </div>
           }
         />
 
-        <CandidatePanel>
+        <PortalPanel padding={false}>
           <div className="flex items-center gap-3 border-b border-border/40 p-5 dark:border-white/5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
               <TicketCheck className="h-[18px] w-[18px]" aria-hidden="true" />
             </div>
             <div>
-              <CandidateEyebrow>History</CandidateEyebrow>
+              <PortalEyebrow>{labels.historyLabel}</PortalEyebrow>
               <p className="text-sm font-medium text-muted-foreground">
                 {tickets.length} ticket{tickets.length !== 1 ? "s" : ""} total
               </p>
@@ -263,10 +304,9 @@ export function CandidateTicketHistory({
                   <Inbox className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-semibold">No tickets yet</p>
+                  <p className="text-sm font-semibold">{labels.emptyTitle}</p>
                   <p className="max-w-sm text-xs text-muted-foreground">
-                    IT tickets and hiring team messages appear here with their status
-                    and any resolution notes.
+                    {labels.emptyDescription}
                   </p>
                 </div>
               </div>
@@ -280,12 +320,14 @@ export function CandidateTicketHistory({
                       setSelectedTicket(ticket);
                       setDetailOpen(true);
                     }}
+                    contactBadgeLabel={labels.contactBadgeLabel}
+                    showContactBadge={showContactBadge}
                   />
                 ))}
               </ul>
             )}
           </div>
-        </CandidatePanel>
+        </PortalPanel>
       </section>
 
       <TicketDetailDialog

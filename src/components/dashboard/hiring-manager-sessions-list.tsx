@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,6 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
-import { HiringManagerSessionDetailsDialog } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import { OptionalDateTimeFields } from "@/components/dashboard/portal/optional-datetime-fields";
 import {
   HiringManagerPortalClientService,
@@ -74,7 +74,6 @@ export function HiringManagerSessionsList() {
   const {
     sessions,
     campaigns: allCampaigns,
-    campaignDetails,
     error,
     lastRefreshAt,
     loading,
@@ -94,14 +93,10 @@ export function HiringManagerSessionsList() {
   const [createdMessage, setCreatedMessage] = useState<string | null>(null);
   const [isForceRefreshing, setIsForceRefreshing] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [removingCandidateId, setRemovingCandidateId] = useState<string | null>(null);
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
-  const [selectedSession, setSelectedSession] = useState<HiringManagerSessionListItem | null>(null);
   const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
 
   const [currentTab, setCurrentTab] = useState<"all" | "live" | "upcoming" | "closed">("all");
-  const [updatingSessionId, setUpdatingSessionId] = useState<string | null>(null);
-  const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createdSession, setCreatedSession] = useState<HiringManagerSessionListItem | null>(null);
@@ -189,24 +184,10 @@ export function HiringManagerSessionsList() {
 
   const isRefreshing = loading || isForceRefreshing;
 
-  useEffect(() => {
-    setSelectedSession((current) =>
-      current ? sessions.find((session) => session.id === current.id) ?? null : null
-    );
-  }, [sessions]);
-
   const refreshLabel = useMemo(
     () => `Last refresh: ${formatLastRefresh(lastRefreshAt)}`,
     [lastRefreshAt]
   );
-
-  const selectedCampaignDetail = useMemo(() => {
-    if (!selectedSession) return null;
-    return campaignDetails.find((campaign) =>
-      campaign.assessmentSessions.some((session) => session.id === selectedSession.id)
-      || campaign.name === selectedSession.campaign
-    ) ?? null;
-  }, [campaignDetails, selectedSession]);
 
   const handleOpenChange = (open: boolean) => {
     setIsCreateOpen(open);
@@ -302,30 +283,6 @@ export function HiringManagerSessionsList() {
     }
   };
 
-  const removeCandidate = async (sessionId: string, candidateSessionId: string) => {
-    const reason = window.prompt("Enter the reason for removing this candidate from the session.");
-    if (!reason?.trim()) return;
-
-    setCreateError(null);
-    setRemovingCandidateId(candidateSessionId);
-    try {
-      await HiringManagerPortalClientService.removeCandidateFromSession({
-        sessionId,
-        candidateSessionId,
-        reason: reason.trim(),
-      });
-      await loadSessions(true);
-    } catch (removeError) {
-      setCreateError(
-        removeError instanceof Error
-          ? removeError.message
-          : "Candidate could not be removed."
-      );
-    } finally {
-      setRemovingCandidateId(null);
-    }
-  };
-
   const deleteSession = async (sessionId: string, sessionName: string) => {
     const confirmed = window.confirm(
       `Delete "${sessionName}"? This cannot be undone. Only empty sessions can be deleted.`
@@ -336,9 +293,6 @@ export function HiringManagerSessionsList() {
     setDeletingSessionId(sessionId);
     try {
       await HiringManagerPortalClientService.deleteSession(sessionId);
-      if (selectedSession?.id === sessionId) {
-        setSelectedSession(null);
-      }
       await loadSessions(true);
     } catch (deleteError) {
       setCreateError(
@@ -348,40 +302,6 @@ export function HiringManagerSessionsList() {
       );
     } finally {
       setDeletingSessionId(null);
-    }
-  };
-
-  const handleUnlockCandidate = async (candidateSessionId: string) => {
-    setUnlockingCandidateId(candidateSessionId);
-    setCreateError(null);
-    try {
-      await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
-      await loadSessions(true);
-    } catch (err) {
-      console.error(err);
-      setCreateError(
-        err instanceof Error
-          ? err.message
-          : "Candidate session could not be unlocked."
-      );
-    } finally {
-      setUnlockingCandidateId(null);
-    }
-  };
-
-  const handleUpdateSessionStatus = async (sessionId: string, status: "closed") => {
-    setUpdatingSessionId(sessionId);
-    try {
-      const success = await HiringManagerPortalClientService.updateSessionStatus(sessionId, status);
-      if (success) {
-        await loadSessions(true);
-      } else {
-        alert(`Failed to update session status to ${status}`);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUpdatingSessionId(null);
     }
   };
 
@@ -860,31 +780,28 @@ export function HiringManagerSessionsList() {
           </TabsTrigger>
           <TabsTrigger value="live" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
             Live
-            {liveCount > 0 ? (
-              <Badge variant="secondary" className={cn("ml-1.5 animate-pulse rounded-full border-none px-1.5 py-0", portalBadgeClass)}>
-                {liveCount}
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
-                0
-              </Badge>
-            )}
+            <Badge
+              variant="secondary"
+              className={cn("ml-1.5 rounded-full border-none px-1.5 py-0 text-[10px] font-semibold", portalBadgeClass)}
+            >
+              {liveCount}
+            </Badge>
           </TabsTrigger>
           <TabsTrigger value="upcoming" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
             Upcoming
-            {upcomingCount > 0 ? (
-              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-indigo-500/20 text-indigo-400 px-1.5 py-0">
-                {upcomingCount}
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
-                0
-              </Badge>
-            )}
+            <Badge
+              variant="secondary"
+              className={cn("ml-1.5 rounded-full border-none px-1.5 py-0 text-[10px] font-semibold", portalBadgeClass)}
+            >
+              {upcomingCount}
+            </Badge>
           </TabsTrigger>
           <TabsTrigger value="closed" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
             Closed
-            <Badge variant="secondary" className="ml-1.5 rounded-full border-none bg-slate-500/20 text-slate-400 px-1.5 py-0">
+            <Badge
+              variant="secondary"
+              className={cn("ml-1.5 rounded-full border-none px-1.5 py-0 text-[10px] font-semibold", portalBadgeClass)}
+            >
               {closedCount}
             </Badge>
           </TabsTrigger>
@@ -920,9 +837,9 @@ export function HiringManagerSessionsList() {
                   
                   {/* Candidates joined status with pill indicator */}
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1.5 rounded-lg border border-indigo-500/15 bg-indigo-500/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-500 shadow-sm dark:text-indigo-300/90">
-                      <Users className="h-3.5 w-3.5 text-indigo-400" />
-                      <span>{session.candidateCount} of {session.candidateLimit} Joined</span>
+                    <span className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-semibold", portalBadgeClass)}>
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{session.candidateCount} of {session.candidateLimit} joined</span>
                     </span>
                     {session.candidateLimit > 0 && (
                       <div className="flex items-center gap-2">
@@ -986,14 +903,15 @@ export function HiringManagerSessionsList() {
                       </Button>
 
                       <Button
-                        type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedSession(session)}
-                        className="h-8 rounded-lg border-border bg-transparent px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/10 dark:hover:text-white"
+                        className="h-8 rounded-lg px-3 text-xs font-semibold"
+                        asChild
                       >
-                        <Eye className="mr-1.5 h-3.5 w-3.5" />
-                        View details
+                        <Link href={`/hiring-manager-dashboard/sessions/${session.id}/`}>
+                          <Eye className="mr-1.5 h-3.5 w-3.5" />
+                          View
+                        </Link>
                       </Button>
 
                       {session.candidateCount === 0 ? (
@@ -1017,36 +935,6 @@ export function HiringManagerSessionsList() {
           ))
         )}
       </div>
-
-      <HiringManagerSessionDetailsDialog
-        session={selectedSession}
-        open={Boolean(selectedSession)}
-        onOpenChange={(open) => !open && setSelectedSession(null)}
-        campaignName={selectedCampaignDetail?.name}
-        campaignRole={selectedCampaignDetail?.role}
-        campaignId={selectedCampaignDetail?.id}
-        expectedAssessmentCount={selectedCampaignDetail?.assessmentStack.length}
-        removingCandidateId={removingCandidateId}
-        onKickCandidate={removeCandidate}
-        getResultsHref={
-          selectedCampaignDetail
-            ? (candidate) =>
-                `/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${selectedCampaignDetail.id}&candidateSessionId=${candidate.id}`
-            : undefined
-        }
-        assessmentStack={selectedCampaignDetail?.assessmentStack}
-        onUnlockCandidate={handleUnlockCandidate}
-        unlockingCandidateId={unlockingCandidateId}
-        onUpdateSessionStatus={handleUpdateSessionStatus}
-        updatingSessionId={updatingSessionId}
-        onDeleteSession={
-          selectedSession?.candidateCount === 0
-            ? (sessionId) => deleteSession(sessionId, selectedSession.campaign)
-            : undefined
-        }
-        deletingSessionId={deletingSessionId}
-        onInvitesSent={() => loadSessions(true)}
-      />
     </div>
   );
 }

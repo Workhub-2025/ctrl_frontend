@@ -8,11 +8,6 @@ import { CardContent } from "@/components/ui/card";
 import {
   ArrowRight,
   RefreshCw,
-  Keyboard,
-  ClipboardList,
-  BrainCircuit,
-  PhoneCall,
-  FileQuestion,
   Target,
   Plus,
 } from "lucide-react";
@@ -20,6 +15,7 @@ import {
   DashboardInfoCard,
   dashboardInfoPillClassName,
 } from "@/components/dashboard/dashboard-info-card";
+import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { portalAlertErrorClass, portalBadgeClass, portalPrimaryButtonClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
@@ -176,7 +172,7 @@ export function HiringManagerCampaignsList() {
                       return (
                         <>
                           {visibleStack.map((item) => {
-                            const Icon = getAssessmentIcon(item);
+                            const Icon = getAssessmentCatalogueIcon(item);
                             const matchedVersion = versionSummary.find((v) =>
                               v.key.replace(/-/g, "").toLowerCase().includes(item.toLowerCase().replace(/\s+/g, "").replace(/-/g, "")) ||
                               item.toLowerCase().replace(/\s+/g, "").replace(/-/g, "").includes(v.key.replace(/-/g, "").toLowerCase())
@@ -221,21 +217,4 @@ export function HiringManagerCampaignsList() {
       </div>
     </div>
   );
-}
-
-function getAssessmentIcon(name: string) {
-  const lowercase = name.toLowerCase();
-  if (lowercase.includes("typing")) {
-    return Keyboard;
-  }
-  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
-    return ClipboardList;
-  }
-  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
-    return BrainCircuit;
-  }
-  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
-    return PhoneCall;
-  }
-  return FileQuestion;
 }

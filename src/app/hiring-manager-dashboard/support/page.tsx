@@ -1,90 +1,69 @@
 "use client";
 
+import { useCallback, useState } from "react";
+import { LifeBuoy, MessageSquare, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { LifeBuoy, MailPlus, ShieldCheck, Ticket } from "lucide-react";
-import { hiringManagerSupport } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { ContactFormDialog } from "@/components/dashboard/contact-form-dialog";
 import { CreateTicketDialog } from "@/components/dashboard/create-ticket-dialog";
-import {
-  PortalEyebrow,
-  PortalPanel,
-  PortalSectionHeader,
-} from "@/components/dashboard/portal/portal-ui";
-
-const supportConfig = [
-  { recipient: "CTRL Support", subject: "Campaign Operations Support" },
-  { recipient: "CTRL Support", subject: "Assessment Operations Query" },
-  { recipient: "CTRL Support", subject: "Commercial Access Request" },
-];
-
-
-const supportIcons = [LifeBuoy, ShieldCheck, MailPlus];
-const supportEyebrows = ["Operations", "Assessments", "Commercial"];
+import { CandidateTicketHistory } from "@/components/dashboard/candidate-ticket-history";
 
 export default function HiringManagerSupportPage() {
+  const [ticketRefreshKey, setTicketRefreshKey] = useState(0);
+
+  const handleTicketCreated = useCallback(() => {
+    setTicketRefreshKey((key) => key + 1);
+  }, []);
+
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8">
+    <div className="mx-auto w-full max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <HiringManagerPageHeader
         eyebrow="Support Desk"
         title="Support"
-        description="Get help with sessions, campaign setup, assessment guidance, and access requests."
+        description="Raise and track support tickets for sessions, campaigns, assessments, and access requests."
         icon={LifeBuoy}
-        action={
-          <CreateTicketDialog>
-            <Button className="gap-2 rounded-xl font-semibold text-sm">
-              <Ticket className="h-4 w-4" aria-hidden="true" />
-              Create Ticket
-            </Button>
-          </CreateTicketDialog>
-        }
       />
 
-      <section className="space-y-4">
-        <PortalSectionHeader
-          eyebrow="Get help"
-          title="Choose the right channel"
-          description="Raise operational requests, assessment guidance queries, or commercial access needs."
-        />
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          {hiringManagerSupport.map((item, index) => {
-            const Icon = supportIcons[index];
-            const config = supportConfig[index];
-
-            return (
-              <PortalPanel key={item.title} className="flex flex-col">
-                <div className="flex flex-1 flex-col gap-4 p-6">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <PortalEyebrow>{supportEyebrows[index]}</PortalEyebrow>
-                    <h2 className="font-display text-lg font-semibold">{item.title}</h2>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {item.description}
-                    </p>
-                  </div>
-                  <div className="mt-auto pt-2">
-                    <ContactFormDialog
-                      recipient={config.recipient}
-                      defaultSubject={config.subject}
-                      triggerVariant="outline"
-                    >
-                      <Button
-                        variant="outline"
-                        className="h-10 w-full gap-2 rounded-xl font-semibold"
-                      >
-                        Raise request
-                      </Button>
-                    </ContactFormDialog>
-                  </div>
-                </div>
-              </PortalPanel>
-            );
-          })}
-        </div>
-      </section>
+      <CandidateTicketHistory
+        refreshKey={ticketRefreshKey}
+        showContactBadge={false}
+        labels={{
+          sectionEyebrow: "Your tickets",
+          sectionTitle: "Support ticket history",
+          sectionDescriptionOpen: (count) =>
+            `${count} open ticket${count !== 1 ? "s" : ""} — select a row for the full thread.`,
+          sectionDescriptionEmpty:
+            "All support tickets and CTRL messages in one place.",
+          emptyTitle: "No support tickets yet",
+          emptyDescription:
+            "Create a ticket for platform issues or send a message to CTRL Support. Updates and replies appear here.",
+          historyLabel: "Tickets",
+        }}
+        headerActions={
+          <>
+            <CreateTicketDialog onSuccess={handleTicketCreated}>
+              <Button className="h-9 gap-2 rounded-xl text-xs font-semibold">
+                <Ticket className="h-3.5 w-3.5" aria-hidden="true" />
+                Create ticket
+              </Button>
+            </CreateTicketDialog>
+            <ContactFormDialog
+              recipient="CTRL Support"
+              defaultSubject="Hiring manager support request"
+              triggerVariant="outline"
+              onSuccess={handleTicketCreated}
+            >
+              <Button
+                variant="outline"
+                className="h-9 gap-2 rounded-xl text-xs font-semibold"
+              >
+                <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                Message support
+              </Button>
+            </ContactFormDialog>
+          </>
+        }
+      />
     </div>
   );
 }

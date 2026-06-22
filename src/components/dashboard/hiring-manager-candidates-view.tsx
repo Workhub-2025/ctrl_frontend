@@ -16,16 +16,12 @@ import {
   ArrowRight,
   RefreshCw,
   Users,
-  Keyboard,
-  ClipboardList,
-  BrainCircuit,
-  PhoneCall,
-  FileQuestion,
   CheckCircle2,
   Clock3,
   Search,
 } from "lucide-react";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
+import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import type {
   HiringManagerCampaignDetail,
   HiringManagerAssessmentResult,
@@ -42,7 +38,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
-import { isKnownAssessmentSlug, normalizeAssessmentSlugInput, normalizeSlug, resolveAssessmentSlug } from "@/lib/assessment-slug";
+import { getAssessmentKey, isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
 
 type CandidateRow = {
   id: string;
@@ -591,42 +587,6 @@ export function HiringManagerCandidatesView() {
   );
 }
 
-function getAssessmentKey(value?: string | null, result?: any) {
-  const slug = normalizeSlug(value);
-  if (isKnownAssessmentSlug(slug)) return slug;
-
-  const resolved = resolveAssessmentSlug(value, result);
-  if (resolved) return resolved;
-
-  if (result) {
-    if (typeof result.wpm === "number" || typeof result.accuracy === "number") {
-      return "typing";
-    }
-    if (typeof result.durationSeconds === "number") {
-      return "call-simulation";
-    }
-  }
-
-  return "";
-}
-
-function getAssessmentIcon(name: string) {
-  const lowercase = name.toLowerCase();
-  if (lowercase.includes("typing")) {
-    return Keyboard;
-  }
-  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
-    return ClipboardList;
-  }
-  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
-    return BrainCircuit;
-  }
-  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
-    return PhoneCall;
-  }
-  return FileQuestion;
-}
-
 function buildEqualWeights(assessmentStack: string[]) {
   if (assessmentStack.length === 0) return {};
   const baseWeight = Math.floor(100 / assessmentStack.length);
@@ -657,17 +617,6 @@ function getCampaignWeights(
     weights[assessmentName] = Number.isFinite(numericValue) ? numericValue : 0;
     return weights;
   }, {});
-}
-
-function isSameAssessment(expectedName?: string | null, resultName?: string | null) {
-  const expectedKey = getAssessmentKey(expectedName);
-  const resultKey = getAssessmentKey(resultName);
-
-  if (expectedKey && resultKey) return expectedKey === resultKey;
-
-  const expected = normalizeAssessmentSlugInput(expectedName);
-  const result = normalizeAssessmentSlugInput(resultName);
-  return (expected && result) ? (expected.includes(result) || result.includes(expected)) : false;
 }
 
 function FilterSelect({

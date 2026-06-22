@@ -11,39 +11,35 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Brain,
-  BrainCircuit,
-  Headphones,
   PlayCircle,
-  SlidersHorizontal,
-  TimerReset,
+  X,
 } from "lucide-react";
 import { useState } from "react";
+import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import {
   DashboardInfoCard,
   dashboardInfoPillClassName,
 } from "@/components/dashboard/dashboard-info-card";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
-import { portalAlertInfoClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalAlertInfoClass,
+  portalBadgeClass,
+  portalDialogShellClass,
+  portalIconWrapLgClass,
+  portalLabelClass,
+  portalPageHeaderClass,
+  portalPanelClass,
+  portalPanelNestedClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
 type HiringManagerAssessmentLibraryProps = {
   assessments: HiringManagerAssessment[];
 };
-
-const iconByKey = {
-  typing: TimerReset,
-  "call-simulation": Headphones,
-  "situational-judgement": SlidersHorizontal,
-  prioritisation: BrainCircuit,
-  "short-term-memory": Brain,
-  default: BrainCircuit,
-} satisfies Record<HiringManagerAssessment["iconKey"], typeof BrainCircuit>;
 
 export function HiringManagerAssessmentLibrary({
   assessments,
@@ -66,24 +62,25 @@ export function HiringManagerAssessmentLibrary({
     <>
       <div className="grid gap-4 xl:grid-cols-2">
         {assessments.map((assessment) => {
-          const Icon = iconByKey[assessment.iconKey] ?? BrainCircuit;
+          const Icon = getAssessmentCatalogueIcon(assessment.slug);
           return (
-            <DashboardInfoCard
-              key={assessment.id}
-            >
+            <DashboardInfoCard key={assessment.id}>
               <CardHeader className="space-y-3 pb-3 pl-6">
                 <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
-                    <Icon className="h-[18px] w-[18px]" />
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                    <Badge variant="outline" className="rounded-lg border-border/55 bg-muted/40 px-2.5 py-0.5 text-xs font-semibold text-muted-foreground hover:bg-muted/40 dark:border-white/15 dark:bg-white/[0.04] dark:text-slate-300 dark:hover:bg-white/[0.04]">
-                      {assessment.duration}
-                    </Badge>
-                  </div>
+                  <span className={portalIconWrapLgClass} aria-hidden="true">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <Badge
+                    className={cn(
+                      "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                      portalBadgeClass
+                    )}
+                  >
+                    {assessment.duration}
+                  </Badge>
                 </div>
                 <div className="space-y-2">
-                  <CardTitle className="break-words text-lg font-bold leading-snug text-foreground tracking-tight">
+                  <CardTitle className="break-words text-lg font-semibold leading-snug tracking-tight text-foreground">
                     {assessment.title}
                   </CardTitle>
                   <CardDescription className="text-sm leading-relaxed text-muted-foreground">
@@ -94,17 +91,15 @@ export function HiringManagerAssessmentLibrary({
               <CardContent className="space-y-4 pl-6">
                 <div className="flex flex-wrap gap-1.5">
                   {assessment.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className={dashboardInfoPillClassName}
-                    >
+                    <span key={skill} className={dashboardInfoPillClassName}>
                       {skill}
                     </span>
                   ))}
                 </div>
                 <Button
                   variant="outline"
-                  className="h-9 rounded-xl border-border bg-background/50 px-4 text-xs font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-200 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+                  size="sm"
+                  className="h-9 rounded-lg px-4 text-xs font-semibold"
                   onClick={() => setSelected(assessment)}
                 >
                   View more
@@ -115,91 +110,139 @@ export function HiringManagerAssessmentLibrary({
         })}
       </div>
 
-      <Dialog open={!!selected} onOpenChange={(open) => !open && setSelected(null)}>
-        <DialogContent className="max-w-3xl p-0 text-white overflow-hidden rounded-[1.25rem] border border-white/10 bg-[#080c16]/95 shadow-2xl backdrop-blur-xl">
-          {selected && (
-            <div className="overflow-hidden">
-              <div className={cn(portalPanelClass, "border-b border-white/5 p-6")}>
-                <DialogHeader className="space-y-3 text-left">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="rounded-lg border-primary/20 bg-primary/15 text-xs font-bold text-primary px-2.5 py-0.5">
-                      {selected.duration}
-                    </Badge>
-                    <Badge variant="outline" className="rounded-lg border-white/10 bg-white/5 text-xs font-semibold text-slate-300 hover:bg-white/5 px-2.5 py-0.5">
-                      {selected.slug}
-                    </Badge>
+      <Dialog open={Boolean(selected)} onOpenChange={(open) => !open && setSelected(null)}>
+        <DialogContent
+          className={cn(
+            portalDialogShellClass,
+            "flex max-h-[min(86dvh,900px)] max-w-3xl flex-col gap-0 overflow-hidden p-0 [&>button]:hidden"
+          )}
+        >
+          {selected ? (
+            <>
+              <div className="pointer-events-none absolute -left-24 -top-24 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
+
+              <div className="relative z-10 shrink-0 px-6 pb-5 pt-6">
+                <DialogHeader className={cn(portalPageHeaderClass, "mb-0 border-b-0 pb-0 text-left")}>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-3.5">
+                      {(() => {
+                        const Icon = getAssessmentCatalogueIcon(selected.slug);
+                        return (
+                          <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
+                            <Icon className="h-5 w-5" />
+                          </span>
+                        );
+                      })()}
+                      <div className="min-w-0 space-y-1.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                          Assessment library
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <DialogTitle className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
+                            {selected.title}
+                          </DialogTitle>
+                          <Badge
+                            className={cn(
+                              "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                              portalBadgeClass
+                            )}
+                          >
+                            {selected.duration}
+                          </Badge>
+                          <Badge
+                            className={cn(
+                              "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                              portalBadgeClass
+                            )}
+                          >
+                            {selected.slug}
+                          </Badge>
+                        </div>
+                        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                          {selected.summary}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelected(null)}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background/60 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-white"
+                      aria-label="Close assessment details"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                  <DialogTitle className="text-2xl font-black text-white tracking-tight">
-                    {selected.title}
-                  </DialogTitle>
-                  <DialogDescription className="max-w-2xl text-sm leading-relaxed text-slate-300">
-                    {selected.summary}
-                  </DialogDescription>
                 </DialogHeader>
               </div>
 
-              <div className="grid gap-5 p-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-5">
-                  <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4">
-                    <div className="mb-3 flex items-center gap-2 text-slate-200">
+              <div className="relative z-10 flex-1 space-y-5 overflow-y-auto px-6 pb-6">
+                <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+                  <div className={cn(portalPanelClass, "p-4")}>
+                    <div className="mb-3 flex items-center gap-2">
                       <PlayCircle className="h-4 w-4 text-primary" />
-                      <p className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                        Video demo
-                      </p>
+                      <p className={portalLabelClass}>Video demo</p>
                     </div>
-                    <div className="flex min-h-44 items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#04070d]/50 p-4 text-center text-xs leading-relaxed text-slate-400">
+                    <div className="flex min-h-44 items-center justify-center rounded-lg border border-dashed border-border/60 bg-muted/20 p-4 text-center text-xs leading-relaxed text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
                       {selected.videoLabel}
                       <br />
                       Video module placeholder for the assessment walkthrough.
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                      What Strapi provides
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {selected.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="rounded-lg border border-white/5 bg-white/[0.02] px-2.5 py-1 text-xs text-slate-300 font-semibold"
-                        >
-                          {skill}
-                        </span>
-                      ))}
+                  <div className="space-y-4">
+                    <div className={cn(portalPanelNestedClass, "p-4")}>
+                      <p className={portalLabelClass}>What Strapi provides</p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {selected.skills.map((skill) => (
+                          <Badge
+                            key={skill}
+                            className={cn(
+                              "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                              portalBadgeClass
+                            )}
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                      <div className="mt-4 grid gap-2 border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground dark:border-white/10">
+                        <p>
+                          Slug:{" "}
+                          <span className="font-mono font-semibold text-foreground">{selected.slug}</span>
+                        </p>
+                        <p>
+                          Attempts:{" "}
+                          <span className="font-semibold text-foreground">
+                            {selected.maxAttempts ?? "Configured by backend"}
+                          </span>
+                        </p>
+                        <p>
+                          Passing score:{" "}
+                          <span className="font-semibold text-foreground">
+                            {selected.passingScore === null
+                              ? "Configured by backend"
+                              : `${selected.passingScore}%`}
+                          </span>
+                        </p>
+                      </div>
                     </div>
-                    <div className="mt-4 grid gap-2 text-xs leading-relaxed text-slate-400 border-t border-white/5 pt-3">
-                      <p>Slug: <span className="font-mono font-bold text-white">{selected.slug}</span></p>
-                      <p>Attempts: <span className="font-bold text-white">{selected.maxAttempts ?? "Configured by backend"}</span></p>
-                      <p>
-                        Passing score:{" "}
-                        <span className="font-bold text-white">
-                          {selected.passingScore === null
-                            ? "Configured by backend"
-                            : `${selected.passingScore}%`}
-                        </span>
+
+                    <div className={cn(portalPanelNestedClass, "p-4")}>
+                      <p className={portalLabelClass}>Why it matters</p>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        {selected.whyItMatters}
                       </p>
                     </div>
-                  </div>
 
-                  <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                      Why it matters
-                    </p>
-                    <p className="mt-2 text-xs leading-relaxed text-slate-300">
-                      {selected.whyItMatters}
-                    </p>
-                  </div>
-                  <div className={cn(portalAlertInfoClass, "text-xs font-semibold leading-relaxed")}>
-                    Remote and premium delivery can be permission-locked later
-                    without changing the assessment definition coming from Strapi.
+                    <div className={cn(portalAlertInfoClass, "text-xs leading-relaxed")}>
+                      Remote and premium delivery can be permission-locked later without changing
+                      the assessment definition coming from Strapi.
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            </>
+          ) : null}
         </DialogContent>
       </Dialog>
     </>

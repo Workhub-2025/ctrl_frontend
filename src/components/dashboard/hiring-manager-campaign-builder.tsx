@@ -17,17 +17,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Brain,
-  BrainCircuit,
-  Headphones,
   FileText,
+  Headphones,
   Lock,
   Unlock,
   Save,
   ShieldCheck,
-  SlidersHorizontal,
-  TimerReset,
 } from "lucide-react";
+import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
 import {
@@ -59,15 +56,6 @@ type CreateCampaignResponse = {
   data?: unknown;
   error?: string;
 };
-
-const iconByKey = {
-  typing: TimerReset,
-  "call-simulation": Headphones,
-  "situational-judgement": SlidersHorizontal,
-  prioritisation: BrainCircuit,
-  "short-term-memory": Brain,
-  default: BrainCircuit,
-} satisfies Record<HiringManagerAssessment["iconKey"], typeof BrainCircuit>;
 
 type CampaignDraft = {
   campaignName: string;
@@ -640,7 +628,7 @@ export function HiringManagerCampaignBuilder({
             ) : (
               assessments.map((assessment) => {
                 const checked = draft.assessmentSlugs.includes(assessment.slug);
-                const Icon = iconByKey[assessment.iconKey] ?? BrainCircuit;
+                const Icon = getAssessmentCatalogueIcon(assessment.slug);
 
                 return (
                   <div

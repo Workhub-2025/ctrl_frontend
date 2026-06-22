@@ -18,15 +18,12 @@ import {
   Pencil,
   RefreshCw,
   Trash2,
-  Keyboard,
   ClipboardList,
-  BrainCircuit,
-  PhoneCall,
-  FileQuestion,
   Users,
   Calendar,
   Briefcase
 } from "lucide-react";
+import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { cn } from "@/lib/utils";
@@ -338,7 +335,7 @@ export function HiringManagerCampaignDetailView({
               (() => {
                 const versionSummary = getAssessmentVersionSummary(campaign.assessmentSettings);
                 return campaign.assessmentStack.map((assessment) => {
-                  const Icon = getAssessmentIcon(assessment);
+                  const Icon = getAssessmentCatalogueIcon(assessment);
                   const matchedVersion = versionSummary.find((v) =>
                     v.key.replace(/-/g, "").toLowerCase().includes(assessment.toLowerCase().replace(/\s+/g, "").replace(/-/g, "")) ||
                     assessment.toLowerCase().replace(/\s+/g, "").replace(/-/g, "").includes(v.key.replace(/-/g, "").toLowerCase())
@@ -593,21 +590,4 @@ export function HiringManagerCampaignDetailView({
       />
     </div>
   );
-}
-
-function getAssessmentIcon(name: string) {
-  const lowercase = name.toLowerCase();
-  if (lowercase.includes("typing")) {
-    return Keyboard;
-  }
-  if (lowercase.includes("prioriti") || lowercase.includes("order")) {
-    return ClipboardList;
-  }
-  if (lowercase.includes("judgement") || lowercase.includes("sjt") || lowercase.includes("behavior")) {
-    return BrainCircuit;
-  }
-  if (lowercase.includes("call") || lowercase.includes("audio") || lowercase.includes("simulat")) {
-    return PhoneCall;
-  }
-  return FileQuestion;
 }

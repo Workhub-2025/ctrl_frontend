@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Mail, Plus, RefreshCw, X } from "lucide-react";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
 import { cn } from "@/lib/utils";
-import { portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalPanelClass, portalBadgeClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 type PendingInvite = {
   id: string;
@@ -145,18 +145,18 @@ export function CandidateEmailInvitesPanel({
   return (
     <div className={cn(portalPanelClass, "space-y-4 rounded-2xl p-4", className)}>
       <div className="space-y-1">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-white">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <Mail className="h-4 w-4 text-primary" />
           Candidate email invites
         </h3>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Invite candidates directly to this session ({deliveryMode.toLowerCase()} delivery).
           {remainingSeats > 0
             ? ` ${remainingSeats} seat${remainingSeats === 1 ? "" : "s"} remaining.`
             : " Session is full."}
         </p>
         {disabledReason ? (
-          <p className="text-xs text-amber-400">{disabledReason}</p>
+          <p className="text-xs text-muted-foreground">{disabledReason}</p>
         ) : null}
       </div>
 
