@@ -1,6 +1,7 @@
 'use server';
 
 import { getActionAuthContext } from '@/lib/auth/server-action-auth';
+import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { getServerStrapiClient } from '@/lib/strapi';
 import { DEFAULT_TYPING_CONFIG } from '@/store/typing-session.store';
 import type { TypingRun, TypingConfig, TypingSessionData } from '@/store/typing-session.store';
@@ -50,7 +51,22 @@ export async function initTypingSession(
       assessmentId: string;
       runs: TypingRun[];
       config: TypingConfig;
+      alreadyCompleted?: boolean;
+      completedAt?: string | null;
+      score?: number | null;
     };
+
+    if (isAlreadyCompletedSession(body)) {
+      return {
+        sessionId: body.sessionId ?? null,
+        assessmentId: body.assessmentId ?? null,
+        runs: [],
+        config: body.config ?? DEFAULT_TYPING_CONFIG,
+        alreadyCompleted: true,
+        completedAt: body.completedAt ?? null,
+        score: body.score ?? null,
+      };
+    }
 
     if (!Array.isArray(body.runs) || !body.config) {
       console.error('[initTypingSession] Unexpected response shape — using fallback', body);

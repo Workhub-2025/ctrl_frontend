@@ -1,18 +1,11 @@
 "use client";
 
 import { ReactNode, useState, useEffect, useRef } from "react";
-import { AlertTriangle, Lock, Monitor, Pause, Play, RefreshCw, Settings, ShieldAlert, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Monitor, Pause, Play, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
 import { AssessmentIntegrityService } from "@/services/assessment-integrity.service";
 import { useAssessmentStore } from "@/store/assessment.store";
-import { useTypingSessionStore } from "@/store/typing-session.store";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   portalAlertErrorClass,
@@ -25,7 +18,6 @@ type SecureAssessmentShellProps = {
   timerLabel: string;
   secureModeActive: boolean;
   warningsCount: number;
-  onExit: () => void;
   children: ReactNode;
   showPauseButton?: boolean;
   enableFocusMonitoring?: boolean;
@@ -40,7 +32,6 @@ export function SecureAssessmentShell({
   timerLabel,
   secureModeActive,
   warningsCount,
-  onExit,
   children,
   showPauseButton = true,
   enableFocusMonitoring = true,
@@ -50,8 +41,6 @@ export function SecureAssessmentShell({
 }: Readonly<SecureAssessmentShellProps>) {
   const integrityEvents = useAssessmentStore((s) => s.integrityEvents);
   const addIntegrityEvent = useAssessmentStore((s) => s.addIntegrityEvent);
-  const submissionStatus = useTypingSessionStore((s) => s.submissionStatus);
-  const isSubmitting = submissionStatus === "submitting";
 
   const [isPaused, setIsPaused] = useState(false);
   const [securityViolation, setSecurityViolation] = useState<string | null>(null);
@@ -297,28 +286,6 @@ export function SecureAssessmentShell({
               <span className="hidden sm:inline">Pause</span>
             </Button>
           )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-10 gap-2 rounded-lg border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <Settings className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">Options</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={onExit}
-                disabled={isSubmitting}
-                className="text-red-600 focus:bg-red-50 dark:focus:bg-red-950/30 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-              >
-                <Lock className="h-4 w-4 mr-2" aria-hidden="true" />
-                {isSubmitting ? "Submitting…" : "Save & Exit Securely"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </header>
 
@@ -436,16 +403,6 @@ export function SecureAssessmentShell({
                 >
                   <Play className="mr-2 h-4 w-4" aria-hidden="true" />
                   Resume Assessment
-                </Button>
-              )}
-              {securityViolation && (
-                <Button
-                  variant="ghost"
-                  onClick={onExit}
-                  disabled={isSubmitting}
-                  className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-                >
-                  Exit & Audit Session
                 </Button>
               )}
             </div>

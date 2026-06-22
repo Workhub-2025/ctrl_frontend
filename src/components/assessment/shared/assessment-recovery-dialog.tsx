@@ -20,6 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  resolveRecoveryContentVersion,
+  resolveRecoveryVersionOptions,
+} from "@/lib/assessment-recovery-versions";
+import {
   AssessmentAttemptService,
   type AssessmentRecoveryMode,
   type CandidateAssessmentAttempt,
@@ -62,22 +66,38 @@ export function AssessmentRecoveryDialog({
   const selectedSlug = attempt?.assessmentSlug ?? "";
   const isTimed = selectedSlug ? TIMED_ASSESSMENT_SLUGS.has(selectedSlug) : false;
   const versionOptions = useMemo(
-    () => versions[selectedSlug] ?? [],
-    [selectedSlug, versions]
+    () =>
+      resolveRecoveryVersionOptions(
+        versions[selectedSlug],
+        attempt?.contentVersion,
+      ),
+    [attempt?.contentVersion, selectedSlug, versions],
   );
 
   useEffect(() => {
-    if (!open) return;
-    void fetch(versionsUrl, { cache: "no-store" })
+    if (!open || !selectedSlug) return;
+
+    const url = new URL(versionsUrl, window.location.origin);
+    url.searchParams.set("slug", selectedSlug);
+
+    void fetch(url.toString(), { cache: "no-store" })
       .then((response) => (response.ok ? response.json() : { data: {} }))
-      .then((body: { data?: VersionCatalog }) => setVersions(body.data ?? {}))
+      .then((body: { data?: VersionCatalog | Array<{ version: string; title: string }> }) => {
+        if (Array.isArray(body.data)) {
+          setVersions({ [selectedSlug]: body.data });
+          return;
+        }
+        setVersions(body.data ?? {});
+      })
       .catch(() => setVersions({}));
-  }, [open, versionsUrl]);
+  }, [open, selectedSlug, versionsUrl]);
 
   useEffect(() => {
     if (!attempt) return;
     setAction(isTimed ? "restart" : "resume");
-    setContentVersion(attempt.contentVersion ?? versionOptions[0]?.version ?? "");
+    setContentVersion(
+      attempt.contentVersion?.trim() || versionOptions[0]?.version || "1.0.0",
+    );
     setSubmitError(null);
   }, [attempt, isTimed, versionOptions]);
 
@@ -91,7 +111,12 @@ export function AssessmentRecoveryDialog({
         candidateSessionDocumentId: attempt.candidateSessionDocumentId,
         assessmentSlug: attempt.assessmentSlug,
         action,
-        contentVersion: action === "restart" ? contentVersion || null : null,
+        contentVersion: resolveRecoveryContentVersion(
+          action,
+          contentVersion,
+          attempt.contentVersion,
+          versionOptions,
+        ),
       });
       onOpenChange(false);
       onRecovered?.();
@@ -102,13 +127,16 @@ export function AssessmentRecoveryDialog({
     }
   };
 
+  const singleVersionRestart = action === "restart" && versionOptions.length === 1;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Recover assessment</DialogTitle>
           <DialogDescription>
-            Unlock the candidate to resume from snapshot or restart with a new question set.
+            Unlock the candidate to resume from snapshot or restart from the beginning with a fresh
+            random question set.
           </DialogDescription>
         </DialogHeader>
 
@@ -136,26 +164,41 @@ export function AssessmentRecoveryDialog({
                   <SelectItem value="resume" disabled={isTimed}>
                     Resume from snapshot
                   </SelectItem>
-                  <SelectItem value="restart">Restart with new question set</SelectItem>
+                  <SelectItem value="restart">
+                    Restart from beginning (new random question set)
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              {isTimed ? (
+                <p className="text-xs text-muted-foreground">
+                  Timed assessments cannot resume mid-run. Restart issues a new random question set
+                  using the selected version.
+                </p>
+              ) : null}
             </div>
 
             {action === "restart" ? (
               <div className="space-y-2">
                 <Label htmlFor="content-version">Question set version</Label>
-                <Select value={contentVersion} onValueChange={setContentVersion}>
-                  <SelectTrigger id="content-version">
-                    <SelectValue placeholder="Select version" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {versionOptions.map((option) => (
-                      <SelectItem key={option.version} value={option.version}>
-                        {option.title} ({option.version})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {singleVersionRestart ? (
+                  <p className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm text-foreground">
+                    {versionOptions[0].title} ({versionOptions[0].version}) — a new random set from
+                    this bank will be generated.
+                  </p>
+                ) : (
+                  <Select value={contentVersion} onValueChange={setContentVersion}>
+                    <SelectTrigger id="content-version">
+                      <SelectValue placeholder="Select version" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {versionOptions.map((option) => (
+                        <SelectItem key={option.version} value={option.version}>
+                          {option.title} ({option.version})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             ) : null}
 

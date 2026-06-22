@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/select';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { initCallSimulationSession } from '@/app/actions/assessment-call-simulation.actions';
+import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { CALL_SIMULATION_REVIEW_SECONDS } from '@/lib/assessment-catalog-defaults';
 import { cn } from '@/lib/utils';
@@ -475,6 +476,11 @@ export default function CallSimulationTest({
         setError(null);
         const sessionData = await initCallSimulationSession(candidateSessionDocumentId);
         if (cancelled) return;
+        if (isAlreadyCompletedSession(sessionData)) {
+          setPhase('submitted');
+          setLoading(false);
+          return;
+        }
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
           const sortedRuns = [...sessionData.runs].sort((a, b) => {
             if (a.kind !== b.kind) {

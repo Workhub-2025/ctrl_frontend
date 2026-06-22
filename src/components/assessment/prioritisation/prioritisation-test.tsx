@@ -25,6 +25,7 @@ import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessme
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 import { initPjaSession } from '@/app/actions/assessment-pja.actions';
+import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { buildTimedAssessmentSubmitMeta } from '@/lib/assessment-completion-status';
 import {
   PJA_INCIDENTS_PER_ROUND,
@@ -400,6 +401,11 @@ export default function PrioritisationTest({
         setError(null);
         const sessionData = await initPjaSession(candidateSessionDocumentId);
         if (cancelled) return;
+        if (isAlreadyCompletedSession(sessionData)) {
+          setPhase('submitted');
+          setLoading(false);
+          return;
+        }
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
           const sessionLimit =
             sessionData.config?.timeLimitSeconds ?? STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;

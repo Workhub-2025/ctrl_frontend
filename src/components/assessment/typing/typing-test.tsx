@@ -286,6 +286,7 @@ export default function TypingTest({
 }: Readonly<TypingTestProps>) {
   const router = useRouter();
   const storeRuns = useTypingSessionStore((s) => s.runs);
+  const alreadyCompleted = useTypingSessionStore((s) => s.alreadyCompleted);
   const assessmentId = useTypingSessionStore((s) => s.assessmentId);
   const config = useTypingSessionStore((s) => s.config);
   const setSubmissionStatus = useTypingSessionStore((s) => s.setSubmissionStatus);
@@ -302,7 +303,10 @@ export default function TypingTest({
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (phase === 'submitting' || phase === 'submitted') {
+      if (phase === 'submitting' || phase === 'submitted' || alreadyCompleted) {
+        if (alreadyCompleted && phase !== 'submitted') {
+          setPhase('submitted');
+        }
         setLoading(false);
         return;
       }
@@ -316,7 +320,7 @@ export default function TypingTest({
       setLoading(false);
     }, 100);
     return () => clearTimeout(timer);
-  }, [phase, storeRuns]);
+  }, [alreadyCompleted, phase, storeRuns]);
 
   const [currentRunIndex, setCurrentRunIndex] = useState(0);
   const [countdown, setCountdown] = useState(3);

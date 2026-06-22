@@ -32,6 +32,9 @@ export type TypingSessionData = {
     assessmentId: string | null;
     runs: TypingRun[];
     config: TypingConfig;
+    alreadyCompleted?: boolean;
+    completedAt?: string | null;
+    score?: number | null;
 };
 
 export type SubmissionStatus = 'idle' | 'submitting' | 'submitted' | 'error';
@@ -58,6 +61,7 @@ interface TypingSessionState {
     runs: TypingRun[];
     /** Parámetros de configuración del assessment (desde Strapi) */
     config: TypingConfig;
+    alreadyCompleted: boolean;
     /** Estado del envío de resultados — permite bloquear el exit durante submission */
     submissionStatus: SubmissionStatus;
 
@@ -74,6 +78,7 @@ export const useTypingSessionStore = create<TypingSessionState>()(
             assessmentId: null,
             runs: [],
             config: DEFAULT_TYPING_CONFIG,
+            alreadyCompleted: false,
             submissionStatus: 'idle',
 
             setSession: (data) =>
@@ -83,6 +88,8 @@ export const useTypingSessionStore = create<TypingSessionState>()(
                         assessmentId: data.assessmentId,
                         runs: data.runs,
                         config: data.config,
+                        alreadyCompleted: data.alreadyCompleted === true,
+                        submissionStatus: data.alreadyCompleted ? 'submitted' : 'idle',
                     },
                     false,
                     'typingSession/setSession'
@@ -102,6 +109,7 @@ export const useTypingSessionStore = create<TypingSessionState>()(
                         assessmentId: null,
                         runs: [],
                         config: DEFAULT_TYPING_CONFIG,
+                        alreadyCompleted: false,
                         submissionStatus: 'idle',
                     },
                     false,

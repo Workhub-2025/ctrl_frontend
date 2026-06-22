@@ -1,6 +1,7 @@
 'use server';
 
 import { getActionAuthContext } from '@/lib/auth/server-action-auth';
+import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { getServerStrapiClient } from '@/lib/strapi';
 import { getAssessmentUiPlugin } from '@/assessments/plugins/registry';
 
@@ -54,5 +55,5 @@ export async function initAssessmentSession<T = typeof EMPTY_SESSION>(
     throw new Error(errorMessage);
   }
 
-  return (await response.json()) as T;
+  return (await response.json()) as T & { alreadyCompleted?: boolean };
 }

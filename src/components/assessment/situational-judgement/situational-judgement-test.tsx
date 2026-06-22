@@ -23,6 +23,7 @@ import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessme
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
 import { initSjaSession } from '@/app/actions/assessment-sja.actions';
+import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { buildTimedAssessmentSubmitMeta } from '@/lib/assessment-completion-status';
 import { STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS } from '@/lib/assessment-catalog-defaults';
 
@@ -291,6 +292,11 @@ export default function SituationalJudgementTest({
         setError(null);
         const sessionData = await initSjaSession(candidateSessionDocumentId);
         if (cancelled) return;
+        if (isAlreadyCompletedSession(sessionData)) {
+          setPhase('submitted');
+          setLoading(false);
+          return;
+        }
         if (sessionData && sessionData.runs && sessionData.runs.length > 0) {
           const sessionLimit =
             sessionData.config?.timeLimitSeconds ?? STANDARD_ASSESSMENT_TIME_LIMIT_SECONDS;

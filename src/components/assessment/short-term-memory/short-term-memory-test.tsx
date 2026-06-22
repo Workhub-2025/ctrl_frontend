@@ -25,6 +25,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { initStmSession } from '@/app/actions/assessment-stm.actions';
+import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { buildTimedAssessmentSubmitMeta } from '@/lib/assessment-completion-status';
 import {
   STM_DISTRACTION_SECONDS,
@@ -148,6 +149,11 @@ export default function ShortTermMemoryTest({
         setError(null);
         const sessionData = await initStmSession(candidateSessionDocumentId);
         if (cancelled) return;
+        if (isAlreadyCompletedSession(sessionData)) {
+          setPhase('complete');
+          setLoading(false);
+          return;
+        }
         if (!sessionData?.runs?.length) {
           throw new Error('No assessment rounds returned from session initialization.');
         }

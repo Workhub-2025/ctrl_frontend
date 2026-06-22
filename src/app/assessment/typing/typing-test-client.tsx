@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { SecureAssessmentShell, TypingTest } from '@/components/assessment';
 import { Button } from '@/components/ui/button';
-import { useSecureExit } from '@/hooks/use-secure-exit';
 import { useTypingSessionStore } from '@/store/typing-session.store';
 import type { TypingSessionData } from '@/store/typing-session.store';
 
@@ -24,7 +23,6 @@ export function TypingTestClient({
   initialSession,
   candidateSessionDocumentId,
 }: Readonly<TypingTestClientProps>) {
-  const { handleExit } = useSecureExit(candidateSessionDocumentId);
   const setSession = useTypingSessionStore((s) => s.setSession);
   const [integrityMonitoringActive, setIntegrityMonitoringActive] = useState(false);
 
@@ -57,7 +55,6 @@ export function TypingTestClient({
       timerLabel="In Progress"
       secureModeActive={true}
       warningsCount={0}
-      onExit={handleExit}
       showPauseButton={false}
       enableFocusMonitoring={true}
       integrityMonitoringActive={integrityMonitoringActive}

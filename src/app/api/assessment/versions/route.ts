@@ -13,6 +13,14 @@ const ASSESSMENT_SLUGS = [
   "short-term-memory",
 ];
 
+function resolveRequestedSlugs(request: NextRequest) {
+  const slug = request.nextUrl.searchParams.get("slug")?.trim();
+  if (slug && ASSESSMENT_SLUGS.includes(slug)) {
+    return [slug];
+  }
+  return ASSESSMENT_SLUGS;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +29,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const versions = await getAdminAssessmentVersions(ASSESSMENT_SLUGS, strapiJwt);
+    const slugs = resolveRequestedSlugs(request);
+    const versions = await getAdminAssessmentVersions(slugs, strapiJwt);
+    const slug = request.nextUrl.searchParams.get("slug")?.trim();
+    if (slug && ASSESSMENT_SLUGS.includes(slug)) {
+      return NextResponse.json({ data: versions[slug] ?? [] });
+    }
     return NextResponse.json({ data: versions });
   } catch (error) {
     return NextResponse.json(

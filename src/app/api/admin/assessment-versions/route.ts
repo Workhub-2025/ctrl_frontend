@@ -14,12 +14,25 @@ const ASSESSMENT_SLUGS = [
   "short-term-memory",
 ];
 
-export async function GET() {
+function resolveRequestedSlugs(request: NextRequest) {
+  const slug = request.nextUrl.searchParams.get("slug")?.trim();
+  if (slug && ASSESSMENT_SLUGS.includes(slug)) {
+    return [slug];
+  }
+  return ASSESSMENT_SLUGS;
+}
+
+export async function GET(request: NextRequest) {
   const auth = await requireAdminApiAccess('recovery.read');
   if ("error" in auth) return auth.error;
 
   try {
-    const versions = await getAdminAssessmentVersions(ASSESSMENT_SLUGS, auth.strapiJwt);
+    const slugs = resolveRequestedSlugs(request);
+    const versions = await getAdminAssessmentVersions(slugs, auth.strapiJwt);
+    const slug = request.nextUrl.searchParams.get("slug")?.trim();
+    if (slug && ASSESSMENT_SLUGS.includes(slug)) {
+      return NextResponse.json({ data: versions[slug] ?? [] });
+    }
     return NextResponse.json({ data: versions });
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);
