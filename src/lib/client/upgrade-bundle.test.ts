@@ -12,7 +12,7 @@ const mockPricing: ClientUpgradePricing = {
   },
 };
 
-describe("computeLineItems pricing and grandfathering", () => {
+describe("computeLineItems pricing and founder discounts", () => {
   it("computes regular line items without discounts", () => {
     const items: ClientUpgradeBundleItem[] = [
       { type: "seat_increase", currentSeats: 5, requestedSeats: 8 },
@@ -34,7 +34,7 @@ describe("computeLineItems pricing and grandfathering", () => {
     expect(sumLineItems(lineItems)).toBe(11000);
   });
 
-  it("applies standard grandfather loyalty discount", () => {
+  it("applies founder loyalty discount", () => {
     const items: ClientUpgradeBundleItem[] = [
       { type: "seat_increase", currentSeats: 5, requestedSeats: 6 },
       { type: "delivery_feature", featureKey: "deliveryRemote" },
@@ -49,14 +49,14 @@ describe("computeLineItems pricing and grandfathering", () => {
     expect(sumLineItems(lineItems)).toBe(2800);
   });
 
-  it("zeroes out features under active grandfathering but charges for seats with discount", () => {
+  it("zeroes out features during founder first-year window but charges for seats with discount", () => {
     const items: ClientUpgradeBundleItem[] = [
       { type: "seat_increase", currentSeats: 5, requestedSeats: 7 },
       { type: "delivery_feature", featureKey: "deliveryRemote" },
       { type: "new_assessment", assessmentSlug: "verbal", assessmentLabel: "Verbal Reasoning", notes: "Needed" },
     ];
 
-    // Active grandfathering + 35% discount
+    // Founder first-year window + 35% discount
     const lineItems = computeLineItems(items, mockPricing, 35, true);
     expect(lineItems).toEqual([
       { label: "2 additional HM seats", quantity: 2, unitAmountPence: 650, billingInterval: "month" },

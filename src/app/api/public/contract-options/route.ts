@@ -68,11 +68,16 @@ export async function GET() {
       },
     ];
 
+    const founderOfferExpiresAt = pricing.founderOfferExpiresAt
+      ? String(pricing.founderOfferExpiresAt)
+      : null;
+
     return NextResponse.json({
       data: {
-        grandfatherAvailable: true,
+        founderAvailable: !founderOfferExpiresAt || founderOfferExpiresAt >= new Date().toISOString().split("T")[0],
+        founderOfferExpiresAt,
         options,
-      }
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Contract options could not be loaded";

@@ -161,14 +161,14 @@ type ContractOption = {
 };
 
 type ContractOptionsData = {
-  grandfatherAvailable: boolean;
-  grandfatherOfferExpiresAt: string | null;
+  founderAvailable: boolean;
+  founderOfferExpiresAt: string | null;
   options: ContractOption[];
 };
 
 const fallbackContractOptions: ContractOptionsData = {
-  grandfatherAvailable: true,
-  grandfatherOfferExpiresAt: null,
+  founderAvailable: true,
+  founderOfferExpiresAt: null,
   options: [
     {
       tier: "essential",
@@ -1041,11 +1041,11 @@ export default function Home() {
                 })}
               </RevealGroup>
 
-              {contractData.grandfatherOfferExpiresAt ? (
+              {contractData.founderOfferExpiresAt ? (
                 <Reveal variant="fade-up">
                   <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-500 dark:text-slate-400">
                     Founder availability is controlled by the platform expiry date and is currently listed until{" "}
-                    {new Date(contractData.grandfatherOfferExpiresAt).toLocaleDateString("en-GB", {
+                    {new Date(contractData.founderOfferExpiresAt).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",

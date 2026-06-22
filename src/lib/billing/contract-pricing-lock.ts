@@ -5,6 +5,17 @@
 
 export type NormalizedContractTier = "essential" | "professional" | "founder";
 
+const TIER_LABELS: Record<NormalizedContractTier, string> = {
+  essential: "Essential",
+  professional: "Professional",
+  founder: "Founder",
+};
+
+export function getContractTierLabel(tier?: string | null): string {
+  if (!tier) return "No contract";
+  return TIER_LABELS[normalizeContractTierForLock(tier)];
+}
+
 export function normalizeContractTierForLock(tier?: string | null): NormalizedContractTier {
   switch (tier) {
     case "minimum":

@@ -3,7 +3,10 @@ import "server-only";
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 import { resolveEffectiveRetentionMonths } from "@/lib/legal/retention-format";
 import { ContractTier, ContractStatus } from "@/types";
-import { resolveEffectiveAnnualPlatformPence } from "@/lib/billing/contract-pricing-lock";
+import {
+  getContractTierLabel,
+  resolveEffectiveAnnualPlatformPence,
+} from "@/lib/billing/contract-pricing-lock";
 
 class AdminStrapiRequestError extends Error {
   status: number;
@@ -448,20 +451,7 @@ function getLatestContract(client: RawClient) {
 }
 
 function contractTierLabel(tier?: RawContract["tier"]) {
-  switch (tier) {
-    case "minimum":
-      return "Minimum";
-    case "professional":
-      return "Professional";
-    case "grandfather":
-      return "Grandfather";
-    case "grandfather_founders":
-      return "Grandfather - Founders";
-    case "professional_gf":
-      return "Professional (GF)";
-    default:
-      return "No contract";
-  }
+  return getContractTierLabel(tier);
 }
 
 function getLatestAccessCode(
