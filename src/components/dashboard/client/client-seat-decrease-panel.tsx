@@ -25,12 +25,14 @@ function slotManagerEmail(slot: SeatSlot) {
 
 export function ClientSeatDecreasePanel({
   currentSeats,
+  minimumContractedSeats,
   seatSlots,
   canRequestUpgrades,
   submitting,
   onSubmit,
 }: {
   currentSeats: number;
+  minimumContractedSeats: number;
   seatSlots: SeatSlot[];
   canRequestUpgrades: boolean;
   submitting: boolean;
@@ -67,7 +69,9 @@ export function ClientSeatDecreasePanel({
   };
 
   const selectionValid =
-    seatsToRemove > 0 && selectedSeats.length === seatsToRemove && parsedTarget >= 1;
+    seatsToRemove > 0
+    && selectedSeats.length === seatsToRemove
+    && parsedTarget >= minimumContractedSeats;
 
   const handleSubmit = async () => {
     setFieldError(null);
@@ -97,7 +101,7 @@ export function ClientSeatDecreasePanel({
     }
   };
 
-  if (currentSeats <= 1) {
+  if (currentSeats <= minimumContractedSeats) {
     return null;
   }
 
@@ -126,8 +130,8 @@ export function ClientSeatDecreasePanel({
             <Input
               id="client-target-seat-count"
               type="number"
-              min={1}
-              max={Math.max(1, currentSeats - 1)}
+              min={minimumContractedSeats}
+              max={Math.max(minimumContractedSeats, currentSeats - 1)}
               value={targetSeatCount}
               onChange={(event) => {
                 setTargetSeatCount(event.target.value);
@@ -136,8 +140,8 @@ export function ClientSeatDecreasePanel({
               className="rounded-xl"
             />
             <p className="text-xs text-muted-foreground">
-              Current allocation: {currentSeats}. Select {seatsToRemove > 0 ? seatsToRemove : 0}{" "}
-              seat{seatsToRemove === 1 ? "" : "s"} to remove.
+              Current allocation: {currentSeats}. Contract minimum: {minimumContractedSeats}. Select{" "}
+              {seatsToRemove > 0 ? seatsToRemove : 0} seat{seatsToRemove === 1 ? "" : "s"} to remove.
             </p>
           </div>
 

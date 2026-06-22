@@ -42,6 +42,7 @@ import {
   type ClientUpgradeRequestType,
 } from "@/lib/client/entitlements";
 import { formatMoney } from "@/lib/money";
+import { resolveMinimumContractedSeats } from "@/lib/client/contract-seat-limits";
 import { cn } from "@/lib/utils";
 
 const UPGRADE_TYPE_LABELS: Record<ClientUpgradeRequestType, string> = {
@@ -115,6 +116,10 @@ export function ClientUpgradeContent() {
   const contract = entitlements?.contract ?? summary?.activeContract ?? null;
   const seats = summary?.seats;
   const canRequestUpgrades = entitlements?.canRequestUpgrades !== false;
+  const currentSeats = contract?.seatCount ?? seats?.limit ?? 0;
+  const minimumContractedSeats =
+    entitlements?.contract?.minimumContractedSeats
+    ?? resolveMinimumContractedSeats({ tier: contract?.tier });
 
   const activationInvoice = useMemo(
     () =>
@@ -463,11 +468,12 @@ export function ClientUpgradeContent() {
           </PortalPanel>
         ) : null}
 
-        {entitlements && (contract?.seatCount ?? seats?.limit ?? 0) > 1 ? (
+        {entitlements && currentSeats > minimumContractedSeats ? (
           <PortalPanel>
             <div className="p-6">
               <ClientSeatDecreasePanel
-                currentSeats={contract?.seatCount ?? seats?.limit ?? 0}
+                currentSeats={currentSeats}
+                minimumContractedSeats={minimumContractedSeats}
                 seatSlots={seatSlots}
                 canRequestUpgrades={canRequestUpgrades}
                 submitting={submittingUpgrade}

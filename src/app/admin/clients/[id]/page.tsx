@@ -41,6 +41,7 @@ import {
   AdminStatTile,
 } from "@/components/admin/admin-portal-ui";
 import { AdminSeatDowngradePanel } from "@/components/admin/admin-seat-downgrade-panel";
+import { resolveMinimumContractedSeats } from "@/lib/client/contract-seat-limits";
 import { AdminAssessmentRetentionPanel } from "@/components/admin/admin-assessment-retention-panel";
 import {
   portalBadgeClass,
@@ -79,6 +80,7 @@ type ClientDetails = {
     startDate: string | null;
     endDate: string | null;
     seatCount: number;
+    tier?: string;
     notes: string;
     paymentStatus?: string;
     assessmentDataRetentionMonths?: number | null;
@@ -708,6 +710,9 @@ export default function ClientDetailPage() {
                   <AdminSeatDowngradePanel
                     clientId={client.id}
                     currentSeatCount={client.activeContract.seatCount}
+                    minimumContractedSeats={resolveMinimumContractedSeats({
+                      tier: client.activeContract.tier,
+                    })}
                     onCompleted={async () => {
                       invalidateAdminResource(`admin:client:${client.id}`);
                       invalidateAdminResource("admin:clients");

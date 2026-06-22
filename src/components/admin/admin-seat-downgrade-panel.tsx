@@ -36,10 +36,12 @@ type ExportState = {
 export function AdminSeatDowngradePanel({
   clientId,
   currentSeatCount,
+  minimumContractedSeats,
   onCompleted,
 }: {
   clientId: string;
   currentSeatCount: number;
+  minimumContractedSeats: number;
   onCompleted: () => void | Promise<void>;
 }) {
   const [slots, setSlots] = useState<SeatSlot[]>([]);
@@ -103,7 +105,9 @@ export function AdminSeatDowngradePanel({
   };
 
   const selectionValid =
-    seatsToRemove > 0 && selectedSeats.length === seatsToRemove && parsedTarget >= 1;
+    seatsToRemove > 0
+    && selectedSeats.length === seatsToRemove
+    && parsedTarget >= minimumContractedSeats;
 
   const exportReady = selectionValid && !exportState;
   const deactivateReady =
@@ -178,6 +182,10 @@ export function AdminSeatDowngradePanel({
     }
   };
 
+  if (currentSeatCount <= minimumContractedSeats) {
+    return null;
+  }
+
   return (
     <AdminPanel className="space-y-5">
       <AdminSectionHeader
@@ -194,8 +202,8 @@ export function AdminSeatDowngradePanel({
           <Input
             id="target-seat-count"
             type="number"
-            min={1}
-            max={Math.max(1, currentSeatCount - 1)}
+            min={minimumContractedSeats}
+            max={Math.max(minimumContractedSeats, currentSeatCount - 1)}
             value={targetSeatCount}
             onChange={(event) => {
               setTargetSeatCount(event.target.value);
@@ -205,8 +213,8 @@ export function AdminSeatDowngradePanel({
             className="rounded-xl"
           />
           <p className="text-xs text-muted-foreground">
-            Current allocation: {currentSeatCount}. Select {seatsToRemove > 0 ? seatsToRemove : 0}{" "}
-            seat{seatsToRemove === 1 ? "" : "s"} to remove.
+            Current allocation: {currentSeatCount}. Contract minimum: {minimumContractedSeats}. Select{" "}
+            {seatsToRemove > 0 ? seatsToRemove : 0} seat{seatsToRemove === 1 ? "" : "s"} to remove.
           </p>
         </div>
 

@@ -76,6 +76,8 @@ export type ClientContract = {
   startDate?: string;
   endDate?: string;
   status?: string;
+  tier?: string;
+  minimumContractedSeats?: number;
   notes?: string | null;
 };
 

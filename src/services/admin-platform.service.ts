@@ -286,13 +286,14 @@ export type AdminUsersSummary = {
 };
 
 export type AdminClientEntitlementRow = AdminClientRow & {
-  activeContract: {
-    documentId: string;
-    status: string;
-    startDate: string | null;
-    endDate: string | null;
-    seatCount: number;
-    notes: string;
+    activeContract: {
+      documentId: string;
+      status: string;
+      startDate: string | null;
+      endDate: string | null;
+      seatCount: number;
+      tier?: string;
+      notes: string;
     paymentStatus?: string;
   } | null;
   features?: Record<string, any> | null;
@@ -355,13 +356,14 @@ export type AdminClientDetails = AdminClientRow & {
   onboardingCompleted: boolean;
   createdAt: string | null;
   updatedAt: string | null;
-  activeContract: {
-    documentId: string;
-    status: string;
-    startDate: string | null;
-    endDate: string | null;
-    seatCount: number;
-    notes: string;
+    activeContract: {
+      documentId: string;
+      status: string;
+      startDate: string | null;
+      endDate: string | null;
+      seatCount: number;
+      tier?: string;
+      notes: string;
     paymentStatus?: string;
     assessmentDataRetentionMonths: number | null;
     effectiveAssessmentDataRetentionMonths: number;
@@ -614,6 +616,7 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
           startDate: displayContract.startDate ?? null,
           endDate: displayContract.endDate ?? null,
           seatCount: displayContract.seatCount ?? 0,
+          tier: displayContract.tier ?? "professional",
           notes: displayContract.notes ?? "",
           paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
           ...normalizeContractRetentionFields(displayContract),

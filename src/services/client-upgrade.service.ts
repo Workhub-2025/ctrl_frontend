@@ -33,6 +33,7 @@ export type BackendClientEntitlements = {
     paidAt?: string | null;
     daysUntilExpiry?: number | null;
     tier?: string;
+    minimumContractedSeats?: number;
     grandfatherStartedAt?: string | null;
     grandfatherEndsAt?: string | null;
     grandfatherDiscountPercent?: number | null;
