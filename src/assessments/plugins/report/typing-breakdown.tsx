@@ -11,12 +11,13 @@ import {
   BreakdownTableShell,
 } from "./breakdown-ui";
 import type { AssessmentReportBreakdownProps } from "./types";
-import { getTypingRuns } from "./shared";
+import { getAverageTypingMistakes, getTypingRuns } from "./shared";
 
 export function TypingReportBreakdown({ result }: AssessmentReportBreakdownProps) {
   if (!result) return null;
 
   const typingRuns = getTypingRuns(result.metrics);
+  const averageMistakes = getAverageTypingMistakes(result.metrics, result.mistakeCount);
 
   return (
     <>
@@ -30,8 +31,8 @@ export function TypingReportBreakdown({ result }: AssessmentReportBreakdownProps
             valueClassName="text-emerald-600 dark:text-emerald-400"
           />
           <BreakdownStatTile
-            label="Total Mistakes"
-            value={result.mistakeCount ?? "—"}
+            label="Average Mistakes"
+            value={averageMistakes ?? "—"}
             valueClassName="text-destructive"
           />
         </div>
