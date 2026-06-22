@@ -8,6 +8,7 @@ import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import { invalidateHmReportServerCache } from "@/lib/portal-cache-invalidation";
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ candidateSessionId: string }> }
@@ -87,6 +88,7 @@ export async function POST(
       }
 
       const data = await strapiRes.json();
+      void invalidateHmReportServerCache(session.user.id, candidateSessionId);
       return NextResponse.json({ data: data.data });
     } catch (error) {
       return NextResponse.json(

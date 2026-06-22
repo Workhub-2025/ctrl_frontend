@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
 export async function GET() {
@@ -33,6 +34,7 @@ export async function PUT(request: Request) {
       method: "PUT",
       body: JSON.stringify(body),
     });
+    void invalidateAdminPlatformServerCache();
     return NextResponse.json({ data: response.data ?? null });
   } catch (error) {
     return NextResponse.json(

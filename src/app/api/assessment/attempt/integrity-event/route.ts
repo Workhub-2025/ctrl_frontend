@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { forwardAssessmentAttemptRequest } from "@/lib/assessment-attempt-server";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
+import { recordIntegrityEventViaBuffer } from "@/lib/security/integrity-event-buffer";
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,39 +47,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const webhook = process.env.INTEGRITY_EVENTS_WEBHOOK_URL;
-    if (webhook) {
-      await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: session.user.id,
-          role: session.user.role ?? "candidate",
-          organization: session.user.organization ?? null,
-          assessmentType: assessmentSlug,
-          eventType,
-          metadata: payload.metadata ?? {},
-          occurredAt: payload.occurredAt ?? new Date().toISOString(),
-          ipAddress: clientIp,
-          userAgent: request.headers.get("user-agent") ?? "unknown",
-        }),
-      });
-    }
+    const result = await recordIntegrityEventViaBuffer({
+      strapiJwt,
+      userId: session.user.id,
+      role: session.user.role ?? "candidate",
+      organization: session.user.organization ?? null,
+      clientIp,
+      userAgent: request.headers.get("user-agent") ?? "unknown",
+      payload,
+    });
 
-    const { response, body } = await forwardAssessmentAttemptRequest(
-      "/candidate-assessment-attempts/integrity-event",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          ...payload,
-          ipAddress: clientIp,
-          userAgent: request.headers.get("user-agent") ?? "unknown",
-        }),
-      },
-      strapiJwt
-    );
-
-    return NextResponse.json(body, { status: response.status });
+    return NextResponse.json(result.body, { status: result.status });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Integrity event failed" },

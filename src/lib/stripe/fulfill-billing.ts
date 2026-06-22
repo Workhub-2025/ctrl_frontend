@@ -62,8 +62,9 @@ export async function fulfillBillingRequest(input: {
 }
 
 export async function syncStripeSubscription(
-  subscription: Stripe.Subscription
-): Promise<{ success: boolean; clientDocumentId?: string; contractDocumentId?: string }> {
+  subscription: Stripe.Subscription,
+  stripeEventId?: string
+): Promise<{ success: boolean; deduplicated?: boolean; clientDocumentId?: string; contractDocumentId?: string }> {
   const secret = process.env.BILLING_INTERNAL_SECRET;
   if (!secret) {
     throw new Error("BILLING_INTERNAL_SECRET is not configured");
@@ -75,7 +76,10 @@ export async function syncStripeSubscription(
       "Content-Type": "application/json",
       "x-internal-billing-secret": secret,
     },
-    body: JSON.stringify({ subscription }),
+    body: JSON.stringify({
+      subscription,
+      ...(stripeEventId ? { stripeEventId } : {}),
+    }),
   });
 
   const responseBody = await response.json().catch(() => ({}));

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
 import { isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
@@ -29,6 +30,8 @@ export async function POST(
       `/admin/billing/requests/${encodeURIComponent(billingRequestId)}/create-checkout`,
       { method: "POST" }
     );
+
+    void invalidateAdminPlatformServerCache();
 
     return NextResponse.json({
       data: response.data,

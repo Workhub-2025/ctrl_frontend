@@ -91,6 +91,57 @@ export async function upstashLpush(key: string, value: string): Promise<boolean>
   }
 }
 
+export async function upstashLlen(key: string): Promise<number> {
+  if (!isUpstashConfigured()) {
+    return 0;
+  }
+
+  try {
+    const response = await upstashFetch(
+      `${UPSTASH_URL}/llen/${encodeURIComponent(key)}`,
+      { method: "POST", headers: baseHeaders() }
+    );
+    const json = (await response.json()) as { result?: number };
+    return typeof json.result === "number" && json.result >= 0 ? json.result : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function upstashLrange(key: string, start: number, stop: number): Promise<string[]> {
+  if (!isUpstashConfigured()) {
+    return [];
+  }
+
+  try {
+    const response = await upstashFetch(
+      `${UPSTASH_URL}/lrange/${encodeURIComponent(key)}/${start}/${stop}`,
+      { method: "POST", headers: baseHeaders() }
+    );
+    const json = (await response.json()) as { result?: string[] | null };
+    return Array.isArray(json.result) ? json.result : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function upstashPexpire(key: string, ttlMs: number): Promise<boolean> {
+  if (!isUpstashConfigured() || ttlMs <= 0) {
+    return false;
+  }
+
+  try {
+    const response = await upstashFetch(
+      `${UPSTASH_URL}/pexpire/${encodeURIComponent(key)}/${ttlMs}`,
+      { method: "POST", headers: baseHeaders() }
+    );
+    const json = (await response.json()) as { result?: number };
+    return json.result === 1;
+  } catch {
+    return false;
+  }
+}
+
 export async function upstashGetJson<T>(key: string): Promise<T | null> {
   const raw = await upstashGet(key);
   if (!raw) {

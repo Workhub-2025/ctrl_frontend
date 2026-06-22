@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
 export async function POST(
@@ -19,6 +20,8 @@ export async function POST(
       `/admin/billing/requests/${encodeURIComponent(requestId)}/process-seat-decrease`,
       { method: "POST" }
     );
+
+    void invalidateAdminPlatformServerCache();
 
     return NextResponse.json({ data: response.data ?? null });
   } catch (error) {

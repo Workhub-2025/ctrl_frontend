@@ -7,6 +7,13 @@ import {
   getContractTierLabel,
   resolveEffectiveAnnualPlatformPence,
 } from "@/lib/billing/contract-pricing-lock";
+import {
+  PORTAL_ADMIN_ANALYTICS_CACHE_KEY,
+  PORTAL_ADMIN_OVERVIEW_CACHE_KEY,
+  PORTAL_ADMIN_PLATFORM_TTL_MS,
+} from "@/lib/portal-cache-keys";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
+import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 
 class AdminStrapiRequestError extends Error {
   status: number;
@@ -1049,6 +1056,9 @@ export async function generateAdminClientAccessCode(
   if (!response.data?.code) {
     throw new AdminStrapiRequestError("Client access code could not be generated", 500);
   }
+
+  void invalidateAdminPlatformServerCache();
+
   return response.data;
 }
 
@@ -1069,6 +1079,9 @@ export async function sendAdminClientInvite(
   if (!response.data?.documentId) {
     throw new AdminStrapiRequestError("Client invite could not be sent", 500);
   }
+
+  void invalidateAdminPlatformServerCache();
+
   return response.data;
 }
 
@@ -1084,6 +1097,8 @@ export async function deleteAdminClient(
     { method: "DELETE" },
     authToken
   );
+
+  void invalidateAdminPlatformServerCache();
 }
 
 export async function createAdminClient(
@@ -1107,6 +1122,8 @@ export async function createAdminClient(
 
   const createdClient = response.data?.client;
 
+  void invalidateAdminPlatformServerCache();
+
   return {
     client: normalizeClient({
       ...createdClient,
@@ -1127,6 +1144,14 @@ export async function createAdminClient(
 }
 
 export async function getAdminOverview(authToken?: string | null): Promise<AdminOverview> {
+  return portalServerCacheGetOrSet(
+    PORTAL_ADMIN_OVERVIEW_CACHE_KEY,
+    PORTAL_ADMIN_PLATFORM_TTL_MS,
+    () => loadAdminOverview(authToken),
+  );
+}
+
+async function loadAdminOverview(authToken?: string | null): Promise<AdminOverview> {
   const rawClients = await getRawClientsWithUsers(authToken);
   const clients = rawClients.map(normalizeClient);
   const now = Date.now();
@@ -1191,6 +1216,16 @@ export async function getAdminOverview(authToken?: string | null): Promise<Admin
 }
 
 export async function getAdminRevenueAnalytics(
+  authToken?: string | null
+): Promise<AdminRevenueAnalytics> {
+  return portalServerCacheGetOrSet(
+    PORTAL_ADMIN_ANALYTICS_CACHE_KEY,
+    PORTAL_ADMIN_PLATFORM_TTL_MS,
+    () => loadAdminRevenueAnalytics(authToken),
+  );
+}
+
+async function loadAdminRevenueAnalytics(
   authToken?: string | null
 ): Promise<AdminRevenueAnalytics> {
   const [rawClients, pricing, billingRequests] = await Promise.all([
@@ -1399,6 +1434,9 @@ export async function updateAdminClient(
     },
     authToken
   );
+
+  void invalidateAdminPlatformServerCache();
+
   return response.data;
 }
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStripeClient } from "@/lib/stripe/server";
+import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { getStrapiClient } from "@/lib/strapi";
 
 type PublicContractTierPricing = {
@@ -18,7 +18,21 @@ type PublicContractOption = {
   discountPercent?: number;
 };
 
-export async function GET() {
+export async function GET(request: Request) {
+  const ipAddress = extractClientIp(request);
+  const rateLimit = await applyRateLimit({
+    key: `public:contract-options:${ipAddress}`,
+    limit: 60,
+    windowMs: 60_000,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds ?? 60) } }
+    );
+  }
+
   try {
     const client = getStrapiClient();
     const response = await client.fetch("/platform-pricing");

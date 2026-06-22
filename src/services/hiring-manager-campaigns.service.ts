@@ -23,6 +23,7 @@ import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import {
   PORTAL_USER_SCOPED_TTL_MS,
   portalHmOverviewCacheKey,
+  portalHmReportCacheKey,
 } from "@/lib/portal-cache-keys";
 import { getServerAuthSub } from "@/lib/portal-server-auth";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
@@ -827,6 +828,35 @@ export async function getHiringManagerCandidateReport(
   error: string | null;
 }> {
   try {
+    const userSub = await getServerAuthSub();
+    if (!userSub) {
+      return loadHiringManagerCandidateReport(candidateSessionDocumentId);
+    }
+
+    return portalServerCacheGetOrSet(
+      portalHmReportCacheKey(userSub, candidateSessionDocumentId),
+      PORTAL_USER_SCOPED_TTL_MS,
+      () => loadHiringManagerCandidateReport(candidateSessionDocumentId),
+    );
+  } catch (error) {
+    console.error("[getHiringManagerCandidateReport] Failed to load report", error);
+    return {
+      report: null,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Candidate report could not be loaded.",
+    };
+  }
+}
+
+async function loadHiringManagerCandidateReport(
+  candidateSessionDocumentId: string
+): Promise<{
+  report: HiringManagerCandidateReport | null;
+  error: string | null;
+}> {
+  try {
     const response = await strapiRequest<StrapiSingleResponse<RawHmCandidateReport>>(
       `/hiring-manager/candidate-sessions/${candidateSessionDocumentId}/report`
     );
@@ -840,7 +870,7 @@ export async function getHiringManagerCandidateReport(
       error: null,
     };
   } catch (error) {
-    console.error("[getHiringManagerCandidateReport] Failed to load report", error);
+    console.error("[loadHiringManagerCandidateReport] Failed to load report", error);
     return {
       report: null,
       error:

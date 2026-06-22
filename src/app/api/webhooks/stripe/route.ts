@@ -70,10 +70,11 @@ export async function POST(request: Request) {
   } else if (SUBSCRIPTION_EVENTS.has(event.type)) {
     const subscription = event.data.object as Stripe.Subscription;
     try {
-      const syncResult = await syncStripeSubscription(subscription);
+      const syncResult = await syncStripeSubscription(subscription, event.id);
       return NextResponse.json({
         received: true,
         synced: syncResult.success,
+        deduplicated: syncResult.deduplicated === true,
       });
     } catch (error) {
       return NextResponse.json(

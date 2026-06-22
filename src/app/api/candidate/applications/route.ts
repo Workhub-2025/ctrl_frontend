@@ -4,6 +4,8 @@ import {
   handleBffRouteError,
   requireCandidateSession,
 } from "@/lib/auth/bff-session";
+import { invalidateCandidateWorkspaceServerCache } from "@/lib/portal-cache-invalidation";
+import { getServerAuthSub } from "@/lib/portal-server-auth";
 
 /** Join a candidate application via access code. List applications via GET /api/candidate/workspace. */
 export async function POST(request: NextRequest) {
@@ -22,6 +24,10 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ accessCode: payload.accessCode.trim() }),
     });
     const body = await response.json().catch(() => ({}));
+
+    if (response.ok) {
+      void invalidateCandidateWorkspaceServerCache(await getServerAuthSub());
+    }
 
     return NextResponse.json(body, { status: response.status });
   } catch (error) {

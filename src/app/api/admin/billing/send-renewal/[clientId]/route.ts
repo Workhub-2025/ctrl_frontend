@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
 import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
 import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import {
@@ -195,6 +196,8 @@ export async function POST(
         }),
       }
     );
+
+    void invalidateAdminPlatformServerCache();
 
     return NextResponse.json({
       data: {

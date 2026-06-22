@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
 import { getStrapiErrorStatus } from "@/services/admin-platform.service";
 import { getAdminClientStrapiUrl } from "@/lib/admin-client-routes";
 
@@ -40,6 +41,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const data = await res.json();
+    void invalidateAdminPlatformServerCache();
     return NextResponse.json(data);
   } catch (error) {
     const upstreamStatus = getStrapiErrorStatus(error);
