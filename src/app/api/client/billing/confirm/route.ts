@@ -15,6 +15,7 @@ import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import { invalidateClientEntitlementCaches } from "@/lib/portal-cache-invalidation";
 export async function POST(request: NextRequest) {
   try {
     await requireClientSession();
@@ -116,6 +117,8 @@ export async function POST(request: NextRequest) {
             ? checkoutSession.customer
             : checkoutSession.customer?.id,
       });
+
+      void invalidateClientEntitlementCaches({ clientDocumentId });
 
       return NextResponse.json({
         data: {

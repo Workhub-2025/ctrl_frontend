@@ -7,6 +7,15 @@ export type PlatformAssessmentSlug =
   | "call-simulation"
   | "short-term-memory";
 
+/** Registered platform catalogue slugs — keep aligned with BackEnd `PLATFORM_ASSESSMENT_SLUGS`. */
+export const PLATFORM_ASSESSMENT_SLUGS: readonly PlatformAssessmentSlug[] = [
+  "typing",
+  "situational-judgement",
+  "prioritisation",
+  "call-simulation",
+  "short-term-memory",
+] as const;
+
 export function normalizeAssessmentSlugInput(value?: string | null): string {
   return (value ?? "")
     .toLowerCase()

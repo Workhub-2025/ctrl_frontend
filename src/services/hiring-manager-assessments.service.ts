@@ -16,11 +16,26 @@ import {
   TYPING_WPM_THRESHOLD,
 } from "@/lib/assessment-catalog-defaults";
 import { isAssessmentEntitledForClient } from "@/lib/client/entitlements";
+import {
+  PORTAL_CATALOGUE_CACHE_KEY,
+  PORTAL_CATALOGUE_TTL_MS,
+  PORTAL_USER_SCOPED_TTL_MS,
+  portalAssessmentVersionCacheKey,
+  portalClientFeaturesClientCacheKey,
+  portalClientTenantCacheKey,
+} from "@/lib/portal-cache-keys";
+import { getServerAuthSub } from "@/lib/portal-server-auth";
+import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
 type StrapiAssessmentResponse = {
   data?: unknown[];
 };
+
+const ASSESSMENT_CATALOGUE_PATH = "/assessment/platform/catalogue";
+
+/** Catalogue rows change rarely — shared Upstash cache (5 min), entitlement filter applied after read. */
+const CLIENT_FEATURES_REVALIDATE_SECONDS = PORTAL_USER_SCOPED_TTL_MS / 1000;
 
 function getStrapiApiToken() {
   // This service only reads assessment content. Prefer a read-only token and
@@ -59,6 +74,34 @@ async function fetchStrapi<T>(path: string): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+async function fetchStrapiCatalogue(): Promise<unknown[]> {
+  const token = getStrapiApiToken() ?? (await getStrapiAuthToken()) ?? undefined;
+  const response = await fetch(
+    joinStrapiApiPath(getStrapiApiBaseUrl(), ASSESSMENT_CATALOGUE_PATH),
+    {
+      cache: "no-store",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Strapi responded ${response.status}: ${response.statusText}`);
+  }
+
+  const body = (await response.json()) as StrapiAssessmentResponse;
+  return body.data ?? [];
+}
+
+function getCachedAssessmentCatalogue(): Promise<unknown[]> {
+  return portalServerCacheGetOrSet(
+    PORTAL_CATALOGUE_CACHE_KEY,
+    PORTAL_CATALOGUE_TTL_MS,
+    fetchStrapiCatalogue,
+  );
 }
 
 type StrapiAssessment = {
@@ -139,6 +182,7 @@ export type HiringManagerAssessment = {
   isActive: boolean;
   passingScore: number | null;
   maxAttempts: number | null;
+  entitlementTier: "core" | "premium" | string;
   availableVersions: AssessmentVersionOption[];
 };
 
@@ -367,6 +411,7 @@ function normalizeAssessment(item: unknown): HiringManagerAssessment | null {
     isActive: assessment.isActive ?? true,
     passingScore: resolvePassingScore(config, assessment),
     maxAttempts: assessment.maxAttempts ?? null,
+    entitlementTier: assessment.entitlementTier === "premium" ? "premium" : "core",
     availableVersions: [{ version: "1.0.0", title: "v1.0.0", description: null }],
   };
 }
@@ -386,16 +431,62 @@ async function getAssessmentVersions(slug: string): Promise<AssessmentVersionOpt
     : [{ version: "1.0.0", title: "v1.0.0", description: null }];
 }
 
-async function getClientFeatures(): Promise<Record<string, unknown> | null> {
+function getCachedAssessmentVersions(slug: string): Promise<AssessmentVersionOption[]> {
+  return portalServerCacheGetOrSet(
+    portalAssessmentVersionCacheKey(slug),
+    PORTAL_CATALOGUE_TTL_MS,
+    () => getAssessmentVersions(slug),
+  );
+}
+
+async function resolveClientDocumentIdForCurrentUser(): Promise<string | null> {
+  const sub = await getServerAuthSub();
+  if (!sub) {
+    return loadClientDocumentIdFromMe();
+  }
+
+  return portalServerCacheGetOrSet(
+    portalClientTenantCacheKey(sub),
+    PORTAL_USER_SCOPED_TTL_MS,
+    loadClientDocumentIdFromMe,
+  );
+}
+
+async function loadClientDocumentIdFromMe(): Promise<string | null> {
   try {
-    const response = await fetchStrapi<{ client?: { features?: Record<string, unknown> } }>(
-      "/users/me?populate=client",
+    const response = await fetchStrapi<{ client?: { documentId?: string } }>(
+      "/users/me?populate[client][fields][0]=documentId",
     );
+    return response?.client?.documentId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function loadClientFeaturesForClient(): Promise<Record<string, unknown>> {
+  try {
+    const response = await fetchStrapi<{
+      client?: { features?: Record<string, unknown> };
+    }>("/users/me?populate[client][fields][0]=features");
+    // Cache only entitlement flags — never email, JWT, or full user profile.
     return response?.client?.features ?? {};
   } catch (error) {
     console.warn("[getHiringManagerAssessments] Failed to load client entitlements", error);
-    return null;
+    return {};
   }
+}
+
+async function getClientFeatures(): Promise<Record<string, unknown> | null> {
+  const clientDocumentId = await resolveClientDocumentIdForCurrentUser();
+  if (!clientDocumentId) {
+    return loadClientFeaturesForClient();
+  }
+
+  return portalServerCacheGetOrSet(
+    portalClientFeaturesClientCacheKey(clientDocumentId),
+    CLIENT_FEATURES_REVALIDATE_SECONDS * 1000,
+    loadClientFeaturesForClient,
+  );
 }
 
 function isAssessmentEntitledForHiringManager(
@@ -425,7 +516,7 @@ async function attachAssessmentVersions(
       try {
         return {
           ...assessment,
-          availableVersions: await getAssessmentVersions(assessment.slug),
+          availableVersions: await getCachedAssessmentVersions(assessment.slug),
         };
       } catch (error) {
         console.warn(
@@ -444,11 +535,12 @@ const loadHiringManagerAssessments = cache(
     error: string | null;
   }> => {
     try {
-      const response = await fetchStrapi<StrapiAssessmentResponse>(
-        "/assessments?populate[config][populate]=*&filters[isActive][$eq]=true&sort[0]=order:asc&sort[1]=displayName:asc",
-      );
-      const clientFeatures = await getClientFeatures();
-      const normalizedAssessments = (response.data ?? [])
+      const [catalogueItems, clientFeatures] = await Promise.all([
+        getCachedAssessmentCatalogue(),
+        getClientFeatures(),
+      ]);
+
+      const normalizedAssessments = catalogueItems
         .filter((item) => isAssessmentEntitledForHiringManager(item, clientFeatures))
         .map(normalizeAssessment)
         .filter((assessment): assessment is HiringManagerAssessment => Boolean(assessment));

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
+import { AssessmentPremiumBadge } from "@/components/dashboard/assessment-premium-badge";
 import {
   DashboardInfoCard,
   dashboardInfoPillClassName,
@@ -78,9 +79,12 @@ export function HiringManagerAssessmentLibrary({
                   </Badge>
                 </div>
                 <div className="space-y-2">
-                  <CardTitle className="break-words text-lg font-semibold leading-snug tracking-tight text-foreground">
-                    {assessment.title}
-                  </CardTitle>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CardTitle className="break-words text-lg font-semibold leading-snug tracking-tight text-foreground">
+                      {assessment.title}
+                    </CardTitle>
+                    <AssessmentPremiumBadge entitlementTier={assessment.entitlementTier} />
+                  </div>
                   <CardDescription className="text-sm leading-relaxed text-muted-foreground">
                     {assessment.summary}
                   </CardDescription>
@@ -122,6 +126,7 @@ export function HiringManagerAssessmentLibrary({
                   closeLabel="Close assessment details"
                   badges={
                     <>
+                      <AssessmentPremiumBadge entitlementTier={selected.entitlementTier} />
                       <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold", portalBadgeClass)}>
                         {selected.duration}
                       </Badge>

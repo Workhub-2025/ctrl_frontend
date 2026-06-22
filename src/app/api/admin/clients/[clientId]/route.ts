@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import { invalidateClientEntitlementCachesByClientId } from "@/lib/portal-cache-keys";
 import {
   deleteAdminClient,
   getAdminClientDetails,
@@ -78,6 +79,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
             body,
             auth.strapiJwt
         );
+        void invalidateClientEntitlementCachesByClientId(await getClientId(context));
         return NextResponse.json({ data: updated });
     } catch (error) {
         const upstreamStatus = getStrapiErrorStatus(error);

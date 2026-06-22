@@ -12,7 +12,7 @@ export function warnIfProductionSecurityGaps() {
   if (!isUpstashConfigured()) {
     const allowInMemory = process.env.ALLOW_IN_MEMORY_SECURITY === "true";
     const message =
-      "[SECURITY] UPSTASH_REDIS_REST_URL/TOKEN not set — login lockout, rate limits, and audit persistence are per-instance only.";
+      "[SECURITY] UPSTASH_REDIS_REST_URL/TOKEN not set — login lockout, rate limits, audit persistence, and portal server read cache are per-instance only.";
 
     if (allowInMemory) {
       console.warn(`${message} ALLOW_IN_MEMORY_SECURITY=true — not recommended for production.`);

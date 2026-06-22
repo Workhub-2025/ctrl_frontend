@@ -1,6 +1,16 @@
 import "server-only";
 
 import {
+  PORTAL_USER_SCOPED_TTL_MS,
+  portalClientDashboardCacheKey,
+  portalClientOverviewCacheKey,
+} from "@/lib/portal-cache-keys";
+import { getServerAuthSub } from "@/lib/portal-server-auth";
+import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
+import {
+  invalidateClientPortalServerCache,
+} from "@/lib/portal-cache-invalidation";
+import {
   strapiRequest,
   type HiringManagerCampaignListItem,
 } from "@/services/hiring-manager-campaigns.service";
@@ -229,12 +239,25 @@ export async function getClientCampaignApprovals(status?: "pending" | "approved"
   return (response.data ?? []).map(normalizeCampaign);
 }
 
-export async function getClientDashboardSummary() {
+async function loadClientDashboardSummary() {
   const response = await strapiRequest<{ data?: ClientDashboardSummary }>(
     "/client/dashboard"
   );
 
   return response.data;
+}
+
+export async function getClientDashboardSummary() {
+  const userSub = await getServerAuthSub();
+  if (!userSub) {
+    return loadClientDashboardSummary();
+  }
+
+  return portalServerCacheGetOrSet(
+    portalClientDashboardCacheKey(userSub),
+    PORTAL_USER_SCOPED_TTL_MS,
+    loadClientDashboardSummary,
+  );
 }
 
 export async function updateClientCampaignApprovalMode(
@@ -252,6 +275,8 @@ export async function updateClientCampaignApprovalMode(
       body: JSON.stringify({ mode }),
     }
   );
+
+  void invalidateClientPortalServerCache();
 
   return response.data;
 }
@@ -272,11 +297,13 @@ export async function updateClientAutoRenew(
     }
   );
 
+  void invalidateClientPortalServerCache();
+
   return response.data;
 }
 
-export async function getClientOverview(): Promise<ClientOverviewData> {
-  const summary = await getClientDashboardSummary();
+async function loadClientOverview(): Promise<ClientOverviewData> {
+  const summary = await loadClientDashboardSummary();
   const clientDocumentId = summary?.client?.documentId;
 
   if (!clientDocumentId) {
@@ -297,6 +324,19 @@ export async function getClientOverview(): Promise<ClientOverviewData> {
   };
 }
 
+export async function getClientOverview(): Promise<ClientOverviewData> {
+  const userSub = await getServerAuthSub();
+  if (!userSub) {
+    return loadClientOverview();
+  }
+
+  return portalServerCacheGetOrSet(
+    portalClientOverviewCacheKey(userSub),
+    PORTAL_USER_SCOPED_TTL_MS,
+    loadClientOverview,
+  );
+}
+
 export async function reviewClientCampaign(input: {
   campaignDocumentId: string;
   decision: "approved" | "rejected";
@@ -312,6 +352,8 @@ export async function reviewClientCampaign(input: {
       }),
     }
   );
+
+  void invalidateClientPortalServerCache();
 
   return normalizeCampaign(response.data ?? {});
 }
@@ -339,6 +381,8 @@ export async function generateHiringManagerAccessCode(input?: {
     }
   );
 
+  void invalidateClientPortalServerCache();
+
   return response.data;
 }
 
@@ -360,6 +404,8 @@ export async function refreshHiringManagerAccessCode(
       }),
     }
   );
+
+  void invalidateClientPortalServerCache();
 
   return response.data;
 }
@@ -383,6 +429,8 @@ export async function inviteHiringManagerByEmail(input: {
       }),
     }
   );
+
+  void invalidateClientPortalServerCache();
 
   return response.data;
 }
@@ -446,6 +494,8 @@ export async function releaseClientHiringManagerSeat(
     `/clients/${encodeURIComponent(clientDocumentId)}/hiring-managers/${encodeURIComponent(managerDocumentId)}/release`,
     { method: "POST" }
   );
+
+  void invalidateClientPortalServerCache();
 
   return response.data;
 }

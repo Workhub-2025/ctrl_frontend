@@ -4,13 +4,18 @@ import { cn } from "@/lib/utils";
 export const portalPanelBaseClass =
   "border border-border/60 bg-card/60 dark:border-white/8 dark:bg-[#0b1329]/30";
 
+/** Subtle lift on dark portal backgrounds (~#080c16) — mirrors light `shadow-lg` without glow. */
+const portalDarkPanelShadowClass = "dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]";
+const portalDarkElevatedShadowClass = "dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)]";
+
 /**
  * Standard portal panel/card — light-theme elevation so surfaces stand off the page.
  * Used for list cards, sections, and primary panels across admin, client, HM, and candidate portals.
  */
 export const portalPanelClass = cn(
   portalPanelBaseClass,
-  "rounded-xl shadow-lg transition-all duration-300 hover:border-primary/30 dark:shadow-none dark:hover:border-white/12"
+  "rounded-xl shadow-lg transition-all duration-300 hover:border-primary/30 dark:hover:border-white/12",
+  portalDarkPanelShadowClass,
 );
 
 /** Primary list / content cards — same elevation with larger radius. */
@@ -19,7 +24,8 @@ export const portalCardClass = cn(portalPanelClass, "rounded-2xl");
 /** Stronger panel surface for hero cards and primary sections. */
 export const portalPanelElevatedClass = cn(
   portalCardClass,
-  "backdrop-blur-md shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/45 dark:shadow-2xl dark:hover:border-primary/30"
+  "backdrop-blur-md shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/45 dark:hover:border-primary/30",
+  portalDarkElevatedShadowClass,
 );
 
 /** Nested panel surface inside elevated cards — flat, no extra shadow. */
@@ -168,7 +174,8 @@ export function portalStatusBadge(_status?: string) {
 /** Outer container for in-browser assessment flows (game shell). */
 export const portalAssessmentShellClass = cn(
   portalCardClass,
-  "overflow-hidden shadow-xl shadow-black/10 dark:shadow-black/30"
+  "overflow-hidden shadow-xl shadow-black/10",
+  portalDarkElevatedShadowClass,
 );
 
 /** Assessment shell header strip. */

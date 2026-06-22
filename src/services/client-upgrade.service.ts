@@ -11,6 +11,16 @@ import {
   requireClientSession,
   handleBffRouteError,
 } from "@/lib/auth/bff-session";
+import {
+  PORTAL_USER_SCOPED_TTL_MS,
+  portalClientEntitlementsCacheKey,
+} from "@/lib/portal-cache-keys";
+import { getServerAuthSub } from "@/lib/portal-server-auth";
+import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
+import {
+  invalidateClientEntitlementsServerCache,
+  invalidateClientPortalServerCache,
+} from "@/lib/portal-cache-invalidation";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
 export { requireClientSession, handleBffRouteError };
@@ -117,13 +127,27 @@ function mapBillingRequest(row: BillingRequestRow): ClientUpgradeRequestRecord {
 
 
 /** Backend-resolved entitlements — never compute unlock state in the browser. */
-export async function getClientEntitlementsBundle(): Promise<BackendClientEntitlements> {
-  await requireClientSession();
+async function loadClientEntitlementsBundle(): Promise<BackendClientEntitlements> {
   const response = await strapiRequest<{ data?: BackendClientEntitlements }>("/client/entitlements");
   if (!response.data) {
     throw new Error("Entitlements could not be loaded");
   }
   return response.data;
+}
+
+export async function getClientEntitlementsBundle(): Promise<BackendClientEntitlements> {
+  await requireClientSession();
+
+  const userSub = await getServerAuthSub();
+  if (!userSub) {
+    return loadClientEntitlementsBundle();
+  }
+
+  return portalServerCacheGetOrSet(
+    portalClientEntitlementsCacheKey(userSub),
+    PORTAL_USER_SCOPED_TTL_MS,
+    loadClientEntitlementsBundle,
+  );
 }
 
 export async function listClientUpgradeRequests(): Promise<ClientUpgradeRequestRecord[]> {
@@ -156,5 +180,9 @@ export async function createClientUpgradeRequest(input: {
 
   const row = response.data;
   if (!row) throw new Error("Upgrade request could not be created");
+
+  void invalidateClientEntitlementsServerCache();
+  void invalidateClientPortalServerCache();
+
   return mapBillingRequest(row);
 }

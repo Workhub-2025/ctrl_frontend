@@ -25,6 +25,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
+import { AssessmentPremiumBadge } from "@/components/dashboard/assessment-premium-badge";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
 import {
@@ -677,9 +678,12 @@ export function HiringManagerCampaignBuilder({
                             <Icon className="h-4 w-4" />
                           </span>
                           <div className="min-w-0">
-                            <p className="break-words text-sm font-bold leading-5 text-foreground">
-                              {assessment.title}
-                            </p>
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                              <p className="break-words text-sm font-bold leading-5 text-foreground">
+                                {assessment.title}
+                              </p>
+                              <AssessmentPremiumBadge entitlementTier={assessment.entitlementTier} />
+                            </div>
                             <p className={cn(portalLabelClass, "mt-0.5 normal-case")}>
                               {assessment.skills.slice(0, 3).join(" · ")}
                             </p>
@@ -791,8 +795,9 @@ export function HiringManagerCampaignBuilder({
                         <span className={portalLabelClass}>
                           {String(index + 1).padStart(2, "0")}
                         </span>
-                        <span className="min-w-0 flex-1 break-words text-xs font-bold text-foreground">
+                        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 break-words text-xs font-bold text-foreground">
                           {assessment.title}
+                          <AssessmentPremiumBadge entitlementTier={assessment.entitlementTier} />
                         </span>
                         <span className={portalLabelClass}>
                           {assessment.duration}

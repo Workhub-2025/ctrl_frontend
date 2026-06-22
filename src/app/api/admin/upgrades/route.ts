@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import { invalidateClientEntitlementCachesByClientId } from "@/lib/portal-cache-keys";
 import {
   getAdminClientEntitlements,
   getStrapiErrorStatus,
@@ -85,6 +86,8 @@ export async function PATCH(request: NextRequest) {
       },
       auth.strapiJwt
     );
+
+    void invalidateClientEntitlementCachesByClientId(clientDocumentId);
 
     return NextResponse.json({ data: updated });
   } catch (error) {

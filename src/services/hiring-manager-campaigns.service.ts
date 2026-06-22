@@ -20,6 +20,13 @@ import {
   resolveCandidateDisplayName,
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
+import {
+  PORTAL_USER_SCOPED_TTL_MS,
+  portalHmOverviewCacheKey,
+} from "@/lib/portal-cache-keys";
+import { getServerAuthSub } from "@/lib/portal-server-auth";
+import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
+import { invalidateHmOverviewServerCache } from "@/lib/portal-cache-invalidation";
 import type {
   HiringManagerAssessmentResult,
   HiringManagerCampaignDetail,
@@ -589,6 +596,28 @@ export async function getHiringManagerSessions(): Promise<{
   }
 }
 
+async function loadHiringManagerOverview(): Promise<{
+  campaigns: HiringManagerCampaignListItem[];
+  campaignDetails: HiringManagerCampaignDetail[];
+  sessions: HiringManagerSessionListItem[];
+  error: null;
+}> {
+  const response = await strapiRequest<{
+    data?: {
+      campaigns?: RawCampaign[];
+      campaignDetails?: RawCampaign[];
+      sessions?: RawAssessmentSession[];
+    };
+  }>("/hiring-manager/overview");
+
+  const payload = response.data ?? {};
+  const campaigns = (payload.campaigns ?? []).map(normalizeCampaign);
+  const campaignDetails = (payload.campaignDetails ?? []).map(normalizeCampaignDetail);
+  const sessions = (payload.sessions ?? []).map(normalizeAssessmentSession);
+
+  return { campaigns, campaignDetails, sessions, error: null };
+}
+
 export async function getHiringManagerOverview(): Promise<{
   campaigns: HiringManagerCampaignListItem[];
   campaignDetails: HiringManagerCampaignDetail[];
@@ -596,20 +625,16 @@ export async function getHiringManagerOverview(): Promise<{
   error: string | null;
 }> {
   try {
-    const response = await strapiRequest<{
-      data?: {
-        campaigns?: RawCampaign[];
-        campaignDetails?: RawCampaign[];
-        sessions?: RawAssessmentSession[];
-      };
-    }>("/hiring-manager/overview");
+    const userSub = await getServerAuthSub();
+    if (!userSub) {
+      return await loadHiringManagerOverview();
+    }
 
-    const payload = response.data ?? {};
-    const campaigns = (payload.campaigns ?? []).map(normalizeCampaign);
-    const campaignDetails = (payload.campaignDetails ?? []).map(normalizeCampaignDetail);
-    const sessions = (payload.sessions ?? []).map(normalizeAssessmentSession);
-
-    return { campaigns, campaignDetails, sessions, error: null };
+    return await portalServerCacheGetOrSet(
+      portalHmOverviewCacheKey(userSub),
+      PORTAL_USER_SCOPED_TTL_MS,
+      loadHiringManagerOverview,
+    );
   } catch (error) {
     console.error("[getHiringManagerOverview] Failed to load overview", error);
     return {
@@ -636,6 +661,8 @@ export async function createHiringManagerCampaign(
   );
   const campaign = response.data ?? {};
 
+  void invalidateHmOverviewServerCache();
+
   return {
     campaign: normalizeCampaign(campaign),
   };
@@ -658,6 +685,8 @@ export async function createHiringManagerAssessmentSession(
     }
   );
 
+  void invalidateHmOverviewServerCache();
+
   return normalizeAssessmentSession(response.data ?? {});
 }
 
@@ -673,6 +702,7 @@ export async function removeCandidateFromAssessmentSession(
       body: JSON.stringify({ reason }),
     }
   );
+  void invalidateHmOverviewServerCache();
 }
 
 export async function deleteHiringManagerAssessmentSession(
@@ -684,6 +714,7 @@ export async function deleteHiringManagerAssessmentSession(
       method: "DELETE",
     }
   );
+  void invalidateHmOverviewServerCache();
 }
 
 export async function deleteHiringManagerCampaign(campaignDocumentId: string): Promise<void> {
@@ -693,6 +724,7 @@ export async function deleteHiringManagerCampaign(campaignDocumentId: string): P
       method: "DELETE",
     }
   );
+  void invalidateHmOverviewServerCache();
 }
 
 export async function updateHiringManagerCampaignAssessmentStack(
@@ -710,6 +742,7 @@ export async function updateHiringManagerCampaignAssessmentStack(
       body: JSON.stringify(input),
     }
   );
+  void invalidateHmOverviewServerCache();
 }
 
 function normalizeResolvedStackSummary(
@@ -836,6 +869,8 @@ export async function inviteCandidatesToSession(
     method: "POST",
     body: JSON.stringify({ emails }),
   });
+
+  void invalidateHmOverviewServerCache();
 
   return {
     sent: response.data?.sent ?? [],

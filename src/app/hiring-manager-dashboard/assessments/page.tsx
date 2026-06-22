@@ -3,8 +3,9 @@ import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-p
 import { portalAlertErrorClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHiringManagerAssessments } from "@/services/hiring-manager-assessments.service";
-import { BookOpenCheck, Clock, Settings2 } from "lucide-react";
+import { BookOpenCheck } from "lucide-react";
 
+// User-specific entitlement filtering uses cookies — keep route dynamic; data cache is Upstash-backed.
 export const dynamic = "force-dynamic";
 
 export default async function HiringManagerAssessmentsPage() {

@@ -80,6 +80,11 @@ export type EntitlementAwareAssessment = {
   entitlementTier?: string | null;
 };
 
+/** True when catalogue row is a premium add-on (`entitlementTier: premium`). */
+export function isPremiumCatalogueTier(entitlementTier?: string | null): boolean {
+  return entitlementTier === "premium";
+}
+
 /** Mirrors BackEnd `isAssessmentIncludedForClient()` — use with catalogue `entitlementTier`. */
 export function isAssessmentEntitledForClient(
   assessment: EntitlementAwareAssessment,
