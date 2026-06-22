@@ -575,43 +575,43 @@ html[data-ctrl-theme="light-blue"] :where(.ctrl-portal, .ctrl-landing-page) :whe
 }
 
 .ctrl-tooltip {
-  background-color: rgb(15 23 42 / 0.96) !important;
-  border-color: rgb(255 255 255 / 0.14) !important;
-  color: rgb(241 245 249) !important;
-  box-shadow: 0 16px 40px rgb(2 6 23 / 0.42) !important;
+  background-color: hsl(var(--popover)) !important;
+  border-color: hsl(var(--border) / 0.6) !important;
+  color: hsl(var(--popover-foreground)) !important;
+  box-shadow: 0 10px 24px hsl(var(--foreground) / 0.12) !important;
 }
 
 .ctrl-tooltip::before {
-  border-top-color: rgb(15 23 42 / 0.96) !important;
+  border-top-color: hsl(var(--popover)) !important;
 }
 
 .ctrl-tooltip-title,
 .ctrl-tooltip :where([class~="text-white"], [class~="text-slate-100"], [class~="text-slate-200"]) {
-  color: rgb(255 255 255) !important;
+  color: hsl(var(--popover-foreground)) !important;
 }
 
 .ctrl-tooltip-muted,
 .ctrl-tooltip :where([class~="text-slate-300"], [class~="text-slate-400"]) {
-  color: rgb(203 213 225) !important;
+  color: hsl(var(--muted-foreground)) !important;
 }
 
 .ctrl-tooltip-subtle,
 .ctrl-tooltip :where([class~="text-slate-500"], [class~="text-gray-500"]) {
-  color: rgb(148 163 184) !important;
+  color: hsl(var(--muted-foreground) / 0.85) !important;
 }
 
 .ctrl-tooltip-accent,
 .ctrl-tooltip :where([class~="text-indigo-400"], [class~="text-blue-400"]) {
-  color: rgb(129 140 248) !important;
+  color: hsl(var(--primary)) !important;
 }
 
 .ctrl-tooltip-warning,
 .ctrl-tooltip :where([class~="text-amber-400"]) {
-  color: rgb(251 191 36) !important;
+  color: hsl(38 92% 50%) !important;
 }
 
 .ctrl-tooltip-divider {
-  border-color: rgb(255 255 255 / 0.12) !important;
+  border-color: hsl(var(--border) / 0.6) !important;
 }
 
 html[data-ctrl-theme="soft-cream"] .ctrl-landing-page .bg-white.text-black,

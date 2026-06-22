@@ -32,6 +32,7 @@ import {
   portalAlertErrorClass,
   portalBadgeClass,
   portalCardClass,
+  portalCssHoverTooltipClass,
   portalEmptyPanelClass,
   portalIconWrapLgClass,
   portalInputClass,
@@ -445,8 +446,8 @@ export function HiringManagerCandidatesView() {
                       </div>
 
                       {/* Tooltip with weighted score breakdown */}
-                      <div className="ctrl-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 rounded-xl border backdrop-blur-md text-sm hidden group-hover:block z-50 pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
-                        <p className="ctrl-tooltip-title font-bold mb-2">Weighted Score Breakdown</p>
+                      <div className={cn(portalCssHoverTooltipClass, "w-64")}>
+                        <p className="mb-2 text-sm font-semibold text-foreground">Weighted score breakdown</p>
                         <div className="space-y-1.5">
                           {candidate.assessmentStack.map((name) => {
                             const weight = candidate.weights[name] ?? 0;
@@ -460,23 +461,23 @@ export function HiringManagerCandidatesView() {
                             return (
                               <div key={name} className="flex justify-between items-center text-xs">
                                 <div className="flex flex-col min-w-0">
-                                  <span className="ctrl-tooltip-muted font-medium truncate">{name}</span>
-                                  <span className="ctrl-tooltip-subtle text-[0.625rem] font-semibold">Weight: {weight}%</span>
+                                  <span className="truncate font-medium text-foreground">{name}</span>
+                                  <span className="text-[0.625rem] font-semibold text-muted-foreground">Weight: {weight}%</span>
                                 </div>
                                 <div className="text-right pl-2 shrink-0">
-                                  <span className="ctrl-tooltip-muted font-semibold">
+                                  <span className="font-semibold text-foreground">
                                     {isAbandoned ? "Abandoned" : isCompleted ? `${score}%` : "Pending"}
                                   </span>
                                   {isCompleted && (
-                                    <span className="ctrl-tooltip-accent text-[0.625rem] font-bold ml-1.5">(+{contribution}%)</span>
+                                    <span className="ml-1.5 text-[0.625rem] font-bold text-primary">(+{contribution}%)</span>
                                   )}
                                 </div>
                               </div>
                             );
                           })}
-                          <div className="ctrl-tooltip-divider border-t pt-1.5 mt-1.5 flex justify-between items-center text-xs font-bold">
-                            <span>Total Weighted Score</span>
-                            <span className="ctrl-tooltip-accent">{candidate.overallScore}%</span>
+                          <div className="mt-1.5 flex items-center justify-between border-t border-border/60 pt-1.5 text-xs font-bold text-foreground">
+                            <span>Total weighted score</span>
+                            <span className="text-primary">{candidate.overallScore}%</span>
                           </div>
                         </div>
                       </div>
@@ -551,26 +552,26 @@ export function HiringManagerCandidatesView() {
                                 style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreValue : 0}%` }}
                               />
                                               {/* Tooltip */}
-                              <div className="ctrl-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 rounded-xl border backdrop-blur-md text-sm hidden group-hover:block z-50 pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-950">
-                                <p className="ctrl-tooltip-title font-bold mb-1">{stackName}</p>
+                              <div className={cn(portalCssHoverTooltipClass, "w-56")}>
+                                <p className="mb-1 text-sm font-semibold text-foreground">{stackName}</p>
                                 {isAbandoned ? (
-                                  <p className="ctrl-tooltip-warning italic text-xs">
+                                  <p className="text-xs italic text-amber-600 dark:text-amber-400">
                                     Abandoned — contact the candidate to find out what happened.
                                   </p>
                                 ) : isCompleted && matchedResult ? (
                                   <div className="space-y-1">
-                                    <div className="flex justify-between items-center text-xs">
-                                      <span className="ctrl-tooltip-muted font-medium">Assessment Score</span>
-                                      <span className="ctrl-tooltip-title font-extrabold">{scoreValue}%</span>
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-medium text-muted-foreground">Assessment score</span>
+                                      <span className="font-extrabold text-foreground">{scoreValue}%</span>
                                     </div>
                                     {metricsContent && (
-                                      <div className="ctrl-tooltip-divider border-t pt-1 mt-1 text-xs font-semibold">
+                                      <div className="mt-1 border-t border-border/60 pt-1 text-xs font-semibold text-foreground">
                                         {metricsContent}
                                       </div>
                                     )}
                                   </div>
                                 ) : (
-                                  <p className="ctrl-tooltip-warning italic text-xs">Awaiting completion (Pending)</p>
+                                  <p className="text-xs italic text-amber-600 dark:text-amber-400">Awaiting completion (Pending)</p>
                                 )}
                               </div>
                             </div>

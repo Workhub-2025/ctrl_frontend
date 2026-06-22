@@ -46,12 +46,16 @@ import {
   portalAlertErrorClass,
   portalBadgeClass,
   portalDialogShellClass,
+  portalFilterChipActiveClass,
+  portalFilterChipClass,
   portalIconWrapLgClass,
+  portalInputClass,
   portalLabelClass,
   portalPanelClass,
   portalPanelNestedClass,
   portalPrimaryButtonClass,
   portalProgressBarClass,
+  portalSheetCloseButtonClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
@@ -395,17 +399,17 @@ export function HiringManagerSessionsList() {
 
       {/* Slide-over Drawer for Creating Session */}
       <Sheet open={isCreateOpen} onOpenChange={handleOpenChange}>
-        <SheetContent className={cn(portalDialogShellClass, "flex w-full flex-col gap-6 border-l p-6 sm:max-w-md [&>button]:text-slate-400 [&>button]:transition-colors [&>button]:hover:text-white")}>
-          <SheetHeader className="border-b border-white/5 pb-4">
+        <SheetContent className={cn(portalDialogShellClass, portalSheetCloseButtonClass, "flex w-full flex-col gap-6 border-l p-6 sm:max-w-md")}>
+          <SheetHeader className="border-b border-border/60 pb-4 dark:border-white/5">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-inner">
                 <KeyRound className="h-4 w-4" />
               </div>
-              <SheetTitle className="text-base font-bold text-white text-left">
+              <SheetTitle className="text-left text-base font-bold text-foreground">
                 {createdSession ? "Session Created" : "Create Assessment Session"}
               </SheetTitle>
             </div>
-            <SheetDescription className="text-xs text-slate-400 text-left mt-1.5 leading-relaxed">
+            <SheetDescription className="mt-1.5 text-left text-xs leading-relaxed text-muted-foreground">
               {createdSession
                 ? "Your new assessment session is active. Candidates can now join using the code below."
                 : "Generate a unique access code for a campaign session. Multiple candidates can join the same session up to the limit you set."}
@@ -419,8 +423,8 @@ export function HiringManagerSessionsList() {
                 <div className={cn(portalIconWrapLgClass, "mb-3 rounded-full")}>
                   <Check className="h-6 w-6" />
                 </div>
-                <h3 className="text-sm font-bold text-white">{getHmSessionDisplayName(createdSession)}</h3>
-                <p className="mt-1 max-w-[240px] text-[11px] text-slate-400">
+                <h3 className="text-sm font-bold text-foreground">{getHmSessionDisplayName(createdSession)}</h3>
+                <p className="mt-1 max-w-[240px] text-[11px] text-muted-foreground">
                   Share the access code below so candidates can join this session.
                 </p>
               </div>
@@ -432,15 +436,16 @@ export function HiringManagerSessionsList() {
                 <p className="mt-2 break-all rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 font-mono text-2xl font-bold tracking-widest text-foreground dark:border-white/10 dark:bg-black/30">
                   {createdSession.accessValue}
                 </p>
-                
+
                 <Button
                   type="button"
+                  variant="outline"
                   onClick={() => {
                     void navigator.clipboard?.writeText(createdSession.accessValue);
                     setCopiedSessionId(createdSession.id);
                     setTimeout(() => setCopiedSessionId(null), 2000);
                   }}
-                  className="mt-4 w-full h-9 rounded-lg text-xs font-semibold bg-white/10 text-white border border-white/10 hover:bg-white/15 transition-all duration-300"
+                  className="mt-4 h-9 w-full rounded-lg border-border bg-background/70 text-xs font-semibold text-foreground transition-colors hover:bg-muted dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/15"
                 >
                   {copiedSessionId === createdSession.id ? (
                     <>
@@ -456,24 +461,24 @@ export function HiringManagerSessionsList() {
                 </Button>
               </div>
 
-              <div className="rounded-xl border border-white/5 bg-white/[0.01] p-4 space-y-2.5 text-xs">
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-slate-400 font-medium">Session Name</span>
-                  <span className="text-white font-bold max-w-[200px] truncate">{createdSession.campaign}</span>
+              <div className={cn(portalPanelNestedClass, "space-y-2.5 p-4 text-xs")}>
+                <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
+                  <span className="font-medium text-muted-foreground">Session Name</span>
+                  <span className="max-w-[200px] truncate font-bold text-foreground">{createdSession.campaign}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-white/5">
-                  <span className="text-slate-400 font-medium">Candidate Limit</span>
-                  <span className="text-white font-bold">{createdSession.candidateLimit}</span>
+                <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
+                  <span className="font-medium text-muted-foreground">Candidate Limit</span>
+                  <span className="font-bold text-foreground">{createdSession.candidateLimit}</span>
                 </div>
                 {createdSession.date && (
-                  <div className="flex justify-between py-1 border-b border-white/5">
-                    <span className="text-slate-400 font-medium">Starts At</span>
-                    <span className="text-white font-bold">{createdSession.date}</span>
+                  <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
+                    <span className="font-medium text-muted-foreground">Starts At</span>
+                    <span className="font-bold text-foreground">{createdSession.date}</span>
                   </div>
                 )}
                 <div className="flex justify-between py-1">
-                  <span className="text-slate-400 font-medium">Location</span>
-                  <span className="text-indigo-400 font-bold max-w-[200px] truncate">{createdSession.location}</span>
+                  <span className="font-medium text-muted-foreground">Location</span>
+                  <span className="max-w-[200px] truncate font-bold text-primary">{createdSession.location}</span>
                 </div>
               </div>
 
@@ -491,7 +496,7 @@ export function HiringManagerSessionsList() {
               <div className="space-y-5">
                 {/* Campaign Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="sessionCampaign" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Label htmlFor="sessionCampaign" className={portalLabelClass}>
                     Campaign
                   </Label>
                   <Select
@@ -504,7 +509,7 @@ export function HiringManagerSessionsList() {
                     }
                     disabled={campaigns.length === 0}
                   >
-                    <SelectTrigger className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors">
+                    <SelectTrigger className={cn(portalInputClass, "h-10 text-foreground")}>
 	                      <SelectValue placeholder={campaigns.length === 0 ? "No approved campaigns available" : "Select a campaign…"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -519,31 +524,31 @@ export function HiringManagerSessionsList() {
 
                 {/* Campaign Preview Card */}
                 {selectedCampaign && (
-                  <div className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-indigo-500/[0.05] to-primary/[0.05] p-4 shadow-inner">
-                    <div className="absolute right-0 top-0 translate-x-1/4 -translate-y-1/4 h-20 w-20 rounded-full bg-primary/10 blur-xl pointer-events-none" />
-                    <div className="space-y-3 relative z-10">
+                  <div className={cn(portalPanelNestedClass, "relative overflow-hidden p-4 shadow-inner")}>
+                    <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 translate-x-1/4 -translate-y-1/4 rounded-full bg-primary/10 blur-xl" />
+                    <div className="relative z-10 space-y-3">
                       <div>
                         <div className="flex items-center gap-1">
-                          <Sparkles className="h-3 w-3 text-indigo-400" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Campaign Preview</span>
+                          <Sparkles className="h-3 w-3 text-primary" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Campaign Preview</span>
                         </div>
-                        <h4 className="text-sm font-bold text-white mt-1 leading-tight">{selectedCampaign.name}</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5">{selectedCampaign.role}</p>
+                        <h4 className="mt-1 text-sm font-bold leading-tight text-foreground">{selectedCampaign.name}</h4>
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">{selectedCampaign.role}</p>
                       </div>
-                      
-                      <div className="flex flex-wrap items-center gap-3 border-t border-white/5 pt-2.5">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-300 font-medium">
+
+                      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-2.5 dark:border-white/5">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                           {selectedCampaign.deliveryMode === "Remote" ? (
-                            <Globe className="h-3.5 w-3.5 text-slate-400" />
+                            <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                           ) : selectedCampaign.deliveryMode === "In-person" ? (
-                            <Building className="h-3.5 w-3.5 text-slate-400" />
+                            <Building className="h-3.5 w-3.5 text-muted-foreground" />
                           ) : (
-                            <Layers3 className="h-3.5 w-3.5 text-slate-400" />
+                            <Layers3 className="h-3.5 w-3.5 text-muted-foreground" />
                           )}
                           <span>{selectedCampaign.deliveryMode}</span>
                         </div>
-                        
-                        <div className="h-3 w-px bg-white/10" />
+
+                        <div className="h-3 w-px bg-border/60 dark:bg-white/10" />
                         
                         <div className="flex flex-wrap items-center gap-1">
                           {selectedCampaign.assessmentStack.map((as) => (
@@ -559,7 +564,7 @@ export function HiringManagerSessionsList() {
 
                 {/* Session Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="sessionName" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Label htmlFor="sessionName" className={portalLabelClass}>
                     Session Name
                   </Label>
                   <Input
@@ -569,13 +574,13 @@ export function HiringManagerSessionsList() {
                       setDraft((current) => ({ ...current, name: event.target.value }))
                     }
                     placeholder="e.g. Morning assessment"
-                    className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                    className={cn(portalInputClass, "h-10 text-foreground placeholder:text-muted-foreground")}
                   />
                 </div>
 
                 {/* Candidate Limit Stepper */}
                 <div className="space-y-2.5">
-                  <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Label className={cn(portalLabelClass, "flex items-center gap-1.5")}>
                     <Users className="h-4 w-4 text-primary" />
                     Candidate Limit
                   </Label>
@@ -586,11 +591,11 @@ export function HiringManagerSessionsList() {
                       size="icon"
                       onClick={() => handleStep(-1)}
                       disabled={stepperLimit <= 1}
-                      className="h-10 w-10 shrink-0 border-white/10 bg-white/[0.02] text-slate-300 hover:bg-white/10 hover:text-white bg-transparent"
+                      className={cn(portalInputClass, "h-10 w-10 shrink-0 bg-transparent text-foreground hover:bg-muted hover:text-foreground")}
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <div className="flex h-10 flex-1 items-center justify-center rounded-lg border border-white/10 bg-white/[0.02] font-mono text-sm font-bold text-white">
+                    <div className={cn(portalInputClass, "flex h-10 flex-1 items-center justify-center font-mono text-sm font-bold text-foreground")}>
                       {stepperLimit} {stepperLimit === 1 ? "Candidate" : "Candidates"}
                     </div>
                     <Button
@@ -598,7 +603,7 @@ export function HiringManagerSessionsList() {
                       variant="outline"
                       size="icon"
                       onClick={() => handleStep(1)}
-                      className="h-10 w-10 shrink-0 border-white/10 bg-white/[0.02] text-slate-300 hover:bg-white/10 hover:text-white bg-transparent"
+                      className={cn(portalInputClass, "h-10 w-10 shrink-0 bg-transparent text-foreground hover:bg-muted hover:text-foreground")}
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -609,12 +614,12 @@ export function HiringManagerSessionsList() {
                         key={preset}
                         type="button"
                         onClick={() => handlePreset(preset)}
-                        className={[
-                          "h-7 rounded-md px-2.5 text-[11px] font-semibold border transition-all duration-200 cursor-pointer",
+                        className={cn(
+                          "h-7 cursor-pointer rounded-md px-2.5 text-[11px] font-semibold transition-all duration-200",
                           stepperLimit === preset
-                            ? "bg-primary/20 border-primary/45 text-white shadow-inner"
-                            : "bg-white/[0.02] border-white/5 text-slate-400 hover:bg-white/[0.06] hover:text-slate-200"
-                        ].join(" ")}
+                            ? portalFilterChipActiveClass
+                            : portalFilterChipClass
+                        )}
                       >
                         {preset} Candidates
                       </button>
@@ -624,7 +629,7 @@ export function HiringManagerSessionsList() {
 
                 {/* Date & Time */}
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Label className={cn(portalLabelClass, "flex items-center gap-1.5")}>
                     <CalendarClock className="h-4 w-4 text-primary" />
                     Start Date & Time
                   </Label>
@@ -650,31 +655,31 @@ export function HiringManagerSessionsList() {
                 {/* Delivery Mode Toggle (only for Hybrid Campaigns) */}
                 {selectedCampaign?.deliveryMode === "Hybrid" && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <Label className={portalLabelClass}>
                       Session Delivery Mode
                     </Label>
-                    <div className="flex rounded-lg border border-white/10 bg-white/[0.02] p-1">
+                    <div className={cn(portalInputClass, "flex rounded-lg p-1")}>
                       <button
                         type="button"
                         onClick={() => setLocationType("Remote")}
-                        className={[
-                          "flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer",
+                        className={cn(
+                          "flex-1 cursor-pointer rounded-md py-1.5 text-xs font-bold transition-all",
                           locationType === "Remote"
-                            ? "bg-primary text-white shadow-sm"
-                            : "text-slate-400 hover:text-slate-200"
-                        ].join(" ")}
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
                       >
                         Remote
                       </button>
                       <button
                         type="button"
                         onClick={() => setLocationType("In-person")}
-                        className={[
-                          "flex-1 rounded-md py-1.5 text-xs font-bold transition-all cursor-pointer",
+                        className={cn(
+                          "flex-1 cursor-pointer rounded-md py-1.5 text-xs font-bold transition-all",
                           locationType === "In-person"
-                            ? "bg-primary text-white shadow-sm"
-                            : "text-slate-400 hover:text-slate-200"
-                        ].join(" ")}
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
                       >
                         In-Person
                       </button>
@@ -684,7 +689,7 @@ export function HiringManagerSessionsList() {
 
                 {/* Location / Link Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="sessionLocation" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                  <Label htmlFor="sessionLocation" className={cn(portalLabelClass, "flex items-center gap-1.5")}>
                     <MapPin className="h-4 w-4 text-primary" />
                     {locationType === "Remote" ? "Session Video Link (Zoom, Teams)" : "Physical Location / Room"}
                   </Label>
@@ -699,10 +704,10 @@ export function HiringManagerSessionsList() {
                         ? "e.g. https://zoom.us/j/... (Optional)"
                         : "e.g. Room 4B, London HQ (Required)"
                     }
-                    className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                    className={cn(portalInputClass, "h-10 text-foreground placeholder:text-muted-foreground")}
                   />
                   {locationType === "Remote" && (
-                    <p className="text-[10px] text-slate-500">
+                    <p className="text-[10px] text-muted-foreground">
                       If left blank, this will default to "Remote Session".
                     </p>
                   )}
@@ -711,37 +716,37 @@ export function HiringManagerSessionsList() {
                 {/* Session Address (In-person only) */}
                 {locationType === "In-person" && (
                   <div className="space-y-2">
-                    <Label htmlFor="sessionAddress" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    <Label htmlFor="sessionAddress" className={cn(portalLabelClass, "flex items-center gap-1.5")}>
                       <Building className="h-4 w-4 text-primary" />
                       Session Address
-                      <span className="ml-2 text-xs bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full font-normal normal-case tracking-normal">Optional for now</span>
+                      <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-normal normal-case tracking-normal text-muted-foreground">Optional for now</span>
                     </Label>
                     <Input
                       id="sessionAddress"
                       value={draft.address}
                       onChange={(e) => setDraft((current) => ({ ...current, address: e.target.value }))}
                       placeholder="e.g. 123 Main Street, London EC1A 1BB"
-                      className="h-10 rounded-lg border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                      className={cn(portalInputClass, "h-10 text-foreground placeholder:text-muted-foreground")}
                     />
                   </div>
                 )}
               </div>
 
               {/* Drawer Actions / Submit */}
-              <div className="space-y-3 pt-6 border-t border-white/5">
+              <div className="space-y-3 border-t border-border/60 pt-6 dark:border-white/5">
                 {createError && (
-                  <p className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs leading-normal text-red-400 flex items-center gap-2 animate-in fade-in duration-200">
+                  <p className={cn(portalAlertErrorClass, "flex animate-in items-center gap-2 text-xs leading-normal duration-200 fade-in")}>
                     <AlertCircle className="h-4 w-4 shrink-0" />
                     {createError}
                   </p>
                 )}
-                
+
                 <div className="flex gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => handleOpenChange(false)}
-                    className="flex-1 h-10 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white bg-transparent"
+                    className="h-10 flex-1 border-border bg-transparent text-foreground hover:bg-muted hover:text-foreground"
                   >
                     Cancel
                   </Button>

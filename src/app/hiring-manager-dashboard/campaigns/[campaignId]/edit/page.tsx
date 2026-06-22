@@ -13,7 +13,9 @@ export default async function HiringManagerCampaignEditPage({
   params,
 }: HiringManagerCampaignEditPageProps) {
   const { campaignId } = await params;
-  const { assessments, error } = await getHiringManagerAssessments();
+  const { assessments, error } = await getHiringManagerAssessments({
+    includeVersions: true,
+  });
 
   let allowRemoteDelivery = false;
   let allowHybridDelivery = false;

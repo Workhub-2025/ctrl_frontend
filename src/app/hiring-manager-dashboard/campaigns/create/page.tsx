@@ -10,7 +10,9 @@ import { ArrowLeft, ClipboardList, FolderPlus, Weight } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function CreateHiringManagerCampaignPage() {
-  const { assessments, error } = await getHiringManagerAssessments();
+  const { assessments, error } = await getHiringManagerAssessments({
+    includeVersions: true,
+  });
 
   let allowRemoteDelivery = false;
   let allowHybridDelivery = false;

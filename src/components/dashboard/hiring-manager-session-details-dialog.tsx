@@ -47,7 +47,6 @@ import {
   portalPanelNestedClass,
   portalProgressBarClass,
   portalStatTileClass,
-  portalTooltipContentClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus, isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
@@ -369,7 +368,7 @@ function HiringManagerSessionWorkspace({
                             </Button>
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent className={cn(portalTooltipContentClass, "max-w-xs")}>
+                        <TooltipContent className="max-w-xs">
                           All candidates must complete their assessments before you can close this
                           session.
                         </TooltipContent>

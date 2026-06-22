@@ -8,7 +8,9 @@ import { BookOpenCheck, Clock, Settings2 } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function HiringManagerAssessmentsPage() {
-  const { assessments, error } = await getHiringManagerAssessments();
+  const { assessments, error } = await getHiringManagerAssessments({
+    includeVersions: false,
+  });
 
   return (
     <div className="max-w-7xl space-y-6">

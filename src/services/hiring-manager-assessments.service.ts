@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import {
   ASSESSMENT_CATALOGUE_DEFAULTS,
   CALL_SIMULATION_CALL_COUNT,
@@ -411,52 +412,76 @@ function isAssessmentEntitledForHiringManager(
   );
 }
 
-export async function getHiringManagerAssessments(): Promise<{
+export type GetHiringManagerAssessmentsOptions = {
+  /** Campaign builder needs version banks; the library view does not. */
+  includeVersions?: boolean;
+};
+
+async function attachAssessmentVersions(
+  assessments: HiringManagerAssessment[],
+): Promise<HiringManagerAssessment[]> {
+  return Promise.all(
+    assessments.map(async (assessment) => {
+      try {
+        return {
+          ...assessment,
+          availableVersions: await getAssessmentVersions(assessment.slug),
+        };
+      } catch (error) {
+        console.warn(
+          `[getHiringManagerAssessments] Failed to load versions for ${assessment.slug}`,
+          error,
+        );
+        return assessment;
+      }
+    }),
+  );
+}
+
+const loadHiringManagerAssessments = cache(
+  async (includeVersions: boolean): Promise<{
+    assessments: HiringManagerAssessment[];
+    error: string | null;
+  }> => {
+    try {
+      const response = await fetchStrapi<StrapiAssessmentResponse>(
+        "/assessments?populate[config][populate]=*&filters[isActive][$eq]=true&sort[0]=order:asc&sort[1]=displayName:asc",
+      );
+      const clientFeatures = await getClientFeatures();
+      const normalizedAssessments = (response.data ?? [])
+        .filter((item) => isAssessmentEntitledForHiringManager(item, clientFeatures))
+        .map(normalizeAssessment)
+        .filter((assessment): assessment is HiringManagerAssessment => Boolean(assessment));
+
+      const assessments = includeVersions
+        ? await attachAssessmentVersions(normalizedAssessments)
+        : normalizedAssessments;
+
+      if (assessments.length > 0) {
+        return { assessments, error: null };
+      }
+
+      return {
+        assessments: getFallbackAssessments(),
+        error:
+          "No active assessments came back from Strapi yet, so the portal is showing the default MVP assessment catalogue.",
+      };
+    } catch (error) {
+      console.error("[getHiringManagerAssessments] Failed to load Strapi assessments", error);
+      return {
+        assessments: getFallbackAssessments(),
+        error:
+          "Assessment library could not be loaded from Strapi, so the portal is showing the default MVP assessment catalogue. Check the backend is running, seeded, and the frontend has a Strapi API token or assessment read permission.",
+      };
+    }
+  },
+);
+
+export async function getHiringManagerAssessments(
+  options: GetHiringManagerAssessmentsOptions = {},
+): Promise<{
   assessments: HiringManagerAssessment[];
   error: string | null;
 }> {
-  try {
-    const response = await fetchStrapi<StrapiAssessmentResponse>(
-      "/assessments?populate[config][populate]=*&filters[isActive][$eq]=true&sort[0]=order:asc&sort[1]=displayName:asc"
-    );
-    const clientFeatures = await getClientFeatures();
-    const normalizedAssessments = (response.data ?? [])
-      .filter((item) => isAssessmentEntitledForHiringManager(item, clientFeatures))
-      .map(normalizeAssessment)
-      .filter((assessment): assessment is HiringManagerAssessment => Boolean(assessment));
-
-    const assessments = await Promise.all(
-      normalizedAssessments.map(async (assessment) => {
-        try {
-          return {
-            ...assessment,
-            availableVersions: await getAssessmentVersions(assessment.slug),
-          };
-        } catch (error) {
-          console.warn(
-            `[getHiringManagerAssessments] Failed to load versions for ${assessment.slug}`,
-            error
-          );
-          return assessment;
-        }
-      })
-    );
-
-    if (assessments.length > 0) {
-      return { assessments, error: null };
-    }
-
-    return {
-      assessments: getFallbackAssessments(),
-      error:
-        "No active assessments came back from Strapi yet, so the portal is showing the default MVP assessment catalogue.",
-    };
-  } catch (error) {
-    console.error("[getHiringManagerAssessments] Failed to load Strapi assessments", error);
-    return {
-      assessments: getFallbackAssessments(),
-      error:
-        "Assessment library could not be loaded from Strapi, so the portal is showing the default MVP assessment catalogue. Check the backend is running, seeded, and the frontend has a Strapi API token or assessment read permission.",
-    };
-  }
+  return loadHiringManagerAssessments(options.includeVersions ?? false);
 }

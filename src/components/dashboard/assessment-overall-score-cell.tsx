@@ -9,7 +9,6 @@ import {
 import {
   portalBadgeClass,
   portalLabelClass,
-  portalTooltipContentClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
@@ -57,8 +56,8 @@ function ScoreRingSmall({ value }: { value: number | null }) {
   const progress = normalized === null ? 0 : normalized / 100;
 
   return (
-    <div className="relative h-8 w-8 shrink-0">
-      <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32" aria-hidden="true">
+    <div className="relative h-8 w-8 shrink-0" aria-hidden="true">
+      <svg className="h-8 w-8 -rotate-90" viewBox="0 0 32 32">
         <circle
           cx="16"
           cy="16"
@@ -114,14 +113,14 @@ export function AssessmentOverallScoreCell({
     return "Pending";
   };
 
-  const cell = (
-    <div className={cn("flex items-center gap-2", className)}>
+  const scoreDisplay =
+    overallScore === null ? (
+      <span className="text-xs font-semibold tabular-nums text-muted-foreground">—</span>
+    ) : (
       <ScoreRingSmall value={overallScore} />
-      <span className="text-xs font-semibold tabular-nums text-foreground">
-        {overallScore === null ? "—" : `${overallScore}%`}
-      </span>
-    </div>
-  );
+    );
+
+  const cell = <div className={cn("inline-flex items-center", className)}>{scoreDisplay}</div>;
 
   if (breakdown.length === 0) return cell;
 
@@ -141,7 +140,7 @@ export function AssessmentOverallScoreCell({
             {cell}
           </button>
         </TooltipTrigger>
-        <TooltipContent side="top" className={portalTooltipContentClass}>
+        <TooltipContent side="top" className="max-w-sm">
           <p className={cn(portalLabelClass, "mb-2")}>Assessment breakdown</p>
           <ul className="space-y-1.5">
             {breakdown.map((row) => (

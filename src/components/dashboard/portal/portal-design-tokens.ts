@@ -42,13 +42,33 @@ export const portalHeroPanelClass =
 export const portalDialogShellClass =
   "overflow-hidden rounded-[1.25rem] border border-border/60 bg-background/95 text-foreground shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#070b14]/90 dark:backdrop-blur-xl dark:shadow-[0_32px_96px_rgba(0,0,0,0.45)]";
 
+/** Radix Sheet built-in close control — readable in light and dark themes. */
+export const portalSheetCloseButtonClass =
+  "[&>button]:text-muted-foreground [&>button]:opacity-100 [&>button]:transition-colors [&>button]:hover:text-foreground dark:[&>button]:hover:text-white";
+
 /** Layout helper for full-width HM detail dialogs. */
 export const portalDialogContentLayoutClass =
   "flex h-[min(86dvh,900px)] max-h-[86dvh] w-[min(92vw,1280px)] max-w-none flex-col gap-0 p-0 [&>button]:hidden";
 
 /** Tooltip surface shared across portal score breakdowns and disabled controls. */
 export const portalTooltipContentClass =
-  "max-w-xs rounded-lg border border-border/60 bg-popover px-3 py-2.5 text-popover-foreground shadow-md dark:border-white/10";
+  "ctrl-tooltip z-50 max-w-xs rounded-lg border border-border/60 bg-popover px-3 py-2.5 text-sm text-popover-foreground shadow-md dark:border-white/10";
+
+/** Positioning helper for CSS hover tooltips (non-Radix). */
+export const portalHoverTooltipClass =
+  "pointer-events-none absolute z-50 hidden group-hover:block";
+
+/** Arrow pseudo-element for CSS hover tooltips. */
+export const portalHoverTooltipArrowClass =
+  "before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:content-[''] before:[border-top-color:hsl(var(--popover))]";
+
+/** Default above-target CSS hover tooltip (combine with width utilities as needed). */
+export const portalCssHoverTooltipClass = cn(
+  portalTooltipContentClass,
+  portalHoverTooltipClass,
+  "bottom-full left-1/2 mb-2 -translate-x-1/2",
+  portalHoverTooltipArrowClass
+);
 
 /** Progress bar fill used in occupancy and completion meters. */
 export const portalProgressBarClass =

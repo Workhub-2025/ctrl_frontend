@@ -37,7 +37,6 @@ import {
   portalTableHeaderClass,
   portalTableRowClass,
   portalTableShellClass,
-  portalTooltipContentClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import {
   formatInviteStatusLabel,
@@ -214,7 +213,7 @@ export function HiringManagerCampaignDetailView({
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent className={portalTooltipContentClass}>
+                <TooltipContent className="max-w-xs">
                   {editCampaignLockedReason}
                 </TooltipContent>
               </Tooltip>

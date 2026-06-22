@@ -11,13 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { portalInputClass, portalLabelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
-const fieldTriggerClass =
-  "flex h-10 w-full items-center gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 text-sm transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50";
+const fieldTriggerClass = cn(
+  portalInputClass,
+  "flex h-10 w-full items-center gap-2 px-3 text-sm text-foreground transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+);
 
-const placeholderClass = "text-slate-500";
-const valueClass = "text-slate-100";
+const placeholderClass = "text-muted-foreground";
+const valueClass = "text-foreground";
 
 const HOUR_OPTIONS = Array.from({ length: 24 }, (_, hour) =>
   hour.toString().padStart(2, "0")
@@ -73,7 +76,7 @@ export function OptionalDateField({
   return (
     <div className="space-y-1.5">
       {label ? (
-        <Label htmlFor={id} className="text-[10px] font-semibold text-slate-500">
+        <Label htmlFor={id} className={cn(portalLabelClass, "text-[10px]")}>
           {label}
         </Label>
       ) : null}
@@ -91,7 +94,7 @@ export function OptionalDateField({
           )}
           aria-hidden="true"
         >
-          <CalendarIcon className="h-4 w-4 shrink-0 text-slate-500" />
+          <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
           <span className={value ? valueClass : placeholderClass}>
             {value ? formatDateLabel(value) : "--/--/----"}
           </span>
@@ -112,7 +115,7 @@ export function OptionalDateField({
           }}
           className={cn(
             "absolute inset-0 h-full w-full cursor-pointer opacity-0",
-            "[color-scheme:dark]"
+            "[color-scheme:light] dark:[color-scheme:dark]"
           )}
         />
       </div>
@@ -156,7 +159,7 @@ function NativeTimeField({
         )}
         aria-hidden="true"
       >
-        <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
+        <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
         <span className={displayValue ? valueClass : placeholderClass}>
           {displayValue || "--:--"}
         </span>
@@ -177,7 +180,7 @@ function NativeTimeField({
         }}
         className={cn(
           "absolute inset-0 h-full w-full cursor-pointer opacity-0",
-          "[color-scheme:dark]"
+          "[color-scheme:light] dark:[color-scheme:dark]"
         )}
       />
     </div>
@@ -222,7 +225,7 @@ function SelectTimeField({
         disabled && "cursor-not-allowed opacity-50"
       )}
     >
-      <Clock3 className="h-4 w-4 shrink-0 text-slate-500" />
+      <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="flex flex-1 items-center gap-1.5">
         <Select
           value={hour || undefined}
@@ -234,11 +237,11 @@ function SelectTimeField({
         >
           <SelectTrigger
             id={id}
-            className="h-8 flex-1 border-white/10 bg-transparent px-2 text-xs text-slate-100 focus:ring-primary/50"
+            className={cn(portalInputClass, "h-8 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-primary/50")}
           >
             <SelectValue placeholder="--" />
           </SelectTrigger>
-          <SelectContent className="z-[200] max-h-56 border-white/10 bg-slate-950 text-slate-100">
+          <SelectContent className="z-[200] max-h-56">
             {HOUR_OPTIONS.map((option) => (
               <SelectItem key={option} value={option}>
                 {option}
@@ -255,10 +258,10 @@ function SelectTimeField({
           }}
           disabled={disabled}
         >
-          <SelectTrigger className="h-8 flex-1 border-white/10 bg-transparent px-2 text-xs text-slate-100 focus:ring-primary/50">
+          <SelectTrigger className={cn(portalInputClass, "h-8 flex-1 border-0 bg-transparent px-2 text-xs shadow-none focus:ring-primary/50")}>
             <SelectValue placeholder="--" />
           </SelectTrigger>
-          <SelectContent className="z-[200] max-h-56 border-white/10 bg-slate-950 text-slate-100">
+          <SelectContent className="z-[200] max-h-56">
             {MINUTE_OPTIONS.map((option) => (
               <SelectItem key={option} value={option}>
                 {option}
@@ -289,7 +292,7 @@ export function OptionalTimeField({
   return (
     <div className="space-y-1.5">
       {label ? (
-        <Label htmlFor={id} className="text-[10px] font-semibold text-slate-500">
+        <Label htmlFor={id} className={cn(portalLabelClass, "text-[10px]")}>
           {label}
         </Label>
       ) : null}
