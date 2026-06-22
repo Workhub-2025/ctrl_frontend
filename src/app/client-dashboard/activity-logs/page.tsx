@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Download, AlertTriangle, ScrollText } from "lucide-react";
+import { Search, Download, ScrollText } from "lucide-react";
 import { downloadCsv } from "@/lib/export-csv";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,31 +30,9 @@ type AuditLogRow = {
   summary?: string;
 };
 
-type IntegrityEventRow = {
-  id: string;
-  assessmentType: string;
-  eventType: string;
-  metadata?: Record<string, any> | null;
-  occurredAt: string;
-  ipAddress?: string;
-  userAgent?: string;
-  correlationId?: string;
-  users_permissions_user?: {
-    id: number;
-    documentId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  } | null;
-};
-
 export default function ActivityLogsPage() {
-  const [activeTab, setActiveTab] = useState<"audit" | "integrity">("audit");
   const [searchTerm, setSearchTerm] = useState("");
-  
   const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([]);
-  const [integrityEvents, setIntegrityEvents] = useState<IntegrityEventRow[]>([]);
-  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,20 +40,14 @@ export default function ActivityLogsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [auditRes, integrityRes] = await Promise.all([
-        fetch("/api/client/audit-logs"),
-        fetch("/api/client/integrity-events"),
-      ]);
+      const auditRes = await fetch("/api/client/audit-logs");
 
-      if (!auditRes.ok || !integrityRes.ok) {
-        throw new Error("Failed to load logs");
+      if (!auditRes.ok) {
+        throw new Error("Failed to load audit logs");
       }
 
       const auditData = await auditRes.json();
-      const integrityData = await integrityRes.json();
-
       setAuditLogs(auditData.data ?? []);
-      setIntegrityEvents(integrityData.data ?? []);
     } catch (err: any) {
       setError(err?.message || "An unexpected error occurred while loading activity logs.");
     } finally {
@@ -109,30 +81,6 @@ export default function ActivityLogsPage() {
     });
   }, [auditLogs, searchTerm]);
 
-  const filteredIntegrityEvents = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    if (!query) return integrityEvents;
-
-    return integrityEvents.filter((ev) => {
-      const candidateName = ev.users_permissions_user
-        ? `${ev.users_permissions_user.firstName} ${ev.users_permissions_user.lastName}`
-        : "";
-      const searchString = [
-        candidateName,
-        ev.users_permissions_user?.email,
-        ev.assessmentType,
-        ev.eventType,
-        ev.ipAddress,
-        ev.userAgent,
-        ev.occurredAt,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return searchString.includes(query);
-    });
-  }, [integrityEvents, searchTerm]);
-
   const exportAuditCsv = () => {
     downloadCsv(
       `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`,
@@ -149,65 +97,17 @@ export default function ActivityLogsPage() {
     );
   };
 
-  const exportIntegrityCsv = () => {
-    downloadCsv(
-      `integrity-events-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Timestamp", "Candidate", "Email", "Assessment", "Event Type", "IP Address", "User Agent"],
-      filteredIntegrityEvents.map((ev) => [
-        new Date(ev.occurredAt).toLocaleString(),
-        ev.users_permissions_user
-          ? `${ev.users_permissions_user.firstName} ${ev.users_permissions_user.lastName}`
-          : "Unknown",
-        ev.users_permissions_user?.email ?? "",
-        ev.assessmentType,
-        ev.eventType,
-        ev.ipAddress ?? "",
-        ev.userAgent ?? "",
-      ])
-    );
-  };
-
   return (
     <div className="space-y-6">
       <ClientPageHeader
         title="Activity logs"
-        description="Monitor system configuration changes and track candidate assessment session integrity events."
+        description="Monitor configuration changes, approvals, and other actions across your organisation."
         notice={error ? <ClientErrorBanner>{error}</ClientErrorBanner> : null}
       />
 
-      <div className="flex border-b border-border/50 dark:border-white/8">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("audit");
-            setSearchTerm("");
-          }}
-          className={cn(
-            "flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold transition-colors focus-visible:outline-none",
-            activeTab === "audit"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <ScrollText className="h-4 w-4" />
-          Audit Trail
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("integrity");
-            setSearchTerm("");
-          }}
-          className={cn(
-            "flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-semibold transition-colors focus-visible:outline-none",
-            activeTab === "integrity"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <AlertTriangle className="h-4 w-4" />
-          Session Integrity Alerts
-        </button>
+      <div className="flex items-center gap-2 border-b border-border/50 pb-3 dark:border-white/8">
+        <ScrollText className="h-4 w-4 text-primary" aria-hidden="true" />
+        <h2 className="text-sm font-semibold text-foreground">Audit trail</h2>
       </div>
 
       <PortalPanel className="space-y-4">
@@ -218,11 +118,7 @@ export default function ActivityLogsPage() {
               aria-hidden="true"
             />
             <Input
-              placeholder={
-                activeTab === "audit"
-                  ? "Search by actor, action, resource, or details…"
-                  : "Search by candidate, email, event type, or IP…"
-              }
+              placeholder="Search by actor, action, resource, or details…"
               className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -231,12 +127,8 @@ export default function ActivityLogsPage() {
           <Button
             type="button"
             variant="outline"
-            disabled={
-              activeTab === "audit"
-                ? filteredAuditLogs.length === 0
-                : filteredIntegrityEvents.length === 0
-            }
-            onClick={activeTab === "audit" ? exportAuditCsv : exportIntegrityCsv}
+            disabled={filteredAuditLogs.length === 0}
+            onClick={exportAuditCsv}
           >
             <Download className="mr-2 h-4 w-4" />
             Export CSV
@@ -246,9 +138,7 @@ export default function ActivityLogsPage() {
         <p className="text-xs text-muted-foreground">
           {loading
             ? "Loading logs…"
-            : activeTab === "audit"
-            ? `${filteredAuditLogs.length} of ${auditLogs.length} audit entries shown`
-            : `${filteredIntegrityEvents.length} of ${integrityEvents.length} integrity alerts shown`}
+            : `${filteredAuditLogs.length} of ${auditLogs.length} audit entries shown`}
         </p>
       </PortalPanel>
 
@@ -261,125 +151,62 @@ export default function ActivityLogsPage() {
             />
           ))}
         </div>
-      ) : activeTab === "audit" ? (
-        filteredAuditLogs.length === 0 ? (
-          <PortalPanel>
-            <p className="text-center text-sm text-muted-foreground">
-              No audit logs found.
-            </p>
-          </PortalPanel>
-        ) : (
-          <ul className="space-y-3">
-            {filteredAuditLogs.map((log) => (
-              <li key={log.id} className={cn(portalPanelClass, "p-4")}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className={portalBadgeClass}>
-                        {log.actionType}
-                      </Badge>
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {log.resource}
-                        {log.resourceDisplayName ? `: ${log.resourceDisplayName}` : ""}
-                      </span>
-                    </div>
-                    <p className="text-sm leading-relaxed text-foreground">
-                      {log.summary ?? "Activity recorded."}
-                    </p>
-                    {log.metadataResolved && Object.keys(log.metadataResolved).length > 0 ? (
-                      <div className="text-sm leading-relaxed text-foreground">
-                        <div className="flex flex-wrap gap-x-4 gap-y-1">
-                          {Object.entries(log.metadataResolved).map(([k, v]) => (
-                            <span key={k} className="text-xs">
-                              <span className="font-semibold text-muted-foreground">{k}</span>: {v}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                  <time className="shrink-0 text-xs font-medium text-muted-foreground sm:text-right">
-                    {new Date(log.occurredAt).toLocaleString()}
-                  </time>
-                </div>
-
-                <dl className="mt-4 grid gap-3 border-t border-border/50 pt-4 sm:grid-cols-2 dark:border-white/8">
-                  <div className="min-w-0">
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Actor
-                    </dt>
-                    <dd className="mt-0.5 break-words text-sm font-medium text-foreground">
-                      {log.actorDisplayName}
-                    </dd>
-                  </div>
-                  <div className="min-w-0">
-                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Resource ID
-                    </dt>
-                    <dd className="mt-0.5 break-words text-sm font-mono text-xs text-foreground">
-                      {log.resourceId ?? "N/A"}
-                    </dd>
-                  </div>
-                </dl>
-              </li>
-            ))}
-          </ul>
-        )
-      ) : filteredIntegrityEvents.length === 0 ? (
+      ) : filteredAuditLogs.length === 0 ? (
         <PortalPanel>
           <p className="text-center text-sm text-muted-foreground">
-            No session integrity alerts found.
+            No audit logs found.
           </p>
         </PortalPanel>
       ) : (
         <ul className="space-y-3">
-          {filteredIntegrityEvents.map((ev) => (
-            <li key={ev.id} className={cn(portalPanelClass, "p-4")}>
+          {filteredAuditLogs.map((log) => (
+            <li key={log.id} className={cn(portalPanelClass, "p-4")}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="destructive" className="bg-red-500/15 text-red-500 hover:bg-red-500/15 border-none">
-                      {ev.eventType}
+                    <Badge variant="outline" className={portalBadgeClass}>
+                      {log.actionType}
                     </Badge>
-                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                      {ev.assessmentType}
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {log.resource}
+                      {log.resourceDisplayName ? `: ${log.resourceDisplayName}` : ""}
                     </span>
                   </div>
                   <p className="text-sm leading-relaxed text-foreground">
-                    {ev.metadata?.reason ?? "Candidate triggered anomaly event."}
+                    {log.summary ?? "Activity recorded."}
                   </p>
+                  {log.metadataResolved && Object.keys(log.metadataResolved).length > 0 ? (
+                    <div className="text-sm leading-relaxed text-foreground">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        {Object.entries(log.metadataResolved).map(([k, v]) => (
+                          <span key={k} className="text-xs">
+                            <span className="font-semibold text-muted-foreground">{k}</span>: {v}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
                 <time className="shrink-0 text-xs font-medium text-muted-foreground sm:text-right">
-                  {new Date(ev.occurredAt).toLocaleString()}
+                  {new Date(log.occurredAt).toLocaleString()}
                 </time>
               </div>
 
-              <dl className="mt-4 grid gap-3 border-t border-border/50 pt-4 sm:grid-cols-3 dark:border-white/8">
+              <dl className="mt-4 grid gap-3 border-t border-border/50 pt-4 sm:grid-cols-2 dark:border-white/8">
                 <div className="min-w-0">
                   <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    Candidate
+                    Actor
                   </dt>
                   <dd className="mt-0.5 break-words text-sm font-medium text-foreground">
-                    {ev.users_permissions_user
-                      ? `${ev.users_permissions_user.firstName} ${ev.users_permissions_user.lastName}`
-                      : "Unknown"}
+                    {log.actorDisplayName}
                   </dd>
-                  <span className="text-xs text-muted-foreground">{ev.users_permissions_user?.email}</span>
                 </div>
                 <div className="min-w-0">
                   <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    IP Address
+                    Resource ID
                   </dt>
                   <dd className="mt-0.5 break-words text-sm font-mono text-xs text-foreground">
-                    {ev.ipAddress ?? "N/A"}
-                  </dd>
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    User Agent
-                  </dt>
-                  <dd className="mt-0.5 truncate text-xs text-muted-foreground" title={ev.userAgent}>
-                    {ev.userAgent ?? "N/A"}
+                    {log.resourceId ?? "N/A"}
                   </dd>
                 </div>
               </dl>

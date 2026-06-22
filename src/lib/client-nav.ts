@@ -39,7 +39,7 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
       {
         href: "/client-dashboard/activity-logs",
         label: "Activity logs",
-        hint: "Audit and session integrity events",
+        hint: "Organisation audit trail",
         icon: ScrollText,
         isActive: (pathname) => pathname.startsWith("/client-dashboard/activity-logs"),
       },
