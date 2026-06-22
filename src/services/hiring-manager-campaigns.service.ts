@@ -20,6 +20,7 @@ import {
   resolveCandidateDisplayName,
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
+import { normalizeResolvedStackSummary } from "@/lib/hiring-manager/campaign-stack-score";
 import {
   PORTAL_USER_SCOPED_TTL_MS,
   portalHmOverviewCacheKey,
@@ -191,6 +192,7 @@ type RawCampaign = {
   location?: string | null;
   assessments?: RawAssessment[];
   assessmentSettings?: Record<string, unknown> | null;
+  resolvedStackSummary?: RawResolvedStackSummary | null;
   candidate_sessions?: RawCandidateSession[];
   assessment_sessions?: RawAssessmentSession[];
 };
@@ -481,6 +483,7 @@ function normalizeCampaign(campaign: RawCampaign): HiringManagerCampaignListItem
     sessions: campaign.assessment_sessions?.length ?? 0,
     assessmentStack,
     assessmentSettings: campaign.assessmentSettings ?? null,
+    resolvedStackSummary: normalizeResolvedStackSummary(campaign.resolvedStackSummary),
     nextMilestone:
       campaign.assessment_sessions?.length
         ? `${campaign.assessment_sessions.length} Session${campaign.assessment_sessions.length === 1 ? "" : "s"} created`
@@ -744,35 +747,6 @@ export async function updateHiringManagerCampaignAssessmentStack(
     }
   );
   void invalidateHmOverviewServerCache();
-}
-
-function normalizeResolvedStackSummary(
-  summary?: RawResolvedStackSummary | null
-): HiringManagerResolvedStackSummary | null {
-  if (!summary || !Array.isArray(summary.assessments) || summary.assessments.length === 0) {
-    return null;
-  }
-
-  const assessments = summary.assessments
-    .map((item) => ({
-      documentId: item.documentId ?? item.slug ?? "assessment",
-      slug: item.slug ?? item.documentId ?? "assessment",
-      displayName: item.displayName ?? item.slug ?? "Assessment",
-      weight: numberOrNull(item.weight) ?? 0,
-    }))
-    .filter((item) => Boolean(item.slug));
-
-  if (assessments.length === 0) return null;
-
-  const weightsTotal =
-    numberOrNull(summary.weightsTotal) ??
-    assessments.reduce((sum, item) => sum + item.weight, 0);
-
-  return {
-    assessments,
-    weightsTotal,
-    resolvedAt: summary.resolvedAt ?? new Date().toISOString(),
-  };
 }
 
 function normalizeHmCandidateReport(raw: RawHmCandidateReport): HiringManagerCandidateReport {

@@ -10,6 +10,7 @@ export type HiringManagerCampaignListItem = {
   sessions: number;
   assessmentStack: string[];
   assessmentSettings?: Record<string, unknown> | null;
+  resolvedStackSummary?: HiringManagerResolvedStackSummary | null;
   nextMilestone: string;
 };
 

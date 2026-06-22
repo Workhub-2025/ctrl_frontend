@@ -12,39 +12,19 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
-import { isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
+import { findAssessmentResultForStackEntry } from "@/lib/hiring-manager/assessment-matching";
+import { buildCompositeStackEntries } from "@/lib/hiring-manager/campaign-stack-score";
 import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
 import type { HiringManagerAssessmentResult } from "@/services/hiring-manager-portal-client.service";
+import type { HiringManagerResolvedStackSummary } from "@/types/hiring-manager.types";
 
 type AssessmentOverallScoreCellProps = {
   assessmentStack: string[];
   results: HiringManagerAssessmentResult[];
-  weights?: Array<{ displayName: string; weight: number }>;
+  assessmentSettings?: Record<string, unknown> | null;
+  resolvedStackSummary?: HiringManagerResolvedStackSummary | null;
   className?: string;
 };
-
-function buildBreakdownRows(
-  assessmentStack: string[],
-  results: HiringManagerAssessmentResult[],
-  weights?: Array<{ displayName: string; weight: number }>
-) {
-  return assessmentStack.map((name, index) => {
-    const weight =
-      weights?.find((item) => isSameAssessment(item.displayName, name))?.weight ??
-      (assessmentStack.length > 0 ? Math.round(100 / assessmentStack.length) : 0);
-    const result = results.find((item) => isSameAssessment(name, item.assessment)) ?? null;
-    const status = result ? getHmAssessmentItemStatus(result) : "pending";
-    const score = result?.numericScore ?? null;
-
-    return {
-      key: `${name}-${index}`,
-      name,
-      weight,
-      status,
-      score,
-    };
-  });
-}
 
 function ScoreRingSmall({ value }: { value: number | null }) {
   const normalized =
@@ -90,22 +70,30 @@ function ScoreRingSmall({ value }: { value: number | null }) {
 export function AssessmentOverallScoreCell({
   assessmentStack,
   results,
-  weights,
+  assessmentSettings,
+  resolvedStackSummary,
   className,
 }: AssessmentOverallScoreCellProps) {
-  const stackForScore =
-    weights && weights.length > 0
-      ? weights.map((item) => ({
-          displayName: item.displayName,
-          weight: item.weight,
-        }))
-      : assessmentStack.map((displayName) => ({
-          displayName,
-          weight: assessmentStack.length > 0 ? 100 / assessmentStack.length : 0,
-        }));
+  const stackEntries = buildCompositeStackEntries({
+    assessmentStack,
+    assessmentSettings,
+    resolvedStackSummary,
+  });
 
-  const overallScore = computeWeightedCompositeScore(stackForScore, results);
-  const breakdown = buildBreakdownRows(assessmentStack, results, weights);
+  const overallScore = computeWeightedCompositeScore(stackEntries, results);
+  const breakdown = stackEntries.map((entry, index) => {
+    const result = findAssessmentResultForStackEntry(entry, results) ?? null;
+    const status = result ? getHmAssessmentItemStatus(result) : "pending";
+    const score = result?.numericScore ?? null;
+
+    return {
+      key: `${entry.displayName}-${index}`,
+      name: entry.displayName,
+      weight: entry.weight,
+      status,
+      score,
+    };
+  });
 
   const statusLabel = (status: string) => {
     if (status === "completed") return "Completed";

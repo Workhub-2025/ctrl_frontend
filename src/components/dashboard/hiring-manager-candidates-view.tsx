@@ -42,7 +42,12 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
-import { getAssessmentKey, isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
+import {
+  buildCompositeStackEntries,
+  type CompositeStackEntry,
+} from "@/lib/hiring-manager/campaign-stack-score";
+import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
+import { findAssessmentResultForStackEntry, getAssessmentKey } from "@/lib/hiring-manager/assessment-matching";
 
 type CandidateRow = {
   id: string;
@@ -59,8 +64,8 @@ type CandidateRow = {
   completion: number;
   results: HiringManagerAssessmentResult[];
   assessmentStack: string[];
-  overallScore: number;
-  weights: Record<string, number>;
+  overallScore: number | null;
+  stackEntries: CompositeStackEntry[];
 };
 
 function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): CandidateRow[] {
@@ -89,22 +94,13 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
             ? "in_progress"
             : "not_started";
 
-      // Calculate overall weighted score using campaign weights
-      const weights = getCampaignWeights(
-        candidate.assessmentStack ?? campaign.assessmentStack ?? [],
-        campaign.assessmentSettings
-      );
-      
-      let overallScore = 0;
       const expectedAssessments = candidate.assessmentStack ?? campaign.assessmentStack ?? [];
-      expectedAssessments.forEach((name) => {
-        const weight = weights[name] ?? 0;
-        const result = results.find((r) => isSameAssessment(name, r.assessment));
-        if (result && result.numericScore !== null) {
-          overallScore += (result.numericScore * weight) / 100;
-        }
+      const stackEntries = buildCompositeStackEntries({
+        assessmentStack: expectedAssessments,
+        assessmentSettings: campaign.assessmentSettings,
+        resolvedStackSummary: campaign.resolvedStackSummary,
       });
-      const roundedOverallScore = Math.round(overallScore);
+      const overallScore = computeWeightedCompositeScore(stackEntries, results);
 
       rows.push({
         id: candidate.id,
@@ -120,9 +116,9 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
         totalAssessments,
         completion,
         results,
-        assessmentStack: candidate.assessmentStack ?? campaign.assessmentStack ?? [],
-        overallScore: roundedOverallScore,
-        weights,
+        assessmentStack: expectedAssessments,
+        overallScore,
+        stackEntries,
       });
     }
   }
@@ -324,8 +320,8 @@ export function HiringManagerCandidatesView() {
 
           {/* Active Filters Summary */}
           {(campaignFilter !== "all" || sessionFilter !== "all" || progressFilter !== "all" || searchQuery !== "") && (
-            <div className="flex items-center justify-between border-t border-white/5 pt-3">
-              <p className="text-xs text-slate-500">
+            <div className="flex items-center justify-between border-t border-border/60 pt-3 dark:border-white/5">
+              <p className="text-xs text-muted-foreground">
                 Found {filteredCandidates.length} matches of {candidates.length} total candidates
               </p>
               <Button
@@ -357,7 +353,7 @@ export function HiringManagerCandidatesView() {
           variant="outline"
           onClick={() => void handleRefresh()}
           disabled={isRefreshing}
-          className="w-fit hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
+          className="w-fit border-border text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           Refresh
@@ -389,17 +385,17 @@ export function HiringManagerCandidatesView() {
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-base font-bold text-white tracking-tight leading-snug">
+                        <h2 className="text-base font-bold text-foreground tracking-tight leading-snug">
                           {candidate.name}
                         </h2>
                         <Badge className={cn(portalBadgeClass, "pointer-events-none border-none text-[10px] font-semibold")}>
                           {progressLabel(candidate.progress)}
                         </Badge>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5 break-all font-medium">
+                      <p className="text-xs text-muted-foreground mt-0.5 break-all font-medium">
                         {candidate.email || "Email not available"}
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-1 font-semibold tracking-wide uppercase">
+                      <p className={cn(portalLabelClass, "mt-1 text-[10px]")}>
                         {candidate.campaignName} · {candidate.sessionName}
                       </p>
                     </div>
@@ -407,16 +403,19 @@ export function HiringManagerCandidatesView() {
 
                   <div className="flex items-center justify-between gap-5 sm:justify-end shrink-0">
                     {/* Completion stats */}
-                    <div className="text-right border-r border-white/5 pr-4">
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Completed</p>
-                      <p className="text-sm font-extrabold text-white tabular-nums">
+                    <div className="text-right border-r border-border/60 pr-4 dark:border-white/5">
+                      <p className={cn(portalLabelClass, "text-[10px]")}>Completed</p>
+                      <p className="text-sm font-extrabold text-foreground tabular-nums">
                         {candidate.completedAssessments}/{candidate.totalAssessments} Done
                       </p>
                     </div>
 
                     <Button
                       variant="outline"
-                      className="group h-9 rounded-xl border-white/10 bg-white/[0.02] px-4 text-xs font-semibold text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors hover:border-primary/30"
+                      className={cn(
+                        portalInputClass,
+                        "group h-9 rounded-xl bg-background/50 px-4 text-xs font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+                      )}
                       asChild
                     >
                       <Link href={`/hiring-manager-dashboard/candidates/${candidate.candidateSessionId}/?campaignId=${candidate.campaignId}&candidateSessionId=${candidate.candidateSessionId}`}>
@@ -428,17 +427,17 @@ export function HiringManagerCandidatesView() {
                 </div>
 
                 {/* Redesigned Performance breakdown segment tracks */}
-                <div className="space-y-4 pt-4 border-t border-white/5">
+                <div className="space-y-4 pt-4 border-t border-border/60 dark:border-white/5">
                   {/* Overall Weighted Score Bar — shown first */}
-                  {candidate.completedAssessments > 0 && (
+                  {candidate.completedAssessments > 0 && candidate.overallScore !== null && (
                     <div className="relative group space-y-2">
-                      <div className="flex items-center justify-between text-xs text-slate-400">
-                        <span className="font-medium text-slate-300">Overall weighted score</span>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Overall weighted score</span>
                         <span className="font-extrabold text-indigo-400 tabular-nums">
                           {candidate.overallScore}%
                         </span>
                       </div>
-                      <div className="h-3 w-full rounded-full bg-white/5 overflow-hidden border border-white/5">
+                      <div className="h-3 w-full overflow-hidden rounded-full border border-border/60 bg-muted dark:border-white/5 dark:bg-white/5">
                         <div
                           className={portalProgressBarClass}
                           style={{ width: `${candidate.overallScore}%` }}
@@ -449,20 +448,21 @@ export function HiringManagerCandidatesView() {
                       <div className={cn(portalCssHoverTooltipClass, "w-64")}>
                         <p className="mb-2 text-sm font-semibold text-foreground">Weighted score breakdown</p>
                         <div className="space-y-1.5">
-                          {candidate.assessmentStack.map((name) => {
-                            const weight = candidate.weights[name] ?? 0;
-                            const result = candidate.results.find((r) => isSameAssessment(name, r.assessment));
+                          {candidate.stackEntries.map((entry) => {
+                            const result = findAssessmentResultForStackEntry(entry, candidate.results);
                             const itemStatus = getHmAssessmentItemStatus(result);
                             const isCompleted = itemStatus === "completed";
                             const isAbandoned = itemStatus === "abandoned";
                             const score = result?.numericScore ?? 0;
-                            const contribution = isCompleted ? parseFloat(((score * weight) / 100).toFixed(1)) : 0;
+                            const contribution = isCompleted
+                              ? parseFloat(((score * entry.weight) / 100).toFixed(1))
+                              : 0;
 
                             return (
-                              <div key={name} className="flex justify-between items-center text-xs">
+                              <div key={entry.displayName} className="flex justify-between items-center text-xs">
                                 <div className="flex flex-col min-w-0">
-                                  <span className="truncate font-medium text-foreground">{name}</span>
-                                  <span className="text-[0.625rem] font-semibold text-muted-foreground">Weight: {weight}%</span>
+                                  <span className="truncate font-medium text-foreground">{entry.displayName}</span>
+                                  <span className="text-[0.625rem] font-semibold text-muted-foreground">Weight: {entry.weight}%</span>
                                 </div>
                                 <div className="text-right pl-2 shrink-0">
                                   <span className="font-semibold text-foreground">
@@ -486,21 +486,18 @@ export function HiringManagerCandidatesView() {
 
                   {/* Segmented per-assessment scores bar — shown second */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-slate-400">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span className="font-medium">Assessment performance breakdown</span>
-                      <span className="font-semibold text-white tabular-nums">
+                      <span className="font-semibold text-foreground tabular-nums">
                         Hover segments for detailed scores
                       </span>
                     </div>
                     <div className="h-3 w-full flex gap-1.5 overflow-visible">
                       {(() => {
-                        const resultsMap = new Map(
-                          (candidate.results || []).map((r) => [r.assessment.toLowerCase(), r])
-                        );
-
-                        const expectedAssessments = candidate.assessmentStack || [];
-                        return expectedAssessments.map((stackName, idx) => {
-                          const matchedResult = resultsMap.get(stackName.toLowerCase());
+                        const expectedAssessments = candidate.stackEntries;
+                        return expectedAssessments.map((entry, idx) => {
+                          const stackName = entry.displayName;
+                          const matchedResult = findAssessmentResultForStackEntry(entry, candidate.results);
                           const itemStatus = getHmAssessmentItemStatus(matchedResult);
                           const isCompleted = itemStatus === "completed";
                           const isAbandoned = itemStatus === "abandoned";
@@ -544,7 +541,7 @@ export function HiringManagerCandidatesView() {
                           return (
                             <div
                               key={`${stackName}-${idx}`}
-                              className="relative group flex-1 h-full bg-white/[0.04] border border-white/10 rounded-full overflow-visible"
+                              className="relative group flex-1 h-full overflow-visible rounded-full border border-border/60 bg-muted/30 dark:border-white/10 dark:bg-white/[0.04]"
                             >
                               {/* Inner filled score bar */}
                               <div
@@ -591,38 +588,6 @@ export function HiringManagerCandidatesView() {
   );
 }
 
-function buildEqualWeights(assessmentStack: string[]) {
-  if (assessmentStack.length === 0) return {};
-  const baseWeight = Math.floor(100 / assessmentStack.length);
-  const remainder = 100 - baseWeight * assessmentStack.length;
-  return assessmentStack.reduce<Record<string, number>>((weights, name, index) => {
-    weights[name] = baseWeight + (index < remainder ? 1 : 0);
-    return weights;
-  }, {});
-}
-
-function getCampaignWeights(
-  assessmentStack: string[],
-  assessmentSettings?: Record<string, unknown> | null
-) {
-  const rawWeights =
-    assessmentSettings &&
-    typeof assessmentSettings.weights === "object" &&
-    assessmentSettings.weights !== null &&
-    !Array.isArray(assessmentSettings.weights)
-      ? (assessmentSettings.weights as Record<string, unknown>)
-      : null;
-
-  if (!rawWeights) return buildEqualWeights(assessmentStack);
-
-  return assessmentStack.reduce<Record<string, number>>((weights, assessmentName) => {
-    const matchedEntry = Object.entries(rawWeights).find(([key]) => isSameAssessment(assessmentName, key));
-    const numericValue = matchedEntry ? Number(matchedEntry[1]) : Number.NaN;
-    weights[assessmentName] = Number.isFinite(numericValue) ? numericValue : 0;
-    return weights;
-  }, {});
-}
-
 function FilterSelect({
   label,
   allLabel,
@@ -638,9 +603,9 @@ function FilterSelect({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium uppercase text-slate-500">{label}</p>
+      <p className={portalLabelClass}>{label}</p>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-10 rounded-md border-white/10 bg-white/[0.03] text-slate-100 hover:bg-white/[0.06] hover:text-white transition-colors">
+        <SelectTrigger className={cn(portalInputClass, "h-10 text-foreground transition-colors hover:bg-muted hover:text-foreground")}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

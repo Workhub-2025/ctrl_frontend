@@ -176,6 +176,8 @@ export function HiringManagerSessionDetailView({ sessionId }: HiringManagerSessi
         removingCandidateId={removingCandidateId}
         onKickCandidate={removeCandidate}
         assessmentStack={campaign?.assessmentStack}
+        assessmentSettings={campaign?.assessmentSettings}
+        resolvedStackSummary={campaign?.resolvedStackSummary}
         onUnlockCandidate={handleUnlockCandidate}
         unlockingCandidateId={unlockingCandidateId}
         onUpdateSessionStatus={handleUpdateSessionStatus}

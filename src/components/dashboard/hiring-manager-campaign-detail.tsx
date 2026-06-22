@@ -34,6 +34,8 @@ import {
   portalPanelElevatedClass,
   portalPanelNestedClass,
   portalBadgeClass,
+  portalInputClass,
+  portalLabelClass,
   portalTableHeaderClass,
   portalTableRowClass,
   portalTableShellClass,
@@ -51,6 +53,13 @@ import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
 } from "@/services/hiring-manager-portal-client.service";
+
+const hmOutlineButtonClass = cn(
+  portalInputClass,
+  "h-9 bg-background/50 text-xs font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+);
+
+const hmBackButtonClass = cn(hmOutlineButtonClass, "h-8 w-fit shrink-0 rounded-lg px-3");
 
 type HiringManagerCampaignDetailProps = {
   campaignId: string;
@@ -156,7 +165,7 @@ export function HiringManagerCampaignDetailView({
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <Button
           variant="outline"
-          className="h-8 w-fit shrink-0 rounded-lg border-white/10 bg-white/[0.02] px-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+          className={hmBackButtonClass}
           asChild
         >
           <Link href="/hiring-manager-dashboard/campaigns/">
@@ -172,7 +181,7 @@ export function HiringManagerCampaignDetailView({
                 type="button"
                 variant="outline"
                 asChild
-                className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+                className={hmOutlineButtonClass}
               >
                 <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
                   <Pencil className="mr-1.5 h-3.5 w-3.5" />
@@ -187,7 +196,7 @@ export function HiringManagerCampaignDetailView({
                       type="button"
                       variant="outline"
                       disabled
-                      className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      className={cn(hmOutlineButtonClass, "disabled:cursor-not-allowed disabled:opacity-50")}
                     >
                       <Pencil className="mr-1.5 h-3.5 w-3.5" />
                       Edit campaign
@@ -204,7 +213,7 @@ export function HiringManagerCampaignDetailView({
               variant="outline"
               onClick={() => void loadCampaign(true)}
               disabled={isRefreshing}
-              className="h-9 border-white/10 bg-white/[0.02] text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white"
+              className={hmOutlineButtonClass}
             >
               <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isRefreshing && "animate-spin text-primary")} />
               Refresh
@@ -245,12 +254,12 @@ export function HiringManagerCampaignDetailView({
         <Card className={cn(portalPanelElevatedClass, "relative overflow-hidden transition-colors duration-300 hover:border-primary/45")}>
           <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-sky-400" />
           <CardContent className="p-5 flex flex-col justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <p className={cn(portalLabelClass, "flex items-center gap-1.5 font-bold")}>
               <Briefcase className="h-3.5 w-3.5 text-indigo-400" /> Active Assessment Sessions
             </p>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-black text-white">{campaign.sessions}</span>
-              <span className="text-xs text-slate-500">scheduled events</span>
+              <span className="text-3xl font-black text-foreground">{campaign.sessions}</span>
+              <span className="text-xs text-muted-foreground">scheduled events</span>
             </div>
           </CardContent>
         </Card>
@@ -258,14 +267,14 @@ export function HiringManagerCampaignDetailView({
 
       <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
         <Card className={cn(portalPanelNestedClass, "rounded-2xl bg-card/40 backdrop-blur-md shadow-sm")}>
-          <CardHeader className="border-b border-border/40 dark:border-white/5 p-4">
-            <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <CardHeader className="border-b border-border/60 p-4 dark:border-white/5">
+            <CardTitle className={cn(portalLabelClass, "flex items-center gap-1.5 text-sm font-bold")}>
               <ClipboardList className="h-4 w-4 text-primary" /> Assessment stack
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2 p-4">
             {campaign.assessmentStack.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">No assessments linked.</p>
+              <p className="text-xs italic text-muted-foreground">No assessments linked.</p>
             ) : (
               (() => {
                 const versionSummary = getAssessmentSettingsSummary(campaign.assessmentSettings);
@@ -281,7 +290,7 @@ export function HiringManagerCampaignDetailView({
                   return (
                     <span
                       key={assessment}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border/55 bg-muted/40 px-3 py-1.5 text-xs font-semibold text-slate-200 dark:border-white/5 dark:bg-white/[0.02]"
+                      className={cn(portalBadgeClass, "inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold")}
                       title={matchedVersion?.detail || undefined}
                     >
                       <Icon className="h-3.5 w-3.5 text-primary" />
@@ -295,31 +304,31 @@ export function HiringManagerCampaignDetailView({
         </Card>
 
         <Card className={cn(portalPanelNestedClass, "rounded-2xl bg-card/40 backdrop-blur-md shadow-sm")}>
-          <CardHeader className="border-b border-border/40 dark:border-white/5 p-4">
-            <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+          <CardHeader className="border-b border-border/60 p-4 dark:border-white/5">
+            <CardTitle className={cn(portalLabelClass, "flex items-center gap-1.5 text-sm font-bold")}>
               <Calendar className="h-4 w-4 text-primary" /> Campaign Timeline
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3.5 p-4 text-xs text-slate-300">
-            <div className="flex items-center justify-between border-b border-white/5 pb-2">
-              <span className="text-slate-500">Start Date</span>
-              <span className="font-semibold text-white">{campaign.startDate}</span>
+          <CardContent className="grid gap-3.5 p-4 text-xs text-foreground">
+            <div className="flex items-center justify-between border-b border-border/60 pb-2 dark:border-white/5">
+              <span className="text-muted-foreground">Start Date</span>
+              <span className="font-semibold text-foreground">{campaign.startDate}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">End Date</span>
-              <span className="font-semibold text-white">{campaign.endDate}</span>
+              <span className="text-muted-foreground">End Date</span>
+              <span className="font-semibold text-foreground">{campaign.endDate}</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Card className={portalPanelElevatedClass}>
-        <CardHeader className="border-b border-white/10 p-4">
-          <CardTitle className="text-sm font-bold text-slate-400 uppercase tracking-wider">Sessions</CardTitle>
+        <CardHeader className="border-b border-border/60 p-4 dark:border-white/10">
+          <CardTitle className={cn(portalLabelClass, "text-sm font-bold")}>Sessions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 p-4">
           {campaign.assessmentSessions.length === 0 ? (
-            <p className="text-xs text-slate-500 italic">
+            <p className="text-xs italic text-muted-foreground">
               No sessions created yet. Create sessions from the Sessions tab.
             </p>
           ) : (
@@ -336,18 +345,18 @@ export function HiringManagerCampaignDetailView({
                     ].join(" ")}>
                       {session.status}
                     </Badge>
-                    <span className="break-words text-sm font-semibold text-white">
+                    <span className="break-words text-sm font-semibold text-foreground">
                       {getHmSessionDisplayName(session)}
                     </span>
                   </div>
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {session.campaign} · {session.date} · {session.location}
                   </p>
                 </div>
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-8 rounded-lg border-white/10 bg-white/[0.02] px-3.5 text-xs text-slate-200 hover:!bg-white/10 hover:!text-white dark:hover:!bg-white/[0.08] dark:hover:!text-white transition-colors"
+                  className={cn(hmOutlineButtonClass, "h-8 rounded-lg px-3.5")}
                   asChild
                 >
                   <Link href={`/hiring-manager-dashboard/sessions/${session.id}`}>
@@ -363,8 +372,8 @@ export function HiringManagerCampaignDetailView({
 
       {/* Candidates in Campaign Section */}
       <Card className={cn(portalPanelElevatedClass, "rounded-xl")}>
-        <CardHeader className="border-b border-white/10 p-5 flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-bold text-white flex items-center gap-2">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 p-5 dark:border-white/10">
+          <CardTitle className="flex items-center gap-2 text-base font-bold text-foreground">
             <Users className="h-5 w-5 text-primary" /> Candidates in Campaign ({campaign.joinedCandidates.length})
           </CardTitle>
           <Badge className="pointer-events-none bg-indigo-500/10 text-indigo-400 border-none px-2.5 py-0.5 text-xs font-semibold">
@@ -373,7 +382,7 @@ export function HiringManagerCampaignDetailView({
         </CardHeader>
         <CardContent className="p-5">
           {campaign.joinedCandidates.length === 0 ? (
-            <p className="text-xs text-slate-500 italic text-center py-6">
+            <p className="py-6 text-center text-xs italic text-muted-foreground">
               No candidates have joined sessions for this campaign yet.
             </p>
           ) : (
@@ -428,6 +437,8 @@ export function HiringManagerCampaignDetailView({
                           <AssessmentOverallScoreCell
                             assessmentStack={assessmentStack}
                             results={results}
+                            assessmentSettings={campaign.assessmentSettings}
+                            resolvedStackSummary={campaign.resolvedStackSummary}
                           />
                         </td>
                         <td className="p-3 text-right">

@@ -64,6 +64,7 @@ import {
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
+import type { HiringManagerResolvedStackSummary } from "@/types/hiring-manager.types";
 
 type SessionCandidate = HiringManagerSessionListItem["candidates"][number];
 
@@ -90,6 +91,8 @@ type HiringManagerSessionDetailsDialogProps = {
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
   onOpenResults?: (candidate: SessionCandidate) => void;
   assessmentStack?: string[];
+  assessmentSettings?: Record<string, unknown> | null;
+  resolvedStackSummary?: HiringManagerResolvedStackSummary | null;
   onUnlockCandidate?: (candidateSessionId: string) => void;
   unlockingCandidateId?: string | null;
   onUpdateSessionStatus?: (sessionId: string, status: "closed") => void;
@@ -112,6 +115,8 @@ export function HiringManagerSessionDetailsDialog({
   onKickCandidate,
   onOpenResults,
   assessmentStack,
+  assessmentSettings,
+  resolvedStackSummary,
   onUnlockCandidate,
   unlockingCandidateId,
   onUpdateSessionStatus,
@@ -167,6 +172,8 @@ export function HiringManagerSessionDetailsDialog({
       removingCandidateId={removingCandidateId}
       onKickCandidate={onKickCandidate}
       assessmentStack={assessmentStack}
+      assessmentSettings={assessmentSettings}
+      resolvedStackSummary={resolvedStackSummary}
       onUnlockCandidate={onUnlockCandidate}
       unlockingCandidateId={unlockingCandidateId}
       onUpdateSessionStatus={onUpdateSessionStatus}
@@ -216,6 +223,8 @@ type HiringManagerSessionWorkspaceProps = {
   removingCandidateId?: string | null;
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
   assessmentStack?: string[];
+  assessmentSettings?: Record<string, unknown> | null;
+  resolvedStackSummary?: HiringManagerResolvedStackSummary | null;
   onUnlockCandidate?: (candidateSessionId: string) => void;
   unlockingCandidateId?: string | null;
   onUpdateSessionStatus?: (sessionId: string, status: "closed") => void;
@@ -240,6 +249,8 @@ function HiringManagerSessionWorkspace({
   removingCandidateId,
   onKickCandidate,
   assessmentStack,
+  assessmentSettings,
+  resolvedStackSummary,
   onUnlockCandidate,
   unlockingCandidateId,
   onUpdateSessionStatus,
@@ -634,6 +645,8 @@ function HiringManagerSessionWorkspace({
                                       <AssessmentOverallScoreCell
                                         assessmentStack={stackForWeights}
                                         results={candidate.results ?? []}
+                                        assessmentSettings={assessmentSettings}
+                                        resolvedStackSummary={resolvedStackSummary}
                                       />
                                     </div>
                                   </div>
