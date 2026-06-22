@@ -27,6 +27,8 @@ import {
   Save,
   RefreshCw,
   ArrowLeft,
+  Download,
+  Trash2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EqualityMonitoringForm from "@/components/auth/equality-monitoring-form";
@@ -36,6 +38,17 @@ import { TelInput } from "@/components/ui/telInput";
 import { PortalMinimalShell } from "@/components/dashboard/portal/portal-minimal-shell";
 import { isAdminRole, routeForRole } from "@/lib/auth/role-model";
 import { useAuthStore } from "@/store/auth.store";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface ProfileData {
   firstName: string;
@@ -69,6 +82,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isErasing, setIsErasing] = useState(false);
   const userIsAdmin = isAdminRole(user?.role);
   const returnPath = routeForRole(user?.role);
 
@@ -173,7 +188,10 @@ export default function ProfilePage() {
       }
 
       await updateProfile({
-        equalityMonitoring: data,
+        equalityMonitoring: {
+          ...data,
+          _submittedAt: new Date().toISOString(),
+        },
       });
 
       toast({
@@ -199,6 +217,52 @@ export default function ProfilePage() {
       title: "No Changes Made",
       description: "Your equality monitoring information remains unchanged.",
     });
+  };
+
+  const handleDataExport = async () => {
+    try {
+      setIsExporting(true);
+      await UserProfileService.downloadDataExport();
+      toast({
+        title: "Export ready",
+        description: "Your data export has been downloaded.",
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Export failed",
+        description:
+          error instanceof Error ? error.message : "We could not export your data.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleErasureRequest = async () => {
+    try {
+      setIsErasing(true);
+      const result = await UserProfileService.requestErasure();
+      toast({
+        title:
+          result.data.status === "completed"
+            ? "Account closed"
+            : "Erasure request received",
+        description: result.data.message,
+      });
+      if (result.data.status === "completed") {
+        window.location.href = "/auth/register?mode=login";
+      }
+    } catch (error: unknown) {
+      toast({
+        title: "Request failed",
+        description:
+          error instanceof Error ? error.message : "We could not process your request.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsErasing(false);
+    }
   };
 
   if (authLoading || isProfileLoading) {
@@ -486,8 +550,15 @@ export default function ProfilePage() {
                           Get a copy of all data we have about you
                         </p>
                       </div>
-                      <Button variant="outline" size="sm" className="rounded-lg shrink-0">
-                        Request Export
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg shrink-0"
+                        onClick={() => void handleDataExport()}
+                        disabled={isExporting}
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        {isExporting ? "Preparing…" : "Request Export"}
                       </Button>
                     </div>
 
@@ -498,9 +569,39 @@ export default function ProfilePage() {
                           Permanently delete your account and all associated data
                         </p>
                       </div>
-                      <Button variant="destructive" size="sm" className="rounded-lg bg-red-600 hover:bg-red-700 shrink-0">
-                        Delete Account
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="rounded-lg bg-red-600 hover:bg-red-700 shrink-0"
+                            disabled={isErasing}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {isErasing ? "Processing…" : "Delete Account"}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Request account deletion?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will close your account and remove personal identifiers where
+                              possible. Assessment records may be retained in pseudonymised form
+                              where your recruiting organisation has a lawful basis. Organisation
+                              admin accounts are reviewed manually within 30 days.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-red-600 hover:bg-red-700"
+                              onClick={() => void handleErasureRequest()}
+                            >
+                              Confirm deletion request
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 </div>

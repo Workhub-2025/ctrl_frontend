@@ -64,4 +64,48 @@ export class UserProfileService {
 
         return body as UserProfileResponse;
     }
+
+    static async downloadDataExport(): Promise<void> {
+        const response = await fetch('/api/user/data-export', {
+            method: 'GET',
+            credentials: 'same-origin',
+        });
+
+        if (!response.ok) {
+            const body = await response.json().catch(() => ({}));
+            throw new Error(typeof body.error === 'string' ? body.error : 'Data export failed');
+        }
+
+        const blob = await response.blob();
+        const disposition = response.headers.get('content-disposition') ?? '';
+        const match = disposition.match(/filename="([^"]+)"/);
+        const filename = match?.[1] ?? 'ctrl-data-export.json';
+
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.click();
+        URL.revokeObjectURL(url);
+    }
+
+    static async requestErasure(): Promise<{ data: { status: string; message: string } }> {
+        const response = await fetch('/api/user/erasure-request', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            throw new Error(typeof body.error === 'string' ? body.error : 'Erasure request failed');
+        }
+
+        return body as { data: { status: string; message: string } };
+    }
 }
