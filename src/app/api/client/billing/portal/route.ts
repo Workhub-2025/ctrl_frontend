@@ -4,6 +4,7 @@ import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { getClientDashboardSummary } from "@/services/client-portal.service";
 import { getStripeClient } from "@/lib/stripe/server";
 import { getStripeAppUrl } from "@/lib/stripe/billing-checkout";
+import { resolveBillingPortalConfigurationId } from "@/lib/stripe/billing-portal";
 import { strapiServerClient } from "@/lib/strapi";
 
 export async function POST(request: Request) {
@@ -47,10 +48,12 @@ export async function POST(request: Request) {
       });
     }
 
-    // Create billing portal session
+    const portalConfigurationId = await resolveBillingPortalConfigurationId();
+
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
-      return_url: `${getStripeAppUrl()}/client-dashboard`,
+      configuration: portalConfigurationId,
+      return_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/`,
     });
 
     return NextResponse.json({ data: { url: portalSession.url } });

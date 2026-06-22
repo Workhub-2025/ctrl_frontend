@@ -93,6 +93,8 @@ export function ClientUpgradeContent() {
     updateAutoRenew,
     autoRenewBusy,
     redirectToBillingPortal,
+    submitUpgradeRequest,
+    submittingUpgrade,
   } = useClientPortal();
 
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
@@ -446,27 +448,59 @@ export function ClientUpgradeContent() {
           </div>
         </PortalPanel>
 
+        {entitlements ? (
+          <PortalPanel>
+            <div className="p-6">
+              <ClientUpgradeBuilder
+                entitlements={entitlements}
+                canRequestUpgrades={canRequestUpgrades}
+                submitting={submittingUpgrade}
+                onSubmit={async (payload) => {
+                  await submitUpgradeRequest({ payload });
+                }}
+              />
+            </div>
+          </PortalPanel>
+        ) : null}
+
+        {entitlements && (contract?.seatCount ?? seats?.limit ?? 0) > 1 ? (
+          <PortalPanel>
+            <div className="p-6">
+              <ClientSeatDecreasePanel
+                currentSeats={contract?.seatCount ?? seats?.limit ?? 0}
+                seatSlots={seatSlots}
+                canRequestUpgrades={canRequestUpgrades}
+                submitting={submittingUpgrade}
+                onSubmit={async (payload) => {
+                  await submitUpgradeRequest({ payload });
+                }}
+              />
+            </div>
+          </PortalPanel>
+        ) : null}
+
         <PortalPanel>
           <div className="p-6 space-y-4">
             <PortalSectionHeader
-              eyebrow="Billing & Plan"
-              title="Manage subscription and seat allocations"
-              description="Adjust your plan tier, seat limits, view invoices, and manage payment methods directly through Stripe."
+              eyebrow="Billing"
+              title="Payment methods and invoices"
+              description="Update your Direct Debit details or download past invoices. To change seats, assessments, or delivery features, use the upgrade builder above — CTRL will send a pro-rated invoice aligned to your contract."
             />
             <div className="pt-2">
               <Button
+                variant="outline"
                 onClick={handleOpenBillingPortal}
                 disabled={billingPortalLoading}
-                className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold px-6 py-2 rounded-xl transition-all shadow-lg"
+                className="rounded-xl font-semibold px-6 py-2"
               >
                 {billingPortalLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Opening Billing Portal...
+                    Opening billing portal…
                   </>
                 ) : (
                   <>
-                    Manage Subscription & Seats
+                    Payment methods & invoices
                     <ArrowUpRight className="ml-2 h-4 w-4" />
                   </>
                 )}
