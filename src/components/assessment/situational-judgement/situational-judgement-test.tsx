@@ -22,6 +22,14 @@ import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
+import {
+  portalAssessmentInsetClass,
+  portalAssessmentSectionClass,
+  portalAssessmentSectionLgClass,
+  portalAssessmentTileClass,
+  portalAssessmentTileShadowClass,
+  portalInputClass,
+} from '@/components/dashboard/portal/portal-design-tokens';
 import { initSjaSession } from '@/app/actions/assessment-sja.actions';
 import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { buildTimedAssessmentSubmitMeta } from '@/lib/assessment-completion-status';
@@ -508,7 +516,7 @@ export default function SituationalJudgementTest({
           'rounded-xl border p-4 transition',
           isBest || isWorst
             ? 'border-primary/50 bg-primary/5'
-            : 'border-border bg-card dark:border-white/10 dark:bg-white/[0.03]',
+            : cn(portalAssessmentTileClass, 'border-border bg-card'),
         ].join(' ')}
       >
         <div className="flex items-start gap-3">
@@ -619,17 +627,17 @@ export default function SituationalJudgementTest({
             Read each scenario and choose the most effective and least effective response.
           </p>
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">{timeLimitLabel}</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">A visual time bar stays on screen during the live scenarios.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <Target className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Best and worst choice</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Select one most effective and one least effective action.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <ListChecks className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">{scenarioCountLabel}</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Your live judgement decisions are submitted securely.</p>
@@ -645,7 +653,7 @@ export default function SituationalJudgementTest({
       {phase === 'rules' && (
         <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center py-6">
           <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentSectionLgClass}>
               <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
                 Behavioural judgement
               </Badge>
@@ -659,7 +667,7 @@ export default function SituationalJudgementTest({
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
                 </div>
@@ -675,18 +683,18 @@ export default function SituationalJudgementTest({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <ListChecks className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h2 className="mb-3 text-lg font-semibold text-foreground">Your Task</h2>
                 <p>For each scenario, you must select:</p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  <div className="rounded-lg border border-border bg-background p-3 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                  <div className={portalAssessmentInsetClass}>
                     <p className="text-sm font-semibold text-foreground">MOST effective</p>
                     <p className="mt-1 text-xs text-muted-foreground">The strongest response.</p>
                   </div>
-                  <div className="rounded-lg border border-border bg-background p-3 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                  <div className={portalAssessmentInsetClass}>
                     <p className="text-sm font-semibold text-foreground">LEAST effective</p>
                     <p className="mt-1 text-xs text-muted-foreground">The weakest response.</p>
                   </div>
@@ -701,7 +709,7 @@ export default function SituationalJudgementTest({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+              <div className={cn(portalAssessmentSectionClass, "flex flex-col justify-between")}>
                 <div>
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                     <ListChecks className="h-5 w-5" aria-hidden="true" />
@@ -713,7 +721,7 @@ export default function SituationalJudgementTest({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentSectionClass}>
               <h2 className="mb-3 text-lg font-semibold text-foreground">How to Approach Each Scenario</h2>
               <p>When making your decisions, think about:</p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -734,7 +742,7 @@ export default function SituationalJudgementTest({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Timer className="h-5 w-5" aria-hidden="true" />
@@ -744,7 +752,7 @@ export default function SituationalJudgementTest({
                 <p>The assessment opens with {practiceCountLabel} so you can understand the best-and-worst format before the live questions. Practice is not scored and does not affect your final result.</p>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                     <ShieldCheck className="h-5 w-5" aria-hidden="true" />
@@ -775,7 +783,7 @@ export default function SituationalJudgementTest({
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
+          <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-8 sm:flex-row">
             <Button size="lg" className="h-12" onClick={startPractice}>
               {practiceScenarios.length > 0 ? 'Start practice scenario' : 'Begin scenarios'}
               <Play className="ml-2 h-4 w-4" aria-hidden="true" />
@@ -796,7 +804,7 @@ export default function SituationalJudgementTest({
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={portalAssessmentSectionClass}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -808,7 +816,7 @@ export default function SituationalJudgementTest({
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={cn(portalAssessmentTileClass, "mt-5 p-5")}>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Situation
             </p>
@@ -819,7 +827,7 @@ export default function SituationalJudgementTest({
             {activePracticeScenario.options.map(renderOption)}
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Select one most effective and one least effective response.
             </p>
@@ -832,7 +840,7 @@ export default function SituationalJudgementTest({
 
       {phase === 'practice-complete' ? (
         <div className="mx-auto flex min-h-[520px] w-full max-w-2xl flex-col justify-center py-6 text-center">
-          <div className="rounded-2xl border border-border bg-card p-8 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={cn(portalAssessmentSectionLgClass, "p-8")}>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Practice complete
             </p>
@@ -860,7 +868,7 @@ export default function SituationalJudgementTest({
               Time limit reached. Submitting your completed scenarios…
             </div>
           ) : null}
-          <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={cn("mb-5", portalAssessmentTileShadowClass)}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -877,12 +885,12 @@ export default function SituationalJudgementTest({
             <Progress value={timerProgress} className="mt-4 h-2.5" />
           </div>
 
-          <div className="mb-6 rounded-xl border border-border bg-card p-4 text-sm shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={cn("mb-6 text-sm", portalAssessmentTileShadowClass)}>
             <p className="font-semibold text-foreground">Pick one MOST effective and one LEAST effective action.</p>
             <p className="mt-1 text-muted-foreground">They must be two different options.</p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={portalAssessmentSectionClass}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -898,7 +906,7 @@ export default function SituationalJudgementTest({
             <Progress value={progress} className="mt-4 h-2" />
           </div>
 
-          <div className="mt-5 rounded-xl border border-border bg-card p-5 dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={cn(portalAssessmentTileClass, "mt-5 p-5")}>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Situation
             </p>
@@ -909,7 +917,7 @@ export default function SituationalJudgementTest({
             {activeScenario.options.map(renderOption)}
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-5 flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               Select one most effective and one least effective response.
             </p>

@@ -16,7 +16,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AdminPanel, AdminSectionHeader } from "@/components/admin/admin-portal-ui";
-import { portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalSelectableCardClass,
+  portalSelectableCardSelectedClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
 type SeatSlot = {
@@ -235,9 +238,8 @@ export function AdminSeatDowngradePanel({
                     onClick={() => toggleSeat(slot.seatNumber)}
                     disabled={seatsToRemove <= 0}
                     className={cn(
-                      portalPanelClass,
-                      "p-3 text-left transition-colors",
-                      selected && "border-primary/40 bg-primary/5",
+                      selected ? portalSelectableCardSelectedClass : portalSelectableCardClass,
+                      "p-3 text-left",
                       seatsToRemove <= 0 && "opacity-60",
                     )}
                   >

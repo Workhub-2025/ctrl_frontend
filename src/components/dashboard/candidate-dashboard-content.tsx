@@ -70,7 +70,7 @@ import {
   type CandidateApplicationView,
 } from "@/lib/candidate/portal";
 import { CandidateSessionService } from "@/services/candidate-session.service";
-import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalIconWrapClass, portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 import { normalizeSlug } from "@/lib/assessment-slug";
 import { getAssessmentPagePath } from "@/assessments/plugins/helpers";
@@ -251,8 +251,8 @@ function AssessmentListItem({
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-muted/30">
-                    <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                  <span className={portalIconWrapClass}>
+                    <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <h4 className="font-display text-base font-semibold">{item.title}</h4>
                   {isActive ? (

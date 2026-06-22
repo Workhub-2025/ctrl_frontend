@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Monitor, PlayCircle, Shield } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  portalBadgeClass,
+  portalDialogShellClass,
+  portalIconWrapLgClass,
+  portalPanelNestedClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 
 export type AssessmentBrief = {
   title: string;
@@ -39,14 +46,14 @@ export function AssessmentBriefDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden sm:max-w-[480px]">
+      <DialogContent className={cn(portalDialogShellClass, "overflow-hidden sm:max-w-[480px]")}>
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"
           aria-hidden="true"
         />
         <DialogHeader className="pr-10">
           <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
+            <span className={portalIconWrapLgClass}>
               <Icon className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="space-y-1">
@@ -68,22 +75,22 @@ export function AssessmentBriefDialog({
 
           <div className="flex flex-wrap gap-2">
             {assessment.duration ? (
-              <Badge variant="outline" className="gap-1.5 rounded-lg px-2.5 py-1">
+              <Badge className={cn("gap-1.5 rounded-lg px-2.5 py-1", portalBadgeClass)}>
                 <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                 {assessment.duration}
               </Badge>
             ) : null}
-            <Badge variant="outline" className="gap-1.5 rounded-lg px-2.5 py-1">
+            <Badge className={cn("gap-1.5 rounded-lg px-2.5 py-1", portalBadgeClass)}>
               <Monitor className="h-3.5 w-3.5" aria-hidden="true" />
               Desktop recommended
             </Badge>
-            <Badge variant="outline" className="gap-1.5 rounded-lg px-2.5 py-1">
+            <Badge className={cn("gap-1.5 rounded-lg px-2.5 py-1", portalBadgeClass)}>
               <Shield className="h-3.5 w-3.5" aria-hidden="true" />
               Secure mode
             </Badge>
           </div>
 
-          <ul className="space-y-2 rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground dark:border-white/5">
+          <ul className={cn(portalPanelNestedClass, "space-y-2 p-4 text-sm text-muted-foreground")}>
             <li>Find a quiet space with a stable internet connection.</li>
             <li>Allow pop-ups when prompted — assessments open in a secure window.</li>
             <li>Do not refresh or navigate away once an assessment has started.</li>

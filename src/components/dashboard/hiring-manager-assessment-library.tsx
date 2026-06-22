@@ -29,6 +29,7 @@ import {
 import {
   portalAlertInfoClass,
   portalBadgeClass,
+  portalEmptyPanelClass,
   portalIconWrapLgClass,
   portalLabelClass,
   portalPanelClass,
@@ -47,13 +48,11 @@ export function HiringManagerAssessmentLibrary({
 
   if (assessments.length === 0) {
     return (
-      <DashboardInfoCard interactive={false} className="border-dashed">
-        <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
-          No active assessments are currently available from Strapi. Once Nelson
-          enables or seeds the assessment records, they will appear here
-          automatically.
-        </CardContent>
-      </DashboardInfoCard>
+      <div className={portalEmptyPanelClass}>
+        No active assessments are currently available from Strapi. Once Nelson
+        enables or seeds the assessment records, they will appear here
+        automatically.
+      </div>
     );
   }
 
@@ -146,7 +145,7 @@ export function HiringManagerAssessmentLibrary({
                       <PlayCircle className="h-4 w-4 text-primary" />
                       <p className={portalLabelClass}>Video demo</p>
                     </div>
-                    <div className="flex min-h-44 items-center justify-center rounded-lg border border-dashed border-border/60 bg-muted/20 p-4 text-center text-xs leading-relaxed text-muted-foreground dark:border-white/10 dark:bg-white/[0.03]">
+                    <div className={cn(portalPanelNestedClass, "flex min-h-44 items-center justify-center border-dashed p-4 text-center text-xs leading-relaxed text-muted-foreground")}>
                       {selected.videoLabel}
                       <br />
                       Video module placeholder for the assessment walkthrough.
@@ -169,7 +168,7 @@ export function HiringManagerAssessmentLibrary({
                           </Badge>
                         ))}
                       </div>
-                      <div className="mt-4 grid gap-2 border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground dark:border-white/10">
+                      <div className="mt-4 grid gap-2 border-t border-border/50 pt-3 text-xs leading-relaxed text-muted-foreground">
                         <p>
                           Slug:{" "}
                           <span className="font-mono font-semibold text-foreground">{selected.slug}</span>

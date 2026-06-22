@@ -35,8 +35,30 @@ export const portalEmptyPanelClass = cn(
 );
 
 /** Gradient hero card used on report and campaign headers. */
-export const portalHeroPanelClass =
-  "relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#0e172e]/80 to-[#0b1329]/50 backdrop-blur-md shadow-xl dark:border-white/10";
+export const portalHeroPanelClass = cn(
+  portalPanelElevatedClass,
+  "relative overflow-hidden dark:border-white/10 dark:bg-gradient-to-br dark:from-[#0e172e]/80 dark:to-[#0b1329]/50 dark:backdrop-blur-md"
+);
+
+/** Unselected selectable option card — delivery-mode pattern, readable on light and dark. */
+export const portalSelectableCardClass = cn(
+  "rounded-xl border transition-all duration-300",
+  "border-border/70 bg-background/50 text-muted-foreground",
+  "hover:border-primary/30 hover:bg-muted/20",
+  "dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-400",
+  "dark:hover:border-primary/30 dark:hover:bg-white/[0.05] dark:hover:text-slate-300"
+);
+
+/** Selected selectable option card — light primary tint with soft glow. */
+export const portalSelectableCardSelectedClass = cn(
+  "rounded-xl border transition-all duration-300",
+  "border-primary/45 bg-primary/10 text-foreground shadow-[0_0_15px_rgba(99,102,241,0.1)] ring-1 ring-primary/20",
+  "dark:text-white"
+);
+
+/** Group wrapper for a cluster of selectable cards (e.g. delivery mode section). */
+export const portalSelectableCardGroupClass =
+  "rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/10 dark:bg-white/[0.02]";
 
 /** Large portal dialog shell — theme-aware, matches default DialogContent + portal panels. */
 export const portalDialogShellClass =
@@ -142,3 +164,41 @@ export const portalPageHeaderClass =
 export function portalStatusBadge(_status?: string) {
   return portalBadgeClass;
 }
+
+/** Outer container for in-browser assessment flows (game shell). */
+export const portalAssessmentShellClass = cn(
+  portalCardClass,
+  "overflow-hidden shadow-xl shadow-black/10 dark:shadow-black/30"
+);
+
+/** Assessment shell header strip. */
+export const portalAssessmentShellHeaderClass =
+  "flex flex-col gap-3 border-b border-border/60 bg-muted/25 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-white/[0.025]";
+
+/** Assessment shell body — theme gradient without hardcoded hex stops. */
+export const portalAssessmentShellBodyClass =
+  "flex flex-1 bg-gradient-to-br from-background to-muted/40 px-4 py-5 sm:px-6 sm:py-6 xl:px-8 dark:from-background dark:to-muted/20";
+
+/** Compact stat / info tile inside assessment screens. */
+export const portalAssessmentTileClass = cn(portalPanelNestedClass, "p-4");
+
+/** Assessment tile with light shadow (welcome / overview panels). */
+export const portalAssessmentTileShadowClass = cn(portalAssessmentTileClass, "shadow-sm");
+
+/** Larger assessment section card. */
+export const portalAssessmentSectionClass = cn(portalPanelClass, "p-5 shadow-sm");
+
+/** Hero-sized assessment section (welcome overview). */
+export const portalAssessmentSectionLgClass = cn(portalPanelClass, "p-6 shadow-sm");
+
+/** Nested inset block inside assessment sections. */
+export const portalAssessmentInsetClass = cn(
+  portalPanelNestedClass,
+  "rounded-lg bg-background/80 p-3 text-center"
+);
+
+/** Collapsible preview panel in campaign builder assessment stack. */
+export const portalAssessmentPreviewDetailsClass = cn(
+  portalPanelNestedClass,
+  "rounded-lg text-xs text-muted-foreground"
+);

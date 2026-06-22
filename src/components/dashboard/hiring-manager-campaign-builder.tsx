@@ -30,8 +30,18 @@ import { HiringManagerPortalClientService } from "@/services/hiring-manager-port
 import {
   portalAlertErrorClass,
   portalAlertInfoClass,
+  portalBadgeClass,
+  portalEmptyPanelClass,
   portalHeroPanelClass,
+  portalIconWrapClass,
+  portalInputClass,
+  portalLabelClass,
+  portalPanelNestedClass,
   portalPrimaryButtonClass,
+  portalAssessmentPreviewDetailsClass,
+  portalSelectableCardClass,
+  portalSelectableCardGroupClass,
+  portalSelectableCardSelectedClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { OptionalDateField } from "@/components/dashboard/portal/optional-datetime-fields";
@@ -133,16 +143,16 @@ function VersionPreviewPanel({
 
   if (samples.length === 0 && !audioPreview && !version?.description) {
     return (
-      <details className="group rounded-lg border border-white/10 bg-white/[0.02] text-xs text-slate-500">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-slate-400 marker:hidden">
+      <details className={portalAssessmentPreviewDetailsClass}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-muted-foreground marker:hidden">
           <span className="flex items-center gap-2">
             <FileText className="h-3.5 w-3.5" aria-hidden="true" />
             Quick preview
           </span>
-          <span className="text-[10px] text-slate-500 group-open:hidden">Show</span>
-          <span className="hidden text-[10px] text-slate-500 group-open:inline">Hide</span>
+          <span className="text-[10px] text-muted-foreground group-open:hidden">Show</span>
+          <span className="hidden text-[10px] text-muted-foreground group-open:inline">Hide</span>
         </summary>
-        <div className="border-t border-white/10 px-3 py-3 leading-5">
+        <div className="border-t border-border/60 px-3 py-3 leading-5 dark:border-white/10">
           Preview content is not available for this version yet.
         </div>
       </details>
@@ -150,25 +160,25 @@ function VersionPreviewPanel({
   }
 
   return (
-    <details className="group rounded-lg border border-white/10 bg-black/20 text-xs text-slate-400">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-slate-400 marker:hidden">
+    <details className={portalAssessmentPreviewDetailsClass}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-muted-foreground marker:hidden">
         <span className="flex items-center gap-2">
           <FileText className="h-3.5 w-3.5" aria-hidden="true" />
           Quick preview
         </span>
-        <span className="text-[10px] text-slate-500 group-open:hidden">Show</span>
-        <span className="hidden text-[10px] text-slate-500 group-open:inline">Hide</span>
+        <span className="text-[10px] text-muted-foreground group-open:hidden">Show</span>
+        <span className="hidden text-[10px] text-muted-foreground group-open:inline">Hide</span>
       </summary>
-      <div className="space-y-3 border-t border-white/10 p-3">
+      <div className="space-y-3 border-t border-border/60 p-3 dark:border-white/10">
         {version?.description ? (
-          <p className="text-xs leading-5 text-slate-400">{version.description}</p>
+          <p className="text-xs leading-5 text-muted-foreground">{version.description}</p>
         ) : null}
         {samples.length > 0 ? (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {samples.map((sample, index) => (
               <p
                 key={`${assessment.slug}-${version?.version}-sample-${index}`}
-                className="rounded-md border border-white/8 bg-white/[0.025] px-3 py-2 text-xs leading-5 text-slate-300"
+                className={cn(portalPanelNestedClass, "rounded-md px-3 py-2 text-xs leading-5 text-foreground")}
               >
                 {sample}
               </p>
@@ -543,12 +553,12 @@ export function HiringManagerCampaignBuilder({
       <div className="space-y-5">
         {!isEditStackMode ? (
         <Card className={portalHeroPanelClass}>
-          <CardHeader className="border-b border-white/5 p-5">
-            <CardTitle className="text-base font-bold text-white">Campaign details</CardTitle>
+          <CardHeader className="border-b border-border/50 p-5 dark:border-white/5">
+            <CardTitle className="text-base font-bold text-foreground">Campaign details</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 p-5 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="campaignName" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <Label htmlFor="campaignName" className={portalLabelClass}>
                 Campaign name
               </Label>
               <Input
@@ -556,11 +566,11 @@ export function HiringManagerCampaignBuilder({
                 value={draft.campaignName}
                 onChange={(event) => updateDraft("campaignName", event.target.value)}
                 placeholder="e.g. Spring control room intake"
-                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="roleTitle" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <Label htmlFor="roleTitle" className={portalLabelClass}>
                 Role title
               </Label>
               <Input
@@ -568,11 +578,11 @@ export function HiringManagerCampaignBuilder({
                 value={draft.roleTitle}
                 onChange={(event) => updateDraft("roleTitle", event.target.value)}
                 placeholder="Emergency call handler"
-                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="location" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <Label htmlFor="location" className={portalLabelClass}>
                 Location
               </Label>
               <Input
@@ -580,7 +590,7 @@ export function HiringManagerCampaignBuilder({
                 value={draft.location}
                 onChange={(event) => updateDraft("location", event.target.value)}
                 placeholder="Assessment centre or operational area"
-                className="h-10 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
               />
             </div>
 
@@ -593,7 +603,7 @@ export function HiringManagerCampaignBuilder({
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <Label htmlFor="notes" className={portalLabelClass}>
                 Operational notes
               </Label>
               <Textarea
@@ -601,7 +611,7 @@ export function HiringManagerCampaignBuilder({
                 value={draft.notes}
                 onChange={(event) => updateDraft("notes", event.target.value)}
                 placeholder="Optional notes for recruiters, assessors, or session planning."
-                className="min-h-24 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                className={cn(portalInputClass, "min-h-24 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
               />
             </div>
           </CardContent>
@@ -609,9 +619,9 @@ export function HiringManagerCampaignBuilder({
         ) : null}
 
         <Card className={portalHeroPanelClass}>
-          <CardHeader className="border-b border-white/5 p-5">
+          <CardHeader className="border-b border-border/50 p-5 dark:border-white/5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="text-base font-bold text-white">
+              <CardTitle className="text-base font-bold text-foreground">
                 Assessment stack
               </CardTitle>
               <Badge className="w-fit rounded-md border-primary/20 bg-primary/10 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 px-2 py-0.5 pointer-events-none">
@@ -621,7 +631,7 @@ export function HiringManagerCampaignBuilder({
           </CardHeader>
           <CardContent className="space-y-3 p-5">
             {assessments.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] p-6 text-sm leading-6 text-slate-400 text-center">
+              <div className={portalEmptyPanelClass}>
                 No active assessments came back from Strapi. Start the backend,
                 check role permissions for `assessments`, then refresh this page.
               </div>
@@ -642,11 +652,10 @@ export function HiringManagerCampaignBuilder({
                     }}
                     role="button"
                     tabIndex={0}
-                    className={`rounded-xl border p-4 text-left transition-all duration-300 cursor-pointer ${
-                      checked
-                        ? "border-primary/45 bg-[#0e172e]/60 shadow-[0_0_20px_rgba(99,102,241,0.08)]"
-                        : "border-white/10 bg-white/[0.02] hover:border-primary/30 hover:bg-[#0e172e]/30"
-                    }`}
+                    className={cn(
+                      checked ? portalSelectableCardSelectedClass : portalSelectableCardClass,
+                      "cursor-pointer p-4 text-left"
+                    )}
                   >
                     <div className="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-start">
                       <Checkbox
@@ -658,30 +667,34 @@ export function HiringManagerCampaignBuilder({
                       />
                       <div className="min-w-0">
                         <div className="flex min-w-0 items-center gap-3">
-                          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-                            checked ? "border-primary/30 bg-primary/15 text-primary" : "border-white/15 bg-white/[0.04] text-slate-400"
-                          }`}>
+                          <span
+                            className={cn(
+                              portalIconWrapClass,
+                              "h-10 w-10 rounded-xl",
+                              checked && "border-primary/30 bg-primary/15 text-primary"
+                            )}
+                          >
                             <Icon className="h-4 w-4" />
                           </span>
                           <div className="min-w-0">
-                            <p className="break-words text-sm font-bold leading-5 text-white">
+                            <p className="break-words text-sm font-bold leading-5 text-foreground">
                               {assessment.title}
                             </p>
-                            <p className="mt-0.5 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                            <p className={cn(portalLabelClass, "mt-0.5 normal-case")}>
                               {assessment.skills.slice(0, 3).join(" · ")}
                             </p>
                           </div>
                         </div>
-                        <p className="mt-3 text-xs leading-5 text-slate-400">
+                        <p className="mt-3 text-xs leading-5 text-muted-foreground">
                           {assessment.summary}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-1.5 sm:justify-end">
-                        <Badge className="rounded-md border-white/10 bg-white/5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 px-2 py-0.5 pointer-events-none">
+                        <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold", portalBadgeClass)}>
                           {assessment.duration}
                         </Badge>
                         {assessment.passingScore !== null && (
-                          <Badge className="rounded-md border-white/10 bg-white/5 text-[10px] font-semibold text-slate-300 hover:bg-white/5 px-2 py-0.5 pointer-events-none">
+                          <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold", portalBadgeClass)}>
                             Pass {assessment.passingScore}%
                           </Badge>
                         )}
@@ -697,14 +710,14 @@ export function HiringManagerCampaignBuilder({
 
       <section className="space-y-4">
         <Card className={portalHeroPanelClass}>
-          <CardHeader className="border-b border-white/5 p-5">
-            <CardTitle className="text-base font-bold text-white">
+          <CardHeader className="border-b border-border/50 p-5 dark:border-white/5">
+            <CardTitle className="text-base font-bold text-foreground">
               {isEditStackMode ? "Update campaign setup" : "Campaign review"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-5">
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+            <div className={portalSelectableCardGroupClass}>
+              <p className={portalLabelClass}>
                 Delivery mode
               </p>
               <div className="mt-3 grid gap-2">
@@ -719,11 +732,13 @@ export function HiringManagerCampaignBuilder({
                        type="button"
                        disabled={locked}
                        onClick={() => updateDraft("deliveryMode", mode)}
-                       className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                       className={cn(
                          draft.deliveryMode === mode
-                           ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                           : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
-                       } ${locked ? "cursor-not-allowed opacity-50" : ""}`}
+                           ? portalSelectableCardSelectedClass
+                           : portalSelectableCardClass,
+                         "flex items-center justify-between px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider",
+                         locked && "cursor-not-allowed opacity-50"
+                       )}
                      >
                        {mode.replace("_", " ").replace("-", " ")}
                        {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
@@ -738,9 +753,9 @@ export function HiringManagerCampaignBuilder({
               )}
             </div>
 
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+            <div className={portalSelectableCardGroupClass}>
               <div className="flex items-center justify-between">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                <p className={portalLabelClass}>
                   Selected stack
                 </p>
                 {selectedAssessments.length > 1 && (
@@ -760,7 +775,7 @@ export function HiringManagerCampaignBuilder({
               </div>
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 {selectedAssessments.length === 0 ? (
-                  <p className="text-xs leading-normal text-slate-500 italic">
+                  <p className="text-xs italic leading-normal text-muted-foreground">
                     Select at least one assessment from the stack above.
                   </p>
                 ) : (
@@ -770,22 +785,22 @@ export function HiringManagerCampaignBuilder({
                     return (
                     <div
                       key={assessment.slug}
-                      className="rounded-xl border border-white/10 bg-white/[0.01] px-3 py-3"
+                      className={cn(portalPanelNestedClass, "px-3 py-3")}
                     >
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-[10px] text-slate-500 font-bold">
+                        <span className={portalLabelClass}>
                           {String(index + 1).padStart(2, "0")}
                         </span>
-                        <span className="min-w-0 flex-1 break-words text-xs font-bold text-slate-100">
+                        <span className="min-w-0 flex-1 break-words text-xs font-bold text-foreground">
                           {assessment.title}
                         </span>
-                        <span className="text-[10px] text-slate-500 font-semibold">
+                        <span className={portalLabelClass}>
                           {assessment.duration}
                         </span>
                       </div>
                       {assessment.slug === "typing" && (
                         <div className="mt-3 space-y-2">
-                          <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                          <Label className={portalLabelClass}>
                             Typing level
                           </Label>
                           <div className="mt-2 grid gap-1.5">
@@ -796,11 +811,12 @@ export function HiringManagerCampaignBuilder({
                                   key={level}
                                   type="button"
                                   onClick={() => updateDraft("typingDifficulty", level)}
-                                  className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
+                                  className={cn(
                                     isActive
-                                      ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                                      : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
-                                  }`}
+                                      ? portalSelectableCardSelectedClass
+                                      : portalSelectableCardClass,
+                                    "flex items-center justify-center px-3 py-2 text-xs font-semibold"
+                                  )}
                                 >
                                   {level}
                                 </button>
@@ -810,7 +826,7 @@ export function HiringManagerCampaignBuilder({
                         </div>
                       )}
                       <div className="mt-3 space-y-2">
-                        <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                        <Label className={portalLabelClass}>
                           Data version
                         </Label>
                         <Select
@@ -825,7 +841,7 @@ export function HiringManagerCampaignBuilder({
                             }))
                           }
                         >
-                          <SelectTrigger className="h-9 rounded-xl border-white/10 bg-white/[0.02] text-xs text-slate-100 focus:ring-2 focus:ring-primary">
+                          <SelectTrigger className={cn(portalInputClass, "h-9 rounded-xl text-xs")}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -840,7 +856,7 @@ export function HiringManagerCampaignBuilder({
                       </div>
                       {assessment.slug === "prioritisation" && (
                         <div className="mt-3 space-y-2">
-                          <Label className="text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                          <Label className={portalLabelClass}>
                             Scoring Mode
                           </Label>
                           <div className="mt-2 grid gap-1.5">
@@ -851,11 +867,12 @@ export function HiringManagerCampaignBuilder({
                                   key={mode}
                                   type="button"
                                   onClick={() => updateDraft("prioritisationScoringMode", mode)}
-                                  className={`flex items-center justify-center rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-300 ${
+                                  className={cn(
                                     isActive
-                                      ? "border-primary/45 bg-primary/10 text-white shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                                      : "border-white/10 bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300"
-                                  }`}
+                                      ? portalSelectableCardSelectedClass
+                                      : portalSelectableCardClass,
+                                    "flex items-center justify-center px-3 py-2 text-xs font-semibold"
+                                  )}
                                 >
                                   {mode}
                                 </button>
@@ -867,7 +884,7 @@ export function HiringManagerCampaignBuilder({
                       <div className="mt-3 space-y-2">
                         <Label
                           htmlFor={`weight-${assessment.slug}`}
-                          className="text-[10px] uppercase font-bold tracking-wider text-slate-500"
+                          className={portalLabelClass}
                         >
                           Weighting
                         </Label>
@@ -885,9 +902,9 @@ export function HiringManagerCampaignBuilder({
                                 event.target.value
                               )
                             }
-                            className="h-9 border-white/10 bg-white/[0.02] text-slate-100 placeholder:text-slate-500 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-colors"
+                            className={cn(portalInputClass, "h-9 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
                           />
-                          <span className="text-xs text-slate-400 font-bold mr-1">%</span>
+                          <span className="mr-1 text-xs font-bold text-muted-foreground">%</span>
                           
                           {draft.assessmentSlugs.length > 1 && (
                             <Button
@@ -895,11 +912,12 @@ export function HiringManagerCampaignBuilder({
                               variant="ghost"
                               size="icon"
                               onClick={() => toggleLockSlug(assessment.slug)}
-                              className={`h-9 w-9 shrink-0 rounded-lg transition-colors ${
+                              className={cn(
+                                "h-9 w-9 shrink-0 rounded-lg transition-colors",
                                 lockedSlugs.includes(assessment.slug)
                                   ? "bg-muted/40 text-foreground hover:bg-muted/60"
-                                  : "bg-white/[0.02] text-slate-500 hover:bg-white/[0.05] hover:text-slate-400"
-                              }`}
+                                  : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+                              )}
                               title={lockedSlugs.includes(assessment.slug) ? "Weight locked (Click to unlock)" : "Weight unlocked (Click to lock)"}
                             >
                               {lockedSlugs.includes(assessment.slug) ? (

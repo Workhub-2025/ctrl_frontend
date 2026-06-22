@@ -19,6 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import {
+  portalDialogShellClass,
+  portalInputClass,
+  portalPanelNestedClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import {
   resolveRecoveryContentVersion,
   resolveRecoveryVersionOptions,
@@ -133,7 +139,7 @@ export function AssessmentRecoveryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className={cn(portalDialogShellClass, "max-w-lg")}>
         <DialogHeader>
           <DialogTitle>Recover assessment</DialogTitle>
           <DialogDescription>
@@ -144,7 +150,7 @@ export function AssessmentRecoveryDialog({
 
         {attempt ? (
           <div className="space-y-4">
-            <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm">
+            <div className={cn(portalPanelNestedClass, "p-4 text-sm")}>
               <p className="font-medium text-foreground">
                 {formatAssessmentSlugLabel(attempt.assessmentSlug ?? "assessment")}
               </p>
@@ -159,7 +165,7 @@ export function AssessmentRecoveryDialog({
                 value={action}
                 onValueChange={(value) => setAction(value as AssessmentRecoveryMode)}
               >
-                <SelectTrigger id="recovery-action">
+                <SelectTrigger id="recovery-action" className={portalInputClass}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -183,13 +189,13 @@ export function AssessmentRecoveryDialog({
               <div className="space-y-2">
                 <Label htmlFor="content-version">Question set version</Label>
                 {singleVersionRestart ? (
-                  <p className="rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm text-foreground">
+                  <p className={cn(portalPanelNestedClass, "px-3 py-2 text-sm text-foreground")}>
                     {versionOptions[0].title} ({versionOptions[0].version}) — a new random set from
                     this bank will be generated.
                   </p>
                 ) : (
                   <Select value={contentVersion} onValueChange={setContentVersion}>
-                    <SelectTrigger id="content-version">
+                    <SelectTrigger id="content-version" className={portalInputClass}>
                       <SelectValue placeholder="Select version" />
                     </SelectTrigger>
                     <SelectContent>

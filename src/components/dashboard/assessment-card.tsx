@@ -14,7 +14,7 @@ import { ArrowRight } from "lucide-react";
 import { CheckCircle2 } from "lucide-react";
 import { SecurePreflightModal } from "@/components/assessment";
 import { cn } from "@/lib/utils";
-import { portalCardClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalCardClass, portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 type AssessmentCardProps = Readonly<{
   icon: React.ReactNode;
@@ -45,7 +45,7 @@ export function AssessmentCard({
         isCompleted && "opacity-80"
       )}>
       <CardHeader className="flex flex-row items-start gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className={portalIconWrapLgClass}>
           {icon}
         </div>
         <div>

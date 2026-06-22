@@ -35,6 +35,14 @@ import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-comp
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { CALL_SIMULATION_REVIEW_SECONDS } from '@/lib/assessment-catalog-defaults';
 import { cn } from '@/lib/utils';
+import {
+  portalAssessmentInsetClass,
+  portalAssessmentSectionClass,
+  portalAssessmentSectionLgClass,
+  portalAssessmentTileClass,
+  portalAssessmentTileShadowClass,
+  portalInputClass,
+} from '@/components/dashboard/portal/portal-design-tokens';
 
 type CallRun = {
   id: string;
@@ -818,26 +826,26 @@ export default function CallSimulationTest({
                 You will complete {practiceCount} practice {practiceCount === 1 ? 'call' : 'calls'} and {finalCount} final {finalCount === 1 ? 'call' : 'calls'}.
               </p>
               <div className="grid gap-3 text-sm leading-6 text-muted-foreground sm:grid-cols-2">
-                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className={portalAssessmentTileClass}>
                   <p className="font-medium text-foreground">One full listen</p>
                   <p className="mt-1">Press play when ready. The audio plays once without pause or replay.</p>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className={portalAssessmentTileClass}>
                   <p className="font-medium text-foreground">Type while listening</p>
                   <p className="mt-1">You may complete the incident log while the call is playing.</p>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className={portalAssessmentTileClass}>
                   <p className="font-medium text-foreground">Review window</p>
                   <p className="mt-1">After the audio ends, you have up to 1 minute to fix or finish your notes.</p>
                 </div>
-                <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+                <div className={portalAssessmentTileClass}>
                   <p className="font-medium text-foreground">No prompts</p>
                   <p className="mt-1">Use your judgement. The form will not suggest what the answer should be.</p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+            <div className={cn(portalAssessmentSectionClass, "flex flex-col justify-between")}>
               <div>
                 <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
                   Walkthrough Preview
@@ -885,7 +893,7 @@ export default function CallSimulationTest({
           />
 
           {/* Audio Player Card */}
-          <div className="rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={portalAssessmentTileShadowClass}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -926,7 +934,7 @@ export default function CallSimulationTest({
           </div>
 
           {/* Incident Log Card */}
-          <div className="mt-5 rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03] sm:p-5">
+          <div className={cn(portalAssessmentTileClass, "mt-5 sm:p-5")}>
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <p className="text-base font-semibold text-foreground">Incident log</p>
@@ -1027,7 +1035,7 @@ export default function CallSimulationTest({
                       value={form.incidentCategory}
                       onValueChange={(value) => updateForm('incidentCategory', value)}
                     >
-                      <SelectTrigger id="incident-category" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                      <SelectTrigger id="incident-category" className={cn(portalInputClass, "w-full")}>
                         <SelectValue placeholder="Select incident category" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1047,7 +1055,7 @@ export default function CallSimulationTest({
                       value={form.callerType}
                       onValueChange={(value) => updateForm('callerType', value)}
                     >
-                      <SelectTrigger id="caller-type" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                      <SelectTrigger id="caller-type" className={cn(portalInputClass, "w-full")}>
                         <SelectValue placeholder="Select caller type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1064,7 +1072,7 @@ export default function CallSimulationTest({
                       value={form.responseTime}
                       onValueChange={(value) => updateForm('responseTime', value)}
                     >
-                      <SelectTrigger id="response-time" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                      <SelectTrigger id="response-time" className={cn(portalInputClass, "w-full")}>
                         <SelectValue placeholder="Select response grade" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1081,7 +1089,7 @@ export default function CallSimulationTest({
                       value={form.referenceNumber}
                       onValueChange={(value) => updateForm('referenceNumber', value)}
                     >
-                      <SelectTrigger id="reference-number" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                      <SelectTrigger id="reference-number" className={cn(portalInputClass, "w-full")}>
                         <SelectValue placeholder="Select reference number" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1105,7 +1113,7 @@ export default function CallSimulationTest({
                       value={form.suspectGender}
                       onValueChange={(value) => updateForm('suspectGender', value)}
                     >
-                      <SelectTrigger id="suspect-gender" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                      <SelectTrigger id="suspect-gender" className={cn(portalInputClass, "w-full")}>
                         <SelectValue placeholder="Select gender" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1121,7 +1129,7 @@ export default function CallSimulationTest({
                       value={form.suspectEthnicity}
                       onValueChange={(value) => updateForm('suspectEthnicity', value)}
                     >
-                      <SelectTrigger id="suspect-ethnicity" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                      <SelectTrigger id="suspect-ethnicity" className={cn(portalInputClass, "w-full")}>
                         <SelectValue placeholder="Select ethnicity" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1140,7 +1148,7 @@ export default function CallSimulationTest({
                       value={form.suspectAge}
                       onValueChange={(value) => updateForm('suspectAge', value)}
                     >
-                      <SelectTrigger id="suspect-age" className="w-full bg-background border-border dark:border-white/10 dark:bg-white/[0.03]">
+                      <SelectTrigger id="suspect-age" className={cn(portalInputClass, "w-full")}>
                         <SelectValue placeholder="Select age range" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1236,7 +1244,7 @@ export default function CallSimulationTest({
 
             </div>
 
-            <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm text-muted-foreground">
                 {audioEnded
                   ? `Review or submit: ${reviewTimeLeft}s left.`
@@ -1268,13 +1276,13 @@ export default function CallSimulationTest({
             the audio plays once, then you have up to 1 minute to review.
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-2">
-            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+            <div className={cn(portalAssessmentTileClass, "border-border")}>
               <p className="text-sm text-muted-foreground">Incident Category</p>
               <p className="mt-2 text-sm font-medium text-foreground">
                 {latestSnapshot.form.incidentCategory || 'Not entered'}
               </p>
             </div>
-            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+            <div className={cn(portalAssessmentTileClass, "border-border")}>
               <p className="text-sm text-muted-foreground">Incident Location</p>
               <p className="mt-2 text-sm font-medium text-foreground">
                 {[
@@ -1320,19 +1328,19 @@ export default function CallSimulationTest({
             <span className="font-bold text-amber-600 dark:text-amber-400 block mb-1">WARNING:</span> You are about to start the live scored emergency call simulation. This run is timed and graded. Ensure you are ready before clicking Continue.
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Listen first</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 The final audio will play once from start to finish.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Review window</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 You will have up to 1 minute after the audio to fix your log.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Submit after audio</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 The final submit button unlocks when the audio finishes.
@@ -1365,19 +1373,19 @@ export default function CallSimulationTest({
             rules, and no result screen will be shown after submission.
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Listen first</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 The next audio will play once from start to finish.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Review window</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 You will have up to 1 minute after the audio to fix your log.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">No prompts</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 Use your judgement. The form will not suggest what the answer should be.

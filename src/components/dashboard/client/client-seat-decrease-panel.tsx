@@ -8,7 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PortalSectionHeader } from "@/components/dashboard/portal/portal-ui";
-import { portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalSelectableCardClass,
+  portalSelectableCardSelectedClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import type { SeatSlot } from "@/hooks/use-client-portal";
 import type { ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
 import { cn } from "@/lib/utils";
@@ -165,9 +168,8 @@ export function ClientSeatDecreasePanel({
                       onClick={() => toggleSeat(slot.seatNumber)}
                       disabled={seatsToRemove <= 0}
                       className={cn(
-                        portalPanelClass,
-                        "p-3 text-left transition-colors",
-                        selected && "border-primary/40 bg-primary/5",
+                        selected ? portalSelectableCardSelectedClass : portalSelectableCardClass,
+                        "p-3 text-left",
                         seatsToRemove <= 0 && "opacity-60",
                       )}
                     >

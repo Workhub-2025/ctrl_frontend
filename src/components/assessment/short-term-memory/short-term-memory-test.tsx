@@ -16,6 +16,15 @@ import {
   AssessmentReconnectOverlay,
 } from '@/components/assessment/shared';
 import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
+import {
+  portalAssessmentInsetClass,
+  portalAssessmentSectionClass,
+  portalAssessmentSectionLgClass,
+  portalAssessmentTileClass,
+  portalAssessmentTileShadowClass,
+  portalInputClass,
+} from '@/components/dashboard/portal/portal-design-tokens';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

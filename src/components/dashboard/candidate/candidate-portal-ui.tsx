@@ -21,6 +21,10 @@ import {
   portalIconWrapLgClass,
   portalAlertErrorClass,
   portalAlertInfoClass,
+  portalEmptyPanelClass,
+  portalInputClass,
+  portalSelectableCardClass,
+  portalSelectableCardSelectedClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 
 export const candidateEyebrowClassName =
@@ -241,7 +245,7 @@ export function CandidateAccessCodeForm({
             spellCheck={false}
             aria-label="Access Code"
             placeholder="e.g. CTRL-9A2X"
-            className="h-11 rounded-xl border-border bg-background pl-10 font-mono uppercase tracking-widest focus-visible:ring-primary dark:border-white/10"
+            className={cn(portalInputClass, "h-11 rounded-xl pl-10 font-mono uppercase tracking-widest focus-visible:ring-primary")}
             value={value}
             onChange={(event) => onChange(event.target.value)}
           />
@@ -323,7 +327,7 @@ export function CandidateEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/15 px-6 py-14 text-center dark:border-white/10 dark:bg-white/[0.02]">
+    <div className={cn(portalEmptyPanelClass, "flex flex-col items-center justify-center px-6 py-14")}>
       <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
         <Icon className="h-6 w-6" aria-hidden="true" />
       </span>
@@ -352,10 +356,8 @@ export function CandidateSessionListItem({
       type="button"
       onClick={onSelect}
       className={cn(
-        "w-full rounded-xl border p-4 text-left transition-[border-color,background-color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-        isSelected
-          ? "border-primary/45 bg-primary/10 shadow-md ring-1 ring-primary/20"
-          : "border-border/70 bg-background/50 hover:border-primary/30 hover:bg-muted/20 dark:border-white/10 dark:bg-white/[0.02]"
+        "w-full p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        isSelected ? portalSelectableCardSelectedClass : portalSelectableCardClass
       )}
     >
       <div className="flex items-start justify-between gap-2">

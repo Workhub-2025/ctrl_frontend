@@ -24,6 +24,15 @@ import { Progress } from '@/components/ui/progress';
 import { closeAssessmentWindow, notifyAssessmentCompleted } from '@/lib/assessment-completion';
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
+import {
+  portalAssessmentInsetClass,
+  portalAssessmentSectionClass,
+  portalAssessmentSectionLgClass,
+  portalAssessmentTileClass,
+  portalAssessmentTileShadowClass,
+  portalEmptyPanelClass,
+  portalInputClass,
+} from '@/components/dashboard/portal/portal-design-tokens';
 import { initPjaSession } from '@/app/actions/assessment-pja.actions';
 import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { buildTimedAssessmentSubmitMeta } from '@/lib/assessment-completion-status';
@@ -770,7 +779,7 @@ export default function PrioritisationTest({
           </div>
         ) : null}
         {isFinal ? (
-          <div className="mb-5 rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={cn("mb-5", portalAssessmentTileShadowClass)}>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -794,7 +803,7 @@ export default function PrioritisationTest({
             <Progress value={timerProgress} className="mt-4 h-2.5" />
           </div>
         ) : null}
-        <div className="rounded-xl border border-border bg-card p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+        <div className={portalAssessmentTileShadowClass}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -821,7 +830,7 @@ export default function PrioritisationTest({
 
         <div className="mt-5 space-y-4">
           <section
-            className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]"
+            className={portalAssessmentTileClass}
             onDragOver={(event) => event.preventDefault()}
             onDrop={handleDropOnBank}
           >
@@ -835,7 +844,7 @@ export default function PrioritisationTest({
 
             <div className="grid gap-3 xl:grid-cols-2">
               {availableIncidents.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground dark:border-white/10 xl:col-span-2">
+                <div className={cn(portalEmptyPanelClass, "xl:col-span-2")}>
                   All incidents have been placed.
                 </div>
               ) : (
@@ -889,7 +898,7 @@ export default function PrioritisationTest({
             </div>
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+          <section className={portalAssessmentTileClass}>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="font-semibold text-foreground">Priority list</p>
@@ -917,7 +926,7 @@ export default function PrioritisationTest({
                       onDrop={(event) => handleDropOnPriority(event, index)}
                       className={[
                         'w-full text-left min-h-[118px] rounded-xl border p-3 transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none',
-                        'border-dashed border-border bg-muted/20 dark:border-white/10 dark:bg-white/[0.02]',
+                        cn(portalAssessmentTileClass, 'border-dashed border-border bg-muted/20'),
                         hasActiveCard ? 'ctrl-priority-slot-glow cursor-copy' : '',
                         selectedIncidentId ? 'hover:border-primary/60 hover:ring-1 hover:ring-primary/20' : '',
                       ].join(' ')}
@@ -934,7 +943,7 @@ export default function PrioritisationTest({
                     key={`${activeRound.id}-slot-${index}`}
                     onDragOver={(event) => event.preventDefault()}
                     onDrop={(event) => handleDropOnPriority(event, index)}
-                    className="min-h-[118px] rounded-xl border p-3 border-border bg-background/70 dark:border-white/10 dark:bg-[#070b13]/80"
+                    className={cn(portalAssessmentTileClass, "min-h-[118px] border-border bg-background/70 p-3")}
                   >
                     <button
                       type="button"
@@ -985,7 +994,7 @@ export default function PrioritisationTest({
           </section>
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-border pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Place every incident before submitting this round.
           </p>
@@ -1082,17 +1091,17 @@ export default function PrioritisationTest({
             Review incoming incidents, decide what needs attention first, and place every item into a clear priority order.
           </p>
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">{timeLimitLabel}</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">A visual time bar stays on screen during the live rounds.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <Target className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Six incidents each</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Rank each queue from highest to lowest priority.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <ListChecks className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">
                 {finalRounds.length} live {finalRounds.length === 1 ? 'round' : 'rounds'}
@@ -1112,7 +1121,7 @@ export default function PrioritisationTest({
       {phase === 'rules' && (
         <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center py-6">
           <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentSectionLgClass}>
               <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
                 Incident priority judgement
               </Badge>
@@ -1126,7 +1135,7 @@ export default function PrioritisationTest({
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <ClipboardList className="h-5 w-5" aria-hidden="true" />
                 </div>
@@ -1142,7 +1151,7 @@ export default function PrioritisationTest({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <ListChecks className="h-5 w-5" aria-hidden="true" />
                 </div>
@@ -1157,7 +1166,7 @@ export default function PrioritisationTest({
                     ['5', 'Fifth'],
                     ['6', 'Lowest'],
                   ].map(([rank, label]) => (
-                    <div key={rank} className="rounded-lg border border-border bg-background p-2.5 text-center dark:border-white/10 dark:bg-white/[0.02]">
+                    <div key={rank} className={cn(portalAssessmentInsetClass, "p-2.5")}>
                       <p className="text-sm font-semibold text-foreground">{rank}</p>
                       <p className="text-[10px] text-muted-foreground">{label}</p>
                     </div>
@@ -1173,7 +1182,7 @@ export default function PrioritisationTest({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+              <div className={cn(portalAssessmentSectionClass, "flex flex-col justify-between")}>
                 <div>
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                     <ClipboardList className="h-5 w-5" aria-hidden="true" />
@@ -1185,7 +1194,7 @@ export default function PrioritisationTest({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentSectionClass}>
               <h2 className="mb-3 text-lg font-semibold text-foreground">How to Decide the Priority Order</h2>
               <p>When deciding your order, consider:</p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -1206,7 +1215,7 @@ export default function PrioritisationTest({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Timer className="h-5 w-5" aria-hidden="true" />
@@ -1216,7 +1225,7 @@ export default function PrioritisationTest({
                 <p>Start with {practiceRounds.length} practice {practiceRounds.length === 1 ? 'question' : 'questions'}. They help you get used to the format and are not scored.</p>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                     <ShieldCheck className="h-5 w-5" aria-hidden="true" />
@@ -1247,7 +1256,7 @@ export default function PrioritisationTest({
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
+          <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-8 sm:flex-row">
             <Button size="lg" className="h-12" onClick={startPractice}>
               Start practice block
               <Play className="ml-2 h-4 w-4" aria-hidden="true" />
@@ -1303,19 +1312,19 @@ export default function PrioritisationTest({
             <span className="font-bold text-amber-600 dark:text-amber-400 block mb-1">WARNING:</span> You are about to start the live scored prioritisation assessment rounds. These rounds are timed and will count towards your final result. Ensure you are ready before clicking Continue.
           </p>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Risk first</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 Prioritize immediate danger and vulnerability.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Read carefully</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 Small details may change the urgency of a call.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Top to bottom</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 Place the most urgent incident at number 1.

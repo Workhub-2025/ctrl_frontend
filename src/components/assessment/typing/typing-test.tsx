@@ -28,6 +28,14 @@ import { useAssessmentHeartbeat } from '@/hooks/use-assessment-heartbeat';
 import { AssessmentAttemptService, type CandidateAssessmentAttempt } from '@/services/assessment-attempt.service';
 import { getAssessmentSubmitUrl } from '@/assessments/plugins/registry';
 import { cn } from '@/lib/utils';
+import {
+  portalAssessmentInsetClass,
+  portalAssessmentSectionClass,
+  portalAssessmentSectionLgClass,
+  portalAssessmentTileClass,
+  portalAssessmentTileShadowClass,
+  portalInputClass,
+} from '@/components/dashboard/portal/portal-design-tokens';
 
 const typingSequence = [
   { text: "", errorIndex: -1 },
@@ -852,17 +860,17 @@ export default function TypingTest({
             Reproduce a passage of text as accurately and efficiently as possible. This assessment measures typing speed and typing accuracy only.
           </p>
           <div className="mt-6 grid w-full max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <FileText className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Incident passage</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">A policing incident passage is shown on screen.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <Keyboard className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">Typing response box</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">Type the passage exactly as displayed.</p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <Timer className="mb-2 h-5 w-5 text-primary" aria-hidden="true" />
               <p className="text-sm font-semibold text-foreground">{currentDuration} seconds</p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">The visible timer ends each exercise automatically.</p>
@@ -882,7 +890,7 @@ export default function TypingTest({
       {phase === 'rules' && (
         <div className="mx-auto flex min-h-[520px] w-full flex-col justify-center py-6">
           <div className="space-y-8 text-sm leading-relaxed text-muted-foreground">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentSectionLgClass}>
               <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary">
                 {selectedDifficulty} level
               </Badge>
@@ -896,7 +904,7 @@ export default function TypingTest({
             </div>
 
             <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <FileText className="h-5 w-5" aria-hidden="true" />
                 </div>
@@ -912,7 +920,7 @@ export default function TypingTest({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Keyboard className="h-5 w-5" aria-hidden="true" />
                 </div>
@@ -920,7 +928,7 @@ export default function TypingTest({
                 <p>Type the passage into the response box exactly as it appears.</p>
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {['Spelling', 'Punctuation', 'Capital letters', 'Spacing', 'Numbers'].map((item) => (
-                    <div key={item} className="rounded-lg border border-border bg-background p-3 text-center text-foreground dark:border-white/10 dark:bg-white/[0.02]">
+                    <div key={item} className={cn(portalAssessmentInsetClass, "text-foreground")}>
                       {item}
                     </div>
                   ))}
@@ -935,7 +943,7 @@ export default function TypingTest({
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03] flex flex-col justify-between">
+              <div className={cn(portalAssessmentSectionClass, "flex flex-col justify-between")}>
                 <div>
                   <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                     <Keyboard className="h-5 w-5" aria-hidden="true" />
@@ -947,7 +955,7 @@ export default function TypingTest({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentSectionClass}>
               <h2 className="mb-3 text-lg font-semibold text-foreground">Assessment Measures</h2>
               <p>The assessment measures typing speed, shown as Words Per Minute, and typing accuracy.</p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -961,7 +969,7 @@ export default function TypingTest({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     <Timer className="h-5 w-5" aria-hidden="true" />
@@ -971,7 +979,7 @@ export default function TypingTest({
                 <p>There is one practice exercise first. Use it to get familiar with the typing screen, timer and response box. Your practice result is not scored and is not included in your final result.</p>
               </div>
 
-              <div className="rounded-2xl border border-border bg-card p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+              <div className={portalAssessmentSectionClass}>
                 <div className="mb-3 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-600 dark:text-green-400">
                     <ShieldCheck className="h-5 w-5" aria-hidden="true" />
@@ -1003,7 +1011,7 @@ export default function TypingTest({
             </div>
 
           </div>
-          <div className="mt-10 flex flex-col gap-3 border-t border-border pt-8 dark:border-white/10 sm:flex-row">
+          <div className="mt-10 flex flex-col gap-3 border-t border-border/60 pt-8 sm:flex-row">
             <Button size="lg" className="h-12" onClick={() => beginCountdown(0)}>
               Go to practice
               <Play className="ml-2 h-4 w-4" aria-hidden="true" />
@@ -1053,7 +1061,7 @@ export default function TypingTest({
             readOnly
           />
 
-          <div className="mb-5 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground shadow-sm dark:border-white/10 dark:bg-white/[0.03]">
+          <div className={cn("mb-5 text-sm font-medium text-foreground", portalAssessmentTileShadowClass)}>
             Type the passage exactly as shown. Correct mistakes if you spot them.
           </div>
 
@@ -1085,19 +1093,19 @@ export default function TypingTest({
                 </Button>
               )}
               <div className="grid grid-cols-3 gap-2 text-sm">
-                <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
+                <div className={cn(portalInputClass, "rounded-xl px-3 py-2")}>
                   <p className="text-muted-foreground">WPM</p>
                   <p className="mt-1 font-mono text-base text-green-600 dark:text-green-400">
                     {liveWpm}
                   </p>
                 </div>
-                <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
+                <div className={cn(portalInputClass, "rounded-xl px-3 py-2")}>
                   <p className="text-muted-foreground">Accuracy</p>
                   <p className="mt-1 font-mono text-base text-blue-600 dark:text-blue-400">
                     {typedCount === 0 ? 100 : Math.round((liveCorrectCount / typedCount) * 100)}%
                   </p>
                 </div>
-                <div className="rounded-xl border border-border px-3 py-2 dark:border-white/10">
+                <div className={cn(portalInputClass, "rounded-xl px-3 py-2")}>
                   <p className="text-muted-foreground">Mistakes</p>
                   <p className="mt-1 font-mono text-base text-red-600 dark:text-red-400">
                     {liveMistakeCount}
@@ -1111,7 +1119,7 @@ export default function TypingTest({
 
           <button
             type="button"
-            className="h-[12rem] w-full cursor-text overflow-hidden rounded-2xl border border-border bg-muted/30 p-5 text-left shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.03] sm:p-6"
+            className={cn(portalAssessmentSectionClass, "h-[12rem] w-full cursor-text overflow-hidden bg-muted/30 p-5 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-primary sm:p-6")}
             onClick={() => captureRef.current?.focus()}
           >
             <span className="grid h-full grid-rows-3 font-mono text-lg leading-[2.6rem] text-foreground sm:text-xl sm:leading-[2.8rem]">
@@ -1173,17 +1181,17 @@ export default function TypingTest({
             <span className="font-bold text-amber-600 dark:text-amber-400 block mb-1">WARNING:</span> You are about to start the live scored assessment rounds. These exercises will determine your final typing speed and accuracy score. Take a break if needed, and click below when you are ready to begin.
           </p>
           <div className="mt-7 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+            <div className={cn(portalAssessmentTileClass, "border-border")}>
               <p className="text-sm text-muted-foreground">WPM</p>
               <p className="mt-2 font-mono text-2xl font-semibold">{latestResult.wpm}</p>
             </div>
-            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+            <div className={cn(portalAssessmentTileClass, "border-border")}>
               <p className="text-sm text-muted-foreground">Accuracy</p>
               <p className="mt-2 font-mono text-2xl font-semibold">
                 {latestResult.accuracy}%
               </p>
             </div>
-            <div className="rounded-xl border border-border p-4 dark:border-white/10">
+            <div className={cn(portalAssessmentTileClass, "border-border")}>
               <p className="text-sm text-muted-foreground">Mistakes</p>
               <p className="mt-2 font-mono text-2xl font-semibold">
                 {latestResult.mistakeCharacters}
@@ -1191,19 +1199,19 @@ export default function TypingTest({
             </div>
           </div>
           <div className="mx-auto mt-7 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Stay steady</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 Keep a controlled pace. Mistakes can be corrected, but the timer keeps moving.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Corrections</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 You can backspace to fix mistakes during the run.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 dark:border-white/10 dark:bg-white/[0.03]">
+            <div className={portalAssessmentTileClass}>
               <p className="font-medium text-foreground">Live runs</p>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 {finalRunIndex} timed runs follow. Scores are submitted at the end.
