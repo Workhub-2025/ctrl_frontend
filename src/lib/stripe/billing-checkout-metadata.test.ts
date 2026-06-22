@@ -18,16 +18,15 @@ describe("parseBillingCheckoutMetadata", () => {
     });
   });
 
-  it("accepts legacy ticketDocumentId alias", () => {
-    const result = parseBillingCheckoutMetadata({
-      metadata: {
-        requestKind: "contract_renewal",
-        clientDocumentId: "client-1",
-        ticketDocumentId: "billing-legacy",
-      },
-    } as any);
-
-    expect(result?.billingRequestDocumentId).toBe("billing-legacy");
+  it("returns null when billingRequestDocumentId is missing", () => {
+    expect(
+      parseBillingCheckoutMetadata({
+        metadata: {
+          requestKind: "contract_renewal",
+          clientDocumentId: "client-1",
+        },
+      } as any)
+    ).toBeNull();
   });
 
   it("returns null for invalid payloads", () => {

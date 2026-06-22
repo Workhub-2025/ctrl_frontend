@@ -14,6 +14,8 @@ import {
 import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
 import { getStripeClient } from "@/lib/stripe/server";
 
+const CTRL_STRIPE_LINE_KIND_KEY = "ctrlLineKind";
+
 export type BillingRequestCheckoutRow = {
   documentId?: string;
   id?: string;
@@ -143,6 +145,10 @@ function mapLineItemToStripe(
         description: isMonthly
           ? `${item.label} · paid monthly via Direct Debit`
           : fallbackDescription,
+        metadata: {
+          ...(item.ctrlLineKind ? { [CTRL_STRIPE_LINE_KIND_KEY]: item.ctrlLineKind } : {}),
+          ...(item.assessmentSlug ? { assessmentSlug: item.assessmentSlug } : {}),
+        },
       },
     },
   };
@@ -169,6 +175,7 @@ function buildStripeLineItems(
           product_data: {
             name: billingRequest.subject ?? "CTRL platform upgrade",
             description: "Annual platform contract · paid monthly via Direct Debit",
+            metadata: { [CTRL_STRIPE_LINE_KIND_KEY]: "platform" },
           },
         },
       },
@@ -199,6 +206,7 @@ function buildStripeLineItems(
           quantity: additional,
           unitAmountPence: monthlySeatPricePence(pricing),
           billingInterval: "month",
+          ctrlLineKind: "hm_seats",
         },
         currency,
         fallbackDescription
@@ -214,6 +222,8 @@ function buildStripeLineItems(
           quantity: 1,
           unitAmountPence: monthlyAssessmentAddonPence(pricing),
           billingInterval: "month",
+          ctrlLineKind: "assessment_addon",
+          assessmentSlug: payload.assessmentSlug,
         },
         currency,
         fallbackDescription

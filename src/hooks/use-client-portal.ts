@@ -174,45 +174,27 @@ export function useClientPortalState(): ClientPortalContextValue {
 
   const seatSlots = useMemo<SeatSlot[]>(() => {
     const limit = summary?.seats.limit ?? 0;
-    const numberedManagers = new Map<number, ClientHiringManagerSeat>();
-    const legacyManagers: ClientHiringManagerSeat[] = [];
-    const numberedCodes = new Map<number, ClientAccessCode>();
-    const legacyCodes: ClientAccessCode[] = [];
+    const managersBySeat = new Map<number, ClientHiringManagerSeat>();
+    const codesBySeat = new Map<number, ClientAccessCode>();
 
     for (const manager of activeHiringManagers) {
       const seatNumber = parseSeatNumber(manager.seatNumber ?? manager.seatLabel);
-      if (seatNumber) {
-        numberedManagers.set(seatNumber, manager);
-      } else {
-        legacyManagers.push(manager);
-      }
+      if (seatNumber) managersBySeat.set(seatNumber, manager);
     }
 
     for (const code of accessCodes) {
       const seatNumber = parseSeatNumber(code.seatNumber ?? code.seatLabel);
-      if (seatNumber) {
-        numberedCodes.set(seatNumber, code);
-      } else {
-        legacyCodes.push(code);
-      }
+      if (seatNumber) codesBySeat.set(seatNumber, code);
     }
-
-    let legacyManagerIndex = 0;
-    let legacyCodeIndex = 0;
 
     return Array.from({ length: limit }, (_, index) => {
       const seatNumber = index + 1;
       const label = `Seat ${seatNumber}`;
-      const manager = numberedManagers.get(seatNumber)
-        ?? legacyManagers[legacyManagerIndex];
-
+      const manager = managersBySeat.get(seatNumber);
       if (manager) {
-        if (!numberedManagers.has(seatNumber)) legacyManagerIndex += 1;
         return { type: "occupied", label, seatNumber, manager } as const;
       }
-
-      const accessCode = numberedCodes.get(seatNumber) ?? legacyCodes[legacyCodeIndex];
-      if (!numberedCodes.has(seatNumber) && accessCode) legacyCodeIndex += 1;
+      const accessCode = codesBySeat.get(seatNumber);
       return { type: "empty", label, seatNumber, accessCode } as const;
     });
   }, [accessCodes, activeHiringManagers, summary?.seats.limit]);

@@ -21,6 +21,10 @@ import { ShortTermMemoryReportBreakdown } from "./report/short-term-memory-break
 import { SituationalJudgementReportBreakdown } from "./report/situational-judgement-breakdown";
 import { TypingReportBreakdown } from "./report/typing-breakdown";
 import type { AssessmentUiPlugin } from "./types";
+import {
+  parseTypingSessionResponse,
+  TYPING_SESSION_FALLBACK,
+} from "./actions/parse-typing-session-response";
 
 const pluginRuntimeBySlug: Record<
   PlatformAssessmentSlug,
@@ -31,6 +35,8 @@ const pluginRuntimeBySlug: Record<
     supportsHeartbeat: true,
     requiresServerInit: true,
     strapiSessionPath: "/assessment/typing/session",
+    initSessionFallback: TYPING_SESSION_FALLBACK,
+    parseInitSessionResponse: parseTypingSessionResponse,
     component: TypingTest,
     shellTitle: "Typing Assessment",
     reportBreakdown: TypingReportBreakdown,

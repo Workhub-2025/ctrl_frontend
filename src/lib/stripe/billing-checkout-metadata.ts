@@ -19,8 +19,7 @@ export function parseBillingCheckoutMetadata(
   }
 
   const clientDocumentId = session.metadata?.clientDocumentId;
-  const billingRequestDocumentId =
-    session.metadata?.billingRequestDocumentId ?? session.metadata?.ticketDocumentId;
+  const billingRequestDocumentId = session.metadata?.billingRequestDocumentId;
 
   if (!clientDocumentId || !billingRequestDocumentId) {
     return null;

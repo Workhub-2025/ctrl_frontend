@@ -1,9 +1,9 @@
 'use server';
 
 import { getActionAuthContext } from '@/lib/auth/server-action-auth';
-import { isAlreadyCompletedSession } from '@/lib/assessment-session-already-completed';
 import { getServerStrapiClient } from '@/lib/strapi';
 import { getAssessmentUiPlugin } from '@/assessments/plugins/registry';
+import type { TypingSessionData } from '@/store/typing-session.store';
 
 const EMPTY_SESSION = {
   sessionId: null,
@@ -13,7 +13,7 @@ const EMPTY_SESSION = {
 
 /**
  * Initialise an assessment session via Strapi for the authenticated candidate.
- * Register `strapiSessionPath` on each UI plugin — new assessments only need registry wiring.
+ * Plugin registry supplies `strapiSessionPath` and optional `parseInitSessionResponse`.
  */
 export async function initAssessmentSession<T = typeof EMPTY_SESSION>(
   slug: string,
@@ -26,6 +26,8 @@ export async function initAssessmentSession<T = typeof EMPTY_SESSION>(
 
   await getActionAuthContext(`initAssessmentSession:${slug}`);
 
+  const fallback = (plugin.initSessionFallback ?? EMPTY_SESSION) as T;
+
   let response;
   try {
     const client = await getServerStrapiClient();
@@ -36,13 +38,11 @@ export async function initAssessmentSession<T = typeof EMPTY_SESSION>(
     });
   } catch (err) {
     console.error(`[initAssessmentSession:${slug}] Network error — using fallback`, err);
-    return EMPTY_SESSION as T;
+    return fallback;
   }
 
   if (!response.ok) {
-    console.error(
-      `[initAssessmentSession:${slug}] Strapi responded ${response.status}`
-    );
+    console.error(`[initAssessmentSession:${slug}] Strapi responded ${response.status}`);
     let errorMessage = 'Failed to load assessment';
     try {
       const errorData = await response.json();
@@ -55,5 +55,21 @@ export async function initAssessmentSession<T = typeof EMPTY_SESSION>(
     throw new Error(errorMessage);
   }
 
-  return (await response.json()) as T & { alreadyCompleted?: boolean };
+  try {
+    const body = await response.json();
+    if (plugin.parseInitSessionResponse) {
+      return plugin.parseInitSessionResponse(body) as T;
+    }
+    return body as T;
+  } catch (err) {
+    console.error(`[initAssessmentSession:${slug}] Response parsing error — using fallback`, err);
+    return fallback;
+  }
+}
+
+/** @deprecated Use initAssessmentSession('typing', candidateSessionDocumentId) */
+export async function initTypingSession(
+  candidateSessionDocumentId?: string | null,
+): Promise<TypingSessionData> {
+  return initAssessmentSession<TypingSessionData>('typing', candidateSessionDocumentId);
 }

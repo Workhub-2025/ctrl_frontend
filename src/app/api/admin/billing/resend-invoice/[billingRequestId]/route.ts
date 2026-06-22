@@ -5,7 +5,7 @@ import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
 
 export async function POST(
   _request: Request,
-  { params }: { params: Promise<{ ticketId: string }> }
+  { params }: { params: Promise<{ billingRequestId: string }> }
 ) {
   const auth = await requireAdminApiAccess('billing.write');
   if ("error" in auth) {
@@ -22,11 +22,11 @@ export async function POST(
     );
   }
 
-  const { ticketId: requestId } = await params;
+  const { billingRequestId } = await params;
 
   try {
     const response = await strapiRequest<{ data?: Record<string, unknown> }>(
-      `/admin/billing/requests/${encodeURIComponent(requestId)}/resend-checkout`,
+      `/admin/billing/requests/${encodeURIComponent(billingRequestId)}/resend-checkout`,
       { method: "POST" }
     );
 

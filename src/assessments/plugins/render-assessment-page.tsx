@@ -1,8 +1,9 @@
-import { initTypingSession } from "@/assessments/plugins/actions/typing-session";
+import { initAssessmentSession } from "@/assessments/plugins/actions/init-session";
 import { TypingTestClient } from "@/app/assessment/typing/typing-test-client";
 import { AssessmentShellPage } from "@/assessments/plugins/assessment-shell-page";
 import { getAssessmentUiPlugin } from "@/assessments/plugins/registry";
 import { notFound } from "next/navigation";
+import type { TypingSessionData } from "@/store/typing-session.store";
 
 type AssessmentPageProps = {
   searchParams?: Promise<{ candidateSessionDocumentId?: string }>;
@@ -19,8 +20,11 @@ export async function renderAssessmentPage(
   const candidateSessionDocumentId = params?.candidateSessionDocumentId ?? null;
 
   if (plugin.requiresServerInit && slug === "typing") {
-    const session = await initTypingSession(candidateSessionDocumentId).catch((err: any) => ({
-      error: err.message || 'Failed to initialize session',
+    const session = await initAssessmentSession<TypingSessionData>(
+      "typing",
+      candidateSessionDocumentId,
+    ).catch((err: unknown) => ({
+      error: err instanceof Error ? err.message : "Failed to initialize session",
     }));
 
     return (

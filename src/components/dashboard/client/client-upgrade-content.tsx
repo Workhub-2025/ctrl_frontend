@@ -201,14 +201,14 @@ export function ClientUpgradeContent() {
     };
   }, [searchParams, loadEntitlements, loadUpgradeRequests, markUpgradeRequestPaid, router, setError]);
 
-  const payForUpgrade = async (ticketDocumentId: string) => {
-    setPayingRequestId(ticketDocumentId);
+  const payForUpgrade = async (billingRequestDocumentId: string) => {
+    setPayingRequestId(billingRequestDocumentId);
     setError(null);
     try {
       const response = await fetch("/api/client/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billingRequestDocumentId: ticketDocumentId }),
+        body: JSON.stringify({ billingRequestDocumentId }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {

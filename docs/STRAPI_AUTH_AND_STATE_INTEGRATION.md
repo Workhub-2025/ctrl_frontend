@@ -1,6 +1,14 @@
+# Strapi Auth + State Integration — historical
+
+> **Deprecated (2026-06-22).** This document describes an April 2026 branch (`ctrl-frontend-hybrid`) and is **not** the current auth model.
+>
+> **Use instead:** `CTRL/02-Security/Auth-Architecture.md` · `FrontEnd/README.md` · `src/hooks/use-auth.ts` → `POST /api/auth/login`
+
+---
+
 # Integración Strapi Auth + Estado Global — `ctrl-frontend-hybrid`
 
-> **Historical branch doc (April 2026).** Current auth: JSON login via `POST /api/auth/login`, Strapi JWT in httpOnly cookie only, browser calls via `/api/strapi-proxy` allowlist. See `CTRL/02-Security/Auth-Architecture.md` and `FrontEnd/README.md`.
+> **Historical branch doc (April 2026).** Current auth: JSON login via `POST /api/auth/login`, Strapi JWT in httpOnly cookie only, browser calls via `/api/strapi-proxy` allowlist.
 
 > Análisis y plan de tareas para la rama `ctrl-frontend-hybrid`  
 > Última actualización: abril 2026

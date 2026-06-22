@@ -132,6 +132,7 @@ export function computeLineItems(
             quantity: additional,
             unitAmountPence,
             billingInterval: "month",
+            ctrlLineKind: "hm_seats",
           });
         }
         break;
@@ -148,6 +149,7 @@ export function computeLineItems(
           quantity: 1,
           unitAmountPence,
           billingInterval: "once",
+          ctrlLineKind: "delivery_feature",
         });
         break;
       }
@@ -161,6 +163,8 @@ export function computeLineItems(
           quantity: 1,
           unitAmountPence,
           billingInterval: "month",
+          ctrlLineKind: "assessment_addon",
+          assessmentSlug: item.assessmentSlug,
         });
         break;
       }

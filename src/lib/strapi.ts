@@ -83,24 +83,3 @@ export async function getServerStrapiClient() {
         return getStrapiClient();
     }
 }
-
-// ─── Legacy user-fetch helper (kept for auth endpoints) ──────────────────────
-
-/**
- * @deprecated Use `getStrapiClient(jwt).fetch(path, opts)` instead.
- * Kept for backward compatibility with auth endpoints that pass JWT manually.
- */
-export async function strapiUserFetch<T>(
-    path: string,
-    userJwt: string,
-    options?: RequestInit
-): Promise<T> {
-    const response = await getStrapiClient(userJwt).fetch(path, {
-        ...options,
-        headers: {
-            ...options?.headers,
-            Authorization: `Bearer ${userJwt}`,
-        },
-    });
-    return response.json();
-}

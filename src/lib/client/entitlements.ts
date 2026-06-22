@@ -124,6 +124,9 @@ export type ClientUpgradeBundleLineItem = {
   unitAmountPence: number;
   /** Monthly recurring DD charge vs one-time unlock fee */
   billingInterval?: "month" | "once";
+  /** Stripe product metadata — maps subscription items for DD adjustments */
+  ctrlLineKind?: "platform" | "hm_seats" | "assessment_addon" | "delivery_feature";
+  assessmentSlug?: string;
 };
 
 export type ClientInitiatedUpgradeType =

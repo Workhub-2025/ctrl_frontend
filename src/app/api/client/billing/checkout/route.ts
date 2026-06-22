@@ -50,9 +50,8 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json().catch(() => ({}))) as {
       billingRequestDocumentId?: string;
-      ticketDocumentId?: string;
     };
-    const billingRequestDocumentId = body.billingRequestDocumentId ?? body.ticketDocumentId;
+    const billingRequestDocumentId = body.billingRequestDocumentId;
     if (!billingRequestDocumentId) {
       return NextResponse.json({ error: "billingRequestDocumentId is required" }, { status: 400 });
     }

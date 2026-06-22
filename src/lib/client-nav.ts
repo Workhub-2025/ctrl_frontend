@@ -61,8 +61,7 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
         hint: "Review hiring campaigns",
         icon: ClipboardCheck,
         isActive: (pathname) =>
-          pathname.startsWith("/client-dashboard/campaign-approvals") ||
-          pathname.startsWith("/client-dashboard/progressed"),
+          pathname.startsWith("/client-dashboard/campaign-approvals"),
       },
       {
         href: "/client-dashboard/client-approved-candidates",
@@ -70,8 +69,7 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
         hint: "Recommended candidates",
         icon: UserCheck,
         isActive: (pathname) =>
-          pathname.startsWith("/client-dashboard/client-approved-candidates") ||
-          pathname.startsWith("/client-dashboard/candidate-approvals"),
+          pathname.startsWith("/client-dashboard/client-approved-candidates"),
       },
     ],
   },
