@@ -9,7 +9,6 @@ import {
   portalClientEntitlementsCacheKey,
   portalClientFeaturesClientCacheKey,
   portalClientOverviewCacheKey,
-  portalClientTenantCacheKey,
   portalHmOverviewCacheKey,
   portalHmReportCacheKey,
 } from "@/lib/portal-cache-keys";
@@ -37,15 +36,9 @@ export async function invalidateClientEntitlementsServerCache(userSub?: string |
   await portalServerCacheDel(portalClientEntitlementsCacheKey(sub));
 }
 
-export async function invalidateClientFeaturesServerCache(clientDocumentId: string): Promise<void> {
+async function invalidateClientFeaturesServerCache(clientDocumentId: string): Promise<void> {
   if (!clientDocumentId) return;
   await portalServerCacheDel(portalClientFeaturesClientCacheKey(clientDocumentId));
-}
-
-export async function invalidateClientTenantServerCache(userSub?: string | null): Promise<void> {
-  const sub = userSub ?? (await getServerAuthSub());
-  if (!sub) return;
-  await portalServerCacheDel(portalClientTenantCacheKey(sub));
 }
 
 /** Bust HM entitlement flags + client portal read caches after billing or admin entitlement changes. */

@@ -10,10 +10,6 @@ export function portalAssessmentVersionCacheKey(slug: string) {
   return `catalogue:assessment-versions:${slug}`;
 }
 
-export function portalClientFeaturesCacheKey(sub: string) {
-  return `client-features:user:${sub}`;
-}
-
 /** Tenant-scoped HM entitlement flags — bust when admin updates client.features. */
 export function portalClientFeaturesClientCacheKey(clientDocumentId: string) {
   return `client-features:client:${clientDocumentId}`;

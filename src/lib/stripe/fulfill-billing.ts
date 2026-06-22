@@ -90,6 +90,3 @@ export async function syncStripeSubscription(
 
   return responseBody;
 }
-
-// Keep Stripe import referenced for re-export consumers that typed against this module.
-export type StripeCheckoutSession = Stripe.Checkout.Session;
