@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const auth = await requireAdminApiAccess('clients.read');
+  const auth = await requireAdminApiAccess('clients.write');
   if ("error" in auth) return auth.error;
 
   try {
@@ -63,7 +63,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-    const auth = await requireAdminApiAccess('clients.read');
+    const auth = await requireAdminApiAccess('entitlements.write');
     if ("error" in auth) return auth.error;
 
     try {
