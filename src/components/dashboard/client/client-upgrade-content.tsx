@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import { formatDate } from "@/components/dashboard/client/client-portal-utils";
 import { ClientUpgradeBuilder } from "@/components/dashboard/client/client-upgrade-builder";
 import { ClientSeatDecreasePanel } from "@/components/dashboard/client/client-seat-decrease-panel";
+import { ClientDataRetentionNotice } from "@/components/dashboard/client/client-data-retention-notice";
 import {
   ClientErrorBanner,
   ClientPageHeader,
@@ -366,6 +367,8 @@ export function ClientUpgradeContent() {
                 </p>
               </div>
             </div>
+
+            <ClientDataRetentionNotice entitlements={entitlements} />
 
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-3">

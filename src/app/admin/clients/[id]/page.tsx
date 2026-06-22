@@ -41,6 +41,7 @@ import {
   AdminStatTile,
 } from "@/components/admin/admin-portal-ui";
 import { AdminSeatDowngradePanel } from "@/components/admin/admin-seat-downgrade-panel";
+import { AdminAssessmentRetentionPanel } from "@/components/admin/admin-assessment-retention-panel";
 import {
   portalBadgeClass,
   portalLabelClass,
@@ -80,6 +81,8 @@ type ClientDetails = {
     seatCount: number;
     notes: string;
     paymentStatus?: string;
+    assessmentDataRetentionMonths?: number | null;
+    effectiveAssessmentDataRetentionMonths?: number;
   } | null;
   users: Array<{ id: string; name: string; email: string; role: string; status: string }>;
   campaigns: Array<{ id: string; title: string; status: string; approvalStatus: string; createdAt: string | null }>;
@@ -718,6 +721,19 @@ export default function ClientDetailPage() {
                 <p className={portalLabelClass}>Notes</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{client.activeContract?.notes || "No notes recorded"}</p>
               </div>
+              {client.activeContract ? (
+                <div className="md:col-span-2 xl:col-span-4">
+                  <AdminAssessmentRetentionPanel
+                    clientId={client.id}
+                    configuredMonths={client.activeContract.assessmentDataRetentionMonths ?? null}
+                    onCompleted={async () => {
+                      invalidateAdminResource(`admin:client:${client.id}`);
+                      invalidateAdminResource("admin:clients");
+                      await refetchClient();
+                    }}
+                  />
+                </div>
+              ) : null}
             </div>
           </AdminPanel>
         </TabsContent>

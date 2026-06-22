@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
+import { resolveEffectiveRetentionMonths } from "@/lib/legal/retention-format";
 import { ContractTier, ContractStatus } from "@/types";
 import { resolveEffectiveAnnualPlatformPence } from "@/lib/billing/contract-pricing-lock";
 
@@ -101,6 +102,7 @@ type RawContract = {
   lockedAnnualPlatformPence?: number | null;
   pricingLockedUntil?: string | null;
   notes?: string | null;
+  assessmentDataRetentionMonths?: number | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -361,6 +363,8 @@ export type AdminClientDetails = AdminClientRow & {
     seatCount: number;
     notes: string;
     paymentStatus?: string;
+    assessmentDataRetentionMonths: number | null;
+    effectiveAssessmentDataRetentionMonths: number;
   } | null;
   users: AdminUserRow[];
   campaigns: Array<{
@@ -574,6 +578,16 @@ function formatAddress(client: RawClient) {
     .join(", ") || "No address recorded";
 }
 
+function normalizeContractRetentionFields(contract?: RawContract | null) {
+  const assessmentDataRetentionMonths = contract?.assessmentDataRetentionMonths ?? null;
+  return {
+    assessmentDataRetentionMonths,
+    effectiveAssessmentDataRetentionMonths: resolveEffectiveRetentionMonths(
+      assessmentDataRetentionMonths,
+    ),
+  };
+}
+
 function normalizeClientDetails(client: RawClient): AdminClientDetails {
   const row = normalizeClient(client);
   const activeContract = getActiveContract(client);
@@ -602,6 +616,7 @@ function normalizeClientDetails(client: RawClient): AdminClientDetails {
           seatCount: displayContract.seatCount ?? 0,
           notes: displayContract.notes ?? "",
           paymentStatus: displayContract.paymentStatus ?? (pendingContract ? "pending" : "not_required"),
+          ...normalizeContractRetentionFields(displayContract),
         }
       : null,
     users: (client.users ?? []).map(normalizeUser),
@@ -1378,6 +1393,7 @@ export async function updateAdminClient(
       notes?: string | null;
       status?: ContractStatus;
       tier?: ContractTier | string;
+      assessmentDataRetentionMonths?: number | null;
     };
   },
   authToken?: string | null

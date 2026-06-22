@@ -36,7 +36,14 @@ export type BackendClientEntitlements = {
     grandfatherStartedAt?: string | null;
     grandfatherEndsAt?: string | null;
     grandfatherDiscountPercent?: number | null;
+    assessmentDataRetentionMonths?: number | null;
+    effectiveAssessmentDataRetentionMonths?: number;
   } | null;
+  dataRetention?: {
+    platformDefaultMonths: number;
+    effectiveMonths: number;
+    contractConfiguredMonths: number | null;
+  };
   platformFeatures: Record<string, boolean>;
   deliveryFeatures?: Record<string, boolean>;
   defaultAssessments: Array<{
