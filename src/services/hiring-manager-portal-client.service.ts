@@ -280,4 +280,29 @@ export class HiringManagerPortalClientService {
     await readJson<{ data?: unknown; error?: string }>(response);
     this.invalidate();
   }
+
+  static async generateOfflineCodes(
+    sessionId: string,
+    count: number
+  ): Promise<Array<Record<string, unknown>>> {
+    const response = await fetch(
+      `/api/hiring-manager/sessions/${sessionId}/generate-offline-codes`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count }),
+      }
+    );
+    if (!response.ok) {
+      const body = await readJson<{ error?: string }>(response);
+      throw new Error(body.error || "Offline codes could not be generated.");
+    }
+    const body = await readJson<{
+      data?: Array<Record<string, unknown>>;
+      error?: string;
+    }>(response);
+
+    this.invalidate();
+    return body.data ?? [];
+  }
 }

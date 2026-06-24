@@ -207,6 +207,7 @@ export type HiringManagerCampaignCreateInput = {
   vacancyCount: number;
   location?: string;
   assessmentMode: "in_person" | "remote" | "hybrid";
+  bypassEmailConfirmation?: boolean;
   assessmentDocumentIds: string[];
   assessmentSettings?: Record<string, unknown>;
 };
@@ -881,4 +882,20 @@ export async function inviteCandidatesToSession(
     failed: response.data?.failed ?? [],
     sessions: response.data?.sessions ?? [],
   };
+}
+
+export async function generateOfflineCodesForSession(
+  assessmentSessionDocumentId: string,
+  count: number
+): Promise<Array<Record<string, unknown>>> {
+  const response = await strapiRequest<{
+    data?: Array<Record<string, unknown>>;
+  }>(`/assessment-sessions/${assessmentSessionDocumentId}/generate-offline-codes`, {
+    method: "POST",
+    body: JSON.stringify({ count }),
+  });
+
+  void invalidateHmOverviewServerCache();
+
+  return response.data ?? [];
 }

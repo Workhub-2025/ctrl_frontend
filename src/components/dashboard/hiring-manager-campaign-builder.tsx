@@ -74,6 +74,7 @@ type CampaignDraft = {
   roleTitle: string;
   location: string;
   deliveryMode: "in_person" | "remote" | "hybrid";
+  bypassEmailConfirmation: boolean;
   candidateVolume: string;
   startDate: string;
   notes: string;
@@ -89,6 +90,7 @@ const emptyDraft: CampaignDraft = {
   roleTitle: "",
   location: "",
   deliveryMode: "in_person",
+  bypassEmailConfirmation: true, // default to true for new campaigns (to make it easiest for offline use cases, default is on when in_person)
   candidateVolume: "100",
   startDate: "",
   notes: "",
@@ -517,6 +519,7 @@ export function HiringManagerCampaignBuilder({
               : draft.deliveryMode === "hybrid"
                 ? "hybrid"
                 : "in_person",
+          bypassEmailConfirmation: draft.bypassEmailConfirmation,
           assessmentDocumentIds: selectedAssessments
             .map((assessment) => assessment.documentId)
             .filter(Boolean),
@@ -736,7 +739,10 @@ export function HiringManagerCampaignBuilder({
                        key={mode}
                        type="button"
                        disabled={locked}
-                       onClick={() => updateDraft("deliveryMode", mode)}
+                       onClick={() => {
+                         updateDraft("deliveryMode", mode);
+                         updateDraft("bypassEmailConfirmation", mode === "in_person");
+                       }}
                        className={cn(
                          draft.deliveryMode === mode
                            ? portalSelectableCardSelectedClass
@@ -756,6 +762,21 @@ export function HiringManagerCampaignBuilder({
                   Remote and Hybrid options require client feature activation by an administrator.
                 </p>
               )}
+              <div className="mt-3.5 flex items-center gap-2">
+                <input
+                  id="bypass-email-confirmation-checkbox"
+                  type="checkbox"
+                  checked={draft.bypassEmailConfirmation}
+                  onChange={(e) => updateDraft("bypassEmailConfirmation", e.target.checked)}
+                  className="h-4 w-4 rounded border-white/10 bg-white/[0.02] text-primary focus:ring-primary cursor-pointer"
+                />
+                <label
+                  htmlFor="bypass-email-confirmation-checkbox"
+                  className="text-xs font-semibold text-foreground/90 cursor-pointer select-none"
+                >
+                  Bypass candidate email verification (recommended for in-person/offline sites)
+                </label>
+              </div>
             </div>
 
             <div className={portalSelectableCardGroupClass}>
