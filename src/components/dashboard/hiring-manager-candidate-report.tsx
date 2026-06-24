@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -460,7 +460,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5 p-5">
-          {rows.map((row) => {
+          {rows.map((row, index) => {
             const key = getAssessmentKey(row.name);
             const displayName = getAssessmentCatalogueTitle(key || row.name, row.name);
             const Icon = getAssessmentCatalogueIcon(key || row.name, row.result);
@@ -471,10 +471,24 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
             const breakdownOpen = openBreakdownKey === row.name;
 
             return (
-              <div
-                key={row.name}
-                className={cn(portalPanelNestedClass, "space-y-4 p-5 transition-colors hover:border-primary/20")}
-              >
+              <Fragment key={row.name}>
+                {index > 0 && (
+                  <div className="relative py-4 flex items-center justify-center print:break-before-page print:mt-0 print:py-0">
+                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                      <div className="w-full border-t border-border/50 dark:border-white/5 border-dashed" />
+                    </div>
+                    <span className="relative z-10 bg-background px-3 text-[10px] text-muted-foreground font-bold uppercase tracking-wider print:hidden">
+                      Next Module
+                    </span>
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    portalPanelNestedClass,
+                    "space-y-4 p-5 transition-colors hover:border-primary/20",
+                    index > 0 && "print:mt-6"
+                  )}
+                >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex min-w-0 items-start gap-3">
                     <span className={portalIconWrapLgClass} aria-hidden="true">
@@ -630,9 +644,10 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                   </div>
                 )}
               </div>
-            );
-          })}
-        </CardContent>
+            </Fragment>
+          );
+        })}
+      </CardContent>
       </Card>
 
       {reportData.sharedCandidateDocumentId ? (
