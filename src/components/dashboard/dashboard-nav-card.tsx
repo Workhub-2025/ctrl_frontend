@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { portalCardClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalCardInteractiveClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ interface DashboardNavCardProps {
 export function DashboardNavCard({ title, description, icon: Icon, href }: DashboardNavCardProps) {
   return (
     <Link href={href} className="block group">
-      <Card className={cn(portalCardClass, "h-full transition-all hover:-translate-y-1")}>
+      <Card className={cn(portalCardInteractiveClass, "h-full transition-all hover:-translate-y-1")}>
         <CardHeader>
           <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
             <Icon className="h-5 w-5" />

@@ -37,6 +37,7 @@ import {
   portalDialogShellClass,
   portalIconWrapClass,
   portalCardClass,
+  portalCardInteractiveClass,
   portalPanelClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { formatDateTime } from "@/components/dashboard/client/client-portal-utils";
@@ -216,7 +217,7 @@ export function ClientHiringManagersContent() {
                         manager,
                       })
                     }
-                    className={cn(portalCardClass, "p-4 text-left")}
+                    className={cn(portalCardInteractiveClass, "p-4 text-left")}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -350,7 +351,7 @@ export function ClientHiringManagersContent() {
                   {selectedSeat.manager.campaigns.map((campaign) => (
                     <div
                       key={campaign.documentId}
-                      className={cn(portalPanelClass, "space-y-3 p-4 transition-colors hover:border-primary/20")}
+                      className={cn(portalPanelClass, "space-y-3 p-4")}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -420,10 +421,10 @@ function SeatCard({
   return (
     <div
       className={cn(
-        "relative flex min-h-[200px] flex-col justify-between overflow-hidden p-5 transition-all duration-300 hover:scale-[1.01]",
+        "relative flex min-h-[200px] flex-col justify-between overflow-hidden p-5 transition-all duration-300",
         seat.type === "occupied"
           ? portalCardClass
-          : "rounded-2xl border-2 border-dashed border-border/80 bg-transparent shadow-none hover:border-primary/40 dark:border-white/10 dark:hover:border-primary/45"
+          : "rounded-2xl border-2 border-dashed border-border/80 bg-transparent shadow-none dark:border-white/10"
       )}
     >
       {seat.type === "occupied" ? (

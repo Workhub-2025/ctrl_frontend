@@ -13,28 +13,43 @@ const portalDarkElevatedShadowClass = "dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)
 
 /**
  * Standard portal panel/card — light-theme elevation so surfaces stand off the page.
- * Used for list cards, sections, and primary panels across admin, client, HM, and candidate portals.
+ * Static sections only; use {@link portalPanelInteractiveClass} for clickable surfaces.
  */
 export const portalPanelClass = cn(
   portalPanelBaseClass,
-  "rounded-xl shadow-lg transition-all duration-300 hover:border-primary/30 dark:hover:border-white/12",
+  "rounded-xl shadow-lg transition-all duration-300",
   portalDarkPanelShadowClass,
+);
+
+/** Clickable portal panel — links, buttons, and cards with an onClick handler. */
+export const portalPanelInteractiveClass = cn(
+  portalPanelClass,
+  "hover:border-primary/30 dark:hover:border-white/12",
 );
 
 /** Primary list / content cards — same elevation with larger radius. */
 export const portalCardClass = cn(portalPanelClass, "rounded-2xl");
 
+/** Clickable list / content cards. */
+export const portalCardInteractiveClass = cn(portalPanelInteractiveClass, "rounded-2xl");
+
 /** Stronger panel surface for hero cards and primary sections. */
 export const portalPanelElevatedClass = cn(
   portalCardClass,
-  "backdrop-blur-md shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/45 dark:hover:border-primary/30",
+  "backdrop-blur-md shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/45",
   portalDarkElevatedShadowClass,
+);
+
+/** Clickable elevated panel — e.g. whole-card navigation. */
+export const portalPanelElevatedInteractiveClass = cn(
+  portalPanelElevatedClass,
+  "hover:border-primary/30 dark:hover:border-primary/30",
 );
 
 /** Nested panel surface inside elevated cards — flat, no extra shadow. */
 export const portalPanelNestedClass = cn(
   portalPanelBaseClass,
-  "rounded-xl shadow-none transition-colors hover:border-border/60 dark:border-white/10 dark:bg-[#0b1329]/20 dark:hover:border-white/10"
+  "rounded-xl shadow-none transition-colors dark:border-white/10 dark:bg-[#0b1329]/20",
 );
 
 /** Dashed empty-state surface for lists and filter results. */

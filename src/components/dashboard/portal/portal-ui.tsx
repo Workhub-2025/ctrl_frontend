@@ -28,7 +28,9 @@ import {
 
 export {
   portalPanelClass,
+  portalPanelInteractiveClass,
   portalCardClass,
+  portalCardInteractiveClass,
   portalEmptyPanelClass,
   portalStatTileClass,
   portalBadgeClass,

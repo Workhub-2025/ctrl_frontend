@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import {
   PortalAlert,
   PortalPageHeader,
-  PortalPanel,
   PortalStatTile,
 } from "@/components/dashboard/portal/portal-ui";
-import { portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalIconWrapLgClass,
+  portalPanelInteractiveClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
 export function ClientErrorBanner({
@@ -71,7 +73,7 @@ export function ClientQuickLink({
       href={href}
       className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
-      <PortalPanel className="h-full transition-colors hover:border-primary/20">
+      <div className={cn(portalPanelInteractiveClass, "h-full p-5")}>
         <div className="flex items-start gap-3">
           <span className={portalIconWrapLgClass}>
             <Icon className="h-5 w-5" aria-hidden="true" />
@@ -88,7 +90,7 @@ export function ClientQuickLink({
             <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
           </div>
         </div>
-      </PortalPanel>
+      </div>
     </Link>
   );
 }

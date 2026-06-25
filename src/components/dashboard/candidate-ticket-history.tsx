@@ -25,7 +25,7 @@ import {
   type SupportTicket,
 } from "@/services/support-ticket.service";
 import { cn } from "@/lib/utils";
-import { portalBadgeClass, portalCardClass } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalCardInteractiveClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 type StatusKey = "open" | "in_progress" | "resolved" | "awaiting_user" | "closed";
 
@@ -122,7 +122,7 @@ function TicketRow({
       <button
         type="button"
         onClick={onSelect}
-        className={cn(portalCardClass, "group w-full p-4 text-left hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary")}
+        className={cn(portalCardInteractiveClass, "group w-full p-4 text-left hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary")}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 space-y-1">

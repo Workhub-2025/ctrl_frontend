@@ -485,7 +485,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                 <div
                   className={cn(
                     portalPanelNestedClass,
-                    "space-y-4 p-5 transition-colors hover:border-primary/20",
+                    "space-y-4 p-5",
                     index > 0 && "print:mt-6"
                   )}
                 >

@@ -32,6 +32,7 @@ import {
   portalBadgeClass,
   portalIconWrapLgClass,
   portalPanelClass,
+  portalPanelInteractiveClass,
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
@@ -232,7 +233,7 @@ export function HiringManagerOverview() {
                 <Link
                   key={campaign.id}
                   href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}
-                  className={cn(portalPanelClass, "block p-4")}
+                  className={cn(portalPanelInteractiveClass, "block p-4")}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 space-y-1">

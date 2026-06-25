@@ -252,7 +252,7 @@ export function HiringManagerCampaignDetailView({
       />
 
       <div className="w-full">
-        <Card className={cn(portalPanelElevatedClass, "relative overflow-hidden transition-colors duration-300 hover:border-primary/45")}>
+        <Card className={cn(portalPanelElevatedClass, "relative overflow-hidden")}>
           <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-sky-400" />
           <CardContent className="p-5 flex flex-col justify-between">
             <p className={cn(portalLabelClass, "flex items-center gap-1.5 font-bold")}>
@@ -336,7 +336,7 @@ export function HiringManagerCampaignDetailView({
             campaign.assessmentSessions.map((session) => (
               <div
                 key={session.id}
-                className={cn(portalPanelNestedClass, "grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto] items-center hover:border-primary/20 transition-all duration-300")}
+                className={cn(portalPanelNestedClass, "grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_auto] items-center")}
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
