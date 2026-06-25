@@ -25,7 +25,10 @@ import {
   type SupportTicket,
 } from "@/services/support-ticket.service";
 import { cn } from "@/lib/utils";
-import { portalCardInteractiveClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalBadgeClass,
+  portalCardInteractiveClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 
 type StatusKey = "open" | "in_progress" | "resolved" | "awaiting_user" | "closed";
 
