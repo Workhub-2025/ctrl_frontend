@@ -9,14 +9,14 @@ import { UK_LEGAL } from "@/lib/legal/uk-compliance";
 export default function DataProcessingAgreementPage() {
   return (
     <LegalPageShell
-      title="Data Processing Agreement (Summary)"
-      description={`UK GDPR Article 28 processor terms for ${UK_LEGAL.tradingName} client organisations`}
+      title="Data Processing Agreement Information"
+      description={`UK GDPR Article 28 processing terms for ${UK_LEGAL.tradingName} customers`}
       icon={FileText}
       iconClassName="bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
-      version="1.0"
+      version={UK_LEGAL.dpaInformationVersion}
     >
       <section>
-        <h3 className="mb-3 text-lg font-semibold">1. Roles</h3>
+        <h2 className="mb-3 text-lg font-semibold">1. Roles</h2>
         <ul className="list-disc space-y-2 pl-6">
           <li>
             <strong>Client organisation</strong> — data controller for candidate and employee
@@ -36,7 +36,7 @@ export default function DataProcessingAgreementPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">2. Subject matter and duration</h3>
+        <h2 className="mb-3 text-lg font-semibold">2. Subject matter and duration</h2>
         <p>
           Processing is limited to delivering operational assessments, scoring, reporting, audit
           logs, and related recruitment workflows for the duration of the client contract plus any
@@ -47,18 +47,18 @@ export default function DataProcessingAgreementPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">3. Categories of data and subjects</h3>
+        <h2 className="mb-3 text-lg font-semibold">3. Categories of data and subjects</h2>
         <ul className="list-disc space-y-1 pl-6">
           <li>
             <strong>Data subjects:</strong> candidates, hiring managers, client administrators
           </li>
           <li>
             <strong>Personal data:</strong> identity, contact details, assessment responses, scores,
-            session metadata, optional equality monitoring (where consented)
+            session metadata and optional equality monitoring where lawfully enabled
           </li>
           <li>
-            <strong>Special category data:</strong> optional equality monitoring fields only, where
-            explicitly consented by the candidate
+            <strong>Special-category data:</strong> optional equality-monitoring fields where the
+            controller has documented the relevant Article 6 basis and Article 9 condition
           </li>
         </ul>
       </section>
@@ -66,7 +66,7 @@ export default function DataProcessingAgreementPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">4. Processor obligations</h3>
+        <h2 className="mb-3 text-lg font-semibold">4. Processor obligations</h2>
         <ul className="list-disc space-y-1 pl-6">
           <li>Process personal data only on documented client instructions</li>
           <li>Ensure personnel confidentiality and security training</li>
@@ -81,7 +81,7 @@ export default function DataProcessingAgreementPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">5. Sub-processors</h3>
+        <h2 className="mb-3 text-lg font-semibold">5. Sub-processors</h2>
         <p>
           Authorised sub-processors are listed on our{" "}
           <Link href="/sub-processors" className="text-primary hover:underline">
@@ -94,7 +94,7 @@ export default function DataProcessingAgreementPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">6. International transfers</h3>
+        <h2 className="mb-3 text-lg font-semibold">6. International transfers</h2>
         <p>
           Transfers outside the UK use appropriate safeguards (UK IDTA / SCCs) where required.
           Clients should confirm deployment regions align with their own DPIA and contract
@@ -105,10 +105,11 @@ export default function DataProcessingAgreementPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">7. Executed DPA</h3>
+        <h2 className="mb-3 text-lg font-semibold">7. Required executed DPA</h2>
         <p>
-          This page is a summary for procurement reviews. A countersigned DPA is provided with
-          enterprise contracts. Request a copy at{" "}
+          This page is procurement information and is not a substitute for the customer contract.
+          An executed Article 28 DPA is required for every customer for whom CTRL processes candidate
+          data, regardless of package or tier. Request the current agreement at{" "}
           <a href={`mailto:${UK_LEGAL.legalEmail}`} className="text-primary hover:underline">
             {UK_LEGAL.legalEmail}
           </a>

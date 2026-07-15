@@ -28,7 +28,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 
 export const candidateEyebrowClassName =
-  "text-[10px] font-bold uppercase tracking-[0.2em] text-primary";
+  "text-xs font-semibold uppercase tracking-[0.08em] text-primary";
 
 export function CandidateEyebrow({
   children,
@@ -59,7 +59,7 @@ export function CandidatePageHeader({
 }) {
   return (
     <header className={portalPageHeaderClass}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex min-w-0 items-start gap-3.5">
           <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
             <Icon className="h-5 w-5" />
@@ -76,7 +76,9 @@ export function CandidatePageHeader({
           </div>
         </div>
         {action ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 xl:shrink-0 xl:justify-end">
+            {action}
+          </div>
         ) : null}
       </div>
     </header>
@@ -87,7 +89,7 @@ export function CandidatePanel({
   children,
   className,
   accent: _accent,
-  padding = true,
+  padding = false,
 }: {
   children: ReactNode;
   className?: string;
@@ -96,7 +98,7 @@ export function CandidatePanel({
   padding?: boolean;
 }) {
   return (
-    <div className={cn(portalPanelClass, padding && "p-5", className)}>{children}</div>
+    <div className={cn(portalPanelClass, padding && "p-4 sm:p-5", className)}>{children}</div>
   );
 }
 
@@ -152,14 +154,14 @@ export function CandidateMetaChip({
   return (
     <div
       className={cn(
-        "flex min-w-0 flex-col gap-0.5 rounded-xl border px-3 py-2.5",
+        "flex min-w-0 flex-col gap-0.5 rounded-md border px-3 py-2.5",
         highlight
-          ? "border-primary/25 bg-primary/5 dark:border-primary/20 dark:bg-primary/10"
-          : "border-border/70 bg-muted/30 dark:border-white/5 dark:bg-white/[0.02]",
+          ? "border-primary/35 bg-primary/5"
+          : "border-border bg-muted/30",
         className
       )}
     >
-      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+      <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
         {Icon ? (
           <Icon className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
         ) : null}
@@ -167,7 +169,7 @@ export function CandidateMetaChip({
       </span>
       <span
         className={cn(
-          "truncate text-sm font-medium text-foreground",
+          "break-words text-sm font-medium text-foreground",
           mono && "font-mono text-xs tracking-wide"
         )}
       >
@@ -193,15 +195,15 @@ export function CandidateStatTile({
 }) {
   return (
     <CandidatePanel>
-      <div className="flex items-start justify-between gap-3 p-5">
+      <div className="flex items-start justify-between gap-3 p-4 sm:p-5">
         <div className="min-w-0 space-y-1">
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             {label}
           </p>
           <p className="font-display text-3xl font-semibold tabular-nums text-foreground">
             {value}
           </p>
-          <p className="truncate text-xs text-muted-foreground">{detail}</p>
+          <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">{detail}</p>
         </div>
         <span className={portalIconWrapLgClass}>
           <Icon className="h-5 w-5" aria-hidden="true" />
@@ -233,40 +235,55 @@ export function CandidateAccessCodeForm({
       onSubmit={onSubmit}
       className={cn("space-y-2", compact ? "max-w-md" : "max-w-lg")}
     >
-      <div className={cn("flex gap-2", compact ? "flex-col sm:flex-row" : "flex-col sm:flex-row")}>
-        <div className="relative min-w-0 flex-1">
-          <KeyRound
-            className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden="true"
-          />
-          <Input
-            name="accessCode"
-            autoComplete="off"
-            spellCheck={false}
-            aria-label="Access Code"
-            placeholder="e.g. CTRL-9A2X"
-            className={cn(portalInputClass, "h-11 rounded-xl pl-10 font-mono uppercase tracking-widest focus-visible:ring-primary")}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-          />
+      <div className="space-y-1.5">
+        <label htmlFor="candidate-access-code" className="text-xs font-semibold text-foreground">
+          Session access code
+        </label>
+        <div className={cn("flex gap-2", compact ? "flex-col sm:flex-row" : "flex-col sm:flex-row")}>
+          <div className="relative min-w-0 flex-1">
+            <KeyRound
+              className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              id="candidate-access-code"
+              name="accessCode"
+              autoComplete="one-time-code"
+              autoCapitalize="characters"
+              spellCheck={false}
+              maxLength={32}
+              pattern="[A-Za-z0-9-]+"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "candidate-access-code-error" : success ? "candidate-access-code-success" : "candidate-access-code-hint"}
+              placeholder="CTRL-9A2X"
+              className={cn(portalInputClass, "h-11 pl-10 font-mono uppercase tracking-widest")}
+              value={value}
+              onChange={(event) => onChange(event.target.value)}
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={isSubmitting || !value.trim()}
+            className="h-11 shrink-0 rounded-md px-6 font-semibold"
+          >
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            ) : (
+              "Link session"
+            )}
+          </Button>
         </div>
-        <Button
-          type="submit"
-          disabled={isSubmitting || !value.trim()}
-          className="h-11 shrink-0 rounded-xl px-6 font-semibold"
-        >
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-          ) : (
-            "Link session"
-          )}
-        </Button>
+        {!error && !success ? (
+          <p id="candidate-access-code-hint" className="text-xs text-muted-foreground">
+            Letters, numbers and hyphens only. Pasting is supported.
+          </p>
+        ) : null}
       </div>
       {error ? (
-        <p className="text-sm font-medium text-rose-600 dark:text-rose-400">{error}</p>
+        <p id="candidate-access-code-error" role="alert" className="text-sm font-medium text-destructive">{error}</p>
       ) : null}
       {success ? (
-        <p className="text-sm font-medium text-primary">{success}</p>
+        <p id="candidate-access-code-success" role="status" className="text-sm font-medium text-primary">{success}</p>
       ) : null}
     </form>
   );
@@ -328,7 +345,7 @@ export function CandidateEmptyState({
 }) {
   return (
     <div className={cn(portalEmptyPanelClass, "flex flex-col items-center justify-center px-6 py-14")}>
-      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary">
         <Icon className="h-6 w-6" aria-hidden="true" />
       </span>
       <h3 className="font-display text-lg font-semibold text-foreground">{title}</h3>
@@ -370,10 +387,10 @@ export function CandidateSessionListItem({
             aria-hidden="true"
           />
           <div className="min-w-0">
-            <h3 className="line-clamp-1 font-display text-base font-semibold text-foreground">
+            <h3 className="break-words font-display text-base font-semibold text-foreground">
               {app.campaign}
             </h3>
-            <p className="mt-0.5 line-clamp-1 text-sm text-muted-foreground">
+            <p className="mt-0.5 break-words text-sm text-muted-foreground">
               {app.role}
             </p>
           </div>
@@ -433,7 +450,7 @@ export function CandidateProgressHeader({
   label?: string;
 }) {
   return (
-    <div className="space-y-2 rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/5 dark:bg-white/[0.02]">
+    <div className="space-y-2 rounded-md border border-border bg-muted/25 p-4">
       <div className="flex items-center justify-between gap-2 text-sm">
         <span className="font-medium text-muted-foreground">{label}</span>
         <span className="font-display font-semibold tabular-nums text-foreground">

@@ -3,26 +3,22 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
-  Building2,
   ClipboardCheck,
   KeyRound,
   Loader2,
-  MessageSquare,
-  TrendingUp,
   UserCheck,
   Users,
 } from "lucide-react";
 import {
   ClientErrorBanner,
   ClientPageHeader,
-  ClientQuickLink,
   ClientRefreshButton,
   ClientStatTile,
 } from "@/components/dashboard/client/client-portal-ui";
-import { PortalQuickLinkRow } from "@/components/dashboard/portal/portal-ui";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
+import { PortalDecisionLedger } from "@/components/dashboard/portal/portal-ui";
 
 export function ClientOverviewContent() {
   const {
@@ -49,6 +45,23 @@ export function ClientOverviewContent() {
           request.requestKind === "contract_activation" && request.billingStatus === "invoice_sent"
       ) ?? null,
     [upgradeRequests]
+  );
+  const attentionItems = useMemo(
+    () => [
+      {
+        count: summary?.campaignsPendingApproval ?? pendingCampaigns.length,
+        href: "/client-dashboard/campaign-approvals/",
+        label: "Campaigns awaiting approval",
+        description: "Review campaign scope before hiring managers begin delivery.",
+      },
+      {
+        count: summary?.candidatesPendingReview ?? pendingSharedCandidates.length,
+        href: "/client-dashboard/client-approved-candidates/",
+        label: "Candidates awaiting a decision",
+        description: "Review shared candidate evidence and record an outcome.",
+      },
+    ].filter((item) => item.count > 0),
+    [pendingCampaigns.length, pendingSharedCandidates.length, summary]
   );
 
   const payForActivation = async (billingRequestDocumentId: string) => {
@@ -165,52 +178,18 @@ export function ClientOverviewContent() {
         />
       </div>
 
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">Go to a workspace area</h2>
-        <PortalQuickLinkRow
-          links={[
-            {
-              href: "/client-dashboard/hiring-managers/",
-              label: "Hiring managers",
-              hint: "Seats and invite codes",
-              icon: Users,
-            },
-            {
-              href: "/client-dashboard/campaign-approvals/",
-              label: "Campaign approvals",
-              hint: "Review hiring campaigns",
-              icon: ClipboardCheck,
-            },
-            {
-              href: "/client-dashboard/client-approved-candidates/",
-              label: "Candidate reviews",
-              hint: "Recommended candidates",
-              icon: UserCheck,
-            },
-            {
-              href: "/client-dashboard/upgrade-requests/",
-              label: "Upgrade requests",
-              hint: "Seats and features",
-              icon: TrendingUp,
-            },
-          ]}
-        />
-      </section>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <ClientQuickLink
-          href="/client-dashboard/messages/"
-          icon={MessageSquare}
-          title="Messages"
-          description="Support tickets and hiring team correspondence."
-        />
-        <ClientQuickLink
-          href="/client-dashboard/hiring-managers/"
-          icon={Building2}
-          title="Team management"
-          description="Full hiring-manager directory, invites, and seat controls."
-        />
-      </div>
+      <PortalDecisionLedger
+        description="Decisions that currently require a client response."
+        loading={loading && !summary}
+        items={attentionItems.map((item) => ({
+          id: item.href,
+          title: item.label,
+          detail: item.description,
+          href: item.href,
+          count: item.count,
+        }))}
+        emptyDescription="Campaign approvals and candidate reviews are up to date."
+      />
     </div>
   );
 }

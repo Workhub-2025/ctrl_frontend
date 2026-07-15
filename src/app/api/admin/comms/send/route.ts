@@ -8,6 +8,8 @@ import type {
   AdminBroadcastTemplateKey,
 } from "@/lib/admin-comms-templates";
 import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import { containsHtmlMarkup, sanitisePlainText } from "@/lib/security/input-sanitization";
 
 type BroadcastSendBody = {
   audience?: AdminBroadcastAudience;
@@ -31,6 +33,9 @@ type BroadcastSendResponse = {
 };
 
 export async function POST(request: Request) {
+  const crossOriginResponse = rejectMutatingCrossOrigin(request);
+  if (crossOriginResponse) return crossOriginResponse;
+
   const auth = await requireAdminApiAccess('comms.send');
   if ("error" in auth) {
     return auth.error;
@@ -49,10 +54,27 @@ export async function POST(request: Request) {
     );
   }
 
-  const body = (await request.json().catch(() => null)) as BroadcastSendBody | null;
-  if (!body?.audience) {
+  const rawBody = (await request.json().catch(() => null)) as BroadcastSendBody | null;
+  if (!rawBody?.audience) {
     return NextResponse.json({ error: "audience is required" }, { status: 400 });
   }
+  if (containsHtmlMarkup(rawBody.subject) || containsHtmlMarkup(rawBody.body)) {
+    return NextResponse.json({ error: "Broadcast content must be plain text" }, { status: 400 });
+  }
+
+  const subject = sanitisePlainText(rawBody.subject, { maxLength: 200 });
+  const messageBody = sanitisePlainText(rawBody.body, { maxLength: 10_000, allowNewlines: true });
+  if (!subject || !messageBody) {
+    return NextResponse.json({ error: "subject and body are required" }, { status: 400 });
+  }
+  const body: BroadcastSendBody = {
+    ...rawBody,
+    subject,
+    body: messageBody,
+    email: sanitisePlainText(rawBody.email, { maxLength: 254 }).toLowerCase() || undefined,
+    clientDocumentId: sanitisePlainText(rawBody.clientDocumentId, { maxLength: 128 }) || undefined,
+    userDocumentId: sanitisePlainText(rawBody.userDocumentId, { maxLength: 128 }) || undefined,
+  };
 
   try {
     const response = await strapiRequest<BroadcastSendResponse>("/admin/comms/send", {

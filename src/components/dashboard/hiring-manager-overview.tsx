@@ -17,22 +17,15 @@ import {
   RefreshCw,
   Users,
 } from "lucide-react";
-import { DashboardInfoCard, dashboardInfoMetaClassName } from "@/components/dashboard/dashboard-info-card";
+import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
-import type {
-  HiringManagerCampaignDetail,
-  HiringManagerCampaignListItem,
-  HiringManagerSessionListItem,
-} from "@/services/hiring-manager-portal-client.service";
-import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
-import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
+import { PortalDecisionLedger, PortalStatTile } from "@/components/dashboard/portal/portal-ui";
 import {
   portalAlertErrorClass,
   portalBadgeClass,
   portalIconWrapLgClass,
   portalPanelClass,
-  portalPanelInteractiveClass,
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
@@ -113,7 +106,7 @@ export function HiringManagerOverview() {
             variant="outline"
             onClick={() => void loadOverview(true)}
             disabled={isRefreshing}
-            className="h-9 border-border text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+            className="h-10 border-border text-foreground hover:bg-muted hover:text-foreground"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
             Refresh
@@ -150,8 +143,8 @@ export function HiringManagerOverview() {
 
       <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
         <DashboardInfoCard interactive={false}>
-          <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
-            <CardTitle className="text-base font-bold text-foreground">Session queue</CardTitle>
+          <CardHeader className="border-b border-border pb-4 pl-6">
+            <CardTitle className="text-base font-semibold text-foreground">Session queue</CardTitle>
             <p className="text-xs text-muted-foreground">{formatPortalLastRefresh(lastRefreshAt)}</p>
           </CardHeader>
           <CardContent className="space-y-3 pt-5 pl-6">
@@ -172,12 +165,12 @@ export function HiringManagerOverview() {
                 })();
                 return (
                   <div key={session.id} className={cn(portalPanelClass, "space-y-2 p-3")}>
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-foreground">{getHmSessionDisplayName(session)}</p>
-                        <p className="truncate text-xs text-muted-foreground">{session.campaign} · {session.date} · {session.location}</p>
+                        <p className="break-words text-sm font-semibold text-foreground">{getHmSessionDisplayName(session)}</p>
+                        <p className="break-words text-[0.8125rem] leading-relaxed text-muted-foreground">{session.campaign} · {session.date} · {session.location}</p>
                       </div>
-                      <span className={dashboardInfoMetaClassName}>{session.status}</span>
+                      <span className={portalBadgeClass}>{session.status}</span>
                     </div>
                     {/* Occupancy bar */}
                     <div className="flex items-center gap-2">
@@ -189,11 +182,11 @@ export function HiringManagerOverview() {
                     {/* Meta row */}
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline" className={cn(portalBadgeClass, "pointer-events-none gap-1 px-1.5 py-0 text-[10px] font-semibold")}>
-                        {isRemote ? <Globe className="h-3 w-3" /> : <Building className="h-3 w-3" />}
+                        {isRemote ? <Globe className="h-3 w-3" aria-hidden="true" /> : <Building className="h-3 w-3" aria-hidden="true" />}
                         {isRemote ? "Remote" : "In-Person"}
                       </Badge>
                       {countdown && (
-                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                        <span className={cn(portalBadgeClass, "px-1.5 py-0 text-[10px]")}>
                           {countdown}
                         </span>
                       )}
@@ -202,7 +195,7 @@ export function HiringManagerOverview() {
                       </span>
                       <Link
                         href={`/hiring-manager-dashboard/sessions/${session.id}`}
-                        className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:text-primary/80 transition-colors"
+                        className="ml-auto inline-flex min-h-8 items-center gap-1 rounded-sm text-[10px] font-semibold text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         View details
                         <ArrowRight className="h-3 w-3" />
@@ -222,46 +215,20 @@ export function HiringManagerOverview() {
           </CardContent>
         </DashboardInfoCard>
 
-        <DashboardInfoCard interactive={false}>
-          <CardHeader className="border-b border-border/50 pb-4 pl-6 dark:border-white/5">
-            <CardTitle className="text-base font-bold text-foreground">Campaign focus</CardTitle>
-            <p className="text-xs text-muted-foreground">Highest priority campaigns and their next milestone.</p>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-5 pl-6">
-            {priorityCampaigns.length ? (
-              priorityCampaigns.map((campaign) => (
-                <Link
-                  key={campaign.id}
-                  href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}
-                  className={cn(portalPanelInteractiveClass, "block p-4")}
-                >
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge className={`${getStatusTone(campaign.status)} pointer-events-none`}>{campaign.status}</Badge>
-                        {campaign.approvalStatus && (
-                          <Badge variant="outline" className="rounded-md border-border bg-background px-2 py-0.5 text-xs text-muted-foreground dark:border-white/5 dark:bg-white/[0.03]">
-                            {campaign.approvalStatus}
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="font-bold text-foreground">{campaign.name}</p>
-                      <p className="text-xs text-muted-foreground">{campaign.role} · {campaign.candidateCount} candidates</p>
-                    </div>
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                      {campaign.nextMilestone}
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </span>
-                  </div>
-                </Link>
-              ))
-            ) : (
-              <p className={cn(portalPanelClass, "border-dashed p-5 text-sm text-muted-foreground")}>
-                No campaigns have been created yet.
-              </p>
-            )}
-          </CardContent>
-        </DashboardInfoCard>
+        <PortalDecisionLedger
+          title="Campaign focus"
+          description="Highest-priority campaigns and the next operational milestone."
+          items={priorityCampaigns.map((campaign) => ({
+            id: campaign.id,
+            title: campaign.name,
+            detail: `${campaign.role} · ${campaign.candidateCount} candidates · ${campaign.approvalStatus || campaign.status}`,
+            href: `/hiring-manager-dashboard/campaigns/${campaign.id}/`,
+            meta: campaign.nextMilestone,
+            actionLabel: "Open",
+          }))}
+          emptyTitle="No campaigns created"
+          emptyDescription="Create a campaign when the role and assessment requirements are ready."
+        />
       </div>
     </div>
   );

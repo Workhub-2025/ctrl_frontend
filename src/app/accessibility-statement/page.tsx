@@ -1,110 +1,95 @@
-"use client";
+"use client"
 
-import Link from "next/link";
-import { Separator } from "@/components/ui/separator";
-import { Accessibility } from "lucide-react";
-import { LegalPageShell } from "@/components/legal/legal-page-shell";
-import { UK_LEGAL } from "@/lib/legal/uk-compliance";
+import Link from "next/link"
+import { Accessibility } from "lucide-react"
+
+import { LegalPageShell } from "@/components/legal/legal-page-shell"
+import { UK_LEGAL } from "@/lib/legal/uk-compliance"
 
 export default function AccessibilityStatementPage() {
   return (
     <LegalPageShell
       title="Accessibility Statement"
-      description={`${UK_LEGAL.tradingName} — commitment to inclusive assessment delivery`}
+      description={`${UK_LEGAL.tradingName}'s approach to inclusive assessment delivery`}
       icon={Accessibility}
-      iconClassName="bg-violet-100 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400"
-      version="1.0"
+      iconClassName="bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300"
+      version="1.1"
     >
       <section>
-        <h3 className="mb-3 text-lg font-semibold">1. Our commitment</h3>
+        <h2>1. Our commitment</h2>
         <p>
-          {UK_LEGAL.legalEntityName} is committed to making {UK_LEGAL.tradingName} accessible to
-          candidates and portal users, including people with disabilities and neurodivergent users
-          taking high-stakes operational assessments.
+          {UK_LEGAL.legalEntityName} aims to make its public pages,
+          authenticated portals, and assessment experiences usable by disabled
+          and neurodivergent people. Our target is WCAG 2.2 Level AA.
         </p>
       </section>
 
-      <Separator />
-
       <section>
-        <h3 className="mb-3 text-lg font-semibold">2. Conformance target</h3>
-        <p className="mb-3">
-          We aim to conform with the Web Content Accessibility Guidelines (WCAG) 2.2 Level AA for
-          public pages and authenticated portal surfaces. Assessment content is designed with
-          adjustable typography, spacing, contrast themes, and reduced-motion support.
-        </p>
+        <h2>2. Current status</h2>
         <p>
-          This statement is partially conformant: core accessibility controls are implemented;
-          formal third-party WCAG audit certification is planned.
+          The service has not yet completed an independent, full WCAG 2.2
+          audit, so we do not claim formal conformance. We test core journeys
+          with keyboard navigation, visible focus, semantic controls, contrast
+          checks, text resizing, and reduced-motion preferences. Outstanding
+          issues identified through testing are prioritised according to user
+          impact.
         </p>
       </section>
 
-      <Separator />
-
       <section>
-        <h3 className="mb-3 text-lg font-semibold">3. Built-in accessibility features</h3>
-        <ul className="list-disc space-y-1 pl-6">
-          <li>Text size scaling (large and extra-large)</li>
-          <li>Comfortable and spacious line spacing for reading-heavy assessments</li>
-          <li>Font preferences including dyslexia-friendly options</li>
-          <li>High contrast, grayscale, and reduced saturation modes</li>
-          <li>Reduced motion for animations and transitions</li>
-          <li>Underline-all-links mode</li>
-          <li>Distinct light and dark theme presets with accessible contrast targets</li>
+        <h2>3. Available features</h2>
+        <ul>
+          <li>Keyboard-accessible navigation and skip links on core layouts.</li>
+          <li>Text-size and line-spacing preferences.</li>
+          <li>High-contrast, grayscale, and reduced-saturation display modes.</li>
+          <li>Reduced-motion and underline-links preferences.</li>
+          <li>Light and dark themes.</li>
         </ul>
+        <p>
+          These options can help, but they do not replace compatibility with
+          browser and operating-system accessibility settings.
+        </p>
       </section>
 
-      <Separator />
-
       <section>
-        <h3 className="mb-3 text-lg font-semibold">4. Reasonable adjustments</h3>
-        <p className="mb-3">
-          If you require an adjustment not available in the platform (for example extra time,
-          alternative assessment format, or assistive technology support), contact the recruiting
-          organisation that invited you, or email{" "}
-          <a href={`mailto:${UK_LEGAL.supportEmail}`} className="text-primary hover:underline">
+        <h2>4. Reasonable adjustments</h2>
+        <p>
+          If you need extra time, an alternative format, assistive-technology
+          support, or another adjustment, contact the recruiting organisation
+          that invited you or email{" "}
+          <a href={`mailto:${UK_LEGAL.supportEmail}`}>
             {UK_LEGAL.supportEmail}
           </a>{" "}
-          with the subject line &quot;Reasonable adjustment request&quot;.
-        </p>
-        <p>
-          Recruiting organisations remain responsible for Equality Act reasonable-adjustment
-          decisions; we support them with configurable sessions and audit trails.
+          as early as possible. Requesting an adjustment should not disadvantage
+          you in the recruitment process.
         </p>
       </section>
 
-      <Separator />
-
       <section>
-        <h3 className="mb-3 text-lg font-semibold">5. Feedback and enforcement</h3>
-        <p className="mb-3">
-          Email accessibility feedback to{" "}
-          <a href={`mailto:${UK_LEGAL.supportEmail}`} className="text-primary hover:underline">
+        <h2>5. Feedback</h2>
+        <p>
+          If you cannot access any part of the platform, email{" "}
+          <a href={`mailto:${UK_LEGAL.supportEmail}`}>
             {UK_LEGAL.supportEmail}
           </a>
-          . We aim to respond within 5 working days.
+          . Include the page, task, assistive technology or browser used, and
+          the format you need where you are comfortable doing so. We aim to
+          acknowledge accessibility reports within five working days.
         </p>
         <p>
-          If you are not satisfied with our response, you may contact the Equality Advisory and
-          Support Service (EASS) or, for public sector users, your organisation&apos;s complaints
-          procedure.
+          If you are not satisfied with the response, you can contact the
+          Equality Advisory and Support Service or use the recruiting
+          organisation&apos;s complaints process.
         </p>
       </section>
 
-      <Separator />
-
       <section>
-        <h3 className="mb-3 text-lg font-semibold">6. Related documents</h3>
+        <h2>6. Related information</h2>
         <p>
-          <Link href="/privacy-policy" className="text-primary hover:underline">
-            Privacy Policy
-          </Link>
-          {" · "}
-          <Link href="/terms-conditions" className="text-primary hover:underline">
-            Terms &amp; Conditions
-          </Link>
+          Read the <Link href="/privacy-policy">Privacy Notice</Link> and{" "}
+          <Link href="/terms-conditions">Platform Terms of Use</Link>.
         </p>
       </section>
     </LegalPageShell>
-  );
+  )
 }

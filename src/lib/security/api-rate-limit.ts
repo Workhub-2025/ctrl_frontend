@@ -12,6 +12,7 @@ export interface RateLimitResult {
 }
 
 const buckets = new Map<string, RateLimitState>();
+const MAX_MEMORY_BUCKETS = 10_000;
 
 const toSeconds = (ms: number) => Math.max(1, Math.ceil(ms / 1000));
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
@@ -35,6 +36,18 @@ const applyMemoryRateLimit = ({
   windowMs: number;
 }): RateLimitResult => {
   const now = Date.now();
+
+  // Prevent unbounded memory growth when the distributed backend is unavailable.
+  if (buckets.size >= MAX_MEMORY_BUCKETS) {
+    for (const [bucketKey, state] of buckets) {
+      if (state.resetAt <= now) buckets.delete(bucketKey);
+    }
+    if (buckets.size >= MAX_MEMORY_BUCKETS) {
+      const oldestKey = buckets.keys().next().value as string | undefined;
+      if (oldestKey) buckets.delete(oldestKey);
+    }
+  }
+
   const current = buckets.get(key);
 
   if (!current || current.resetAt <= now) {
@@ -157,3 +170,39 @@ export const applyRateLimit = async ({
   limit: number;
   windowMs: number;
 }): Promise<RateLimitResult> => applyUpstashRateLimit({ key, limit, windowMs });
+
+/**
+ * Shared mutation limiter for BFF routes. Use the authenticated user id when it
+ * is already available so colleagues on one corporate network do not share a bucket.
+ */
+export async function rejectRateLimitedMutation(
+  request: Request,
+  {
+    scope,
+    actorId,
+    limit = 60,
+    windowMs = 60_000,
+  }: { scope: string; actorId?: string | number | null; limit?: number; windowMs?: number },
+) {
+  const identity = actorId ? `user:${String(actorId)}` : `ip:${extractClientIp(request)}`;
+  const result = await applyRateLimit({
+    key: `mutation:${scope}:${identity}`,
+    limit,
+    windowMs,
+  });
+
+  if (result.allowed) return null;
+
+  const { NextResponse } = await import("next/server");
+  return NextResponse.json(
+    { error: "Too many requests. Please wait and try again." },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(result.retryAfterSeconds),
+        "X-RateLimit-Limit": String(result.limit),
+        "X-RateLimit-Remaining": "0",
+      },
+    },
+  );
+}

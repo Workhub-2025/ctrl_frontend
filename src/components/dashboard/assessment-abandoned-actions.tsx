@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Headset, RotateCcw } from "lucide-react";
+import { Headset, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateTicketDialog } from "@/components/dashboard/create-ticket-dialog";
-import { AssessmentRecoveryDialog } from "@/components/assessment/shared";
 import { normalizeSlug } from "@/lib/assessment-slug";
 import {
   buildAssessmentRecoveryTicket,
   formatAbandonSnapshotSummary,
 } from "@/lib/assessment-abandon-summary";
 import {
-  AssessmentAttemptService,
   type AssessmentRecoveryMode,
   type CandidateAssessmentAttempt,
 } from "@/services/assessment-attempt.service";
@@ -56,24 +53,10 @@ export function AssessmentAbandonedActions({
   attemptStatus,
   compact = false,
   onRecovered,
-  recoverFn = AssessmentAttemptService.recover.bind(AssessmentAttemptService),
-  versionsUrl = "/api/assessment/versions",
+  recoverFn: _recoverFn,
+  versionsUrl: _versionsUrl,
 }: AssessmentAbandonedActionsProps) {
-  const [recoverOpen, setRecoverOpen] = useState(false);
-
-  const attempt: CandidateAssessmentAttempt = {
-    documentId: attemptDocumentId ?? undefined,
-    candidateSessionDocumentId,
-    assessmentSlug,
-    contentVersion,
-    snapshot,
-    abandonReason,
-    abandonedAt,
-    attemptStatus,
-    candidateSession: { campaign: { name: campaignName ?? undefined } },
-  };
-
-  const canRecover = attemptStatus === "abandoned_locked" || !attemptStatus;
+  const canRecover = attemptStatus === "interrupted_locked" || !attemptStatus;
 
   const ticket = buildAssessmentRecoveryTicket({
     candidateName,
@@ -97,10 +80,9 @@ export function AssessmentAbandonedActions({
       ) : null}
       <div className="flex flex-wrap gap-2">
         {canRecover ? (
-          <Button size="sm" variant="secondary" onClick={() => setRecoverOpen(true)}>
-            <RotateCcw className="mr-2 h-3.5 w-3.5" />
-            Recover
-          </Button>
+          <span className="inline-flex min-h-9 items-center gap-2 rounded-md border border-orange-500/30 bg-orange-500/10 px-3 text-xs font-semibold text-orange-800 dark:text-orange-200">
+            <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" /> Candidate can restart with fresh incidents
+          </span>
         ) : null}
         <CreateTicketDialog
           triggerLabel="Escalate to support"
@@ -115,15 +97,6 @@ export function AssessmentAbandonedActions({
           </Button>
         </CreateTicketDialog>
       </div>
-
-      <AssessmentRecoveryDialog
-        attempt={attempt}
-        open={recoverOpen}
-        onOpenChange={setRecoverOpen}
-        onRecovered={onRecovered}
-        recoverFn={recoverFn}
-        versionsUrl={versionsUrl}
-      />
     </div>
   );
 }

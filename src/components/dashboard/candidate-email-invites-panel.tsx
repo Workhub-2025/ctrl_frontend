@@ -297,7 +297,7 @@ export function CandidateEmailInvitesPanel({
             setInviteError(null);
           }}
           className={cn(
-            "px-3 py-1.5 text-xs font-semibold border-b-2 transition-all duration-200 gap-1.5 flex items-center",
+            "flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-semibold transition-colors duration-200",
             activeTab === "email"
               ? "border-primary text-foreground font-bold"
               : "border-transparent text-muted-foreground hover:text-foreground"
@@ -314,7 +314,7 @@ export function CandidateEmailInvitesPanel({
             setInviteError(null);
           }}
           className={cn(
-            "px-3 py-1.5 text-xs font-semibold border-b-2 transition-all duration-200 gap-1.5 flex items-center",
+            "flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-xs font-semibold transition-colors duration-200",
             activeTab === "offline"
               ? "border-primary text-foreground font-bold"
               : "border-transparent text-muted-foreground hover:text-foreground"

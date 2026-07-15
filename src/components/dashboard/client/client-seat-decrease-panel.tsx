@@ -183,7 +183,7 @@ export function ClientSeatDecreasePanel({
                         {managerName ?? "No active hiring manager"}
                       </p>
                       {managerEmail ? (
-                        <p className="truncate text-xs text-muted-foreground">{managerEmail}</p>
+                        <p className="break-all text-[0.8125rem] leading-relaxed text-muted-foreground">{managerEmail}</p>
                       ) : null}
                     </button>
                   );

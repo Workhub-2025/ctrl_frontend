@@ -7,13 +7,11 @@ import {
   History,
   LayoutDashboard,
   Mail,
-  PlusCircle,
   RotateCcw,
   ShieldCheck,
   ShieldOff,
   Ticket,
   TrendingUp,
-  UserPlus,
   Users,
 } from "lucide-react";
 import type { AdminPermission } from "@/lib/auth/admin-portal-permissions";
@@ -39,7 +37,7 @@ const normalizePath = (pathname: string) =>
 
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
-    label: "Platform",
+    label: "Workspace",
     items: [
       {
         href: "/admin",
@@ -49,32 +47,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         permission: "platform.overview",
         isActive: (pathname) => normalizePath(pathname) === "/admin",
       },
-    ],
-  },
-  {
-    label: "Clients",
-    items: [
       {
         href: "/admin/clients",
-        label: "All clients",
+        label: "Clients",
         hint: "Contracts and invites",
         icon: Building2,
         permission: "clients.read",
-        isActive: (pathname) => {
-          const path = normalizePath(pathname);
-          return (
-            path === "/admin/clients" ||
-            (path.startsWith("/admin/clients/") && path !== "/admin/clients/create")
-          );
-        },
-      },
-      {
-        href: "/admin/clients/create",
-        label: "Add client",
-        hint: "New organisation setup",
-        icon: PlusCircle,
-        permission: "clients.write",
-        isActive: (pathname) => normalizePath(pathname) === "/admin/clients/create",
+        isActive: (pathname) => normalizePath(pathname).startsWith("/admin/clients"),
       },
     ],
   },
@@ -125,16 +104,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         hint: "Directory across all roles",
         icon: Users,
         permission: "users.read",
-        isActive: (pathname) =>
-          pathname.startsWith("/admin/users") && !pathname.startsWith("/admin/users/invite"),
-      },
-      {
-        href: "/admin/users/invite",
-        label: "Invite admin",
-        hint: "Create scoped admin accounts",
-        icon: UserPlus,
-        permission: "admins.manage",
-        isActive: (pathname) => pathname.startsWith("/admin/users/invite"),
+        isActive: (pathname) => pathname.startsWith("/admin/users"),
       },
       {
         href: "/admin/comms",

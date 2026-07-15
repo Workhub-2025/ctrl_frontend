@@ -16,6 +16,7 @@ function validatePayload(body: unknown):
 
   const value = body as Partial<AdminClientCreateInput>;
   const seatCount = Number(value.contract?.seatCount);
+  const assessmentDataRetentionMonths = Number(value.contract?.assessmentDataRetentionMonths);
   const tier = value.contract?.tier ?? "professional";
 
   if (!value.name?.trim()) return { valid: false, error: "Client name is required" };
@@ -35,6 +36,13 @@ function validatePayload(body: unknown):
   if (!Number.isInteger(seatCount) || seatCount < 1) {
     return { valid: false, error: "Hiring manager seats must be at least 1" };
   }
+  if (
+    !Number.isInteger(assessmentDataRetentionMonths)
+    || assessmentDataRetentionMonths < 1
+    || assessmentDataRetentionMonths > 120
+  ) {
+    return { valid: false, error: "Assessment retention must be between 1 and 120 months" };
+  }
 
   return {
     valid: true,
@@ -53,6 +61,7 @@ function validatePayload(body: unknown):
       contract: {
         tier: tier as AdminClientCreateInput["contract"]["tier"],
         seatCount,
+        assessmentDataRetentionMonths,
         notes: value.contract?.notes?.trim() || undefined,
       },
       issueAccessCode: Boolean(value.issueAccessCode),

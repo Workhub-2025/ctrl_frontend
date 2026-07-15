@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { deleteSharedCandidateNote } from "@/services/shared-candidate-notes.service";
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 
 export async function DELETE(
   request: NextRequest,
@@ -11,7 +12,13 @@ export async function DELETE(
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    await requireClientSession();
+    const { session } = await requireClientSession();
+    const rateLimited = await rejectRateLimitedMutation(request, {
+      scope: "client:candidate-note:delete",
+      actorId: session.user.id,
+      limit: 30,
+    });
+    if (rateLimited) return rateLimited;
     const { noteId } = await context.params;
     await deleteSharedCandidateNote(noteId);
     return new NextResponse(null, { status: 204 });

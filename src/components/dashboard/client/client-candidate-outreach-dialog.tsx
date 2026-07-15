@@ -2,14 +2,6 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { CheckCircle, Loader2, Send } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +18,7 @@ import type {
   ClientOutreachTemplates,
   ClientSharedCandidate,
 } from "@/services/client-portal.service";
+import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
 
 const TEMPLATE_OPTIONS: Array<{ key: ClientOutreachTemplateKey; label: string }> = [
   { key: "inperson", label: "In-person interview invite" },
@@ -114,7 +107,7 @@ export function ClientCandidateOutreachDialog({
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen);
     if (!nextOpen) {
-      setTimeout(resetState, 300);
+      setTimeout(resetState, 200);
     }
   };
 
@@ -168,37 +161,31 @@ export function ClientCandidateOutreachDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-lg rounded-2xl">
+    <PortalSidePanel
+      open={open}
+      onOpenChange={handleOpenChange}
+      trigger={children}
+      eyebrow="Candidate communication"
+      title={success ? "Message sent" : "Send message"}
+      description={
+        success
+          ? `Your email to ${candidate.candidateName} has been sent.`
+          : `Email ${candidate.candidateName} about ${candidate.campaignName}. You can edit the subject and message before sending.`
+      }
+      icon={success ? CheckCircle : Send}
+      width="md"
+    >
         {success ? (
-          <>
-            <DialogHeader>
-              <DialogTitle className="font-display">Message sent</DialogTitle>
-              <DialogDescription>
-                Your email to {candidate.candidateName} has been sent.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
               <CheckCircle className="h-10 w-10 text-emerald-500" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">
                 The candidate can reply directly to your email address.
               </p>
-              <Button className="rounded-xl" onClick={() => handleOpenChange(false)}>
+              <Button className="rounded-md" onClick={() => handleOpenChange(false)}>
                 Close
               </Button>
             </div>
-          </>
         ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle className="font-display">Send message</DialogTitle>
-              <DialogDescription>
-                Email {candidate.candidateName} about {candidate.campaignName}. You can edit the
-                subject and body before sending.
-              </DialogDescription>
-            </DialogHeader>
-
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor={`template-${candidate.documentId}`}>Template</Label>
@@ -209,7 +196,7 @@ export function ClientCandidateOutreachDialog({
                   }
                   disabled={loadingTemplates || sending || !templates}
                 >
-                  <SelectTrigger id={`template-${candidate.documentId}`} className="rounded-xl">
+                  <SelectTrigger id={`template-${candidate.documentId}`} className="rounded-md">
                     <SelectValue placeholder="Choose a template" />
                   </SelectTrigger>
                   <SelectContent>
@@ -226,10 +213,11 @@ export function ClientCandidateOutreachDialog({
                 <Label htmlFor={`subject-${candidate.documentId}`}>Subject</Label>
                 <Input
                   id={`subject-${candidate.documentId}`}
+                  maxLength={200}
                   value={subject}
                   onChange={(event) => setSubject(event.target.value)}
                   disabled={loadingTemplates || sending}
-                  className="rounded-xl"
+                  className="rounded-md"
                 />
               </div>
 
@@ -237,11 +225,12 @@ export function ClientCandidateOutreachDialog({
                 <Label htmlFor={`body-${candidate.documentId}`}>Message</Label>
                 <Textarea
                   id={`body-${candidate.documentId}`}
+                  maxLength={10000}
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   disabled={loadingTemplates || sending}
                   rows={8}
-                  className="rounded-xl resize-y"
+                  className="resize-y rounded-md"
                 />
               </div>
 
@@ -252,19 +241,23 @@ export function ClientCandidateOutreachDialog({
                 </p>
               ) : null}
 
-              {error ? <p className="text-sm text-red-500">{error}</p> : null}
+              {error ? (
+                <p className="text-sm text-red-500" role="alert">
+                  {error}
+                </p>
+              ) : null}
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
-                  className="rounded-xl"
+                  className="rounded-md"
                   onClick={() => handleOpenChange(false)}
                   disabled={sending}
                 >
                   Cancel
                 </Button>
                 <Button
-                  className="gap-2 rounded-xl font-semibold"
+                  className="gap-2 rounded-md font-semibold"
                   onClick={() => void handleSend()}
                   disabled={loadingTemplates || sending || !candidate.candidateEmail}
                 >
@@ -283,9 +276,7 @@ export function ClientCandidateOutreachDialog({
                 </p>
               ) : null}
             </div>
-          </>
         )}
-      </DialogContent>
-    </Dialog>
+    </PortalSidePanel>
   );
 }

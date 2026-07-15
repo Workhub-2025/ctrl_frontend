@@ -519,12 +519,12 @@ export default function ClientDetailPage() {
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b border-white/5 bg-transparent p-0">
+        <TabsList className="grid h-auto w-full grid-cols-2 justify-start rounded-none border-b border-border bg-transparent p-0 min-[480px]:grid-cols-3 sm:flex sm:overflow-x-auto">
           {["summary", "contract", "users", "campaigns", "access"].map((tab) => (
             <TabsTrigger
               key={tab}
               value={tab}
-              className="rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-semibold capitalize text-muted-foreground transition-all hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none"
+              className="min-w-0 justify-start rounded-none border-b-2 border-transparent px-3 py-3 text-sm font-semibold capitalize text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:text-primary data-[state=active]:shadow-none sm:flex-none sm:px-4"
             >
               {tab === "access" ? "Access codes" : tab}
             </TabsTrigger>
@@ -980,12 +980,12 @@ function SimpleList({
           <p className="text-sm italic text-muted-foreground">{empty}</p>
         ) : (
           rows.map((row) => (
-            <div key={row.id} className={cn(portalPanelClass, "flex items-center justify-between gap-4 p-3")}>
+            <div key={row.id} className={cn(portalPanelClass, "flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4")}>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-foreground">{row.primary}</p>
-                <p className="truncate text-xs text-muted-foreground">{row.secondary}</p>
+                <p className="break-words text-sm font-bold text-foreground">{row.primary}</p>
+                <p className="break-all text-[0.8125rem] leading-relaxed text-muted-foreground">{row.secondary}</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                 <Badge variant="outline" className={cn(statusClass(row.badge), "pointer-events-none rounded-md px-2 py-0.5 text-xs font-semibold")}>
                   {row.badge}
                 </Badge>

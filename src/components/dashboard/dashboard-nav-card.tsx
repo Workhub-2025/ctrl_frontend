@@ -24,15 +24,15 @@ interface DashboardNavCardProps {
  */
 export function DashboardNavCard({ title, description, icon: Icon, href }: DashboardNavCardProps) {
   return (
-    <Link href={href} className="block group">
-      <Card className={cn(portalCardInteractiveClass, "h-full transition-all hover:-translate-y-1")}>
+    <Link href={href} className="group block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+      <Card className={cn(portalCardInteractiveClass, "h-full")}>
         <CardHeader>
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-            <Icon className="h-5 w-5" />
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+            <Icon className="h-5 w-5" aria-hidden="true" />
           </div>
           <CardTitle className="text-base text-foreground flex items-center justify-between">
             {title}
-            <ArrowRight className="h-4 w-4 opacity-0 -translate-x-2 transition-all group-hover:opacity-100 group-hover:translate-x-0" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
           </CardTitle>
         </CardHeader>
         <CardContent className="text-sm leading-relaxed text-muted-foreground">

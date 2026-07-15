@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import EqualityMonitoringForm from '@/components/auth/equality-monitoring-form';
-import { EqualityMonitoringData } from '@/types';
+import { EqualityMonitoringState } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 
@@ -46,18 +46,14 @@ function EqualityMonitoringContent() {
     }
   }, [user, isAuthenticated, authLoading, router]);
 
-  const handleComplete = async (data: EqualityMonitoringData) => {
+  const handleComplete = async (data: EqualityMonitoringState) => {
     if (!user?.id) return;
     
     try {
       setIsLoading(true);
       
-      console.log('💾 Saving equality monitoring data:', data);
-      
       // Use updateProfile so the Zustand store and session stay in sync
-      const updatedUser = await updateProfile({ equalityMonitoring: data });
-      
-      console.log('✅ Equality monitoring data saved successfully:', updatedUser);
+      await updateProfile({ equalityMonitoring: data });
       
       toast({
         title: 'Thank you!',
@@ -66,7 +62,7 @@ function EqualityMonitoringContent() {
       
       router.push('/candidate-dashboard/');
     } catch (error) {
-      console.error('❌ Error saving equality monitoring:', error);
+      console.error('Error saving equality monitoring:', error);
       toast({
         title: 'Error',
         description: 'Could not save your information. Please try again.',

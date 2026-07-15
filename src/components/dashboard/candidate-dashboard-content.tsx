@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,6 @@ import {
   ClipboardList,
   Clock,
   Globe,
-  Info,
   Link2,
   ListChecks,
   Lock,
@@ -39,9 +39,6 @@ import {
   Target,
   AlertTriangle,
 } from "lucide-react";
-import { SecurePreflightModal } from "@/components/assessment/security";
-import { AssessmentBriefDialog } from "@/components/dashboard/candidate/assessment-brief-dialog";
-import { candidateAssessmentItems } from "@/components/dashboard/candidate-dashboard-data";
 import {
   buildSessionContext,
   CandidateEmptyState,
@@ -72,27 +69,16 @@ import {
 import { CandidateSessionService } from "@/services/candidate-session.service";
 import { portalIconWrapClass, portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
-import { normalizeSlug } from "@/lib/assessment-slug";
 import { getAssessmentPagePath } from "@/assessments/plugins/helpers";
-
-function getCandidateAssessmentSlug(
-  item: (typeof candidateAssessmentItems)[number]
-) {
-  return item.slug;
-}
+import { resolveCandidateAssessmentCatalogItem } from "@/lib/candidate/assessment-catalog";
+import { sanitiseAccessCode } from "@/lib/security/input-sanitization";
 
 function getAssessmentItemsForApplication(application: CandidateApplicationView) {
   if (!application.assessments.length) return [];
 
   return application.assessments.map((assessment) => {
-    const slug = normalizeSlug(assessment.slug);
-    const matchedItem = candidateAssessmentItems.find(
-      (item) =>
-        getCandidateAssessmentSlug(item) === slug ||
-        normalizeSlug(item.title) === slug ||
-        normalizeSlug(assessment.name) === slug
-    );
-    const resolvedSlug = slug || matchedItem?.slug || normalizeSlug(assessment.name) || "unknown";
+    const { item: matchedItem, resolvedSlug } =
+      resolveCandidateAssessmentCatalogItem(assessment);
 
     const isLocked = assessment.status === "locked";
     const isAbandoned = assessment.status === "abandoned";
@@ -193,9 +179,6 @@ function AssessmentListItem({
   totalSteps: number;
   isLast: boolean;
 }) {
-  const [showBrief, setShowBrief] = useState(false);
-  const [showPreflight, setShowPreflight] = useState(false);
-
   const isCompleted = item.isCompleted;
   const isLocked = item.isLocked;
   const isAbandoned = item.isAbandoned;
@@ -211,9 +194,9 @@ function AssessmentListItem({
   const Icon = item.icon;
 
   const nodeClassName = isCompleted
-    ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/15"
+    ? "border-primary bg-primary text-primary-foreground"
     : isActive
-      ? "border-primary bg-primary text-primary-foreground ring-4 ring-primary/15"
+      ? "border-primary bg-primary text-primary-foreground"
       : "border-border bg-card text-muted-foreground";
 
   return (
@@ -221,7 +204,7 @@ function AssessmentListItem({
       <div className="relative flex gap-4 sm:gap-5">
         <div className="flex w-11 shrink-0 flex-col items-center">
           <span
-            className={`relative z-10 flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-bold tabular-nums ${nodeClassName}`}
+            className={`relative z-10 flex h-9 w-9 items-center justify-center rounded-md border-2 text-xs font-bold tabular-nums ${nodeClassName}`}
             aria-hidden="true"
           >
             {isCompleted ? (
@@ -308,48 +291,18 @@ function AssessmentListItem({
                   </p>
                 </div>
               ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1.5 rounded-lg font-semibold"
-                    onClick={() => setShowBrief(true)}
-                  >
-                    <Info className="h-3.5 w-3.5" aria-hidden="true" />
-                    What to expect
-                  </Button>
-                  <Button
-                    onClick={() => setShowBrief(true)}
-                    className="h-9 gap-2 font-semibold"
-                  >
-                    <PlayCircle className="h-4 w-4" aria-hidden="true" /> Start
-                  </Button>
-                </>
+                <Button className="h-10 gap-2 font-semibold" asChild>
+                  <Link href={item.href}>
+                    <PlayCircle className="h-4 w-4" aria-hidden="true" />
+                    Open readiness and practice
+                  </Link>
+                </Button>
               )}
             </div>
           </div>
         </CandidatePanel>
       </div>
 
-      <AssessmentBriefDialog
-        assessment={{
-          title: item.title,
-          description: item.description,
-          duration: item.duration,
-          icon: item.icon,
-          href: item.href,
-        }}
-        open={showBrief}
-        onOpenChange={setShowBrief}
-        onStart={() => setShowPreflight(true)}
-      />
-
-      <SecurePreflightModal
-        isOpen={showPreflight}
-        onClose={() => setShowPreflight(false)}
-        assessmentName={item.title}
-        href={item.href}
-      />
     </>
   );
 }
@@ -373,11 +326,11 @@ function SessionModeMetaChip({ application }: { application: CandidateApplicatio
           onClick={() => setLocationDialogOpen(true)}
           className="flex min-w-0 flex-col gap-0.5 rounded-xl border border-border/70 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/5 dark:bg-white/[0.02] dark:hover:border-primary/30"
         >
-          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+          <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             <MapPin className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />
             Location
           </span>
-          <span className="truncate text-sm font-medium text-foreground">
+          <span className="break-words text-sm font-medium text-foreground">
             {application.location || "View venue"}
           </span>
         </button>
@@ -541,7 +494,7 @@ export function CandidateDashboardContent() {
 
   const handleJoinWithAccessCode = async (event: FormEvent) => {
     event.preventDefault();
-    const code = accessCodeInput.trim();
+    const code = sanitiseAccessCode(accessCodeInput);
     if (!code) {
       setJoinError("Please enter an Access Code.");
       return;
@@ -570,7 +523,7 @@ export function CandidateDashboardContent() {
   if (error && applications.length === 0) {
     return (
       <div className="max-w-3xl p-2">
-        <Alert className="rounded-2xl border-destructive/30 bg-destructive/5 text-destructive">
+        <Alert className="rounded-md border-destructive/30 bg-destructive/5 text-destructive">
           <AlertTitle className="font-bold">Assessments unavailable</AlertTitle>
           <AlertDescription className="text-sm leading-relaxed">
             {error}
@@ -607,7 +560,7 @@ export function CandidateDashboardContent() {
             <CandidateLinkSessionPanel
               compactTitle="Link your first session"
               value={accessCodeInput}
-              onChange={setAccessCodeInput}
+              onChange={(value) => setAccessCodeInput(sanitiseAccessCode(value))}
               onSubmit={(event) => void handleJoinWithAccessCode(event)}
               isSubmitting={isJoinSubmitting}
               error={joinError}
@@ -642,7 +595,7 @@ export function CandidateDashboardContent() {
               size="sm"
               onClick={() => void refresh({ force: true })}
               disabled={isRefreshing}
-              className="h-9 gap-2 rounded-xl font-semibold"
+              className="h-10 gap-2 rounded-md font-semibold"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "motion-safe:animate-spin" : ""}`} />
               Refresh
@@ -658,12 +611,12 @@ export function CandidateDashboardContent() {
           }`}
         >
           <CandidatePanel className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex items-center justify-between gap-2 border-b border-border/60 px-4 py-3 dark:border-white/5">
+            <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
               <CandidateEyebrow className="normal-case tracking-[0.12em]">
                 Sessions ({applications.length})
               </CandidateEyebrow>
               <Select value={sortBy} onValueChange={(v) => setSortBy(v as AssessmentSortOption)}>
-                <SelectTrigger aria-label="Sort sessions" className="h-9 w-[170px] rounded-xl text-xs">
+                <SelectTrigger aria-label="Sort sessions" className="h-10 w-[170px] rounded-md text-xs">
                   <ArrowUpDown className="mr-2 h-3.5 w-3.5" aria-hidden="true" />
                   <SelectValue />
                 </SelectTrigger>
@@ -699,7 +652,7 @@ export function CandidateDashboardContent() {
           <CandidateLinkSessionPanel
             compactTitle="Link another session"
             value={accessCodeInput}
-            onChange={setAccessCodeInput}
+            onChange={(value) => setAccessCodeInput(sanitiseAccessCode(value))}
             onSubmit={(event) => void handleJoinWithAccessCode(event)}
             isSubmitting={isJoinSubmitting}
             error={joinError}
@@ -709,8 +662,8 @@ export function CandidateDashboardContent() {
 
         <div className={`min-w-0 flex-1 ${showDetailOnMobile ? "block" : "hidden lg:block"}`}>
           {currentApplication ? (
-            <CandidatePanel className="flex flex-col overflow-hidden motion-safe:animate-in motion-safe:fade-in">
-              <div className="border-b border-border/60 bg-muted/15 px-5 py-5 sm:px-6 dark:border-white/5">
+            <CandidatePanel className="flex flex-col overflow-hidden">
+              <div className="border-b border-border bg-muted/20 px-5 py-5 sm:px-6">
                 <Button
                   variant="ghost"
                   className="-ml-2 mb-3 lg:hidden"
@@ -774,7 +727,7 @@ export function CandidateDashboardContent() {
                     <CandidateEyebrow>Assessment journey</CandidateEyebrow>
                     <h3 className="font-display text-lg font-semibold">Your assigned tasks</h3>
                     <p className="text-sm text-muted-foreground">
-                      Complete each assessment in order. Tap &ldquo;What to expect&rdquo; for
+                      Complete all assigned assessments. Select &ldquo;What to expect&rdquo; for
                       duration and setup guidance before you start.
                     </p>
                   </div>
@@ -825,7 +778,7 @@ export function CandidateDashboardContent() {
                       sessionContext={sessionContext}
                       triggerVariant="outline"
                     >
-                      <Button variant="outline" className="h-10 shrink-0 gap-2 rounded-xl font-semibold">
+                      <Button variant="outline" className="h-10 shrink-0 gap-2 rounded-md font-semibold">
                         <Mail className="h-4 w-4" aria-hidden="true" />
                         Message hiring team
                       </Button>

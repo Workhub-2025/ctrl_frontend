@@ -3,31 +3,6 @@
 @tailwind utilities;
 
 @layer base {
-  html,
-  body {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-
-  /* Hide scrollbars site-wide while preserving scroll behaviour */
-  * {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  *::-webkit-scrollbar {
-    display: none;
-    width: 0;
-    height: 0;
-  }
-
   :root {
     color-scheme: light;
     --background: 210 33% 98%;
@@ -54,7 +29,7 @@
     --chart-3: 222 46% 25%;
     --chart-4: 31 92% 55%;
     --chart-5: 165 67% 38%;
-    --radius: 1rem;
+    --radius: 0.5rem;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 14%;
     --sidebar-primary: 212 88% 45%;
@@ -710,100 +685,185 @@ html[data-ctrl-contrast="high"] .text-muted-foreground {
 html[data-ctrl-contrast="high"] .border-border {
   border-color: hsl(var(--border)) !important;
 }
-/* --- Soft Cream Theme --- */
+/* --- Porcelain (warm light) ---
+   The persisted theme key remains `soft-cream` for backwards compatibility. */
 html[data-ctrl-theme="soft-cream"] {
-  --background: 36 60% 95%; /* Warm rich cream (#fdf7ec) */
-  --foreground: 36 30% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 36 30% 12%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 36 30% 12%;
-  --muted: 36 30% 91%;
-  --muted-foreground: 36 15% 42%;
-  --border: 36 20% 86%;
-  --input: 36 20% 86%;
-  --ring: 36 60% 45%;
-  --sidebar-background: 36 40% 93%;
-  --sidebar-foreground: 36 30% 12%;
-  --sidebar-border: 36 20% 86%;
+  color-scheme: light;
+  --background: 42 22% 95%;
+  --foreground: 216 34% 14%;
+  --card: 40 25% 98%;
+  --card-foreground: 216 34% 14%;
+  --popover: 40 25% 98%;
+  --popover-foreground: 216 34% 14%;
+  --primary: 211 61% 31%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 40 15% 90%;
+  --secondary-foreground: 216 30% 18%;
+  --muted: 40 14% 91%;
+  --muted-foreground: 215 13% 38%;
+  --accent: 205 34% 87%;
+  --accent-foreground: 211 61% 24%;
+  --border: 38 12% 80%;
+  --input: 38 12% 76%;
+  --ring: 211 61% 36%;
+  --sidebar-background: 42 18% 92%;
+  --sidebar-foreground: 216 34% 14%;
+  --sidebar-primary: 211 61% 31%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 40 15% 87%;
+  --sidebar-accent-foreground: 216 34% 14%;
+  --sidebar-border: 38 12% 78%;
+  --sidebar-ring: 211 61% 36%;
   color: hsl(var(--foreground));
 }
-html[data-ctrl-theme="soft-cream"] .ctrl-portal header,
 html[data-ctrl-theme="soft-cream"] .ctrl-portal [data-sidebar="sidebar"] {
-  background-color: rgba(253, 247, 236, 0.88) !important;
+  background-color: hsl(var(--sidebar-background)) !important;
   color: hsl(var(--foreground)) !important;
 }
 
-/* --- Light Blue Theme --- */
+/* --- Mineral (cool light) --- */
 html[data-ctrl-theme="light-blue"] {
-  --background: 210 75% 95%; /* Cool icy blue (#eef5fc) */
-  --foreground: 210 40% 12%;
+  color-scheme: light;
+  --background: 210 14% 94%;
+  --foreground: 215 34% 13%;
   --card: 0 0% 100%;
-  --card-foreground: 210 40% 12%;
+  --card-foreground: 215 34% 13%;
   --popover: 0 0% 100%;
-  --popover-foreground: 210 40% 12%;
-  --muted: 210 40% 90%;
-  --muted-foreground: 210 20% 42%;
-  --border: 210 25% 84%;
-  --input: 210 25% 84%;
-  --ring: 210 75% 45%;
-  --sidebar-background: 210 45% 92%;
-  --sidebar-foreground: 210 40% 12%;
-  --sidebar-border: 210 25% 84%;
+  --popover-foreground: 215 34% 13%;
+  --primary: 207 66% 32%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 13% 89%;
+  --secondary-foreground: 215 30% 18%;
+  --muted: 210 12% 89%;
+  --muted-foreground: 214 14% 38%;
+  --accent: 205 27% 84%;
+  --accent-foreground: 207 66% 24%;
+  --border: 210 11% 77%;
+  --input: 210 11% 73%;
+  --ring: 207 66% 36%;
+  --sidebar-background: 210 13% 90%;
+  --sidebar-foreground: 215 34% 13%;
+  --sidebar-primary: 207 66% 32%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 208 15% 85%;
+  --sidebar-accent-foreground: 215 34% 13%;
+  --sidebar-border: 210 11% 75%;
+  --sidebar-ring: 207 66% 36%;
   color: hsl(var(--foreground));
 }
-html[data-ctrl-theme="light-blue"] .ctrl-portal header,
 html[data-ctrl-theme="light-blue"] .ctrl-portal [data-sidebar="sidebar"] {
-  background-color: rgba(238, 245, 252, 0.88) !important;
+  background-color: hsl(var(--sidebar-background)) !important;
   color: hsl(var(--foreground)) !important;
 }
 
-/* --- Black Theme --- */
+/* --- Carbon (graphite dark) --- */
 html[data-ctrl-theme="black"] {
-  --background: 0 0% 0%; /* OLED black */
-  --foreground: 0 0% 98%;
-  --card: 0 0% 4%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 4%;
-  --popover-foreground: 0 0% 98%;
-  --muted: 0 0% 9%;
-  --muted-foreground: 0 0% 70%;
-  --border: 0 0% 14%;
-  --input: 0 0% 14%;
-  --ring: 204 94% 67%;
-  --sidebar-background: 0 0% 0%;
-  --sidebar-foreground: 0 0% 98%;
-  --sidebar-border: 0 0% 11%;
+  color-scheme: dark;
+  --background: 210 6% 8%;
+  --foreground: 210 14% 92%;
+  --card: 210 6% 11%;
+  --card-foreground: 210 14% 92%;
+  --popover: 210 6% 11%;
+  --popover-foreground: 210 14% 92%;
+  --primary: 208 45% 68%;
+  --primary-foreground: 212 30% 12%;
+  --secondary: 210 6% 16%;
+  --secondary-foreground: 210 14% 92%;
+  --muted: 210 6% 16%;
+  --muted-foreground: 210 9% 69%;
+  --accent: 210 9% 20%;
+  --accent-foreground: 210 14% 94%;
+  --border: 210 7% 24%;
+  --input: 210 7% 27%;
+  --ring: 208 45% 68%;
+  --sidebar-background: 210 6% 10%;
+  --sidebar-foreground: 210 14% 92%;
+  --sidebar-primary: 208 45% 68%;
+  --sidebar-primary-foreground: 212 30% 12%;
+  --sidebar-accent: 210 7% 17%;
+  --sidebar-accent-foreground: 210 14% 94%;
+  --sidebar-border: 210 7% 22%;
+  --sidebar-ring: 208 45% 68%;
   color: hsl(var(--foreground));
 }
-html[data-ctrl-theme="black"] .ctrl-portal header,
 html[data-ctrl-theme="black"] .ctrl-portal [data-sidebar="sidebar"] {
-  background-color: rgba(0, 0, 0, 0.94) !important;
+  background-color: hsl(var(--sidebar-background)) !important;
   color: hsl(var(--foreground)) !important;
 }
 
-/* --- Dark Blue Theme --- */
+/* --- Midnight (navy dark) --- */
 html[data-ctrl-theme="dark-blue"] {
-  --background: 222 47% 6%; /* Deep midnight navy (#080c16) */
-  --foreground: 210 40% 96%;
-  --card: 222 35% 11%; /* Professional dark slate blue (#0f172a) */
-  --card-foreground: 210 40% 96%;
-  --popover: 222 35% 11%;
-  --popover-foreground: 210 40% 96%;
-  --muted: 222 25% 15%;
-  --muted-foreground: 215 20% 76%;
-  --border: 222 20% 20%;
-  --input: 222 20% 20%;
-  --ring: 204 94% 67%;
-  --sidebar-background: 222 45% 8%;
-  --sidebar-foreground: 210 40% 96%;
-  --sidebar-border: 222 20% 18%;
+  color-scheme: dark;
+  --background: 216 35% 8%;
+  --foreground: 210 22% 92%;
+  --card: 215 28% 12%;
+  --card-foreground: 210 22% 92%;
+  --popover: 215 28% 12%;
+  --popover-foreground: 210 22% 92%;
+  --primary: 207 57% 66%;
+  --primary-foreground: 216 35% 10%;
+  --secondary: 215 22% 17%;
+  --secondary-foreground: 210 22% 92%;
+  --muted: 215 21% 17%;
+  --muted-foreground: 213 14% 69%;
+  --accent: 211 24% 21%;
+  --accent-foreground: 210 22% 94%;
+  --border: 214 18% 25%;
+  --input: 214 18% 28%;
+  --ring: 207 57% 66%;
+  --sidebar-background: 216 33% 10%;
+  --sidebar-foreground: 210 22% 92%;
+  --sidebar-primary: 207 57% 66%;
+  --sidebar-primary-foreground: 216 35% 10%;
+  --sidebar-accent: 214 23% 17%;
+  --sidebar-accent-foreground: 210 22% 94%;
+  --sidebar-border: 214 18% 23%;
+  --sidebar-ring: 207 57% 66%;
   color: hsl(var(--foreground));
 }
-html[data-ctrl-theme="dark-blue"] .ctrl-portal header,
 html[data-ctrl-theme="dark-blue"] .ctrl-portal [data-sidebar="sidebar"] {
-  background-color: rgba(8, 12, 22, 0.94) !important;
+  background-color: hsl(var(--sidebar-background)) !important;
   color: hsl(var(--foreground)) !important;
+}
+
+/* Portal visual grammar: solid operational surfaces, no glass or ambient effects. */
+.ctrl-portal {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.ctrl-portal :where([class*="backdrop-blur"], [class*="backdrop-filter"]) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+.ctrl-portal :where([class*="bg-gradient-"]) {
+  background-image: none !important;
+}
+
+.ctrl-portal :where(.shadow-xl, .shadow-2xl, [class*="shadow-["]) {
+  box-shadow: 0 1px 2px hsl(var(--foreground) / 0.08) !important;
+}
+
+.ctrl-portal :where(h1, h2, h3, h4, .font-display) {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Legacy 9–11px utilities were too small and did not respond to CTRL's text
+   sizing options. Keep captions compact, but use a rem-based 12px floor. */
+.ctrl-portal :where(
+  [class~="text-[9px]"],
+  [class~="text-[10px]"],
+  [class~="text-[11px]"],
+  [class~="text-[0.625rem]"],
+  [class~="text-[0.6875rem]"]
+) {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.ctrl-portal :where(button, a, input, select, textarea, [role="button"]) {
+  scroll-margin-block: 5rem;
 }
 
 /* Landing page theme normalization */
@@ -823,6 +883,11 @@ html[data-ctrl-theme-switching] *::after {
   transition: none !important;
   animation-duration: 0s !important;
   animation-delay: 0s !important;
+}
+
+/* Shared spatial motion for infrequent portal side-overs. */
+.ctrl-sheet-motion {
+  animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .ctrl-brand-logo {
@@ -880,6 +945,24 @@ html[data-ctrl-motion="reduced"] .ctrl-portal *::after {
   animation-iteration-count: 1 !important;
   scroll-behavior: auto !important;
   transition-duration: 0.001ms !important;
+}
+
+/* WCAG 2.2 baseline: focused controls must clear sticky portal chrome. */
+:focus {
+  scroll-margin-top: 5rem;
+  scroll-margin-bottom: 4rem;
+}
+
+/* Honour the operating-system preference before a user opens CTRL settings. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 

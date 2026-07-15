@@ -36,6 +36,80 @@ type CriterionRow = {
   maxScore: number;
 };
 
+type V2Competency = { id: string; label: string; weight: number; score: number };
+type V2CriticalFlag = { id: string; scenarioId: string; label: string };
+type V2ScenarioEvidence = {
+  scenarioId: string;
+  title: string;
+  capturedFields?: number;
+  expectedFields?: number;
+  classification?: string;
+  incidentType?: string;
+  resourceDecision?: string;
+  elapsedSeconds?: number | null;
+};
+
+function CallSimulationV2Report({ metrics }: { metrics: Record<string, unknown> }) {
+  const competencies = Array.isArray(metrics.competencyScores) ? metrics.competencyScores as V2Competency[] : [];
+  const criticalFlags = Array.isArray(metrics.criticalFlags) ? metrics.criticalFlags as V2CriticalFlag[] : [];
+  const scenarios = Array.isArray(metrics.scenarioEvidence) ? metrics.scenarioEvidence as V2ScenarioEvidence[] : [];
+  const integrity = metrics.integrity && typeof metrics.integrity === "object" ? metrics.integrity as { events?: unknown[] } : {};
+  const overallScore = Number(metrics.overallScore ?? 0);
+  const threshold = Number(metrics.configuredThreshold ?? 70);
+  const meetsStandard = metrics.meetsConfiguredStandard === true;
+
+  return (
+    <div className="space-y-5">
+      <div className="border-l-4 border-slate-700 bg-slate-50 p-4 text-sm leading-6 dark:border-slate-300 dark:bg-slate-900">
+        This report contains evidence from a high-fidelity operational simulation. It is not a validated psychometric instrument or an automated hiring decision.
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <BreakdownStatTile label="Overall score" value={Math.round(overallScore)} suffix="%" />
+        <BreakdownStatTile label="Configured standard" value={threshold} suffix="%" />
+        <BreakdownStatTile label="Assessment standard" value={meetsStandard ? "MET" : "NOT MET"} valueClassName={meetsStandard ? "text-emerald-700 dark:text-emerald-300" : "text-destructive"} />
+      </div>
+
+      <BreakdownSection title="Weighted competencies">
+        <div className="space-y-4">
+          {competencies.map((competency) => (
+            <div key={competency.id}>
+              <BreakdownMetricRow label={`${competency.label} · ${competency.weight}% weight`} value={`${Math.round(competency.score)}%`} />
+              <BreakdownProgressTrack value={competency.score} className={portalProgressBarClass} />
+            </div>
+          ))}
+        </div>
+      </BreakdownSection>
+
+      <BreakdownSection title="Critical gates">
+        {criticalFlags.length ? (
+          <ul className="space-y-2">
+            {criticalFlags.map((flag) => <li key={`${flag.scenarioId}-${flag.id}`} className="border-l-4 border-red-600 bg-red-50 p-3 text-sm text-red-950 dark:bg-red-950/30 dark:text-red-100"><strong>{flag.scenarioId}:</strong> {flag.label}</li>)}
+          </ul>
+        ) : <p className="text-sm text-muted-foreground">No fixed critical gate was triggered.</p>}
+      </BreakdownSection>
+
+      {scenarios.length ? (
+        <div className="space-y-2.5">
+          <BreakdownSectionTitle>Scenario evidence</BreakdownSectionTitle>
+          <BreakdownTableShell>
+            <BreakdownTable>
+              <BreakdownTableHead><BreakdownTableHeaderRow><BreakdownTableHeaderCell>Incident</BreakdownTableHeaderCell><BreakdownTableHeaderCell>Classification</BreakdownTableHeaderCell><BreakdownTableHeaderCell>Capture</BreakdownTableHeaderCell><BreakdownTableHeaderCell align="right">Time</BreakdownTableHeaderCell></BreakdownTableHeaderRow></BreakdownTableHead>
+              <BreakdownTableBody>
+                {scenarios.map((scenario) => <BreakdownTableRow key={scenario.scenarioId}><BreakdownTableCell><p className="font-semibold">{scenario.title}</p><p className="text-[10px] text-muted-foreground">{scenario.resourceDecision}</p></BreakdownTableCell><BreakdownTableCell>{scenario.classification}<br /><span className="text-[10px] text-muted-foreground">{scenario.incidentType}</span></BreakdownTableCell><BreakdownTableCell>{scenario.capturedFields ?? 0} / {scenario.expectedFields ?? 0} fields</BreakdownTableCell><BreakdownTableCell align="right">{scenario.elapsedSeconds ? `${Math.round(scenario.elapsedSeconds / 60)} min` : "—"}</BreakdownTableCell></BreakdownTableRow>)}
+              </BreakdownTableBody>
+            </BreakdownTable>
+          </BreakdownTableShell>
+        </div>
+      ) : null}
+
+      <BreakdownSection title="Integrity events — separate from performance scoring">
+        <p className="text-sm text-muted-foreground">{Array.isArray(integrity.events) ? integrity.events.length : 0} monitored event(s) recorded. Integrity events are reviewed separately and do not alter the performance score.</p>
+      </BreakdownSection>
+      <p className="text-xs text-muted-foreground">Narrative evidence status: {String(metrics.scoringStatus ?? "pending").replaceAll("_", " ")}</p>
+    </div>
+  );
+}
+
 function getCallSimulationRuns(result?: HiringManagerAssessmentResult | null): CallSimulationRun[] {
   const rawCalls = result?.rawData?.calls;
   const rawSnapshots = result?.rawData?.snapshots;
@@ -77,6 +151,10 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
   const [selectedCallRunIndex, setSelectedCallRunIndex] = useState<number | null>(null);
 
   if (!result?.metrics) return null;
+
+  if (result.metrics.evidenceLabel === "high-fidelity operational simulation") {
+    return <CallSimulationV2Report metrics={result.metrics} />;
+  }
 
   const callsList = getCallSimulationRuns(result);
   const finalRuns = callsList.filter((c) => c.metrics);

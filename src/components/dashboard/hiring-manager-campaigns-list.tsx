@@ -125,7 +125,7 @@ export function HiringManagerCampaignsList() {
                   </div>
 
                   <div className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs text-primary shadow-sm w-fit">
-                    <Target className="h-3.5 w-3.5 shrink-0 text-primary animate-pulse" />
+                    <Target className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
                     <span className="font-semibold">{campaign.nextMilestone}</span>
                   </div>
                 </div>

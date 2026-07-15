@@ -6,11 +6,22 @@ import {
     guardPortalApiRoute,
 } from "@/lib/auth/bff-api-middleware";
 import { isAdminPortalRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
+import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 
 export default withAuth(
     function middleware(req) {
         const token = req.nextauth.token;
         const { pathname } = req.nextUrl;
+
+        // One production CSRF boundary for every authenticated BFF mutation.
+        // Stripe webhooks are deliberately outside this matcher and verify signatures instead.
+        if (
+            pathname.startsWith('/api/') &&
+            !['GET', 'HEAD', 'OPTIONS'].includes(req.method.toUpperCase())
+        ) {
+            const crossOriginResponse = rejectCrossOriginRequest(req);
+            if (crossOriginResponse) return crossOriginResponse;
+        }
 
         const portalApiResponse = guardPortalApiRoute(pathname, !!token, token?.role);
         if (portalApiResponse) {

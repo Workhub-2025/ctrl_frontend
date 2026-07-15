@@ -173,10 +173,6 @@ export function CreateTicketDialog({
       </DialogTrigger>
 
       <DialogContent className="overflow-hidden sm:max-w-[520px]">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"
-          aria-hidden="true"
-        />
         <DialogHeader className="pr-10">
           <div className="flex items-start gap-3">
             <span
@@ -289,6 +285,7 @@ export function CreateTicketDialog({
               </label>
               <Textarea
                 id="ticket-description"
+                maxLength={5000}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Please describe the issue in detail (min. 20 characters)"
@@ -310,7 +307,7 @@ export function CreateTicketDialog({
                       : "text-muted-foreground"
                   }`}
                 >
-                  {description.length} characters
+                  {description.length}/5000 characters
                   {description.length > 0 && description.length < 20
                     ? ` (${20 - description.length} more needed)`
                     : ""}
@@ -376,7 +373,7 @@ export function CreateTicketDialog({
                 !subject.trim() ||
                 description.trim().length < 20
               }
-              className="h-11 w-full gap-2 rounded-lg font-semibold shadow-md transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-safe:hover:scale-[1.01]"
+              className="h-11 w-full gap-2 rounded-md font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               {isSubmitting ? (
                 <>

@@ -7,6 +7,8 @@ import {
 
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
+import { sanitisePlainText } from "@/lib/security/input-sanitization";
 
 function parseSeatNumber(value: unknown) {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) return value;
@@ -32,11 +34,17 @@ export async function POST(request: Request) {
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    await requireClientSession();
+    const { session } = await requireClientSession();
+    const rateLimited = await rejectRateLimitedMutation(request, {
+      scope: "client:access-code:create",
+      actorId: session.user.id,
+      limit: 20,
+    });
+    if (rateLimited) return rateLimited;
 
     const body = await request.json().catch(() => ({}));
     const seatNumber = parseSeatNumber(body?.seatNumber ?? body?.seatLabel);
-    const seatLabel = typeof body?.seatLabel === "string" ? body.seatLabel : undefined;
+    const seatLabel = sanitisePlainText(body?.seatLabel, { maxLength: 80 }) || undefined;
     const code = body?.refreshCodeDocumentId
       ? await refreshHiringManagerAccessCode(String(body.refreshCodeDocumentId), {
           seatNumber,

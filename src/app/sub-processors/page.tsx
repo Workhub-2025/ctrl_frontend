@@ -16,12 +16,11 @@ export default function SubProcessorsPage() {
       version={UK_LEGAL.privacyPolicyVersion}
     >
       <section>
-        <h3 className="mb-3 text-lg font-semibold">1. Overview</h3>
+        <h2 className="mb-3 text-lg font-semibold">1. Overview</h2>
         <p className="mb-3">
           {UK_LEGAL.legalEntityName} ({UK_LEGAL.tradingName}) uses the categories of sub-processors
-          below. Vendor names reflect our <strong>current or planned</strong> infrastructure and
-          will be updated when hosting changes (for example a move from Vercel to AWS, or to Strapi
-          Cloud).
+          below. Production deployment is blocked when a required vendor or processing location has
+          not been configured. Non-live development environments may display “Not configured”.
         </p>
         <p>
           Client organisations (data controllers for candidate assessment data) may request an
@@ -36,7 +35,7 @@ export default function SubProcessorsPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">2. Processor categories</h3>
+        <h2 className="mb-3 text-lg font-semibold">2. Processor categories</h2>
         <div className="space-y-4">
           {UK_SUB_PROCESSOR_CATEGORIES.map((processor) => (
             <div key={processor.category} className="rounded-lg border p-4">
@@ -55,6 +54,10 @@ export default function SubProcessorsPage() {
                 <li>
                   <strong className="text-foreground">Safeguard:</strong> {processor.safeguard}
                 </li>
+                <li>
+                  <strong className="text-foreground">Configuration status:</strong>{" "}
+                  {processor.verified ? "Verified in the public inventory" : "Confirmation required before live use"}
+                </li>
               </ul>
             </div>
           ))}
@@ -64,7 +67,7 @@ export default function SubProcessorsPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">3. International transfers</h3>
+        <h2 className="mb-3 text-lg font-semibold">3. International transfers</h2>
         <p>
           Where a sub-processor processes personal data outside the UK, we rely on appropriate
           transfer safeguards (UK International Data Transfer Agreement, UK Addendum to EU SCCs, or
@@ -76,7 +79,7 @@ export default function SubProcessorsPage() {
       <Separator />
 
       <section>
-        <h3 className="mb-3 text-lg font-semibold">4. Changes</h3>
+        <h2 className="mb-3 text-lg font-semibold">4. Changes</h2>
         <p>
           We will notify client administrators of material sub-processor changes via email or
           in-platform notice. Objections should be sent to{" "}

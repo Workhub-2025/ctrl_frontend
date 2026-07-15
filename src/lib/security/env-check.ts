@@ -1,4 +1,5 @@
 import { isUpstashConfigured } from "@/lib/security/upstash-rest";
+import { getUkComplianceConfigurationIssues } from "@/lib/legal/uk-compliance";
 
 let warned = false;
 
@@ -26,5 +27,15 @@ export function warnIfProductionSecurityGaps() {
 
   if (!process.env.NEXTAUTH_SECRET) {
     throw new Error("[SECURITY] NEXTAUTH_SECRET is required in production.");
+  }
+
+  const complianceIssues = getUkComplianceConfigurationIssues();
+  if (complianceIssues.length > 0) {
+    const message = `[COMPLIANCE] Production legal configuration is incomplete: ${complianceIssues.join("; ")}.`;
+    if (process.env.ALLOW_INCOMPLETE_UK_COMPLIANCE === "true") {
+      console.warn(`${message} ALLOW_INCOMPLETE_UK_COMPLIANCE=true is for non-live previews only.`);
+      return;
+    }
+    throw new Error(message);
   }
 }

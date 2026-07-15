@@ -160,7 +160,7 @@ export function useAssessmentHeartbeat({
     void AssessmentAttemptService.getStatus(candidateSessionDocumentId, assessmentSlug)
       .then((attempt) => {
         if (cancelled) return;
-        if (attempt?.attemptStatus === "abandoned_locked") {
+        if (attempt?.attemptStatus === "interrupted_locked") {
           setIsLocked(true);
         }
       })

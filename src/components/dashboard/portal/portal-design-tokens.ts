@@ -2,14 +2,10 @@ import { cn } from "@/lib/utils";
 
 /** Shared fill and border for every CTRL portal surface. */
 export const portalPanelBaseClass =
-  "border border-border/60 bg-card/60 dark:border-white/8 dark:bg-[#0b1329]/30";
+  "border border-border bg-card";
 
 /** Border colour for nested panels, card headers, and internal dividers. */
-export const portalPanelBorderClass = "border-border/60 dark:border-white/10";
-
-/** Subtle lift on dark portal backgrounds (~#080c16) — mirrors light `shadow-lg` without glow. */
-const portalDarkPanelShadowClass = "dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]";
-const portalDarkElevatedShadowClass = "dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)]";
+export const portalPanelBorderClass = "border-border";
 
 /**
  * Standard portal panel/card — light-theme elevation so surfaces stand off the page.
@@ -17,76 +13,71 @@ const portalDarkElevatedShadowClass = "dark:shadow-[0_12px_40px_rgba(0,0,0,0.45)
  */
 export const portalPanelClass = cn(
   portalPanelBaseClass,
-  "rounded-xl shadow-lg transition-all duration-300",
-  portalDarkPanelShadowClass,
+  "rounded-lg transition-colors duration-150",
 );
 
 /** Clickable portal panel — links, buttons, and cards with an onClick handler. */
 export const portalPanelInteractiveClass = cn(
   portalPanelClass,
-  "hover:border-primary/30 dark:hover:border-white/12",
+  "hover:border-primary/45 focus-within:border-primary/55",
 );
 
 /** Primary list / content cards — same elevation with larger radius. */
-export const portalCardClass = cn(portalPanelClass, "rounded-2xl");
+export const portalCardClass = portalPanelClass;
 
 /** Clickable list / content cards. */
-export const portalCardInteractiveClass = cn(portalPanelInteractiveClass, "rounded-2xl");
+export const portalCardInteractiveClass = portalPanelInteractiveClass;
 
 /** Stronger panel surface for hero cards and primary sections. */
 export const portalPanelElevatedClass = cn(
   portalCardClass,
-  "backdrop-blur-md shadow-2xl dark:border-white/10 dark:bg-[#0b1329]/45",
-  portalDarkElevatedShadowClass,
+  "border-border",
 );
 
 /** Clickable elevated panel — e.g. whole-card navigation. */
 export const portalPanelElevatedInteractiveClass = cn(
   portalPanelElevatedClass,
-  "hover:border-primary/30 dark:hover:border-primary/30",
+  "hover:border-primary/40",
 );
 
 /** Nested panel surface inside elevated cards — flat, no extra shadow. */
 export const portalPanelNestedClass = cn(
   portalPanelBaseClass,
-  "rounded-xl shadow-none transition-colors dark:border-white/10 dark:bg-[#0b1329]/20",
+  "rounded-lg bg-muted/20 shadow-none transition-colors",
 );
 
 /** Dashed empty-state surface for lists and filter results. */
 export const portalEmptyPanelClass = cn(
   portalPanelNestedClass,
-  "rounded-[1.25rem] border-dashed p-6 text-center text-sm text-muted-foreground"
+  "rounded-lg border-dashed p-4 text-center text-sm text-muted-foreground sm:p-6"
 );
 
-/** Gradient hero card used on report and campaign headers. */
+/** Primary decision surface with a restrained CTRL evidence rail. */
 export const portalHeroPanelClass = cn(
   portalPanelElevatedClass,
-  "relative overflow-hidden dark:border-white/10 dark:bg-gradient-to-br dark:from-[#0e172e]/80 dark:to-[#0b1329]/50 dark:backdrop-blur-md"
+  "relative overflow-hidden border-l-2 border-l-primary/70"
 );
 
 /** Unselected selectable option card — delivery-mode pattern, readable on light and dark. */
 export const portalSelectableCardClass = cn(
-  "rounded-xl border transition-all duration-300",
-  "border-border/70 bg-background/50 text-muted-foreground",
+  "rounded-lg border transition-colors duration-150",
+  "border-border bg-background text-muted-foreground",
   "hover:border-primary/30 hover:bg-muted/20",
-  "dark:border-white/10 dark:bg-white/[0.02] dark:text-slate-400",
-  "dark:hover:border-primary/30 dark:hover:bg-white/[0.05] dark:hover:text-slate-300"
+  "dark:text-muted-foreground"
 );
 
-/** Selected selectable option card — light primary tint with soft glow. */
+/** Selected selectable option card — clear state without glow. */
 export const portalSelectableCardSelectedClass = cn(
-  "rounded-xl border transition-all duration-300",
-  "border-primary/45 bg-primary/10 text-foreground shadow-[0_0_15px_rgba(99,102,241,0.1)] ring-1 ring-primary/20",
-  "dark:text-white"
+  "rounded-lg border border-primary/60 bg-primary/10 text-foreground ring-1 ring-primary/20 transition-colors duration-150"
 );
 
 /** Group wrapper for a cluster of selectable cards (e.g. delivery mode section). */
 export const portalSelectableCardGroupClass =
-  "rounded-xl border border-border/60 bg-muted/20 p-4 dark:border-white/10 dark:bg-white/[0.02]";
+  "rounded-lg border border-border bg-muted/20 p-4";
 
 /** Large portal dialog shell — theme-aware, matches default DialogContent + portal panels. */
 export const portalDialogShellClass =
-  "overflow-hidden rounded-[1.25rem] border border-border/60 bg-background/95 text-foreground shadow-2xl backdrop-blur-md dark:border-white/10 dark:bg-[#070b14]/90 dark:backdrop-blur-xl dark:shadow-[0_32px_96px_rgba(0,0,0,0.45)]";
+  "overflow-hidden rounded-lg border border-border bg-background text-foreground shadow-lg";
 
 /** Radix Sheet built-in close control — readable in light and dark themes. */
 export const portalSheetCloseButtonClass =
@@ -98,7 +89,7 @@ export const portalDialogContentLayoutClass =
 
 /** Tooltip surface shared across portal score breakdowns and disabled controls. */
 export const portalTooltipContentClass =
-  "ctrl-tooltip z-50 max-w-xs rounded-lg border border-border/60 bg-popover px-3 py-2.5 text-sm text-popover-foreground shadow-md dark:border-white/10";
+  "ctrl-tooltip z-50 max-w-xs rounded-md border border-border bg-popover px-3 py-2.5 text-sm text-popover-foreground shadow-md";
 
 /** Positioning helper for CSS hover tooltips (non-Radix). */
 export const portalHoverTooltipClass =
@@ -118,29 +109,29 @@ export const portalCssHoverTooltipClass = cn(
 
 /** Progress bar fill used in occupancy and completion meters. */
 export const portalProgressBarClass =
-  "h-full rounded-full bg-gradient-to-r from-primary to-indigo-500 transition-all duration-500";
+  "h-full rounded-full bg-primary transition-[width] duration-300";
 
 /** Primary gradient action button shared across HM portal views. */
 export const portalPrimaryButtonClass =
-  "rounded-xl bg-gradient-to-r from-indigo-500 to-primary text-sm font-semibold text-white transition-all duration-300 hover:opacity-95 shadow-[0_4px_20px_rgba(99,102,241,0.15)]";
+  "rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary/90";
 
 /** Muted chat / transcript bubble in dark panels. */
 export const portalMutedBubbleClass =
-  "border-white/5 bg-[#0b1329]/50 text-slate-100 hover:border-white/10";
+  "border-border bg-muted/30 text-foreground hover:border-primary/30";
 
 /** Dark inset surface for code / transcript blocks in reports. */
 export const portalCodeSurfaceClass =
-  "overflow-x-auto rounded-lg border border-white/15 bg-[#080d1a]/60";
+  "overflow-x-auto rounded-lg border border-border bg-muted/30";
 
 /** Semantic score meter (low → high) for integrity and composite scores. */
 export const portalScoreMeterClass =
-  "h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 transition-all duration-500";
+  "h-full rounded-full bg-primary transition-[width] duration-300";
 
 /** Positive action button (approve, confirm) in HM reports. */
 export const portalSuccessButtonClass =
-  "rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 px-4 text-xs font-bold text-slate-950 transition-all hover:from-emerald-400 hover:to-teal-300 shadow-[0_0_15px_rgba(52,211,153,0.15)]";
+  "rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-500";
 
-export const portalStatTileClass = cn(portalPanelClass, "p-4");
+export const portalStatTileClass = cn(portalPanelClass, "p-4 sm:p-5");
 
 export const portalIconWrapClass =
   "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary";
@@ -151,39 +142,43 @@ export const portalIconWrapLgClass =
 export const portalTableShellClass = cn(portalPanelClass, "overflow-hidden");
 
 export const portalTableToolbarClass =
-  "flex flex-col gap-3 border-b border-border/50 bg-muted/20 p-4 dark:border-white/6 dark:bg-black/10 sm:flex-row sm:items-center sm:justify-between";
+  "flex flex-col gap-3 border-b border-border bg-muted/25 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4";
 
 export const portalTableHeaderClass =
-  "bg-muted/25 dark:bg-black/15 [&_tr]:border-b [&_tr]:border-border/50 dark:[&_tr]:border-white/6";
+  "bg-muted/35 [&_tr]:border-b [&_tr]:border-border";
 
 export const portalTableRowClass =
-  "border-b border-border/40 transition-colors hover:bg-muted/25 dark:border-white/6 dark:hover:bg-white/[0.02]";
+  "border-b border-border transition-colors hover:bg-muted/30";
 
 export const portalInputClass =
-  "rounded-lg border-border/70 bg-background dark:border-white/10";
+  "rounded-md border-input bg-background focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1";
 
 export const portalFilterChipActiveClass =
-  "rounded-lg border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm";
+  "inline-flex min-h-9 items-center rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary";
 
 export const portalFilterChipClass =
-  "rounded-lg border border-border/60 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/40 dark:border-white/8";
+  "inline-flex min-h-9 items-center rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground";
 
 /** One badge style for all statuses — colour is not used for categorisation. */
 export const portalBadgeClass =
-  "rounded-md border border-border/60 bg-muted/35 px-2 py-0.5 text-xs font-medium text-foreground dark:border-white/10 dark:bg-white/[0.04]";
+  "rounded-sm border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium text-foreground";
 
 export const portalAlertErrorClass =
-  "rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive";
+  "rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive";
 
 export const portalAlertInfoClass =
-  "rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm text-foreground";
+  "rounded-md border border-primary/35 bg-primary/5 px-4 py-3 text-sm text-foreground";
 
 export const portalLabelClass =
-  "text-xs font-medium uppercase tracking-wide text-muted-foreground";
+  "text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground";
+
+/** Supporting copy between compact labels and standard body text. */
+export const portalSupportingTextClass =
+  "text-[0.8125rem] leading-relaxed text-muted-foreground";
 
 /** Page header wrapper — separates title block from main content across portals. */
 export const portalPageHeaderClass =
-  "mb-7 space-y-4 border-b border-border/60 pb-6 dark:border-white/6";
+  "mb-5 space-y-4 border-b border-border pb-5 sm:mb-7 sm:pb-6";
 
 export function portalStatusBadge(_status?: string) {
   return portalBadgeClass;
@@ -192,17 +187,16 @@ export function portalStatusBadge(_status?: string) {
 /** Outer container for in-browser assessment flows (game shell). */
 export const portalAssessmentShellClass = cn(
   portalCardClass,
-  "overflow-hidden shadow-xl shadow-black/10",
-  portalDarkElevatedShadowClass,
+  "overflow-hidden shadow-sm",
 );
 
 /** Assessment shell header strip. */
 export const portalAssessmentShellHeaderClass =
   "flex flex-col gap-3 border-b border-border/60 bg-muted/25 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-white/[0.025]";
 
-/** Assessment shell body — theme gradient without hardcoded hex stops. */
+/** Assessment shell body — quiet solid surface for task focus. */
 export const portalAssessmentShellBodyClass =
-  "flex flex-1 bg-gradient-to-br from-background to-muted/40 px-4 py-5 sm:px-6 sm:py-6 xl:px-8 dark:from-background dark:to-muted/20";
+  "flex flex-1 bg-background px-4 py-5 sm:px-6 sm:py-6 xl:px-8";
 
 /** Compact stat / info tile inside assessment screens. */
 export const portalAssessmentTileClass = cn(portalPanelNestedClass, "p-4");

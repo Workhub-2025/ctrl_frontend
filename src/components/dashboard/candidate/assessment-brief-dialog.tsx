@@ -47,10 +47,6 @@ export function AssessmentBriefDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(portalDialogShellClass, "overflow-hidden sm:max-w-[480px]")}>
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"
-          aria-hidden="true"
-        />
         <DialogHeader className="pr-10">
           <div className="flex items-start gap-3">
             <span className={portalIconWrapLgClass}>

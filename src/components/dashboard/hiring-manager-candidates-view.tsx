@@ -462,7 +462,7 @@ export function HiringManagerCandidatesView() {
                             return (
                               <div key={entry.displayName} className="flex justify-between items-center text-xs">
                                 <div className="flex flex-col min-w-0">
-                                  <span className="truncate font-medium text-foreground">{entry.displayName}</span>
+                                  <span className="break-words font-medium text-foreground">{entry.displayName}</span>
                                   <span className="text-[0.625rem] font-semibold text-muted-foreground">Weight: {entry.weight}%</span>
                                 </div>
                                 <div className="text-right pl-2 shrink-0">
@@ -549,7 +549,7 @@ export function HiringManagerCandidatesView() {
                             >
                               {/* Inner filled score bar */}
                               <div
-                                className={`h-full ${colorClass} transition-all duration-500 rounded-full`}
+                                className={`h-full ${colorClass} rounded-full transition-[width] duration-500`}
                                 style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreValue : 0}%` }}
                               />
                                               {/* Tooltip */}

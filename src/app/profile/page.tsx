@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import EqualityMonitoringForm from "@/components/auth/equality-monitoring-form";
-import { EqualityMonitoringData, IUser } from "@/types";
+import { EqualityMonitoringState, IUser } from "@/types";
 import Link from "next/link";
 import { TelInput } from "@/components/ui/telInput";
 import { PortalMinimalShell } from "@/components/dashboard/portal/portal-minimal-shell";
@@ -178,7 +178,7 @@ export default function ProfilePage() {
   };
 
   const handleEqualityMonitoringUpdate = async (
-    data: EqualityMonitoringData
+    data: EqualityMonitoringState
   ) => {
     try {
       setIsLoading(true);
@@ -521,13 +521,18 @@ export default function ProfilePage() {
                   </h3>
                   <div className="space-y-2.5 text-sm text-muted-foreground">
                     <p className="flex items-center gap-2">
-                      <span className="text-emerald-500 font-bold">✓</span> Data privacy terms accepted
+                      <span aria-hidden="true" className="font-bold text-emerald-500">
+                        ✓
+                      </span>{" "}
+                      Privacy notice{" "}
+                      {userProfile?.privacyConsent || userProfile?.agreeToDataPrivacyPolicy
+                        ? "acknowledged"
+                        : "acknowledgement not recorded"}
                     </p>
-                    <p className="flex items-center gap-2">
-                      <span className="text-emerald-500 font-bold">✓</span> Data processing consent given
-                    </p>
-                    <p className="flex items-center gap-2">
-                      <span className="text-emerald-500 font-bold">✓</span> Data retention period acknowledged
+                    <p className="text-xs">
+                      Core assessment processing is governed by the recruiting organisation&apos;s
+                      lawful basis and its processor agreement with CTRL; it is not presented as
+                      candidate consent.
                     </p>
                     <p className="flex items-center gap-2">
                       <span className="text-primary font-bold">•</span> Marketing communications:{" "}
@@ -547,7 +552,7 @@ export default function ProfilePage() {
                       <div className="mr-4">
                         <p className="font-semibold text-sm">Download My Data</p>
                         <p className="text-xs text-muted-foreground">
-                          Get a copy of all data we have about you
+                          Get a copy of the account data available through the platform
                         </p>
                       </div>
                       <Button
@@ -566,7 +571,7 @@ export default function ProfilePage() {
                       <div className="mr-4">
                         <p className="font-semibold text-sm text-red-600 dark:text-red-400">Delete My Account</p>
                         <p className="text-xs text-muted-foreground">
-                          Permanently delete your account and all associated data
+                          Ask us and your recruiting organisation to erase eligible personal data
                         </p>
                       </div>
                       <AlertDialog>
@@ -613,15 +618,15 @@ export default function ProfilePage() {
                   <ul className="text-xs text-muted-foreground space-y-2">
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">•</span>
-                      <span>Assessment data is retained for 7 years as per employment law requirements.</span>
+                      <span>Assessment retention is set by the recruiting organisation&apos;s documented schedule.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">•</span>
-                      <span>Equality monitoring data is anonymized after 12 months.</span>
+                      <span>Identifiable equality-monitoring responses are removed after 12 months.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">•</span>
-                      <span>You can withdraw consent at any time by contacting support.</span>
+                      <span>You can change marketing preferences and ask the privacy team about optional equality data.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">•</span>

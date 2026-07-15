@@ -110,7 +110,7 @@ export function SharedCandidateNotesPanel({
   };
 
   return (
-    <div className={cn("space-y-3 rounded-xl border border-border/60 bg-background/40 p-4", className)}>
+    <div className={cn("space-y-3 rounded-md border border-border bg-background p-4", className)}>
       <div className="flex items-center gap-2">
         <MessageSquarePlus className="h-4 w-4 text-primary" aria-hidden="true" />
         <p className="text-sm font-semibold text-foreground">Collaboration notes</p>
@@ -133,7 +133,7 @@ export function SharedCandidateNotesPanel({
           {notes.map((note) => (
             <li
               key={note.documentId}
-              className="rounded-lg border border-border/50 bg-background/60 px-3 py-2 text-sm"
+              className="rounded-md border border-border bg-background px-3 py-2 text-sm"
             >
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">
@@ -165,17 +165,26 @@ export function SharedCandidateNotesPanel({
       )}
 
       <div className="space-y-2">
+        <label htmlFor="shared-candidate-note" className="text-xs font-semibold text-foreground">
+          Add a collaboration note
+        </label>
         <Textarea
+          id="shared-candidate-note"
           value={content}
           onChange={(event) => setContent(event.target.value)}
           placeholder="Add a note for your team…"
+          maxLength={2000}
           rows={3}
-          className="resize-none rounded-xl"
+          aria-describedby="shared-candidate-note-count"
+          className="resize-none rounded-md"
         />
+        <p id="shared-candidate-note-count" className="text-right text-[0.6875rem] tabular-nums text-muted-foreground">
+          {content.length}/2000
+        </p>
         <Button
           type="button"
           size="sm"
-          className="rounded-xl font-semibold"
+          className="min-h-10 rounded-md font-semibold"
           disabled={saving || !content.trim()}
           onClick={() => void handleAdd()}
         >
@@ -190,7 +199,7 @@ export function SharedCandidateNotesPanel({
         </Button>
       </div>
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }

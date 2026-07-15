@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Download, History, Search, SlidersHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -10,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Download } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import { downloadCsv } from "@/lib/export-csv";
 import {
@@ -18,9 +20,12 @@ import {
   AdminPageHeader,
   AdminPanel,
 } from "@/components/admin/admin-portal-ui";
-import { Button } from "@/components/ui/button";
-import { portalBadgeClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
-
+import {
+  portalBadgeClass,
+  portalLabelClass,
+  portalPanelClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
+import { PortalLockedPane } from "@/components/dashboard/portal/portal-workspace-ui";
 import { cn } from "@/lib/utils";
 
 type AuditLogRow = {
@@ -37,45 +42,39 @@ type AuditLogRow = {
   details: string;
 };
 
-
 function AuditLogEntry({ log }: { log: AuditLogRow }) {
   return (
-    <article className={cn(portalPanelClass, "p-4")}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 space-y-2">
+    <article className="px-4 py-4 sm:px-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="outline" className={portalBadgeClass}>
               {log.event}
             </Badge>
             {log.resource ? (
-              <span className="text-xs font-medium text-muted-foreground">
-                {log.resource}
-                {log.resourceLabel ? `: ${log.resourceLabel}` : ""}
+              <span className="break-words text-[0.8125rem] font-medium text-muted-foreground">
+                {log.resourceLabel || log.resource}
               </span>
             ) : null}
           </div>
-          <p className="text-sm leading-relaxed text-foreground">{log.details}</p>
+          <p className="mt-2 text-sm leading-relaxed text-foreground">{log.details}</p>
         </div>
         <time
-          className="shrink-0 text-xs font-medium text-muted-foreground sm:text-right"
+          className="shrink-0 text-xs tabular-nums text-muted-foreground sm:text-right"
           dateTime={log.rawTimestamp}
         >
           {log.timestamp}
         </time>
       </div>
 
-      <dl className="mt-4 grid gap-3 border-t border-border/50 pt-4 sm:grid-cols-2 dark:border-white/8">
-        <div className="min-w-0">
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Actor
-          </dt>
-          <dd className="mt-0.5 break-words text-sm font-medium text-foreground">{log.actor}</dd>
+      <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-xs">
+        <div className="flex min-w-0 gap-1.5">
+          <dt className="font-semibold text-muted-foreground">Actor</dt>
+          <dd className="break-words text-foreground">{log.actor}</dd>
         </div>
-        <div className="min-w-0">
-          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Client
-          </dt>
-          <dd className="mt-0.5 break-words text-sm font-medium text-foreground">{log.client}</dd>
+        <div className="flex min-w-0 gap-1.5">
+          <dt className="font-semibold text-muted-foreground">Client</dt>
+          <dd className="break-words text-foreground">{log.client}</dd>
         </div>
       </dl>
     </article>
@@ -112,96 +111,131 @@ export default function AuditLogsPage() {
     });
   }, [logs, searchTerm, eventFilter]);
 
+  const exportLogs = () => {
+    downloadCsv(
+      `audit-log-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Timestamp", "Event", "Actor", "Client", "Resource", "Details"],
+      filteredLogs.map((log) => [
+        log.timestamp,
+        log.event,
+        log.actor,
+        log.client,
+        log.resourceLabel ?? log.resource ?? "",
+        log.details,
+      ])
+    );
+  };
+
   return (
     <div className="space-y-6">
       <AdminPageHeader
         title="Audit log"
-        description="Every administrative action on the platform, newest first."
+        description="Platform activity, ordered newest first. Filter the record without losing your place in the ledger."
         notice={error ? <AdminAlert>{error}</AdminAlert> : null}
       />
 
-      <AdminPanel className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              placeholder="Search by actor, event, client, or details…"
-              className="pl-9"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <PortalLockedPane
+        asideLabel="Audit log controls"
+        aside={
+          <div className="space-y-5">
+            <div className="flex items-start gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary">
+                <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Filter the record</h2>
+                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                  Controls stay available while the activity ledger scrolls.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="audit-search" className={portalLabelClass}>
+                Search
+              </Label>
+              <div className="relative">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <Input
+                  id="audit-search"
+                  placeholder="Actor, client, event…"
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label id="audit-event-label" className={portalLabelClass}>
+                Event type
+              </Label>
+              <Select value={eventFilter} onValueChange={setEventFilter}>
+                <SelectTrigger aria-labelledby="audit-event-label">
+                  <SelectValue placeholder="All events" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All events</SelectItem>
+                  {eventTypes.map((event) => (
+                    <SelectItem key={event} value={event}>
+                      {event}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {loading
+                  ? "Loading entries…"
+                  : `${filteredLogs.length} of ${logs.length} entries shown`}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3 w-full justify-start"
+                disabled={filteredLogs.length === 0}
+                onClick={exportLogs}
+              >
+                <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                Export filtered CSV
+              </Button>
+            </div>
           </div>
-          <Select value={eventFilter} onValueChange={setEventFilter}>
-            <SelectTrigger className="w-full sm:w-[220px]">
-              <SelectValue placeholder="All events" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All events</SelectItem>
-              {eventTypes.map((event) => (
-                <SelectItem key={event} value={event}>
-                  {event}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={filteredLogs.length === 0}
-            onClick={() =>
-              downloadCsv(
-                `audit-log-${new Date().toISOString().slice(0, 10)}.csv`,
-                ["Timestamp", "Event", "Actor", "Client", "Resource", "Details"],
-                filteredLogs.map((log) => [
-                  log.timestamp,
-                  log.event,
-                  log.actor,
-                  log.client,
-                  log.resourceLabel ?? log.resource ?? "",
-                  log.details,
-                ])
-              )
-            }
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          {loading
-            ? "Loading entries…"
-            : `${filteredLogs.length} of ${logs.length} entries shown`}
-        </p>
-      </AdminPanel>
-
-      {loading ? (
-        <div className="space-y-3" aria-busy="true">
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-28 animate-pulse rounded-xl border border-border/60 bg-muted/30"
-            />
-          ))}
-        </div>
-      ) : filteredLogs.length === 0 ? (
-        <AdminPanel>
-          <p className="text-center text-sm text-muted-foreground">
-            No audit entries match your search.
-          </p>
-        </AdminPanel>
-      ) : (
-        <ul className="space-y-3">
-          {filteredLogs.map((log, index) => (
-            <li key={`${log.id}-${index}`}>
-              <AuditLogEntry log={log} />
-            </li>
-          ))}
-        </ul>
-      )}
+        }
+      >
+        {loading ? (
+          <div className={cn(portalPanelClass, "divide-y divide-border")} aria-busy="true">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="space-y-3 px-5 py-5">
+                <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-4/5 animate-pulse rounded bg-muted/70" />
+                <div className="h-3 w-64 animate-pulse rounded bg-muted/50" />
+              </div>
+            ))}
+          </div>
+        ) : filteredLogs.length === 0 ? (
+          <AdminPanel className="py-12 text-center">
+            <History className="mx-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            <p className="mt-3 text-sm font-medium text-foreground">No matching activity</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Change the event type or clear the search term.
+            </p>
+          </AdminPanel>
+        ) : (
+          <ol className={cn(portalPanelClass, "divide-y divide-border overflow-hidden")}>
+            {filteredLogs.map((log, index) => (
+              <li key={`${log.id}-${index}`}>
+                <AuditLogEntry log={log} />
+              </li>
+            ))}
+          </ol>
+        )}
+      </PortalLockedPane>
     </div>
   );
 }

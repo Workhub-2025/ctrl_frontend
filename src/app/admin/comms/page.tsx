@@ -355,6 +355,8 @@ export default function AdminCommsPage() {
                 <Input
                   id="comms-email"
                   type="email"
+                  autoComplete="email"
+                  maxLength={254}
                   className={portalInputClass}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
@@ -415,6 +417,7 @@ export default function AdminCommsPage() {
               </Label>
               <Input
                 id="comms-subject"
+                maxLength={200}
                 className={portalInputClass}
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
@@ -428,6 +431,7 @@ export default function AdminCommsPage() {
               </Label>
               <Textarea
                 id="comms-body"
+                maxLength={10000}
                 className={cn(portalInputClass, "min-h-[220px]")}
                 value={body}
                 onChange={(event) => setBody(event.target.value)}

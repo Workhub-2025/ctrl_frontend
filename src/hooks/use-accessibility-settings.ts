@@ -34,37 +34,69 @@ export const defaultAccessibilitySettings: AccessibilitySettings = {
 };
 
 export const accessibilityThemeClassName: Record<AccessibilitySettings["theme"], string> = {
-  "dark-blue": "bg-[#080c16]",
-  black: "bg-black",
-  "soft-cream": "bg-[#fdf7ec]",
-  "light-blue": "bg-[#eef5fc]",
+  "dark-blue": "bg-background",
+  black: "bg-background",
+  "soft-cream": "bg-background",
+  "light-blue": "bg-background",
 };
 
-function sanitiseSettings(input: Partial<AccessibilitySettings>): AccessibilitySettings {
+const themes = ["dark-blue", "black", "soft-cream", "light-blue"] as const;
+const textSizes = ["default", "large", "extra-large"] as const;
+const lineSpacings = ["default", "comfortable", "spacious"] as const;
+const contrasts = ["default", "high"] as const;
+const motions = ["full", "reduced"] as const;
+const fontFamilies = ["default", "reading", "dyslexia"] as const;
+const saturations = ["default", "reduced"] as const;
+
+function isOneOf<TValue extends string>(value: unknown, options: readonly TValue[]): value is TValue {
+  return typeof value === "string" && options.includes(value as TValue);
+}
+
+function storedBoolean(value: unknown, fallback: boolean) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+export function sanitiseAccessibilitySettings(input: unknown): AccessibilitySettings {
+  const candidate =
+    input && typeof input === "object" && !Array.isArray(input)
+      ? (input as Record<string, unknown>)
+      : {};
+
   // Graceful migration from older boolean flags to fontFamily enum
-  let migratedFontFamily = input.fontFamily;
-  if (!migratedFontFamily) {
-    const oldInput = input as any;
-    if (oldInput.dyslexiaFont) {
+  let migratedFontFamily: AccessibilitySettings["fontFamily"];
+  if (isOneOf(candidate.fontFamily, fontFamilies)) {
+    migratedFontFamily = candidate.fontFamily;
+  } else {
+    if (candidate.dyslexiaFont === true) {
       migratedFontFamily = "dyslexia";
-    } else if (oldInput.readingFont) {
+    } else if (candidate.readingFont === true) {
       migratedFontFamily = "reading";
     } else {
       migratedFontFamily = "default";
     }
   }
 
-  const next = {
-    ...defaultAccessibilitySettings,
-    ...input,
+  return {
+    theme: isOneOf(candidate.theme, themes) ? candidate.theme : defaultAccessibilitySettings.theme,
+    textSize: isOneOf(candidate.textSize, textSizes)
+      ? candidate.textSize
+      : defaultAccessibilitySettings.textSize,
+    lineSpacing: isOneOf(candidate.lineSpacing, lineSpacings)
+      ? candidate.lineSpacing
+      : defaultAccessibilitySettings.lineSpacing,
+    contrast: isOneOf(candidate.contrast, contrasts)
+      ? candidate.contrast
+      : defaultAccessibilitySettings.contrast,
+    motion: isOneOf(candidate.motion, motions) ? candidate.motion : defaultAccessibilitySettings.motion,
+    enhancedFocus: storedBoolean(candidate.enhancedFocus, defaultAccessibilitySettings.enhancedFocus),
     fontFamily: migratedFontFamily,
-  } as AccessibilitySettings;
-
-  if (!(next.theme in accessibilityThemeClassName)) {
-    next.theme = defaultAccessibilitySettings.theme;
-  }
-
-  return next;
+    hoverReader: storedBoolean(candidate.hoverReader, defaultAccessibilitySettings.hoverReader),
+    grayscale: storedBoolean(candidate.grayscale, defaultAccessibilitySettings.grayscale),
+    underlineLinks: storedBoolean(candidate.underlineLinks, defaultAccessibilitySettings.underlineLinks),
+    saturation: isOneOf(candidate.saturation, saturations)
+      ? candidate.saturation
+      : defaultAccessibilitySettings.saturation,
+  };
 }
 
 function readStoredSettings(): AccessibilitySettings {
@@ -73,7 +105,7 @@ function readStoredSettings(): AccessibilitySettings {
   try {
     const raw = window.localStorage.getItem(ACCESSIBILITY_STORAGE_KEY);
     if (!raw) return defaultAccessibilitySettings;
-    return sanitiseSettings(JSON.parse(raw) as Partial<AccessibilitySettings>);
+    return sanitiseAccessibilitySettings(JSON.parse(raw));
   } catch {
     return defaultAccessibilitySettings;
   }
@@ -152,7 +184,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
 
     if (settings.hoverReader) {
       let lastSpokenText = "";
-      let speechTimeout: any;
+      let speechTimeout: ReturnType<typeof setTimeout> | undefined;
 
       const handleMouseOver = (e: MouseEvent) => {
         const target = e.target as HTMLElement;
@@ -164,7 +196,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
         const text = target.innerText?.trim();
         if (!text || text === lastSpokenText) return;
 
-        clearTimeout(speechTimeout);
+        if (speechTimeout) clearTimeout(speechTimeout);
         speechTimeout = setTimeout(() => {
           if (typeof window !== "undefined" && window.speechSynthesis) {
             window.speechSynthesis.cancel();
@@ -180,7 +212,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
       };
 
       const handleMouseLeave = () => {
-        clearTimeout(speechTimeout);
+        if (speechTimeout) clearTimeout(speechTimeout);
         if (typeof window !== "undefined" && window.speechSynthesis) {
           window.speechSynthesis.cancel();
         }
@@ -192,7 +224,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
       return () => {
         document.removeEventListener("mouseover", handleMouseOver);
         document.removeEventListener("mouseleave", handleMouseLeave);
-        clearTimeout(speechTimeout);
+        if (speechTimeout) clearTimeout(speechTimeout);
         if (typeof window !== "undefined" && window.speechSynthesis) {
           window.speechSynthesis.cancel();
         }
@@ -203,7 +235,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
   return {
     settings,
     updateSettings: (patch: Partial<AccessibilitySettings>) =>
-      setSettings((current) => sanitiseSettings({ ...current, ...patch })),
+      setSettings((current) => sanitiseAccessibilitySettings({ ...current, ...patch })),
     resetSettings: () => {
       setStorageReady(true);
       setSettings(defaultAccessibilitySettings);

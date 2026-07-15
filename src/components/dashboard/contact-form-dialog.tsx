@@ -132,10 +132,6 @@ export function ContactFormDialog({
       </DialogTrigger>
 
       <DialogContent className="overflow-hidden sm:max-w-[480px]">
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent"
-          aria-hidden="true"
-        />
         <DialogHeader className="pr-10">
           <div className="flex items-start gap-3">
             <span
@@ -233,6 +229,7 @@ export function ContactFormDialog({
               </label>
               <Input
                 id="contact-subject"
+                maxLength={200}
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Brief summary of your query"
@@ -250,6 +247,7 @@ export function ContactFormDialog({
               </label>
               <Textarea
                 id="contact-message"
+                maxLength={5000}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Describe your query in detail (min. 10 characters)"
@@ -266,7 +264,7 @@ export function ContactFormDialog({
                       : "text-muted-foreground"
                   }`}
                 >
-                  {message.length} characters
+                  {message.length}/5000 characters
                   {message.length > 0 && message.trim().length < 10
                     ? ` (min. 10)`
                     : ""}
@@ -301,7 +299,7 @@ export function ContactFormDialog({
             <Button
               type="submit"
               disabled={isSubmitting || message.trim().length < 10}
-              className="h-11 w-full gap-2 rounded-lg font-semibold shadow-md transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-safe:hover:scale-[1.01]"
+              className="h-11 w-full gap-2 rounded-md font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               {isSubmitting ? (
                 <>

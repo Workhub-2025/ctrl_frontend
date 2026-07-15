@@ -7,11 +7,8 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { UK_LEGAL, formatUkDate } from "@/lib/legal/uk-compliance";
@@ -41,7 +38,13 @@ export function LegalPageShell({
 
   return (
     <div className="min-h-screen bg-background p-4">
-      <div className="mx-auto max-w-4xl">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+      >
+        Skip to main content
+      </a>
+      <main id="main-content" tabIndex={-1} className="mx-auto max-w-4xl focus:outline-none">
         <div className="mb-6 flex items-center justify-between">
           <Button asChild variant="ghost">
             <Link href="/">
@@ -61,10 +64,12 @@ export function LegalPageShell({
             <div
               className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${iconClassName}`}
             >
-              <Icon className="h-8 w-8" />
+              <Icon className="h-8 w-8" aria-hidden="true" />
             </div>
-            <CardTitle className="text-3xl font-headline">{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
+            <h1 className="text-3xl font-semibold leading-none tracking-tight font-headline">
+              {title}
+            </h1>
+            <p className="text-sm text-muted-foreground">{description}</p>
             <p className="mt-2 text-sm text-muted-foreground">
               Last updated: {formatUkDate(UK_LEGAL.lastUpdated)}
               {version ? (
@@ -76,9 +81,9 @@ export function LegalPageShell({
             </p>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[600px] w-full rounded-md border p-6">
-              <div className="space-y-6 text-sm">{children}</div>
-            </ScrollArea>
+            <div className="space-y-6 rounded-md border p-4 text-sm leading-6 sm:p-6">
+              {children}
+            </div>
           </CardContent>
         </Card>
 
@@ -103,7 +108,7 @@ export function LegalPageShell({
             DPA
           </Link>
         </p>
-      </div>
+      </main>
     </div>
   );
 }

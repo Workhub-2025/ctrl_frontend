@@ -5,13 +5,7 @@ import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { getAdminAssessmentVersions } from "@/services/admin-platform.service";
 
-const ASSESSMENT_SLUGS = [
-  "situational-judgement",
-  "typing",
-  "prioritisation",
-  "call-simulation",
-  "short-term-memory",
-];
+const ASSESSMENT_SLUGS = ["call-simulation", "prioritisation", "situational-judgement", "short-term-memory", "typing"];
 
 function resolveRequestedSlugs(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get("slug")?.trim();

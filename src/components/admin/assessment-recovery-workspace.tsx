@@ -183,8 +183,8 @@ export function AssessmentRecoveryWorkspace({
                       </td>
                       <td className="px-4 py-4">
                         <Badge className={portalBadgeClass}>
-                          {attempt.attemptStatus === "abandoned_locked"
-                            ? "Abandoned"
+                          {attempt.attemptStatus === "interrupted_locked"
+                            ? "Interrupted"
                             : attempt.attemptStatus?.replace(/_/g, " ") ?? "Unknown"}
                         </Badge>
                       </td>

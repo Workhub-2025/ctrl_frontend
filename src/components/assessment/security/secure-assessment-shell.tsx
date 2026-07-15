@@ -292,6 +292,7 @@ export function SecureAssessmentShell({
       {/* Main Assessment Content */}
       <main
         id="main-content"
+        tabIndex={-1}
         className="flex-1 overflow-y-auto overflow-x-hidden bg-[linear-gradient(180deg,hsl(var(--background))_0%,hsl(var(--muted)/0.28)_100%)] pb-14 pt-20"
       >
         <div className="mx-auto w-full max-w-[1680px] px-4 py-6 md:px-6">

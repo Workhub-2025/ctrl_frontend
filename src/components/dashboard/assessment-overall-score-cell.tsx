@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
 import { findAssessmentResultForStackEntry } from "@/lib/hiring-manager/assessment-matching";
 import { buildCompositeStackEntries } from "@/lib/hiring-manager/campaign-stack-score";
-import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
+import { computeDecisionReadyCompositeScore } from "@/lib/hiring-manager/composite-score";
 import type { HiringManagerAssessmentResult } from "@/services/hiring-manager-portal-client.service";
 import type { HiringManagerResolvedStackSummary } from "@/types/hiring-manager.types";
 
@@ -80,7 +80,6 @@ export function AssessmentOverallScoreCell({
     resolvedStackSummary,
   });
 
-  const overallScore = computeWeightedCompositeScore(stackEntries, results);
   const breakdown = stackEntries.map((entry, index) => {
     const result = findAssessmentResultForStackEntry(entry, results) ?? null;
     const status = result ? getHmAssessmentItemStatus(result) : "pending";
@@ -94,6 +93,8 @@ export function AssessmentOverallScoreCell({
       score,
     };
   });
+  const completedCount = breakdown.filter((entry) => entry.status === "completed").length;
+  const overallScore = computeDecisionReadyCompositeScore(stackEntries, results);
 
   const statusLabel = (status: string) => {
     if (status === "completed") return "Completed";
@@ -101,11 +102,14 @@ export function AssessmentOverallScoreCell({
     return "Pending";
   };
 
-  const scoreDisplay =
-    overallScore === null ? (
-      <span className="text-xs font-semibold tabular-nums text-muted-foreground">—</span>
-    ) : (
+  const scoreDisplay = overallScore !== null ? (
       <ScoreRingSmall value={overallScore} />
+    ) : breakdown.length > 0 ? (
+      <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+        {completedCount}/{breakdown.length}
+      </span>
+    ) : (
+      <span className="text-xs font-semibold tabular-nums text-muted-foreground">—</span>
     );
 
   const cell = <div className={cn("inline-flex items-center", className)}>{scoreDisplay}</div>;
@@ -120,9 +124,9 @@ export function AssessmentOverallScoreCell({
             type="button"
             className="rounded-lg text-left transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label={
-              overallScore === null
-                ? "Overall score pending — view assessment breakdown"
-                : `Overall score ${overallScore}% — view assessment breakdown`
+              overallScore !== null
+                ? `Overall score ${overallScore}% — view assessment breakdown`
+                : `Assessment progress ${completedCount} of ${breakdown.length} completed — view assessment breakdown`
             }
           >
             {cell}
@@ -132,8 +136,8 @@ export function AssessmentOverallScoreCell({
           <p className={cn(portalLabelClass, "mb-2")}>Assessment breakdown</p>
           <ul className="space-y-1.5">
             {breakdown.map((row) => (
-              <li key={row.key} className="flex items-center justify-between gap-4 text-xs">
-                <span className="min-w-0 truncate font-medium text-foreground">{row.name}</span>
+              <li key={row.key} className="flex items-start justify-between gap-4 text-xs">
+                <span className="min-w-0 break-words font-medium text-foreground">{row.name}</span>
                 <span className="flex shrink-0 items-center gap-2 tabular-nums text-muted-foreground">
                   <span className={portalBadgeClass}>{statusLabel(row.status)}</span>
                   <span>{row.weight}% wt</span>

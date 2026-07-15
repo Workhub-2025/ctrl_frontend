@@ -58,6 +58,7 @@ interface CampaignBuilderProps {
     assessmentSlugs: string[];
     assessmentWeights: Record<string, number>;
     assessmentVersions: Record<string, string>;
+    assessmentThresholds?: Record<string, number>;
     typingDifficulty: CampaignDraft["typingDifficulty"];
     prioritisationScoringMode: CampaignDraft["prioritisationScoringMode"];
     deliveryMode: CampaignDraft["deliveryMode"];
@@ -81,6 +82,7 @@ type CampaignDraft = {
   assessmentSlugs: string[];
   assessmentWeights: Record<string, number>;
   assessmentVersions: Record<string, string>;
+  assessmentThresholds: Record<string, number>;
   typingDifficulty: "Base" | "Intermediate" | "Extreme";
   prioritisationScoringMode: "Basic" | "Advanced";
 };
@@ -97,11 +99,12 @@ const emptyDraft: CampaignDraft = {
   assessmentSlugs: [],
   assessmentWeights: {},
   assessmentVersions: {},
+  assessmentThresholds: {},
   typingDifficulty: "Base",
   prioritisationScoringMode: "Basic",
 };
 
-const DEFAULT_ASSESSMENT_VERSION = "1.0.0";
+const DEFAULT_ASSESSMENT_VERSION = "2.0.0";
 
 function getVersionOptions(assessment: HiringManagerAssessment) {
   return assessment.availableVersions.length > 0
@@ -251,6 +254,7 @@ export function HiringManagerCampaignBuilder({
       assessmentSlugs: initialStackDraft.assessmentSlugs,
       assessmentWeights: initialStackDraft.assessmentWeights,
       assessmentVersions: initialStackDraft.assessmentVersions,
+      assessmentThresholds: initialStackDraft.assessmentThresholds ?? current.assessmentThresholds,
       typingDifficulty: initialStackDraft.typingDifficulty,
       prioritisationScoringMode: initialStackDraft.prioritisationScoringMode,
       deliveryMode: initialStackDraft.deliveryMode,
@@ -332,6 +336,9 @@ export function HiringManagerCampaignBuilder({
               ...current.assessmentVersions,
               [slug]: DEFAULT_ASSESSMENT_VERSION,
             },
+        assessmentThresholds: exists
+          ? removeRecordKey(current.assessmentThresholds, slug)
+          : { ...current.assessmentThresholds, [slug]: 70 },
       };
     });
     setSavedMessage(null);
@@ -442,12 +449,7 @@ export function HiringManagerCampaignBuilder({
           const version = draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION;
           settings[assessment.slug] = {
             version,
-            difficulty: assessment.slug === "typing" ? draft.typingDifficulty : "Base",
-            ...(assessment.slug === "prioritisation"
-              ? {
-                  scoringMode: draft.prioritisationScoringMode,
-                }
-              : {}),
+            threshold: draft.assessmentThresholds[assessment.slug] ?? 70,
           };
           return settings;
         },
@@ -554,7 +556,7 @@ export function HiringManagerCampaignBuilder({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)] xl:items-start">
       <div className="space-y-5">
         {!isEditStackMode ? (
         <Card className={portalHeroPanelClass}>
@@ -716,7 +718,7 @@ export function HiringManagerCampaignBuilder({
         </Card>
       </div>
 
-      <section className="space-y-4">
+      <section className="space-y-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:overscroll-contain">
         <Card className={portalHeroPanelClass}>
           <CardHeader className="border-b border-border/50 p-5 dark:border-white/5">
             <CardTitle className="text-base font-bold text-foreground">
@@ -799,7 +801,7 @@ export function HiringManagerCampaignBuilder({
                   </Button>
                 )}
               </div>
-              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              <div className="mt-3 grid gap-3">
                 {selectedAssessments.length === 0 ? (
                   <p className="text-xs italic leading-normal text-muted-foreground">
                     Select at least one assessment from the stack above.
@@ -825,36 +827,9 @@ export function HiringManagerCampaignBuilder({
                           {assessment.duration}
                         </span>
                       </div>
-                      {assessment.slug === "typing" && (
-                        <div className="mt-3 space-y-2">
-                          <Label className={portalLabelClass}>
-                            Typing level
-                          </Label>
-                          <div className="mt-2 grid gap-1.5">
-                            {(["Base", "Intermediate", "Extreme"] as const).map((level) => {
-                              const isActive = draft.typingDifficulty === level;
-                              return (
-                                <button
-                                  key={level}
-                                  type="button"
-                                  onClick={() => updateDraft("typingDifficulty", level)}
-                                  className={cn(
-                                    isActive
-                                      ? portalSelectableCardSelectedClass
-                                      : portalSelectableCardClass,
-                                    "flex items-center justify-center px-3 py-2 text-xs font-semibold"
-                                  )}
-                                >
-                                  {level}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
                       <div className="mt-3 space-y-2">
                         <Label className={portalLabelClass}>
-                          Data version
+                          Module release
                         </Label>
                         <Select
                           value={selectedVersion}
@@ -881,33 +856,31 @@ export function HiringManagerCampaignBuilder({
                         </Select>
                         <VersionPreviewPanel assessment={assessment} version={selectedVersionOption} />
                       </div>
-                      {assessment.slug === "prioritisation" && (
-                        <div className="mt-3 space-y-2">
-                          <Label className={portalLabelClass}>
-                            Scoring Mode
-                          </Label>
-                          <div className="mt-2 grid gap-1.5">
-                            {(["Basic", "Advanced"] as const).map((mode) => {
-                              const isActive = draft.prioritisationScoringMode === mode;
-                              return (
-                                <button
-                                  key={mode}
-                                  type="button"
-                                  onClick={() => updateDraft("prioritisationScoringMode", mode)}
-                                  className={cn(
-                                    isActive
-                                      ? portalSelectableCardSelectedClass
-                                      : portalSelectableCardClass,
-                                    "flex items-center justify-center px-3 py-2 text-xs font-semibold"
-                                  )}
-                                >
-                                  {mode}
-                                </button>
-                              );
-                            })}
-                          </div>
+                      <div className="mt-3 space-y-2">
+                        <Label htmlFor={`threshold-${assessment.slug}`} className={portalLabelClass}>
+                          Assessment standard threshold
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id={`threshold-${assessment.slug}`}
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={draft.assessmentThresholds[assessment.slug] ?? 70}
+                            onChange={(event) => {
+                              const next = Math.max(0, Math.min(100, Number.parseInt(event.target.value || "0", 10)));
+                              setDraft((current) => ({
+                                ...current,
+                                assessmentThresholds: { ...current.assessmentThresholds, [assessment.slug]: next },
+                              }));
+                            }}
+                            className={cn(portalInputClass, "h-9")}
+                          />
+                          <span className="text-xs font-bold text-muted-foreground">%</span>
                         </div>
-                      )}
+                        <p className="text-[11px] leading-5 text-muted-foreground">Snapshotted when the candidate starts. Critical gates still apply; this is evidence, not an automated hiring decision.</p>
+                      </div>
                       <div className="mt-3 space-y-2">
                         <Label
                           htmlFor={`weight-${assessment.slug}`}
@@ -993,7 +966,7 @@ export function HiringManagerCampaignBuilder({
                 <ShieldCheck className="h-4 w-4" />
                 <p className="text-xs uppercase font-bold tracking-wider">Estimated time</p>
               </div>
-              <p className="mt-2 text-2xl font-black text-white">
+              <p className="mt-2 text-2xl font-bold text-foreground">
                 {formatTotalDuration(totalDurationSeconds)}
               </p>
             </div>

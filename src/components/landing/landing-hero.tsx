@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowRight,
+  CheckCircle2,
+  ClipboardCheck,
+  Headphones,
+  ListChecks,
+  Scale,
+} from "lucide-react";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 
@@ -15,15 +23,10 @@ function scrollToScene(id: string) {
   if (!target) return;
 
   const navHeight = nav instanceof HTMLElement ? nav.getBoundingClientRect().height : 0;
-  const extraOffset = window.innerWidth >= 1024 ? 28 : 18;
-  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - extraOffset;
+  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 24;
 
-  window.scrollTo({
-    top: Math.max(0, top),
-    behavior: "smooth",
-  });
-
-  window.history.replaceState(null, "", `#${id}`);
+  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  window.history.replaceState(null, "", "#" + id);
 }
 
 type LandingHeroProps = {
@@ -32,164 +35,195 @@ type LandingHeroProps = {
   reduceMotion?: boolean;
 };
 
+const moduleRows = [
+  { label: "Call simulation", detail: "Branching live scenario", icon: Headphones },
+  { label: "Prioritisation", detail: "Evolving incident queue", icon: ListChecks },
+  { label: "Situational judgement", detail: "Operational decisions", icon: Scale },
+];
+
 export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion = false }: LandingHeroProps) {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
 
-  // Extract color for gradient (e.g., from "bg-[#000f24]" to "#000f24")
-  const gradientColor = bgColor.startsWith("bg-[")
-    ? bgColor.slice(4, -1)
-    : bgColor.replace("bg-", "");
-
   const container: Variants = {
     hidden: {},
-    show: {
-      transition: { staggerChildren: 0.12, delayChildren: 0.15 },
-    },
+    show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
   };
 
   const rise: Variants = {
-    hidden: { opacity: 0, y: 26, filter: "blur(8px)" },
+    hidden: { opacity: 0, y: 12 },
     show: {
       opacity: 1,
       y: 0,
-      filter: "blur(0px)",
-      transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.52, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
   return (
     <section
       id="landing-hero"
-      className={`relative min-h-[92svh] lg:min-h-[100svh] overflow-hidden flex flex-col items-center justify-start lg:justify-center pb-20 scroll-mt-24 ${bgColor}`}
+      className={"relative min-h-[760px] overflow-hidden " + bgColor}
     >
-      {/* Animated Data Streams Background */}
       <AnimatedBackground disabled={reduceMotion} />
 
-      {/* Reticle grid — echoes the logo's registration marks, very subtle */}
       <div
         aria-hidden
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.18] dark:opacity-[0.22]"
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.14] dark:opacity-[0.2]"
         style={{
           backgroundImage:
             "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
           backgroundSize: "64px 64px",
           color: "rgb(148 163 184 / 0.35)",
-          maskImage: "radial-gradient(ellipse 70% 60% at 50% 42%, black 30%, transparent 78%)",
-          WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 42%, black 30%, transparent 78%)",
+          maskImage: "linear-gradient(to bottom, black 10%, black 68%, transparent 95%)",
+          WebkitMaskImage: "linear-gradient(to bottom, black 10%, black 68%, transparent 95%)",
         }}
       />
 
-      {/* Soft radial spotlight behind the headline */}
-      <motion.div
+      <div
         aria-hidden
-        className="absolute left-1/2 top-[38%] z-0 h-[42rem] w-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[44rem]"
         style={{
           background:
-            "radial-gradient(circle, rgba(56,189,248,0.16) 0%, rgba(37,99,235,0.08) 38%, transparent 70%)",
+            "radial-gradient(circle at 23% 40%, rgba(56,189,248,0.13), transparent 34%), radial-gradient(circle at 78% 46%, rgba(37,99,235,0.1), transparent 30%)",
         }}
-        initial={reduceMotion ? false : { opacity: 0, scale: 0.85 }}
-        animate={reduceMotion ? {} : { opacity: [0.7, 1, 0.7], scale: [0.95, 1.04, 0.95] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Soft bottom fade to seamlessly blend into the next section */}
-      <div
-        className="absolute bottom-0 inset-x-0 h-48 pointer-events-none z-[1]"
-        style={{ background: `linear-gradient(to top, ${gradientColor.startsWith('#') ? gradientColor : (gradientColor === 'black' ? 'black' : 'var(--tw-gradient-from)')}, transparent)` }}
       />
 
       <div
-        className="relative z-10 mx-auto w-full max-w-[1440px] px-6 max-lg:pt-[calc(var(--landing-nav-clearance)+1.5rem)] lg:pt-[var(--landing-nav-clearance)]"
-        style={{ "--landing-nav-clearance": `${navHeight}px` } as React.CSSProperties}
+        className="relative z-10 mx-auto flex min-h-[760px] w-full max-w-[1440px] items-center px-6 pb-16 max-lg:pt-[calc(var(--landing-nav-clearance)+2.25rem)] lg:px-10 lg:pb-20 lg:pt-[calc(var(--landing-nav-clearance)+2rem)]"
+        style={{ "--landing-nav-clearance": String(navHeight) + "px" } as React.CSSProperties}
       >
         <motion.div
           variants={container}
           initial={reduceMotion ? false : "hidden"}
           animate={reduceMotion ? undefined : "show"}
-          className="flex flex-col items-center text-center max-w-[58rem] mx-auto gap-7"
+          className="grid w-full items-center gap-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(23rem,0.72fr)] lg:gap-16 xl:gap-24"
         >
-          {/* Main Headline */}
-          <motion.h1
-            variants={rise}
-            className="text-[2.75rem] leading-[1.05] sm:text-6xl lg:text-[4.75rem] lg:leading-[1.04] font-medium tracking-tight text-slate-900 dark:text-white font-display text-balance"
-          >
-            Hiring the right people starts with the{" "}
-            <span className="relative whitespace-nowrap">
-              <span className="bg-gradient-to-r from-sky-500 to-blue-600 dark:from-sky-300 dark:to-blue-400 bg-clip-text text-transparent">
-                right intelligence
+          <div className="min-w-0 max-w-[49rem]">
+            <motion.div
+              variants={rise}
+              className="mb-6 flex items-center gap-3 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400"
+            >
+              <span className="h-px w-8 bg-sky-500/70" aria-hidden="true" />
+              Operational assessment infrastructure
+            </motion.div>
+
+            <motion.h1
+              variants={rise}
+              className="text-balance font-display text-[3rem] font-medium leading-[1.02] tracking-[-0.035em] text-slate-900 sm:text-6xl lg:text-[4.6rem] dark:text-white"
+            >
+              See how people think before the role{" "}
+              <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent dark:from-sky-300 dark:to-blue-400">
+                demands it.
               </span>
-            </span>
-          </motion.h1>
+            </motion.h1>
 
-
-
-          {/* Call to Action Buttons */}
-          <motion.div
-            variants={rise}
-            className="mt-2 flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto"
-          >
-            <Button
-              asChild
-              className="group h-12 md:h-14 rounded-full bg-slate-900 dark:bg-white px-8 text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors text-sm md:text-base font-medium w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50"
+            <motion.p
+              variants={rise}
+              className="mt-7 max-w-[42rem] text-lg leading-8 text-slate-600 sm:text-xl dark:text-slate-300"
             >
-              <Link href="/auth/register?mode=register" className="flex items-center justify-center">
-                Get Started
-                <ArrowRight className="h-4 w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => scrollToScene("capabilities")}
-              className="h-12 md:h-14 rounded-full border border-slate-200 dark:border-white/10 bg-transparent px-8 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors text-sm md:text-base font-medium w-full sm:w-auto focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
-            >
-              Explore Platform
-            </Button>
-          </motion.div>
+              CTRL gives emergency services and high-trust teams realistic,
+              auditable simulations—then turns performance into evidence hiring
+              teams can review.
+            </motion.p>
 
-          {/* Trust strip — quiet proof points instead of a noisy widget */}
-          <motion.div
+            <motion.div variants={rise} className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Button
+                type="button"
+                onClick={() => scrollToScene("capabilities")}
+                className="group h-12 w-full rounded-md bg-slate-900 px-7 text-sm font-semibold text-white hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400 sm:w-auto md:h-13 md:text-base dark:bg-white dark:text-black dark:hover:bg-slate-200 dark:focus-visible:ring-white/50"
+              >
+                Explore the platform
+                <ArrowDown className="ml-2 h-4 w-4 transition-transform group-hover:translate-y-0.5" aria-hidden="true" />
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                className="group h-12 w-full rounded-md border border-slate-300 bg-white/60 px-7 text-sm font-semibold text-slate-800 hover:bg-white focus-visible:ring-2 focus-visible:ring-slate-400 sm:w-auto md:h-13 md:text-base dark:border-white/15 dark:bg-transparent dark:text-slate-200 dark:hover:bg-white/[0.06] dark:hover:text-white dark:focus-visible:ring-white/20"
+              >
+                <Link href="#contracts" onClick={(event) => { event.preventDefault(); scrollToScene("contracts"); }}>
+                  View contracts
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                </Link>
+              </Button>
+            </motion.div>
+
+            <motion.ul
+              variants={rise}
+              className="mt-9 flex flex-wrap gap-x-7 gap-y-3 border-t border-slate-200/80 pt-6 text-xs font-medium text-slate-500 dark:border-white/10 dark:text-slate-400"
+            >
+              {["Scenario-based", "Auditable evidence", "Human hiring decisions"].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+                  {item}
+                </li>
+              ))}
+            </motion.ul>
+          </div>
+
+          <motion.aside
             variants={rise}
-            className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-[11px] font-mono uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500"
+            aria-label="Example CTRL assessment brief"
+            className="relative min-w-0 overflow-hidden border border-slate-300 bg-[#f8fafc] shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)] dark:border-white/12 dark:bg-[#080b10] dark:shadow-[0_24px_80px_-30px_rgba(0,0,0,0.75)]"
           >
-            <span className="flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-sky-500/70" />
-              Behavioural scoring
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-sky-500/70" />
-              Pressure-tested scenarios
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-1 w-1 rounded-full bg-sky-500/70" />
-              Three role-built portals
-            </span>
-          </motion.div>
+            <span aria-hidden className="absolute -left-px -top-px h-5 w-5 border-l-2 border-t-2 border-sky-500" />
+            <span aria-hidden className="absolute -bottom-px -right-px h-5 w-5 border-b-2 border-r-2 border-sky-500" />
+
+            <div className="flex items-start justify-between gap-6 border-b border-slate-200 px-6 py-5 dark:border-white/10">
+              <div>
+                <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400">
+                  Assessment brief
+                </p>
+                <h2 className="mt-2 font-display text-2xl font-medium text-slate-900 dark:text-white">
+                  Emergency call handler
+                </h2>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-2 border border-emerald-500/25 bg-emerald-500/[0.08] px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                Controlled
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 border-b border-slate-200 dark:border-white/10">
+              <div className="border-r border-slate-200 px-6 py-4 dark:border-white/10">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">Delivery</p>
+                <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">Remote or in-person</p>
+              </div>
+              <div className="px-6 py-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">Evidence</p>
+                <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">Structured review</p>
+              </div>
+            </div>
+
+            <div className="px-6 py-5">
+              <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Module sequence
+              </p>
+              <div className="divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/10 dark:border-white/10">
+                {moduleRows.map((module, index) => (
+                  <div key={module.label} className="flex items-center gap-4 py-3.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-slate-200 bg-white text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
+                      <module.icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{module.label}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{module.detail}</p>
+                    </div>
+                    <span className="font-mono text-[10px] text-slate-400">0{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 bg-slate-100 px-6 py-4 text-xs leading-5 text-slate-600 dark:bg-white/[0.035] dark:text-slate-400">
+              <ClipboardCheck className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" aria-hidden="true" />
+              Integrity events remain separate from performance evidence.
+            </div>
+          </motion.aside>
         </motion.div>
       </div>
-
-      {/* Scroll Down Indicator */}
-      <motion.button
-        onClick={() => scrollToScene("capabilities")}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
-        initial={reduceMotion ? false : { opacity: 0 }}
-        animate={reduceMotion ? {} : { opacity: 1 }}
-        transition={{ duration: 0.8, delay: 1.1, ease: "easeOut" }}
-        aria-label="Scroll down"
-      >
-        <motion.div
-          animate={reduceMotion ? {} : { y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-        >
-          <ChevronDown className="h-8 w-8" />
-        </motion.div>
-      </motion.button>
     </section>
   );
 }

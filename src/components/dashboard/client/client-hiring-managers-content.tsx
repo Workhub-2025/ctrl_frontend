@@ -16,13 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   ClientErrorBanner,
   ClientPageHeader,
   ClientRefreshButton,
@@ -34,12 +27,12 @@ import {
 } from "@/components/dashboard/portal/portal-ui";
 import {
   portalBadgeClass,
-  portalDialogShellClass,
   portalIconWrapClass,
   portalCardClass,
   portalCardInteractiveClass,
   portalPanelClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
 import { formatDateTime } from "@/components/dashboard/client/client-portal-utils";
 import type { SeatSlot } from "@/hooks/use-client-portal";
 import { useClientPortal } from "@/context/client-portal-provider";
@@ -221,8 +214,8 @@ export function ClientHiringManagersContent() {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-foreground">{manager.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">{manager.email}</p>
+                        <p className="break-words text-sm font-semibold text-foreground">{manager.name}</p>
+                        <p className="break-all text-[0.8125rem] leading-relaxed text-muted-foreground">{manager.email}</p>
                       </div>
                       <Badge variant="outline" className="rounded-md border-slate-500/20 text-muted-foreground">
                         Previous
@@ -240,19 +233,25 @@ export function ClientHiringManagersContent() {
         </div>
       </PortalPanel>
 
-      <Dialog open={Boolean(selectedSeat)} onOpenChange={(open) => !open && setSelectedSeat(null)}>
-        <DialogContent className={cn(portalDialogShellClass, "max-w-md")}>
+      <PortalSidePanel
+        open={Boolean(selectedSeat)}
+        onOpenChange={(open) => !open && setSelectedSeat(null)}
+        eyebrow={selectedSeat?.type === "empty" ? "Seat access" : "Hiring manager"}
+        title={
+          selectedSeat?.type === "empty"
+            ? `${selectedSeat.label} access code`
+            : selectedSeat?.manager.name ?? "Hiring manager"
+        }
+        description={
+          selectedSeat?.type === "empty"
+            ? "Email an invite or share the access code manually with the hiring manager."
+            : selectedSeat?.manager.email
+        }
+        icon={selectedSeat?.type === "empty" ? KeyRound : BriefcaseBusiness}
+        width="md"
+      >
           {selectedSeat?.type === "empty" && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="font-display text-xl font-semibold">
-                  {selectedSeat.label} access code
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  Email an invite or share the access code manually with the hiring manager.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-5 pt-3">
+              <div className="space-y-5">
                 <div className="space-y-2">
                   <label htmlFor="hm-invite-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Hiring manager email
@@ -264,11 +263,11 @@ export function ClientHiringManagersContent() {
                       placeholder="name@company.com"
                       value={inviteEmail}
                       onChange={(event) => setInviteEmail(event.target.value)}
-                      className="rounded-xl"
+                      className="rounded-md"
                     />
                     <Button
                       type="button"
-                      className="shrink-0 gap-2 rounded-xl"
+                      className="shrink-0 gap-2 rounded-md"
                       onClick={() => void handleSendInvite(selectedSeat)}
                       disabled={!inviteEmail.trim() || inviteBusy === selectedSeat.label}
                     >
@@ -283,7 +282,7 @@ export function ClientHiringManagersContent() {
                   ) : null}
                 </div>
 
-                <div className="relative overflow-hidden rounded-xl border border-border bg-muted/40 p-5 shadow-inner dark:border-white/10 dark:bg-white/[0.02]">
+                <div className="relative overflow-hidden rounded-md border border-border bg-muted/30 p-5">
                   <p className="break-all text-center font-mono text-2xl font-bold tracking-widest text-primary">
                     {selectedSeat.accessCode?.code ?? "No code available"}
                   </p>
@@ -300,7 +299,7 @@ export function ClientHiringManagersContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full gap-2 rounded-xl"
+                  className="w-full gap-2 rounded-md"
                   onClick={() => void handleRefreshCode(selectedSeat)}
                   disabled={!selectedSeat.accessCode || codeBusy === selectedSeat.label}
                 >
@@ -311,21 +310,11 @@ export function ClientHiringManagersContent() {
                   {codeBusy === selectedSeat.label ? "Refreshing…" : "Refresh code"}
                 </Button>
               </div>
-            </>
           )}
           {selectedSeat?.type === "occupied" && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="font-display text-xl font-semibold">
-                  {selectedSeat.manager.name}
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground">
-                  {selectedSeat.manager.email}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-5 pt-3">
+              <div className="space-y-5">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border bg-muted/30 p-4 shadow-inner dark:border-white/10 dark:bg-white/[0.02]">
+                  <div className="rounded-md border border-border bg-muted/20 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Campaigns
                     </p>
@@ -333,7 +322,7 @@ export function ClientHiringManagersContent() {
                       {selectedSeat.manager.campaigns.length}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-border bg-muted/30 p-4 shadow-inner dark:border-white/10 dark:bg-white/[0.02]">
+                  <div className="rounded-md border border-border bg-muted/20 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Onboarded
                     </p>
@@ -355,8 +344,8 @@ export function ClientHiringManagersContent() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate font-semibold text-foreground">{campaign.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{campaign.jobRole}</p>
+                          <p className="break-words font-semibold text-foreground">{campaign.name}</p>
+                          <p className="break-words text-[0.8125rem] leading-relaxed text-muted-foreground">{campaign.jobRole}</p>
                         </div>
                         <BriefcaseBusiness className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                       </div>
@@ -378,7 +367,7 @@ export function ClientHiringManagersContent() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full rounded-xl border-orange-500/20 text-orange-500 hover:!border-orange-500/50 hover:!bg-orange-500/10 hover:!text-orange-500"
+                    className="w-full rounded-md border-orange-500/20 text-orange-500 hover:!border-orange-500/50 hover:!bg-orange-500/10 hover:!text-orange-500"
                     onClick={() => void handleRelease(selectedSeat.manager)}
                     disabled={releasingManagerId === selectedSeat.manager.documentId}
                   >
@@ -393,10 +382,8 @@ export function ClientHiringManagersContent() {
                   </Button>
                 )}
               </div>
-            </>
           )}
-        </DialogContent>
-      </Dialog>
+      </PortalSidePanel>
     </div>
   );
 }
@@ -421,17 +408,17 @@ function SeatCard({
   return (
     <div
       className={cn(
-        "relative flex min-h-[200px] flex-col justify-between overflow-hidden p-5 transition-all duration-300",
+        "relative flex min-h-[200px] flex-col justify-between overflow-hidden p-5 transition-colors duration-150",
         seat.type === "occupied"
           ? portalCardClass
-          : "rounded-2xl border-2 border-dashed border-border/80 bg-transparent shadow-none dark:border-white/10"
+          : "rounded-lg border-2 border-dashed border-border bg-transparent shadow-none"
       )}
     >
       {seat.type === "occupied" ? (
         <div className="flex h-full flex-col justify-between space-y-4">
           <div className="flex min-w-0 items-start justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-gradient-to-tr from-primary/30 to-indigo-500/25 text-xs font-bold text-foreground shadow-sm">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-xs font-bold text-foreground">
                 {seat.manager.name
                   .split(" ")
                   .map((n) => n[0])
@@ -440,10 +427,10 @@ function SeatCard({
                   .toUpperCase()}
               </div>
               <div className="min-w-0">
-                <h3 className="truncate text-sm font-semibold leading-snug text-foreground">
+                <h3 className="break-words text-sm font-semibold leading-snug text-foreground">
                   {seat.manager.name}
                 </h3>
-                <p className="truncate text-xs leading-snug text-muted-foreground">{seat.manager.email}</p>
+                <p className="break-all text-[0.8125rem] leading-relaxed text-muted-foreground">{seat.manager.email}</p>
               </div>
             </div>
             <Badge className="shrink-0 rounded-lg border-primary/15 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
@@ -451,8 +438,8 @@ function SeatCard({
             </Badge>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 border-t border-border/40 pt-3 dark:border-white/5">
-            <div className="rounded-xl border border-border/20 bg-muted/10 p-2 text-center dark:border-white/5 dark:bg-white/[0.01]">
+          <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
+            <div className="rounded-md border border-border bg-muted/20 p-2 text-center">
               <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Campaigns
               </p>
@@ -460,7 +447,7 @@ function SeatCard({
                 {seat.manager.campaigns.length}
               </p>
             </div>
-            <div className="rounded-xl border border-border/20 bg-muted/10 p-2 text-center dark:border-white/5 dark:bg-white/[0.01]">
+            <div className="rounded-md border border-border bg-muted/20 p-2 text-center">
               <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Onboarded
               </p>
@@ -475,7 +462,7 @@ function SeatCard({
               type="button"
               variant="outline"
               size="sm"
-              className="w-full rounded-xl text-xs font-semibold"
+              className="w-full rounded-md text-xs font-semibold"
               onClick={onOpenOccupied}
             >
               View workspaces
@@ -485,7 +472,7 @@ function SeatCard({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="rounded-xl border border-transparent px-2 text-red-500 hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-600"
+                className="rounded-md border border-transparent px-2 text-destructive hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => onRelease(seat.manager)}
                 disabled={releasingManagerId === seat.manager.documentId}
                 aria-label="Release seat"
@@ -515,7 +502,7 @@ function SeatCard({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className={cn("flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest", portalBadgeClass)}>
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary motion-safe:animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                   {seat.accessCode.invitedEmail ? "Invited" : "Invite code active"}
                 </span>
                 <span className="text-[9px] text-muted-foreground">Expires in 7 days</span>

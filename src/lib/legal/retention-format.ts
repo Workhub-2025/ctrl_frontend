@@ -1,6 +1,6 @@
 import { UK_LEGAL } from "@/lib/legal/uk-compliance";
 
-export const PLATFORM_DEFAULT_RETENTION_MONTHS = UK_LEGAL.assessmentDataRetentionYears * 12;
+export const PLATFORM_DEFAULT_RETENTION_MONTHS = UK_LEGAL.assessmentDataRetentionMonths;
 
 export function formatRetentionPeriod(months: number): string {
   const years = Math.floor(months / 12);

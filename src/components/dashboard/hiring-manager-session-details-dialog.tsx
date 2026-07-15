@@ -4,16 +4,6 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   UserMinus,
   MoreVertical,
   CalendarClock,
@@ -57,8 +47,8 @@ import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-mana
 import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
 import {
   PortalDetailHeader,
-  portalDetailDialogContentClass,
 } from "@/components/dashboard/portal/portal-dialog-ui";
+import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
 import {
   formatInviteStatusLabel,
   isCandidateJoined,
@@ -198,15 +188,19 @@ export function HiringManagerSessionDetailsDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={() => { }}>
-        <DialogContent
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          className={portalDetailDialogContentClass}
-        >
-          {workspace}
-        </DialogContent>
-      </Dialog>
+      <PortalSidePanel
+        open={open}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) handleClose();
+        }}
+        title={session ? getHmSessionDisplayName(session) : "Session workspace"}
+        header={null}
+        width="lg"
+        contentClassName="[&>button]:hidden"
+        bodyClassName="flex flex-col overflow-hidden p-0"
+      >
+        {workspace}
+      </PortalSidePanel>
 
       <CandidateResultsDialog
         resultsDialog={resultsDialog}
@@ -347,6 +341,10 @@ function HiringManagerSessionWorkspace({
                     session.candidates,
                     expectedAssessmentCount
                   );
+                  const incompleteCandidateCount = session.candidates.filter((candidate) => {
+                    const progress = getCandidateProgress(candidate, expectedAssessmentCount);
+                    return progress.completed < progress.total;
+                  }).length;
                   const isClosing = updatingSessionId === session.id;
 
                   if (allCandidatesComplete) {
@@ -364,28 +362,25 @@ function HiringManagerSessionWorkspace({
                     );
                   }
 
+                  const closeRequirementId = `close-session-requirement-${session.id}`;
+
                   return (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-flex cursor-not-allowed">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled
-                              className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              Close session
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          All candidates must complete their assessments before you can close this
-                          session.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex max-w-xs flex-col items-end gap-1.5 text-right">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled
+                        aria-describedby={closeRequirementId}
+                        className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Close session
+                      </Button>
+                      <p id={closeRequirementId} className="text-xs leading-snug text-muted-foreground">
+                        Available after all candidates complete their assessments. {incompleteCandidateCount}{" "}
+                        {incompleteCandidateCount === 1 ? "candidate remains" : "candidates remain"}.
+                      </p>
+                    </div>
                   );
                 })()
               ) : null}
@@ -456,7 +451,7 @@ function HiringManagerSessionWorkspace({
                       ? "Virtual"
                       : "In-person"}
                   </p>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{session.location}</p>
+                  <p className="mt-1 break-words text-[0.8125rem] leading-relaxed text-muted-foreground">{session.location}</p>
                 </div>
               </div>
 
@@ -555,9 +550,8 @@ function HiringManagerSessionWorkspace({
                         >
                           {/* Row header */}
                           <div
-                            onClick={() => toggleCandidateExpand(candidate.id)}
                             className={cn(
-                              "grid cursor-pointer select-none gap-4 p-4 sm:items-center",
+                              "grid gap-4 p-4 sm:items-center",
                               showUnlockControl
                                 ? "sm:grid-cols-[minmax(0,1fr)_140px_auto]"
                                 : "sm:grid-cols-[minmax(0,1fr)_auto]"
@@ -641,7 +635,7 @@ function HiringManagerSessionWorkspace({
                               {!showUnlockControl ? (
                                 <div className={cn("min-w-[130px] border-r pr-4", portalPanelBorderClass)}>
                                   <div className="text-right">
-                                    <p className={portalLabelClass}>Overall score</p>
+                                    <p className={portalLabelClass}>Assessment status</p>
                                     <div className="mt-1 flex justify-end">
                                       <AssessmentOverallScoreCell
                                         assessmentStack={stackForWeights}
@@ -661,7 +655,7 @@ function HiringManagerSessionWorkspace({
                                 className="h-9 rounded-lg px-4 text-xs font-semibold"
                               >
                                 <Eye className="mr-1.5 h-3.5 w-3.5" />
-                                View results
+                                {progress.completed >= progress.total ? "View results" : "View progress"}
                               </Button>
 
                               {onKickCandidate ? (
@@ -670,9 +664,10 @@ function HiringManagerSessionWorkspace({
                                     <Button
                                       variant="ghost"
                                       size="icon"
+                                      aria-label={`Candidate actions for ${candidate.name}`}
                                       className="h-9 w-9 shrink-0 rounded-lg text-muted-foreground"
                                     >
-                                      <MoreVertical className="h-4 w-4" />
+                                      <MoreVertical className="h-4 w-4" aria-hidden="true" />
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
@@ -694,7 +689,11 @@ function HiringManagerSessionWorkspace({
                                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                 aria-label={isExpanded ? "Collapse candidate details" : "Expand candidate details"}
                               >
-                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                {isExpanded ? (
+                                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
+                                )}
                               </button>
                             </div>
                           </div>
@@ -722,7 +721,7 @@ function HiringManagerSessionWorkspace({
                                     >
                                       <div
                                         className={cn(
-                                          "h-full rounded-full transition-all duration-500",
+                                          "h-full rounded-full transition-[width] duration-500",
                                           isAbandoned ? "bg-muted-foreground/40" : "bg-primary"
                                         )}
                                         style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreVal : 0}%` }}
@@ -776,12 +775,17 @@ export function CandidateResultsDialog({
   ].filter(Boolean);
 
   return (
-    <Dialog open={Boolean(resultsDialog)} onOpenChange={() => { }}>
-      <DialogContent
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        className={portalDetailDialogContentClass}
-      >
+    <PortalSidePanel
+      open={Boolean(resultsDialog)}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose();
+      }}
+      title={resultsDialog.candidateName}
+      header={null}
+      width="lg"
+      contentClassName="[&>button]:hidden"
+      bodyClassName="flex flex-col overflow-hidden p-0"
+    >
         <div className="relative z-10 shrink-0 px-6 pb-5 pt-6">
           <PortalDetailHeader
             layout="dialog"
@@ -814,8 +818,7 @@ export function CandidateResultsDialog({
             embedded
           />
         </div>
-      </DialogContent>
-    </Dialog>
+    </PortalSidePanel>
   );
 }
 

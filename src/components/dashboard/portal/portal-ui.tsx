@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   portalAlertErrorClass,
@@ -16,6 +16,7 @@ import {
   portalLabelClass,
   portalPageHeaderClass,
   portalPanelClass,
+  portalSupportingTextClass,
   portalCardClass,
   portalEmptyPanelClass,
   portalStatTileClass,
@@ -102,7 +103,7 @@ export function PortalPageHeader({
 }) {
   return (
     <header className={cn(portalPageHeaderClass, className)}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0 space-y-1.5">
           <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
             {title}
@@ -114,7 +115,9 @@ export function PortalPageHeader({
           ) : null}
         </div>
         {action ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 xl:shrink-0 xl:justify-end">
+            {action}
+          </div>
         ) : null}
       </div>
       {notice}
@@ -127,12 +130,14 @@ export function PortalPageHeader({
 export function PortalSectionHeader({
   eyebrow,
   title,
+  titleId,
   description,
   action,
   className,
 }: {
   eyebrow?: string;
   title: string;
+  titleId?: string;
   description?: string;
   action?: ReactNode;
   className?: string;
@@ -140,17 +145,17 @@ export function PortalSectionHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between",
+        "flex flex-col gap-3 md:flex-row md:items-end md:justify-between",
         className
       )}
     >
       <div className="min-w-0 space-y-0.5">
         {eyebrow ? (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-primary">
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        <h2 id={titleId} className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
         {description ? (
           <p className="text-sm text-muted-foreground">{description}</p>
         ) : null}
@@ -190,7 +195,7 @@ export function PortalStatTile({
         {value}
       </p>
       {detail ? (
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{detail}</p>
+        <p className={cn("mt-1", portalSupportingTextClass)}>{detail}</p>
       ) : null}
     </div>
   );
@@ -211,7 +216,90 @@ export function PortalPanel({
   accent?: string;
 }) {
   return (
-    <div className={cn(portalPanelClass, padding && "p-5", className)}>{children}</div>
+    <div className={cn(portalPanelClass, padding && "p-4 sm:p-5", className)}>{children}</div>
+  );
+}
+
+/* ── Decision ledger ─────────────────────────────────────────── */
+
+export type PortalDecisionLedgerItem = {
+  id: string;
+  title: string;
+  detail: string;
+  href: string;
+  count?: number;
+  meta?: string;
+  actionLabel?: string;
+};
+
+export function PortalDecisionLedger({
+  title = "Decision ledger",
+  description,
+  items,
+  loading = false,
+  emptyTitle = "No decisions are waiting",
+  emptyDescription = "There is nothing requiring a response right now.",
+}: {
+  title?: string;
+  description: string;
+  items: PortalDecisionLedgerItem[];
+  loading?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
+}) {
+  const headingId = `decision-ledger-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
+  return (
+    <section className="space-y-3" aria-labelledby={headingId}>
+      <PortalSectionHeader title={title} titleId={headingId} description={description} />
+      <div className={cn(portalPanelClass, "overflow-hidden border-l-2 border-l-primary/70")}>
+        {loading ? (
+          <p className="p-5 text-sm text-muted-foreground" aria-live="polite">
+            Loading decisions…
+          </p>
+        ) : items.length === 0 ? (
+          <div className="flex min-h-24 items-start gap-3 p-5">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">{emptyTitle}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{emptyDescription}</p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <ul className="divide-y divide-border">
+              {items.map((item) => (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    className="group flex min-h-[4.5rem] items-center gap-4 px-5 py-4 transition-colors hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  >
+                    {typeof item.count === "number" ? (
+                      <span className="min-w-10 text-lg font-semibold tabular-nums text-foreground">
+                        {item.count}
+                      </span>
+                    ) : (
+                      <span className="h-8 w-1 shrink-0 bg-primary/65" aria-hidden="true" />
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-foreground">{item.title}</span>
+                      <span className="mt-0.5 block text-sm leading-relaxed text-muted-foreground">{item.detail}</span>
+                    </span>
+                    {item.meta ? (
+                      <span className="hidden text-[0.8125rem] font-medium text-muted-foreground md:inline">{item.meta}</span>
+                    ) : null}
+                    <span className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary">
+                      <span className="hidden sm:inline">{item.actionLabel ?? "Review"}</span>
+                      <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -281,7 +369,7 @@ export function PortalQuickLinkRow({
             <link.icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <span>
               <span className="block text-sm font-semibold text-foreground">{link.label}</span>
-              <span className="block text-xs text-muted-foreground">{link.hint}</span>
+              <span className={cn("block", portalSupportingTextClass)}>{link.hint}</span>
             </span>
           </Link>
         ))}
@@ -332,7 +420,7 @@ export function PortalTableShell({
     <div className={cn(portalTableShellClass, className)}>
       {toolbar ? <div className={portalTableToolbarClass}>{toolbar}</div> : null}
       {footer ? (
-        <div className="border-b border-border/50 px-4 py-2.5 text-xs text-muted-foreground dark:border-white/6">
+        <div className="border-b border-border/50 px-4 py-2.5 text-[0.8125rem] text-muted-foreground dark:border-white/6">
           {footer}
         </div>
       ) : null}

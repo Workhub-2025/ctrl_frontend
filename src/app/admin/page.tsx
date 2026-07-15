@@ -2,26 +2,21 @@
 
 import { useMemo } from "react";
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Building2,
   AlertTriangle,
   History,
-  ArrowRight,
   Clock3,
-  FileCheck2,
   KeyRound,
   CreditCard,
   ArrowUpRight,
 } from "lucide-react";
-import Link from "next/link";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
   AdminAlert,
@@ -30,7 +25,7 @@ import {
   AdminStatTile,
 } from "@/components/admin/admin-portal-ui";
 import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
-import { cn } from "@/lib/utils";
+import { PortalDecisionLedger } from "@/components/dashboard/portal/portal-ui";
 
 type AdminOverviewData = {
   activeClients: number;
@@ -122,7 +117,7 @@ export default function AdminOverview() {
         {/* HM Seat Capacity Card */}
         <DashboardInfoCard interactive={false} className="lg:col-span-4">
           <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
-            <CardTitle className="text-base font-bold text-foreground">HM Seat Capacity</CardTitle>
+            <CardTitle className="text-base font-semibold text-foreground">Hiring-manager seat capacity</CardTitle>
             <CardDescription className="mt-0.5 text-xs text-muted-foreground">
               Active hiring-manager occupants versus contracted reusable seats.
             </CardDescription>
@@ -140,9 +135,9 @@ export default function AdminOverview() {
                       {client.seatsUsed} / {client.seatsAllowed} Seats
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-muted dark:bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className="h-full rounded-full bg-primary transition-all duration-300"
+                      className="h-full rounded-full bg-primary transition-[width] duration-300"
                       style={{ width: `${percent}%` }}
                     />
                   </div>
@@ -157,20 +152,20 @@ export default function AdminOverview() {
         {/* Recent Client Movement Card */}
         <DashboardInfoCard interactive={false} className="lg:col-span-3">
           <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
-            <CardTitle className="text-base font-bold text-foreground">Recent Client Movement</CardTitle>
+            <CardTitle className="text-base font-semibold text-foreground">Recent client activity</CardTitle>
             <CardDescription className="mt-0.5 text-xs text-muted-foreground">Latest client records returned by the platform API.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-5">
             {overview.recentActivity.length ? overview.recentActivity.map((activity, index) => (
               <div key={`${activity.id || "activity"}-${index}`}>
                 <div className="flex items-center gap-4">
-                  <History className="h-[18px] w-[18px] text-muted-foreground" />
+                  <History className="h-[18px] w-[18px] text-muted-foreground" aria-hidden="true" />
                   <div className="flex-1 space-y-1">
-                    <p className="text-sm font-bold leading-none text-foreground">{activity.title}</p>
+                    <p className="text-sm font-semibold leading-none text-foreground">{activity.title}</p>
                     <p className="text-xs text-muted-foreground">{activity.detail}</p>
                   </div>
                 </div>
-                {index < overview.recentActivity.length - 1 && <Separator className="mt-4 border-white/5" />}
+                {index < overview.recentActivity.length - 1 && <Separator className="mt-4" />}
               </div>
             )) : (
               <p className="text-xs text-muted-foreground">No recent client activity yet.</p>
@@ -179,38 +174,18 @@ export default function AdminOverview() {
         </DashboardInfoCard>
       </div>
 
-      {/* Operational Attention Card */}
-      <DashboardInfoCard interactive={false}>
-        <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
-          <CardTitle className="text-base font-bold text-foreground">Operational Attention</CardTitle>
-          <CardDescription className="text-slate-400 text-xs mt-0.5">Real account states that need a CTRL admin decision.</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-5">
-          <div className="space-y-4">
-            {overview.attentionRequired.length ? overview.attentionRequired.map((item, index) => (
-              <div key={`${item.id || "attention"}-${index}`} className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <AlertTriangle className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-bold text-foreground">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">{item.detail}</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" asChild className="h-8 rounded-lg text-xs font-semibold">
-                  <Link href="/admin/clients">
-                    Review <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </div>
-            )) : (
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <FileCheck2 className="h-[18px] w-[18px] text-primary" />
-                No real account issues need attention right now.
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </DashboardInfoCard>
+      <PortalDecisionLedger
+        title="Operational decisions"
+        description="Account states that require a CTRL administrator response."
+        items={overview.attentionRequired.map((item, index) => ({
+          id: `${item.id || "attention"}-${index}`,
+          title: item.title,
+          detail: item.detail,
+          href: "/admin/clients",
+        }))}
+        emptyTitle="No account issues need attention"
+        emptyDescription="Contracts, access and client records are currently up to date."
+      />
     </div>
   );
 }

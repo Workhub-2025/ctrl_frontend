@@ -27,6 +27,9 @@ export const EqualityMonitoringStateSchema = EqualityMonitoringSchema.extend({
     completed: z.boolean().optional(),
     completedAt: z.string().optional(),
     skipped: z.boolean().optional(),
+    voluntarySubmissionAcknowledged: z.boolean().optional(),
+    noticeVersion: z.string().optional(),
+    submittedAt: z.string().optional(),
 });
 
 // Type inference from schemas
@@ -60,7 +63,8 @@ export const UserSchema = z.object({
     agreeToMarketing: z.boolean().optional().nullable().default(false),
     agreeToTerms: z.boolean().optional().nullable(),
     agreeToDataPrivacyPolicy: z.boolean().optional().nullable(),
-    privacyPolicyVersion: z.string().optional().default("1.0"),
+    privacyConsent: z.record(z.string(), z.unknown()).optional().nullable(),
+    privacyPolicyVersion: z.string().optional().default("2.1"),
 
     // Assessment related
     progresStatus: ProgresStatusSchema.optional().default("Not started"),
@@ -132,7 +136,7 @@ export const UserRegistrationSchema = z.object({
         message: 'You must agree to the terms and conditions',
     }),
     agreeToDataPrivacyPolicy: z.boolean().refine(val => val === true, {
-        message: 'You must agree to the data privacy policy',
+        message: 'You must acknowledge the Candidate Privacy Notice',
     }),
     agreeToMarketing: z.boolean().optional().default(false),
 }).refine((data) => {

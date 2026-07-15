@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card, CardContent,
@@ -18,12 +19,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Users, Heart, ArrowRight, ArrowLeft } from "lucide-react";
-import { EqualityMonitoringData } from "@/types";
+import { EqualityMonitoringData, EqualityMonitoringState } from "@/types";
 import { FormPageHeader } from "./form-page-header";
+import { UK_LEGAL } from "@/lib/legal/uk-compliance";
 
 interface EqualityMonitoringFormProps {
-  onComplete: (data: EqualityMonitoringData) => void;
+  onComplete: (data: EqualityMonitoringState) => void;
   onSkip: () => void;
   onSkipAll?: () => void;
   isLoading?: boolean;
@@ -41,6 +44,7 @@ export default function EqualityMonitoringForm({
 }: EqualityMonitoringFormProps) {
   // --- Form State Management ---
   const [formData, setFormData] = useState<EqualityMonitoringData>({});
+  const [voluntarySubmissionAcknowledged, setVoluntarySubmissionAcknowledged] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
@@ -65,15 +69,28 @@ export default function EqualityMonitoringForm({
   };
 
   const handleComplete = () => {
-    onComplete(formData);
+    if (!voluntarySubmissionAcknowledged) return;
+    const submittedAt = new Date().toISOString();
+    onComplete({
+      ...formData,
+      completed: true,
+      completedAt: submittedAt,
+      submittedAt,
+      noticeVersion: UK_LEGAL.equalityMonitoringNoticeVersion,
+      voluntarySubmissionAcknowledged: true,
+    });
   };
 
   // --- Progress Indicator ---
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-between mb-8 max-w-md mx-auto w-full">
+    <ol
+      aria-label={`Equality monitoring progress: step ${currentStep} of ${totalSteps}`}
+      className="flex items-center justify-between mb-8 max-w-md mx-auto w-full"
+    >
       {Array.from({ length: totalSteps }, (_, i) => (
-        <div key={i} className="flex items-center flex-1 last:flex-none">
-          <div
+        <li key={i} className="flex items-center flex-1 last:flex-none">
+          <span
+            aria-current={i + 1 === currentStep ? "step" : undefined}
             className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
               i + 1 < currentStep
                 ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
@@ -83,7 +100,10 @@ export default function EqualityMonitoringForm({
             }`}
           >
             {i + 1}
-          </div>
+            <span className="sr-only">
+              {i + 1 < currentStep ? " completed" : i + 1 === currentStep ? " current" : " upcoming"}
+            </span>
+          </span>
           {i < totalSteps - 1 && (
             <div
               className={`h-[2px] flex-1 mx-2 rounded-full transition-all duration-500 ${
@@ -91,9 +111,9 @@ export default function EqualityMonitoringForm({
               }`}
             />
           )}
-        </div>
+        </li>
       ))}
-    </div>
+    </ol>
   );
 
   // --- Step 1: Personal Information ---
@@ -108,7 +128,7 @@ export default function EqualityMonitoringForm({
               value={formData.age_range || ""}
               onValueChange={(value) => handleInputChange("age_range", value)}
             >
-              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="age-range" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your age range (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -126,8 +146,9 @@ export default function EqualityMonitoringForm({
           </div>
 
           <div className="space-y-3">
-            <Label>Gender</Label>
+            <Label id="gender-label">Gender</Label>
             <RadioGroup
+              aria-labelledby="gender-label"
               value={formData.gender || ""}
               onValueChange={(value) => handleInputChange("gender", value)}
             >
@@ -157,20 +178,22 @@ export default function EqualityMonitoringForm({
             </RadioGroup>
 
             {formData.gender === "other" && (
-              <Input
-                placeholder="Please specify"
-                value={formData.gender_other || ""}
-                onChange={(e) =>
-                  handleInputChange("gender_other", e.target.value)
-                }
-                className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="gender-other-detail">Please specify your gender (optional)</Label>
+                <Input
+                  id="gender-other-detail"
+                  value={formData.gender_other || ""}
+                  onChange={(e) => handleInputChange("gender_other", e.target.value)}
+                  className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
+                />
+              </div>
             )}
           </div>
 
           <div className="space-y-3">
-            <Label>Sexual Orientation</Label>
+            <Label id="sexual-orientation-label">Sexual orientation</Label>
             <RadioGroup
+              aria-labelledby="sexual-orientation-label"
               value={formData.sexual_orientation || ""}
               onValueChange={(value) =>
                 handleInputChange("sexual_orientation", value)
@@ -211,14 +234,15 @@ export default function EqualityMonitoringForm({
             </RadioGroup>
 
             {formData.sexual_orientation === "other-orientation" && (
-              <Input
-                placeholder="Please specify"
-                value={formData.sexual_orientation_other || ""}
-                onChange={(e) =>
-                  handleInputChange("sexual_orientation_other", e.target.value)
-                }
-                className="rounded-xl border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="sexual-orientation-other-detail">Please specify (optional)</Label>
+                <Input
+                  id="sexual-orientation-other-detail"
+                  value={formData.sexual_orientation_other || ""}
+                  onChange={(e) => handleInputChange("sexual_orientation_other", e.target.value)}
+                  className="rounded-xl border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
+                />
+              </div>
             )}
           </div>
         </div>
@@ -238,7 +262,7 @@ export default function EqualityMonitoringForm({
               value={formData.ethnicity || ""}
               onValueChange={(value) => handleInputChange("ethnicity", value)}
             >
-              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="ethnicity" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your ethnic group (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -283,7 +307,7 @@ export default function EqualityMonitoringForm({
               value={formData.religion || ""}
               onValueChange={(value) => handleInputChange("religion", value)}
             >
-              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="religion" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your religion or belief (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -310,7 +334,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("marital_status", value)
               }
             >
-              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="marital-status" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your marital status (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -330,8 +354,9 @@ export default function EqualityMonitoringForm({
           </div>
 
           <div className="space-y-3">
-            <Label>Do you have any dependents?</Label>
+            <Label id="dependents-label">Do you have any dependants?</Label>
             <RadioGroup
+              aria-labelledby="dependents-label"
               value={formData.dependents || ""}
               onValueChange={(value) => handleInputChange("dependents", value)}
             >
@@ -366,13 +391,14 @@ export default function EqualityMonitoringForm({
         </h3>
         <div className="space-y-4">
           <div className="space-y-3">
-            <Label>Do you consider yourself to have a disability?</Label>
+            <Label id="disability-label">Do you consider yourself to have a disability?</Label>
             <p className="text-sm text-muted-foreground">
               The Equality Act 2010 defines disability as 'a physical or mental
               impairment which has a substantial and long-term adverse effect on
               a person's ability to carry out normal day-to-day activities.'
             </p>
             <RadioGroup
+              aria-labelledby="disability-label"
               value={formData.disability || ""}
               onValueChange={(value) => handleInputChange("disability", value)}
             >
@@ -395,21 +421,18 @@ export default function EqualityMonitoringForm({
           </div>
 
           {formData.disability === "yes" && (
-            <div className="space-y-2">
-              <Label htmlFor="disability-details">
-                Please provide details of any reasonable adjustments you might
-                need (optional)
-              </Label>
-              <Textarea
-                id="disability-details"
-                placeholder="Please describe any adjustments you might need for assessments or employment..."
-                value={formData.disability_details || ""}
-                onChange={(e) =>
-                  handleInputChange("disability_details", e.target.value)
-                }
-                rows={4}
-                className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary resize-none"
-              />
+            <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm">
+              <p className="font-medium">Need an assessment adjustment?</p>
+              <p className="mt-1 text-muted-foreground">
+                Do not include medical details in this monitoring form. Use the separate,
+                confidential adjustment request so the appropriate support team can act on it.
+              </p>
+              <Link
+                href="/candidate-dashboard/help-support?action=reasonable-adjustment"
+                className="mt-2 inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4"
+              >
+                Request a reasonable adjustment
+              </Link>
             </div>
           )}
         </div>
@@ -431,7 +454,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("education_level", value)
               }
             >
-              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="education" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your highest qualification (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -467,7 +490,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("employment_status", value)
               }
             >
-              <SelectTrigger className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="employment" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
                 <SelectValue placeholder="Select your employment status (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -491,8 +514,9 @@ export default function EqualityMonitoringForm({
           </div>
 
           <div className="space-y-3">
-            <Label>Have you previously worked in emergency services?</Label>
+            <Label id="previous-service-label">Have you previously worked in emergency services?</Label>
             <RadioGroup
+              aria-labelledby="previous-service-label"
               value={formData.previous_emergency_services || ""}
               onValueChange={(value) =>
                 handleInputChange("previous_emergency_services", value)
@@ -546,15 +570,14 @@ export default function EqualityMonitoringForm({
 
       <div className="rounded-xl border border-primary/20 dark:border-primary/10 bg-primary/5 dark:bg-primary/5 p-4 shadow-inner">
         <div className="flex items-start gap-3">
-          <Users className="mt-0.5 h-5 w-5 text-primary animate-pulse" />
+          <Users className="mt-0.5 h-5 w-5 text-primary" aria-hidden="true" />
           <div>
             <p className="text-sm font-semibold tracking-tight text-foreground mb-1">
               Why do we collect this information?
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              This data helps us monitor equality, identify barriers, and
-              improve our services. Your individual responses remain
-              confidential and are used only for statistical analysis.
+              This optional data helps monitor equality and identify barriers. It is kept
+              separate from hiring decisions and reported only for statistical analysis.
             </p>
           </div>
         </div>
@@ -564,6 +587,27 @@ export default function EqualityMonitoringForm({
       {currentStep === 2 && renderStep2()}
       {currentStep === 3 && renderStep3()}
       {currentStep === 4 && renderStep4()}
+
+      {currentStep === totalSteps ? (
+        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4">
+          <Checkbox
+            id="equality-voluntary-submission"
+            checked={voluntarySubmissionAcknowledged}
+            onCheckedChange={(checked) => setVoluntarySubmissionAcknowledged(checked === true)}
+            aria-describedby="equality-voluntary-submission-help"
+          />
+          <div className="space-y-1">
+            <Label htmlFor="equality-voluntary-submission" className="leading-5">
+              I choose to submit this optional equality-monitoring information
+            </Label>
+            <p id="equality-voluntary-submission-help" className="text-xs leading-5 text-muted-foreground">
+              You can skip this form without affecting your application. Responses are linked to
+              your account while retained, kept away from hiring decision-makers in identifiable
+              form, and removed after the stated retention period. Notice version {UK_LEGAL.equalityMonitoringNoticeVersion}.
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <Separator className="my-6" />
 
@@ -590,7 +634,7 @@ export default function EqualityMonitoringForm({
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         ) : (
-          <Button onClick={handleComplete} disabled={isLoading} size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-primary-foreground shadow-md shadow-primary/20">
+          <Button onClick={handleComplete} disabled={isLoading || !voluntarySubmissionAcknowledged} size="lg" className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-primary-foreground shadow-md shadow-primary/20">
             {isLoading ? "Saving..." : inline ? "Save Changes" : "Complete Registration"}
           </Button>
         )}
@@ -655,8 +699,8 @@ export default function EqualityMonitoringForm({
               ? "Complete Your Equality Monitoring (Optional)"
               : "Equality and Diversity Monitoring"}
             description={isOptional
-              ? "Help us ensure our services are fair and accessible. This information is anonymous and completely optional - you can skip and complete it later in your profile settings."
-              : "This information helps us ensure our services are accessible and fair to everyone. All questions are optional and your responses are anonymous."}
+              ? "Help monitor whether the assessment process is fair and accessible. This information is optional, stored separately from hiring decisions, and can be skipped."
+              : "This optional information supports equality monitoring. It is linked to your account while retained but is not shown to hiring decision-makers in identifiable form."}
           />
         </CardHeader>
 

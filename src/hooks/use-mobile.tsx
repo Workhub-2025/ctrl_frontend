@@ -1,12 +1,13 @@
 import * as React from "react"
 
-const MOBILE_BREAKPOINT = 768
+/** Keep portal navigation off-canvas until both rail and content fit. */
+const MOBILE_BREAKPOINT = 1024
 
 /**
  * useIsMobile Hook
  * 
  * A utility hook that tracks window resize events to determine if the user
- * is currently on a mobile viewport (width < 768px). 
+ * is currently on a compact portal viewport (width < 1024px).
  * Useful for responsive conditional rendering.
  * 
  * @returns {boolean} True if the viewport is considered mobile.

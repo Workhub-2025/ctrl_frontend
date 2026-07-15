@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
+import {
+  computeDecisionReadyCompositeScore,
+  computeWeightedCompositeScore,
+} from "@/lib/hiring-manager/composite-score";
 
 describe("computeWeightedCompositeScore", () => {
   const stack = [
@@ -29,5 +32,57 @@ describe("computeWeightedCompositeScore", () => {
     ]);
 
     expect(score).toBe(18);
+  });
+});
+
+describe("computeDecisionReadyCompositeScore", () => {
+  const stack = [
+    { displayName: "Typing", slug: "typing", weight: 40 },
+    { displayName: "Situational judgement", slug: "situational-judgement", weight: 30 },
+    { displayName: "Call simulation", slug: "call-simulation", weight: 30 },
+  ];
+
+  it("withholds a composite while the required stack is incomplete", () => {
+    expect(
+      computeDecisionReadyCompositeScore(stack, [
+        { assessment: "Typing", numericScore: 80, assessmentStatus: "completed" },
+      ])
+    ).toBeNull();
+  });
+
+  it("returns the composite when every required assessment is scored", () => {
+    expect(
+      computeDecisionReadyCompositeScore(stack, [
+        { assessment: "Typing", numericScore: 80, assessmentStatus: "completed" },
+        {
+          assessment: "Situational judgement",
+          numericScore: 60,
+          assessmentStatus: "completed",
+        },
+        {
+          assessment: "Call simulation",
+          numericScore: 80,
+          assessmentStatus: "completed",
+        },
+      ])
+    ).toBe(74);
+  });
+
+  it("withholds the composite when a required assessment was abandoned", () => {
+    expect(
+      computeDecisionReadyCompositeScore(stack, [
+        { assessment: "Typing", numericScore: 80, assessmentStatus: "completed" },
+        {
+          assessment: "Situational judgement",
+          numericScore: 60,
+          assessmentStatus: "abandoned",
+        },
+        {
+          assessment: "Call simulation",
+          numericScore: 80,
+          assessmentStatus: "completed",
+        },
+      ])
+    ).toBeNull();
   });
 });

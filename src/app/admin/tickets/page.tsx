@@ -15,13 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Ticket,
   RefreshCw,
   Search,
@@ -47,6 +40,7 @@ import {
   type TicketStats,
 } from "@/services/support-ticket.service";
 import { AdminPageHeader, AdminStatTile, AdminTableShell } from "@/components/admin/admin-portal-ui";
+import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
 import { hasAdminPermission } from "@/lib/auth/admin-portal-permissions";
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -134,7 +128,7 @@ function messageAuthorLabel(message: SupportTicketMessage): string {
   return name || author.email || "Unknown";
 }
 
-/* ── ticket detail dialog ─────────────────────────────── */
+/* ── ticket detail workspace ──────────────────────────── */
 
 function TicketDetailDialog({
   ticket,
@@ -264,32 +258,60 @@ function TicketDetailDialog({
   const canReply = status !== "closed";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2.5 text-lg font-bold">
-            <span className="font-mono text-primary tracking-wider">
-              {ticket.ticketNumber}
-            </span>
+    <PortalSidePanel
+      open={open}
+      onOpenChange={onOpenChange}
+      eyebrow="Support ticket"
+      title={ticket.ticketNumber}
+      description={ticket.subject}
+      icon={Ticket}
+      width="lg"
+      footer={
+        <div className="space-y-2">
+          {saveError ? (
+            <p className="text-sm font-medium text-destructive" role="alert">
+              {saveError}
+            </p>
+          ) : null}
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="h-10 w-full gap-2 rounded-md font-semibold"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Saving…
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4" aria-hidden="true" />
+                Save changes
+              </>
+            )}
+          </Button>
+        </div>
+      }
+    >
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge
               variant="outline"
-              className={`text-[10px] uppercase font-bold tracking-wider ${portalBadgeClass}`}
+              className={`text-[10px] font-bold uppercase tracking-wider ${portalBadgeClass}`}
             >
               {ticket.status.replace("_", " ")}
             </Badge>
-          </DialogTitle>
-          <DialogDescription className="text-sm text-slate-400">
-            {ticket.subject}
-          </DialogDescription>
-        </DialogHeader>
+            <span className="text-xs text-muted-foreground">
+              Updated {formatDateTime(ticket.updatedAt)}
+            </span>
+          </div>
 
-        <div className="space-y-6 pt-2">
           {/* Description */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Description
             </p>
-            <div className="rounded-lg border border-white/8 bg-white/[0.02] p-4 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+            <div className="whitespace-pre-wrap rounded-lg border border-border bg-muted/20 p-4 text-sm leading-relaxed text-foreground">
               {ticket.description}
             </div>
           </div>
@@ -297,30 +319,30 @@ function TicketDetailDialog({
           {/* Info Grid */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <User className="h-3 w-3" /> Submitted by
               </p>
               <p className="text-sm font-medium text-foreground">
                 {userDisplayName(ticket.submittedBy)}
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 {ticket.submittedBy?.email}
               </p>
               <Badge
                 variant="outline"
-                className="text-[10px] mt-1 border-white/10 bg-white/5 text-slate-400"
+                className="mt-1 text-[10px]"
               >
                 {userRoleBadge(ticket.submittedBy)}
               </Badge>
             </div>
             <div className="space-y-1">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <Calendar className="h-3 w-3" /> Timestamps
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Created: {new Date(ticket.createdAt).toLocaleString()}
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Updated: {new Date(ticket.updatedAt).toLocaleString()}
               </p>
               {ticket.resolvedAt && (
@@ -348,7 +370,7 @@ function TicketDetailDialog({
             {ticket.portal && (
               <Badge
                 variant="outline"
-                className="text-xs border-white/10 bg-white/5 text-slate-400"
+                className="text-xs"
               >
                 {ticket.portal}
               </Badge>
@@ -358,24 +380,24 @@ function TicketDetailDialog({
           {/* Metadata */}
           {metadata && Object.keys(metadata).length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Metadata
               </p>
-              <div className="rounded-lg border border-white/8 bg-white/[0.02] p-3 space-y-1.5">
+              <div className="space-y-1.5 rounded-lg border border-border bg-muted/20 p-3">
                 {metadata.pageUrl && (
-                  <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Globe className="h-3 w-3 shrink-0" />
                     {String(metadata.pageUrl)}
                   </p>
                 )}
                 {metadata.userAgent && (
-                  <p className="text-xs text-slate-400 flex items-center gap-1.5 break-all">
+                  <p className="flex items-center gap-1.5 break-all text-xs text-muted-foreground">
                     <Monitor className="h-3 w-3 shrink-0" />
                     {truncate(String(metadata.userAgent), 120)}
                   </p>
                 )}
                 {metadata.recipient && (
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-muted-foreground">
                     Recipient: {String(metadata.recipient)}
                   </p>
                 )}
@@ -385,13 +407,13 @@ function TicketDetailDialog({
 
           {/* Message thread */}
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Conversation
             </p>
             {loadingMessages ? (
-              <p className="text-sm text-slate-400">Loading messages…</p>
+              <p className="text-sm text-muted-foreground">Loading messages…</p>
             ) : messages.length === 0 ? (
-              <p className="text-sm text-slate-500">No thread messages yet.</p>
+              <p className="text-sm text-muted-foreground">No thread messages yet.</p>
             ) : (
               <ul className="space-y-2 max-h-48 overflow-y-auto">
                 {messages.map((message) => (
@@ -400,10 +422,10 @@ function TicketDetailDialog({
                     className={`rounded-lg border p-3 text-sm ${
                       message.isInternal
                         ? "border-amber-500/20 bg-amber-500/5"
-                        : "border-white/8 bg-white/[0.02]"
+                        : "border-border bg-muted/20"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                       <span className="font-medium text-foreground">
                         {messageAuthorLabel(message)}
                         {message.isInternal ? (
@@ -412,7 +434,7 @@ function TicketDetailDialog({
                       </span>
                       <time>{formatDateTime(message.createdAt)}</time>
                     </div>
-                    <p className="mt-1.5 whitespace-pre-wrap text-slate-300 leading-relaxed">
+                    <p className="mt-1.5 whitespace-pre-wrap leading-relaxed text-foreground">
                       {message.body}
                     </p>
                   </li>
@@ -425,9 +447,10 @@ function TicketDetailDialog({
                 <Textarea
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
+                  aria-label="Reply to ticket"
                   placeholder="Reply to the user…"
                   rows={3}
-                  className="rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary resize-none"
+                  className="resize-none rounded-lg bg-background focus-visible:ring-primary"
                 />
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -439,7 +462,7 @@ function TicketDetailDialog({
                   />
                   <Label
                     htmlFor="internal-note"
-                    className="text-xs text-slate-400 cursor-pointer"
+                    className="cursor-pointer text-xs text-muted-foreground"
                   >
                     Internal note (not visible to submitter)
                   </Label>
@@ -460,9 +483,9 @@ function TicketDetailDialog({
           </div>
 
           {/* Admin Actions */}
-          <div className="rounded-xl border border-primary/10 bg-primary/[0.02] p-4 space-y-4">
+          <div className="space-y-4 rounded-lg border border-border bg-muted/20 p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-primary">
-              Admin Actions
+              Admin actions
             </p>
 
             {ticket.escalatedTo ? (
@@ -480,15 +503,16 @@ function TicketDetailDialog({
 
             {canEscalate && canReply ? (
               <div className="space-y-3 rounded-lg border border-dashed border-primary/20 p-3">
-                <p className="text-xs font-semibold text-slate-400">
+                <p className="text-xs font-semibold text-muted-foreground">
                   Escalate to another queue
                 </p>
                 <Textarea
                   value={escalationNote}
                   onChange={(event) => setEscalationNote(event.target.value)}
+                  aria-label="Escalation handoff note"
                   placeholder="Optional handoff note for ops or billing…"
                   rows={2}
-                  className="rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary resize-none"
+                  className="resize-none rounded-lg bg-background focus-visible:ring-primary"
                 />
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -518,11 +542,11 @@ function TicketDetailDialog({
             ) : null}
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-400">
+              <Label htmlFor="ticket-status" className="text-xs font-semibold text-muted-foreground">
                 Status
-              </label>
+              </Label>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="h-10 rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus:ring-primary">
+                <SelectTrigger id="ticket-status" className="h-10 rounded-lg bg-background focus:ring-primary">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,7 +561,7 @@ function TicketDetailDialog({
                 </SelectContent>
               </Select>
               {(status === "awaiting_user" || status === "resolved") && (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   User must confirm before the ticket closes. Use &quot;Awaiting
                   User Confirmation&quot; or &quot;Resolved&quot; — both notify
                   the submitter.
@@ -549,47 +573,22 @@ function TicketDetailDialog({
               status === "resolved" ||
               status === "closed") && (
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-400">
-                  Resolution Notes
-                </label>
+                <Label htmlFor="ticket-resolution" className="text-xs font-semibold text-muted-foreground">
+                  Resolution notes
+                </Label>
                 <Textarea
+                  id="ticket-resolution"
                   value={resolution}
                   onChange={(e) => setResolution(e.target.value)}
                   placeholder="Describe the resolution…"
                   rows={3}
-                  className="rounded-lg bg-background dark:bg-[#04070d]/50 dark:border-white/10 focus-visible:ring-primary resize-none"
+                  className="resize-none rounded-lg bg-background focus-visible:ring-primary"
                 />
               </div>
             )}
-
-            {saveError && (
-              <p className="text-sm text-red-400 font-medium">{saveError}</p>
-            )}
-
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full h-10 rounded-lg font-semibold gap-2"
-            >
-              {saving ? (
-                <>
-                  <Loader2
-                    className="h-4 w-4 animate-spin"
-                    aria-hidden="true"
-                  />
-                  Saving…
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4" aria-hidden="true" />
-                  Save Changes
-                </>
-              )}
-            </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+    </PortalSidePanel>
   );
 }
 
@@ -725,7 +724,7 @@ export default function AdminTicketsPage() {
           <button
             key={tab.key}
             onClick={() => setStatusFilter(tab.key)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+            className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200 ${
               statusFilter === tab.key
                 ? "bg-primary/15 text-primary border border-primary/20"
                 : "text-slate-400 hover:text-foreground hover:bg-white/5 border border-transparent"
@@ -829,8 +828,8 @@ export default function AdminTicketsPage() {
                 </span>
 
                 {/* Subject */}
-                <span className="flex-1 text-sm font-medium text-foreground truncate min-w-0">
-                  {truncate(ticket.subject, 50)}
+                <span className="min-w-0 flex-1 break-words text-sm font-medium text-foreground">
+                  {ticket.subject}
                 </span>
 
                 {/* Category */}

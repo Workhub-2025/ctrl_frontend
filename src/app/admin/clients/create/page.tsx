@@ -73,6 +73,7 @@ export default function CreateClientPage() {
     campaignApprovalMode: "require_approval" as "auto_approve" | "require_approval",
     contractTier: "professional" as ContractTier,
     seatCount: "3",
+    assessmentDataRetentionMonths: "",
     notes: "",
     issueAccessCode: true,
   });
@@ -115,6 +116,15 @@ export default function CreateClientPage() {
       setError(`${CONTRACT_TIERS[form.contractTier].label} contracts require at least ${tierMinimumSeats} hiring manager seats.`);
       return;
     }
+    const assessmentDataRetentionMonths = Number.parseInt(form.assessmentDataRetentionMonths, 10);
+    if (
+      !Number.isInteger(assessmentDataRetentionMonths)
+      || assessmentDataRetentionMonths < 1
+      || assessmentDataRetentionMonths > 120
+    ) {
+      setError("Choose a documented assessment retention period between 1 and 120 months.");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
@@ -136,6 +146,7 @@ export default function CreateClientPage() {
           contract: {
             tier: form.contractTier,
             seatCount,
+            assessmentDataRetentionMonths,
             notes: form.notes,
           },
           issueAccessCode: form.issueAccessCode,
@@ -485,6 +496,27 @@ export default function CreateClientPage() {
                 </div>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="assessmentRetentionMonths" className={portalLabelClass}>
+                  Assessment retention (months)
+                </Label>
+                <Input
+                  id="assessmentRetentionMonths"
+                  type="number"
+                  min={1}
+                  max={120}
+                  required
+                  value={form.assessmentDataRetentionMonths}
+                  onChange={(event) => updateField("assessmentDataRetentionMonths", event.target.value)}
+                  placeholder="For example, 12"
+                  aria-describedby="assessment-retention-help"
+                  className={cn(portalInputClass, "h-10")}
+                />
+                <p id="assessment-retention-help" className="text-xs text-muted-foreground">
+                  Required. Enter the period approved for this client&apos;s recruitment purpose; do not
+                  copy a platform default without documented justification.
+                </p>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="notes" className={portalLabelClass}>Contract notes</Label>
                 <Textarea
                   id="notes"
@@ -522,6 +554,14 @@ export default function CreateClientPage() {
               </span>
               {CONTRACT_TIERS[form.contractTier].label} contract with{" "}
               {Number.isInteger(seatCount) && seatCount > 0 ? seatCount : 0} hiring manager seats
+            </div>
+            <div className="flex items-center gap-3 font-medium text-foreground">
+              <span className={portalIconWrapLgClass}>
+                <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+              </span>
+              {form.assessmentDataRetentionMonths
+                ? `${form.assessmentDataRetentionMonths} month assessment retention`
+                : "Retention period required"}
             </div>
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-3.5 transition-colors hover:bg-muted/30 dark:border-white/8">
               <Checkbox

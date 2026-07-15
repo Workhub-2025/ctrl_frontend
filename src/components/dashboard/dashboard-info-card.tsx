@@ -15,10 +15,10 @@ type DashboardInfoCardProps = React.ComponentProps<typeof Card> & {
 };
 
 export const dashboardInfoPillClassName =
-  "inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/35 px-2.5 py-1 text-xs font-medium text-muted-foreground dark:border-white/10 dark:bg-white/[0.04]";
+  "inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/35 px-2.5 py-1 text-xs font-medium text-muted-foreground";
 
 export const dashboardInfoMetaClassName =
-  "rounded-lg border border-border/60 bg-muted/35 px-2.5 py-1 text-xs font-semibold text-muted-foreground dark:border-white/10 dark:bg-white/[0.04]";
+  "rounded-md border border-border bg-muted/35 px-2.5 py-1 text-xs font-semibold text-muted-foreground";
 
 export function DashboardInfoCard({
   interactive = false,
@@ -30,7 +30,6 @@ export function DashboardInfoCard({
     <Card
       className={cn(
         interactive ? portalCardInteractiveClass : portalCardClass,
-        "backdrop-blur-sm",
         className
       )}
       {...props}

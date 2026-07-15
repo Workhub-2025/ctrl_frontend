@@ -21,7 +21,6 @@ import {
   AlertCircle,
   Globe,
   Building,
-  Sparkles,
   Layers3,
   Trash2,
 } from "lucide-react";
@@ -32,20 +31,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
 import {
   portalAlertErrorClass,
   portalBadgeClass,
-  portalDialogShellClass,
   portalFilterChipActiveClass,
   portalFilterChipClass,
   portalIconWrapLgClass,
@@ -55,8 +46,8 @@ import {
   portalPanelNestedClass,
   portalPrimaryButtonClass,
   portalProgressBarClass,
-  portalSheetCloseButtonClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
 import { cn } from "@/lib/utils";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
 import { OptionalDateTimeFields } from "@/components/dashboard/portal/optional-datetime-fields";
@@ -397,24 +388,19 @@ export function HiringManagerSessionsList() {
         </p>
       )}
 
-      {/* Slide-over Drawer for Creating Session */}
-      <Sheet open={isCreateOpen} onOpenChange={handleOpenChange}>
-        <SheetContent className={cn(portalDialogShellClass, portalSheetCloseButtonClass, "flex w-full flex-col gap-6 border-l p-6 sm:max-w-md")}>
-          <SheetHeader className="border-b border-border/60 pb-4 dark:border-white/5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-inner">
-                <KeyRound className="h-4 w-4" />
-              </div>
-              <SheetTitle className="text-left text-base font-bold text-foreground">
-                {createdSession ? "Session Created" : "Create Assessment Session"}
-              </SheetTitle>
-            </div>
-            <SheetDescription className="mt-1.5 text-left text-xs leading-relaxed text-muted-foreground">
-              {createdSession
-                ? "Your new assessment session is active. Candidates can now join using the code below."
-                : "Generate a unique access code for a campaign session. Multiple candidates can join the same session up to the limit you set."}
-            </SheetDescription>
-          </SheetHeader>
+      <PortalSidePanel
+        open={isCreateOpen}
+        onOpenChange={handleOpenChange}
+        eyebrow="Assessment delivery"
+        title={createdSession ? "Session created" : "Create assessment session"}
+        description={
+          createdSession
+            ? "The session is active. Candidates can now join with the access code."
+            : "Create one controlled access point for an approved campaign."
+        }
+        icon={KeyRound}
+        width="sm"
+      >
 
           {createdSession ? (
             /* SUCCESS VIEW */
@@ -449,8 +435,8 @@ export function HiringManagerSessionsList() {
                 >
                   {copiedSessionId === createdSession.id ? (
                     <>
-                      <Check className="mr-1.5 h-3.5 w-3.5 animate-in zoom-in-50 duration-200" />
-                      <span>Copied!</span>
+                      <Check className="mr-1.5 h-3.5 w-3.5" />
+                      <span>Copied</span>
                     </>
                   ) : (
                     <>
@@ -464,7 +450,7 @@ export function HiringManagerSessionsList() {
               <div className={cn(portalPanelNestedClass, "space-y-2.5 p-4 text-xs")}>
                 <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
                   <span className="font-medium text-muted-foreground">Session Name</span>
-                  <span className="max-w-[200px] truncate font-bold text-foreground">{createdSession.campaign}</span>
+                  <span className="max-w-[200px] break-words text-right font-bold text-foreground">{createdSession.campaign}</span>
                 </div>
                 <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
                   <span className="font-medium text-muted-foreground">Candidate Limit</span>
@@ -478,14 +464,14 @@ export function HiringManagerSessionsList() {
                 )}
                 <div className="flex justify-between py-1">
                   <span className="font-medium text-muted-foreground">Location</span>
-                  <span className="max-w-[200px] truncate font-bold text-primary">{createdSession.location}</span>
+                  <span className="max-w-[200px] break-words text-right font-bold text-primary">{createdSession.location}</span>
                 </div>
               </div>
 
               <Button
                 type="button"
                 onClick={() => setIsCreateOpen(false)}
-                className={cn(portalPrimaryButtonClass, "h-10 w-full animate-in fade-in slide-in-from-bottom-2 duration-300")}
+                className={cn(portalPrimaryButtonClass, "h-10 w-full")}
               >
                 Done
               </Button>
@@ -524,13 +510,12 @@ export function HiringManagerSessionsList() {
 
                 {/* Campaign Preview Card */}
                 {selectedCampaign && (
-                  <div className={cn(portalPanelNestedClass, "relative overflow-hidden p-4 shadow-inner")}>
-                    <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 translate-x-1/4 -translate-y-1/4 rounded-full bg-primary/10 blur-xl" />
-                    <div className="relative z-10 space-y-3">
+                  <div className={cn(portalPanelNestedClass, "p-4")}>
+                    <div className="space-y-3">
                       <div>
                         <div className="flex items-center gap-1">
-                          <Sparkles className="h-3 w-3 text-primary" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Campaign Preview</span>
+                          <Layers3 className="h-3 w-3 text-primary" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Campaign context</span>
                         </div>
                         <h4 className="mt-1 text-sm font-bold leading-tight text-foreground">{selectedCampaign.name}</h4>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">{selectedCampaign.role}</p>
@@ -591,6 +576,7 @@ export function HiringManagerSessionsList() {
                       size="icon"
                       onClick={() => handleStep(-1)}
                       disabled={stepperLimit <= 1}
+                      aria-label="Decrease candidate limit"
                       className={cn(portalInputClass, "h-10 w-10 shrink-0 bg-transparent text-foreground hover:bg-muted hover:text-foreground")}
                     >
                       <Minus className="h-4 w-4" />
@@ -603,6 +589,7 @@ export function HiringManagerSessionsList() {
                       variant="outline"
                       size="icon"
                       onClick={() => handleStep(1)}
+                      aria-label="Increase candidate limit"
                       className={cn(portalInputClass, "h-10 w-10 shrink-0 bg-transparent text-foreground hover:bg-muted hover:text-foreground")}
                     >
                       <Plus className="h-4 w-4" />
@@ -615,7 +602,7 @@ export function HiringManagerSessionsList() {
                         type="button"
                         onClick={() => handlePreset(preset)}
                         className={cn(
-                          "h-7 cursor-pointer rounded-md px-2.5 text-[11px] font-semibold transition-all duration-200",
+                          "h-7 cursor-pointer rounded-md px-2.5 text-[11px] font-semibold transition-colors duration-200",
                           stepperLimit === preset
                             ? portalFilterChipActiveClass
                             : portalFilterChipClass
@@ -663,7 +650,7 @@ export function HiringManagerSessionsList() {
                         type="button"
                         onClick={() => setLocationType("Remote")}
                         className={cn(
-                          "flex-1 cursor-pointer rounded-md py-1.5 text-xs font-bold transition-all",
+                          "flex-1 cursor-pointer rounded-md py-1.5 text-xs font-bold transition-colors",
                           locationType === "Remote"
                             ? "bg-primary text-primary-foreground shadow-sm"
                             : "text-muted-foreground hover:text-foreground"
@@ -675,7 +662,7 @@ export function HiringManagerSessionsList() {
                         type="button"
                         onClick={() => setLocationType("In-person")}
                         className={cn(
-                          "flex-1 cursor-pointer rounded-md py-1.5 text-xs font-bold transition-all",
+                          "flex-1 cursor-pointer rounded-md py-1.5 text-xs font-bold transition-colors",
                           locationType === "In-person"
                             ? "bg-primary text-primary-foreground shadow-sm"
                             : "text-muted-foreground hover:text-foreground"
@@ -762,8 +749,7 @@ export function HiringManagerSessionsList() {
               </div>
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+      </PortalSidePanel>
 
       {error && (
         <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>

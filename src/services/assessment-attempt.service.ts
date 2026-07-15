@@ -1,4 +1,4 @@
-export type AssessmentAttemptStatus = "in_progress" | "abandoned_locked" | "completed";
+export type AssessmentAttemptStatus = "in_progress" | "interrupted_locked" | "submitted" | "completed" | "voided";
 export type AssessmentRecoveryMode = "resume" | "restart";
 
 export type CandidateAssessmentAttempt = {
@@ -165,7 +165,7 @@ export class AssessmentAttemptService {
 
   static async listAbandonedForAdmin(limit = 50): Promise<CandidateAssessmentAttempt[]> {
     const query = new URLSearchParams({
-      status: "abandoned_locked",
+      status: "interrupted_locked",
       limit: String(limit),
     });
     const body = await readJson<{ data?: CandidateAssessmentAttempt[] }>(
@@ -213,7 +213,7 @@ export class AssessmentAttemptService {
   static async listRecoveryAttempts(scope: "admin" | "portal" = "portal"): Promise<CandidateAssessmentAttempt[]> {
     const url =
       scope === "admin"
-        ? "/api/admin/assessment-attempts?status=abandoned_locked&limit=100"
+        ? "/api/admin/assessment-attempts?status=interrupted_locked&limit=100"
         : "/api/assessment/attempt/recovery-list?limit=100";
     const body = await readJson<{ data?: CandidateAssessmentAttempt[] }>(
       await fetch(url, { cache: "no-store" })

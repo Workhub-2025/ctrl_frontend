@@ -36,3 +36,28 @@ export function computeWeightedCompositeScore(
 
   return hasScore ? Math.round(composite) : null;
 }
+
+/**
+ * Return a composite only when every assessment in the configured stack has a
+ * non-abandoned numeric result. Partial composites are useful for internal
+ * progress calculations, but must not be presented as decision-ready scores.
+ */
+export function computeDecisionReadyCompositeScore(
+  stack: StackAssessment[],
+  results: ScoreResult[]
+): number | null {
+  if (stack.length === 0) return null;
+
+  const allAssessmentsScored = stack.every((entry) => {
+    const result = findAssessmentResultForStackEntry(entry, results);
+    return (
+      result?.assessmentStatus !== "abandoned" &&
+      typeof result?.numericScore === "number" &&
+      Number.isFinite(result.numericScore)
+    );
+  });
+
+  return allAssessmentsScored
+    ? computeWeightedCompositeScore(stack, results)
+    : null;
+}

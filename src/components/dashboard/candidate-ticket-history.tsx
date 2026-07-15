@@ -140,7 +140,7 @@ function TicketRow({
                 </Badge>
               ) : null}
             </div>
-            <p className="truncate text-sm font-semibold text-foreground group-hover:text-primary">
+            <p className="break-words text-sm font-semibold text-foreground group-hover:text-primary">
               {ticket.subject}
             </p>
           </div>

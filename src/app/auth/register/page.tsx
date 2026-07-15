@@ -17,6 +17,7 @@ import { Eye, EyeOff, CheckCircle, KeyRound, ArrowRight, Loader2 } from "lucide-
 import Link from "next/link";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
+import { UK_LEGAL } from "@/lib/legal/uk-compliance";
 
 interface SignUpData {
   firstName: string;
@@ -612,7 +613,7 @@ function UnifiedAuthContent() {
                       />
                       <Label htmlFor="agreeToDataPrivacyPolicy" className="cursor-pointer text-sm font-light leading-snug text-slate-400">
                         <span className={isLightAuthTheme ? "text-slate-700" : undefined}>
-                          I agree to the <Link href="/privacy-policy" target="_blank" className={cn("underline transition-colors", isLightAuthTheme ? "text-slate-950 decoration-slate-400 hover:text-sky-800" : "text-white decoration-white/30 hover:text-cyan-300")}>Data Privacy Policy</Link> *
+                          I have read the <Link href="/privacy-policy" target="_blank" className={cn("underline transition-colors", isLightAuthTheme ? "text-slate-950 decoration-slate-400 hover:text-sky-800" : "text-white decoration-white/30 hover:text-cyan-300")}>Candidate Privacy Notice</Link> (version {UK_LEGAL.privacyPolicyVersion}) *
                         </span>
                       </Label>
                     </div>

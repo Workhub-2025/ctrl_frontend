@@ -30,13 +30,13 @@ export function HiringManagerPageHeader({
 }: PortalPageHeaderProps) {
   return (
     <header className={portalPageHeaderClass}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="flex min-w-0 items-start gap-3.5">
           <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
             <Icon className="h-5 w-5" />
           </span>
           <div className="min-w-0 space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-primary">
               {eyebrow}
             </p>
             <div className="flex flex-wrap items-center gap-2.5">
@@ -52,7 +52,9 @@ export function HiringManagerPageHeader({
           </div>
         </div>
         {action ? (
-          <div className="flex shrink-0 flex-wrap items-center gap-2">{action}</div>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 xl:shrink-0 xl:justify-end">
+            {action}
+          </div>
         ) : null}
       </div>
     </header>

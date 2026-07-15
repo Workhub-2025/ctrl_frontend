@@ -1,13 +1,5 @@
-import {
-  Brain,
-  ClipboardCheck,
-  Keyboard,
-  ListOrdered,
-  Phone,
-  type LucideIcon,
-} from "lucide-react";
+import { Brain, Keyboard, ListOrdered, Phone, Scale, type LucideIcon } from "lucide-react";
 
-import { getAssessmentCardDuration } from "@/lib/assessment-catalog-defaults";
 import type { PlatformAssessmentSlug } from "@/lib/assessment-slug";
 
 import { getAssessmentPagePath } from "./helpers";
@@ -24,49 +16,45 @@ export type CandidateAssessmentCatalogItem = {
 /** Lightweight assessment metadata for candidate portal surfaces (no test components). */
 export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
   {
-    slug: "typing",
-    title: "Typing Assessment",
-    description:
-      "Complete a timed typing exercise designed to assess speed and accuracy.",
-    href: getAssessmentPagePath("typing"),
-    duration: getAssessmentCardDuration("typing"),
-    icon: Keyboard,
-  },
-  {
     slug: "call-simulation",
-    title: "Call Simulation",
+    title: "Call Simulation v2",
     description:
-      "Listen to a simulated call and record the key details clearly and accurately.",
+      "Handle three branching control-room incidents using live caller audio, structured capture and operational decisions.",
     href: getAssessmentPagePath("call-simulation"),
-    duration: getAssessmentCardDuration("call-simulation"),
+    duration: "35–45 minutes",
     icon: Phone,
   },
   {
-    slug: "situational-judgement",
-    title: "Situational Judgement Assessment",
-    description:
-      "Respond to realistic scenarios that assess judgement, prioritisation, and decision-making.",
-    href: getAssessmentPagePath("situational-judgement"),
-    duration: getAssessmentCardDuration("situational-judgement"),
-    icon: ClipboardCheck,
-  },
-  {
     slug: "prioritisation",
-    title: "Prioritisation Judgement Assessment",
-    description:
-      "Rank incident sets from highest to lowest priority to show operational risk judgement.",
+    title: "Prioritisation v2",
+    description: "Manage an evolving incident queue, allocate constrained resources and explain risk-led reprioritisation.",
     href: getAssessmentPagePath("prioritisation"),
-    duration: getAssessmentCardDuration("prioritisation"),
+    duration: "30–40 minutes",
     icon: ListOrdered,
   },
   {
+    slug: "situational-judgement",
+    title: "Situational Judgement v2",
+    description: "Make branching operational decisions, respond to consequences and record evidence-led rationale.",
+    href: getAssessmentPagePath("situational-judgement"),
+    duration: "30–40 minutes",
+    icon: Scale,
+  },
+  {
     slug: "short-term-memory",
-    title: "Short-Term Memory Test",
-    description:
-      "Study operational details, complete a distraction task, then recall key information from memory.",
+    title: "Short-Term Memory v2",
+    description: "Retain an operational briefing through interruption, reconstruct key facts and correct the record.",
     href: getAssessmentPagePath("short-term-memory"),
-    duration: getAssessmentCardDuration("short-term-memory"),
+    duration: "25–35 minutes",
     icon: Brain,
+  },
+  {
+    slug: "typing",
+    title: "Typing v2",
+    description: "Transcribe an operational update accurately while completing structured incident fields.",
+    href: getAssessmentPagePath("typing"),
+    duration: "20–30 minutes",
+    icon: Keyboard,
   },
 ];
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   Table,
   TableBody,
@@ -10,8 +12,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ShieldCheck, UserCheck, Users, UserX } from "lucide-react";
+import { Search, ShieldCheck, UserCheck, UserPlus, Users, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
@@ -22,6 +25,7 @@ import {
   AdminTableShell,
 } from "@/components/admin/admin-portal-ui";
 import { portalBadgeClass, portalInputClass, portalStatusBadge } from "@/components/dashboard/portal/portal-design-tokens";
+import { hasAdminPermission } from "@/lib/auth/admin-portal-permissions";
 
 type UserRole = "CTRL Admin" | "Client Contact" | "Hiring Manager" | "Candidate";
 type UserStatus = "Active" | "Invited" | "Disabled";
@@ -53,6 +57,8 @@ type AdminUsersPayload = {
 const statusBadgeClass = portalStatusBadge;
 
 export default function AdminUsersPage() {
+  const { data: session } = useSession();
+  const canInviteAdmins = hasAdminPermission(session?.user?.role, "admins.manage");
   const [searchTerm, setSearchTerm] = useState("");
   const fallbackPayload: AdminUsersPayload = {
     users: [],
@@ -98,9 +104,14 @@ export default function AdminUsersPage() {
         title="Users"
         description="Directory of CTRL admins, client contacts, hiring managers, and candidates."
         action={
-          <Badge variant="outline" className="pointer-events-none font-medium">
-            Live directory
-          </Badge>
+          canInviteAdmins ? (
+            <Button asChild>
+              <Link href="/admin/users/invite">
+                <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+                Invite admin
+              </Link>
+            </Button>
+          ) : null
         }
       />
 

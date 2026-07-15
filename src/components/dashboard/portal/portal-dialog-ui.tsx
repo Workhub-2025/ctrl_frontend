@@ -47,13 +47,18 @@ export function PortalDetailHeader({
   const TitleTag = layout === "page" ? "h1" : DialogTitle;
 
   const headerInner = (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div
+      className={cn(
+        "flex flex-col gap-4",
+        layout === "page" && "xl:flex-row xl:items-start xl:justify-between"
+      )}
+    >
       <div className="flex min-w-0 items-start gap-3.5">
         <span className={cn(portalIconWrapLgClass, "mt-0.5")} aria-hidden="true">
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0 space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-primary">
             {eyebrow}
           </p>
           <div className="flex flex-wrap items-center gap-2.5">

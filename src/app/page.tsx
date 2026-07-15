@@ -22,7 +22,7 @@ import {
   CalendarClock,
   Trophy,
 } from "lucide-react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -33,8 +33,6 @@ import {
   Reveal,
   RevealGroup,
   RevealItem,
-  ZoomOnScroll,
-  Parallax,
 } from "@/components/landing/scroll-effects";
 import {
   WorkflowVisual,
@@ -43,9 +41,8 @@ import {
 import { UK_LEGAL_FOOTER_LINKS } from "@/lib/legal/uk-compliance";
 
 const navItems = [
-  { label: "Disciplines", href: "#disciplines" },
-  { label: "Hiring Workflow", href: "#workflow" },
-  { label: "Candidate Workflow", href: "#candidate-experience" },
+  { label: "Platform", href: "#capabilities" },
+  { label: "How it works", href: "#workflow" },
   { label: "Contracts", href: "#contracts" },
 ];
 
@@ -315,12 +312,11 @@ function scrollToTop() {
 
 export default function Home() {
   const navRef = useRef<HTMLElement | null>(null);
-  const hiringRef = useRef<HTMLElement | null>(null);
-  const candidateRef = useRef<HTMLElement | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [navHeight, setNavHeight] = useState(96);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState<string>("");
+  const [workflowAudience, setWorkflowAudience] = useState<"hiring" | "candidate">("hiring");
   const [contractData, setContractData] = useState<ContractOptionsData>(fallbackContractOptions);
   const {
     settings: accessibilitySettings,
@@ -329,18 +325,6 @@ export default function Home() {
     reduceMotion,
     themeClassName: bgColor,
   } = useAccessibilitySettings();
-
-  const { scrollYProgress: hiringProgress } = useScroll({
-    target: hiringRef,
-    offset: ["start center", "end center"]
-  });
-  const hiringHeight = useTransform(hiringProgress, [0, 1], ["0%", "100%"]);
-
-  const { scrollYProgress: candidateProgress } = useScroll({
-    target: candidateRef,
-    offset: ["start center", "end center"]
-  });
-  const candidateHeight = useTransform(candidateProgress, [0, 1], ["0%", "100%"]);
 
   useEffect(() => {
     let cancelled = false;
@@ -403,7 +387,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className={cn(bgColor, "ctrl-landing-page selection:bg-white/20 font-sans min-h-screen transition-colors duration-500")}>
+    <div className={cn(bgColor, "ctrl-landing-page min-h-screen overflow-x-clip font-sans selection:bg-white/20 transition-colors duration-500")}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-full focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary">
         Skip to content
       </a>
@@ -621,15 +605,16 @@ export default function Home() {
             </div>
           </section>
 
-          <div className="relative px-6 py-24 md:py-32 flex flex-col gap-28 md:gap-40 overflow-hidden w-full max-w-[1440px] mx-auto">
+          <div className="relative mx-auto flex w-full max-w-[1440px] flex-col gap-24 overflow-hidden px-6 py-20 md:gap-32 md:py-28">
 
             {/* Narrative Capabilities Section */}
             <section id="capabilities" className="w-full">
               <div className="text-center max-w-3xl mx-auto mb-16">
                 <SectionHeading
-                  eyebrow="Core Engine"
+                  eyebrow="Assessment modules"
                   accent="cyan"
-                  title={<>Assess Skills. <GradientText accent="cyan">Simulate Reality.</GradientText></>}
+                  title={<>Operational evidence, <GradientText accent="cyan">not generic test scores.</GradientText></>}
+                  body="High-fidelity simulations reveal how candidates capture information, prioritise, decide and communicate in realistic conditions."
                   centered
                 />
               </div>
@@ -832,152 +817,118 @@ export default function Home() {
               </RevealGroup>
             </section>
 
-            {/* Hiring Workflow Section */}
-            <section id="workflow" ref={hiringRef} className="w-full">
-              <div className="text-center mb-16 max-w-3xl mx-auto">
+            <section id="workflow" className="w-full scroll-mt-32">
+              <div className="mx-auto max-w-4xl text-center">
                 <SectionHeading
-                  eyebrow="For Hiring Teams"
+                  eyebrow="One connected workflow"
                   accent="blue"
-                  title={<>Build Stronger Talent Pipelines with <GradientText accent="blue">Confidence</GradientText></>}
+                  title={<>Clear for the team. <GradientText accent="blue">Calm for the candidate.</GradientText></>}
+                  body="Follow the same controlled assessment process from either side. Switch roles to see only the steps that matter."
                   centered
                 />
               </div>
-              <div className="relative max-w-5xl mx-auto py-8">
-                <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-slate-200 dark:bg-white/5 md:-translate-x-1/2" />
-                <motion.div
-                  className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-blue-500 to-blue-400 md:-translate-x-1/2 shadow-[0_0_15px_rgba(59,130,246,0.4)] dark:shadow-[0_0_15px_rgba(59,130,246,0.6)]"
-                  style={{ height: hiringHeight, transformOrigin: "top" }}
-                />
 
-                <div className="space-y-24 md:space-y-32 relative z-10">
-                  {hiringWorkflowSteps.map((step, i) => (
-                    <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
-                      <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
-                        <Reveal variant={i % 2 === 0 ? "right" : "left"}>
-                          <div className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 mb-3">{step.step} {"//"}</div>
-                          <h4 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-3 text-balance font-display">{step.title}</h4>
-                          <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">{step.text}</p>
-                        </Reveal>
-                      </div>
-                      <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-blue-200 dark:border-blue-500/30 bg-blue-50 dark:bg-[#040f24] flex items-center justify-center z-20 shadow-sm dark:shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
-                        <step.icon className="h-5 w-5 text-blue-600 dark:text-blue-400" aria-hidden="true" />
-                      </div>
-                      <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
-                        <Parallax distance={36}>
+              <div
+                role="tablist"
+                aria-label="Choose a workflow"
+                className="mx-auto mt-10 grid w-full max-w-md grid-cols-2 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-white/10 dark:bg-white/[0.04]"
+              >
+                {[
+                  { id: "hiring" as const, label: "Hiring teams" },
+                  { id: "candidate" as const, label: "Candidates" },
+                ].map((audience) => {
+                  const selected = workflowAudience === audience.id;
+                  return (
+                    <button
+                      key={audience.id}
+                      id={"workflow-" + audience.id + "-tab"}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-controls="workflow-panel"
+                      tabIndex={selected ? 0 : -1}
+                      onClick={() => setWorkflowAudience(audience.id)}
+                      onKeyDown={(event) => {
+                        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                        event.preventDefault();
+                        const nextAudience = audience.id === "hiring" ? "candidate" : "hiring";
+                        setWorkflowAudience(nextAudience);
+                        requestAnimationFrame(() => {
+                          document.getElementById("workflow-" + nextAudience + "-tab")?.focus();
+                        });
+                      }}
+                      className={cn(
+                        "min-h-11 rounded-md px-4 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
+                        selected
+                          ? "bg-white text-slate-900 shadow-sm dark:bg-white/10 dark:text-white"
+                          : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      )}
+                    >
+                      {audience.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div
+                id="workflow-panel"
+                role="tabpanel"
+                aria-labelledby={"workflow-" + workflowAudience + "-tab"}
+                className="mt-10"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={workflowAudience}
+                    initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                    animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
+                    exit={reduceMotion ? {} : { opacity: 0, y: -8 }}
+                    transition={{ duration: reduceMotion ? 0 : 0.24 }}
+                    className="grid gap-4 lg:grid-cols-2"
+                  >
+                    {(workflowAudience === "hiring" ? hiringWorkflowSteps : candidateWorkflowSteps).map((step) => (
+                      <article
+                        key={step.title}
+                        className="grid min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white/75 shadow-sm dark:border-white/10 dark:bg-[#090b0f] sm:grid-cols-[minmax(0,0.8fr)_minmax(15rem,1.2fr)] lg:grid-cols-1 xl:grid-cols-[minmax(0,0.78fr)_minmax(15rem,1.22fr)]"
+                      >
+                        <div className="flex min-w-0 flex-col p-6">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="font-mono text-xs font-semibold text-sky-600 dark:text-sky-400">
+                              {step.step} {"//"}
+                            </span>
+                            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-sky-500/20 bg-sky-500/[0.08] text-sky-600 dark:text-sky-400">
+                              <step.icon className="h-4 w-4" aria-hidden="true" />
+                            </span>
+                          </div>
+                          <h3 className="mt-6 text-balance font-display text-2xl font-medium text-slate-900 dark:text-white">
+                            {step.title}
+                          </h3>
+                          <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                            {step.text}
+                          </p>
+                        </div>
+                        <div className="min-w-0 overflow-hidden border-t border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-black/20 sm:border-l sm:border-t-0 lg:border-l-0 lg:border-t xl:border-l xl:border-t-0">
                           <WorkflowVisual variant={step.visual} reduceMotion={reduceMotion} />
-                        </Parallax>
-                      </div>
+                        </div>
+                      </article>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              <Reveal variant="fade-up" className="mt-8">
+                <div className="grid divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/10 dark:border-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
+                  {[
+                    ["Evidence-led", "Structured performance data supports—not replaces—human judgement."],
+                    ["Controlled delivery", "Remote and in-person sessions follow the same governed process."],
+                    ["Auditable by design", "Tenant access, candidate activity and decisions remain traceable."],
+                  ].map(([title, text]) => (
+                    <div key={title} className="px-5 py-6 md:px-7">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{text}</p>
                     </div>
                   ))}
                 </div>
-              </div>
-            </section>
-
-            {/* Candidate Workflow Section */}
-            <section id="candidate-experience" ref={candidateRef} className="w-full">
-              <div className="text-center mb-16 max-w-3xl mx-auto">
-                <SectionHeading
-                  eyebrow="For Candidates"
-                  accent="emerald"
-                  title={<>Where Capability <GradientText accent="emerald">Speaks for Itself</GradientText></>}
-                  centered
-                />
-              </div>
-              <div className="relative max-w-5xl mx-auto py-8">
-                <div className="absolute left-[39px] md:left-1/2 top-0 bottom-0 w-px bg-slate-200 dark:bg-white/5 md:-translate-x-1/2" />
-                <motion.div
-                  className="absolute left-[39px] md:left-1/2 top-0 w-px bg-gradient-to-b from-transparent via-cyan-500 to-cyan-400 md:-translate-x-1/2 shadow-[0_0_15px_rgba(6,182,212,0.3)] dark:shadow-[0_0_15px_rgba(6,182,212,0.6)]"
-                  style={{ height: candidateHeight, transformOrigin: "top" }}
-                />
-
-                <div className="space-y-24 md:space-y-32 relative z-10">
-                  {candidateWorkflowSteps.map((step, i) => (
-                    <div key={step.title} className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-8 md:gap-16 items-start md:items-center relative">
-                      <div className={cn("pl-20 md:pl-0", i % 2 === 0 ? "md:text-right md:col-start-1 md:row-start-1" : "md:col-start-3 md:text-left md:row-start-1")}>
-                        <Reveal variant={i % 2 === 0 ? "right" : "left"}>
-                          <div className="text-xs font-mono font-semibold text-cyan-600 dark:text-cyan-400 mb-3">{step.step} {"//"}</div>
-                          <h4 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-3 text-balance font-display">{step.title}</h4>
-                          <p className="text-lg text-slate-600 dark:text-slate-400 font-light leading-relaxed">{step.text}</p>
-                        </Reveal>
-                      </div>
-                      <div className="absolute left-[15px] md:static md:col-start-2 md:row-start-1 top-2 md:top-auto w-12 h-12 rounded-full border border-cyan-200 dark:border-cyan-500/30 bg-cyan-50 dark:bg-[#041d24] flex items-center justify-center z-20 shadow-sm dark:shadow-[0_0_20px_rgba(0,0,0,0.8)] mt-2 md:mt-0">
-                        <step.icon className="h-5 w-5 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
-                      </div>
-                      <div className={cn("pl-20 md:pl-0 w-full", i % 2 === 0 ? "md:col-start-3 md:row-start-1" : "md:col-start-1 md:row-start-1")}>
-                        <Parallax distance={36}>
-                          <WorkflowVisual variant={step.visual} reduceMotion={reduceMotion} />
-                        </Parallax>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
-            {/* Outcomes & Assurance Section (Replaces Platform Overview) */}
-            <section id="solutions" className="w-full relative py-20">
-              <div className="text-center mb-16 max-w-3xl mx-auto">
-                <SectionHeading
-                  eyebrow="Outcomes & Assurance"
-                  accent="violet"
-                  title={<>Built for <GradientText accent="violet">high-trust decisions.</GradientText></>}
-                  centered
-                />
-              </div>
-
-              <div className="mx-auto w-full max-w-6xl px-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-                  <Reveal variant="fade-up">
-                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
-                        <Scale className="h-6 w-6" aria-hidden="true" />
-                      </div>
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">Evidence-Led Hiring</h4>
-                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
-                        Assess practical judgement, typing speed, and situational performance. Base recruitment on structured, reviewable data rather than intuition.
-                      </p>
-                    </div>
-                  </Reveal>
-
-                  <Reveal variant="fade-up">
-                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
-                        <ListChecks className="h-6 w-6" aria-hidden="true" />
-                      </div>
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">Controlled Delivery</h4>
-                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
-                        Support both remote and proctored in-person assessment flows. Session isolation, heartbeat checks, and timed submissions prevent external interference.
-                      </p>
-                    </div>
-                  </Reveal>
-
-                  <Reveal variant="fade-up">
-                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
-                        <Activity className="h-6 w-6" aria-hidden="true" />
-                      </div>
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">Decision Support</h4>
-                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
-                        Detailed performance breakdowns and comparative metrics for hiring managers. Align candidates by clear operational criteria.
-                      </p>
-                    </div>
-                  </Reveal>
-
-                  <Reveal variant="fade-up">
-                    <div className="flex flex-col h-full rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] p-8 transition-all hover:scale-[1.01] hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400 mb-6">
-                        <KeyRound className="h-6 w-6" aria-hidden="true" />
-                      </div>
-                      <h4 className="text-xl font-medium text-slate-900 dark:text-white mb-2">High-Trust Workflows</h4>
-                      <p className="text-sm font-light leading-relaxed text-slate-600 dark:text-slate-400">
-                        Tenant-isolated candidate records, secure access codes, and auditable action trails preserve organizational compliance and user privacy.
-                      </p>
-                    </div>
-                  </Reveal>
-                </div>
-
-
-              </div>
+              </Reveal>
             </section>
 
             <section id="contracts" className="w-full">
@@ -985,7 +936,8 @@ export default function Home() {
                 <SectionHeading
                   eyebrow="Contract Options"
                   accent="cyan"
-                  title={<>Choose the contract that fits your <GradientText accent="cyan">hiring rhythm</GradientText></>}
+                  title={<>Contracts for the way you <GradientText accent="cyan">deliver.</GradientText></>}
+                  body="Start with the access and delivery modes your team needs. Every option includes CTRL's core released assessments."
                   centered
                 />
               </div>
@@ -1076,39 +1028,42 @@ export default function Home() {
             <div className="relative z-10 mx-auto w-full max-w-3xl px-6 py-28 md:py-40 text-center">
               <Reveal variant="zoom">
                 {/* Crosshair kicker — echoes the logo motif */}
-                <div className="mb-7 flex items-center justify-center gap-3 font-mono text-[11px] uppercase tracking-[0.28em] text-sky-600 dark:text-sky-400">
+                <div className="mb-7 flex items-center justify-center gap-3 font-mono text-xs uppercase tracking-[0.24em] text-sky-600 dark:text-sky-400">
                   <span className="h-px w-8 bg-gradient-to-r from-transparent to-sky-500/60" />
                   Get Started
                   <span className="h-px w-8 bg-gradient-to-l from-transparent to-sky-500/60" />
                 </div>
 
                 <h2 className="mx-auto max-w-3xl text-balance font-display text-5xl font-medium leading-[1.04] tracking-tight text-slate-900 dark:text-white md:text-7xl">
-                  Ready to transform your{" "}
+                  Build an assessment process your team can{" "}
                   <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent dark:from-sky-300 dark:to-blue-400">
-                    recruitment process?
+                    defend.
                   </span>
                 </h2>
 
-
+                <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">
+                  Configure delivery, protect assessment integrity and review structured
+                  evidence—without turning hiring into an automated decision.
+                </p>
 
                 <div className="mt-11 flex flex-col items-center justify-center gap-4 sm:flex-row">
                   <Button asChild className="group h-12 rounded-full bg-slate-900 px-9 text-sm font-medium text-white shadow-lg shadow-slate-900/10 transition-colors hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400 dark:bg-white dark:text-black dark:shadow-white/10 dark:hover:bg-slate-200 dark:focus-visible:ring-white/50 md:h-14 md:text-base">
                     <Link href="/auth/register?mode=register" className="flex items-center justify-center">
-                      Get Started
+                      Create your account
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                     </Link>
                   </Button>
-                  <Button type="button" variant="ghost" onClick={() => scrollToAnchor("capabilities")} className="h-12 rounded-full border border-slate-200 bg-transparent px-9 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:ring-white/20 md:h-14 md:text-base">
-                    Explore Platform
+                  <Button type="button" variant="ghost" onClick={() => scrollToAnchor("contracts")} className="h-12 rounded-full border border-slate-200 bg-transparent px-9 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:ring-white/20 md:h-14 md:text-base">
+                    View contracts
                   </Button>
                 </div>
 
-                <div className="mx-auto mt-12 flex max-w-md flex-wrap items-center justify-center gap-x-7 gap-y-2 border-t border-slate-200/70 pt-7 text-[11px] font-mono uppercase tracking-[0.18em] text-slate-400 dark:border-white/5 dark:text-slate-500">
+                <div className="mx-auto mt-12 flex max-w-xl flex-wrap items-center justify-center gap-x-7 gap-y-2 border-t border-slate-200/70 pt-7 text-xs font-mono uppercase tracking-[0.15em] text-slate-500 dark:border-white/5 dark:text-slate-400">
                   <span>Access-code onboarding</span>
                   <span className="hidden h-3 w-px bg-slate-300 dark:bg-white/10 sm:inline-block" />
                   <span>Role-built portals</span>
                   <span className="hidden h-3 w-px bg-slate-300 dark:bg-white/10 sm:inline-block" />
-                  <span>No setup required</span>
+                  <span>Human-reviewed evidence</span>
                 </div>
               </Reveal>
             </div>
@@ -1124,14 +1079,11 @@ export default function Home() {
                   <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
                     <BrandLogo layout="stacked" className="h-14 w-[6.25rem] self-start" />
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light">
-                      Empowering teams to make objective, data-driven hiring decisions with confidence and speed.
+                      High-fidelity operational simulations and structured evidence for high-trust hiring teams.
                     </p>
-                    <span className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/[0.03] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400 backdrop-blur-sm">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      </span>
-                      All systems operational
+                    <span className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/60 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-sky-500" aria-hidden="true" />
+                      Operational assessment platform
                     </span>
                   </div>
 

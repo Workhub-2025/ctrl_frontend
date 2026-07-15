@@ -48,7 +48,7 @@ function PortalMinimalHeader({
     "User";
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 min-w-0 items-center gap-3 border-b border-border/70 bg-background/90 px-3 backdrop-blur-md dark:border-white/6 dark:bg-[#02040a]/75 sm:px-5">
+    <header className="sticky top-0 z-20 flex h-14 min-w-0 items-center gap-3 border-b border-border bg-background px-3 sm:px-5">
       <Link
         href={homeHref}
         className="flex shrink-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -56,6 +56,8 @@ function PortalMinimalHeader({
       >
         <img
           src="/assets/newlogo.svg"
+          width={32}
+          height={32}
           className="logo-adaptive-filter h-8 w-8 scale-125 object-contain object-center"
           alt="CTRL"
         />
@@ -87,7 +89,7 @@ function PortalMinimalHeader({
               size="icon"
               className="h-9 w-9 rounded-lg border border-border/60 dark:border-white/10"
             >
-              <User className="h-4 w-4" />
+              <User className="h-4 w-4" aria-hidden="true" />
               <span className="sr-only">Profile menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -101,7 +103,7 @@ function PortalMinimalHeader({
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/profile" className="flex cursor-pointer items-center">
-                <UserCircle className="mr-2 h-4 w-4" />
+                <UserCircle className="mr-2 h-4 w-4" aria-hidden="true" />
                 Profile
               </Link>
             </DropdownMenuItem>
@@ -110,7 +112,7 @@ function PortalMinimalHeader({
               className="cursor-pointer text-destructive focus:text-destructive"
               onClick={() => void logout()}
             >
-              <LogOut className="mr-2 h-4 w-4" />
+              <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
               Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -151,7 +153,7 @@ function PortalMinimalFrame({
         updateAccessibilitySettings={updateAccessibilitySettings}
         resetAccessibilitySettings={resetAccessibilitySettings}
       />
-      <main id="main-content" className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 md:px-8">
+      <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 md:px-8 focus:outline-none">
         <div className={cn("mx-auto w-full", maxWidthClass)}>{children}</div>
       </main>
     </div>

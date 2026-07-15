@@ -192,9 +192,14 @@ export const AuthLoginForm = memo(function AuthLoginForm({
             )}
             onClick={() => setShowPassword((current) => !current)}
             disabled={disabled || submitStatus === "loading"}
-            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPassword ? (
+              <EyeOff className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Eye className="h-4 w-4" aria-hidden="true" />
+            )}
           </Button>
         </div>
       </div>

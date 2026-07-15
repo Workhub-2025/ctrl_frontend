@@ -223,7 +223,7 @@ export function HiringManagerCampaignDetailView({
               type="button"
               onClick={deleteCampaign}
               disabled={isDeleting}
-              className="h-9 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-all"
+              className="h-9 rounded-md border border-destructive/30 bg-destructive/10 px-3.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/15"
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               {isDeleting ? "Deleting..." : "Delete Campaign"}
@@ -233,7 +233,7 @@ export function HiringManagerCampaignDetailView({
       </div>
 
       <HiringManagerPageHeader
-        eyebrow={`Campaign Workspace // ${campaign.deliveryMode}`}
+        eyebrow={`Campaign workspace · ${campaign.deliveryMode}`}
         title={campaign.name}
         description={`${campaign.role} · ${campaign.location}`}
         icon={Briefcase}
@@ -253,10 +253,10 @@ export function HiringManagerCampaignDetailView({
 
       <div className="w-full">
         <Card className={cn(portalPanelElevatedClass, "relative overflow-hidden")}>
-          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-indigo-500 to-sky-400" />
+          <div className="absolute left-0 top-0 h-full w-1 bg-primary/70" aria-hidden="true" />
           <CardContent className="p-5 flex flex-col justify-between">
             <p className={cn(portalLabelClass, "flex items-center gap-1.5 font-bold")}>
-              <Briefcase className="h-3.5 w-3.5 text-indigo-400" /> Active Assessment Sessions
+              <Briefcase className="h-3.5 w-3.5 text-primary" aria-hidden="true" /> Active assessment sessions
             </p>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black text-foreground">{campaign.sessions}</span>
@@ -267,10 +267,10 @@ export function HiringManagerCampaignDetailView({
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-        <Card className={cn(portalPanelNestedClass, "rounded-2xl bg-card/40 backdrop-blur-md shadow-sm")}>
-          <CardHeader className="border-b border-border/60 p-4 dark:border-white/5">
+        <Card className={cn(portalPanelNestedClass, "rounded-lg bg-card")}>
+          <CardHeader className="border-b border-border p-4">
             <CardTitle className={cn(portalLabelClass, "flex items-center gap-1.5 text-sm font-bold")}>
-              <ClipboardList className="h-4 w-4 text-primary" /> Assessment stack
+              <ClipboardList className="h-4 w-4 text-primary" aria-hidden="true" /> Assessment stack
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2 p-4">
@@ -304,14 +304,14 @@ export function HiringManagerCampaignDetailView({
           </CardContent>
         </Card>
 
-        <Card className={cn(portalPanelNestedClass, "rounded-2xl bg-card/40 backdrop-blur-md shadow-sm")}>
-          <CardHeader className="border-b border-border/60 p-4 dark:border-white/5">
+        <Card className={cn(portalPanelNestedClass, "rounded-lg bg-card")}>
+          <CardHeader className="border-b border-border p-4">
             <CardTitle className={cn(portalLabelClass, "flex items-center gap-1.5 text-sm font-bold")}>
-              <Calendar className="h-4 w-4 text-primary" /> Campaign Timeline
+              <Calendar className="h-4 w-4 text-primary" aria-hidden="true" /> Campaign timeline
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3.5 p-4 text-xs text-foreground">
-            <div className="flex items-center justify-between border-b border-border/60 pb-2 dark:border-white/5">
+            <div className="flex items-center justify-between border-b border-border pb-2">
               <span className="text-muted-foreground">Start Date</span>
               <span className="font-semibold text-foreground">{campaign.startDate}</span>
             </div>
@@ -393,7 +393,7 @@ export function HiringManagerCampaignDetailView({
                   <tr className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     <th className="p-3">Candidate</th>
                     <th className="p-3">Session</th>
-                    <th className="p-3">Overall score</th>
+                    <th className="p-3">Assessment status</th>
                     <th className="p-3 text-right">Actions</th>
                   </tr>
                 </thead>

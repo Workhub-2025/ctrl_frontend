@@ -1,8 +1,11 @@
-import { listAssessmentSlugs } from "@/assessments/plugins/registry";
-import { renderAssessmentPage } from "@/assessments/plugins/render-assessment-page";
+import {
+  getAssessmentRenderer,
+  listAssessmentModuleSlugs,
+} from "@/assessment-modules/registry";
+import { notFound } from "next/navigation";
 
 export function generateStaticParams() {
-  return listAssessmentSlugs().map((slug) => ({ slug }));
+  return listAssessmentModuleSlugs().map((slug) => ({ slug }));
 }
 
 export default async function AssessmentSlugPage({
@@ -13,5 +16,16 @@ export default async function AssessmentSlugPage({
   searchParams?: Promise<{ candidateSessionDocumentId?: string }>;
 }) {
   const { slug } = await params;
-  return renderAssessmentPage(slug, { searchParams });
+  const renderer = getAssessmentRenderer(slug);
+  if (!renderer) notFound();
+  const query = await searchParams;
+  const candidateSessionDocumentId = query?.candidateSessionDocumentId?.trim();
+  if (!candidateSessionDocumentId) notFound();
+  const ReadinessComponent = renderer.ReadinessComponent;
+  return (
+    <ReadinessComponent
+      slug={slug}
+      candidateSessionDocumentId={candidateSessionDocumentId}
+    />
+  );
 }

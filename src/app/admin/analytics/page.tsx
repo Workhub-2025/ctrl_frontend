@@ -354,8 +354,8 @@ export default function AdminAnalyticsPage() {
                 className="flex items-start justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 p-3 dark:border-white/8 dark:bg-white/[0.03]"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-foreground">{payment.clientName}</p>
-                  <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+                  <p className="break-words text-sm font-semibold text-foreground">{payment.clientName}</p>
+                  <p className="mt-0.5 break-words text-[0.8125rem] leading-relaxed text-muted-foreground">
                     {payment.requestNumber} · {requestKindLabel(payment.requestKind)}
                   </p>
                 </div>

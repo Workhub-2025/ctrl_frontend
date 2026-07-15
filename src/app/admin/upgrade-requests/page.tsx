@@ -348,7 +348,7 @@ export default function UpgradeRequestsPage() {
                   key={client.id}
                   type="button"
                   onClick={() => setSelectedClientId(client.id)}
-                  className={`w-full rounded-xl border p-3.5 text-left transition-all duration-200 ${
+                  className={`w-full rounded-md border p-3.5 text-left transition-colors duration-200 ${
                     selectedClient?.id === client.id
                       ? "bg-primary/10 border-primary/20 text-primary shadow-sm"
                       : "border-border/60 dark:border-white/5 text-muted-foreground hover:bg-slate-100/50 dark:hover:bg-white/[0.02]"
@@ -356,8 +356,8 @@ export default function UpgradeRequestsPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">{client.name}</p>
-                      <p className="truncate text-xs text-muted-foreground/85 mt-0.5">{client.primaryContact}</p>
+                      <p className="break-words text-sm font-semibold text-foreground">{client.name}</p>
+                      <p className="mt-0.5 break-all text-[0.8125rem] leading-relaxed text-muted-foreground/85">{client.primaryContact}</p>
                     </div>
                     <Badge variant="outline" className={`shrink-0 rounded-lg text-[10px] px-2 py-0.5 ${selectedClient?.id === client.id ? "border-primary/30 text-primary bg-primary/5" : "text-muted-foreground"}`}>
                       {seatSummary(client)}
@@ -575,7 +575,7 @@ function FeatureList({
 
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-xl border border-border/60 dark:border-white/5 bg-slate-100/30 dark:bg-black/10 p-3.5 transition-all duration-300 hover:scale-[1.01]">
+    <div className="rounded-md border border-border bg-muted/25 p-3.5 transition-colors duration-150 hover:border-primary/40">
       <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
       <p className="mt-1.5 text-lg font-extrabold text-foreground font-display">{value}</p>
     </div>

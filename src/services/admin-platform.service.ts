@@ -338,6 +338,7 @@ export type AdminClientCreateInput = {
   contract: {
     tier: ContractTier;
     seatCount: number;
+    assessmentDataRetentionMonths: number;
     notes?: string;
   };
   issueAccessCode?: boolean;
