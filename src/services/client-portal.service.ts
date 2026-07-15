@@ -9,6 +9,7 @@ import { getServerAuthSub } from "@/lib/portal-server-auth";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import {
   invalidateClientPortalServerCache,
+  invalidateHmOverviewServerCache,
 } from "@/lib/portal-cache-invalidation";
 import {
   strapiRequest,
@@ -30,6 +31,7 @@ type RawAssessment = {
 };
 
 type RawUser = {
+  id?: number;
   documentId?: string;
   firstName?: string;
   lastName?: string;
@@ -353,9 +355,19 @@ export async function reviewClientCampaign(input: {
     }
   );
 
-  void invalidateClientPortalServerCache();
+  const campaign = response.data ?? {};
+  const hiringManagerUserIds = (campaign.users_permissions_users ?? [])
+    .map((user) => user.id)
+    .filter((id): id is number => Number.isInteger(id));
 
-  return normalizeCampaign(response.data ?? {});
+  await Promise.all([
+    invalidateClientPortalServerCache(),
+    ...hiringManagerUserIds.map((id) =>
+      invalidateHmOverviewServerCache(String(id))
+    ),
+  ]);
+
+  return normalizeCampaign(campaign);
 }
 
 export async function getClientAccessCodes() {

@@ -6,7 +6,6 @@ import {
   ArrowRight,
   CheckCircle2,
   ClipboardCheck,
-  Headphones,
   ListChecks,
   Scale,
 } from "lucide-react";
@@ -35,10 +34,10 @@ type LandingHeroProps = {
   reduceMotion?: boolean;
 };
 
-const moduleRows = [
-  { label: "Call simulation", detail: "Branching live scenario", icon: Headphones },
-  { label: "Prioritisation", detail: "Evolving incident queue", icon: ListChecks },
-  { label: "Situational judgement", detail: "Operational decisions", icon: Scale },
+const platformFlowRows = [
+  { label: "Campaign setup", detail: "A clear starting point for delivery", icon: ListChecks },
+  { label: "Managed delivery", detail: "A consistent participant journey", icon: ClipboardCheck },
+  { label: "Structured review", detail: "Clear evidence for your team", icon: Scale },
 ];
 
 export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion = false }: LandingHeroProps) {
@@ -107,16 +106,16 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
               className="mb-6 flex items-center gap-3 font-mono text-xs font-semibold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400"
             >
               <span className="h-px w-8 bg-sky-500/70" aria-hidden="true" />
-              Operational assessment infrastructure
+              Assessment platform for organisations
             </motion.div>
 
             <motion.h1
               variants={rise}
               className="text-balance font-display text-[3rem] font-medium leading-[1.02] tracking-[-0.035em] text-slate-900 sm:text-6xl lg:text-[4.6rem] dark:text-white"
             >
-              See how people think before the role{" "}
+              A clearer way to understand{" "}
               <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent dark:from-sky-300 dark:to-blue-400">
-                demands it.
+                capability.
               </span>
             </motion.h1>
 
@@ -124,9 +123,8 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
               variants={rise}
               className="mt-7 max-w-[42rem] text-lg leading-8 text-slate-600 sm:text-xl dark:text-slate-300"
             >
-              CTRL gives emergency services and high-trust teams realistic,
-              auditable simulations—then turns performance into evidence hiring
-              teams can review.
+              CTRL helps organisations run structured assessments and review
+              consistent evidence across one connected platform.
             </motion.p>
 
             <motion.div variants={rise} className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -154,7 +152,7 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
               variants={rise}
               className="mt-9 flex flex-wrap gap-x-7 gap-y-3 border-t border-slate-200/80 pt-6 text-xs font-medium text-slate-500 dark:border-white/10 dark:text-slate-400"
             >
-              {["Scenario-based", "Auditable evidence", "Human hiring decisions"].map((item) => (
+              {["Connected process", "Consistent delivery", "Human-led decisions"].map((item) => (
                 <li key={item} className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-sky-600 dark:text-sky-400" aria-hidden="true" />
                   {item}
@@ -165,7 +163,7 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
 
           <motion.aside
             variants={rise}
-            aria-label="Example CTRL assessment brief"
+            aria-label="Example CTRL workspace"
             className="relative min-w-0 overflow-hidden border border-slate-300 bg-[#f8fafc] shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)] dark:border-white/12 dark:bg-[#080b10] dark:shadow-[0_24px_80px_-30px_rgba(0,0,0,0.75)]"
           >
             <span aria-hidden className="absolute -left-px -top-px h-5 w-5 border-l-2 border-t-2 border-sky-500" />
@@ -174,42 +172,42 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
             <div className="flex items-start justify-between gap-6 border-b border-slate-200 px-6 py-5 dark:border-white/10">
               <div>
                 <p className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400">
-                  Assessment brief
+                  Workspace preview
                 </p>
                 <h2 className="mt-2 font-display text-2xl font-medium text-slate-900 dark:text-white">
-                  Emergency call handler
+                  Assessment campaign
                 </h2>
               </div>
               <span className="inline-flex shrink-0 items-center gap-2 border border-emerald-500/25 bg-emerald-500/[0.08] px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                Controlled
+                Ready
               </span>
             </div>
 
             <div className="grid grid-cols-2 border-b border-slate-200 dark:border-white/10">
               <div className="border-r border-slate-200 px-6 py-4 dark:border-white/10">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">Delivery</p>
-                <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">Remote or in-person</p>
+                <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">Flexible</p>
               </div>
               <div className="px-6 py-4">
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-slate-500">Evidence</p>
-                <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">Structured review</p>
+                <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">Reviewable</p>
               </div>
             </div>
 
             <div className="px-6 py-5">
               <p className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                Module sequence
+                Platform flow
               </p>
               <div className="divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/10 dark:border-white/10">
-                {moduleRows.map((module, index) => (
-                  <div key={module.label} className="flex items-center gap-4 py-3.5">
+                {platformFlowRows.map((flow, index) => (
+                  <div key={flow.label} className="flex items-center gap-4 py-3.5">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center border border-slate-200 bg-white text-slate-600 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-                      <module.icon className="h-4 w-4" aria-hidden="true" />
+                      <flow.icon className="h-4 w-4" aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{module.label}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{module.detail}</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{flow.label}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{flow.detail}</p>
                     </div>
                     <span className="font-mono text-[10px] text-slate-400">0{index + 1}</span>
                   </div>
@@ -219,7 +217,7 @@ export function LandingHero({ navHeight = 96, bgColor = "bg-black", reduceMotion
 
             <div className="flex items-center gap-3 bg-slate-100 px-6 py-4 text-xs leading-5 text-slate-600 dark:bg-white/[0.035] dark:text-slate-400">
               <ClipboardCheck className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" aria-hidden="true" />
-              Integrity events remain separate from performance evidence.
+              Designed to support consistent, considered hiring decisions.
             </div>
           </motion.aside>
         </motion.div>

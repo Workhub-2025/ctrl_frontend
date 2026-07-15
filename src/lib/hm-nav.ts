@@ -4,7 +4,6 @@ import {
   FolderKanban,
   Headset,
   LayoutDashboard,
-  Layers3,
   Users,
 } from "lucide-react";
 
@@ -41,14 +40,9 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
         label: "Campaigns",
         hint: "Create and manage campaigns",
         icon: FolderKanban,
-        isActive: (p) => p.startsWith("/hiring-manager-dashboard/campaigns"),
-      },
-      {
-        href: "/hiring-manager-dashboard/sessions",
-        label: "Sessions",
-        hint: "Assessment sessions",
-        icon: Layers3,
-        isActive: (p) => p.startsWith("/hiring-manager-dashboard/sessions"),
+        isActive: (p) =>
+          p.startsWith("/hiring-manager-dashboard/campaigns") ||
+          p.startsWith("/hiring-manager-dashboard/sessions"),
       },
       {
         href: "/hiring-manager-dashboard/candidates",
@@ -94,7 +88,7 @@ export function getHmBreadcrumbs(pathname: string) {
 
   const labels: Record<string, string> = {
     campaigns: "Campaigns",
-    sessions: "Sessions",
+    sessions: "Campaigns",
     candidates: "Candidates",
     assessments: "Assessments",
     "assessment-recovery": "Assessment recovery",
@@ -112,7 +106,13 @@ export function getHmBreadcrumbs(pathname: string) {
   const sectionLabel = labels[section] ?? section;
 
   if (detailId && (section === "sessions" || section === "campaigns" || section === "candidates")) {
-    crumbs.push({ label: sectionLabel, href: `/hiring-manager-dashboard/${section}` });
+    crumbs.push({
+      label: sectionLabel,
+      href:
+        section === "sessions"
+          ? "/hiring-manager-dashboard/campaigns"
+          : `/hiring-manager-dashboard/${section}`,
+    });
     crumbs.push({ label: section === "sessions" ? "Session detail" : detailId });
     return crumbs;
   }

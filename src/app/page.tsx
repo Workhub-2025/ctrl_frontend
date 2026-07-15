@@ -6,18 +6,13 @@ import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
   Activity,
-  PhoneCall,
   Menu,
   Crosshair,
   X,
   CheckCircle2,
-  Headphones,
-  Siren,
   Network,
-  Gauge,
   ListChecks,
   Scale,
-  Keyboard,
   KeyRound,
   CalendarClock,
   Trophy,
@@ -46,11 +41,11 @@ const navItems = [
   { label: "Contracts", href: "#contracts" },
 ];
 
-const disciplines: { label: string; icon: typeof Siren; tint: DisciplineTint }[] = [
-  { label: "Emergency Dispatch", icon: Siren, tint: "rose" },
-  { label: "Control Room Operations", icon: Gauge, tint: "amber" },
-  { label: "Contact & Service Centres", icon: Headphones, tint: "cyan" },
-  { label: "Command & Coordination", icon: Network, tint: "violet" },
+const platformPillars: { label: string; icon: typeof Activity; tint: DisciplineTint }[] = [
+  { label: "Clear campaign setup", icon: ListChecks, tint: "rose" },
+  { label: "Managed delivery", icon: Activity, tint: "amber" },
+  { label: "Clear participant journeys", icon: Network, tint: "cyan" },
+  { label: "Structured review", icon: Scale, tint: "violet" },
 ];
 
 type DisciplineTint = "rose" | "amber" | "cyan" | "violet";
@@ -83,29 +78,29 @@ const hiringWorkflowSteps: {
 }[] = [
   {
     step: "01",
-    title: "Build the Campaign",
-    text: "Bundle the assessments that matter for the role — call simulation, prioritisation, situational judgement and typing — into a single campaign, then generate a secure invitation link to share with candidates.",
+    title: "Prepare the Assessment",
+    text: "Set up the campaign, confirm delivery details and bring everything together in one place.",
     icon: ListChecks,
     visual: "campaign",
   },
   {
     step: "02",
-    title: "Invite & Schedule Sessions",
-    text: "Invite candidates and schedule remote or in-person sessions with a set date and time. Sessions stay locked until they're due, and in-person sessions carry a venue address candidates can map.",
+    title: "Invite Participants",
+    text: "Manage invitations, scheduling and delivery details from a single workspace.",
     icon: CalendarClock,
     visual: "sessions",
   },
   {
     step: "03",
-    title: "Run Live Sessions",
-    text: "Track candidates from one sessions-first overview as they work through the assessments. Lock or unlock candidates on demand and watch progress update in real time.",
+    title: "Deliver Consistently",
+    text: "Give every participant a clear, guided experience while your team retains oversight of delivery.",
     icon: Activity,
     visual: "tracking",
   },
   {
     step: "04",
-    title: "Compare & Progress",
-    text: "Once assessments are complete, progress switches to an overall score. Compare candidates side by side and progress the strongest to the next stage with confidence.",
+    title: "Review the Evidence",
+    text: "Bring assessment outcomes into one reviewable view to support a considered, human-led decision.",
     icon: Trophy,
     visual: "ranking",
   },
@@ -120,29 +115,29 @@ const candidateWorkflowSteps: {
 }[] = [
   {
     step: "01",
-    title: "Activate with Your Access Code",
-    text: "Register using the access code from your agency. It places you in the right workspace and lists every assessment session you've been invited to.",
+    title: "Receive Your Invitation",
+    text: "Use your secure invitation to access the correct organisation and assessment.",
     icon: KeyRound,
     visual: "access",
   },
   {
     step: "02",
-    title: "Your Session Unlocks",
-    text: "Remote sessions unlock automatically at the scheduled time; in-person sessions are unlocked on site. Each one shows the role and, for in-person, a venue you can open on a map.",
+    title: "Check the Details",
+    text: "Review the timing, delivery information and requirements before your assessment begins.",
     icon: CalendarClock,
     visual: "schedule",
   },
   {
     step: "03",
-    title: "Complete the Assessments",
-    text: "Work through your assigned modules — call simulation, prioritisation, situational judgement and typing — at the pace each assessment allows.",
+    title: "Complete the Assessment",
+    text: "Follow a focused, guided experience with clear instructions at each stage.",
     icon: ListChecks,
     visual: "modules",
   },
   {
     step: "04",
-    title: "See Your Outcome",
-    text: "Your performance is shared directly with the hiring team, who update your status to Completed, Progressed or Unsuccessful.",
+    title: "Await the Outcome",
+    text: "Your assessment is shared securely with the organisation, who will contact you about next steps.",
     icon: CheckCircle2,
     visual: "outcome",
   },
@@ -438,10 +433,15 @@ export default function Home() {
             {navItems.map((item) => {
               const isActive = activeSection === item.href.slice(1);
               return (
-                <button
+                <a
                   key={item.href}
-                  onClick={() => scrollToAnchor(item.href.slice(1))}
-                  aria-current={isActive ? "true" : undefined}
+                  href={item.href}
+                  onClick={(event) => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                    event.preventDefault();
+                    scrollToAnchor(item.href.slice(1));
+                  }}
+                  aria-current={isActive ? "location" : undefined}
                   className={cn(
                     "relative transition-colors rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20",
                     "after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-slate-900 dark:after:bg-white after:transition-transform after:origin-left",
@@ -451,7 +451,7 @@ export default function Home() {
                   )}
                 >
                   {item.label}
-                </button>
+                </a>
               );
             })}
           </div>
@@ -465,12 +465,12 @@ export default function Home() {
             />
             <Link href="/auth/register?mode=login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
               Log in
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-[opacity,margin] duration-300" aria-hidden="true" />
             </Link>
             <Button asChild className="group rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
               <Link href="/auth/register?mode=register" className="flex items-center gap-1.5">
                 Get Started
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" aria-hidden="true" />
+                <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-[opacity,margin] duration-300" aria-hidden="true" />
               </Link>
             </Button>
           </div>
@@ -483,11 +483,17 @@ export default function Home() {
               resetSettings={resetAccessibilitySettings}
             />
             <button
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20 rounded-lg p-1"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle mobile menu"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-navigation"
             >
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="h-6 w-6" aria-hidden="true" />
+              )}
             </button>
           </div>
         </div>
@@ -496,6 +502,7 @@ export default function Home() {
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div
+              id="mobile-navigation"
               initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -510,13 +517,16 @@ export default function Home() {
                   {navItems.map((item) => {
                     const isActive = activeSection === item.href.slice(1);
                     return (
-                      <button
+                      <a
                         key={item.href}
-                        onClick={() => {
+                        href={item.href}
+                        onClick={(event) => {
+                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                          event.preventDefault();
                           scrollToAnchor(item.href.slice(1));
                           setIsMobileMenuOpen(false);
                         }}
-                        aria-current={isActive ? "true" : undefined}
+                        aria-current={isActive ? "location" : undefined}
                         className={cn(
                           "w-full flex items-center gap-3 text-left text-base font-medium px-3 py-3 min-h-[44px] rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20",
                           isActive
@@ -532,7 +542,7 @@ export default function Home() {
                           aria-hidden="true"
                         />
                         {item.label}
-                      </button>
+                      </a>
                     );
                   })}
                 </div>
@@ -568,21 +578,21 @@ export default function Home() {
         <main id="main-content" className="relative z-10">
           <LandingHero navHeight={navHeight} bgColor={bgColor} reduceMotion={reduceMotion} />
 
-          {/* Disciplines marquee strip */}
+          {/* Platform principles strip */}
           <section
             id="disciplines"
-            aria-label="Operational disciplines CTRL is built for"
+            aria-label="CTRL platform principles"
             className="relative border-y border-slate-200/70 dark:border-white/5 bg-white/40 dark:bg-white/[0.015] backdrop-blur-sm"
           >
             <div className="mx-auto max-w-[1440px] px-6 py-8 md:py-10">
               <Reveal variant="fade" className="mb-6 text-center text-xs font-mono uppercase tracking-[0.25em] text-slate-500 dark:text-slate-500">
-                Built for high-stakes operational roles
+                A consistent foundation for structured assessment
               </Reveal>
               <RevealGroup
                 stagger={0.1}
                 className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-stretch"
               >
-                {disciplines.map((d) => {
+                {platformPillars.map((d) => {
                   const tint = disciplineTintStyles[d.tint];
                   return (
                     <RevealItem key={d.label} variant="zoom" className="h-full w-full">
@@ -611,16 +621,16 @@ export default function Home() {
             <section id="capabilities" className="w-full">
               <div className="text-center max-w-3xl mx-auto mb-16">
                 <SectionHeading
-                  eyebrow="Assessment modules"
+                  eyebrow="The platform"
                   accent="cyan"
-                  title={<>Operational evidence, <GradientText accent="cyan">not generic test scores.</GradientText></>}
-                  body="High-fidelity simulations reveal how candidates capture information, prioritise, decide and communicate in realistic conditions."
+                  title={<>One platform. A more <GradientText accent="cyan">consistent assessment process.</GradientText></>}
+                  body="CTRL connects preparation, delivery and review without exposing teams or candidates to unnecessary complexity."
                   centered
                 />
               </div>
 
               <RevealGroup stagger={0.14} amount={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                {/* Card 1 - Full Width: Live Call Simulation */}
+                {/* Primary platform overview */}
                 <RevealItem variant="zoom" className="md:col-span-3">
                   <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 md:p-12 group transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-cyan-500/30">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -630,16 +640,16 @@ export default function Home() {
                       <div className="flex-1">
                         <div className="mb-6 flex items-center gap-3">
                           <div className="h-11 w-11 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center">
-                            <PhoneCall className="h-5 w-5 text-cyan-500 dark:text-cyan-400" aria-hidden="true" />
+                            <ListChecks className="h-5 w-5 text-cyan-500 dark:text-cyan-400" aria-hidden="true" />
                           </div>
-                          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">01 // Call Simulation</span>
+                          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">01 // Setup</span>
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-4 text-balance font-display">The Flagship: Live Call Simulation.</h3>
+                        <h3 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-4 text-balance font-display">A clear starting point.</h3>
                         <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                          Candidates work realistic dispatch and customer calls, capturing caller details in real time as the audio plays. CTRL grades every answer against a millisecond-perfect Earliest Speech Point, scoring both accuracy and how quickly the right information was captured.
+                          Bring campaign details, participants and delivery information into one focused assessment experience.
                         </p>
                         <div className="mt-6 flex flex-wrap gap-2">
-                          {["Real-time data capture", "Millisecond ESP grading", "Dispatch scenarios"].map((chip) => (
+                          {["Campaign-based", "Managed", "Consistent"].map((chip) => (
                             <span key={chip} className="rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-3 py-1 text-xs font-medium text-cyan-700 dark:text-cyan-300">
                               {chip}
                             </span>
@@ -647,53 +657,57 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {/* Live call HUD */}
+                      {/* Abstract assessment progress preview */}
                       <div className="flex-1 w-full relative rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden shadow-inner">
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_0%,rgba(6,182,212,0.06)_50%,transparent_100%)]" />
                         <div className="relative z-10 flex flex-col gap-3.5 p-5 font-mono">
                           <div className="flex items-center justify-between text-[11px]">
                             <span className="flex items-center gap-2 uppercase tracking-wider text-slate-500 dark:text-slate-400">
                               <span className="relative flex h-1.5 w-1.5">
-                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-500 opacity-60" />
+                                <span
+                                  className={cn(
+                                    "absolute inline-flex h-full w-full rounded-full bg-cyan-500 opacity-60",
+                                    !reduceMotion && "animate-ping"
+                                  )}
+                                  aria-hidden="true"
+                                />
                                 <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-500" />
                               </span>
-                              Live // Caller audio
+                              Assessment // In progress
                             </span>
-                            <span className="text-slate-400 dark:text-slate-500 tabular-nums">02:14</span>
+                            <span className="text-slate-400 dark:text-slate-500 tabular-nums">03 / 04</span>
                           </div>
 
                           <div className="flex h-16 items-center justify-center gap-1 rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3">
-                            {[14, 26, 18, 38, 22, 44, 20, 34, 16, 40, 24, 30, 18, 36, 22, 28].map((peak, i) => (
-                              <motion.div
+                            {Array.from({ length: 16 }).map((_, i) => (
+                              <div
                                 key={i}
-                                className="w-1 rounded-full bg-cyan-500/60"
+                                className={cn("h-1 flex-1 rounded-full", i < 11 ? "bg-cyan-500/70" : "bg-slate-200 dark:bg-white/10")}
                                 style={{ height: "10px" }}
-                                animate={reduceMotion ? {} : { height: ["10px", `${peak}px`, "10px"] }}
-                                transition={{ repeat: Infinity, duration: 1.1, delay: i * 0.06, ease: "easeInOut" }}
                               />
                             ))}
                           </div>
 
-                          {/* Captured caller fields against ESP timing */}
+                          {/* Generic stage progression */}
                           <div className="space-y-1.5">
                             <div className="flex items-center justify-between rounded-md bg-white/60 px-2.5 py-1.5 text-[10px] uppercase tracking-wider dark:bg-black/40">
-                              <span className="text-slate-500 dark:text-slate-400">Door no.</span>
-                              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">14 <CheckCircle2 className="h-3 w-3" /></span>
+                              <span className="text-slate-500 dark:text-slate-400">Stage 01</span>
+                              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">Complete <CheckCircle2 className="h-3 w-3" aria-hidden="true" /></span>
                             </div>
                             <div className="flex items-center justify-between rounded-md bg-white/60 px-2.5 py-1.5 text-[10px] uppercase tracking-wider dark:bg-black/40">
-                              <span className="text-slate-500 dark:text-slate-400">Street</span>
-                              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">Oak Lane <CheckCircle2 className="h-3 w-3" /></span>
+                              <span className="text-slate-500 dark:text-slate-400">Stage 02</span>
+                              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">Complete <CheckCircle2 className="h-3 w-3" aria-hidden="true" /></span>
                             </div>
                             <div className="flex items-center justify-between rounded-md bg-white/60 px-2.5 py-1.5 text-[10px] uppercase tracking-wider dark:bg-black/40">
-                              <span className="text-slate-500 dark:text-slate-400">Postcode</span>
-                              <span className="tabular-nums text-slate-400 dark:text-slate-500">capturing…</span>
+                              <span className="text-slate-500 dark:text-slate-400">Stage 03</span>
+                              <span className="tabular-nums text-slate-400 dark:text-slate-500">In progress…</span>
                             </div>
                           </div>
 
                           <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[10px] uppercase tracking-wider text-slate-500 dark:border-white/5 dark:text-slate-500">
-                            <span>Accuracy 98%</span>
-                            <span>ESP +0.4s</span>
-                            <span className="text-cyan-600 dark:text-cyan-400">On target</span>
+                            <span>Guided journey</span>
+                            <span>Secure delivery</span>
+                            <span className="text-cyan-600 dark:text-cyan-400">Active</span>
                           </div>
                         </div>
                       </div>
@@ -701,7 +715,7 @@ export default function Home() {
                   </div>
                 </RevealItem>
 
-                {/* Card 2: Prioritisation */}
+                {/* Card 2: Delivery */}
                 <RevealItem variant="zoom">
                   <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-blue-500/30">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -710,26 +724,26 @@ export default function Home() {
                       <div className="h-11 w-11 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center">
                         <ListChecks className="h-5 w-5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
                       </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">02 // Prioritisation</span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">02 // Delivery</span>
                     </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Rank Incidents Under the Clock</h3>
+                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Managed from one place</h3>
                     <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      Candidates drag live incidents into priority order against a timer. Scored on how closely their ranking matches the optimal response sequence.
+                      Keep invitations, readiness and assessment delivery connected through one clear process.
                     </p>
                     <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4 space-y-2">
                       {[
-                        { id: "A", label: "Active fire — occupied", band: "High" },
-                        { id: "C", label: "Welfare check", band: "Med" },
-                        { id: "E", label: "Noise complaint", band: "Low" },
+                        { id: "A", label: "Invitation", band: "Ready" },
+                        { id: "B", label: "Readiness", band: "Set" },
+                        { id: "C", label: "Assessment", band: "Next" },
                       ].map((row) => (
                         <div key={row.id} className="flex items-center gap-3 rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3 py-2">
                           <span className="font-mono text-[10px] text-slate-400">{row.id}</span>
                           <span className="flex-1 truncate text-xs text-slate-600 dark:text-slate-300">{row.label}</span>
                           <span className={cn(
                             "rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider",
-                            row.band === "High" && "bg-rose-500/10 text-rose-600 dark:text-rose-400",
-                            row.band === "Med" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                            row.band === "Low" && "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                            row.band === "Ready" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                            row.band === "Set" && "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
+                            row.band === "Next" && "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                           )}>{row.band}</span>
                         </div>
                       ))}
@@ -737,7 +751,7 @@ export default function Home() {
                   </div>
                 </RevealItem>
 
-                {/* Card 3: Situational Judgement */}
+                {/* Card 3: Experience */}
                 <RevealItem variant="zoom">
                   <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-violet-500/30">
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -746,22 +760,22 @@ export default function Home() {
                       <div className="h-11 w-11 rounded-full border border-violet-500/20 bg-violet-500/10 flex items-center justify-center">
                         <Scale className="h-5 w-5 text-violet-500 dark:text-violet-400" aria-hidden="true" />
                       </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-violet-600 dark:text-violet-400">03 // Situational Judgement</span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-violet-600 dark:text-violet-400">03 // Experience</span>
                     </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Judgement in Real Context</h3>
+                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Clear at every stage</h3>
                     <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      Realistic workplace scenarios where candidates choose the most and least effective response, graded against a key built by subject-matter experts.
+                      Give participants focused instructions and a consistent journey from readiness to completion.
                     </p>
                     <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4 space-y-2">
                       {[
-                        { label: "Escalate to supervisor", tag: "Most", tone: "good" },
-                        { label: "Reassure and log details", tag: "", tone: "" },
-                        { label: "Ignore the request", tag: "Least", tone: "bad" },
+                        { label: "Requirements", tag: "Ready", tone: "good" },
+                        { label: "Guided assessment", tag: "", tone: "" },
+                        { label: "Completion", tag: "Next", tone: "next" },
                       ].map((row) => (
                         <div key={row.label} className={cn(
                           "flex items-center gap-3 rounded-lg border px-3 py-2",
                           row.tone === "good" && "border-emerald-500/30 bg-emerald-500/[0.06]",
-                          row.tone === "bad" && "border-rose-500/30 bg-rose-500/[0.06]",
+                          row.tone === "next" && "border-blue-500/30 bg-blue-500/[0.06]",
                           !row.tone && "border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40"
                         )}>
                           <span className="flex-1 truncate text-xs text-slate-600 dark:text-slate-300">{row.label}</span>
@@ -769,7 +783,7 @@ export default function Home() {
                             <span className={cn(
                               "rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider",
                               row.tone === "good" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-                              row.tone === "bad" && "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                              row.tone === "next" && "bg-blue-500/15 text-blue-600 dark:text-blue-400"
                             )}>{row.tag}</span>
                           )}
                         </div>
@@ -778,34 +792,34 @@ export default function Home() {
                   </div>
                 </RevealItem>
 
-                {/* Card 4: Typing */}
+                {/* Card 4: Review */}
                 <RevealItem variant="zoom">
                   <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-emerald-500/30">
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
                     <div className="mb-6 flex items-center gap-3 relative z-10">
                       <div className="h-11 w-11 rounded-full border border-emerald-500/20 bg-emerald-500/10 flex items-center justify-center">
-                        <Keyboard className="h-5 w-5 text-emerald-500 dark:text-emerald-400" aria-hidden="true" />
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" aria-hidden="true" />
                       </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">04 // Typing</span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">04 // Review</span>
                     </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Speed Meets Accuracy</h3>
+                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Evidence brought together</h3>
                     <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      Real-time WPM, accuracy and error tracking on realistic call-handler passages — across Base, Intermediate and Extreme difficulty.
+                      Review outcomes and relevant context in one place while decisions remain with your team.
                     </p>
                     <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4">
                       <div className="mb-3 grid grid-cols-2 gap-2">
                         <div className="rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3 py-2">
-                          <div className="font-mono text-[9px] uppercase tracking-wider text-slate-500">WPM</div>
-                          <div className="font-display text-xl font-medium text-slate-900 dark:text-white tabular-nums">72</div>
+                          <div className="font-mono text-[9px] uppercase tracking-wider text-slate-500">Record</div>
+                          <div className="font-display text-xl font-medium text-slate-900 dark:text-white">Ready</div>
                         </div>
                         <div className="rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3 py-2">
-                          <div className="font-mono text-[9px] uppercase tracking-wider text-slate-500">Accuracy</div>
-                          <div className="font-display text-xl font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">98%</div>
+                          <div className="font-mono text-[9px] uppercase tracking-wider text-slate-500">Context</div>
+                          <div className="font-display text-xl font-medium text-emerald-600 dark:text-emerald-400">Included</div>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {["Base", "Intermediate", "Extreme"].map((lvl) => (
+                        {["Prepared", "Delivered", "Reviewed"].map((lvl) => (
                           <span key={lvl} className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
                             {lvl}
                           </span>
@@ -823,7 +837,7 @@ export default function Home() {
                   eyebrow="One connected workflow"
                   accent="blue"
                   title={<>Clear for the team. <GradientText accent="blue">Calm for the candidate.</GradientText></>}
-                  body="Follow the same controlled assessment process from either side. Switch roles to see only the steps that matter."
+                  body="Follow the same controlled assessment process from either side. Switch views to see only the steps that matter."
                   centered
                 />
               </div>
@@ -918,9 +932,9 @@ export default function Home() {
               <Reveal variant="fade-up" className="mt-8">
                 <div className="grid divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/10 dark:border-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
                   {[
-                    ["Evidence-led", "Structured performance data supports—not replaces—human judgement."],
-                    ["Controlled delivery", "Remote and in-person sessions follow the same governed process."],
-                    ["Auditable by design", "Tenant access, candidate activity and decisions remain traceable."],
+                    ["Consistent by design", "A shared process keeps assessment delivery clear and considered."],
+                    ["Flexible delivery", "Supported delivery options adapt to the needs of each organisation."],
+                    ["Human-led outcomes", "CTRL supports the review; your team retains the decision."],
                   ].map(([title, text]) => (
                     <div key={title} className="px-5 py-6 md:px-7">
                       <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
@@ -1059,9 +1073,9 @@ export default function Home() {
                 </div>
 
                 <div className="mx-auto mt-12 flex max-w-xl flex-wrap items-center justify-center gap-x-7 gap-y-2 border-t border-slate-200/70 pt-7 text-xs font-mono uppercase tracking-[0.15em] text-slate-500 dark:border-white/5 dark:text-slate-400">
-                  <span>Access-code onboarding</span>
+                  <span>Secure onboarding</span>
                   <span className="hidden h-3 w-px bg-slate-300 dark:bg-white/10 sm:inline-block" />
-                  <span>Role-built portals</span>
+                  <span>Clear account access</span>
                   <span className="hidden h-3 w-px bg-slate-300 dark:bg-white/10 sm:inline-block" />
                   <span>Human-reviewed evidence</span>
                 </div>
@@ -1079,11 +1093,11 @@ export default function Home() {
                   <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
                     <BrandLogo layout="stacked" className="h-14 w-[6.25rem] self-start" />
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light">
-                      High-fidelity operational simulations and structured evidence for high-trust hiring teams.
+                      Structured assessment experiences and reviewable evidence for organisations making important hiring decisions.
                     </p>
                     <span className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/60 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-sky-500" aria-hidden="true" />
-                      Operational assessment platform
+                      Assessment platform for organisations
                     </span>
                   </div>
 
@@ -1092,14 +1106,19 @@ export default function Home() {
                       <span className="h-1 w-1 rounded-full bg-sky-500" /> Explore
                     </h4>
                     {navItems.map(item => (
-                      <button
+                      <a
                         key={item.href}
-                        onClick={() => scrollToAnchor(item.href.slice(1))}
+                        href={item.href}
+                        onClick={(event) => {
+                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                          event.preventDefault();
+                          scrollToAnchor(item.href.slice(1));
+                        }}
                         className="group flex items-center gap-1.5 text-left text-sm font-light text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/40 dark:focus-visible:ring-white/20 rounded"
                       >
                         {item.label}
-                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
-                      </button>
+                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
+                      </a>
                     ))}
                   </div>
 
@@ -1111,10 +1130,10 @@ export default function Home() {
                       <Link
                         key={l.href}
                         href={l.href}
-                        className="group flex items-center gap-1.5 text-sm font-light text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                        className="group flex items-center gap-1.5 rounded text-sm font-light text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/40 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
                       >
                         {l.label}
-                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
+                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
                       </Link>
                     ))}
                   </div>
@@ -1130,21 +1149,21 @@ export default function Home() {
                       <Link
                         key={l.label}
                         href={l.href}
-                        className="group flex items-center gap-1.5 text-sm font-light text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                        className="group flex items-center gap-1.5 rounded text-sm font-light text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/40 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
                       >
                         {l.label}
-                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
+                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
                       </Link>
                     ))}
                   </div>
                 </div>
 
-                {/* Disciplines strip */}
+                {/* Platform principles strip */}
                 <div className="mb-10 flex flex-wrap items-center gap-2 border-t border-slate-200/70 dark:border-white/5 pt-8">
                   <span className="mr-1 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                    Built for
+                    Platform
                   </span>
-                  {disciplines.map((d) => (
+                  {platformPillars.map((d) => (
                     <span
                       key={d.label}
                       className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-600 dark:text-slate-300"

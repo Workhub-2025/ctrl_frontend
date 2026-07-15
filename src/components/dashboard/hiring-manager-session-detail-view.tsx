@@ -51,6 +51,9 @@ export function HiringManagerSessionDetailView({ sessionId }: HiringManagerSessi
     () => (session ? findCampaignForSession(session, campaignDetails) : null),
     [campaignDetails, session]
   );
+  const campaignSessionsHref = campaign
+    ? `/hiring-manager-dashboard/campaigns/${encodeURIComponent(campaign.documentId ?? campaign.id)}?tab=sessions`
+    : "/hiring-manager-dashboard/campaigns";
 
   const refresh = async () => {
     await loadOverview(true);
@@ -88,7 +91,7 @@ export function HiringManagerSessionDetailView({ sessionId }: HiringManagerSessi
     setDeletingSessionId(assessmentSessionId);
     try {
       await HiringManagerPortalClientService.deleteSession(assessmentSessionId);
-      router.push("/hiring-manager-dashboard/sessions/");
+      router.push(campaignSessionsHref);
     } catch (deleteError) {
       setActionError(
         deleteError instanceof Error ? deleteError.message : "Session could not be deleted."
@@ -139,9 +142,9 @@ export function HiringManagerSessionDetailView({ sessionId }: HiringManagerSessi
     return (
       <div className="space-y-4">
         <Button variant="outline" size="sm" className="h-9 rounded-lg" asChild>
-          <Link href="/hiring-manager-dashboard/sessions/">
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-            Back to sessions
+          <Link href="/hiring-manager-dashboard/campaigns/">
+            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            Back to campaigns
           </Link>
         </Button>
         <div className={cn(portalAlertErrorClass, "text-sm")}>
@@ -154,9 +157,9 @@ export function HiringManagerSessionDetailView({ sessionId }: HiringManagerSessi
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4">
       <Button variant="outline" size="sm" className="h-8 w-fit rounded-lg" asChild>
-        <Link href="/hiring-manager-dashboard/sessions/">
-          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-          Back to sessions
+        <Link href={campaignSessionsHref}>
+          <ArrowLeft className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+          Back to campaign sessions
         </Link>
       </Button>
 
@@ -167,7 +170,7 @@ export function HiringManagerSessionDetailView({ sessionId }: HiringManagerSessi
       <HiringManagerSessionDetailsDialog
         session={session}
         open
-        onOpenChange={() => router.push("/hiring-manager-dashboard/sessions/")}
+        onOpenChange={() => router.push(campaignSessionsHref)}
         layout="page"
         campaignName={campaign?.name}
         campaignRole={campaign?.role}

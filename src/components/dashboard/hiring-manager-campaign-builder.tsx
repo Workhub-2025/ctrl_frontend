@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,7 +27,11 @@ import {
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { AssessmentPremiumBadge } from "@/components/dashboard/assessment-premium-badge";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
-import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
+import {
+  HiringManagerPortalClientService,
+  type HiringManagerCampaignListItem,
+} from "@/services/hiring-manager-portal-client.service";
+import { canCreateSessionForCampaign } from "@/lib/hiring-manager/campaign-session-approval";
 import {
   portalAlertErrorClass,
   portalAlertInfoClass,
@@ -66,7 +70,9 @@ interface CampaignBuilderProps {
 }
 
 type CreateCampaignResponse = {
-  data?: unknown;
+  data?: {
+    campaign?: HiringManagerCampaignListItem;
+  };
   error?: string;
 };
 
@@ -238,7 +244,6 @@ export function HiringManagerCampaignBuilder({
   initialStackDraft,
 }: CampaignBuilderProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isEditStackMode = mode === "edit-stack";
   const [draft, setDraft] = useState<CampaignDraft>(emptyDraft);
   const [lockedSlugs, setLockedSlugs] = useState<string[]>([]);
@@ -534,14 +539,27 @@ export function HiringManagerCampaignBuilder({
         throw new Error(body.error || "Campaign could not be created.");
       }
 
+      const createdCampaign = body.data?.campaign;
+      const createdCampaignId = createdCampaign?.documentId ?? createdCampaign?.id;
+      if (!createdCampaign || !createdCampaignId) {
+        throw new Error("Campaign was created but its workspace could not be identified.");
+      }
+
       HiringManagerPortalClientService.invalidate();
-      const returnTo = searchParams.get("returnTo");
-      const safeReturnTo =
-        returnTo?.startsWith("/hiring-manager-dashboard/")
-          ? returnTo
-          : "/hiring-manager-dashboard/campaigns/";
       router.refresh();
-      router.push(safeReturnTo);
+      if (!canCreateSessionForCampaign(createdCampaign.approvalStatus)) {
+        router.push(
+          "/hiring-manager-dashboard/campaigns/" +
+            encodeURIComponent(createdCampaignId) +
+            "?created=1"
+        );
+      } else {
+        router.push(
+          "/hiring-manager-dashboard/campaigns/" +
+            encodeURIComponent(createdCampaignId) +
+            "?tab=sessions&create=1"
+        );
+      }
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -570,9 +588,11 @@ export function HiringManagerCampaignBuilder({
               </Label>
               <Input
                 id="campaignName"
+                name="campaignName"
+                autoComplete="off"
                 value={draft.campaignName}
                 onChange={(event) => updateDraft("campaignName", event.target.value)}
-                placeholder="e.g. Spring control room intake"
+                placeholder="e.g. Spring assessment intake…"
                 className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
               />
             </div>
@@ -582,9 +602,11 @@ export function HiringManagerCampaignBuilder({
               </Label>
               <Input
                 id="roleTitle"
+                name="roleTitle"
+                autoComplete="off"
                 value={draft.roleTitle}
                 onChange={(event) => updateDraft("roleTitle", event.target.value)}
-                placeholder="Emergency call handler"
+                placeholder="e.g. Call handler…"
                 className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
               />
             </div>
@@ -594,9 +616,11 @@ export function HiringManagerCampaignBuilder({
               </Label>
               <Input
                 id="location"
+                name="location"
+                autoComplete="off"
                 value={draft.location}
                 onChange={(event) => updateDraft("location", event.target.value)}
-                placeholder="Assessment centre or operational area"
+                placeholder="e.g. London assessment centre…"
                 className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
               />
             </div>
@@ -754,7 +778,7 @@ export function HiringManagerCampaignBuilder({
                        )}
                      >
                        {mode.replace("_", " ").replace("-", " ")}
-                       {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
+                       {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />}
                      </button>
                   );
                 })}
@@ -863,6 +887,8 @@ export function HiringManagerCampaignBuilder({
                         <div className="flex items-center gap-2">
                           <Input
                             id={`threshold-${assessment.slug}`}
+                            name={`threshold-${assessment.slug}`}
+                            autoComplete="off"
                             type="number"
                             min="0"
                             max="100"
@@ -891,6 +917,8 @@ export function HiringManagerCampaignBuilder({
                         <div className="flex items-center gap-2">
                           <Input
                             id={`weight-${assessment.slug}`}
+                            name={`weight-${assessment.slug}`}
+                            autoComplete="off"
                             type="number"
                             min="0"
                             max="100"
@@ -921,9 +949,9 @@ export function HiringManagerCampaignBuilder({
                               title={lockedSlugs.includes(assessment.slug) ? "Weight locked (Click to unlock)" : "Weight unlocked (Click to lock)"}
                             >
                               {lockedSlugs.includes(assessment.slug) ? (
-                                <Lock className="h-3.5 w-3.5" />
+                                <Lock className="h-3.5 w-3.5" aria-hidden="true" />
                               ) : (
-                                <Unlock className="h-3.5 w-3.5" />
+                                <Unlock className="h-3.5 w-3.5" aria-hidden="true" />
                               )}
                             </Button>
                           )}

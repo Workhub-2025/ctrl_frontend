@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
 import { getAssessmentSettingsSummary } from "@/lib/hiring-manager/assessment-settings-display";
+import { canCreateSessionForCampaign } from "@/lib/hiring-manager/campaign-session-approval";
 
 export function HiringManagerCampaignsList() {
   const { campaigns, error, lastRefreshAt, loading, loadOverview } = useHiringManagerPortal();
@@ -75,7 +76,7 @@ export function HiringManagerCampaignsList() {
             disabled={isRefreshing}
             className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} aria-hidden="true" />
             Refresh
           </Button>
           <Button
@@ -83,8 +84,8 @@ export function HiringManagerCampaignsList() {
             asChild
             className={cn(portalPrimaryButtonClass, "h-10")}
           >
-            <Link href="/hiring-manager-dashboard/campaigns/create/?returnTo=/hiring-manager-dashboard/campaigns/">
-              <Plus className="mr-2 h-4 w-4" />
+            <Link href="/hiring-manager-dashboard/campaigns/create/">
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
               Create campaign
             </Link>
           </Button>
@@ -177,7 +178,21 @@ export function HiringManagerCampaignsList() {
                   </div>
                 </div>
 
-                <div className="flex justify-end pt-2">
+                <div className="flex flex-wrap justify-end gap-2 pt-2">
+                  {canCreateSessionForCampaign(campaign.approvalStatus) && campaign.sessions === 0 ? (
+                    <Button asChild className={cn(portalPrimaryButtonClass, "h-9")}>
+                      <Link
+                        href={
+                          "/hiring-manager-dashboard/campaigns/" +
+                          encodeURIComponent(campaign.documentId ?? campaign.id) +
+                          "?tab=sessions&create=1"
+                        }
+                      >
+                        <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        Create session
+                      </Link>
+                    </Button>
+                  ) : null}
                   <Button
                     variant="outline"
                     className="group h-9 rounded-md border-border bg-background/50 px-3.5 text-xs font-medium text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:border-white/10 dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
@@ -185,7 +200,7 @@ export function HiringManagerCampaignsList() {
                   >
                     <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}>
                       View More
-                      <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                      <ArrowRight className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                     </Link>
                   </Button>
                 </div>

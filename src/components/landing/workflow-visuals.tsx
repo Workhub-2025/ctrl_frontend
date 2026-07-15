@@ -37,11 +37,13 @@ const HEADER =
 function MeterBar({
   label,
   value,
+  valueLabel,
   accent,
   reduceMotion,
 }: {
   label: string;
   value: number;
+  valueLabel?: string;
   accent: string;
   reduceMotion: boolean;
 }) {
@@ -57,8 +59,8 @@ function MeterBar({
           transition={reduceMotion ? { duration: 0 } : { duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
         />
       </div>
-      <span className="w-8 shrink-0 text-right font-mono text-[10px] text-slate-500 dark:text-slate-400">
-        {value}
+      <span className="w-14 shrink-0 text-right font-mono text-[10px] uppercase text-slate-500 dark:text-slate-400">
+        {valueLabel ?? value}
       </span>
     </div>
   );
@@ -77,11 +79,11 @@ export function WorkflowVisual({
       return (
         <div className={SHELL}>
           <div className={HEADER}>
-            <ListChecks className="h-3.5 w-3.5" aria-hidden="true" /> Campaign Builder
+            <ListChecks className="h-3.5 w-3.5" aria-hidden="true" /> Assessment Setup
           </div>
           <div className="flex flex-1 flex-col justify-center gap-3">
             <div className="flex flex-wrap gap-1.5">
-              {["Call Simulation", "Prioritisation", "Situational Judgement", "Typing v3"].map((p) => (
+              {["Campaign", "Delivery", "Participants", "Review"].map((p) => (
                 <span
                   key={p}
                   className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider text-cyan-600 dark:text-cyan-400"
@@ -92,7 +94,7 @@ export function WorkflowVisual({
             </div>
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] px-3 py-2 font-mono text-[10px] text-slate-500 dark:text-slate-400">
               <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              <span className="truncate">ctrl.app/invite/9A2X</span>
+              <span className="truncate">ctrl.app/invite/secure</span>
               <span className="ml-auto shrink-0 rounded-md border border-slate-200 dark:border-white/10 px-2 py-0.5 text-slate-600 dark:text-slate-300">
                 Copy
               </span>
@@ -109,12 +111,12 @@ export function WorkflowVisual({
           </div>
           <div className="flex flex-1 flex-col justify-center gap-2.5">
             {[
-              { role: "Dispatch Operator", mode: "Remote", meta: "Tomorrow · 09:00", status: "Locked", locked: true },
-              { role: "Call Handler", mode: "In-person", meta: "Control Room B", status: "Scheduled", locked: false },
+              { label: "Assessment group A", mode: "Online", meta: "Tomorrow · 09:00", status: "Upcoming", locked: true },
+              { label: "Assessment group B", mode: "On site", meta: "Organisation venue", status: "Scheduled", locked: false },
             ].map((s) => (
-              <div key={s.role} className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-3">
+              <div key={s.label} className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-medium text-slate-900 dark:text-white">{s.role}</span>
+                  <span className="truncate text-sm font-medium text-slate-900 dark:text-white">{s.label}</span>
                   <span
                     className={cn(
                       "flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider",
@@ -128,7 +130,7 @@ export function WorkflowVisual({
                   </span>
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  {s.mode === "In-person" && <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />}
+                  {s.mode === "On site" && <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" />}
                   {s.mode} · {s.meta}
                 </div>
               </div>
@@ -141,13 +143,13 @@ export function WorkflowVisual({
       return (
         <div className={SHELL}>
           <div className={HEADER}>
-            <Activity className="h-3.5 w-3.5" aria-hidden="true" /> Live Sessions
+            <Activity className="h-3.5 w-3.5" aria-hidden="true" /> Delivery Overview
           </div>
           <div className="flex flex-1 flex-col justify-center gap-3">
             {[
-              { name: "Candidate A", pct: 100, status: "Score 92", done: true },
-              { name: "Candidate B", pct: 60, status: "In progress", done: false },
-              { name: "Candidate C", pct: 25, status: "In progress", done: false },
+              { name: "Participant 01", pct: 100, status: "Complete", done: true },
+              { name: "Participant 02", pct: 60, status: "In progress", done: false },
+              { name: "Participant 03", pct: 25, status: "In progress", done: false },
             ].map((r) => (
               <div key={r.name} className="flex items-center gap-3">
                 <span className="w-24 shrink-0 truncate text-xs text-slate-600 dark:text-slate-300">{r.name}</span>
@@ -178,18 +180,19 @@ export function WorkflowVisual({
       return (
         <div className={SHELL}>
           <div className={HEADER}>
-            <Trophy className="h-3.5 w-3.5" aria-hidden="true" /> Compare &amp; Progress
+            <Trophy className="h-3.5 w-3.5" aria-hidden="true" /> Review Summary
           </div>
           <div className="flex flex-1 flex-col justify-center gap-3">
             {[
-              { name: "Candidate A", score: 92, accent: "bg-emerald-500" },
-              { name: "Candidate B", score: 78, accent: "bg-cyan-500" },
-              { name: "Candidate C", score: 64, accent: "bg-slate-400 dark:bg-white/30" },
+              { name: "Assessment record", score: 100, status: "Ready", accent: "bg-emerald-500" },
+              { name: "Review context", score: 82, status: "Included", accent: "bg-cyan-500" },
+              { name: "Decision notes", score: 64, status: "Owned", accent: "bg-slate-400 dark:bg-white/30" },
             ].map((c) => (
               <MeterBar
                 key={c.name}
                 label={c.name}
                 value={c.score}
+                valueLabel={c.status}
                 accent={c.accent}
                 reduceMotion={reduceMotion}
               />
@@ -203,14 +206,14 @@ export function WorkflowVisual({
       return (
         <div className={SHELL}>
           <div className={HEADER}>
-            <KeyRound className="h-3.5 w-3.5" aria-hidden="true" /> Access Code
+            <KeyRound className="h-3.5 w-3.5" aria-hidden="true" /> Secure Access
           </div>
           <div className="flex flex-1 flex-col justify-center gap-3">
-            <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] px-4 py-3 text-center font-mono text-lg font-medium uppercase tracking-[0.3em] text-slate-900 dark:text-white">
-              CTRL-9A2X
+            <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] px-4 py-3 text-center font-mono text-sm font-medium uppercase tracking-[0.18em] text-slate-900 dark:text-white">
+              SECURE INVITE
             </div>
             <div className="flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Verified · Agency workspace
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Verified · Organisation workspace
             </div>
           </div>
         </div>
@@ -225,7 +228,7 @@ export function WorkflowVisual({
           <div className="flex flex-1 flex-col justify-center">
             <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] p-4">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-medium text-slate-900 dark:text-white">Dispatch Operator</span>
+                <span className="truncate text-sm font-medium text-slate-900 dark:text-white">Scheduled assessment</span>
                 <span className="flex shrink-0 items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-amber-600 dark:text-amber-400">
                   <Lock className="h-3 w-3" aria-hidden="true" /> Locked
                 </span>
@@ -234,7 +237,7 @@ export function WorkflowVisual({
                 <CalendarClock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Unlocks tomorrow · 09:00
               </div>
               <div className="mt-1 flex items-center gap-1.5 text-xs text-cyan-600 dark:text-cyan-400">
-                <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Control Room B · View map
+                <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Assessment venue · View map
               </div>
             </div>
           </div>
@@ -245,14 +248,14 @@ export function WorkflowVisual({
       return (
         <div className={SHELL}>
           <div className={HEADER}>
-            <ListChecks className="h-3.5 w-3.5" aria-hidden="true" /> Assessment Modules
+            <ListChecks className="h-3.5 w-3.5" aria-hidden="true" /> Guided Journey
           </div>
           <div className="flex flex-1 flex-col justify-center gap-2.5">
             {[
-              { name: "Typing Assessment", done: true },
-              { name: "Situational Judgement", done: true },
-              { name: "Prioritisation", done: false },
-              { name: "Call Simulation", done: false },
+              { name: "Readiness", done: true },
+              { name: "Stage 01", done: true },
+              { name: "Stage 02", done: false },
+              { name: "Completion", done: false },
             ].map((m) => (
               <div key={m.name} className="flex items-center gap-3">
                 <span
@@ -281,18 +284,18 @@ export function WorkflowVisual({
       return (
         <div className={SHELL}>
           <div className={HEADER}>
-            <Flag className="h-3.5 w-3.5" aria-hidden="true" /> Outcome
+            <Flag className="h-3.5 w-3.5" aria-hidden="true" /> Completion
           </div>
           <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
               <CheckCircle2 className="h-6 w-6 text-emerald-500" aria-hidden="true" />
             </div>
-            <p className="text-sm font-medium text-slate-900 dark:text-white">Progressed — shared with the hiring team</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white">Assessment complete — next steps will follow</p>
             <div className="flex flex-wrap justify-center gap-1.5">
               {[
-                { label: "Completed", active: false },
-                { label: "Progressed", active: true },
-                { label: "Unsuccessful", active: false },
+                { label: "Submitted", active: true },
+                { label: "Under review", active: false },
+                { label: "Next steps", active: false },
               ].map((s) => (
                 <span
                   key={s.label}
