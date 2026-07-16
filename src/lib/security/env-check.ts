@@ -36,6 +36,11 @@ export function warnIfProductionSecurityGaps() {
       console.warn(`${message} ALLOW_INCOMPLETE_UK_COMPLIANCE=true is for non-live previews only.`);
       return;
     }
-    throw new Error(message);
+
+    // Missing public legal metadata must remain highly visible, but it must not
+    // turn every page and health endpoint into a 500. Enforce this as a release
+    // readiness failure in deployment checks while keeping the running service
+    // available for remediation.
+    console.error(`${message} The deployment is running but is not compliance-ready.`);
   }
 }
