@@ -12,7 +12,6 @@ import {
 export type ClientNavItem = {
   href: string;
   label: string;
-  hint?: string;
   icon: LucideIcon;
   isActive: (pathname: string) => boolean;
 };
@@ -20,6 +19,7 @@ export type ClientNavItem = {
 export type ClientNavGroup = {
   label: string;
   items: ClientNavItem[];
+  collapsible?: boolean;
 };
 
 const normalizePath = (pathname: string) =>
@@ -32,33 +32,18 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
       {
         href: "/client-dashboard",
         label: "Overview",
-        hint: "Seats, approvals, activity",
         icon: Home,
         isActive: (pathname) => normalizePath(pathname) === "/client-dashboard",
       },
       {
-        href: "/client-dashboard/activity-logs",
-        label: "Activity logs",
-        hint: "Organisation audit trail",
-        icon: ScrollText,
-        isActive: (pathname) => pathname.startsWith("/client-dashboard/activity-logs"),
-      },
-    ],
-  },
-  {
-    label: "Team",
-    items: [
-      {
         href: "/client-dashboard/hiring-managers",
         label: "Hiring managers",
-        hint: "Seats and invite codes",
         icon: Users,
         isActive: (pathname) => pathname.startsWith("/client-dashboard/hiring-managers"),
       },
       {
         href: "/client-dashboard/campaign-approvals",
         label: "Campaign approvals",
-        hint: "Review hiring campaigns",
         icon: ClipboardCheck,
         isActive: (pathname) =>
           pathname.startsWith("/client-dashboard/campaign-approvals"),
@@ -66,7 +51,6 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
       {
         href: "/client-dashboard/client-approved-candidates",
         label: "Candidate reviews",
-        hint: "Recommended candidates",
         icon: UserCheck,
         isActive: (pathname) =>
           pathname.startsWith("/client-dashboard/client-approved-candidates"),
@@ -74,19 +58,24 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
     ],
   },
   {
-    label: "Account",
+    label: "Account & records",
+    collapsible: true,
     items: [
+      {
+        href: "/client-dashboard/activity-logs",
+        label: "Activity logs",
+        icon: ScrollText,
+        isActive: (pathname) => pathname.startsWith("/client-dashboard/activity-logs"),
+      },
       {
         href: "/client-dashboard/upgrade-requests",
         label: "Upgrade requests",
-        hint: "Seats and features",
         icon: TrendingUp,
         isActive: (pathname) => pathname.startsWith("/client-dashboard/upgrade-requests"),
       },
       {
         href: "/client-dashboard/messages",
         label: "Messages",
-        hint: "Support and hiring team",
         icon: MessageSquare,
         isActive: (pathname) => pathname.startsWith("/client-dashboard/messages"),
       },

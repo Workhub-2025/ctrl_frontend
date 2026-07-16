@@ -19,6 +19,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
         getActiveLabel={(pathname) => getActiveCandidateNavItem(pathname)?.label ?? "Candidate"}
         accessibilityDescription="Adjust the candidate portal display."
         maxWidthClass="max-w-[1600px]"
+        compactNavigation
       >
         {children}
       </PortalShell>

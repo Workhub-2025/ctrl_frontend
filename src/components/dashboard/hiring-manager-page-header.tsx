@@ -36,7 +36,7 @@ export function HiringManagerPageHeader({
             <Icon className="h-5 w-5" />
           </span>
           <div className="min-w-0 space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-primary">
+            <p className="text-sm font-medium text-primary">
               {eyebrow}
             </p>
             <div className="flex flex-wrap items-center gap-2.5">

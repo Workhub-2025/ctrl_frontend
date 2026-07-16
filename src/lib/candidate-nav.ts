@@ -4,12 +4,11 @@ import { BriefcaseBusiness, HelpCircle } from "lucide-react";
 export type CandidateNavItem = {
   href: string;
   label: string;
-  hint?: string;
   icon: LucideIcon;
   isActive: (pathname: string) => boolean;
 };
 
-export type CandidateNavGroup = { label: string; items: CandidateNavItem[] };
+export type CandidateNavGroup = { label: string; items: CandidateNavItem[]; collapsible?: boolean };
 
 const normalizePath = (pathname: string) => pathname.replace(/\/+$/, "") || "/";
 
@@ -20,7 +19,6 @@ export const CANDIDATE_NAV_GROUPS: CandidateNavGroup[] = [
       {
         href: "/candidate-dashboard",
         label: "My assessments",
-        hint: "Tasks and sessions",
         icon: BriefcaseBusiness,
         isActive: (p) =>
           normalizePath(p) === "/candidate-dashboard" ||
@@ -34,7 +32,6 @@ export const CANDIDATE_NAV_GROUPS: CandidateNavGroup[] = [
       {
         href: "/candidate-dashboard/help-support",
         label: "Help & support",
-        hint: "Tickets and guidance",
         icon: HelpCircle,
         isActive: (p) => p.startsWith("/candidate-dashboard/help-support"),
       },

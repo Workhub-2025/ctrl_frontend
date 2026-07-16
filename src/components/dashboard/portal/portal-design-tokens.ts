@@ -174,7 +174,7 @@ export const portalLabelClass =
 
 /** Supporting copy between compact labels and standard body text. */
 export const portalSupportingTextClass =
-  "text-[0.8125rem] leading-relaxed text-muted-foreground";
+  "text-sm leading-relaxed text-muted-foreground";
 
 /** Page header wrapper — separates title block from main content across portals. */
 export const portalPageHeaderClass =

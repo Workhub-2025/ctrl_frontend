@@ -10,12 +10,11 @@ import {
 export type HmNavItem = {
   href: string;
   label: string;
-  hint?: string;
   icon: LucideIcon;
   isActive: (pathname: string) => boolean;
 };
 
-export type HmNavGroup = { label: string; items: HmNavItem[] };
+export type HmNavGroup = { label: string; items: HmNavItem[]; collapsible?: boolean };
 
 const normalizePath = (pathname: string) => pathname.replace(/\/+$/, "") || "/";
 
@@ -26,19 +25,12 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
       {
         href: "/hiring-manager-dashboard",
         label: "Overview",
-        hint: "Campaigns and candidates",
         icon: LayoutDashboard,
         isActive: (p) => normalizePath(p) === "/hiring-manager-dashboard",
       },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
       {
         href: "/hiring-manager-dashboard/campaigns",
         label: "Campaigns",
-        hint: "Create and manage campaigns",
         icon: FolderKanban,
         isActive: (p) =>
           p.startsWith("/hiring-manager-dashboard/campaigns") ||
@@ -47,28 +39,26 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
       {
         href: "/hiring-manager-dashboard/candidates",
         label: "Candidates",
-        hint: "Review and share candidates",
         icon: Users,
         isActive: (p) => p.startsWith("/hiring-manager-dashboard/candidates"),
       },
       {
-        href: "/hiring-manager-dashboard/assessments",
-        label: "Assessments",
-        hint: "Assessment library",
-        icon: BookOpenCheck,
-        isActive: (p) => p.startsWith("/hiring-manager-dashboard/assessments"),
+        href: "/hiring-manager-dashboard/support",
+        label: "Help & support",
+        icon: Headset,
+        isActive: (p) => p.startsWith("/hiring-manager-dashboard/support"),
       },
     ],
   },
   {
-    label: "Support",
+    label: "Reference",
+    collapsible: true,
     items: [
       {
-        href: "/hiring-manager-dashboard/support",
-        label: "Help & support",
-        hint: "Tickets and guidance",
-        icon: Headset,
-        isActive: (p) => p.startsWith("/hiring-manager-dashboard/support"),
+        href: "/hiring-manager-dashboard/assessments",
+        label: "Assessment library",
+        icon: BookOpenCheck,
+        isActive: (p) => p.startsWith("/hiring-manager-dashboard/assessments"),
       },
     ],
   },

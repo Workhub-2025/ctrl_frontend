@@ -20,8 +20,6 @@ import { hasAdminPermission } from "@/lib/auth/admin-portal-permissions";
 export type AdminNavItem = {
   href: string;
   label: string;
-  /** Short helper shown under the label in the sidebar */
-  hint?: string;
   icon: LucideIcon;
   permission: AdminPermission;
   isActive: (pathname: string) => boolean;
@@ -30,6 +28,7 @@ export type AdminNavItem = {
 export type AdminNavGroup = {
   label: string;
   items: AdminNavItem[];
+  collapsible?: boolean;
 };
 
 const normalizePath = (pathname: string) =>
@@ -42,7 +41,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         href: "/admin",
         label: "Overview",
-        hint: "Metrics and alerts",
         icon: LayoutDashboard,
         permission: "platform.overview",
         isActive: (pathname) => normalizePath(pathname) === "/admin",
@@ -50,29 +48,41 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         href: "/admin/clients",
         label: "Clients",
-        hint: "Contracts and invites",
         icon: Building2,
         permission: "clients.read",
         isActive: (pathname) => normalizePath(pathname).startsWith("/admin/clients"),
       },
-    ],
-  },
-  {
-    label: "Billing & access",
-    items: [
       {
         href: "/admin/billing",
         label: "Pricing & invoices",
-        hint: "Stripe pricing and renewals",
         icon: CreditCard,
         permission: "billing.read",
         isActive: (pathname) =>
           pathname.startsWith("/admin/billing") && !pathname.startsWith("/admin/billing/requests"),
       },
       {
+        href: "/admin/users",
+        label: "Users",
+        icon: Users,
+        permission: "users.read",
+        isActive: (pathname) => pathname.startsWith("/admin/users"),
+      },
+      {
+        href: "/admin/tickets",
+        label: "Support tickets",
+        icon: Ticket,
+        permission: "tickets.read",
+        isActive: (pathname) => pathname.startsWith("/admin/tickets"),
+      },
+    ],
+  },
+  {
+    label: "More tools",
+    collapsible: true,
+    items: [
+      {
         href: "/admin/billing/requests",
         label: "Upgrade requests",
-        hint: "Requested · invoiced · paid",
         icon: TrendingUp,
         permission: "billing.read",
         isActive: (pathname) => pathname.startsWith("/admin/billing/requests"),
@@ -80,7 +90,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         href: "/admin/analytics",
         label: "Analytics",
-        hint: "Revenue and pipeline",
         icon: BarChart3,
         permission: "analytics.read",
         isActive: (pathname) => pathname.startsWith("/admin/analytics"),
@@ -88,28 +97,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         href: "/admin/upgrade-requests",
         label: "Entitlements",
-        hint: "Manual seats and features",
         icon: ArrowUpRight,
         permission: "entitlements.write",
         isActive: (pathname) => pathname.startsWith("/admin/upgrade-requests"),
       },
-    ],
-  },
-  {
-    label: "People & support",
-    items: [
-      {
-        href: "/admin/users",
-        label: "Users",
-        hint: "Directory across all roles",
-        icon: Users,
-        permission: "users.read",
-        isActive: (pathname) => pathname.startsWith("/admin/users"),
-      },
       {
         href: "/admin/comms",
         label: "Operational email",
-        hint: "Broadcast platform updates",
         icon: Mail,
         permission: "comms.send",
         isActive: (pathname) => pathname.startsWith("/admin/comms"),
@@ -117,36 +111,20 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         href: "/admin/erasure-requests",
         label: "Data erasure queue",
-        hint: "Pending GDPR deletion requests",
         icon: ShieldOff,
         permission: "users.read",
         isActive: (pathname) => pathname.startsWith("/admin/erasure-requests"),
       },
       {
-        href: "/admin/tickets",
-        label: "Support tickets",
-        hint: "IT and platform issues",
-        icon: Ticket,
-        permission: "tickets.read",
-        isActive: (pathname) => pathname.startsWith("/admin/tickets"),
-      },
-      {
         href: "/admin/assessment-recovery",
         label: "Assessment recovery",
-        hint: "Abandoned attempts and unlocks",
         icon: RotateCcw,
         permission: "recovery.read",
         isActive: (pathname) => pathname.startsWith("/admin/assessment-recovery"),
       },
-    ],
-  },
-  {
-    label: "System",
-    items: [
       {
         href: "/admin/settings",
         label: "Security",
-        hint: "Admin two-factor authentication",
         icon: ShieldCheck,
         permission: "security.manage",
         isActive: (pathname) => pathname.startsWith("/admin/settings"),
@@ -154,7 +132,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       {
         href: "/admin/audit-logs",
         label: "Audit log",
-        hint: "Platform activity history",
         icon: History,
         permission: "audit.read",
         isActive: (pathname) => pathname.startsWith("/admin/audit-logs"),

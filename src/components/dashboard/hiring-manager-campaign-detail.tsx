@@ -13,6 +13,7 @@ import {
   Eye,
   LayoutDashboard,
   MapPin,
+  MoreHorizontal,
   Pencil,
   Plus,
   RefreshCw,
@@ -22,6 +23,23 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -70,12 +88,12 @@ import {
 
 const hmOutlineButtonClass = cn(
   portalInputClass,
-  "h-9 bg-background/50 text-xs font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+  "h-10 bg-background text-sm font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground"
 );
 
 const hmBackButtonClass = cn(
   hmOutlineButtonClass,
-  "h-8 w-fit shrink-0 rounded-lg px-3"
+  "w-fit shrink-0 px-3"
 );
 
 type CampaignWorkspaceTab = "overview" | "candidates" | "sessions" | "assessments";
@@ -118,6 +136,7 @@ export function HiringManagerCampaignDetailView({
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
   const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
@@ -218,11 +237,6 @@ export function HiringManagerCampaignDetailView({
 
   const deleteCampaign = async () => {
     if (!campaign) return;
-    const confirmed = window.confirm(
-      `Delete "${campaign.name}"? This removes the campaign, its sessions, and linked candidate application records.`
-    );
-    if (!confirmed) return;
-
     setIsDeleting(true);
     setError(null);
     try {
@@ -237,6 +251,7 @@ export function HiringManagerCampaignDetailView({
       );
     } finally {
       setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -269,108 +284,12 @@ export function HiringManagerCampaignDetailView({
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <Button variant="outline" className={hmBackButtonClass} asChild>
-          <Link href="/hiring-manager-dashboard/campaigns/">
-            <ArrowLeft className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-            Back to campaigns
-          </Link>
-        </Button>
-
-        <TooltipProvider>
-          <div className="flex flex-wrap items-center gap-2">
-            {canEditAssessmentStack ? (
-              <Button type="button" variant="outline" asChild className={hmOutlineButtonClass}>
-                <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
-                  <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                  Edit campaign
-                </Link>
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex cursor-not-allowed">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled
-                      className={cn(
-                        hmOutlineButtonClass,
-                        "disabled:cursor-not-allowed disabled:opacity-50"
-                      )}
-                    >
-                      <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                      Edit campaign
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  {editCampaignLockedReason}
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {canCreateSession ? (
-              <Button
-                type="button"
-                onClick={openCreateSession}
-                className={cn(portalPrimaryButtonClass, "h-9")}
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                Create session
-              </Button>
-            ) : (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex cursor-not-allowed">
-                    <Button
-                      type="button"
-                      disabled
-                      className={cn(
-                        portalPrimaryButtonClass,
-                        "h-9 disabled:cursor-not-allowed disabled:opacity-50"
-                      )}
-                    >
-                      <Plus className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                      Create session
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  {getSessionCreationApprovalError(campaign.approvalStatus)}
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void loadCampaign(true)}
-              disabled={isRefreshing}
-              className={hmOutlineButtonClass}
-            >
-              <RefreshCw
-                className={cn(
-                  "mr-1.5 h-3.5 w-3.5",
-                  isRefreshing && "animate-spin text-primary"
-                )}
-                aria-hidden="true"
-              />
-              Refresh
-            </Button>
-
-            <Button
-              type="button"
-              onClick={deleteCampaign}
-              disabled={isDeleting}
-              className="h-9 rounded-md border border-destructive/30 bg-destructive/10 px-3.5 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/15"
-            >
-              <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              {isDeleting ? "Deleting…" : "Delete campaign"}
-            </Button>
-          </div>
-        </TooltipProvider>
-      </div>
+      <Button variant="outline" className={hmBackButtonClass} asChild>
+        <Link href="/hiring-manager-dashboard/campaigns/">
+          <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+          Back to campaigns
+        </Link>
+      </Button>
 
       <HiringManagerPageHeader
         eyebrow={`Campaign workspace · ${campaign.deliveryMode}`}
@@ -392,6 +311,94 @@ export function HiringManagerCampaignDetailView({
             </Badge>
           </div>
         }
+        action={
+          <TooltipProvider>
+            <div className="flex items-center gap-2">
+              {canCreateSession ? (
+                <Button
+                  type="button"
+                  onClick={openCreateSession}
+                  className={cn(portalPrimaryButtonClass, "h-10")}
+                >
+                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Create session
+                </Button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex cursor-not-allowed">
+                      <Button
+                        type="button"
+                        disabled
+                        className={cn(
+                          portalPrimaryButtonClass,
+                          "h-10 disabled:cursor-not-allowed disabled:opacity-50"
+                        )}
+                      >
+                        <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Create session
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    {getSessionCreationApprovalError(campaign.approvalStatus)}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(hmOutlineButtonClass, "w-10 px-0")}
+                    aria-label="Campaign actions"
+                  >
+                    <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  {canEditAssessmentStack ? (
+                    <DropdownMenuItem asChild>
+                      <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                        Edit campaign
+                      </Link>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem disabled title={editCampaignLockedReason}>
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                      <span className="min-w-0">
+                        <span className="block">Edit campaign</span>
+                        <span className="block text-xs font-normal text-muted-foreground">
+                          Locked after sessions exist
+                        </span>
+                      </span>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onSelect={() => void loadCampaign(true)}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw
+                      className={cn("h-4 w-4", isRefreshing && "animate-spin")}
+                      aria-hidden="true"
+                    />
+                    {isRefreshing ? "Refreshing…" : "Refresh campaign"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onSelect={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    Delete campaign
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </TooltipProvider>
+        }
         notice={
           wasJustCreated && campaign.approvalStatus === "Pending approval" ? (
             <p
@@ -411,30 +418,30 @@ export function HiringManagerCampaignDetailView({
         onValueChange={(value) => selectTab(value as CampaignWorkspaceTab)}
         className="space-y-4"
       >
-        <div className="sticky top-[4.25rem] z-20 -mx-1 overflow-x-auto border-y border-border bg-background px-1 py-2 shadow-sm">
-          <TabsList className="h-11 min-w-max justify-start gap-1 bg-transparent p-0">
-            <TabsTrigger value="overview" className="h-9 gap-2 px-3 text-xs sm:px-4">
-              <LayoutDashboard className="h-3.5 w-3.5" aria-hidden="true" />
+        <div className="sticky top-16 z-10 -mx-1 overflow-x-auto border-b border-border bg-background px-1">
+          <TabsList className="h-12 min-w-max justify-start gap-1 bg-transparent p-0">
+            <TabsTrigger value="overview" className="h-11 gap-2 px-3 text-sm sm:px-4">
+              <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="candidates" className="h-9 gap-2 px-3 text-xs sm:px-4">
-              <Users className="h-3.5 w-3.5" aria-hidden="true" />
+            <TabsTrigger value="candidates" className="h-11 gap-2 px-3 text-sm sm:px-4">
+              <Users className="h-4 w-4" aria-hidden="true" />
               Candidates
-              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-[10px]")}>
+              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-xs")}>
                 {campaign.joinedCandidates.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="sessions" className="h-9 gap-2 px-3 text-xs sm:px-4">
-              <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+            <TabsTrigger value="sessions" className="h-11 gap-2 px-3 text-sm sm:px-4">
+              <Calendar className="h-4 w-4" aria-hidden="true" />
               Sessions
-              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-[10px]")}>
+              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-xs")}>
                 {campaign.assessmentSessions.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="assessments" className="h-9 gap-2 px-3 text-xs sm:px-4">
-              <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
+            <TabsTrigger value="assessments" className="h-11 gap-2 px-3 text-sm sm:px-4">
+              <ClipboardList className="h-4 w-4" aria-hidden="true" />
               Assessments
-              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-[10px]")}>
+              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-xs")}>
                 {campaign.assessmentStack.length}
               </Badge>
             </TabsTrigger>
@@ -799,6 +806,28 @@ export function HiringManagerCampaignDetailView({
         resultsDialog={selectedReport}
         onClose={() => setSelectedReport(null)}
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {campaign.name}?</AlertDialogTitle>
+            <AlertDialogDescription className="leading-6">
+              This permanently removes the campaign, its sessions, and linked candidate
+              application records. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Keep campaign</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void deleteCampaign()}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting…" : "Delete campaign"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
