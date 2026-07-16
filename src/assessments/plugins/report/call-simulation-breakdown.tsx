@@ -60,13 +60,13 @@ function CallSimulationV2Report({ metrics }: { metrics: Record<string, unknown> 
 
   return (
     <div className="space-y-5">
-      <div className="border-l-4 border-slate-700 bg-slate-50 p-4 text-sm leading-6 dark:border-slate-300 dark:bg-slate-900">
+      <div className="border-l-4 border-primary bg-muted p-4 text-sm leading-6 text-foreground">
         This report contains evidence from a high-fidelity operational simulation. It is not a validated psychometric instrument or an automated hiring decision.
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <BreakdownStatTile label="Overall score" value={Math.round(overallScore)} suffix="%" />
         <BreakdownStatTile label="Configured standard" value={threshold} suffix="%" />
-        <BreakdownStatTile label="Assessment standard" value={meetsStandard ? "MET" : "NOT MET"} valueClassName={meetsStandard ? "text-emerald-700 dark:text-emerald-300" : "text-destructive"} />
+        <BreakdownStatTile label="Assessment standard" value={meetsStandard ? "MET" : "NOT MET"} valueClassName={meetsStandard ? "text-primary" : "text-destructive"} />
       </div>
 
       <BreakdownSection title="Weighted competencies">
@@ -83,7 +83,7 @@ function CallSimulationV2Report({ metrics }: { metrics: Record<string, unknown> 
       <BreakdownSection title="Critical gates">
         {criticalFlags.length ? (
           <ul className="space-y-2">
-            {criticalFlags.map((flag) => <li key={`${flag.scenarioId}-${flag.id}`} className="border-l-4 border-red-600 bg-red-50 p-3 text-sm text-red-950 dark:bg-red-950/30 dark:text-red-100"><strong>{flag.scenarioId}:</strong> {flag.label}</li>)}
+            {criticalFlags.map((flag) => <li key={`${flag.scenarioId}-${flag.id}`} className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm text-foreground"><strong>{flag.scenarioId}:</strong> {flag.label}</li>)}
           </ul>
         ) : <p className="text-sm text-muted-foreground">No fixed critical gate was triggered.</p>}
       </BreakdownSection>
@@ -181,7 +181,7 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
   return (
     <div className="space-y-5">
       {finalRuns.length > 1 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-border/50 pb-3 dark:border-white/10">
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border/50 pb-3">
           <span className="mr-2 text-xs font-semibold text-muted-foreground">Select call</span>
           {finalRuns.map((run, idx) => {
             const runMetrics = run.metrics as Record<string, unknown> | undefined;
@@ -207,7 +207,7 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
           value={activeMetrics.passed ? "PASSED" : "FAILED"}
           valueClassName={
             activeMetrics.passed
-              ? "text-emerald-600 dark:text-emerald-400"
+              ? "text-primary"
               : "text-destructive"
           }
         />

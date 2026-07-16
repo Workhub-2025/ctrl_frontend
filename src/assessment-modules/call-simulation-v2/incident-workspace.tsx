@@ -57,31 +57,31 @@ export function IncidentWorkspace({
   return (
     <div className="space-y-6">
       <section
-        className="border border-slate-300 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900"
+        className="border border-border bg-card p-5 shadow-sm  "
         aria-labelledby={`${id}-call-title`}
       >
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 pb-4 dark:border-slate-700">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4 ">
           <div>
-            <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600 dark:text-slate-300">
+            <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground ">
               <Radio className="h-4 w-4" aria-hidden="true" />{" "}
               {practice ? "Training channel" : "Live incident"}
             </p>
             <h2
               id={`${id}-call-title`}
-              className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white"
+              className="text-xl font-semibold tracking-tight text-foreground "
             >
               {scenario.title}
             </h2>
           </div>
-          <span className="border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+          <span className="border border-border bg-muted px-3 py-1 text-xs font-medium text-foreground   ">
             {practice ? "Not scored or monitored" : "Assessed"}
           </span>
         </div>
-        <p className="mb-4 text-sm leading-6 text-slate-700 dark:text-slate-200">
+        <p className="mb-4 text-sm leading-6 text-foreground ">
           {scenario.dispatchContext}
         </p>
         <label
-          className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white"
+          className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground "
           htmlFor={`${id}-base-audio`}
         >
           <Headphones className="h-4 w-4" aria-hidden="true" /> Caller audio
@@ -96,7 +96,7 @@ export function IncidentWorkspace({
           Your browser does not support audio playback.
         </audio>
         {scenario.transcripts?.[scenario.baseMediaId] ? (
-          <details className="mt-3 border-l-4 border-slate-400 bg-slate-50 p-3 text-sm dark:border-slate-500 dark:bg-slate-800">
+          <details className="mt-3 border-l-4 border-border bg-muted/50 p-3 text-sm  ">
             <summary className="cursor-pointer font-semibold">
               Approved audio transcript
             </summary>
@@ -108,16 +108,16 @@ export function IncidentWorkspace({
       </section>
 
       <section
-        className="border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
+        className="border border-border bg-card p-5  "
         aria-labelledby={`${id}-capture-title`}
       >
         <h3
           id={`${id}-capture-title`}
-          className="mb-1 text-base font-semibold text-slate-950 dark:text-white"
+          className="mb-1 text-base font-semibold text-foreground "
         >
           Incident record
         </h3>
-        <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mb-4 text-sm text-muted-foreground ">
           Capture details while audio is available. Use concise operational
           language.
         </p>
@@ -125,7 +125,7 @@ export function IncidentWorkspace({
           {scenario.captureFields.map((field) => (
             <div key={field.id}>
               <label
-                className="mb-1.5 block text-sm font-medium text-slate-800 dark:text-slate-100"
+                className="mb-1.5 block text-sm font-medium text-foreground "
                 htmlFor={`${id}-${field.id}`}
               >
                 {field.label}
@@ -135,7 +135,7 @@ export function IncidentWorkspace({
                 type={field.inputMode === "tel" ? "tel" : "text"}
                 value={value.fields[field.id] ?? ""}
                 onChange={(event) => updateField(field.id, event.target.value)}
-                className="min-h-11 w-full border border-slate-400 bg-white px-3 py-2 text-sm text-slate-950 outline-none focus-visible:border-blue-700 focus-visible:ring-2 focus-visible:ring-blue-700/30 dark:border-slate-600 dark:bg-slate-950 dark:text-white"
+                className="min-h-11 w-full border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30   "
                 autoComplete="off"
               />
             </div>
@@ -143,18 +143,18 @@ export function IncidentWorkspace({
         </div>
       </section>
 
-      <fieldset className="border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
-        <legend className="px-1 text-base font-semibold text-slate-950 dark:text-white">
+      <fieldset className="border border-border bg-card p-5  ">
+        <legend className="px-1 text-base font-semibold text-foreground ">
           Follow-up action
         </legend>
-        <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">
+        <p className="mb-4 text-sm text-muted-foreground ">
           {scenario.actionPrompt}
         </p>
         <div className="space-y-2">
           {scenario.actions.map((action) => (
             <label
               key={action.id}
-              className="flex min-h-12 cursor-pointer items-start gap-3 border border-slate-300 p-3 hover:border-slate-500 has-[:checked]:border-blue-800 has-[:checked]:bg-blue-50 dark:border-slate-700 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-950/40"
+              className="flex min-h-12 cursor-pointer items-start gap-3 border border-border p-3 hover:border-border has-[:checked]:border-primary has-[:checked]:bg-primary/10 "
             >
               <input
                 type="radio"
@@ -172,7 +172,7 @@ export function IncidentWorkspace({
         </div>
         {selectedAction ? (
           <div
-            className="mt-4 border-l-4 border-amber-500 bg-amber-50 p-4 dark:bg-amber-950/30"
+            className="mt-4 border-l-4 border-warning bg-warning/10 p-4 "
             aria-live="polite"
           >
             <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -201,7 +201,7 @@ export function IncidentWorkspace({
       </fieldset>
 
       <section
-        className="grid gap-4 border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900 md:grid-cols-3"
+        className="grid gap-4 border border-border bg-card p-5   md:grid-cols-3"
         aria-labelledby={`${id}-decision-title`}
       >
         <h3
@@ -232,7 +232,7 @@ export function IncidentWorkspace({
             </label>
             <select
               id={`${id}-${key}`}
-              className="min-h-11 w-full border border-slate-400 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:border-slate-600 dark:bg-slate-950"
+              className="min-h-11 w-full border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring  "
               value={
                 value[
                   key as "classification" | "incidentType" | "resourceDecision"
@@ -254,7 +254,7 @@ export function IncidentWorkspace({
       </section>
 
       <section
-        className="border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
+        className="border border-border bg-card p-5  "
         aria-labelledby={`${id}-handover-title`}
       >
         <h3
@@ -264,7 +264,7 @@ export function IncidentWorkspace({
           Handover record
         </h3>
         <label
-          className="mb-2 block text-sm text-slate-600 dark:text-slate-300"
+          className="mb-2 block text-sm text-muted-foreground "
           htmlFor={`${id}-handover`}
         >
           Summarise what is happening, where, who is at risk, key intelligence
@@ -275,7 +275,7 @@ export function IncidentWorkspace({
           rows={5}
           value={value.handover}
           onChange={(event) => update({ handover: event.target.value })}
-          className="w-full border border-slate-400 bg-white p-3 text-sm leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 dark:border-slate-600 dark:bg-slate-950"
+          className="w-full border border-border bg-card p-3 text-sm leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring  "
         />
         {practice &&
         value.actionId &&
@@ -284,7 +284,7 @@ export function IncidentWorkspace({
         value.resourceDecision &&
         value.handover.trim() ? (
           <p
-            className="mt-3 flex items-center gap-2 text-sm font-semibold text-emerald-800 dark:text-emerald-300"
+            className="mt-3 flex items-center gap-2 text-sm font-semibold text-primary "
             role="status"
           >
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Practice

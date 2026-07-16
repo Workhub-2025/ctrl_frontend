@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, ClipboardCheck, RefreshCw, XCircle } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, ArrowRight, CheckCircle2, FolderKanban, RefreshCw, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -57,7 +58,7 @@ function ApprovalModeControl({
 export function ClientCampaignApprovalsContent() {
   const {
     summary,
-    pendingCampaigns,
+    campaigns,
     loading,
     error,
     reviewingId,
@@ -70,8 +71,8 @@ export function ClientCampaignApprovalsContent() {
   return (
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <ClientPageHeader
-        title="Campaign approvals"
-        description="Review hiring-manager campaigns before sessions can be created."
+        title="Campaigns"
+        description="Review every campaign created for your organisation and open its operational workspace."
         notice={error ? <ClientErrorBanner message={error} /> : null}
         action={
           <ClientRefreshButton onClick={() => void loadOverview(true)} loading={loading} />
@@ -81,9 +82,9 @@ export function ClientCampaignApprovalsContent() {
       <PortalPanel>
         <div className="space-y-6 p-6">
           <PortalSectionHeader
-            eyebrow="Campaign queue"
-            title="Pending campaigns"
-            description="Approve or reject campaigns submitted by your hiring managers."
+            eyebrow="Campaign register"
+            title="All campaigns"
+            description="Approval, assessment and session information stays together. Candidate data appears only after a hiring manager shares it."
             action={
               <ApprovalModeControl
                 mode={summary?.client?.campaignApprovalMode ?? "require_approval"}
@@ -100,16 +101,16 @@ export function ClientCampaignApprovalsContent() {
             </p>
           )}
 
-          {!loading && pendingCampaigns.length === 0 && (
+          {!loading && campaigns.length === 0 && (
             <PortalEmptyState
-              icon={ClipboardCheck}
-              title="No pending campaigns"
-              description="No campaigns are waiting for your approval."
+              icon={FolderKanban}
+              title="No campaigns yet"
+              description="Campaigns created for your organisation will appear here."
             />
           )}
 
           {!loading &&
-            pendingCampaigns.map((campaign) => (
+            campaigns.map((campaign) => (
               <div
                 key={campaign.id}
                 className={cn(portalCardClass, "p-5")}
@@ -117,14 +118,14 @@ export function ClientCampaignApprovalsContent() {
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
                   <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="rounded-lg border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 font-semibold text-orange-600 hover:bg-orange-500/10 dark:text-orange-400">
-                        Pending approval
+                      <Badge variant="outline" className={cn("rounded-md px-2.5 py-0.5 font-semibold", portalBadgeClass)}>
+                        {campaign.approvalStatus}
                       </Badge>
                       <Badge variant="outline" className="rounded-lg px-2.5 py-0.5 text-xs">
                         {campaign.deliveryMode}
                       </Badge>
                       <Badge variant="outline" className="rounded-lg px-2.5 py-0.5 text-xs">
-                        {campaign.candidateCount} candidates
+                        {campaign.candidateCount} vacancies
                       </Badge>
                     </div>
                     <div className="min-w-0 space-y-1">
@@ -135,7 +136,7 @@ export function ClientCampaignApprovalsContent() {
                         {campaign.role} · Created by {campaign.createdBy}
                       </p>
                     </div>
-                    <div className="rounded-xl border border-border bg-card/60 p-4 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
+                    <div className="rounded-md border border-border bg-muted/40 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                         Assessment stack
                       </p>
@@ -148,7 +149,7 @@ export function ClientCampaignApprovalsContent() {
                             return (
                             <span
                               key={assessment}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground dark:border-white/5 dark:bg-white/[0.04]"
+                              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-semibold text-foreground"
                             >
                               <Icon className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
                               {assessment}
@@ -173,21 +174,23 @@ export function ClientCampaignApprovalsContent() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-between gap-4 rounded-xl border border-border bg-card/60 p-4 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <AlertCircle className="h-4 w-4 text-orange-500" aria-hidden="true" />
-                        Review required
+                  <div className="flex flex-col justify-between gap-4 rounded-md border border-border bg-muted/40 p-4">
+                    {campaign.approvalStatus === "Pending approval" ? (
+                      <>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                          <AlertCircle className="h-4 w-4 text-primary" aria-hidden="true" />
+                          Review required
+                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          Approving unlocks session creation for this campaign.
+                        </p>
                       </div>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        Approving unlocks session creation for this campaign.
-                      </p>
-                    </div>
-                    <div className="grid gap-2">
+                      <div className="grid gap-2">
                       <Button
                         disabled={reviewingId === campaign.id}
                         onClick={() => void reviewCampaign(campaign.id, "approved")}
-                        className="gap-2 rounded-xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="min-h-11 gap-2 rounded-md font-semibold"
                       >
                         <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                         Approve
@@ -196,12 +199,27 @@ export function ClientCampaignApprovalsContent() {
                         variant="outline"
                         disabled={reviewingId === campaign.id}
                         onClick={() => void reviewCampaign(campaign.id, "rejected")}
-                        className="gap-2 rounded-xl border-red-500/20 bg-transparent font-semibold text-red-500 transition-colors hover:!border-red-500/50 hover:!bg-red-500/10 hover:!text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="min-h-11 gap-2 rounded-md font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive"
                       >
                         <XCircle className="h-4 w-4" aria-hidden="true" />
                         Reject
                       </Button>
-                    </div>
+                      </div>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-sm font-semibold text-foreground">{campaign.nextMilestone}</p>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          Open the campaign to review its assessments, sessions and shared candidates.
+                        </p>
+                      </div>
+                    )}
+                    <Button variant="outline" className="min-h-11 justify-between rounded-md" asChild>
+                      <Link href={`/client-dashboard/campaigns/${encodeURIComponent(campaign.id)}`}>
+                        View campaign
+                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                      </Link>
+                    </Button>
                   </div>
                 </div>
               </div>

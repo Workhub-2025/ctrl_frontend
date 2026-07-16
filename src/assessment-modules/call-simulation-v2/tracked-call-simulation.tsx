@@ -393,17 +393,17 @@ export function TrackedCallSimulation({ launch }: Props) {
     return <TrackedCallSimulation launch={replacementLaunch} />;
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950 dark:bg-slate-950 dark:text-white">
-      <header className="border-b border-slate-700 bg-slate-950 text-white">
+    <main className="min-h-screen bg-muted text-foreground  ">
+      <header className="border-b border-border bg-background text-foreground">
         <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               CTRL incident desk
             </p>
             <p className="font-semibold">Call Simulation v2</p>
           </div>
           <div className="flex items-center gap-5 text-sm">
-            <span className="hidden items-center gap-2 text-emerald-300 sm:flex">
+            <span className="hidden items-center gap-2 text-primary sm:flex">
               <RadioTower className="h-4 w-4" aria-hidden="true" /> Monitored
             </span>
             <span
@@ -419,10 +419,10 @@ export function TrackedCallSimulation({ launch }: Props) {
 
       <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-[260px_minmax(0,1fr)]">
         <nav
-          className="border-r border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900"
+          className="border-r border-border bg-card p-5  "
           aria-label="Assessment stages"
         >
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             Stage ledger
           </p>
           <ol className="space-y-1">
@@ -432,7 +432,7 @@ export function TrackedCallSimulation({ launch }: Props) {
               return (
                 <li
                   key={node.id}
-                  className={`border-l-4 px-3 py-3 ${active ? "border-blue-800 bg-blue-50 dark:border-blue-400 dark:bg-blue-950/40" : complete ? "border-emerald-700" : "border-slate-200 dark:border-slate-700"}`}
+                  className={`border-l-4 px-3 py-3 ${active ? "border-primary bg-primary/10  " : complete ? "border-primary" : "border-border "}`}
                   aria-current={active ? "step" : undefined}
                 >
                   <div className="flex items-start gap-2">
@@ -447,7 +447,7 @@ export function TrackedCallSimulation({ launch }: Props) {
                       <p className="text-sm font-semibold leading-5">
                         {node.title}
                       </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-muted-foreground ">
                         {node.assessed ? "Assessed" : "Receipt"}
                       </p>
                     </div>
@@ -456,7 +456,7 @@ export function TrackedCallSimulation({ launch }: Props) {
               );
             })}
           </ol>
-          <div className="mt-6 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-500 dark:border-slate-700 dark:text-slate-400">
+          <div className="mt-6 border-t border-border pt-4 text-xs leading-5 text-muted-foreground  ">
             Release {launch.module.releaseVersion}
             <br />
             Attempt {launch.attemptId.slice(0, 8)}
@@ -468,7 +468,7 @@ export function TrackedCallSimulation({ launch }: Props) {
             {error ? (
               <div
                 role="alert"
-                className="mb-5 flex gap-3 border-l-4 border-red-700 bg-red-50 p-4 text-sm text-red-950 dark:bg-red-950/40 dark:text-red-100"
+                className="mb-5 flex gap-3 border-l-4 border-destructive bg-destructive/10 p-4 text-sm text-foreground  "
               >
                 <AlertTriangle
                   className="h-5 w-5 shrink-0"
@@ -480,10 +480,10 @@ export function TrackedCallSimulation({ launch }: Props) {
 
             {stageIndex === 0 ? (
               <section
-                className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900"
+                className="border border-border bg-card p-7  "
                 aria-labelledby="tracked-briefing-title"
               >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-foreground ">
                   Monitoring active
                 </p>
                 <h1
@@ -492,7 +492,7 @@ export function TrackedCallSimulation({ launch }: Props) {
                 >
                   Assessed section briefing
                 </h1>
-                <p className="mt-4 max-w-3xl leading-7 text-slate-700 dark:text-slate-200">
+                <p className="mt-4 max-w-3xl leading-7 text-foreground ">
                   You will handle three incidents. Caller audio remains
                   available within each incident. Capture information as it
                   arrives, choose one follow-up, classify risk, decide the
@@ -506,14 +506,14 @@ export function TrackedCallSimulation({ launch }: Props) {
                   ].map((item) => (
                     <div
                       key={item}
-                      className="border border-slate-300 p-4 text-sm font-medium dark:border-slate-700"
+                      className="border border-border p-4 text-sm font-medium "
                     >
                       {item}
                     </div>
                   ))}
                 </div>
                 <Button
-                  className="mt-7 min-h-11 rounded-none bg-slate-950 px-6 text-white dark:bg-white dark:text-slate-950"
+                  className="mt-7 min-h-11 rounded-none bg-primary px-6 text-primary-foreground hover:bg-primary/90"
                   onClick={next}
                   disabled={saving}
                 >
@@ -539,7 +539,7 @@ export function TrackedCallSimulation({ launch }: Props) {
                 />
                 <div className="mt-6 flex justify-end">
                   <Button
-                    className="min-h-11 rounded-none bg-slate-950 px-6 text-white dark:bg-white dark:text-slate-950"
+                    className="min-h-11 rounded-none bg-primary px-6 text-primary-foreground hover:bg-primary/90"
                     onClick={next}
                     disabled={saving}
                   >
@@ -556,28 +556,28 @@ export function TrackedCallSimulation({ launch }: Props) {
 
             {stageIndex === 4 ? (
               <section
-                className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900"
+                className="border border-border bg-card p-7  "
                 aria-labelledby="review-title"
               >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   Final review
                 </p>
                 <h1 id="review-title" className="text-2xl font-semibold">
                   Submit your incident records
                 </h1>
-                <p className="mt-3 leading-7 text-slate-700 dark:text-slate-200">
+                <p className="mt-3 leading-7 text-foreground ">
                   All {completedCount} incident records are complete. Submission
                   is final. Your hiring team receives the scored evidence after
                   processing; this screen will only show a receipt.
                 </p>
-                <ul className="mt-6 divide-y divide-slate-200 border-y border-slate-200 dark:divide-slate-700 dark:border-slate-700">
+                <ul className="mt-6 divide-y divide-border border-y border-border  ">
                   {scenarios.map((scenario, index) => (
                     <li
                       key={scenario.id}
                       className="flex items-center justify-between gap-4 py-4"
                     >
                       <span className="font-medium">{scenario.title}</span>
-                      <span className="flex items-center gap-2 text-sm text-emerald-800 dark:text-emerald-300">
+                      <span className="flex items-center gap-2 text-sm text-primary ">
                         <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                         Complete
                       </span>
@@ -585,7 +585,7 @@ export function TrackedCallSimulation({ launch }: Props) {
                   ))}
                 </ul>
                 <Button
-                  className="mt-7 min-h-12 rounded-none bg-slate-950 px-7 text-white dark:bg-white dark:text-slate-950"
+                  className="mt-7 min-h-12 rounded-none bg-primary px-7 text-primary-foreground hover:bg-primary/90"
                   onClick={submit}
                   disabled={submitting}
                 >
@@ -604,28 +604,28 @@ export function TrackedCallSimulation({ launch }: Props) {
 
             {receipt ? (
               <section
-                className="border border-slate-300 bg-white p-8 text-center dark:border-slate-700 dark:bg-slate-900"
+                className="border border-border bg-card p-8 text-center  "
                 aria-labelledby="receipt-title"
               >
                 <CheckCircle2
-                  className="mx-auto h-10 w-10 text-emerald-700 dark:text-emerald-300"
+                  className="mx-auto h-10 w-10 text-primary "
                   aria-hidden="true"
                 />
                 <h1 id="receipt-title" className="mt-4 text-2xl font-semibold">
                   Assessment received
                 </h1>
-                <p className="mx-auto mt-3 max-w-xl leading-7 text-slate-600 dark:text-slate-300">
+                <p className="mx-auto mt-3 max-w-xl leading-7 text-muted-foreground ">
                   Your responses have been submitted for scoring and review. No
                   result is shown here. Follow the next steps provided by the
                   hiring team.
                 </p>
-                <dl className="mx-auto mt-6 grid max-w-xl gap-3 border border-slate-300 p-4 text-left text-sm dark:border-slate-700 sm:grid-cols-2">
+                <dl className="mx-auto mt-6 grid max-w-xl gap-3 border border-border p-4 text-left text-sm  sm:grid-cols-2">
                   <div>
-                    <dt className="text-slate-500">Receipt</dt>
+                    <dt className="text-muted-foreground">Receipt</dt>
                     <dd className="font-mono">{receipt.receiptId}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-500">Received</dt>
+                    <dt className="text-muted-foreground">Received</dt>
                     <dd>
                       {new Date(receipt.submittedAt).toLocaleString("en-GB")}
                     </dd>
@@ -647,12 +647,12 @@ export function TrackedCallSimulation({ launch }: Props) {
 
       {breakActive && !locked ? (
         <div
-          className="fixed inset-0 z-40 grid place-items-center bg-slate-950/90 p-5"
+          className="fixed inset-0 z-40 grid place-items-center bg-background/90 p-5"
           role="dialog"
           aria-modal="true"
           aria-labelledby="break-title"
         >
-          <div className="w-full max-w-lg border border-slate-600 bg-slate-900 p-7 text-white shadow-2xl">
+          <div className="w-full max-w-lg border border-border bg-card p-7 text-card-foreground shadow-2xl">
             <PauseCircle
               className="h-8 w-8 text-amber-300"
               aria-hidden="true"
@@ -660,12 +660,12 @@ export function TrackedCallSimulation({ launch }: Props) {
             <h2 id="break-title" className="mt-4 text-xl font-semibold">
               Controlled break between incidents
             </h2>
-            <p className="mt-3 leading-7 text-slate-300">
+            <p className="mt-3 leading-7 text-muted-foreground">
               Monitoring remains active. The next incident is not visible yet.
               Continue when ready or use the remaining {breakRemaining} seconds.
             </p>
             <Button
-              className="mt-6 rounded-none bg-white text-slate-950 hover:bg-slate-200"
+              className="mt-6 rounded-none bg-card text-foreground hover:bg-muted"
               onClick={() => setBreakActive(false)}
             >
               Continue to next incident
@@ -676,12 +676,12 @@ export function TrackedCallSimulation({ launch }: Props) {
 
       {pauseReason && !locked ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-slate-950 p-5"
+          className="fixed inset-0 z-50 grid place-items-center bg-background p-5"
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="pause-title"
         >
-          <div className="w-full max-w-lg border border-amber-500 bg-slate-900 p-7 text-white">
+          <div className="w-full max-w-lg border border-warning bg-card p-7 text-card-foreground">
             <AlertTriangle
               className="h-8 w-8 text-amber-300"
               aria-hidden="true"
@@ -689,12 +689,12 @@ export function TrackedCallSimulation({ launch }: Props) {
             <h2 id="pause-title" className="mt-4 text-xl font-semibold">
               Assessment paused
             </h2>
-            <p className="mt-3 leading-7 text-slate-300">
+            <p className="mt-3 leading-7 text-muted-foreground">
               {pauseReason} Repeated or prolonged interruptions lock the
               attempt.
             </p>
             <Button
-              className="mt-6 rounded-none bg-white text-slate-950 hover:bg-slate-200"
+              className="mt-6 rounded-none bg-card text-foreground hover:bg-muted"
               onClick={resume}
             >
               <Maximize2 className="h-4 w-4" aria-hidden="true" /> Return to
@@ -706,25 +706,25 @@ export function TrackedCallSimulation({ launch }: Props) {
 
       {locked ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-slate-950 p-5"
+          className="fixed inset-0 z-50 grid place-items-center bg-background p-5"
           role="alertdialog"
           aria-modal="true"
           aria-labelledby="locked-title"
         >
-          <div className="w-full max-w-lg border border-red-500 bg-slate-900 p-7 text-white">
+          <div className="w-full max-w-lg border border-destructive bg-card p-7 text-card-foreground">
             <LockKeyhole className="h-8 w-8 text-red-300" aria-hidden="true" />
             <h2 id="locked-title" className="mt-4 text-xl font-semibold">
               Attempt interrupted and locked
             </h2>
-            <p className="mt-3 leading-7 text-slate-300">
+            <p className="mt-3 leading-7 text-muted-foreground">
               The assessed workspace is no longer available. Restarting voids
               this exposed attempt and selects a fresh scenario set.
             </p>
-            <p className="mt-4 text-sm text-slate-400">
+            <p className="mt-4 text-sm text-muted-foreground">
               Receipt reference: {launch.attemptId}
             </p>
             <Button
-              className="mt-6 rounded-none bg-white text-slate-950 hover:bg-slate-200"
+              className="mt-6 rounded-none bg-card text-foreground hover:bg-muted"
               disabled={restarting}
               onClick={restart}
             >

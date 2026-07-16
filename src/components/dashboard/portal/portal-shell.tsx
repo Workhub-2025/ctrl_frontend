@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
@@ -42,6 +42,18 @@ import { useAuth } from "@/hooks/use-auth";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import type { AccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { cn } from "@/lib/utils";
+
+const PortalBreadcrumbDetailContext = createContext<((label: string | null) => void) | null>(null);
+
+export function usePortalBreadcrumbDetail(label?: string | null) {
+  const setDetailLabel = useContext(PortalBreadcrumbDetailContext);
+
+  useEffect(() => {
+    if (!setDetailLabel) return;
+    setDetailLabel(label?.trim() || null);
+    return () => setDetailLabel(null);
+  }, [label, setDetailLabel]);
+}
 
 export type PortalNavItem = {
   href: string;
@@ -297,6 +309,13 @@ export function PortalShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [breadcrumbDetail, setBreadcrumbDetail] = useState<{
+    pathname: string;
+    label: string;
+  } | null>(null);
+  const registerBreadcrumbDetail = useCallback((label: string | null) => {
+    setBreadcrumbDetail(label ? { pathname, label } : null);
+  }, [pathname]);
   const {
     settings: accessibilitySettings,
     updateSettings: updateAccessibilitySettings,
@@ -305,9 +324,17 @@ export function PortalShell({
   } = useAccessibilitySettings({ enabled: true });
 
   const navItems = navGroups.flatMap((g) => g.items);
+  const breadcrumbs = getBreadcrumbs(pathname);
+  if (breadcrumbDetail?.pathname === pathname && breadcrumbs.length > 0) {
+    breadcrumbs[breadcrumbs.length - 1] = {
+      ...breadcrumbs[breadcrumbs.length - 1],
+      label: breadcrumbDetail.label,
+    };
+  }
 
   return (
     <AuthProvider>
+      <PortalBreadcrumbDetailContext.Provider value={registerBreadcrumbDetail}>
       <div className={cn("ctrl-portal min-h-screen selection:bg-primary/30", themeClassName)}>
         <a
           href="#main-content"
@@ -357,7 +384,7 @@ export function PortalShell({
 
           <SidebarInset className="min-w-0 bg-background">
             <PortalHeaderBar
-              breadcrumbs={getBreadcrumbs(pathname)}
+              breadcrumbs={breadcrumbs}
               activeLabel={getActiveLabel(pathname)}
               accessibilitySettings={accessibilitySettings}
               updateAccessibilitySettings={updateAccessibilitySettings}
@@ -377,6 +404,7 @@ export function PortalShell({
           </SidebarInset>
         </SidebarProvider>
       </div>
+      </PortalBreadcrumbDetailContext.Provider>
     </AuthProvider>
   );
 }

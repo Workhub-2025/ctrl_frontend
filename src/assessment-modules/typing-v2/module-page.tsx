@@ -27,19 +27,19 @@ function EntryWorkspace({
   practice?: boolean;
 }) {
   return (
-    <section className="border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-      <div className="border-b border-slate-300 p-5 dark:border-slate-700">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <section className="border border-border bg-card  ">
+      <div className="border-b border-border p-5 ">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
           {practice ? "Unscored practice" : exercise.sourceLabel}
         </p>
         <h1 className="mt-2 text-2xl font-semibold">{exercise.title}</h1>
       </div>
       <div className="grid lg:grid-cols-2">
-        <div className="border-b border-slate-300 p-6 lg:border-b-0 lg:border-r dark:border-slate-700">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <div className="border-b border-border p-6 lg:border-b-0 lg:border-r ">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Source record
           </h2>
-          <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-slate-800 dark:text-slate-100">
+          <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-foreground ">
             {exercise.sourceText}
           </p>
         </div>
@@ -47,7 +47,7 @@ function EntryWorkspace({
           <label className="text-sm font-semibold">
             Operational transcription
             <textarea
-              className="mt-2 min-h-64 w-full resize-y border border-slate-400 bg-white p-4 font-mono text-sm leading-6 dark:bg-slate-950"
+              className="mt-2 min-h-64 w-full resize-y border border-border bg-card p-4 font-mono text-sm leading-6 "
               value={state.transcript}
               onChange={(event) =>
                 setState({ ...state, transcript: event.target.value })
@@ -55,7 +55,7 @@ function EntryWorkspace({
               spellCheck={false}
             />
           </label>
-          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mt-6 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Structured fields
           </h2>
           <div className="mt-3 grid gap-4 sm:grid-cols-2">
@@ -63,7 +63,7 @@ function EntryWorkspace({
               <label key={field.id} className="text-sm font-semibold">
                 {field.label}
                 <input
-                  className="mt-2 h-11 w-full border border-slate-400 bg-white px-3 font-normal dark:bg-slate-950"
+                  className="mt-2 h-11 w-full border border-border bg-card px-3 font-normal "
                   value={state.structured[field.id] ?? ""}
                   onChange={(event) =>
                     setState({
@@ -113,14 +113,14 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
       renderStage={({ stageIndex, state, setState }) => {
         if (stageIndex === 0)
           return (
-            <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+            <section className="border border-border bg-card p-7  ">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
                 Monitoring active
               </p>
               <h1 className="mt-2 text-2xl font-semibold">
                 Operational transcription briefing
               </h1>
-              <p className="mt-4 max-w-3xl leading-7 text-slate-700 dark:text-slate-200">
+              <p className="mt-4 max-w-3xl leading-7 text-foreground ">
                 Transcribe the source record and complete its structured fields.
                 Accuracy of names, locations, access routes and callback details
                 matters more than raw speed. Clipboard actions are disabled.
@@ -136,22 +136,22 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
             />
           );
         return (
-          <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <section className="border border-border bg-card p-7  ">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Final review
             </p>
             <h1 className="mt-2 text-2xl font-semibold">
               Submit the operational entry
             </h1>
-            <dl className="mt-5 grid gap-4 border-y border-slate-200 py-4 text-sm sm:grid-cols-2 dark:border-slate-700">
+            <dl className="mt-5 grid gap-4 border-y border-border py-4 text-sm sm:grid-cols-2 ">
               <div>
-                <dt className="text-slate-500">Transcribed words</dt>
+                <dt className="text-muted-foreground">Transcribed words</dt>
                 <dd className="mt-1 text-xl font-semibold">
                   {state.transcript.trim().split(/\s+/).filter(Boolean).length}
                 </dd>
               </div>
               <div>
-                <dt className="text-slate-500">Structured fields complete</dt>
+                <dt className="text-muted-foreground">Structured fields complete</dt>
                 <dd className="mt-1 text-xl font-semibold">
                   {
                     Object.values(state.structured).filter((value) =>
@@ -162,7 +162,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
                 </dd>
               </div>
             </dl>
-            <p className="mt-5 text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <p className="mt-5 text-sm leading-6 text-muted-foreground ">
               Submission is final. The candidate portal will show a receipt
               only.
             </p>

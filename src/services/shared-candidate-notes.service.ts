@@ -14,6 +14,12 @@ type RawNote = {
   authorRole?: SharedCandidateNote["authorRole"];
   visibility?: SharedCandidateNote["visibility"];
   createdAt?: string | null;
+  author?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    username?: string | null;
+  } | null;
 };
 
 async function getCurrentUserDocumentId(strapiJwt: string) {
@@ -28,12 +34,17 @@ async function getCurrentUserDocumentId(strapiJwt: string) {
 
 function normalizeNote(raw: RawNote, currentUserDocumentId: string | null): SharedCandidateNote {
   const documentId = raw.documentId ?? "";
+  const authorName = [raw.author?.firstName, raw.author?.lastName].filter(Boolean).join(" ").trim()
+    || raw.author?.email
+    || raw.author?.username
+    || undefined;
   return {
     documentId,
     content: raw.content ?? "",
     authorRole: raw.authorRole ?? "client",
     visibility: raw.visibility ?? "hiring_manager_and_client",
     createdAt: raw.createdAt ?? null,
+    authorName,
     canDelete: Boolean(
       currentUserDocumentId &&
         raw.authorId &&

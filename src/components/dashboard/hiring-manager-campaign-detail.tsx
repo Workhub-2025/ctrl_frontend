@@ -81,6 +81,7 @@ import {
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
+import { usePortalBreadcrumbDetail } from "@/components/dashboard/portal/portal-shell";
 import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
@@ -140,6 +141,7 @@ export function HiringManagerCampaignDetailView({
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
   const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
+  usePortalBreadcrumbDetail(campaign?.name);
 
   const loadCampaign = useCallback(
     async (force = false) => {

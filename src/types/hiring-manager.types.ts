@@ -78,6 +78,9 @@ export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
     status?: string;
     inviteStatus?: "invited" | "registered" | "started" | null;
     hmDecision?: "pending" | "approved" | "rejected" | null;
+    sharedCandidateDocumentId?: string | null;
+    clientReviewStatus?: "pending_review" | "reviewed" | "progressed" | "hired" | "rejected" | null;
+    clientReviewStatusChangedAt?: string | null;
     sessionName?: string;
     campaignId?: string;
     campaignName?: string;
@@ -127,4 +130,6 @@ export type HiringManagerCandidateReport = {
   hmDecisionAt?: string | null;
   hmDecisionNote?: string | null;
   sharedCandidateDocumentId?: string | null;
+  clientReviewStatus?: "pending_review" | "reviewed" | "progressed" | "hired" | "rejected" | null;
+  clientReviewStatusChangedAt?: string | null;
 };

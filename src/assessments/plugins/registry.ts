@@ -1,12 +1,13 @@
-import { Phone } from "lucide-react";
 import { CallSimulationReportBreakdown } from "./report/call-simulation-breakdown";
 import { hasCallSimulationReportBreakdown } from "./report/shared";
 import { CANDIDATE_ASSESSMENT_CATALOG } from "./candidate-catalog";
 
-const catalog = CANDIDATE_ASSESSMENT_CATALOG[0];
+const catalog = CANDIDATE_ASSESSMENT_CATALOG.find((item) => item.slug === "call-simulation");
+if (!catalog) {
+  throw new Error("Call Simulation UI plugin metadata is missing from the assessment catalogue");
+}
 const plugin = {
   ...catalog,
-  icon: Phone,
   reportBreakdown: CallSimulationReportBreakdown,
   hasReportBreakdown: hasCallSimulationReportBreakdown,
 };
@@ -28,11 +29,11 @@ export function listAssessmentUiPlugins() {
 }
 
 export function listAssessmentSlugs(): string[] {
-  return [plugin.slug];
+  return CANDIDATE_ASSESSMENT_CATALOG.map((item) => item.slug);
 }
 
 export function getTimedAssessmentSlugs(): Set<string> {
-  return new Set([plugin.slug]);
+  return new Set(CANDIDATE_ASSESSMENT_CATALOG.map((item) => item.slug));
 }
 
 export { candidateAssessmentItems, completionLabels } from "./candidate-catalog";

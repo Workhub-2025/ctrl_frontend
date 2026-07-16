@@ -10,6 +10,7 @@ import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import {
   invalidateClientPortalServerCache,
   invalidateHmOverviewServerCache,
+  invalidateHmReportServerCache,
 } from "@/lib/portal-cache-invalidation";
 import {
   strapiRequest,
@@ -50,6 +51,8 @@ type RawCampaign = {
   assessmentSettings?: Record<string, unknown> | null;
   createdAt?: string;
   approvalNote?: string | null;
+  createdBy?: string;
+  sessionCount?: number;
   assessments?: RawAssessment[];
   users_permissions_users?: RawUser[];
   assessment_sessions?: unknown[];
@@ -95,13 +98,31 @@ export type ClientContract = {
 
 export type ClientSharedCandidate = {
   documentId: string;
-  reviewStatus: "pending_review" | "reviewed" | "progressed" | "rejected";
+  reviewStatus: "pending_review" | "reviewed" | "progressed" | "hired" | "rejected";
   sharedAt?: string | null;
+  reviewStatusChangedAt?: string | null;
   candidateName: string;
   candidateEmail?: string;
   hiringManagerName: string;
   campaignName: string;
   role: string;
+};
+
+export type ClientCampaignWorkspace = ClientCampaignApprovalItem & {
+  startDate?: string | null;
+  endDate?: string | null;
+  location?: string | null;
+  vacancyCount?: number | null;
+  sessionsDetail: Array<{
+    documentId: string;
+    name: string;
+    sessionStatus: string;
+    startsAt?: string | null;
+    location?: string | null;
+    mode?: string;
+    candidateLimit?: number;
+  }>;
+  sharedCandidates: ClientSharedCandidate[];
 };
 
 export type ClientOutreachTemplateKey = "inperson" | "phone";
@@ -217,7 +238,7 @@ function normalizeCampaign(campaign: RawCampaign): ClientCampaignApprovalItem {
     approvalStatus: formatApprovalStatus(campaign.approvalStatus),
     deliveryMode: formatMode(campaign.assessmentMode) as "In-person" | "Remote" | "Hybrid",
     candidateCount: campaign.vacancyCount ?? candidateSessions.length,
-    sessions: assessmentSessions.length,
+    sessions: campaign.sessionCount ?? assessmentSessions.length,
     assessmentStack,
     assessmentSettings: campaign.assessmentSettings ?? null,
     nextMilestone:
@@ -227,7 +248,7 @@ function normalizeCampaign(campaign: RawCampaign): ClientCampaignApprovalItem {
           ? "Rejected by client"
           : "Approved",
     createdAt: campaign.createdAt,
-    createdBy: createdBy || createdByUser?.email || "Hiring manager",
+    createdBy: campaign.createdBy || createdBy || createdByUser?.email || "Hiring manager",
     approvalNote: campaign.approvalNote ?? null,
   };
 }
@@ -239,6 +260,53 @@ export async function getClientCampaignApprovals(status?: "pending" | "approved"
   );
 
   return (response.data ?? []).map(normalizeCampaign);
+}
+
+export async function getClientCampaigns(status?: "pending" | "approved" | "rejected") {
+  const query = status ? `?status=${status}` : "";
+  const response = await strapiRequest<StrapiListResponse<RawCampaign>>(
+    `/client/campaigns${query}`
+  );
+  return (response.data ?? []).map(normalizeCampaign);
+}
+
+export async function getClientCampaignWorkspace(
+  campaignDocumentId: string
+): Promise<ClientCampaignWorkspace | null> {
+  const response = await strapiRequest<StrapiSingleResponse<RawCampaign & {
+    sessions?: Array<{
+      documentId?: string;
+      name?: string;
+      sessionStatus?: string;
+      startsAt?: string | null;
+      location?: string | null;
+      mode?: string;
+      candidateLimit?: number;
+    }>;
+    sharedCandidates?: Array<Record<string, unknown>>;
+    startDate?: string | null;
+    endDate?: string | null;
+    location?: string | null;
+  }>>(`/client/campaigns/${encodeURIComponent(campaignDocumentId)}`);
+  if (!response.data) return null;
+  const campaign = normalizeCampaign(response.data);
+  return {
+    ...campaign,
+    startDate: response.data.startDate ?? null,
+    endDate: response.data.endDate ?? null,
+    location: response.data.location ?? null,
+    vacancyCount: response.data.vacancyCount ?? null,
+    sessionsDetail: (response.data.sessions ?? []).map((session) => ({
+      documentId: session.documentId ?? session.name ?? "session",
+      name: session.name ?? "Assessment session",
+      sessionStatus: session.sessionStatus ?? "ready",
+      startsAt: session.startsAt ?? null,
+      location: session.location ?? null,
+      mode: session.mode,
+      candidateLimit: session.candidateLimit,
+    })),
+    sharedCandidates: (response.data.sharedCandidates ?? []).map(normalizeSharedCandidate),
+  };
 }
 
 async function loadClientDashboardSummary() {
@@ -313,7 +381,7 @@ async function loadClientOverview(): Promise<ClientOverviewData> {
   }
 
   const [campaigns, accessCodes, hiringManagers] = await Promise.all([
-    getClientCampaignApprovals(),
+    getClientCampaigns(),
     getClientAccessCodes(),
     getClientHiringManagers(clientDocumentId),
   ]);
@@ -533,12 +601,33 @@ function normalizeSharedCandidate(raw: Record<string, unknown>): ClientSharedCan
     documentId: String(raw.documentId ?? ""),
     reviewStatus: (raw.reviewStatus as ClientSharedCandidate["reviewStatus"]) ?? "pending_review",
     sharedAt: (raw.sharedAt as string | undefined) ?? null,
+    reviewStatusChangedAt: (raw.reviewStatusChangedAt as string | undefined) ?? null,
     candidateName: candidateName || String(candidate?.username ?? "Candidate"),
     candidateEmail: candidate?.email as string | undefined,
     hiringManagerName: hmName || String(hm?.email ?? "Hiring manager"),
     campaignName: String(campaign?.name ?? "Campaign"),
     role: String(campaign?.jobRole ?? "Role not set"),
   };
+}
+
+async function invalidateSharedCandidateCaches(raw: Record<string, unknown>) {
+  const hiringManagers =
+    (raw.hiringManagers as Array<Record<string, unknown>> | undefined) ?? [];
+  const managerSubs = hiringManagers
+    .map((manager) => manager.id)
+    .filter((id): id is number => Number.isInteger(id))
+    .map(String);
+  const candidateSessionIds = Array.isArray(raw.candidateSessionDocumentIds)
+    ? raw.candidateSessionDocumentIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+    : [];
+
+  await Promise.all([
+    invalidateClientPortalServerCache(),
+    ...managerSubs.map((sub) => invalidateHmOverviewServerCache(sub)),
+    ...managerSubs.flatMap((sub) =>
+      candidateSessionIds.map((sessionId) => invalidateHmReportServerCache(sub, sessionId))
+    ),
+  ]);
 }
 
 export async function getClientContract(clientDocumentId: string) {
@@ -567,6 +656,19 @@ export async function updateSharedCandidateReviewStatus(
       body: JSON.stringify({ reviewStatus }),
     }
   );
+  if (response.data) await invalidateSharedCandidateCaches(response.data);
+  return response.data ? normalizeSharedCandidate(response.data) : null;
+}
+
+export async function reopenSharedCandidateReviewStatus(
+  sharedCandidateDocumentId: string,
+  reason: string
+) {
+  const response = await strapiRequest<{ data?: Record<string, unknown> }>(
+    `/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/reopen`,
+    { method: "POST", body: JSON.stringify({ reason }) }
+  );
+  if (response.data) await invalidateSharedCandidateCaches(response.data);
   return response.data ? normalizeSharedCandidate(response.data) : null;
 }
 

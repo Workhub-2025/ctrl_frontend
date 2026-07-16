@@ -19,7 +19,7 @@ import {
   invalidatePortalCache,
   PORTAL_CACHE_TTL_MS,
 } from "@/lib/portal-fetch-cache";
-import { getClientSharedCandidateStatusBffPath } from "@/lib/client-shared-candidate-routes";
+import { getClientSharedCandidateReopenBffPath, getClientSharedCandidateStatusBffPath } from "@/lib/client-shared-candidate-routes";
 
 export type SeatSlot =
   | { type: "occupied"; label: string; seatNumber: number; manager: ClientHiringManagerSeat }
@@ -68,6 +68,7 @@ type ClientPortalContextValue = {
     id: string,
     reviewStatus: ClientSharedCandidate["reviewStatus"]
   ) => Promise<void>;
+  reopenSharedCandidateStatus: (id: string, reason: string) => Promise<void>;
   generateSeatCode: (seatLabel: string) => Promise<void>;
   refreshSeatCode: (seatLabel: string, refreshCodeDocumentId: string) => Promise<void>;
   sendSeatInvite: (seatLabel: string, email: string, accessCodeDocumentId?: string) => Promise<void>;
@@ -346,6 +347,28 @@ export function useClientPortalState(): ClientPortalContextValue {
     }
   };
 
+  const reopenSharedCandidateStatus = async (id: string, reason: string) => {
+    setReviewingCandidateId(id);
+    try {
+      const response = await fetch(getClientSharedCandidateReopenBffPath(id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error((body as { error?: string }).error || "Candidate outcome could not be reopened");
+      }
+      invalidatePortalCache("client:shared:all");
+      await Promise.all([loadSharedCandidates(undefined, true), loadOverview(true)]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Candidate outcome could not be reopened");
+      throw err;
+    } finally {
+      setReviewingCandidateId(null);
+    }
+  };
+
   const generateSeatCode = async (seatLabel: string) => {
     setCodeBusy(seatLabel);
     try {
@@ -573,6 +596,7 @@ export function useClientPortalState(): ClientPortalContextValue {
     submitUpgradeRequest,
     reviewCampaign,
     updateSharedCandidateStatus,
+    reopenSharedCandidateStatus,
     generateSeatCode,
     refreshSeatCode,
     sendSeatInvite,

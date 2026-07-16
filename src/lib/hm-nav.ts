@@ -5,6 +5,7 @@ import {
   Headset,
   LayoutDashboard,
   Users,
+  ScrollText,
 } from "lucide-react";
 
 export type HmNavItem = {
@@ -51,6 +52,18 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
     ],
   },
   {
+    label: "Account & records",
+    collapsible: true,
+    items: [
+      {
+        href: "/hiring-manager-dashboard/activity-logs",
+        label: "Activity logs",
+        icon: ScrollText,
+        isActive: (p) => p.startsWith("/hiring-manager-dashboard/activity-logs"),
+      },
+    ],
+  },
+  {
     label: "Reference",
     collapsible: true,
     items: [
@@ -83,6 +96,7 @@ export function getHmBreadcrumbs(pathname: string) {
     assessments: "Assessments",
     "assessment-recovery": "Assessment recovery",
     support: "Help & support",
+    "activity-logs": "Activity logs",
     create: "Create campaign",
     edit: "Edit campaign",
   };
@@ -103,7 +117,14 @@ export function getHmBreadcrumbs(pathname: string) {
           ? "/hiring-manager-dashboard/campaigns"
           : `/hiring-manager-dashboard/${section}`,
     });
-    crumbs.push({ label: section === "sessions" ? "Session detail" : detailId });
+    crumbs.push({
+      label:
+        section === "sessions"
+          ? "Session detail"
+          : section === "campaigns"
+            ? "Campaign detail"
+            : "Candidate report",
+    });
     return crumbs;
   }
 

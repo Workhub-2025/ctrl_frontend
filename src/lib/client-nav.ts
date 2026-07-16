@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  ClipboardCheck,
+  FolderKanban,
   Home,
   MessageSquare,
   TrendingUp,
@@ -42,10 +42,11 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
         isActive: (pathname) => pathname.startsWith("/client-dashboard/hiring-managers"),
       },
       {
-        href: "/client-dashboard/campaign-approvals",
-        label: "Campaign approvals",
-        icon: ClipboardCheck,
+        href: "/client-dashboard/campaigns",
+        label: "Campaigns",
+        icon: FolderKanban,
         isActive: (pathname) =>
+          pathname.startsWith("/client-dashboard/campaigns") ||
           pathname.startsWith("/client-dashboard/campaign-approvals"),
       },
       {
@@ -90,10 +91,11 @@ export type ClientBreadcrumb = { label: string; href?: string };
 const SEGMENT_LABELS: Record<string, string> = {
   "client-dashboard": "Client",
   "hiring-managers": "Hiring managers",
-  "campaign-approvals": "Campaign approvals",
+  campaigns: "Campaigns",
+  "campaign-approvals": "Campaigns",
   "client-approved-candidates": "Candidate reviews",
   "candidate-approvals": "Candidate reviews",
-  progressed: "Campaign approvals",
+  progressed: "Campaigns",
   "upgrade-requests": "Upgrade requests",
   "assessment-recovery": "Assessment recovery",
   "activity-logs": "Activity logs",
@@ -114,7 +116,8 @@ export function getClientBreadcrumbs(pathname: string): ClientBreadcrumb[] {
 
   for (let index = 1; index < segments.length; index += 1) {
     const segment = segments[index];
-    const label = SEGMENT_LABELS[segment] ?? segment;
+    const isDetail = index > 1 && segments[index - 1] === "campaigns";
+    const label = isDetail ? "Campaign detail" : SEGMENT_LABELS[segment] ?? segment;
     const isLast = index === segments.length - 1;
     const href = isLast
       ? undefined

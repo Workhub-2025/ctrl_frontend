@@ -58,9 +58,9 @@ function QueueTable({
       ),
     );
   return (
-    <div className="overflow-x-auto border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
+    <div className="overflow-x-auto border border-border bg-card  ">
       <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-        <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+        <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground  ">
           <tr>
             <th className="p-3">Priority</th>
             <th className="p-3">Incident</th>
@@ -68,7 +68,7 @@ function QueueTable({
             {showActions ? <th className="p-3">Action</th> : null}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+        <tbody className="divide-y divide-border ">
           {exercise.incidents.map((incident) => {
             const row = rows.find((item) => item.incidentId === incident.id)!;
             return (
@@ -79,7 +79,7 @@ function QueueTable({
                   </label>
                   <select
                     id={`rank-${incident.id}`}
-                    className="h-10 w-20 border border-slate-400 bg-white px-2 dark:bg-slate-950"
+                    className="h-10 w-20 border border-border bg-card px-2 "
                     value={row.rank || ""}
                     onChange={(event) =>
                       update(incident.id, { rank: Number(event.target.value) })
@@ -95,7 +95,7 @@ function QueueTable({
                 </td>
                 <td className="p-3">
                   <p className="font-semibold">{incident.summary}</p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {incident.receivedAt} · {incident.location}
                   </p>
                 </td>
@@ -116,7 +116,7 @@ function QueueTable({
                     </label>
                     <select
                       id={`action-${incident.id}`}
-                      className="h-10 w-full min-w-56 border border-slate-400 bg-white px-2 dark:bg-slate-950"
+                      className="h-10 w-full min-w-56 border border-border bg-card px-2 "
                       value={row.actionId}
                       onChange={(event) =>
                         update(incident.id, { actionId: event.target.value })
@@ -151,9 +151,9 @@ function PracticeWorkspace({
 }) {
   return (
     <div className="space-y-4">
-      <div className="border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <div className="border border-border bg-card p-5  ">
         <h3 className="font-semibold">{practice.title}</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+        <p className="mt-2 text-sm leading-6 text-muted-foreground ">
           {practice.controlContext}
         </p>
       </div>
@@ -163,10 +163,10 @@ function PracticeWorkspace({
         onChange={(initial) => setState({ ...state, initial })}
         showActions={false}
       />
-      <label className="block border border-slate-300 bg-white p-4 text-sm font-semibold dark:border-slate-700 dark:bg-slate-900">
+      <label className="block border border-border bg-card p-4 text-sm font-semibold  ">
         Why is your first-ranked incident most urgent?
         <textarea
-          className="mt-2 min-h-24 w-full border border-slate-400 bg-white p-3 font-normal dark:bg-slate-950"
+          className="mt-2 min-h-24 w-full border border-border bg-card p-3 font-normal "
           value={state.rationale}
           onChange={(event) =>
             setState({ ...state, rationale: event.target.value })
@@ -256,7 +256,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
                 {exercise.updates.map((update) => (
                   <div
                     key={update.id}
-                    className="border-l-4 border-amber-600 bg-amber-50 p-4 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"
+                    className="border-l-4 border-warning bg-warning/10 p-4 text-sm text-foreground  "
                   >
                     {update.message}
                   </div>
@@ -287,12 +287,12 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
         if (stageIndex === 4)
           return (
             <Panel eyebrow="Decision record" title="Explain your final plan">
-              <p className="text-sm text-slate-600 dark:text-slate-300">
+              <p className="text-sm text-muted-foreground ">
                 Identify the risks, vulnerabilities, resource constraints and
                 information that changed your priorities.
               </p>
               <textarea
-                className="mt-5 min-h-48 w-full border border-slate-400 bg-white p-4 dark:bg-slate-950"
+                className="mt-5 min-h-48 w-full border border-border bg-card p-4 "
                 value={state.rationale}
                 onChange={(event) =>
                   setState({ ...state, rationale: event.target.value })
@@ -317,11 +317,11 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
 function StageTitle({ title, detail }: { title: string; detail: string }) {
   return (
     <div className="mb-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         Operational queue
       </p>
       <h1 className="mt-2 text-2xl font-semibold">{title}</h1>
-      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+      <p className="mt-2 text-sm leading-6 text-muted-foreground ">
         {detail}
       </p>
     </div>
@@ -337,12 +337,12 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-blue-800 dark:text-blue-300">
+    <section className="border border-border bg-card p-7  ">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary ">
         {eyebrow}
       </p>
       <h1 className="text-2xl font-semibold">{title}</h1>
-      <div className="mt-4 leading-7 text-slate-700 dark:text-slate-200">
+      <div className="mt-4 leading-7 text-foreground ">
         {children}
       </div>
     </section>

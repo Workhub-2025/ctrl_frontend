@@ -17,8 +17,11 @@ import {
   RefreshCw,
   Users,
   CheckCircle2,
-  Clock3,
   Search,
+  BriefcaseBusiness,
+  Share2,
+  UserRoundCheck,
+  XCircle,
 } from "lucide-react";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
@@ -67,6 +70,8 @@ type CandidateRow = {
   assessmentStack: string[];
   overallScore: number | null;
   stackEntries: CompositeStackEntry[];
+  hmDecision: "pending" | "approved" | "rejected";
+  clientOutcome: "pending_review" | "reviewed" | "progressed" | "hired" | "rejected" | null;
 };
 
 function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): CandidateRow[] {
@@ -120,6 +125,8 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
         assessmentStack: expectedAssessments,
         overallScore,
         stackEntries,
+        hmDecision: candidate.hmDecision ?? "pending",
+        clientOutcome: candidate.clientReviewStatus ?? null,
       });
     }
   }
@@ -147,6 +154,21 @@ function progressLabel(progress: CandidateRow["progress"]) {
   }
 }
 
+function hmDecisionLabel(decision: CandidateRow["hmDecision"]) {
+  if (decision === "approved") return "Moved forward by hiring manager";
+  if (decision === "rejected") return "Rejected by hiring manager";
+  return "HM decision pending";
+}
+
+function clientOutcomeLabel(outcome: CandidateRow["clientOutcome"]) {
+  if (outcome === "pending_review") return "Awaiting client review";
+  if (outcome === "reviewed") return "Reviewed by client";
+  if (outcome === "progressed") return "Progressed by client";
+  if (outcome === "hired") return "Hired by client";
+  if (outcome === "rejected") return "Rejected by client";
+  return "Not shared with client";
+}
+
 export function HiringManagerCandidatesView() {
   const { campaignDetails: campaigns, error, lastRefreshAt, loading, loadOverview } =
     useHiringManagerPortal();
@@ -154,6 +176,7 @@ export function HiringManagerCandidatesView() {
   const [campaignFilter, setCampaignFilter] = useState("all");
   const [sessionFilter, setSessionFilter] = useState("all");
   const [progressFilter, setProgressFilter] = useState("all");
+  const [outcomeFilter, setOutcomeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleRefresh = async () => {
@@ -193,30 +216,32 @@ export function HiringManagerCandidatesView() {
         const matchesCampaign = campaignFilter === "all" || candidate.campaignName === campaignFilter;
         const matchesSession = sessionFilter === "all" || candidate.sessionName === sessionFilter;
         const matchesProgress = progressFilter === "all" || candidate.progress === progressFilter;
+        const matchesOutcome = outcomeFilter === "all" ||
+          (outcomeFilter === "not_shared" ? candidate.clientOutcome === null : candidate.clientOutcome === outcomeFilter);
         const matchesSearch = !searchQuery.trim() ||
           candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (candidate.email ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesCampaign && matchesSession && matchesProgress && matchesSearch;
+        return matchesCampaign && matchesSession && matchesProgress && matchesOutcome && matchesSearch;
       }),
-    [campaignFilter, candidates, progressFilter, sessionFilter, searchQuery]
+    [campaignFilter, candidates, outcomeFilter, progressFilter, sessionFilter, searchQuery]
   );
 
   const stats = useMemo(() => {
-    let completed = 0;
-    let inProgress = 0;
-    let notStarted = 0;
+    let awaitingDecision = 0;
+    let shared = 0;
+    let finalOutcomes = 0;
 
     for (const c of candidates) {
-      if (c.progress === "completed") completed++;
-      else if (c.progress === "in_progress") inProgress++;
-      else notStarted++;
+      if (c.progress === "completed" && c.hmDecision === "pending") awaitingDecision++;
+      if (c.clientOutcome) shared++;
+      if (c.clientOutcome === "hired" || c.clientOutcome === "rejected") finalOutcomes++;
     }
 
     return {
       total: candidates.length,
-      completed,
-      inProgress,
-      notStarted,
+      awaitingDecision,
+      shared,
+      finalOutcomes,
     };
   }, [candidates]);
 
@@ -244,26 +269,22 @@ export function HiringManagerCandidatesView() {
           icon={Users}
         />
         <PortalStatTile
-          label="Completed"
-          value={stats.completed}
-          detail={
-            stats.total > 0
-              ? `${Math.round((stats.completed / stats.total) * 100)}% completion rate`
-              : "ready for review"
-          }
-          icon={CheckCircle2}
+          label="Awaiting HM decision"
+          value={stats.awaitingDecision}
+          detail="completed assessments to review"
+          icon={UserRoundCheck}
         />
         <PortalStatTile
-          label="In Progress"
-          value={stats.inProgress}
-          detail="active evaluation sessions"
-          icon={RefreshCw}
+          label="Shared with client"
+          value={stats.shared}
+          detail="explicitly progressed by HM"
+          icon={Share2}
         />
         <PortalStatTile
-          label="Not Started"
-          value={stats.notStarted}
-          detail="awaiting first assessment"
-          icon={Clock3}
+          label="Final outcomes"
+          value={stats.finalOutcomes}
+          detail="hired or rejected by client"
+          icon={BriefcaseBusiness}
         />
       </div>
 
@@ -273,12 +294,15 @@ export function HiringManagerCandidatesView() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             {/* Search Input */}
             <div className="flex-1 space-y-2">
-              <p className={portalLabelClass}>Search</p>
+              <label htmlFor="hm-candidate-search" className={portalLabelClass}>Search</label>
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <input
+                  id="hm-candidate-search"
                   type="text"
-                  placeholder="Search candidate by name or email..."
+                  name="candidate-search"
+                  autoComplete="off"
+                  placeholder="Search by name or email…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={cn(portalInputClass, "h-10 w-full pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground")}
@@ -287,7 +311,7 @@ export function HiringManagerCandidatesView() {
             </div>
 
             {/* Select Filters */}
-            <div className="grid gap-3 sm:grid-cols-3 flex-[2] md:flex-[3]">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 flex-[2] md:flex-[3]">
               <FilterSelect
                 label="Campaign"
                 allLabel="All campaigns"
@@ -297,6 +321,20 @@ export function HiringManagerCandidatesView() {
                   setSessionFilter("all");
                 }}
                 options={campaignOptions}
+              />
+              <FilterSelect
+                label="Outcome"
+                allLabel="All outcomes"
+                value={outcomeFilter}
+                onChange={setOutcomeFilter}
+                options={[
+                  { label: "Not shared", value: "not_shared" },
+                  { label: "Pending client review", value: "pending_review" },
+                  { label: "Reviewed", value: "reviewed" },
+                  { label: "Progressed", value: "progressed" },
+                  { label: "Hired", value: "hired" },
+                  { label: "Rejected", value: "rejected" },
+                ]}
               />
               <FilterSelect
                 label="Session"
@@ -320,8 +358,8 @@ export function HiringManagerCandidatesView() {
           </div>
 
           {/* Active Filters Summary */}
-          {(campaignFilter !== "all" || sessionFilter !== "all" || progressFilter !== "all" || searchQuery !== "") && (
-            <div className="flex items-center justify-between border-t border-border/60 pt-3 dark:border-white/5">
+          {(campaignFilter !== "all" || sessionFilter !== "all" || progressFilter !== "all" || outcomeFilter !== "all" || searchQuery !== "") && (
+            <div className="flex items-center justify-between border-t border-border/60 pt-3">
               <p className="text-xs text-muted-foreground">
                 Found {filteredCandidates.length} matches of {candidates.length} total candidates
               </p>
@@ -332,9 +370,10 @@ export function HiringManagerCandidatesView() {
                   setCampaignFilter("all");
                   setSessionFilter("all");
                   setProgressFilter("all");
+                  setOutcomeFilter("all");
                   setSearchQuery("");
                 }}
-                className="h-8 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                className="h-8 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
               >
                 Reset Filters
               </Button>
@@ -427,8 +466,23 @@ export function HiringManagerCandidatesView() {
                   </div>
                 </div>
 
+                <ol className="grid gap-2 border-t border-border pt-4 md:grid-cols-3" aria-label="Candidate decision journey">
+                  <li className="flex min-w-0 items-start gap-3 rounded-md bg-muted/40 p-3">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Assessment</p><p className="mt-0.5 text-sm font-medium text-foreground">{progressLabel(candidate.progress)}</p></div>
+                  </li>
+                  <li className="flex min-w-0 items-start gap-3 rounded-md bg-muted/40 p-3">
+                    {candidate.hmDecision === "rejected" ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" /> : <UserRoundCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
+                    <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">HM decision</p><p className="mt-0.5 text-sm font-medium text-foreground">{hmDecisionLabel(candidate.hmDecision)}</p></div>
+                  </li>
+                  <li className="flex min-w-0 items-start gap-3 rounded-md bg-muted/40 p-3">
+                    {candidate.clientOutcome === "hired" ? <BriefcaseBusiness className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" /> : candidate.clientOutcome === "rejected" ? <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" /> : <Share2 className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />}
+                    <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client outcome</p><p className="mt-0.5 text-sm font-medium text-foreground">{clientOutcomeLabel(candidate.clientOutcome)}</p></div>
+                  </li>
+                </ol>
+
                 {/* Redesigned Performance breakdown segment tracks */}
-                <div className="space-y-4 pt-4 border-t border-border/60 dark:border-white/5">
+                <div className="space-y-4 border-t border-border/60 pt-4">
                   {/* Overall Weighted Score Bar — shown first */}
                   {candidate.completedAssessments > 0 && candidate.overallScore !== null && (
                     <div className="relative group space-y-2">

@@ -9,6 +9,7 @@ export type SharedCandidateNote = {
   content: string;
   authorRole: SharedCandidateNoteAuthorRole;
   visibility: SharedCandidateNoteVisibility;
+  authorName?: string;
   createdAt?: string | null;
   canDelete?: boolean;
 };

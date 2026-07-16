@@ -143,6 +143,9 @@ type RawCandidateSession = {
   invitedEmail?: string | null;
   inviteStatus?: "invited" | "registered" | "started" | null;
   hmDecision?: "pending" | "approved" | "rejected" | null;
+  sharedCandidateDocumentId?: string | null;
+  clientReviewStatus?: "pending_review" | "reviewed" | "progressed" | "hired" | "rejected" | null;
+  clientReviewStatusChangedAt?: string | null;
   users_permissions_users?: Array<{
     documentId?: string;
     firstName?: string;
@@ -271,6 +274,8 @@ type RawHmCandidateReport = {
   hmDecisionAt?: string | null;
   hmDecisionNote?: string | null;
   sharedCandidateDocumentId?: string | null;
+  clientReviewStatus?: "pending_review" | "reviewed" | "progressed" | "hired" | "rejected" | null;
+  clientReviewStatusChangedAt?: string | null;
 };
 
 export type HiringManagerAssessmentSessionCreateInput = {
@@ -436,6 +441,9 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
         status: candidateSession.sessionStatus,
         inviteStatus: candidateSession.inviteStatus ?? null,
         hmDecision: candidateSession.hmDecision ?? "pending",
+        sharedCandidateDocumentId: candidateSession.sharedCandidateDocumentId ?? null,
+        clientReviewStatus: candidateSession.clientReviewStatus ?? null,
+        clientReviewStatusChangedAt: candidateSession.clientReviewStatusChangedAt ?? null,
         hasStartedAssessment:
           results.length > 0 ||
           candidateSession.sessionStatus === "completed" ||
@@ -793,6 +801,8 @@ function normalizeHmCandidateReport(raw: RawHmCandidateReport): HiringManagerCan
     hmDecisionAt: raw.hmDecisionAt ?? null,
     hmDecisionNote: raw.hmDecisionNote ?? null,
     sharedCandidateDocumentId: raw.sharedCandidateDocumentId ?? null,
+    clientReviewStatus: raw.clientReviewStatus ?? null,
+    clientReviewStatusChangedAt: raw.clientReviewStatusChangedAt ?? null,
   };
 }
 

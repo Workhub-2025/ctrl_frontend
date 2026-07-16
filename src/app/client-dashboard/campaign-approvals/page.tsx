@@ -1,7 +1,5 @@
-"use client";
-
-import { ClientCampaignApprovalsContent } from "@/components/dashboard/client";
+import { redirect } from "next/navigation";
 
 export default function ClientCampaignApprovalsPage() {
-  return <ClientCampaignApprovalsContent />;
+  redirect("/client-dashboard/campaigns");
 }

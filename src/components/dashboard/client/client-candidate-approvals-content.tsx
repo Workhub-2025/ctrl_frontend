@@ -1,9 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
-import { Mail, RefreshCw, UserCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BriefcaseBusiness, Mail, RefreshCw, RotateCcw, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   ClientErrorBanner,
   ClientPageHeader,
@@ -26,6 +38,7 @@ const REVIEW_STATUS_LABELS: Record<ClientSharedCandidate["reviewStatus"], string
   pending_review: "Pending review",
   reviewed: "Reviewed",
   progressed: "Progressed",
+  hired: "Hired",
   rejected: "Rejected",
 };
 
@@ -46,7 +59,10 @@ export function ClientCandidateApprovalsContent() {
     loadOverview,
     loadSharedCandidates,
     updateSharedCandidateStatus,
+    reopenSharedCandidateStatus,
   } = useClientPortal();
+  const [reopenTarget, setReopenTarget] = useState<ClientSharedCandidate | null>(null);
+  const [reopenReason, setReopenReason] = useState("");
 
   useEffect(() => {
     void loadSharedCandidates();
@@ -136,7 +152,7 @@ export function ClientCandidateApprovalsContent() {
                             <Button
                               variant="secondary"
                               size="sm"
-                              className="rounded-xl font-semibold"
+                              className="min-h-10 rounded-md font-semibold"
                               disabled={reviewingCandidateId === candidate.documentId}
                               onClick={() =>
                                 void updateSharedCandidateStatus(candidate.documentId, "reviewed")
@@ -147,7 +163,7 @@ export function ClientCandidateApprovalsContent() {
                             <Button
                               variant="default"
                               size="sm"
-                              className="rounded-xl font-semibold"
+                              className="min-h-10 rounded-md font-semibold"
                               disabled={reviewingCandidateId === candidate.documentId}
                               onClick={() =>
                                 void updateSharedCandidateStatus(candidate.documentId, "progressed")
@@ -158,7 +174,7 @@ export function ClientCandidateApprovalsContent() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="rounded-xl font-semibold"
+                              className="min-h-10 rounded-md font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive"
                               disabled={reviewingCandidateId === candidate.documentId}
                               onClick={() =>
                                 void updateSharedCandidateStatus(candidate.documentId, "rejected")
@@ -168,11 +184,26 @@ export function ClientCandidateApprovalsContent() {
                             </Button>
                           </>
                         ) : null}
+                        {candidate.reviewStatus === "reviewed" ? (
+                          <>
+                            <Button size="sm" className="min-h-10 rounded-md font-semibold" disabled={reviewingCandidateId === candidate.documentId} onClick={() => void updateSharedCandidateStatus(candidate.documentId, "progressed")}>Progress</Button>
+                            <Button variant="outline" size="sm" className="min-h-10 rounded-md font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={reviewingCandidateId === candidate.documentId} onClick={() => void updateSharedCandidateStatus(candidate.documentId, "rejected")}>Reject</Button>
+                          </>
+                        ) : null}
+                        {candidate.reviewStatus === "progressed" ? (
+                          <>
+                            <Button size="sm" className="min-h-10 gap-2 rounded-md font-semibold" disabled={reviewingCandidateId === candidate.documentId} onClick={() => void updateSharedCandidateStatus(candidate.documentId, "hired")}><BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />Mark hired</Button>
+                            <Button variant="outline" size="sm" className="min-h-10 rounded-md font-semibold text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={reviewingCandidateId === candidate.documentId} onClick={() => void updateSharedCandidateStatus(candidate.documentId, "rejected")}>Reject</Button>
+                          </>
+                        ) : null}
+                        {candidate.reviewStatus === "hired" || candidate.reviewStatus === "rejected" ? (
+                          <Button variant="outline" size="sm" className="min-h-10 gap-2 rounded-md font-semibold" disabled={reviewingCandidateId === candidate.documentId} onClick={() => { setReopenTarget(candidate); setReopenReason(""); }}><RotateCcw className="h-4 w-4" aria-hidden="true" />Reopen outcome</Button>
+                        ) : null}
                       </div>
                       <ClientCandidateOutreachDialog candidate={candidate}>
                         <Button
                           variant="outline"
-                          className="gap-2 rounded-xl font-semibold"
+                          className="min-h-10 gap-2 rounded-md font-semibold"
                           disabled={!candidate.candidateEmail}
                         >
                           <Mail className="h-4 w-4" aria-hidden="true" />
@@ -192,6 +223,38 @@ export function ClientCandidateApprovalsContent() {
           )}
         </div>
       </PortalPanel>
+
+      <AlertDialog open={Boolean(reopenTarget)} onOpenChange={(open) => { if (!open) setReopenTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reopen final outcome?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {reopenTarget ? `${reopenTarget.candidateName} will return to Reviewed. The previous ${REVIEW_STATUS_LABELS[reopenTarget.reviewStatus].toLowerCase()} outcome remains in the audit history.` : "The outcome will return to Reviewed."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="candidate-reopen-reason">Reason</Label>
+            <Textarea id="candidate-reopen-reason" value={reopenReason} onChange={(event) => setReopenReason(event.target.value)} maxLength={500} rows={4} aria-describedby="candidate-reopen-count" />
+            <p id="candidate-reopen-count" className="text-right text-xs tabular-nums text-muted-foreground">{reopenReason.length}/500</p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!reopenTarget || reopenReason.trim().length < 3 || reviewingCandidateId === reopenTarget?.documentId}
+              onClick={(event) => {
+                event.preventDefault();
+                if (!reopenTarget) return;
+                void reopenSharedCandidateStatus(reopenTarget.documentId, reopenReason).then(() => {
+                  setReopenTarget(null);
+                  setReopenReason("");
+                });
+              }}
+            >
+              Reopen to Reviewed
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

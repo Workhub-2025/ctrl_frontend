@@ -15,6 +15,7 @@ import { HiringManagerPortalClientService } from "@/services/hiring-manager-port
 import { portalAlertErrorClass, portalPanelNestedClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
+import { usePortalBreadcrumbDetail } from "@/components/dashboard/portal/portal-shell";
 
 type HiringManagerSessionDetailViewProps = {
   sessionId: string;
@@ -51,6 +52,7 @@ export function HiringManagerSessionDetailView({ sessionId }: HiringManagerSessi
     () => (session ? findCampaignForSession(session, campaignDetails) : null),
     [campaignDetails, session]
   );
+  usePortalBreadcrumbDetail(session?.name);
   const campaignSessionsHref = campaign
     ? `/hiring-manager-dashboard/campaigns/${encodeURIComponent(campaign.documentId ?? campaign.id)}?tab=sessions`
     : "/hiring-manager-dashboard/campaigns";

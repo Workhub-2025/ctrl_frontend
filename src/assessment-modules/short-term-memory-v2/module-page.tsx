@@ -56,26 +56,26 @@ function Briefing({
     return () => window.clearInterval(timer);
   }, [availableUntil]);
   return (
-    <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-700">
+    <section className="border border-border bg-card p-7  ">
+      <div className="flex items-center justify-between gap-4 border-b border-border pb-4 ">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
             One-time briefing
           </p>
           <h1 className="mt-2 text-2xl font-semibold">
             {exercise.briefing.heading}
           </h1>
         </div>
-        <div className="border border-slate-400 px-3 py-2 font-mono text-sm">
+        <div className="border border-border px-3 py-2 font-mono text-sm">
           {remaining}s
         </div>
       </div>
-      <div className="mt-6 space-y-4 text-base leading-8 text-slate-800 dark:text-slate-100">
+      <div className="mt-6 space-y-4 text-base leading-8 text-foreground ">
         {exercise.briefing.paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
       </div>
-      <p className="mt-6 border-l-4 border-slate-700 bg-slate-100 p-4 text-sm dark:bg-slate-800">
+      <p className="mt-6 border-l-4 border-border bg-muted p-4 text-sm ">
         The briefing is removed when you continue. Notes and clipboard actions
         are not available.
       </p>
@@ -93,8 +93,8 @@ function Interruption({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <section className="border border-border bg-card p-7  ">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         Interruption task
       </p>
       <h1 className="mt-2 text-2xl font-semibold">
@@ -108,7 +108,7 @@ function Interruption({
               {task.options.map((option) => (
                 <label
                   key={option.id}
-                  className={`cursor-pointer border px-4 py-3 text-sm ${state.interruptionAnswers[task.id] === option.id ? "border-blue-800 bg-blue-50 dark:border-blue-400 dark:bg-blue-950/30" : "border-slate-300 dark:border-slate-700"}`}
+                  className={`cursor-pointer border px-4 py-3 text-sm ${state.interruptionAnswers[task.id] === option.id ? "border-primary bg-primary/10  " : "border-border "}`}
                 >
                   <input
                     className="mr-2"
@@ -146,14 +146,14 @@ function Recall({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <section className="border border-border bg-card p-7  ">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         Delayed recall
       </p>
       <h1 className="mt-2 text-2xl font-semibold">
         Reconstruct the key operational facts
       </h1>
-      <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+      <p className="mt-3 text-sm text-muted-foreground ">
         Enter only details you remember. Do not invent a missing value.
       </p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -161,7 +161,7 @@ function Recall({
           <label key={field.id} className="text-sm font-semibold">
             {field.label}
             <input
-              className="mt-2 h-11 w-full border border-slate-400 bg-white px-3 font-normal dark:bg-slate-950"
+              className="mt-2 h-11 w-full border border-border bg-card px-3 font-normal "
               value={state.recall[field.id] ?? ""}
               onChange={(event) =>
                 setState({
@@ -187,8 +187,8 @@ function Sequence({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <section className="border border-border bg-card p-7  ">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         Event sequence
       </p>
       <h1 className="mt-2 text-2xl font-semibold">
@@ -200,11 +200,11 @@ function Sequence({
             key={index}
             className="flex items-center gap-4 text-sm font-semibold"
           >
-            <span className="grid h-8 w-8 shrink-0 place-items-center border border-slate-400">
+            <span className="grid h-8 w-8 shrink-0 place-items-center border border-border">
               {index + 1}
             </span>
             <select
-              className="h-11 w-full border border-slate-400 bg-white px-3 font-normal dark:bg-slate-950"
+              className="h-11 w-full border border-border bg-card px-3 font-normal "
               value={selected}
               onChange={(event) =>
                 setState({
@@ -239,18 +239,18 @@ function Corrections({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <section className="border border-border bg-card p-7  ">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         Record correction
       </p>
       <h1 className="mt-2 text-2xl font-semibold">
         Correct the flawed operational record
       </h1>
-      <div className="mt-6 divide-y divide-slate-200 border-y border-slate-200 dark:divide-slate-700 dark:border-slate-700">
+      <div className="mt-6 divide-y divide-border border-y border-border  ">
         {exercise.flawedRecord.map((field) => (
           <div key={field.id} className="grid gap-3 py-4 sm:grid-cols-2">
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 {field.label}
               </p>
               <p className="mt-1 font-medium line-through decoration-red-700">
@@ -260,7 +260,7 @@ function Corrections({
             <label className="text-sm font-semibold">
               Correct value
               <input
-                className="mt-2 h-11 w-full border border-slate-400 bg-white px-3 font-normal dark:bg-slate-950"
+                className="mt-2 h-11 w-full border border-border bg-card px-3 font-normal "
                 value={state.corrections[field.id] ?? ""}
                 onChange={(event) =>
                   setState({
@@ -362,14 +362,14 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
             />
           );
         return (
-          <section className="border border-slate-300 bg-white p-7 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <section className="border border-border bg-card p-7  ">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Final review
             </p>
             <h1 className="mt-2 text-2xl font-semibold">
               Submit the reconstructed record
             </h1>
-            <p className="mt-4 leading-7 text-slate-700 dark:text-slate-200">
+            <p className="mt-4 leading-7 text-foreground ">
               Your interruption answers, recalled details, event order and
               corrections will be submitted together. The briefing cannot be
               reopened.

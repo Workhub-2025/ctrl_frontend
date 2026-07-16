@@ -40,6 +40,7 @@ import {
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
+import { usePortalBreadcrumbDetail } from "@/components/dashboard/portal/portal-shell";
 import { isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
 import {
   findAssessmentResultForStackEntry,
@@ -117,6 +118,14 @@ function getHmDecisionLabel(decision: "approved" | "rejected") {
   return decision === "approved" ? "Move forward" : "Reject";
 }
 
+function getClientOutcomeLabel(status: NonNullable<HiringManagerCandidateReport["clientReviewStatus"]>) {
+  if (status === "pending_review") return "Awaiting client review";
+  if (status === "reviewed") return "Reviewed by client";
+  if (status === "progressed") return "Progressed by client";
+  if (status === "hired") return "Hired by client";
+  return "Rejected by client";
+}
+
 
 export function HiringManagerCandidateReport({ candidateId, candidateSessionId, embedded = false }: CandidateReportProps) {
   const [reportData, setReportData] = useState<HiringManagerCandidateReport | null>(null);
@@ -129,6 +138,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
   const [reloadTick, setReloadTick] = useState(0);
 
   const resolvedSessionId = candidateSessionId ?? candidateId;
+  usePortalBreadcrumbDetail(embedded ? null : reportData?.candidate.name);
 
   useEffect(() => {
     let cancelled = false;
@@ -254,7 +264,7 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
   if (isLoading) {
     return (
       <div className={cn(portalPanelNestedClass, "rounded-lg p-6 text-sm text-muted-foreground")}>
-        Loading candidate report...
+        Loading candidate report…
       </div>
     );
   }
@@ -377,6 +387,15 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
           </div>
         </div>
       )}
+
+      {reportData.clientReviewStatus ? (
+        <div className={cn("flex items-center text-sm", reportData.clientReviewStatus === "rejected" ? portalAlertErrorClass : portalAlertInfoClass)}>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+            <span>Client outcome: <strong className="font-semibold text-foreground">{getClientOutcomeLabel(reportData.clientReviewStatus)}</strong></span>
+          </div>
+        </div>
+      ) : null}
 
       <div>
         <Card className={cn(portalPanelClass, "relative overflow-hidden")}>

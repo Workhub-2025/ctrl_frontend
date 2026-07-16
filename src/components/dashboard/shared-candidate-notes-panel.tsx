@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Loader2, MessageSquarePlus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,6 +23,11 @@ const AUTHOR_LABELS: Record<SharedCandidateNote["authorRole"], string> = {
   client: "Client",
 };
 
+const NOTE_DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
 export function SharedCandidateNotesPanel({
   sharedCandidateDocumentId,
   portal,
@@ -34,6 +39,9 @@ export function SharedCandidateNotesPanel({
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const noteInputId = useId();
+  const noteCountId = `${noteInputId}-count`;
 
   const notesPath = getSharedCandidateNotesBffPath(portal, sharedCandidateDocumentId);
 
@@ -68,6 +76,7 @@ export function SharedCandidateNotesPanel({
 
     setSaving(true);
     setError("");
+    setSuccess("");
     try {
       const response = await fetch(notesPath, {
         method: "POST",
@@ -82,7 +91,9 @@ export function SharedCandidateNotesPanel({
         throw new Error(body.error || "Note could not be saved");
       }
       setContent("");
-      await loadNotes();
+      if (body.data) setNotes((current) => [...current, body.data as SharedCandidateNote]);
+      else await loadNotes();
+      setSuccess(portal === "client" ? "Private client note added." : "Note added and shared with the client.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Note could not be saved");
     } finally {
@@ -137,8 +148,9 @@ export function SharedCandidateNotesPanel({
             >
               <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {AUTHOR_LABELS[note.authorRole]}
-                  {note.visibility === "client_only" ? " · Client only" : ""}
+                  {note.authorName || AUTHOR_LABELS[note.authorRole]}
+                  {` · ${AUTHOR_LABELS[note.authorRole]}`}
+                  {note.visibility === "client_only" ? " · Client only" : " · Shared with client"}
                 </span>
                 {note.canDelete ? (
                   <Button
@@ -159,26 +171,31 @@ export function SharedCandidateNotesPanel({
                 ) : null}
               </div>
               <p className="whitespace-pre-wrap text-foreground">{note.content}</p>
+              {note.createdAt ? (
+                <time className="mt-1 block text-xs tabular-nums text-muted-foreground" dateTime={note.createdAt}>
+                  {NOTE_DATE_FORMAT.format(new Date(note.createdAt))}
+                </time>
+              ) : null}
             </li>
           ))}
         </ul>
       )}
 
       <div className="space-y-2">
-        <label htmlFor="shared-candidate-note" className="text-xs font-semibold text-foreground">
+        <label htmlFor={noteInputId} className="text-xs font-semibold text-foreground">
           Add a collaboration note
         </label>
         <Textarea
-          id="shared-candidate-note"
+          id={noteInputId}
           value={content}
           onChange={(event) => setContent(event.target.value)}
           placeholder="Add a note for your team…"
           maxLength={2000}
           rows={3}
-          aria-describedby="shared-candidate-note-count"
+          aria-describedby={noteCountId}
           className="resize-none rounded-md"
         />
-        <p id="shared-candidate-note-count" className="text-right text-[0.6875rem] tabular-nums text-muted-foreground">
+        <p id={noteCountId} className="text-right text-[0.6875rem] tabular-nums text-muted-foreground">
           {content.length}/2000
         </p>
         <Button
@@ -200,6 +217,7 @@ export function SharedCandidateNotesPanel({
       </div>
 
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
+      {success ? <p role="status" aria-live="polite" className="text-sm text-primary">{success}</p> : null}
     </div>
   );
 }

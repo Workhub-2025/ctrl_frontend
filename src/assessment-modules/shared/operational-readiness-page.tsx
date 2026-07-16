@@ -188,7 +188,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
       <main className="mx-auto max-w-3xl p-6">
         <div
           role="alert"
-          className="border-l-4 border-red-700 bg-red-50 p-5 text-red-950"
+          className="border-l-4 border-destructive bg-destructive/10 p-5 text-foreground"
         >
           <h1 className="font-semibold">Assessment unavailable</h1>
           <p className="mt-2">{loadingError}</p>
@@ -208,20 +208,20 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-slate-100 text-slate-950 dark:bg-slate-950 dark:text-slate-50"
+      className="min-h-screen bg-muted text-foreground  "
     >
-      <header className="border-b border-slate-300 bg-slate-950 text-white dark:border-slate-700">
+      <header className="border-b border-border bg-background text-foreground">
         <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             CTRL assessment readiness
           </p>
           <h1 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
             {readiness.module.title}
           </h1>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+          <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">
             {readiness.module.description}
           </p>
-          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-200">
+          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span>
               {readiness.module.durationMinutes.minimum}–
               {readiness.module.durationMinutes.maximum} minutes assessed
@@ -237,7 +237,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
       <div className="mx-auto grid max-w-6xl gap-7 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-7">
           <section
-            className="border border-slate-300 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
+            className="border border-border bg-card p-6  "
             aria-labelledby="before-title"
           >
             <h2 id="before-title" className="text-xl font-semibold">
@@ -247,7 +247,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
               {readiness.instructions.map((instruction) => (
                 <li key={instruction} className="flex gap-3 text-sm leading-6">
                   <Check
-                    className="mt-1 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300"
+                    className="mt-1 h-4 w-4 shrink-0 text-primary "
                     aria-hidden="true"
                   />
                   {instruction}
@@ -257,7 +257,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
           </section>
 
           <section aria-labelledby="practice-title">
-            <div className="mb-4 border-l-4 border-blue-800 bg-blue-50 p-4 dark:border-blue-400 dark:bg-blue-950/30">
+            <div className="mb-4 border-l-4 border-primary bg-primary/10 p-4  ">
               <h2 id="practice-title" className="font-semibold">
                 Practice workspace
               </h2>
@@ -278,13 +278,13 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
           className="space-y-5 lg:sticky lg:top-6 lg:self-start"
           aria-label="Readiness status"
         >
-          <section className="border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+          <section className="border border-border bg-card p-5  ">
             <h2 className="mb-4 text-base font-semibold">Technical checks</h2>
             <div className="space-y-3">
               {checks.map(({ label, detail, ready, icon: Icon, action }) => (
                 <div
                   key={label}
-                  className="border border-slate-200 p-3 dark:border-slate-700"
+                  className="border border-border p-3 "
                 >
                   <div className="flex items-start gap-3">
                     <Icon
@@ -293,17 +293,17 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold">{label}</p>
-                      <p className="text-xs leading-5 text-slate-600 dark:text-slate-300">
+                      <p className="text-xs leading-5 text-muted-foreground ">
                         {detail}
                       </p>
                     </div>
                     {ready ? (
                       <Check
-                        className="h-5 w-5 text-emerald-700"
+                        className="h-5 w-5 text-primary"
                         aria-label="Ready"
                       />
                     ) : (
-                      <span className="text-slate-400" aria-label="Not ready">
+                      <span className="text-muted-foreground" aria-label="Not ready">
                         —
                       </span>
                     )}
@@ -324,22 +324,22 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
             </div>
           </section>
 
-          <section className="border border-slate-300 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+          <section className="border border-border bg-card p-5  ">
             <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
               <ShieldCheck className="h-5 w-5" aria-hidden="true" /> Assessed
               section
             </h2>
-            <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+            <p className="text-sm leading-6 text-muted-foreground ">
               Fullscreen is requested first. The server creates an attempt only
               after fullscreen succeeds.
             </p>
-            <ul className="mt-3 space-y-2 text-xs leading-5 text-slate-600 dark:text-slate-300">
+            <ul className="mt-3 space-y-2 text-xs leading-5 text-muted-foreground ">
               {readiness.requirements.map((item) => (
                 <li key={item}>• {item}</li>
               ))}
             </ul>
             {!practiceComplete ? (
-              <p className="mt-4 flex gap-2 text-sm text-amber-800 dark:text-amber-200">
+              <p className="mt-4 flex gap-2 text-sm text-foreground ">
                 <AlertCircle
                   className="mt-0.5 h-4 w-4 shrink-0"
                   aria-hidden="true"
@@ -349,7 +349,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
             ) : null}
             {launchError ? (
               <p
-                className="mt-4 text-sm text-red-800 dark:text-red-300"
+                className="mt-4 text-sm text-foreground "
                 role="alert"
               >
                 {launchError}
@@ -358,7 +358,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
             <Button
               type="button"
               size="lg"
-              className="mt-5 min-h-12 w-full rounded-none bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
+              className="mt-5 min-h-12 w-full rounded-none bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={!readyToBegin || launching}
               onClick={begin}
             >
@@ -377,7 +377,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                 </>
               )}
             </Button>
-            <p className="mt-3 text-center text-xs text-slate-500">
+            <p className="mt-3 text-center text-xs text-muted-foreground">
               {readiness.support.label}:{" "}
               <a
                 className="underline"

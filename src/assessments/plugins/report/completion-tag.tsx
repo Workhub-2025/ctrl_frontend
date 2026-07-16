@@ -37,7 +37,7 @@ export function AssessmentCompletionTag({
       variant="outline"
       className={cn(
         portalBadgeClass,
-        label === "Timeout" && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+        label === "Timeout" && "border-warning/40 bg-warning/10 text-foreground"
       )}
     >
       {displayLabel}

@@ -50,7 +50,7 @@ export function ClientOverviewContent() {
     () => [
       {
         count: summary?.campaignsPendingApproval ?? pendingCampaigns.length,
-        href: "/client-dashboard/campaign-approvals/",
+        href: "/client-dashboard/campaigns/",
         label: "Campaigns awaiting approval",
         description: "Review campaign scope before hiring managers begin delivery.",
       },
@@ -165,7 +165,7 @@ export function ClientOverviewContent() {
           icon={KeyRound}
         />
         <ClientStatTile
-          label="Campaign approvals"
+          label="Campaigns awaiting approval"
           value={summary?.campaignsPendingApproval ?? pendingCampaigns.length}
           detail="Campaigns waiting for your review"
           icon={ClipboardCheck}
@@ -188,7 +188,7 @@ export function ClientOverviewContent() {
           href: item.href,
           count: item.count,
         }))}
-        emptyDescription="Campaign approvals and candidate reviews are up to date."
+        emptyDescription="Campaign reviews and candidate reviews are up to date."
       />
     </div>
   );
