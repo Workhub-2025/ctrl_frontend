@@ -3,7 +3,11 @@ import { postStrapiAuth } from "@/lib/auth/strapi-public-auth";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
-import { checkStrapiReachability } from "@/lib/strapi-connectivity";
+import {
+  PUBLIC_STRAPI_UNAVAILABLE_MESSAGE,
+  checkStrapiReachability,
+  logStrapiConnectivityIssue,
+} from "@/lib/strapi-connectivity";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,7 +45,8 @@ export async function POST(request: Request) {
 
   const strapiIssue = await checkStrapiReachability();
   if (strapiIssue) {
-    return NextResponse.json({ error: strapiIssue.message }, { status: 503 });
+    logStrapiConnectivityIssue("auth/forgot-password", strapiIssue);
+    return NextResponse.json({ error: PUBLIC_STRAPI_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
   await postStrapiAuth("auth/forgot-password", { email });

@@ -13,7 +13,11 @@ import {
   getAuthRequestContext,
 } from "@/lib/auth/session-config";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
-import { checkStrapiReachability } from "@/lib/strapi-connectivity";
+import {
+  PUBLIC_STRAPI_UNAVAILABLE_MESSAGE,
+  checkStrapiReachability,
+  logStrapiConnectivityIssue,
+} from "@/lib/strapi-connectivity";
 
 export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
@@ -35,7 +39,8 @@ export async function POST(request: Request) {
 
   const strapiIssue = await checkStrapiReachability();
   if (strapiIssue) {
-    return NextResponse.json({ error: strapiIssue.message }, { status: 503 });
+    logStrapiConnectivityIssue("auth/register", strapiIssue);
+    return NextResponse.json({ error: PUBLIC_STRAPI_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
   try {

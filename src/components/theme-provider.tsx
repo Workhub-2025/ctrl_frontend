@@ -6,8 +6,10 @@ type ThemeMode = "light" | "dark";
 
 export function ThemeProvider({
   children,
+  nonce,
 }: {
   readonly children: React.ReactNode;
+  readonly nonce?: string;
 }) {
   return (
     <NextThemeProvider
@@ -17,6 +19,7 @@ export function ThemeProvider({
       enableSystem={false}
       storageKey="theme"
       themes={["light", "dark"]}
+      nonce={nonce}
     >
       {children}
     </NextThemeProvider>

@@ -4,23 +4,11 @@ import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
+import { isAllowedProxyPath } from "./proxy-path";
 
 const PROXY_RATE_LIMIT = 120;
 const PROXY_RATE_WINDOW_MS = 60_000;
 const MAX_PROXY_BODY_BYTES = 2 * 1024 * 1024;
-
-const ALLOWED_PREFIXES = [
-  "support-tickets",
-  "candidate-sessions",
-  "users-permissions",
-];
-
-function isAllowedPath(path: string) {
-  const normalized = path.replace(/^\/+/, "");
-  return ALLOWED_PREFIXES.some(
-    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
-  );
-}
 
 async function forwardToStrapi(
   request: NextRequest,
@@ -40,10 +28,10 @@ async function forwardToStrapi(
     );
   }
 
-  const relativePath = pathSegments.join("/");
-  if (!isAllowedPath(relativePath)) {
+  if (!isAllowedProxyPath(pathSegments)) {
     return NextResponse.json({ error: "Forbidden path" }, { status: 403 });
   }
+  const relativePath = pathSegments.join("/");
 
   const jwt = await getServerStrapiJwt(request);
   if (!jwt) {

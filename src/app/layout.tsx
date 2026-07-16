@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import { StoreHydration } from "@/components/providers/store-hydration";
 import { CookieBannerMount } from "@/components/legal/cookie-banner-mount";
+import { headers } from "next/headers";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -34,14 +35,20 @@ const atkinsonHyperlegible = Atkinson_Hyperlegible({
 
 export const metadata: Metadata = {
   title: { default: "CTRL Assessment", template: "%s | CTRL Assessment" },
-  description: "Assessment platform for emergency services personnel.",
+  description: "Structured assessment delivery and review for organisational hiring teams.",
 };
 
-export default function RootLayout({
+// A nonce-based CSP requires request-time rendering so Next.js can apply the
+// per-request nonce to framework and inline bootstrap scripts.
+export const dynamic = "force-dynamic";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -59,7 +66,7 @@ export default function RootLayout({
           "min-h-screen bg-background font-sans antialiased transition-colors duration-300"
         )}
       >
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           <StoreHydration>{children}</StoreHydration>
           <CookieBannerMount />
           <Toaster />

@@ -105,13 +105,24 @@ export async function POST(request: Request) {
 
   await clearLoginAttempts(attemptKey);
 
+  const verifiedStrapiJwt =
+    typeof verifyBody?.jwt === "string" && verifyBody.jwt.length > 0
+      ? verifyBody.jwt
+      : null;
+  if (!verifiedStrapiJwt) {
+    return NextResponse.json(
+      { error: "Two-factor verification could not create an authenticated session." },
+      { status: 502 },
+    );
+  }
+
   const token = await encodeSessionToken({
     id: pending.id,
     email: pending.email,
     firstName: pending.firstName,
     lastName: pending.lastName,
     role: pending.role,
-    jwt: pending.jwt,
+    jwt: verifiedStrapiJwt,
     organization: pending.organization,
     phone: pending.phone,
     equalityMonitoring: pending.equalityMonitoring,

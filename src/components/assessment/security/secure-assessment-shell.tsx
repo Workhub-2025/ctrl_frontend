@@ -237,7 +237,7 @@ export function SecureAssessmentShell({
       </a>
 
       {/* Secure Header */}
-      <header className="fixed inset-x-0 top-0 z-30 flex min-h-[72px] items-center justify-between border-b border-border/70 bg-background/95 px-4 py-3 backdrop-blur-xl dark:border-white/8 sm:px-6">
+      <header className="fixed inset-x-0 top-0 z-30 flex min-h-[72px] items-center justify-between border-b border-border/70 bg-background px-4 py-3 shadow-sm dark:border-white/8 sm:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-500/25 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
             <ShieldCheck className="h-5 w-5" aria-hidden="true" />
@@ -347,7 +347,7 @@ export function SecureAssessmentShell({
       </main>
 
       {/* Secure Footer */}
-      <footer className="fixed inset-x-0 bottom-0 z-30 flex h-12 items-center justify-center border-t border-border/70 bg-background/95 px-4 backdrop-blur-xl dark:border-white/8">
+      <footer className="fixed inset-x-0 bottom-0 z-30 flex h-12 items-center justify-center border-t border-border/70 bg-background px-4 dark:border-white/8">
         <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
           <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.55)] motion-safe:animate-pulse"></div>
           <span className="text-xs font-bold uppercase tracking-[0.16em]">Secured session mode</span>
@@ -356,7 +356,7 @@ export function SecureAssessmentShell({
 
       {/* Blocker Modal (Pause & Security Alert Overlays) */}
       {isPaused && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
           <div className={cn(portalPanelClass, "w-full max-w-lg p-6 text-center shadow-2xl")}>
             <div className="space-y-4 pb-4">
               <div className={cn(portalIconWrapLgClass, "mx-auto mb-4 h-16 w-16 rounded-2xl")}>

@@ -394,7 +394,7 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-slate-900/10 dark:bg-black/50 backdrop-blur-[2px] lg:hidden"
+            className="fixed inset-0 z-40 bg-slate-950/35 dark:bg-black/70 lg:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
             aria-label="Close menu"
           />
@@ -411,7 +411,7 @@ export default function Home() {
         <div className={cn(
           "flex items-center justify-between rounded-full border transition-[background-color,border-color,padding,box-shadow] duration-500 px-6",
           scrolled
-            ? "bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md border-slate-200 dark:border-white/10 py-3 shadow-md dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+            ? "bg-white dark:bg-[#0a0a0a] border-slate-200 dark:border-white/10 py-3 shadow-md dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
             : "bg-transparent border-transparent py-4"
         )}>
           {/* Logo */}
@@ -507,7 +507,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -8, scale: 0.98 }}
               transition={{ duration: 0.2 }}
-              className="absolute top-[calc(100%+12px)] inset-x-0 bg-[#fdfaf2]/95 dark:bg-[#0a0a0a]/95 backdrop-blur-2xl border border-slate-200/80 dark:border-white/10 rounded-3xl overflow-hidden lg:hidden shadow-[0_20px_50px_-12px_rgba(15,23,42,0.18)] dark:shadow-2xl origin-top"
+              className="absolute top-[calc(100%+12px)] inset-x-0 bg-[#fdfaf2] dark:bg-[#0a0a0a] border border-slate-200/80 dark:border-white/10 rounded-3xl overflow-hidden lg:hidden shadow-[0_20px_50px_-12px_rgba(15,23,42,0.18)] dark:shadow-2xl origin-top"
             >
               <nav aria-label="Mobile navigation" className="flex flex-col p-2">
                 <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 font-mono">
@@ -582,7 +582,7 @@ export default function Home() {
           <section
             id="disciplines"
             aria-label="CTRL platform principles"
-            className="relative border-y border-slate-200/70 dark:border-white/5 bg-white/40 dark:bg-white/[0.015] backdrop-blur-sm"
+            className="relative border-y border-slate-200/70 bg-slate-50 dark:border-white/5 dark:bg-[#0b0b0b]"
           >
             <div className="mx-auto max-w-[1440px] px-6 py-8 md:py-10">
               <Reveal variant="fade" className="mb-6 text-center text-xs font-mono uppercase tracking-[0.25em] text-slate-500 dark:text-slate-500">
@@ -597,7 +597,7 @@ export default function Home() {
                   return (
                     <RevealItem key={d.label} variant="zoom" className="h-full w-full">
                       <div className={cn(
-                        "group flex h-full min-h-[5.5rem] w-full items-center gap-3 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0a0a0a]/60 px-4 py-3.5 backdrop-blur-md transition-transform duration-300 hover:-translate-y-0.5",
+                        "group flex h-full min-h-[5.5rem] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 transition-transform duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-[#0a0a0a]",
                         tint.ring
                       )}>
                         <span className={cn(
@@ -632,7 +632,7 @@ export default function Home() {
               <RevealGroup stagger={0.14} amount={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {/* Primary platform overview */}
                 <RevealItem variant="zoom" className="md:col-span-3">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 md:p-12 group transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-cyan-500/30">
+                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 md:p-12 group transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-cyan-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     {/* reticle tick */}
                     <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
@@ -717,7 +717,7 @@ export default function Home() {
 
                 {/* Card 2: Delivery */}
                 <RevealItem variant="zoom">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-blue-500/30">
+                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
                     <div className="mb-6 flex items-center gap-3 relative z-10">
@@ -753,7 +753,7 @@ export default function Home() {
 
                 {/* Card 3: Experience */}
                 <RevealItem variant="zoom">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-violet-500/30">
+                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-violet-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
                     <div className="mb-6 flex items-center gap-3 relative z-10">
@@ -794,7 +794,7 @@ export default function Home() {
 
                 {/* Card 4: Review */}
                 <RevealItem variant="zoom">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0a0a0a]/90 backdrop-blur-md p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)] hover:border-emerald-500/30">
+                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
                     <div className="mb-6 flex items-center gap-3 relative z-10">

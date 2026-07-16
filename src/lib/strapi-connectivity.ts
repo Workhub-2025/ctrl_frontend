@@ -10,6 +10,20 @@ export type StrapiConnectivityIssue = {
   configuredUrl?: string;
 };
 
+export const PUBLIC_STRAPI_UNAVAILABLE_MESSAGE =
+  "The account service is temporarily unavailable. Please try again shortly.";
+
+export function logStrapiConnectivityIssue(
+  context: string,
+  issue: StrapiConnectivityIssue
+) {
+  console.error(`[${context}] Strapi connectivity failure`, {
+    code: issue.code,
+    message: issue.message,
+    configuredUrl: issue.configuredUrl,
+  });
+}
+
 const PRIVATE_HOST_PATTERNS = [
   /^localhost$/i,
   /^127(?:\.\d{1,3}){3}$/,

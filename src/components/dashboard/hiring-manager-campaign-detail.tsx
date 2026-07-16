@@ -411,7 +411,7 @@ export function HiringManagerCampaignDetailView({
         onValueChange={(value) => selectTab(value as CampaignWorkspaceTab)}
         className="space-y-4"
       >
-        <div className="sticky top-[4.25rem] z-20 -mx-1 overflow-x-auto border-y border-border bg-background/95 px-1 py-2 backdrop-blur-sm supports-[backdrop-filter]:bg-background/90">
+        <div className="sticky top-[4.25rem] z-20 -mx-1 overflow-x-auto border-y border-border bg-background px-1 py-2 shadow-sm">
           <TabsList className="h-11 min-w-max justify-start gap-1 bg-transparent p-0">
             <TabsTrigger value="overview" className="h-9 gap-2 px-3 text-xs sm:px-4">
               <LayoutDashboard className="h-3.5 w-3.5" aria-hidden="true" />

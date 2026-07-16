@@ -3,7 +3,12 @@ import { postStrapiAuth } from "@/lib/auth/strapi-public-auth";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
-import { checkStrapiReachability } from "@/lib/strapi-connectivity";
+import {
+  PUBLIC_STRAPI_UNAVAILABLE_MESSAGE,
+  checkStrapiReachability,
+  logStrapiConnectivityIssue,
+} from "@/lib/strapi-connectivity";
+import { getPasswordPolicyIssue } from "@/lib/security/password-policy";
 
 export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
@@ -38,9 +43,10 @@ export async function POST(request: Request) {
   if (!code) {
     return NextResponse.json({ error: "Reset code is required" }, { status: 400 });
   }
-  if (!password || password.length < 8) {
+  const passwordIssue = getPasswordPolicyIssue(password);
+  if (passwordIssue) {
     return NextResponse.json(
-      { error: "Password must be at least 8 characters" },
+      { error: passwordIssue },
       { status: 400 }
     );
   }
@@ -50,7 +56,8 @@ export async function POST(request: Request) {
 
   const strapiIssue = await checkStrapiReachability();
   if (strapiIssue) {
-    return NextResponse.json({ error: strapiIssue.message }, { status: 503 });
+    logStrapiConnectivityIssue("auth/reset-password", strapiIssue);
+    return NextResponse.json({ error: PUBLIC_STRAPI_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
   const result = await postStrapiAuth("auth/reset-password", {

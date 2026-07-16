@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-import { buildContentSecurityPolicy } from './src/lib/security/content-security-policy';
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -21,10 +20,6 @@ const nextConfig: NextConfig = {
       securityHeaders.push({
         key: 'Strict-Transport-Security',
         value: 'max-age=31536000; includeSubDomains',
-      });
-      securityHeaders.push({
-        key: 'Content-Security-Policy',
-        value: buildContentSecurityPolicy(),
       });
     }
 

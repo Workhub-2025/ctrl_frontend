@@ -55,7 +55,7 @@ export function PortalShowcase({
   };
 
   return (
-    <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 dark:border-white/10 bg-white/85 dark:bg-[#080808]/95 backdrop-blur-md shadow-lg dark:shadow-2xl">
+    <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-lg dark:border-white/10 dark:bg-[#080808] dark:shadow-2xl">
       {/* Window chrome */}
       <div className="flex items-center justify-between gap-4 border-b border-slate-200/60 dark:border-white/5 bg-slate-50 dark:bg-[#0a0a0a] px-5 py-3">
         <div className="flex gap-2">
@@ -113,7 +113,7 @@ export function PortalShowcase({
             type="button"
             onClick={togglePlay}
             aria-label={isPlaying ? "Pause walkthrough" : "Play walkthrough"}
-            className="absolute bottom-4 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white backdrop-blur-md transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            className="absolute bottom-4 right-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/30 bg-black/75 text-white transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
           >
             {isPlaying ? (
               <Pause className="h-5 w-5" aria-hidden="true" />

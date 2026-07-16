@@ -12,6 +12,10 @@ import { Label } from "@/components/ui/label";
 import { AnimatedSubmitButton, type ButtonState } from "@/components/ui/animated-submit-button";
 import { AuthAPI } from "@/services/auth-api";
 import { cn } from "@/lib/utils";
+import {
+  PASSWORD_MAX_LENGTH,
+  getPasswordPolicyIssue,
+} from "@/lib/security/password-policy";
 
 const AUTH_INPUT_CLASS =
   "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-[border-color,box-shadow] focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50";
@@ -36,8 +40,9 @@ function ResetPasswordForm() {
       setSubmitStatus("invalid");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    const passwordIssue = getPasswordPolicyIssue(password);
+    if (passwordIssue) {
+      setError(`${passwordIssue}.`);
       setSubmitStatus("invalid");
       return;
     }
@@ -109,6 +114,7 @@ function ResetPasswordForm() {
                   id="reset-password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
+                  maxLength={PASSWORD_MAX_LENGTH}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   className={cn(AUTH_INPUT_CLASS, "pr-12")}
@@ -133,6 +139,7 @@ function ResetPasswordForm() {
                 id="reset-confirm-password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
+                maxLength={PASSWORD_MAX_LENGTH}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 className={AUTH_INPUT_CLASS}
@@ -157,7 +164,7 @@ function ResetPasswordForm() {
               disabled={
                 submitStatus === "loading" ||
                 submitStatus === "success" ||
-                password.length < 8 ||
+                getPasswordPolicyIssue(password) !== null ||
                 password !== confirmPassword
               }
             />
@@ -176,7 +183,7 @@ function ResetPasswordForm() {
 
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <KeyRound className="h-4 w-4" aria-hidden="true" />
-            <span>Use at least 8 characters.</span>
+            <span>Use at least 12 characters; a memorable passphrase works well.</span>
           </div>
         </div>
       </div>

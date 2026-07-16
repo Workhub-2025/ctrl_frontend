@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { RoleSchema, type IRole } from './role.types';
 import { AssessmentSchema, ProgresStatusSchema } from './assessments.types';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '@/lib/security/password-policy';
 
 // Zod schema for Equality Monitoring Data
 export const EqualityMonitoringSchema = z.object({
@@ -124,7 +125,9 @@ export const LoginUserDataSchema = z.object({
 export const UserRegistrationSchema = z.object({
     username: z.string().min(3, 'Username must be at least 3 characters'),
     email: z.string().email('Invalid email format'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string()
+        .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+        .max(PASSWORD_MAX_LENGTH, `Password must be no more than ${PASSWORD_MAX_LENGTH} characters`),
     confirmPassword: z.string().optional(),
     firstName: z.string().min(1, 'First name is required'),
     lastName: z.string().min(1, 'Last name is required'),
@@ -168,7 +171,9 @@ export const UserUpdateSchema = z.object({
 export const CreateUserDataSchema = z.object({
     username: z.string().min(3, 'Username must be at least 3 characters'),
     email: z.string().email('Invalid email format'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string()
+        .min(PASSWORD_MIN_LENGTH, `Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+        .max(PASSWORD_MAX_LENGTH, `Password must be no more than ${PASSWORD_MAX_LENGTH} characters`),
     firstName: z.string().min(1, 'First name is required'),
     lastName: z.string().min(1, 'Last name is required'),
     organization: z.string().optional(),

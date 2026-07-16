@@ -3,8 +3,8 @@
  *
  * Exposes:
  *  - `strapiServerClient`      – singleton with API token (admin / public ops)
- *  - `getStrapiClient(jwt?)`   – per-request client; uses user JWT when provided,
- *                                falls back to API token
+ *  - `getStrapiClient(jwt?)`   – per-request client; uses only the explicitly
+ *                                supplied user JWT
  *  - `getServerStrapiClient()` – async helper that resolves NextAuth JWT and
  *                                returns an authenticated client (server-only)
  */
@@ -60,14 +60,14 @@ export const strapiServerClient = new Proxy({} as ReturnType<typeof strapi>, {
 // ─── Per-request factory ──────────────────────────────────────────────────────
 
 /**
- * Creates a Strapi client using the user's JWT when available, otherwise
- * falls back to the server API token.
+ * Creates a Strapi client using only the explicitly supplied user's JWT.
+ * Privileged service-token access must use `strapiServerClient` so an auth
+ * resolution failure can never silently become a full-access request.
  */
 export function getStrapiClient(jwt?: string | null) {
-    const auth = jwt || getApiToken();
     return strapi({
         baseURL: getBaseUrl(),
-        ...(auth ? { auth } : {}),
+        ...(jwt ? { auth: jwt } : {}),
     });
 }
 
@@ -76,10 +76,10 @@ export function getStrapiClient(jwt?: string | null) {
  * authenticated client. Only call from Server Components or Server Actions.
  */
 export async function getServerStrapiClient() {
-    try {
-        const { getServerStrapiJwt } = await import('@/lib/auth/strapi-jwt');
-        return getStrapiClient(await getServerStrapiJwt());
-    } catch {
-        return getStrapiClient();
+    const { getServerStrapiJwt } = await import('@/lib/auth/strapi-jwt');
+    const jwt = await getServerStrapiJwt();
+    if (!jwt) {
+        throw new Error('Authenticated Strapi session is required.');
     }
+    return getStrapiClient(jwt);
 }

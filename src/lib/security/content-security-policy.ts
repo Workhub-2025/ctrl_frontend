@@ -23,7 +23,7 @@ function getStrapiOrigin() {
 }
 
 /** Builds a production Content-Security-Policy header value. */
-export function buildContentSecurityPolicy(): string {
+export function buildContentSecurityPolicy(nonce: string): string {
   const strapiOrigin = getStrapiOrigin();
 
   const directives: Record<string, string[]> = {
@@ -38,7 +38,7 @@ export function buildContentSecurityPolicy(): string {
     "media-src": ["'self'", "blob:", strapiOrigin],
     "font-src": ["'self'", "data:"],
     "style-src": ["'self'", "'unsafe-inline'"],
-    "script-src": ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
+    "script-src": ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'", "https://js.stripe.com"],
     "connect-src": [
       "'self'",
       strapiOrigin,

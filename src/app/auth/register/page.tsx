@@ -4,6 +4,10 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import {
+  PASSWORD_MAX_LENGTH,
+  getPasswordPolicyIssue,
+} from "@/lib/security/password-policy";
 import { AnimatedSubmitButton, ButtonState } from "@/components/ui/animated-submit-button";
 import { AuthBrandingPane } from "@/components/auth/auth-branding-pane";
 import { AuthLoginForm } from "@/components/auth/auth-login-form";
@@ -229,7 +233,7 @@ function UnifiedAuthContent() {
     if (!formData.firstName.trim()) fields.push("firstName");
     if (!formData.lastName.trim()) fields.push("lastName");
     if (!formData.email.trim()) fields.push("email");
-    if (!formData.password || formData.password.length < 8) fields.push("password");
+    if (getPasswordPolicyIssue(formData.password, formData.email)) fields.push("password");
     if (!formData.confirmPassword || formData.password !== formData.confirmPassword) {
       fields.push("confirmPassword");
     }
@@ -364,7 +368,7 @@ function UnifiedAuthContent() {
                   onClick={() => switchAuthMode(true)}
                   disabled={isAuthBusy}
                   className={cn(
-                    "rounded-full py-2.5 text-sm font-medium transition-all duration-300",
+                    "rounded-full py-2.5 text-sm font-medium transition-[background-color,color,box-shadow] duration-300",
                     isLoginView
                       ? isLightAuthTheme
                         ? "bg-slate-900 text-white shadow-sm"
@@ -384,7 +388,7 @@ function UnifiedAuthContent() {
                   onClick={() => switchAuthMode(false)}
                   disabled={isAuthBusy}
                   className={cn(
-                    "rounded-full py-2.5 text-sm font-medium transition-all duration-300",
+                    "rounded-full py-2.5 text-sm font-medium transition-[background-color,color,box-shadow] duration-300",
                     !isLoginView
                       ? isLightAuthTheme
                         ? "bg-slate-900 text-white shadow-sm"
@@ -481,7 +485,8 @@ function UnifiedAuthContent() {
                         <Input
                           id="password"
                           type={showPassword ? "text" : "password"}
-                          placeholder="Min. 8 characters"
+                          placeholder="At least 12 characters"
+                          maxLength={PASSWORD_MAX_LENGTH}
                           value={formData.password}
                           onChange={(e) => handleInputChange("password", e.target.value)}
                           required
@@ -512,6 +517,7 @@ function UnifiedAuthContent() {
                           id="confirmPassword"
                           type={showConfirmPassword ? "text" : "password"}
                           placeholder="Confirm password"
+                          maxLength={PASSWORD_MAX_LENGTH}
                           value={formData.confirmPassword}
                           onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                           required

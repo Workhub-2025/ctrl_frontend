@@ -7,11 +7,22 @@ import {
 } from "@/lib/auth/bff-api-middleware";
 import { isAdminPortalRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
+import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
+import { buildContentSecurityPolicy } from "@/lib/security/content-security-policy";
 
 export default withAuth(
-    function middleware(req) {
+    async function middleware(req) {
         const token = req.nextauth.token;
         const { pathname } = req.nextUrl;
+        const requestHeaders = new Headers(req.headers);
+        let contentSecurityPolicy: string | null = null;
+
+        if (process.env.NODE_ENV === "production") {
+            const nonce = btoa(crypto.randomUUID());
+            contentSecurityPolicy = buildContentSecurityPolicy(nonce);
+            requestHeaders.set("x-nonce", nonce);
+            requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
+        }
 
         // One production CSRF boundary for every authenticated BFF mutation.
         // Stripe webhooks are deliberately outside this matcher and verify signatures instead.
@@ -21,6 +32,35 @@ export default withAuth(
         ) {
             const crossOriginResponse = rejectCrossOriginRequest(req);
             if (crossOriginResponse) return crossOriginResponse;
+
+            const contentLength = Number(req.headers.get("content-length") ?? "0");
+            if (Number.isFinite(contentLength) && contentLength > 2 * 1024 * 1024) {
+                return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+            }
+
+            // A broad safety net for every portal mutation. Route-specific
+            // limits remain in place for expensive or abuse-prone operations.
+            const actor = token?.sub
+                ? `user:${String(token.sub)}`
+                : `ip:${extractClientIp(req)}`;
+            const rateLimit = await applyRateLimit({
+                key: `bff-mutation:${pathname}:${actor}`,
+                limit: 120,
+                windowMs: 60_000,
+            });
+            if (!rateLimit.allowed) {
+                return NextResponse.json(
+                    { error: "Too many requests. Please wait and try again." },
+                    {
+                        status: 429,
+                        headers: {
+                            "Retry-After": String(rateLimit.retryAfterSeconds),
+                            "X-RateLimit-Limit": String(rateLimit.limit),
+                            "X-RateLimit-Remaining": "0",
+                        },
+                    },
+                );
+            }
         }
 
         const portalApiResponse = guardPortalApiRoute(pathname, !!token, token?.role);
@@ -67,7 +107,13 @@ export default withAuth(
             return NextResponse.redirect(new URL(routeForRole(normalizedRole), req.url));
         }
 
-        return NextResponse.next();
+        const response = NextResponse.next({
+            request: { headers: requestHeaders },
+        });
+        if (contentSecurityPolicy) {
+            response.headers.set("Content-Security-Policy", contentSecurityPolicy);
+        }
+        return response;
     },
     {
         callbacks: {
@@ -113,19 +159,12 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        '/admin/:path*',
-        '/dashboard/:path*',
-        '/candidate-dashboard/:path*',
-        '/client-dashboard/:path*',
-        '/hiring-manager-dashboard/:path*',
-        '/assessment/:path*',
-        '/results/:path*',
-        '/profile',
-        '/api/hiring-manager/:path*',
-        '/api/client/:path*',
-        '/api/admin/:path*',
-        '/api/candidate/:path*',
-        '/api/assessment/:path*',
-        '/api/user/:path*',
+        {
+            source: '/((?!api/auth|api/webhooks/stripe|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+            missing: [
+                { type: 'header', key: 'next-router-prefetch' },
+                { type: 'header', key: 'purpose', value: 'prefetch' },
+            ],
+        },
     ]
 };

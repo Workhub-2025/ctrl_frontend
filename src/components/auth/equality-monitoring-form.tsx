@@ -91,7 +91,7 @@ export default function EqualityMonitoringForm({
         <li key={i} className="flex items-center flex-1 last:flex-none">
           <span
             aria-current={i + 1 === currentStep ? "step" : undefined}
-            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-300 ${
               i + 1 < currentStep
                 ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
                 : i + 1 === currentStep
@@ -106,7 +106,7 @@ export default function EqualityMonitoringForm({
           </span>
           {i < totalSteps - 1 && (
             <div
-              className={`h-[2px] flex-1 mx-2 rounded-full transition-all duration-500 ${
+              className={`h-[2px] flex-1 mx-2 rounded-full transition-[background-color,transform] duration-500 ${
                 i + 1 < currentStep ? "bg-emerald-500" : "bg-muted"
               }`}
             />
@@ -689,7 +689,7 @@ export default function EqualityMonitoringForm({
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <Card className="w-full max-w-2xl border border-border/80 dark:border-white/10 bg-background/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden">
+      <Card className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
         {/* Form Header & Description */}
         <CardHeader className="pt-8 pb-6 border-b border-border/40 dark:border-white/5 bg-slate-50/50 dark:bg-black/20">
           <FormPageHeader

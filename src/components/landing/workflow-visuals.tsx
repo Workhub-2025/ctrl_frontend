@@ -29,7 +29,7 @@ export type WorkflowVisualVariant =
   | "outcome";
 
 const SHELL =
-  "w-full aspect-video rounded-xl border border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#070707]/80 backdrop-blur-sm overflow-hidden relative p-5 flex flex-col";
+  "w-full aspect-video rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#070707] overflow-hidden relative p-5 flex flex-col";
 
 const HEADER =
   "flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4";

@@ -16,7 +16,11 @@ import {
   attachTotpPendingCookie,
   encodeTotpPendingToken,
 } from "@/lib/auth/totp-pending-cookie";
-import { checkStrapiReachability } from "@/lib/strapi-connectivity";
+import {
+  PUBLIC_STRAPI_UNAVAILABLE_MESSAGE,
+  checkStrapiReachability,
+  logStrapiConnectivityIssue,
+} from "@/lib/strapi-connectivity";
 
 const wantsJsonResponse = (request: Request) =>
   request.headers.get("accept")?.includes("application/json") ?? false;
@@ -82,13 +86,14 @@ export async function POST(request: Request) {
 
   const strapiIssue = await checkStrapiReachability();
   if (strapiIssue) {
+    logStrapiConnectivityIssue("auth/login", strapiIssue);
     if (jsonResponse) {
-      return NextResponse.json({ error: strapiIssue.message }, { status: 503 });
+      return NextResponse.json({ error: PUBLIC_STRAPI_UNAVAILABLE_MESSAGE }, { status: 503 });
     }
     const loginUrl = new URL("/auth/register", request.url);
     loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
-    loginUrl.searchParams.set("message", strapiIssue.message);
+    loginUrl.searchParams.set("message", PUBLIC_STRAPI_UNAVAILABLE_MESSAGE);
     return NextResponse.redirect(loginUrl, 303);
   }
 

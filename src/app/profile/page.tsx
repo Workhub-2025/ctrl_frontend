@@ -62,7 +62,7 @@ const profileTabListClass =
   "flex h-auto min-h-10 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto rounded-xl border border-border/60 bg-slate-100/80 p-1 no-scrollbar dark:border-white/5 dark:bg-[#090d16] md:grid md:grid-cols-3 md:overflow-visible";
 
 const profileTabTriggerClass =
-  "shrink-0 min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-medium leading-tight whitespace-nowrap transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-3 sm:text-xs md:w-full md:px-2 md:py-2.5 md:text-sm";
+  "shrink-0 min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-medium leading-tight whitespace-nowrap transition-[background-color,color,box-shadow] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-3 sm:text-xs md:w-full md:px-2 md:py-2.5 md:text-sm";
 
 export default function ProfilePage() {
   const {
@@ -316,7 +316,7 @@ export default function ProfilePage() {
 
           {/* Profile Information Tab */}
           <TabsContent value="profile" className="focus-visible:outline-none">
-            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl">
+            <Card className="rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
               <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10 rounded-t-2xl">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
                   <User className="h-5 w-5 text-primary" />
@@ -480,7 +480,7 @@ export default function ProfilePage() {
 
           {/* Equality Monitoring Tab */}
           <TabsContent value="equality" className="focus-visible:outline-none">
-            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
               <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
                   <Heart className="h-5 w-5 text-primary" />
@@ -504,7 +504,7 @@ export default function ProfilePage() {
 
           {/* Privacy Settings Tab */}
           <TabsContent value="privacy" className="focus-visible:outline-none">
-            <Card className="border border-border/80 dark:border-white/10 bg-slate-50/50 dark:bg-[#0b1329]/40 backdrop-blur-md shadow-lg rounded-2xl overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
               <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
                   <Shield className="h-5 w-5 text-primary" />

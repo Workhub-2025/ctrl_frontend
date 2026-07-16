@@ -2,24 +2,27 @@ import { expect, test, type Page } from "@playwright/test";
 
 const QA = {
   client: {
-    email: process.env.E2E_CLIENT_EMAIL ?? "qa.client@ctrl-assess.co.uk",
-    password: process.env.E2E_CLIENT_PASSWORD ?? "admin123",
+    email: process.env.E2E_CLIENT_EMAIL,
+    password: process.env.E2E_CLIENT_PASSWORD,
     landing: /\/client-dashboard/,
   },
   hm: {
-    email: process.env.E2E_HM_EMAIL ?? "qa.hm@ctrl-assess.co.uk",
-    password: process.env.E2E_HM_PASSWORD ?? "admin123",
+    email: process.env.E2E_HM_EMAIL,
+    password: process.env.E2E_HM_PASSWORD,
     landing: /\/hiring-manager-dashboard/,
   },
   candidate: {
-    email: process.env.E2E_CANDIDATE_EMAIL ?? "qa.candidate@ctrl-assess.co.uk",
-    password: process.env.E2E_CANDIDATE_PASSWORD ?? "admin123",
+    email: process.env.E2E_CANDIDATE_EMAIL,
+    password: process.env.E2E_CANDIDATE_PASSWORD,
     landing: /\/candidate-dashboard/,
   },
 } as const;
 
 async function loginRole(page: Page, role: keyof typeof QA) {
   const { email, password, landing } = QA[role];
+  if (!email || !password) {
+    throw new Error(`Missing E2E credentials for ${role}`);
+  }
   await page.goto("/auth/login");
   await page.getByLabel(/email address/i).fill(email);
   await page.getByLabel(/^password$/i).fill(password);
@@ -82,6 +85,11 @@ async function discoverCandidateSessionId(page: Page): Promise<string | undefine
 test.describe.configure({ mode: "serial" });
 
 test.describe("QA portal full coverage (client / HM / candidate)", () => {
+  test.skip(
+    Object.values(QA).some(({ email, password }) => !email || !password),
+    "Set E2E client, HM, and candidate email/password variables to run QA portal coverage",
+  );
+
   test("client signs in and overview loads", async ({ page }) => {
     await loginRole(page, "client");
 

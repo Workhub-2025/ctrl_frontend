@@ -3,11 +3,11 @@ import { encode } from "next-auth/jwt";
 
 export const SESSION_MAX_AGE =
   Number.parseInt(process.env.SESSION_MAX_AGE_SECONDS || "", 10) ||
-  30 * 24 * 60 * 60;
+  12 * 60 * 60;
 
 export const SESSION_IDLE_MAX_AGE =
   Number.parseInt(process.env.SESSION_IDLE_MAX_AGE_SECONDS || "", 10) ||
-  7 * 24 * 60 * 60;
+  30 * 60;
 
 export function getAuthRequestContext(request: Request) {
   const forwardedFor = request.headers.get("x-forwarded-for");
