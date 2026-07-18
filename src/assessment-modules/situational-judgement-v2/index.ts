@@ -7,7 +7,7 @@ export const situationalJudgementV2Renderer: AssessmentRenderer = {
   ReadinessComponent: SituationalJudgementModulePage,
   stageRenderers: {
     briefing: "BriefingStage",
-    "custom:branching-judgement": "BranchingJudgementStage",
+    "custom:best-worst-judgement": "BestWorstJudgementStage",
     review: "ReviewStage",
     completion: "CompletionStage",
   },

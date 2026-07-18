@@ -9,7 +9,6 @@ import {
 } from "react";
 import {
   AlertTriangle,
-  Check,
   CheckCircle2,
   Clock3,
   FileCheck2,
@@ -27,6 +26,8 @@ type StageContext<TState> = {
   stageIndex: number;
   state: TState;
   setState: (next: TState) => void;
+  advance: (nextState?: TState) => Promise<void>;
+  isSaving: boolean;
 };
 
 type Props<TContent, TState> = {
@@ -37,6 +38,8 @@ type Props<TContent, TState> = {
   buildSubmission: (state: TState, elapsedSeconds: number) => unknown;
   renderStage: (context: StageContext<TState>, content: TContent) => ReactNode;
   restartNoun: string;
+  canManuallyAdvance?: (stageIndex: number) => boolean;
+  continueLabel?: (stageIndex: number) => string;
 };
 
 function formatRemaining(seconds: number) {
@@ -55,6 +58,8 @@ export function TrackedAssessmentShell<TContent, TState>(
     buildSubmission,
     renderStage,
     restartNoun,
+    canManuallyAdvance = () => true,
+    continueLabel = () => "Save and continue",
   } = props;
   const [stageIndex, setStageIndex] = useState(0);
   const [state, setState] = useState<TState>(() =>
@@ -256,8 +261,9 @@ export function TrackedAssessmentShell<TContent, TState>(
     };
   }, [launch.integrity, locked, receipt, recordEvent]);
 
-  const next = useCallback(async () => {
-    const validationError = validateStage(stageIndex, state);
+  const next = useCallback(async (nextState?: TState) => {
+    const stateToSave = nextState ?? state;
+    const validationError = validateStage(stageIndex, stateToSave);
     if (validationError) {
       setError(validationError);
       return;
@@ -268,7 +274,7 @@ export function TrackedAssessmentShell<TContent, TState>(
       const saved = await AssessmentRuntimeClient.progress(
         launch.attemptId,
         revision,
-        { stageIndex: nextIndex, state },
+        { stageIndex: nextIndex, state: stateToSave },
       );
       setRevision(saved.progressRevision);
       setStageIndex(nextIndex);
@@ -361,81 +367,57 @@ export function TrackedAssessmentShell<TContent, TState>(
     return <TrackedAssessmentShell {...props} launch={replacementLaunch} />;
 
   const reviewIndex = launch.stageGraph.nodes.length - 2;
+  const currentNode = launch.stageGraph.nodes[stageIndex];
+  const visibleStageCount = reviewIndex + 1;
+  const stageProgress = Math.min(100, ((stageIndex + 1) / visibleStageCount) * 100);
   return (
-    <main className="min-h-screen bg-muted text-foreground  ">
-      <header className="border-b border-border bg-background text-foreground">
-        <div className="flex min-h-16 items-center justify-between gap-4 px-4 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              CTRL operational simulation
-            </p>
-            <p className="font-semibold">{title}</p>
+    <main className="min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border bg-card">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-muted-foreground">{title}</p>
+            <p className="truncate text-sm font-semibold">{currentNode?.title ?? "Assessment"}</p>
           </div>
-          <div className="flex items-center gap-5 text-sm">
-            <span className="hidden items-center gap-2 text-primary sm:flex">
-              <RadioTower className="h-4 w-4" aria-hidden="true" /> Monitored
+          <div className="flex shrink-0 items-center gap-3 text-sm sm:gap-5">
+            <span className="hidden items-center gap-2 text-muted-foreground sm:flex">
+              <RadioTower className="h-4 w-4 text-primary" aria-hidden="true" /> Monitored
             </span>
             <span
-              className="flex min-w-24 items-center justify-end gap-2 font-mono text-base"
+              className="flex min-w-24 items-center justify-end gap-2 font-mono text-base font-semibold tabular-nums"
               aria-label={`${remaining} seconds remaining`}
             >
-              <Clock3 className="h-4 w-4" aria-hidden="true" />
+              <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {formatRemaining(remaining)}
             </span>
           </div>
         </div>
-      </header>
-      <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-[260px_minmax(0,1fr)]">
-        <nav
-          className="border-r border-border bg-card p-5  "
-          aria-label="Assessment stages"
-        >
-          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            Stage ledger
-          </p>
-          <ol className="space-y-1">
-            {launch.stageGraph.nodes.map((node, index) => {
-              const active = index === stageIndex;
-              const complete = index < stageIndex;
-              return (
-                <li
-                  key={node.id}
-                  className={`border-l-4 px-3 py-3 ${active ? "border-primary bg-primary/10  " : complete ? "border-primary" : "border-border "}`}
-                  aria-current={active ? "step" : undefined}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center border border-current text-[10px] font-bold">
-                      {complete ? (
-                        <Check className="h-3 w-3" aria-hidden="true" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold leading-5">
-                        {node.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground ">
-                        {node.assessed ? "Assessed" : "Receipt"}
-                      </p>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-          <div className="mt-6 border-t border-border pt-4 text-xs leading-5 text-muted-foreground  ">
-            Release {launch.module.releaseVersion}
-            <br />
-            Attempt {launch.attemptId.slice(0, 8)}
+        <div className="border-t border-border bg-background">
+          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
+            <p className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
+              Step {Math.min(stageIndex + 1, visibleStageCount)} of {visibleStageCount}
+            </p>
+            <div
+              className="h-1.5 flex-1 overflow-hidden bg-muted"
+              role="progressbar"
+              aria-label="Assessment progress"
+              aria-valuemin={1}
+              aria-valuemax={visibleStageCount}
+              aria-valuenow={Math.min(stageIndex + 1, visibleStageCount)}
+            >
+              <div className="h-full bg-primary transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${stageProgress}%` }} />
+            </div>
+            <p className="hidden shrink-0 text-xs text-muted-foreground md:block">
+              Release {launch.module.releaseVersion} · Attempt {launch.attemptId.slice(0, 8)}
+            </p>
           </div>
-        </nav>
-        <div className="min-w-0 p-4 sm:p-7">
-          <div className="mx-auto max-w-5xl">
+        </div>
+      </header>
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7">
+        <div className="mx-auto max-w-6xl">
             {error ? (
               <div
                 role="alert"
-                className="mb-5 flex gap-3 border-l-4 border-destructive bg-destructive/10 p-4 text-sm text-foreground  "
+                className="mb-5 flex gap-3 border border-destructive/40 bg-destructive/10 p-4 text-sm text-foreground"
               >
                 <AlertTriangle
                   className="h-5 w-5 shrink-0"
@@ -446,7 +428,7 @@ export function TrackedAssessmentShell<TContent, TState>(
             ) : null}
             {receipt ? (
               <section
-                className="border border-border bg-card p-8 text-center  "
+                className="border border-border bg-card p-8 text-center"
                 aria-labelledby="receipt-title"
               >
                 <CheckCircle2
@@ -473,7 +455,7 @@ export function TrackedAssessmentShell<TContent, TState>(
                   </div>
                 </dl>
                 <Button
-                  className="mt-7 rounded-none"
+                  className="mt-7 rounded-sm"
                   onClick={() => {
                     window.location.href = "/candidate-dashboard";
                   }}
@@ -483,12 +465,15 @@ export function TrackedAssessmentShell<TContent, TState>(
               </section>
             ) : (
               <>
-                {renderStage({ stageIndex, state, setState }, launch.content)}
-                <div className="mt-6 flex justify-end">
-                  {stageIndex < reviewIndex ? (
+                {renderStage({ stageIndex, state, setState, advance: next, isSaving: saving }, launch.content)}
+                <div className="sticky bottom-0 z-20 mt-6 flex min-h-16 items-center justify-between gap-4 border border-border bg-card px-4 py-3">
+                  <p className="hidden text-xs text-muted-foreground sm:block">
+                    Progress is saved before the next step opens.
+                  </p>
+                  {stageIndex < reviewIndex && canManuallyAdvance(stageIndex) ? (
                     <Button
-                      className="min-h-11 rounded-none bg-primary px-6 text-primary-foreground hover:bg-primary/90"
-                      onClick={next}
+                      className="ml-auto min-h-11 rounded-sm px-6"
+                      onClick={() => void next()}
                       disabled={saving}
                     >
                       {saving ? (
@@ -497,11 +482,11 @@ export function TrackedAssessmentShell<TContent, TState>(
                           aria-hidden="true"
                         />
                       ) : null}{" "}
-                      Save and continue
+                      {continueLabel(stageIndex)}
                     </Button>
                   ) : stageIndex === reviewIndex ? (
                     <Button
-                      className="min-h-12 rounded-none bg-primary px-7 text-primary-foreground hover:bg-primary/90"
+                      className="ml-auto min-h-12 rounded-sm px-7"
                       onClick={submit}
                       disabled={submitting}
                     >
@@ -515,11 +500,10 @@ export function TrackedAssessmentShell<TContent, TState>(
                       )}{" "}
                       Submit assessment
                     </Button>
-                  ) : null}
+                  ) : <span className="ml-auto text-xs text-muted-foreground">This step advances automatically.</span>}
                 </div>
               </>
             )}
-          </div>
         </div>
       </div>
       {pauseReason && !locked ? (
@@ -529,7 +513,7 @@ export function TrackedAssessmentShell<TContent, TState>(
           aria-modal="true"
           aria-labelledby="pause-title"
         >
-          <div className="w-full max-w-lg border border-warning bg-card p-7 text-card-foreground">
+          <div className="w-full max-w-lg border border-warning/60 bg-card p-7 text-card-foreground">
             <AlertTriangle
               className="h-8 w-8 text-amber-300"
               aria-hidden="true"
@@ -542,7 +526,7 @@ export function TrackedAssessmentShell<TContent, TState>(
               attempt.
             </p>
             <Button
-              className="mt-6 rounded-none bg-card text-foreground"
+              className="mt-6 rounded-sm"
               onClick={resume}
             >
               <Maximize2 className="h-4 w-4" aria-hidden="true" /> Return to
@@ -558,7 +542,7 @@ export function TrackedAssessmentShell<TContent, TState>(
           aria-modal="true"
           aria-labelledby="locked-title"
         >
-          <div className="w-full max-w-lg border border-destructive bg-card p-7 text-card-foreground">
+          <div className="w-full max-w-lg border border-destructive/60 bg-card p-7 text-card-foreground">
             <LockKeyhole className="h-8 w-8 text-red-300" aria-hidden="true" />
             <h2 id="locked-title" className="mt-4 text-xl font-semibold">
               Attempt interrupted and locked
@@ -568,7 +552,7 @@ export function TrackedAssessmentShell<TContent, TState>(
               {restartNoun}.
             </p>
             <Button
-              className="mt-6 rounded-none bg-card text-foreground"
+              className="mt-6 rounded-sm"
               disabled={restarting}
               onClick={restart}
             >

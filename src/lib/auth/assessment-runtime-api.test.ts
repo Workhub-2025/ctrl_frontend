@@ -36,4 +36,20 @@ describe("assessment runtime BFF boundary", () => {
     expect(source).not.toContain('slug !== "call-simulation"');
     expect(source).not.toContain('release !== "2.0.0"');
   });
+
+  it("blocks assessment start and restart without a supported desktop device check", () => {
+    const route = readFileSync(
+      join(root, "src/app/api/assessment-runtime/[...segments]/route.ts"),
+      "utf8",
+    );
+    const client = readFileSync(
+      join(root, "src/lib/assessment-runtime-client.ts"),
+      "utf8",
+    );
+
+    expect(route).toContain("isSupportedAssessmentDeviceRequest");
+    expect(route).toContain("launchesAttempt");
+    expect(route).toContain("non-touch desktop or laptop");
+    expect(client).toContain("assessmentDeviceRequestHeaders");
+  });
 });

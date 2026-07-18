@@ -8,6 +8,8 @@ const config = {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/assessment-modules/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/assessments/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   prefix: "",
   theme: {

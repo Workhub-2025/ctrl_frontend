@@ -7,10 +7,7 @@ export const prioritisationV2Renderer: AssessmentRenderer = {
   ReadinessComponent: PrioritisationModulePage,
   stageRenderers: {
     briefing: "BriefingStage",
-    "custom:priority-queue": "PriorityQueueStage",
-    "custom:queue-updates": "QueueUpdatesStage",
-    "choice-action": "ResourcePlanStage",
-    handover: "RationaleStage",
+    "custom:priority-ranking": "PriorityRankingStage",
     review: "ReviewStage",
     completion: "CompletionStage",
   },

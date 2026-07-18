@@ -7,7 +7,8 @@ export const typingV2Renderer: AssessmentRenderer = {
   ReadinessComponent: TypingModulePage,
   stageRenderers: {
     briefing: "BriefingStage",
-    "custom:operational-transcription": "OperationalTranscriptionStage",
+    "custom:timed-typing": "TimedTypingStage",
+    "custom:countdown-break": "CountdownBreakStage",
     review: "ReviewStage",
     completion: "CompletionStage",
   },

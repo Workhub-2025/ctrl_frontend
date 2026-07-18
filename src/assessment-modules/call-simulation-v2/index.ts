@@ -7,7 +7,7 @@ export const callSimulationV2Renderer: AssessmentRenderer = {
   ReadinessComponent: CallSimulationReadinessPage,
   stageRenderers: {
     briefing: "BriefingStage",
-    "custom:incident-workspace": "IncidentWorkspaceStage",
+    "custom:call-record": "CallRecordStage",
     review: "ReviewStage",
     completion: "CompletionStage",
   },

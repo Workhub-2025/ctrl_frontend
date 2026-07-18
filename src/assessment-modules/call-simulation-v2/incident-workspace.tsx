@@ -1,297 +1,194 @@
 "use client";
 
-import { useId } from "react";
-import { AlertTriangle, CheckCircle2, Headphones, Radio } from "lucide-react";
-import type { CallSimulationScenario, MediaReference } from "../types";
+import { useMemo, useRef, useState } from "react";
+import { Check, Headphones, Play, Radio } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { MediaReference } from "../types";
 
-export type IncidentResponse = {
+export type CallField = {
+  id: string;
+  label: string;
+  section: "caller" | "system" | "intelligence" | "incident";
+  inputMode?: "text" | "tel";
+  control?: "text" | "select" | "textarea";
+  options?: string[];
+};
+
+export type CallScenario = {
+  id: string;
+  title: string;
+  mediaId: string;
+  context: string;
+  fields: CallField[];
+};
+
+export type CallResponse = {
   scenarioId: string;
   fields: Record<string, string>;
-  actionId: string;
-  classification: string;
-  incidentType: string;
-  resourceDecision: string;
-  handover: string;
-  elapsedSeconds: number;
+  fieldTimings: Record<string, number>;
 };
 
-export function emptyIncidentResponse(scenarioId: string): IncidentResponse {
-  return {
-    scenarioId,
-    fields: {},
-    actionId: "",
-    classification: "",
-    incidentType: "",
-    resourceDecision: "",
-    handover: "",
-    elapsedSeconds: 0,
-  };
-}
-
-type Props = {
-  scenario: CallSimulationScenario;
-  media: Record<string, MediaReference>;
-  value: IncidentResponse;
-  onChange: (value: IncidentResponse) => void;
-  practice?: boolean;
-};
+const sectionMeta = [
+  { id: "caller", label: "Caller" },
+  { id: "system", label: "System" },
+  { id: "intelligence", label: "Intelligence" },
+  { id: "incident", label: "Incident" },
+] as const;
 
 export function IncidentWorkspace({
   scenario,
   media,
   value,
   onChange,
+  onPlaybackChange,
   practice = false,
-}: Props) {
-  const id = useId();
-  const selectedAction = scenario.actions.find(
-    (action) => action.id === value.actionId,
-  );
-  const update = (patch: Partial<IncidentResponse>) =>
-    onChange({ ...value, ...patch });
-  const updateField = (fieldId: string, fieldValue: string) =>
-    update({
-      fields: { ...value.fields, [fieldId]: fieldValue },
+}: {
+  scenario: CallScenario;
+  media: Record<string, MediaReference>;
+  value: CallResponse;
+  onChange: (response: CallResponse) => void;
+  onPlaybackChange?: (status: "idle" | "live" | "complete") => void;
+  practice?: boolean;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playback, setPlayback] = useState<"idle" | "live" | "complete">("idle");
+  const availableSections = sectionMeta.filter((section) => scenario.fields.some((field) => field.section === section.id));
+  const [section, setSection] = useState<string>(availableSections[0]?.id ?? "caller");
+  const completed = useMemo(() => scenario.fields.filter((field) => value.fields[field.id]?.trim()).length, [scenario.fields, value.fields]);
+  const mediaItem = media[scenario.mediaId];
+  const startCall = async () => {
+    if (!audioRef.current || playback !== "idle") return;
+    try {
+      await audioRef.current.play();
+      setPlayback("live");
+      onPlaybackChange?.("live");
+    } catch {
+      setPlayback("idle");
+    }
+  };
+
+  const updateField = (field: CallField, nextValue: string) => {
+    onChange({
+      ...value,
+      fields: { ...value.fields, [field.id]: nextValue },
+      fieldTimings: {
+        ...value.fieldTimings,
+        [field.id]: Math.round((audioRef.current?.currentTime ?? 0) * 100) / 100,
+      },
     });
+  };
 
   return (
-    <div className="space-y-6">
-      <section
-        className="border border-border bg-card p-5 shadow-sm  "
-        aria-labelledby={`${id}-call-title`}
-      >
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4 ">
-          <div>
-            <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground ">
-              <Radio className="h-4 w-4" aria-hidden="true" />{" "}
-              {practice ? "Training channel" : "Live incident"}
-            </p>
-            <h2
-              id={`${id}-call-title`}
-              className="text-xl font-semibold tracking-tight text-foreground "
-            >
-              {scenario.title}
-            </h2>
-          </div>
-          <span className="border border-border bg-muted px-3 py-1 text-xs font-medium text-foreground   ">
-            {practice ? "Not scored or monitored" : "Assessed"}
-          </span>
-        </div>
-        <p className="mb-4 text-sm leading-6 text-foreground ">
-          {scenario.dispatchContext}
-        </p>
-        <label
-          className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground "
-          htmlFor={`${id}-base-audio`}
-        >
-          <Headphones className="h-4 w-4" aria-hidden="true" /> Caller audio
-        </label>
-        <audio
-          id={`${id}-base-audio`}
-          className="w-full"
-          controls
-          preload="metadata"
-          src={media[scenario.baseMediaId]?.url}
-        >
-          Your browser does not support audio playback.
-        </audio>
-        {scenario.transcripts?.[scenario.baseMediaId] ? (
-          <details className="mt-3 border-l-4 border-border bg-muted/50 p-3 text-sm  ">
-            <summary className="cursor-pointer font-semibold">
-              Approved audio transcript
-            </summary>
-            <p className="mt-2 leading-6">
-              {scenario.transcripts[scenario.baseMediaId]}
-            </p>
-          </details>
-        ) : null}
-      </section>
+    <section className="grid min-h-[560px] border border-border bg-card lg:grid-cols-[320px_minmax(0,1fr)]" aria-labelledby={`${scenario.id}-title`}>
+      <aside className="border-b border-border bg-muted/20 p-5 lg:sticky lg:top-[113px] lg:h-[calc(100vh-145px)] lg:self-start lg:border-b-0 lg:border-r">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{practice ? "Unscored practice" : "Live call"}</p>
+        <h1 id={`${scenario.id}-title`} className="mt-2 text-xl font-semibold">{scenario.title}</h1>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">{scenario.context}</p>
 
-      <section
-        className="border border-border bg-card p-5  "
-        aria-labelledby={`${id}-capture-title`}
-      >
-        <h3
-          id={`${id}-capture-title`}
-          className="mb-1 text-base font-semibold text-foreground "
-        >
-          Incident record
-        </h3>
-        <p className="mb-4 text-sm text-muted-foreground ">
-          Capture details while audio is available. Use concise operational
-          language.
-        </p>
-        <div className="grid gap-4 md:grid-cols-2">
-          {scenario.captureFields.map((field) => (
-            <div key={field.id}>
-              <label
-                className="mb-1.5 block text-sm font-medium text-foreground "
-                htmlFor={`${id}-${field.id}`}
-              >
-                {field.label}
-              </label>
-              <input
-                id={`${id}-${field.id}`}
-                type={field.inputMode === "tel" ? "tel" : "text"}
-                value={value.fields[field.id] ?? ""}
-                onChange={(event) => updateField(field.id, event.target.value)}
-                className="min-h-11 w-full border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30   "
-                autoComplete="off"
-              />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <fieldset className="border border-border bg-card p-5  ">
-        <legend className="px-1 text-base font-semibold text-foreground ">
-          Follow-up action
-        </legend>
-        <p className="mb-4 text-sm text-muted-foreground ">
-          {scenario.actionPrompt}
-        </p>
-        <div className="space-y-2">
-          {scenario.actions.map((action) => (
-            <label
-              key={action.id}
-              className="flex min-h-12 cursor-pointer items-start gap-3 border border-border p-3 hover:border-border has-[:checked]:border-primary has-[:checked]:bg-primary/10 "
-            >
-              <input
-                type="radio"
-                name={`${id}-action`}
-                value={action.id}
-                checked={value.actionId === action.id}
-                onChange={() => update({ actionId: action.id })}
-                className="mt-1 h-4 w-4"
-              />
-              <span className="text-sm font-medium leading-6">
-                {action.label}
-              </span>
-            </label>
-          ))}
-        </div>
-        {selectedAction ? (
-          <div
-            className="mt-4 border-l-4 border-warning bg-warning/10 p-4 "
-            aria-live="polite"
-          >
-            <p className="mb-2 flex items-center gap-2 text-sm font-semibold">
-              <AlertTriangle className="h-4 w-4" aria-hidden="true" /> Caller
-              response
-            </p>
-            <audio
-              controls
-              preload="metadata"
-              className="w-full"
-              src={media[selectedAction.branchMediaId]?.url}
-            >
-              Your browser does not support audio playback.
+        <div className="mt-5 border border-border bg-card p-4">
+          <div className="flex items-center gap-2 text-sm font-semibold"><Headphones className="h-4 w-4 text-primary" aria-hidden="true" /> Caller audio</div>
+          {mediaItem ? practice ? (
+            <audio ref={audioRef} className="mt-3 w-full" controls preload="metadata">
+              <source src={mediaItem.url} />
+              Your browser does not support the audio element.
             </audio>
-            <p className="mt-2 text-sm leading-6">
-              {selectedAction.branchSummary}
-            </p>
-            {scenario.transcripts?.[selectedAction.branchMediaId] ? (
-              <p className="mt-2 text-sm">
-                <strong>Transcript:</strong>{" "}
-                {scenario.transcripts[selectedAction.branchMediaId]}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-      </fieldset>
-
-      <section
-        className="grid gap-4 border border-border bg-card p-5   md:grid-cols-3"
-        aria-labelledby={`${id}-decision-title`}
-      >
-        <h3
-          id={`${id}-decision-title`}
-          className="md:col-span-3 text-base font-semibold"
-        >
-          Operational decision
-        </h3>
-        {[
-          [
-            "Risk classification",
-            "classification",
-            scenario.classificationOptions,
-          ],
-          ["Incident type", "incidentType", scenario.incidentTypeOptions],
-          [
-            "Response and resource",
-            "resourceDecision",
-            scenario.resourceOptions,
-          ],
-        ].map(([label, key, options]) => (
-          <div key={key as string}>
-            <label
-              className="mb-1.5 block text-sm font-medium"
-              htmlFor={`${id}-${key}`}
-            >
-              {label as string}
-            </label>
-            <select
-              id={`${id}-${key}`}
-              className="min-h-11 w-full border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring  "
-              value={
-                value[
-                  key as "classification" | "incidentType" | "resourceDecision"
-                ]
-              }
-              onChange={(event) =>
-                update({ [key as string]: event.target.value })
-              }
-            >
-              <option value="">Select an option</option>
-              {(options as string[]).map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
-      </section>
-
-      <section
-        className="border border-border bg-card p-5  "
-        aria-labelledby={`${id}-handover-title`}
-      >
-        <h3
-          id={`${id}-handover-title`}
-          className="mb-1 text-base font-semibold"
-        >
-          Handover record
-        </h3>
-        <label
-          className="mb-2 block text-sm text-muted-foreground "
-          htmlFor={`${id}-handover`}
-        >
-          Summarise what is happening, where, who is at risk, key intelligence
-          and the response required.
-        </label>
-        <textarea
-          id={`${id}-handover`}
-          rows={5}
-          value={value.handover}
-          onChange={(event) => update({ handover: event.target.value })}
-          className="w-full border border-border bg-card p-3 text-sm leading-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring  "
-        />
-        {practice &&
-        value.actionId &&
-        value.classification &&
-        value.incidentType &&
-        value.resourceDecision &&
-        value.handover.trim() ? (
-          <p
-            className="mt-3 flex items-center gap-2 text-sm font-semibold text-primary "
-            role="status"
-          >
-            <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Practice
-            record complete
+          ) : (
+            <div className="mt-3">
+              <audio ref={audioRef} preload="metadata" onEnded={() => { setPlayback("complete"); onPlaybackChange?.("complete"); }}>
+                <source src={mediaItem.url} />
+                Your browser does not support the audio element.
+              </audio>
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border border-border bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
+                disabled={playback !== "idle"}
+                onClick={() => void startCall()}
+              >
+                {playback === "idle" ? <Play className="h-4 w-4" aria-hidden="true" /> : <Radio className="h-4 w-4" aria-hidden="true" />}
+                {playback === "idle" ? "Start caller audio" : playback === "live" ? "Call in progress" : "Call audio complete"}
+              </button>
+            </div>
+          ) : (
+            <p role="alert" className="mt-3 text-sm text-destructive">Audio could not be loaded.</p>
+          )}
+          <p className="mt-3 text-xs leading-5 text-muted-foreground">
+            {practice
+              ? "Use the controls freely while learning the workspace."
+              : "The assessed call plays once without pause or replay. Field timing is recorded against the live playback position."}
           </p>
-        ) : null}
-      </section>
-    </div>
+        </div>
+
+        <div className="mt-4 border-t border-border pt-4">
+          <div className="flex items-center justify-between text-xs text-muted-foreground"><span>Record completion</span><span className="font-semibold tabular-nums text-foreground">{completed}/{scenario.fields.length}</span></div>
+          <div className="mt-2 h-1.5 bg-muted" role="progressbar" aria-label="Record completion" aria-valuemin={0} aria-valuemax={scenario.fields.length} aria-valuenow={completed}>
+            <div className="h-full bg-primary" style={{ width: `${scenario.fields.length ? completed / scenario.fields.length * 100 : 0}%` }} />
+          </div>
+        </div>
+      </aside>
+
+      <div className="min-w-0 p-5 sm:p-6">
+        <Tabs value={section} onValueChange={setSection}>
+          <TabsList className="grid h-auto w-full rounded-sm border border-border bg-muted/30 p-0" style={{ gridTemplateColumns: `repeat(${availableSections.length}, minmax(0, 1fr))` }} aria-label="Call record sections">
+            {availableSections.map((item) => {
+              const fields = scenario.fields.filter((field) => field.section === item.id);
+              const sectionComplete = fields.filter((field) => value.fields[field.id]?.trim()).length;
+              return (
+                <TabsTrigger key={item.id} value={item.id} className="min-h-12 rounded-none border-r border-border px-2 text-xs shadow-none last:border-r-0 data-[state=active]:bg-card data-[state=active]:shadow-none sm:text-sm">
+                  <span>{item.label}</span>
+                  {sectionComplete === fields.length ? <Check className="ml-2 h-3.5 w-3.5 text-primary" aria-label="Complete" /> : <span className="ml-2 tabular-nums text-muted-foreground">{sectionComplete}/{fields.length}</span>}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          {availableSections.map((item) => {
+            const fields = scenario.fields.filter((field) => field.section === item.id);
+            return (
+              <TabsContent key={item.id} value={item.id} className="mt-5 border-0 focus-visible:ring-offset-4">
+                <div className="mb-5 border-b border-border pb-3">
+                  <h2 className="text-lg font-semibold">{item.label} information</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Record only information supported by the call.</p>
+                </div>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  {fields.map((field) => (
+                    <label key={field.id} className={field.control === "textarea" ? "text-sm font-semibold sm:col-span-2" : "text-sm font-semibold"}>
+                      {field.label}
+                      {field.control === "select" ? (
+                        <select
+                          className="mt-2 min-h-11 w-full rounded-sm border border-border bg-background px-3 font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          value={value.fields[field.id] ?? ""}
+                          disabled={!practice && playback === "idle"}
+                          onChange={(event) => updateField(field, event.target.value)}
+                        >
+                          <option value="">Select an option</option>
+                          {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
+                        </select>
+                      ) : field.control === "textarea" ? (
+                        <textarea
+                          className="mt-2 min-h-28 w-full rounded-sm border border-border bg-background p-3 font-normal leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          value={value.fields[field.id] ?? ""}
+                          disabled={!practice && playback === "idle"}
+                          maxLength={2_000}
+                          onChange={(event) => updateField(field, event.target.value)}
+                        />
+                      ) : (
+                        <input
+                          className="mt-2 min-h-11 w-full rounded-sm border border-border bg-background px-3 font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          inputMode={field.inputMode}
+                          value={value.fields[field.id] ?? ""}
+                          disabled={!practice && playback === "idle"}
+                          maxLength={200}
+                          onChange={(event) => updateField(field, event.target.value)}
+                        />
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      </div>
+    </section>
   );
 }

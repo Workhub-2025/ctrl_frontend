@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { forwardAssessmentRuntime } from "@/lib/assessment-runtime-server";
+import { isSupportedAssessmentDeviceRequest } from "@/lib/assessment-device-eligibility";
 
 type RouteContext = { params: Promise<{ segments: string[] }> };
 
@@ -18,6 +19,19 @@ async function handle(request: NextRequest, context: RouteContext) {
   const { segments } = await context.params;
   if (!allowed(request.method, segments)) {
     return NextResponse.json({ error: "Assessment runtime route not found" }, { status: 404 });
+  }
+  const path = segments.join("/");
+  const launchesAttempt =
+    request.method === "POST" &&
+    (path === "start" || /^attempts\/[^/]+\/restart$/.test(path));
+  if (launchesAttempt && !isSupportedAssessmentDeviceRequest(request.headers)) {
+    return NextResponse.json(
+      {
+        error:
+          "Assessments require a non-touch desktop or laptop with a physical keyboard.",
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
   }
   const query = request.nextUrl.search;
   const body = ["POST", "PATCH"].includes(request.method) ? await request.text() : undefined;

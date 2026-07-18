@@ -14,32 +14,6 @@ export type StageGraph = {
 
 export type MediaReference = { url: string; sha256: string };
 
-export type CallSimulationAction = {
-  id: string;
-  label: string;
-  branchMediaId: string;
-  branchSummary: string;
-};
-
-export type CallSimulationScenario = {
-  id: string;
-  title: string;
-  stratum: string;
-  baseMediaId: string;
-  dispatchContext: string;
-  actionPrompt: string;
-  actions: CallSimulationAction[];
-  classificationOptions: string[];
-  incidentTypeOptions: string[];
-  resourceOptions: string[];
-  captureFields: Array<{
-    id: string;
-    label: string;
-    inputMode?: "text" | "tel";
-  }>;
-  transcripts?: Record<string, string>;
-};
-
 export type AssessmentReadiness<TPractice = unknown> = {
   module: {
     moduleId: string;

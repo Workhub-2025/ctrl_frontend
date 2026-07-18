@@ -2,6 +2,7 @@ import type {
   AssessmentReadiness,
   LaunchEnvelope,
 } from "@/assessment-modules/types";
+import { assessmentDeviceRequestHeaders } from "@/lib/assessment-device-eligibility";
 
 async function readJson<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => ({}))) as T & {
@@ -39,7 +40,10 @@ export const AssessmentRuntimeClient = {
     const body = await readJson<{ data: LaunchEnvelope<TContent> }>(
       await fetch("/api/assessment-runtime/start", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...assessmentDeviceRequestHeaders(),
+        },
         body: JSON.stringify({
           candidateSessionDocumentId,
           slug,
@@ -84,7 +88,10 @@ export const AssessmentRuntimeClient = {
         `/api/assessment-runtime/attempts/${encodeURIComponent(attemptId)}/events`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...assessmentDeviceRequestHeaders(),
+          },
           body: JSON.stringify(event),
           keepalive: true,
         },

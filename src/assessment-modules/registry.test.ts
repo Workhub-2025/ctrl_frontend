@@ -13,7 +13,7 @@ describe("assessment module renderer registry", () => {
   });
 
   it("rejects unsupported release majors", () => {
-    expect(getAssessmentRenderer("call-simulation")?.stageRenderers["custom:incident-workspace"]).toBeTruthy();
+    expect(getAssessmentRenderer("call-simulation")?.stageRenderers["custom:call-record"]).toBeTruthy();
     expect(supportsReleaseMajor("call-simulation", "2.0.0")).toBe(true);
     expect(supportsReleaseMajor("call-simulation", "3.0.0")).toBe(false);
     for (const slug of listAssessmentModuleSlugs()) {

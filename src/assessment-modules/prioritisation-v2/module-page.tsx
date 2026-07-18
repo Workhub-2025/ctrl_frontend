@@ -1,387 +1,277 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, Check, Clock3, GripVertical } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
 import type { LaunchEnvelope } from "../types";
 
-type Action = { id: string; label: string };
 type Incident = {
   id: string;
-  receivedAt: string;
-  summary: string;
-  operationalSignals: string[];
-  location: string;
-  availableActions: Action[];
-};
-type Update = { id: string; incidentId: string; message: string };
-type Exercise = {
-  id: string;
+  label: string;
   title: string;
-  controlContext: string;
-  resources: string[];
-  incidents: Incident[];
-  updates: Update[];
+  description: string;
+  timeOfIncident: string;
 };
-type ResponseRow = { incidentId: string; rank: number; actionId: string };
-type State = {
-  initial: ResponseRow[];
-  final: ResponseRow[];
-  rationale: string;
-};
-type Content = { exercise: Exercise };
-type Practice = Exercise;
+type Question = { id: string; number: number; difficulty: string; incidents: Incident[] };
+type Practice = { title: string; instructions: string; questions: Question[] };
+type Content = { questions: Question[] };
+type RankingResponse = { order: string[]; confirmed: boolean; timeTakenSeconds: number };
+type State = { responses: Record<string, RankingResponse>; practiceIndex: number };
 
-function rowsFor(exercise: Exercise): ResponseRow[] {
-  return exercise.incidents.map((incident) => ({
-    incidentId: incident.id,
-    rank: 0,
-    actionId: "",
-  }));
+function createState(questions: Question[]): State {
+  return {
+    practiceIndex: 0,
+    responses: Object.fromEntries(questions.map((question) => [
+      question.id,
+      { order: question.incidents.map((incident) => incident.id), confirmed: false, timeTakenSeconds: 0 },
+    ])),
+  };
 }
 
-function QueueTable({
-  exercise,
-  rows,
+function RankingWorkspace({
+  question,
+  response,
   onChange,
-  showActions = true,
+  questionSeconds,
+  onTimeout,
+  practice = false,
 }: {
-  exercise: Exercise;
-  rows: ResponseRow[];
-  onChange: (rows: ResponseRow[]) => void;
-  showActions?: boolean;
+  question: Question;
+  response: RankingResponse;
+  onChange: (response: RankingResponse) => void;
+  questionSeconds?: number;
+  onTimeout?: (response: RankingResponse) => void;
+  practice?: boolean;
 }) {
-  const update = (incidentId: string, patch: Partial<ResponseRow>) =>
-    onChange(
-      rows.map((row) =>
-        row.incidentId === incidentId ? { ...row, ...patch } : row,
-      ),
-    );
+  const [startedAt] = useState(Date.now());
+  const [now, setNow] = useState(Date.now());
+  const timedOut = useRef(false);
+  const incidentById = new Map(question.incidents.map((incident) => [incident.id, incident]));
+  const elapsedSeconds = Math.max(0, Math.floor((now - startedAt) / 1_000));
+  const remainingSeconds = questionSeconds === undefined ? null : Math.max(0, questionSeconds - elapsedSeconds);
+
+  useEffect(() => {
+    if (questionSeconds === undefined || response.confirmed) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [questionSeconds, response.confirmed]);
+
+  useEffect(() => {
+    if (remainingSeconds !== 0 || response.confirmed || timedOut.current || !onTimeout) return;
+    timedOut.current = true;
+    onTimeout({ ...response, confirmed: true, timeTakenSeconds: questionSeconds ?? elapsedSeconds });
+  }, [elapsedSeconds, onTimeout, questionSeconds, remainingSeconds, response]);
+
+  const move = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= response.order.length) return;
+    const order = [...response.order];
+    [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
+    onChange({ order, confirmed: false, timeTakenSeconds: elapsedSeconds });
+  };
+
   return (
-    <div className="overflow-x-auto border border-border bg-card  ">
-      <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-        <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground  ">
-          <tr>
-            <th className="p-3">Priority</th>
-            <th className="p-3">Incident</th>
-            <th className="p-3">Operational signals</th>
-            {showActions ? <th className="p-3">Action</th> : null}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border ">
-          {exercise.incidents.map((incident) => {
-            const row = rows.find((item) => item.incidentId === incident.id)!;
-            return (
-              <tr key={incident.id} className="align-top">
-                <td className="p-3">
-                  <label className="sr-only" htmlFor={`rank-${incident.id}`}>
-                    Priority for {incident.summary}
-                  </label>
-                  <select
-                    id={`rank-${incident.id}`}
-                    className="h-10 w-20 border border-border bg-card px-2 "
-                    value={row.rank || ""}
-                    onChange={(event) =>
-                      update(incident.id, { rank: Number(event.target.value) })
-                    }
-                  >
-                    <option value="">—</option>
-                    {exercise.incidents.map((_, index) => (
-                      <option key={index + 1} value={index + 1}>
-                        {index + 1}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="p-3">
-                  <p className="font-semibold">{incident.summary}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {incident.receivedAt} · {incident.location}
-                  </p>
-                </td>
-                <td className="p-3">
-                  <ul className="space-y-1 text-xs leading-5">
-                    {incident.operationalSignals.map((signal) => (
-                      <li key={signal}>• {signal}</li>
-                    ))}
-                  </ul>
-                </td>
-                {showActions ? (
-                  <td className="p-3">
-                    <label
-                      className="sr-only"
-                      htmlFor={`action-${incident.id}`}
-                    >
-                      Action for {incident.summary}
-                    </label>
-                    <select
-                      id={`action-${incident.id}`}
-                      className="h-10 w-full min-w-56 border border-border bg-card px-2 "
-                      value={row.actionId}
-                      onChange={(event) =>
-                        update(incident.id, { actionId: event.target.value })
-                      }
-                    >
-                      <option value="">Choose action</option>
-                      {incident.availableActions.map((action) => (
-                        <option key={action.id} value={action.id}>
-                          {action.label}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                ) : null}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <section className="border border-border bg-card" aria-labelledby={`${question.id}-title`}>
+      <div className="flex flex-col gap-2 border-b border-border px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {practice ? "Practice question" : `Question ${question.number} of 15`}
+          </p>
+          <h1 id={`${question.id}-title`} className="mt-1 text-xl font-semibold">
+            Rank the six incidents
+          </h1>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-muted-foreground">1 = highest priority · 6 = lowest priority</p>
+          {remainingSeconds !== null ? (
+            <p className="mt-1 font-mono text-sm font-semibold tabular-nums" aria-live="polite">
+              {String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:{String(remainingSeconds % 60).padStart(2, "0")} remaining
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <ol className="divide-y divide-border" aria-label="Incident ranking">
+        {response.order.map((incidentId, index) => {
+          const incident = incidentById.get(incidentId);
+          if (!incident) return null;
+          return (
+            <li key={incident.id} className="grid gap-3 p-4 sm:grid-cols-[48px_minmax(0,1fr)_96px] sm:items-center">
+              <div className="flex items-center gap-2 sm:block">
+                <span className="grid h-11 w-11 place-items-center border border-primary bg-primary/10 text-lg font-semibold tabular-nums text-primary" aria-label={`Priority ${index + 1}`}>
+                  {index + 1}
+                </span>
+                <GripVertical className="h-4 w-4 text-muted-foreground sm:hidden" aria-hidden="true" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <h2 className="font-semibold text-foreground">{incident.title}</h2>
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock3 className="h-3.5 w-3.5" aria-hidden="true" /> {incident.timeOfIncident}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{incident.description}</p>
+              </div>
+              <div className="flex gap-2 sm:justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 rounded-sm"
+                  disabled={index === 0}
+                  onClick={() => move(index, -1)}
+                  aria-label={`Move ${incident.title} higher`}
+                >
+                  <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 rounded-sm"
+                  disabled={index === response.order.length - 1}
+                  onClick={() => move(index, 1)}
+                  aria-label={`Move ${incident.title} lower`}
+                >
+                  <ArrowDown className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="flex flex-col gap-3 border-t border-border bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs leading-5 text-muted-foreground">
+          Check the full order before confirming. Scoring rationale is not shown during the assessment.
+        </p>
+        <Button
+          type="button"
+          variant={response.confirmed ? "outline" : "default"}
+          className="min-h-11 shrink-0 rounded-sm"
+          onClick={() => onChange({ ...response, confirmed: true, timeTakenSeconds: elapsedSeconds })}
+        >
+          <Check className="h-4 w-4" aria-hidden="true" />
+          {response.confirmed ? "Order confirmed" : "Confirm this order"}
+        </Button>
+      </div>
+    </section>
   );
 }
 
-function PracticeWorkspace({
-  practice,
-  state,
-  setState,
-}: {
-  practice: Practice;
-  state: State;
-  setState: (state: State) => void;
-}) {
+function PracticeWorkspace({ practice, state, setState }: { practice: Practice; state: State; setState: (state: State) => void }) {
+  const question = practice.questions[state.practiceIndex];
+  const response = state.responses[question.id];
   return (
-    <div className="space-y-4">
-      <div className="border border-border bg-card p-5  ">
-        <h3 className="font-semibold">{practice.title}</h3>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground ">
-          {practice.controlContext}
-        </p>
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 border border-border bg-card" aria-label="Practice questions">
+        {practice.questions.map((item, index) => {
+          const confirmed = state.responses[item.id].confirmed;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={state.practiceIndex === index}
+              className={`flex min-h-12 items-center justify-center gap-2 border-r border-border px-3 text-sm font-medium last:border-r-0 ${state.practiceIndex === index ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted/40"}`}
+              onClick={() => setState({ ...state, practiceIndex: index })}
+            >
+              {confirmed ? <Check className="h-4 w-4 text-primary" aria-hidden="true" /> : null}
+              Practice {index + 1}
+            </button>
+          );
+        })}
       </div>
-      <QueueTable
-        exercise={practice}
-        rows={state.initial}
-        onChange={(initial) => setState({ ...state, initial })}
-        showActions={false}
+      <RankingWorkspace
+        key={question.id}
+        practice
+        question={question}
+        response={response}
+        onChange={(next) => setState({ ...state, responses: { ...state.responses, [question.id]: next } })}
       />
-      <label className="block border border-border bg-card p-4 text-sm font-semibold  ">
-        Why is your first-ranked incident most urgent?
-        <textarea
-          className="mt-2 min-h-24 w-full border border-border bg-card p-3 font-normal "
-          value={state.rationale}
-          onChange={(event) =>
-            setState({ ...state, rationale: event.target.value })
-          }
-        />
-      </label>
     </div>
   );
 }
 
 function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
-  const exercise = launch.content.exercise;
+  const questionSeconds = Math.round(180 + (launch.extraTimeMinutes * 60) / 15);
   return (
-    <TrackedAssessmentShell
+    <TrackedAssessmentShell<Content, State>
       launch={launch}
-      title="Prioritisation v2"
-      restartNoun="incident queue"
-      initialState={() => ({
-        initial: rowsFor(exercise),
-        final: rowsFor(exercise),
-        rationale: "",
-      })}
+      title="Prioritisation Judgement Assessment"
+      restartNoun="question order"
+      initialState={(content) => createState(content.questions)}
       validateStage={(stage, state) => {
-        const validRows = (rows: ResponseRow[], actions: boolean) =>
-          rows.every((row) => row.rank > 0 && (!actions || row.actionId)) &&
-          new Set(rows.map((row) => row.rank)).size === rows.length;
-        if (stage === 1 && !validRows(state.initial, true))
-          return "Give every incident a unique priority and an initial action.";
-        if (stage === 2 && !validRows(state.final, false))
-          return "Re-rank the full queue after considering every update.";
-        if (stage === 3 && !validRows(state.final, true))
-          return "Choose a final action for every incident.";
-        if (stage === 4 && state.rationale.trim().length < 40)
-          return "Provide a concise rationale of at least 40 characters.";
+        if (stage >= 1 && stage <= 15) {
+          const question = launch.content.questions[stage - 1];
+          if (!state.responses[question.id]?.confirmed) return "Confirm the complete ranking before continuing.";
+        }
         return null;
       }}
       buildSubmission={(state, elapsedSeconds) => ({
-        exerciseId: exercise.id,
-        initial: state.initial,
-        final: state.final,
-        rationale: state.rationale,
-        elapsedSeconds,
+        questions: launch.content.questions.map((question) => ({
+          questionId: question.id,
+          submittedOrder: state.responses[question.id].order,
+          timeTakenSeconds: Math.max(1, state.responses[question.id].timeTakenSeconds || Math.round(elapsedSeconds / 15)),
+        })),
       })}
-      renderStage={({ stageIndex, state, setState }) => {
-        if (stageIndex === 0)
-          return (
-            <Panel eyebrow="Monitoring active" title={exercise.title}>
-              <p>{exercise.controlContext}</p>
-              <h2 className="mt-5 font-semibold">Available resources</h2>
-              <ul className="mt-2 space-y-1 text-sm">
-                {exercise.resources.map((resource) => (
-                  <li key={resource}>• {resource}</li>
-                ))}
-              </ul>
-            </Panel>
-          );
-        if (stageIndex === 1)
-          return (
-            <section>
-              <StageTitle
-                title="Set the initial queue"
-                detail="Rank every incident and choose the action you would take with the available resources."
-              />
-              <QueueTable
-                exercise={exercise}
-                rows={state.initial}
-                onChange={(initial) =>
-                  setState({
-                    ...state,
-                    initial,
-                    final: state.final.every((row) => row.rank === 0)
-                      ? initial.map((row) => ({ ...row }))
-                      : state.final,
-                  })
-                }
-              />
-            </section>
-          );
-        if (stageIndex === 2)
-          return (
-            <section>
-              <StageTitle
-                title="Reassess after new information"
-                detail="Review each update, then set a complete revised priority order."
-              />
-              <div className="mb-5 space-y-2">
-                {exercise.updates.map((update) => (
-                  <div
-                    key={update.id}
-                    className="border-l-4 border-warning bg-warning/10 p-4 text-sm text-foreground  "
-                  >
-                    {update.message}
-                  </div>
-                ))}
-              </div>
-              <QueueTable
-                exercise={exercise}
-                rows={state.final}
-                onChange={(final) => setState({ ...state, final })}
-                showActions={false}
-              />
-            </section>
-          );
-        if (stageIndex === 3)
-          return (
-            <section>
-              <StageTitle
-                title="Confirm the resource plan"
-                detail="Keep your revised order and choose the final operational action for each incident."
-              />
-              <QueueTable
-                exercise={exercise}
-                rows={state.final}
-                onChange={(final) => setState({ ...state, final })}
-              />
-            </section>
-          );
-        if (stageIndex === 4)
-          return (
-            <Panel eyebrow="Decision record" title="Explain your final plan">
-              <p className="text-sm text-muted-foreground ">
-                Identify the risks, vulnerabilities, resource constraints and
-                information that changed your priorities.
-              </p>
-              <textarea
-                className="mt-5 min-h-48 w-full border border-border bg-card p-4 "
-                value={state.rationale}
-                onChange={(event) =>
-                  setState({ ...state, rationale: event.target.value })
-                }
-              />
-            </Panel>
-          );
-        return (
-          <Panel eyebrow="Final review" title="Submit your queue decisions">
-            <p>
-              All incident rankings, actions and your rationale will be
-              submitted together. You will receive a submission receipt, not an
-              immediate score.
+      continueLabel={(stage) => stage === 0 ? "Start question 1" : stage < 15 ? "Save and open next question" : "Review responses"}
+      renderStage={({ stageIndex, state, setState, advance, isSaving }, content) => {
+        if (stageIndex === 0) return (
+          <section className="border border-border bg-card p-6 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
+            <h1 className="mt-2 text-2xl font-semibold">Fifteen ranking decisions</h1>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+              Each question contains six incidents. Put every incident into a unique position from 1 to 6, then confirm the order. You have up to three minutes per question within the overall assessment time.
             </p>
-          </Panel>
+          </section>
+        );
+        if (stageIndex >= 1 && stageIndex <= 15) {
+          const question = content.questions[stageIndex - 1];
+          return (
+            <RankingWorkspace
+              key={question.id}
+              question={question}
+              questionSeconds={questionSeconds}
+              response={state.responses[question.id]}
+              onChange={(next) => setState({ ...state, responses: { ...state.responses, [question.id]: next } })}
+              onTimeout={(next) => {
+                const nextState = { ...state, responses: { ...state.responses, [question.id]: next } };
+                setState(nextState);
+                if (!isSaving) void advance(nextState);
+              }}
+            />
+          );
+        }
+        const confirmed = Object.values(state.responses).filter((response) => response.confirmed).length;
+        return (
+          <section className="border border-border bg-card p-6 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Final review</p>
+            <h1 className="mt-2 text-2xl font-semibold">Submit your rankings</h1>
+            <div className="mt-5 flex items-center gap-4 border-y border-border py-4">
+              <span className="grid h-10 w-10 place-items-center bg-primary/10 text-primary"><Check className="h-5 w-5" aria-hidden="true" /></span>
+              <div>
+                <p className="font-semibold tabular-nums">{confirmed} of 15 questions confirmed</p>
+                <p className="text-sm text-muted-foreground">Your score is not shown after submission.</p>
+              </div>
+            </div>
+          </section>
         );
       }}
     />
   );
 }
 
-function StageTitle({ title, detail }: { title: string; detail: string }) {
-  return (
-    <div className="mb-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        Operational queue
-      </p>
-      <h1 className="mt-2 text-2xl font-semibold">{title}</h1>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground ">
-        {detail}
-      </p>
-    </div>
-  );
-}
-function Panel({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="border border-border bg-card p-7  ">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary ">
-        {eyebrow}
-      </p>
-      <h1 className="text-2xl font-semibold">{title}</h1>
-      <div className="mt-4 leading-7 text-foreground ">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-export function PrioritisationModulePage({
-  candidateSessionDocumentId,
-  slug,
-}: {
-  candidateSessionDocumentId: string;
-  slug: string;
-}) {
-  const createPracticeState = useCallback(
-    (practice: Practice): State => ({
-      initial: rowsFor(practice),
-      final: [],
-      rationale: "",
-    }),
-    [],
-  );
+export function PrioritisationModulePage({ candidateSessionDocumentId, slug }: { candidateSessionDocumentId: string; slug: string }) {
+  const createPracticeState = useCallback((practice: Practice) => createState(practice.questions), []);
   return (
     <OperationalReadinessPage<Practice, State, Content>
       candidateSessionDocumentId={candidateSessionDocumentId}
       slug={slug}
       createPracticeState={createPracticeState}
-      isPracticeComplete={(state) =>
-        state.initial.every((row) => row.rank > 0) &&
-        new Set(state.initial.map((row) => row.rank)).size ===
-          state.initial.length &&
-        state.rationale.trim().length >= 10
-      }
-      renderPractice={(practice, state, setState) => (
-        <PracticeWorkspace
-          practice={practice}
-          state={state}
-          setState={setState}
-        />
-      )}
+      isPracticeComplete={(state) => Object.values(state.responses).every((response) => response.confirmed)}
+      renderPractice={(practice, state, setState) => <PracticeWorkspace practice={practice} state={state} setState={setState} />}
       renderAssessment={(launch) => <Assessed launch={launch} />}
     />
   );
