@@ -19,7 +19,7 @@ export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
     slug: "call-simulation",
     title: "Call Simulation",
     description:
-      "Capture caller, system, intelligence and incident information from a live recorded call.",
+      "Practice plus two assessed calls — capture caller, system, intelligence and incident information.",
     href: getAssessmentPagePath("call-simulation"),
     duration: "15–20 minutes",
     icon: Phone,

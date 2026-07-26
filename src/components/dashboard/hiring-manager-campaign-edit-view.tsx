@@ -47,7 +47,9 @@ function buildInitialStackDraft(campaign: HiringManagerCampaignDetail) {
     const version =
       config && typeof config === "object" && "version" in config
         ? String((config as { version?: unknown }).version ?? DEFAULT_ASSESSMENT_VERSION)
-        : DEFAULT_ASSESSMENT_VERSION;
+        : slug === "call-simulation"
+          ? "1.1.0"
+          : DEFAULT_ASSESSMENT_VERSION;
     acc[slug] = version;
     return acc;
   }, {});

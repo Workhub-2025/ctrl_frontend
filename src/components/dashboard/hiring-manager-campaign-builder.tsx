@@ -164,6 +164,10 @@ function getVersionOptions(assessment: HiringManagerAssessment) {
 
 function defaultVersionFor(assessment: HiringManagerAssessment): string {
   const options = getVersionOptions(assessment);
+  if (assessment.slug === "call-simulation") {
+    const dual = options.find((option) => option.version === "1.1.0");
+    if (dual) return dual.version;
+  }
   return options[0]?.version ?? DEFAULT_ASSESSMENT_VERSION;
 }
 
