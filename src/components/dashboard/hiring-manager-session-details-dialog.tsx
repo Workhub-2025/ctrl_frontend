@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -654,13 +655,15 @@ function HiringManagerSessionWorkspace({
                               ) : null}
 
                               <Button
+                                asChild
                                 variant="outline"
                                 size="sm"
-                                onClick={() => onOpenResults(candidate)}
                                 className="h-9 rounded-lg px-4 text-xs font-semibold"
                               >
-                                <Eye className="mr-1.5 h-3.5 w-3.5" />
-                                {progress.completed >= progress.total ? "View results" : "View progress"}
+                                <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}`}>
+                                  <Eye className="mr-1.5 h-3.5 w-3.5" />
+                                  {progress.completed >= progress.total ? "View results" : "View progress"}
+                                </Link>
                               </Button>
 
                               {onKickCandidate ? (

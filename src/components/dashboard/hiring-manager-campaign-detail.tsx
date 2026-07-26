@@ -755,23 +755,14 @@ export function HiringManagerCampaignDetailView({
                             </td>
                             <td className="p-3 text-right">
                               <Button
-                                type="button"
+                                asChild
                                 variant="ghost"
                                 size="sm"
-                                onClick={() =>
-                                  setSelectedReport({
-                                    candidateId: candidate.id,
-                                    campaignId: campaign.id,
-                                    candidateSessionId: candidate.id,
-                                    candidateName: candidate.name,
-                                    candidateEmail: candidate.email,
-                                    role: campaign.role,
-                                    campaignName: campaign.name,
-                                  })
-                                }
                                 className="h-8 text-xs text-primary"
                               >
-                                View report
+                                <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}`}>
+                                  View report
+                                </Link>
                               </Button>
                             </td>
                           </tr>
