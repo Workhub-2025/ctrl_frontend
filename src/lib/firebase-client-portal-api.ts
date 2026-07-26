@@ -135,9 +135,16 @@ export function createFirebaseClientPortalApi(
         },
       );
     },
-    listAuditEvents(organizationId: string, limit = 100) {
+    listAuditEvents(
+      organizationId: string,
+      options: { limit?: number; audience?: "hiring_manager" | "client" | "admin" } = {},
+    ) {
+      const limit = options.limit ?? 100;
+      const audienceQuery = options.audience
+        ? `&audience=${encodeURIComponent(options.audience)}`
+        : "";
       return request<FirebaseOrganizationAuditEvent[]>(
-        `/v1/organizations/${encodeURIComponent(organizationId)}/audit-events?limit=${limit}`,
+        `/v1/organizations/${encodeURIComponent(organizationId)}/audit-events?limit=${limit}${audienceQuery}`,
       );
     },
     getOutreachTemplates(assignmentId: string) {

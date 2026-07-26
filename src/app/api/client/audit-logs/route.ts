@@ -21,7 +21,9 @@ export async function GET() {
       domainApi,
       firebaseSessionCookie,
     );
-    const events = await portal.listAuditEvents(context.organizationId);
+    const events = await portal.listAuditEvents(context.organizationId, {
+      audience: "client",
+    });
     return NextResponse.json({ data: toClientAuditLogs(events) });
   } catch (error) {
     return handleBffRouteError(error, "Audit logs could not be loaded");
