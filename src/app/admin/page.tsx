@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { History, Users } from "lucide-react";
+import { Building2, ClipboardCheck, Clock, History, KeyRound, Users } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
   AdminAlert,
@@ -9,6 +9,7 @@ import {
   AdminPageHeader,
   AdminPanel,
   AdminSectionHeader,
+  AdminStatTile,
 } from "@/components/admin/admin-portal-ui";
 import { PortalDecisionLedger } from "@/components/dashboard/portal/portal-ui";
 import { portalProgressBarClass } from "@/components/dashboard/portal/portal-design-tokens";
@@ -38,7 +39,7 @@ type AdminOverviewData = {
 };
 
 export default function AdminOverview() {
-  const { data: overview, error } = useAdminResource<AdminOverviewData>(
+  const { data: overview, loading, error } = useAdminResource<AdminOverviewData>(
     "admin:overview",
     "/api/admin/overview",
     {
@@ -63,6 +64,37 @@ export default function AdminOverview() {
       />
 
       {error ? <AdminAlert>{error}</AdminAlert> : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminStatTile
+          label="Active clients"
+          value={overview.activeClients}
+          loading={loading}
+          detail="Organizations with active platforms"
+          icon={Building2}
+        />
+        <AdminStatTile
+          label="Pending approvals"
+          value={overview.pendingCampaignApprovals}
+          loading={loading}
+          detail="Campaigns awaiting client sign-off"
+          icon={ClipboardCheck}
+        />
+        <AdminStatTile
+          label="Expiring contracts"
+          value={overview.contractsExpiringSoon}
+          loading={loading}
+          detail="Contracts expiring within 60 days"
+          icon={Clock}
+        />
+        <AdminStatTile
+          label="Available codes"
+          value={overview.availableClientCodes}
+          loading={loading}
+          detail="Unused onboarding access codes"
+          icon={KeyRound}
+        />
+      </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <AdminPanel padding={false} className="overflow-hidden lg:col-span-4">

@@ -116,24 +116,28 @@ export function HiringManagerOverview() {
         <PortalStatTile
           label="Campaigns"
           value={campaigns.length}
+          loading={isRefreshing && campaigns.length === 0}
           detail="Configured campaign workspaces"
           icon={FolderKanban}
         />
         <PortalStatTile
           label="Live sessions"
           value={metrics.liveSessions}
+          loading={isRefreshing && campaigns.length === 0}
           detail={`${metrics.upcomingSessions} upcoming`}
           icon={CalendarClock}
         />
         <PortalStatTile
           label="Candidates joined"
           value={metrics.joinedCandidates}
+          loading={isRefreshing && campaigns.length === 0}
           detail={`${metrics.completedCandidates} with submitted results`}
           icon={Users}
         />
         <PortalStatTile
           label="Pending approvals"
           value={metrics.pendingApprovals}
+          loading={isRefreshing && campaigns.length === 0}
           detail="Campaigns waiting on client review"
           icon={ClipboardList}
         />

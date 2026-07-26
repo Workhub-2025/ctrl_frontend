@@ -176,6 +176,7 @@ export function ClientOverviewContent() {
         <ClientStatTile
           label="Hiring manager seats"
           value={summary ? `${summary.seats.used}/${summary.seats.limit}` : "…"}
+          loading={loading && !summary}
           detail={
             summary
               ? `${summary.seats.available} seat${summary.seats.available === 1 ? "" : "s"} available`
@@ -186,18 +187,21 @@ export function ClientOverviewContent() {
         <ClientStatTile
           label="Available invites"
           value={summary?.availableAccessCodes ?? "…"}
+          loading={loading && !summary}
           detail="Unused hiring-manager invite codes"
           icon={KeyRound}
         />
         <ClientStatTile
           label="Campaigns awaiting approval"
           value={summary?.campaignsPendingApproval ?? pendingCampaigns.length}
+          loading={loading && !summary}
           detail="Campaigns waiting for your review"
           icon={ClipboardCheck}
         />
         <ClientStatTile
           label="Candidates pending review"
           value={summary?.candidatesPendingReview ?? pendingSharedCandidates.length}
+          loading={loading && !summary}
           detail="Shared candidates awaiting a decision"
           icon={UserCheck}
         />

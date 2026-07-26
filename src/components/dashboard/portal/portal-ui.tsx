@@ -229,16 +229,19 @@ export function PortalStatTile({
   value,
   detail,
   icon,
+  loading,
   tone: _tone,
 }: {
   label: string;
   value: string | number;
   detail?: string;
   icon?: PortalIconProp;
+  loading?: boolean;
   /** @deprecated Tones removed — all stat tiles use the unified style */
   tone?: string;
 }) {
   const resolvedIcon = resolvePortalIcon(icon, "h-4 w-4");
+  const isValueLoading = loading || value === "…" || value === "...";
   return (
     <div className={portalStatTileClass}>
       <div className="flex items-start justify-between gap-3">
@@ -247,9 +250,13 @@ export function PortalStatTile({
           <span className={portalIconWrapClass}>{resolvedIcon}</span>
         ) : null}
       </div>
-      <p className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
-        {value}
-      </p>
+      {isValueLoading ? (
+        <div className="mt-2.5 h-7 w-20 animate-pulse rounded-md bg-muted/60" />
+      ) : (
+        <p className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
+          {value}
+        </p>
+      )}
       {detail ? (
         <p className={cn("mt-1", portalSupportingTextClass)}>{detail}</p>
       ) : null}
