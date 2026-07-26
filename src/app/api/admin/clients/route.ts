@@ -17,23 +17,46 @@ export async function GET() {
     if ("error" in auth) return auth.error;
 
     if (isFirebaseAdminAuth(auth)) {
-      const organizations = await auth.domainApi.request<FirebaseOrganization[]>({
-        path: "/v1/organizations",
+      const response = await auth.domainApi.request<{
+        data: {
+          items: Array<{
+            id: string;
+            displayName: string;
+            email: string;
+            accountStatus: "active" | "suspended" | "closed";
+            portalRole: "candidate" | "hiring_manager" | "client" | "admin";
+            organizationId: string | null;
+            organizationName: string | null;
+            createdAt: string;
+            updatedAt: string;
+          }>;
+        };
+      }>({
+        path: "/v1/screens/admin-clients",
         firebaseSessionCookie: auth.firebaseSessionCookie,
       });
-      const workspaces = await Promise.all(
-        organizations.map((organization) =>
-          auth.domainApi.request<FirebaseClientTeamWorkspace>({
-            path: `/v1/organizations/${encodeURIComponent(organization.id)}/workspace`,
-            firebaseSessionCookie: auth.firebaseSessionCookie,
-          }),
-        ),
-      );
-      return NextResponse.json({
-        data: workspaces.map((workspace) =>
-          toAdminClientRow(workspace.organization, workspace),
-        ),
-      });
+
+      const clients = response.data.items
+        .filter((user) => user.organizationId !== null)
+        .map((user) => ({
+          id: user.organizationId!,
+          name: user.organizationName ?? user.displayName,
+          status: user.accountStatus === "active" ? "Active" : "Paused",
+          plan: "Firebase tenancy",
+          seatsUsed: 1,
+          seatsAllowed: 10,
+          enabledAssessments: [],
+          billingStatus: "Not configured",
+          primaryContact: user.displayName || user.email,
+          lastActivity: user.updatedAt,
+          pendingCampaignApprovals: 0,
+          hasClientContact: true,
+          clientInviteStatus: "none" as const,
+          clientInviteExpiresAt: null,
+          canGenerateClientCode: false,
+        }));
+
+      return NextResponse.json({ data: clients });
     }
 
     const clients = await getAdminClients(auth.cmsJwt);

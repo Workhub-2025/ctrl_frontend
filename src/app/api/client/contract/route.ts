@@ -3,10 +3,8 @@ import { getClientContract, getClientDashboardSummary } from "@/services/client-
 
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
-import {
-  createFirebaseBillingApi,
-} from "@/lib/firebase-billing-api";
 import { requireFirebaseTenancySession } from "@/lib/firebase-tenancy-bff";
+import { loadClientBillingState } from "@/lib/client-billing-state";
 import {
   DEFAULT_PLATFORM_ASSESSMENTS,
   PREMIUM_PLATFORM_ASSESSMENTS,
@@ -25,53 +23,42 @@ export async function GET() {
         );
       }
 
-      const [seatEntitlements, billing, workspace] = await Promise.all([
-        tenancy.listEntitlements(context.organizationId),
-        createFirebaseBillingApi(domainApi, firebaseSessionCookie).getEntitlements(
-          context.organizationId,
-        ),
+      const [billingState, workspace] = await Promise.all([
+        loadClientBillingState({
+          organizationId: context.organizationId,
+          tenancy,
+          domainApi,
+          firebaseSessionCookie,
+        }),
         tenancy.getClientTeamWorkspace(context.organizationId).catch(() => null),
       ]);
 
-      const seats = seatEntitlements.find(
-        (entitlement) => entitlement.entitlementKey === "hiring_manager_seats",
-      );
-      const seatCount = billing.seatCount || seats?.quantity || 0;
-      const commerciallyOperational = billing.commercial?.operational === true;
-      const unlockedPremiumSlugs = new Set(
-        billing.features.additionalAssessmentSlugs ?? [],
-      );
+      const {
+        contract,
+        client,
+        seatCount,
+        platformFeatures,
+        unlockedPremiumSlugs,
+      } = billingState;
 
       return NextResponse.json({
         data: {
           contract: {
-            documentId:
-              billing.commercial?.activeContractId ??
-              seats?.id ??
-              context.organizationId,
-            seatCount,
-            startDate: seats?.validFrom ?? null,
-            endDate:
-              billing.commercial?.contractEndDate ?? seats?.validUntil ?? null,
-            status: commerciallyOperational ? "active" : seats?.status ?? "draft",
-            paymentStatus: billing.client.billingStatus,
+            ...contract,
+            startDate: contract.startDate ?? null,
+            endDate: contract.endDate ?? null,
+            tier: contract.tier ?? null,
             paidAt: null,
             daysUntilExpiry: null,
-            tier: billing.tier ?? seats?.source ?? null,
-            minimumContractedSeats: seats?.quantity ?? seatCount,
             founderDiscountPercent: null,
             assessmentDataRetentionMonths: null,
-            effectiveAssessmentDataRetentionMonths: 12,
-            autoRenew: billing.client.autoRenew,
           },
           client: {
-            documentId: billing.client.documentId || context.organizationId,
-            billingStatus: billing.client.billingStatus,
-            autoRenew: billing.client.autoRenew,
+            documentId: client.documentId,
+            billingStatus: client.billingStatus,
+            autoRenew: client.autoRenew,
             features: {
-              deliveryRemote: billing.features.deliveryRemote,
-              deliveryHybrid: billing.features.deliveryHybrid,
-              assessmentRecovery: billing.features.assessmentRecovery,
+              ...platformFeatures,
               additionalAssessments: [...unlockedPremiumSlugs].map((slug) => ({
                 slug,
                 title: resolveAssessmentCatalogueTitle(slug),
@@ -99,11 +86,7 @@ export async function GET() {
                 occupied: null,
                 available: null,
               },
-          features: {
-            deliveryRemote: billing.features.deliveryRemote,
-            deliveryHybrid: billing.features.deliveryHybrid,
-            assessmentRecovery: billing.features.assessmentRecovery,
-          },
+          features: platformFeatures,
         },
       });
     }

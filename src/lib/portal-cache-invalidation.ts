@@ -75,13 +75,25 @@ export async function invalidateOrganizationScreenCaches(
   await bumpHmOverviewOrgGeneration(organizationId);
 }
 
-export async function invalidateHmOverviewServerCache(userSub?: string | null): Promise<void> {
+export async function invalidateHmOverviewServerCache(
+  userSub?: string | null,
+  organizationId?: string | null,
+): Promise<void> {
+  if (organizationId) {
+    await bumpHmOverviewOrgGeneration(organizationId);
+  }
   const sub = userSub ?? (await getServerAuthSub());
   if (!sub) return;
   await portalServerCacheDel(portalHmOverviewCacheKey(sub));
 }
 
-export async function invalidateClientPortalServerCache(userSub?: string | null): Promise<void> {
+export async function invalidateClientPortalServerCache(
+  userSub?: string | null,
+  organizationId?: string | null,
+): Promise<void> {
+  if (organizationId) {
+    await bumpHmOverviewOrgGeneration(organizationId);
+  }
   const sub = userSub ?? (await getServerAuthSub());
   if (!sub) return;
   await portalServerCacheDelMany([
@@ -105,15 +117,15 @@ export async function invalidateFirebaseClientPortalCaches(input: {
   firebaseUid: string;
   organizationId?: string | null;
 }): Promise<void> {
+  if (input.organizationId) {
+    await bumpHmOverviewOrgGeneration(input.organizationId);
+  }
   if (!input.firebaseUid) return;
   await portalServerCacheDelMany([
     portalClientEntitlementsCacheKey(input.firebaseUid),
     portalClientDashboardCacheKey(input.firebaseUid),
     portalClientOverviewCacheKey(input.firebaseUid),
   ]);
-  if (input.organizationId) {
-    await bumpHmOverviewOrgGeneration(input.organizationId);
-  }
 }
 
 async function invalidateClientFeaturesServerCache(clientDocumentId: string): Promise<void> {
@@ -125,10 +137,11 @@ async function invalidateClientFeaturesServerCache(clientDocumentId: string): Pr
 export async function invalidateClientEntitlementCaches(input: {
   clientDocumentId: string;
   userSub?: string | null;
+  organizationId?: string | null;
 }): Promise<void> {
   await invalidateClientFeaturesServerCache(input.clientDocumentId);
   await invalidateClientEntitlementsServerCache(input.userSub);
-  await invalidateClientPortalServerCache(input.userSub);
+  await invalidateClientPortalServerCache(input.userSub, input.organizationId);
 }
 
 /** Bust admin overview + revenue analytics after client or billing mutations. */

@@ -55,6 +55,42 @@ export type FirebaseClientSharedCandidates = Readonly<{
   items: FirebaseClientSharedCandidate[];
 }>;
 
+export type FirebaseAdminOverviewOrganizationCard = Readonly<{
+  id: string;
+  legalName: string;
+  activeSeats: number;
+  pendingUpgradesCount: number;
+  contractSummary: {
+    status: string;
+    seatCount: number;
+    startDate: string;
+    endDate: string | null;
+  } | null;
+}>;
+
+export type FirebaseAdminOverviewScreen = Readonly<{
+  organizations: FirebaseAdminOverviewOrganizationCard[];
+  totalOrganizations: number;
+}>;
+
+export type FirebaseAdminAuditEvent = Readonly<{
+  id: string;
+  actorUserId: string | null;
+  actorFirebaseUid: string | null;
+  actorDisplayName: string | null;
+  action: string;
+  resourceType: string;
+  resourceId: string;
+  organizationId: string | null;
+  occurredAt: string;
+}>;
+
+export type FirebaseAdminAuditScreen = Readonly<{
+  items: FirebaseAdminAuditEvent[];
+  events: FirebaseAdminAuditEvent[];
+  nextCursor?: string | null;
+}>;
+
 export function createFirebaseScreenApi(
   domainApi: FirebaseDomainRequester,
   firebaseSessionCookie: string,
@@ -75,6 +111,22 @@ export function createFirebaseScreenApi(
     getClientSharedCandidates() {
       return domainApi.request<FirebaseClientSharedCandidates>({
         path: "/v1/screens/client-shared-candidates",
+        firebaseSessionCookie,
+      });
+    },
+    getAdminOverview() {
+      return domainApi.request<FirebaseAdminOverviewScreen>({
+        path: "/v1/screens/admin-overview",
+        firebaseSessionCookie,
+      });
+    },
+    getAdminAuditEvents(params?: { limit?: number; cursor?: string }) {
+      const search = new URLSearchParams();
+      if (params?.limit) search.set("limit", String(params.limit));
+      if (params?.cursor) search.set("cursor", params.cursor);
+      const query = search.toString();
+      return domainApi.request<FirebaseAdminAuditScreen>({
+        path: `/v1/screens/admin-audit${query ? `?${query}` : ""}`,
         firebaseSessionCookie,
       });
     },

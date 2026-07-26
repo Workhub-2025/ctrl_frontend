@@ -4,7 +4,7 @@
  * cutover; prefer Firebase when the flag says so.
  */
 export function isFirebaseAuthProvider(): boolean {
-  return process.env.NEXT_PUBLIC_AUTH_PROVIDER === "firebase";
+  return true;
 }
 
 export const FIREBASE_AUTH_ROUTE_GONE_MESSAGE =

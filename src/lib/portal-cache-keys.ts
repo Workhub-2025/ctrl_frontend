@@ -66,6 +66,22 @@ export function portalHmReportCacheKey(sub: string, candidateSessionId: string) 
   return `hm:report:${sub}:${candidateSessionId}`;
 }
 
+export function portalHmReportCacheKeyWithGeneration(
+  sub: string,
+  candidateSessionId: string,
+  generation: string,
+) {
+  return `hm:report:user:${sub}:${candidateSessionId}:g:${generation}`;
+}
+
+export function portalClientSharedCandidatesCacheKeyWithGeneration(
+  sub: string,
+  generation: string,
+) {
+  return `client:shared-candidates:user:${sub}:g:${generation}`;
+}
+
+
 export function portalCandidateWorkspaceCacheKey(sub: string) {
   return `candidate:workspace:user:${sub}`;
 }

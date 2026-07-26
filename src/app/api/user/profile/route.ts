@@ -78,14 +78,12 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        if (session.user.authProvider === 'firebase') {
-            const firebaseAuth = await requireFirebaseSession();
-            const profile = await getFirebaseUserProfile(firebaseAuth.firebaseSessionCookie);
-            trace.success({ userId: session.user.id, provider: 'firebase' });
-            return NextResponse.json(toProfileResponse(profile), {
-                headers: { 'x-correlation-id': correlationId },
-            });
-        }
+        const firebaseAuth = await requireFirebaseSession();
+        const profile = await getFirebaseUserProfile(firebaseAuth.firebaseSessionCookie);
+        trace.success({ userId: session.user.id, provider: 'firebase' });
+        return NextResponse.json(toProfileResponse(profile), {
+            headers: { 'x-correlation-id': correlationId },
+        });
 
         const cmsJwt = await getServerCmsJwt(request);
         if (!cmsJwt) {
@@ -176,17 +174,15 @@ export async function PUT(request: NextRequest) {
         }
         const updateData = decision.data;
 
-        if (session.user.authProvider === 'firebase') {
-            const firebaseAuth = await requireFirebaseSession();
-            const profile = await updateFirebaseUserProfile(
-                firebaseAuth.firebaseSessionCookie,
-                updateData,
-            );
-            trace.success({ userId: session.user.id, provider: 'firebase' });
-            return NextResponse.json(toProfileResponse(profile), {
-                headers: { 'x-correlation-id': correlationId },
-            });
-        }
+        const firebaseAuth = await requireFirebaseSession();
+        const profile = await updateFirebaseUserProfile(
+            firebaseAuth.firebaseSessionCookie,
+            updateData,
+        );
+        trace.success({ userId: session.user.id, provider: 'firebase' });
+        return NextResponse.json(toProfileResponse(profile), {
+            headers: { 'x-correlation-id': correlationId },
+        });
 
         const cmsJwt = await getServerCmsJwt(request);
         if (!cmsJwt) {

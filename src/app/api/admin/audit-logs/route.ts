@@ -6,14 +6,11 @@ import {
 } from "@/lib/auth/admin-dual-access";
 import {
   toAdminAuditLogRows,
-  type FirebaseAdminAuditEvent,
-  type FirebaseOrganization,
 } from "@/lib/firebase-admin-tenancy-bff";
+import { createFirebaseScreenApi } from "@/lib/firebase-screen-api";
 import { getAdminAuditLogs } from "@/services/admin-platform.service";
 
-const AUDIT_EVENTS_PER_ORG = 100;
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const auth = await requireAdminDualAccess("audit.read");
     if ("error" in auth) {
@@ -21,38 +18,20 @@ export async function GET() {
     }
 
     if (isFirebaseAdminAuth(auth)) {
-      const organizations = await auth.domainApi.request<FirebaseOrganization[]>({
-        path: "/v1/organizations",
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-      });
-      const organizationNameById = new Map(
-        organizations.map((organization) => [
-          organization.id,
-          organization.legalName,
-        ]),
-      );
-      const [eventsByOrg, platformEvents] = await Promise.all([
-        Promise.all(
-          organizations.map((organization) =>
-            auth.domainApi.request<FirebaseAdminAuditEvent[]>({
-              path: `/v1/organizations/${encodeURIComponent(organization.id)}/audit-events?limit=${AUDIT_EVENTS_PER_ORG}`,
-              firebaseSessionCookie: auth.firebaseSessionCookie,
-            }),
-          ),
-        ),
-        auth.domainApi
-          .request<FirebaseAdminAuditEvent[]>({
-            path: `/v1/admin/platform-audit-events?limit=${AUDIT_EVENTS_PER_ORG}`,
-            firebaseSessionCookie: auth.firebaseSessionCookie,
-          })
-          .catch(() => [] as FirebaseAdminAuditEvent[]),
-      ]);
-      const events = [...platformEvents, ...eventsByOrg.flat()];
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get("limit") ?? "100", 10);
+      const cursor = url.searchParams.get("cursor") ?? undefined;
+
+      const screens = createFirebaseScreenApi(auth.domainApi, auth.firebaseSessionCookie);
+      const auditResult = await screens.getAdminAuditEvents({ limit, cursor });
+
+      const events = auditResult.events ?? auditResult.items ?? [];
       return NextResponse.json({
-        data: toAdminAuditLogRows(events, organizationNameById),
+        data: toAdminAuditLogRows(events, new Map()),
         meta: {
+          nextCursor: auditResult.nextCursor ?? null,
           notice:
-            "Firebase audit view merges platform-scoped events (organizationId null) with tenant-scoped organization streams.",
+            "Firebase audit view streams combined platform and tenant audit logs via paginated index query.",
         },
       });
     }

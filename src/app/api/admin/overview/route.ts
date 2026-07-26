@@ -6,10 +6,9 @@ import {
   type AdminDualAuthResult,
 } from "@/lib/auth/admin-dual-access";
 import {
-  toAdminOverviewFromOrganizations,
-  type FirebaseClientTeamWorkspace,
-  type FirebaseOrganization,
+  toAdminOverviewFromScreen,
 } from "@/lib/firebase-admin-tenancy-bff";
+import { createFirebaseScreenApi } from "@/lib/firebase-screen-api";
 import {
   PORTAL_ADMIN_OVERVIEW_CACHE_KEY,
   PORTAL_ADMIN_PLATFORM_TTL_MS,
@@ -31,19 +30,9 @@ async function loadFirebaseAdminOverview(
     { domainApi: unknown }
   >,
 ) {
-  const organizations = await auth.domainApi.request<FirebaseOrganization[]>({
-    path: "/v1/organizations",
-    firebaseSessionCookie: auth.firebaseSessionCookie,
-  });
-  const workspaces = await Promise.all(
-    organizations.map((organization) =>
-      auth.domainApi.request<FirebaseClientTeamWorkspace>({
-        path: `/v1/organizations/${encodeURIComponent(organization.id)}/workspace`,
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-      }),
-    ),
-  );
-  return toAdminOverviewFromOrganizations(organizations, workspaces);
+  const screens = createFirebaseScreenApi(auth.domainApi, auth.firebaseSessionCookie);
+  const screen = await screens.getAdminOverview();
+  return toAdminOverviewFromScreen(screen);
 }
 
 export async function GET(request: Request) {

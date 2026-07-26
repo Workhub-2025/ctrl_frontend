@@ -386,6 +386,81 @@ export function toAdminOverviewFromOrganizations(
   };
 }
 
+export function toAdminOverviewFromScreen(
+  screen: {
+    organizations: ReadonlyArray<{
+      id: string;
+      legalName: string;
+      activeSeats: number;
+      pendingUpgradesCount: number;
+      contractSummary: {
+        status: string;
+        seatCount: number;
+        startDate: string;
+        endDate: string | null;
+      } | null;
+    }>;
+    totalOrganizations: number;
+  },
+): AdminOverview {
+  const rows: AdminClientRow[] = screen.organizations.map((org) => ({
+    id: org.id,
+    name: org.legalName,
+    status: "Active",
+    plan: "Firebase tenancy",
+    seatsUsed: org.activeSeats,
+    seatsAllowed: org.contractSummary?.seatCount ?? org.activeSeats,
+    enabledAssessments: [],
+    billingStatus: org.contractSummary
+      ? org.contractSummary.status === "active"
+        ? "Active"
+        : org.contractSummary.status === "paused"
+          ? "Paused"
+          : org.contractSummary.status === "expired"
+            ? "Expired"
+            : "Not configured"
+      : "Not configured",
+    primaryContact: "Organization contact",
+    lastActivity: new Date().toISOString(),
+    pendingCampaignApprovals: org.pendingUpgradesCount,
+    hasClientContact: true,
+    clientInviteStatus: "none" as const,
+    clientInviteExpiresAt: null,
+    canGenerateClientCode: false,
+  }));
+
+  const activeClients = rows.length;
+
+  return {
+    activeClients,
+    awaitingClientSignups: 0,
+    pendingCampaignApprovals: screen.organizations.reduce(
+      (sum, o) => sum + o.pendingUpgradesCount,
+      0,
+    ),
+    availableClientCodes: 0,
+    contractsExpiringSoon: 0,
+    seatUsage: rows,
+    recentActivity: [
+      {
+        id: "firebase-tenancy-ready",
+        title: "Firebase tenancy connected",
+        detail: `${screen.totalOrganizations} organization${screen.totalOrganizations === 1 ? "" : "s"} visible from Cloud Firestore.`,
+      },
+    ],
+    attentionRequired:
+      screen.totalOrganizations === 0
+        ? [
+            {
+              id: "firebase-no-organizations",
+              title: "No organizations yet",
+              detail: "Create a client from the organizations page.",
+            },
+          ]
+        : [],
+  };
+}
+
 export function toAdminClientCreateResult(
   organizationId: string,
   workspace: FirebaseClientTeamWorkspace,

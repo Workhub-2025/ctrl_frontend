@@ -362,47 +362,4 @@ export function toClientDashboardSummary(
   };
 }
 
-export async function buildClientOverview(
-  domainApi: FirebaseDomainRequester,
-  firebaseSessionCookie: string,
-  organizationId: string,
-): Promise<ClientOverviewData> {
-  const portal = createFirebaseClientPortalApi(domainApi, firebaseSessionCookie);
-  const recruitment = createFirebaseRecruitmentApi(
-    domainApi,
-    firebaseSessionCookie,
-  );
-  const [workspace, campaignResult] = await Promise.all([
-    portal.getTeamWorkspace(organizationId),
-    recruitment.listCampaigns(organizationId),
-  ]);
-  const workspaces = await Promise.all(
-    campaignResult.items.map(async (campaign) => {
-      const [detail, assignments] = await Promise.all([
-        recruitment.getCampaign(campaign.id),
-        recruitment.listAssignments(campaign.id),
-      ]);
-      return { campaign, detail, assignments: assignments.items };
-    }),
-  );
-  const pendingReviewCount = workspaces.reduce(
-    (total, item) =>
-      total +
-      item.assignments.filter(
-        (assignment) => assignment.visibility === "released",
-      ).length,
-    0,
-  );
-  return {
-    summary: toClientDashboardSummary(
-      workspace,
-      campaignResult.items,
-      pendingReviewCount,
-    ),
-    campaigns: workspaces.map(({ campaign, detail }) =>
-      toClientCampaign(campaign, detail),
-    ),
-    accessCodes: toAccessCodes(workspace),
-    hiringManagers: toHiringManagers(workspace, campaignResult.items),
-  };
-}
+
