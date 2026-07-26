@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FirebaseError } from "firebase/app";
 
 const mocks = vi.hoisted(() => ({
   currentUser: { email: "admin@example.com" } as Record<string, unknown>,
@@ -8,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   signOut: vi.fn(),
   generateSecret: vi.fn(),
   assertionForEnrollment: vi.fn(),
+  assertionForSignIn: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  setPersistence: vi.fn(),
+  getMultiFactorResolver: vi.fn(),
+  resolveSignIn: vi.fn(),
 }));
 
 vi.mock("@/lib/firebase-client", () => ({
@@ -25,17 +31,24 @@ vi.mock("firebase/auth", async (importOriginal) => {
       unenroll: mocks.unenroll,
     }),
     signOut: mocks.signOut,
+    signInWithEmailAndPassword: mocks.signInWithEmailAndPassword,
+    setPersistence: mocks.setPersistence,
+    getMultiFactorResolver: mocks.getMultiFactorResolver,
+    inMemoryPersistence: "memory",
     TotpMultiFactorGenerator: {
       FACTOR_ID: "totp",
       generateSecret: mocks.generateSecret,
       assertionForEnrollment: mocks.assertionForEnrollment,
+      assertionForSignIn: mocks.assertionForSignIn,
     },
   };
 });
 
 import {
+  AuthenticatorUnlockError,
   beginFirebaseTotpEnrollment,
   completeFirebaseTotpEnrollment,
+  unlockAuthenticatorManagement,
 } from "@/lib/firebase-totp-browser";
 
 beforeEach(() => {
@@ -46,6 +59,11 @@ beforeEach(() => {
     generateQrCodeUrl: () => "otpauth://totp/CTRL",
   });
   mocks.assertionForEnrollment.mockReturnValue({ assertion: true });
+  mocks.assertionForSignIn.mockReturnValue({ assertion: true });
+  mocks.signInWithEmailAndPassword.mockResolvedValue({
+    user: mocks.currentUser,
+  });
+  mocks.setPersistence.mockResolvedValue(undefined);
 });
 
 describe("Firebase TOTP enrollment", () => {
@@ -68,5 +86,44 @@ describe("Firebase TOTP enrollment", () => {
     );
     expect(mocks.signOut).toHaveBeenCalledOnce();
   });
-});
 
+  it("unlocks authenticator management with password when MFA is not required", async () => {
+    await expect(
+      unlockAuthenticatorManagement({
+        email: "admin@example.com",
+        password: "password123",
+      }),
+    ).resolves.toMatchObject({ totpEnabled: false });
+    expect(mocks.signInWithEmailAndPassword).toHaveBeenCalledOnce();
+  });
+
+  it("asks for an authenticator code when unlock hits MFA", async () => {
+    const realMfa = new FirebaseError(
+      "auth/multi-factor-auth-required",
+      "MFA required",
+    );
+    mocks.signInWithEmailAndPassword.mockRejectedValueOnce(realMfa);
+    mocks.getMultiFactorResolver.mockReturnValue({
+      hints: [{ uid: "factor-1", factorId: "totp" }],
+      resolveSignIn: mocks.resolveSignIn,
+    });
+
+    await expect(
+      unlockAuthenticatorManagement({
+        email: "admin@example.com",
+        password: "password123",
+      }),
+    ).rejects.toBeInstanceOf(AuthenticatorUnlockError);
+
+    mocks.signInWithEmailAndPassword.mockRejectedValueOnce(realMfa);
+    mocks.resolveSignIn.mockResolvedValueOnce({ user: mocks.currentUser });
+    await expect(
+      unlockAuthenticatorManagement({
+        email: "admin@example.com",
+        password: "password123",
+        totpCode: "123456",
+      }),
+    ).resolves.toMatchObject({ totpEnabled: false });
+    expect(mocks.resolveSignIn).toHaveBeenCalledOnce();
+  });
+});
