@@ -196,11 +196,14 @@ export function CandidateEmailInvitesPanel({
   const [offlineMaterial, setOfflineMaterial] = useState<OfflineSheetMaterial | null>(null);
 
   const remainingSeats = Math.max(0, candidateLimit - candidateCount);
-  const maxBatchSize = Math.min(25, remainingSeats);
+  const maxBatchSize = Math.max(0, Math.min(25, remainingSeats));
   const maxOfflineCopies = Math.max(
     1,
     Math.min(MAX_OFFLINE_COPIES, remainingSeats || MAX_OFFLINE_COPIES)
   );
+  const trimmedInviteInput = inviteEmailInput.trim();
+  const canQueueMore = !disabled && remainingSeats > 0 && inviteEmails.length < maxBatchSize;
+  const canAddFromInput = canQueueMore && trimmedInviteInput.length > 0;
 
   useEffect(() => {
     if (!supportsOfflineSheets && activeTab === "offline") {
@@ -219,14 +222,32 @@ export function CandidateEmailInvitesPanel({
     };
   }, []);
 
-  const addInviteEmails = (raw: string) => {
-    const parsed = raw
+  const parseInviteEmails = (raw: string) =>
+    raw
       .split(/[\s,;]+/)
       .map((value) => value.trim().toLowerCase())
       .filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
 
-    if (parsed.length === 0) return;
+  const addInviteEmails = (raw: string) => {
+    if (!canQueueMore) {
+      setInviteError(
+        disabled
+          ? disabledReason || "Invites are disabled for this session."
+          : remainingSeats === 0
+            ? "Session is full — no seats left to invite."
+            : "Invite batch limit reached."
+      );
+      return;
+    }
 
+    const parsed = parseInviteEmails(raw);
+    if (parsed.length === 0) {
+      setInviteError("Enter a valid email address (for example name@company.com).");
+      return;
+    }
+
+    setInviteError(null);
+    setInviteFeedback(null);
     setInviteEmails((current) => {
       const seen = new Set(current);
       const next = [...current];
@@ -238,6 +259,11 @@ export function CandidateEmailInvitesPanel({
       return next;
     });
     setInviteEmailInput("");
+  };
+
+  const removeQueuedInvite = (email: string) => {
+    setInviteEmails((current) => current.filter((value) => value !== email));
+    setInviteError(null);
   };
 
   const sendCandidateInvites = async () => {
@@ -254,10 +280,22 @@ export function CandidateEmailInvitesPanel({
       );
       const sentCount = result.sent.length;
       const failedCount = result.failed.length;
+      const verb = result.queued ? "Queued" : "Processed";
+      const deliveryNote = result.queued
+        ? " Email delivery is asynchronous — check the candidate inbox (and spam) shortly."
+        : "";
+      if (sentCount === 0) {
+        setInviteError(
+          failedCount > 0
+            ? result.failed.join(" · ")
+            : "Candidate invites could not be queued."
+        );
+        return;
+      }
       setInviteFeedback(
         failedCount > 0
-          ? `Sent ${sentCount} invite${sentCount === 1 ? "" : "s"}. ${failedCount} failed.`
-          : `Sent ${sentCount} invite${sentCount === 1 ? "" : "s"}.`
+          ? `${verb} ${sentCount} invite${sentCount === 1 ? "" : "s"}. ${failedCount} failed: ${result.failed.join(" · ")}.${deliveryNote}`
+          : `${verb} ${sentCount} invite${sentCount === 1 ? "" : "s"}.${deliveryNote}`
       );
       setInviteEmails([]);
       await onInvitesSent?.();
@@ -290,7 +328,9 @@ export function CandidateEmailInvitesPanel({
         });
         delete resendUnlockTimeoutsRef.current[invite.id];
       }, RESEND_BUTTON_LOCK_MS);
-      setInviteFeedback(`Resent invite to ${invite.email}.`);
+      setInviteFeedback(
+        `Invite re-queued for ${invite.email}. Delivery is asynchronous while SMTP is operator-gated.`
+      );
       await onInvitesSent?.();
     } catch (error) {
       setInviteError(
@@ -390,27 +430,41 @@ export function CandidateEmailInvitesPanel({
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              type="email"
-              placeholder="candidate@email.com"
-              value={inviteEmailInput}
-              onChange={(event) => setInviteEmailInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  addInviteEmails(inviteEmailInput);
-                }
-              }}
-              disabled={disabled || remainingSeats === 0}
-              className="rounded-lg border-white/10 bg-white/[0.02] text-white"
-            />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {/*
+              Input's base styles include w-full. Inside a row flex that overflows
+              and covers Add (disabled:pointer-events-none is unrelated — the
+              hit target was simply under the input). Constrain with flex-1/min-w-0.
+            */}
+            <div className="min-w-0 flex-1">
+              <Input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="candidate@email.com"
+                value={inviteEmailInput}
+                onChange={(event) => {
+                  setInviteEmailInput(event.target.value);
+                  if (inviteError) setInviteError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    addInviteEmails(inviteEmailInput);
+                  }
+                }}
+                disabled={disabled || remainingSeats === 0}
+                aria-invalid={Boolean(inviteError)}
+                className="rounded-lg border-white/10 bg-white/[0.02] text-white"
+              />
+            </div>
             <Button
               type="button"
               variant="outline"
-              className="shrink-0 rounded-lg border-white/10"
+              className="relative z-10 w-full shrink-0 rounded-lg border-white/10 sm:w-auto"
               onClick={() => addInviteEmails(inviteEmailInput)}
-              disabled={disabled || !inviteEmailInput.trim() || inviteEmails.length >= maxBatchSize || remainingSeats === 0}
+              disabled={!canAddFromInput}
             >
               <Plus className="mr-1.5 h-4 w-4" />
               Add
@@ -418,30 +472,30 @@ export function CandidateEmailInvitesPanel({
           </div>
 
           {inviteEmails.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <ul className="flex flex-wrap gap-2" aria-label="Queued invite emails">
               {inviteEmails.map((email) => (
-                <Badge
-                  key={email}
-                  variant="secondary"
-                  className="gap-1 rounded-lg border-border bg-muted/30 px-2.5 py-1 text-xs text-foreground"
-                >
-                  {email}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setInviteEmails((current) => current.filter((value) => value !== email))
-                    }
-                    className="rounded-full p-0.5 hover:bg-muted/60"
-                    aria-label={`Remove ${email}`}
+                <li key={email}>
+                  <Badge
+                    variant="secondary"
+                    className="gap-1.5 rounded-lg border-border bg-muted/30 py-1 pl-2.5 pr-1 text-xs text-foreground"
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
+                    <span className="max-w-[14rem] truncate">{email}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeQueuedInvite(email)}
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground"
+                      aria-label={`Remove ${email} from invite queue`}
+                    >
+                      <X className="h-3.5 w-3.5" aria-hidden="true" />
+                      Remove
+                    </button>
+                  </Badge>
+                </li>
               ))}
-            </div>
+            </ul>
           ) : (
             <p className="text-xs italic text-muted-foreground">
-              Paste multiple emails separated by commas or new lines.
+              Paste multiple emails separated by commas or new lines, then Add.
             </p>
           )}
 
@@ -527,6 +581,7 @@ export function CandidateEmailInvitesPanel({
                     {offlineMaterial.copyCount === 1 ? "" : "s"} ready
                   </h4>
                   <p className="mt-1 font-mono text-sm font-semibold tracking-wider text-foreground">
+                    {/* Intentional HM reveal after authenticated join-link fetch */}
                     {offlineMaterial.accessCode}
                   </p>
                   <p className="mt-1 break-all text-[11px] text-muted-foreground">
@@ -544,8 +599,8 @@ export function CandidateEmailInvitesPanel({
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                All copies share one session code. Candidates open /join and enter the code
-                shown above.
+                All copies share one session code. Capacity is enforced when candidates
+                claim the code on /join — printing N slips does not reserve N seats.
               </p>
             </div>
           ) : null}

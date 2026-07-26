@@ -5,24 +5,24 @@ import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { sessionJoinUrl } from "@/lib/public-app-urls";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
 
 /**
  * Reveal the session access code for an authenticated hiring manager.
  * List DTOs never include plaintext (codes are stored write-once encrypted);
  * this is the intentional share surface for both the code and the /join deep link.
+ *
+ * GET — no CSRF mutation guard; rate-limited + session:write on the domain API.
+ * Never log the plaintext accessCode.
  */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ sessionId: string }> },
 ) {
   try {
-    const { recruitment } =
+    const { session, recruitment } =
       await requireFirebaseRecruitmentSession("hiring_manager");
-    const session = await getServerSession(authOptions);
     const limiter = await applyRateLimit({
-      key: `hm-session-join:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
+      key: `hm-session-join:${session.user.id}:${extractClientIp(request)}`,
       limit: 30,
       windowMs: 60_000,
     });

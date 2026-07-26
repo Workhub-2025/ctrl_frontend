@@ -149,7 +149,9 @@ export function toHiringManagerSession(
     date: displayDate(session.startsAt),
     startsAt: session.startsAt,
     location: session.location ?? "Location to confirm",
-    candidateCount: activeAssignments.length || session.claimedCapacity,
+    // Prefer the higher of live assignment rows vs claimedCapacity so a stale
+    // projection cannot show 0 seats (which disables Add) or under-count.
+    candidateCount: Math.max(activeAssignments.length, session.claimedCapacity),
     candidateLimit: session.capacity,
     accessMode: "Session Code",
     // Codes are write-only and never returned by the domain API.

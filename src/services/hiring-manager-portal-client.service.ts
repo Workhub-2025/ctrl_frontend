@@ -238,24 +238,39 @@ export class HiringManagerPortalClientService {
   static async inviteCandidatesToSession(
     sessionId: string,
     emails: string[]
-  ): Promise<{ sent: string[]; failed: string[] }> {
+  ): Promise<{ sent: string[]; failed: string[]; queued: boolean }> {
     const response = await fetch(
       `/api/hiring-manager/sessions/${sessionId}/invite-candidates`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         body: JSON.stringify({ emails }),
       }
     );
     const body = await readJson<{
-      data?: { sent?: string[]; failed?: string[] };
+      data?: {
+        sent?: string[];
+        failed?: string[] | Array<{ email?: string; error?: string }>;
+        queued?: boolean;
+        delivery?: string;
+      };
       error?: string;
     }>(response);
 
     this.invalidate();
+    const failedRaw = body.data?.failed ?? [];
+    const failed = failedRaw.map((item) =>
+      typeof item === "string"
+        ? item
+        : [item.email, item.error].filter(Boolean).join(": ") || "Invitation failed",
+    );
     return {
       sent: body.data?.sent ?? [],
-      failed: body.data?.failed ?? [],
+      failed,
+      queued: body.data?.queued ?? body.data?.delivery === "queued",
     };
   }
 
