@@ -31,7 +31,8 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
     slug: "situational-judgement",
     shortLabel: "SJA",
     title: "Situational judgement",
-    description: "Situational judgement assessment content",
+    description:
+      "Choose the most and least effective response to workplace situations under time pressure.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
     timed: true,
@@ -39,8 +40,9 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
   {
     slug: "typing",
     shortLabel: "TA",
-    title: "Typing assessment",
-    description: "Typing assessment content",
+    title: "Typing",
+    description:
+      "Measure typing speed, accuracy and stability across timed operational passages.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
     timed: true,
@@ -48,8 +50,9 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
   {
     slug: "prioritisation",
     shortLabel: "PJA",
-    title: "Prioritisation",
-    description: "Prioritisation assessment content",
+    title: "Prioritisation judgement",
+    description:
+      "Rank competing incidents by urgency, seriousness, vulnerability, immediacy and potential risk.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
     timed: true,
@@ -68,7 +71,8 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
     slug: "short-term-memory",
     shortLabel: "STM",
     title: "Short-term memory",
-    description: "Short-term memory assessment content",
+    description:
+      "Retain an operational briefing through interruption, then reconstruct key facts.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
     timed: true,

@@ -30,7 +30,7 @@ describe("resolveCandidateAssessmentCatalogItem", () => {
     expect(resolved.resolvedSlug).toBe("situational-judgement");
     expect(resolved.item).toMatchObject({
       slug: "situational-judgement",
-      title: "Situational Judgement",
+      title: "Situational judgement",
     });
   });
 
@@ -54,25 +54,25 @@ describe("resolveCandidateAssessmentCatalogItem", () => {
       ),
     ).toEqual({
       "call-simulation": {
-        title: "Call Simulation",
+        title: "Simulated call",
         description:
-          "Capture caller, system, intelligence and incident information from a live recorded call.",
+          "Practice plus two assessed calls — capture caller, system, intelligence and incident information.",
         duration: "15–20 minutes",
       },
       prioritisation: {
-        title: "Prioritisation",
+        title: "Prioritisation judgement",
         description:
           "Rank competing incidents by urgency, seriousness, vulnerability, immediacy and potential risk.",
         duration: "35–45 minutes",
       },
       "situational-judgement": {
-        title: "Situational Judgement",
+        title: "Situational judgement",
         description:
           "Choose the most and least effective response to 20 workplace situations.",
         duration: "30–40 minutes",
       },
       "short-term-memory": {
-        title: "Short-Term Memory",
+        title: "Short-term memory",
         description:
           "Retain an operational briefing through interruption, reconstruct key facts and correct the record.",
         duration: "25–35 minutes",
@@ -80,7 +80,7 @@ describe("resolveCandidateAssessmentCatalogItem", () => {
       typing: {
         title: "Typing",
         description:
-          "Measure typing speed, accuracy and stability across three sustained 90-second passages.",
+          "Measure typing speed, accuracy and stability across three sustained passages.",
         duration: "7–10 minutes",
       },
     });

@@ -17,7 +17,7 @@ export type CandidateAssessmentCatalogItem = {
 export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
   {
     slug: "call-simulation",
-    title: "Call Simulation",
+    title: "Simulated call",
     description:
       "Practice plus two assessed calls — capture caller, system, intelligence and incident information.",
     href: getAssessmentPagePath("call-simulation"),
@@ -26,7 +26,7 @@ export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
   },
   {
     slug: "prioritisation",
-    title: "Prioritisation",
+    title: "Prioritisation judgement",
     description: "Rank competing incidents by urgency, seriousness, vulnerability, immediacy and potential risk.",
     href: getAssessmentPagePath("prioritisation"),
     duration: "35–45 minutes",
@@ -34,7 +34,7 @@ export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
   },
   {
     slug: "situational-judgement",
-    title: "Situational Judgement",
+    title: "Situational judgement",
     description: "Choose the most and least effective response to 20 workplace situations.",
     href: getAssessmentPagePath("situational-judgement"),
     duration: "30–40 minutes",
@@ -42,7 +42,7 @@ export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
   },
   {
     slug: "short-term-memory",
-    title: "Short-Term Memory",
+    title: "Short-term memory",
     description: "Retain an operational briefing through interruption, reconstruct key facts and correct the record.",
     href: getAssessmentPagePath("short-term-memory"),
     duration: "25–35 minutes",
@@ -51,7 +51,7 @@ export const CANDIDATE_ASSESSMENT_CATALOG: CandidateAssessmentCatalogItem[] = [
   {
     slug: "typing",
     title: "Typing",
-    description: "Measure typing speed, accuracy and stability across three sustained 90-second passages.",
+    description: "Measure typing speed, accuracy and stability across three sustained passages.",
     href: getAssessmentPagePath("typing"),
     duration: "7–10 minutes",
     icon: Keyboard,

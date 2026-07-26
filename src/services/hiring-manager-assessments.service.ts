@@ -6,7 +6,11 @@ import {
   ASSESSMENT_CATALOGUE_DEFAULTS,
   formatEstimatedCompletion,
 } from "@/lib/assessment-catalog-defaults";
-import { assessmentEntitlementTier } from "@/lib/assessment-platform-registry";
+import { getAssessmentLibraryPreview } from "@/lib/assessment-library-previews";
+import {
+  assessmentEntitlementTier,
+  getAssessmentPlatformEntry,
+} from "@/lib/assessment-platform-registry";
 import { isKnownAssessmentSlug } from "@/lib/assessment-slug";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 import { createFirebaseRecruitmentApi } from "@/lib/firebase-recruitment-api";
@@ -68,6 +72,46 @@ const catalogueMeta: Record<
     videoLabel: "Call simulation preview",
     configType: "assessment-config.call-simulation",
   },
+  "situational-judgement": {
+    iconKey: "default",
+    skills: ["Judgement", "Communication", "Composure"],
+    fallbackSummary:
+      "Choose the most and least effective response to workplace situations under time pressure.",
+    whyItMatters:
+      "Shows how candidates balance empathy, structure and risk when handling distressed or incomplete calls.",
+    videoLabel: "Situational judgement preview",
+    configType: "assessment-config.situational-judgement",
+  },
+  prioritisation: {
+    iconKey: "default",
+    skills: ["Risk awareness", "Urgency", "Decision support"],
+    fallbackSummary:
+      "Rank competing incidents by urgency, seriousness, vulnerability, immediacy and potential risk.",
+    whyItMatters:
+      "Shows whether candidates can triage a busy queue without missing high-harm work.",
+    videoLabel: "Prioritisation judgement preview",
+    configType: "assessment-config.prioritisation",
+  },
+  typing: {
+    iconKey: "default",
+    skills: ["Speed", "Accuracy", "Stability"],
+    fallbackSummary:
+      "Measure typing speed, accuracy and stability across timed operational passages.",
+    whyItMatters:
+      "Shows whether candidates can capture caller detail clearly while the call is live.",
+    videoLabel: "Typing preview",
+    configType: "assessment-config.typing",
+  },
+  "short-term-memory": {
+    iconKey: "default",
+    skills: ["Retention", "Reconstruction", "Attention"],
+    fallbackSummary:
+      "Retain an operational briefing through interruption, then reconstruct key facts.",
+    whyItMatters:
+      "Shows whether candidates can hold critical detail after distraction — a core control-room skill.",
+    videoLabel: "Short-term memory preview",
+    configType: "assessment-config.short-term-memory",
+  },
 };
 
 const fallbackMeta = {
@@ -104,6 +148,7 @@ function mapCatalogueItem(
   const meta = catalogueMeta[item.slug] ?? fallbackMeta;
   const knownSlug = isKnownAssessmentSlug(item.slug) ? item.slug : null;
   const defaults = knownSlug ? ASSESSMENT_CATALOGUE_DEFAULTS[knownSlug] : null;
+  const platform = getAssessmentPlatformEntry(item.slug);
 
   const availableVersions: AssessmentVersionOption[] = includeVersions
     ? (item.availableReleases?.length
@@ -115,20 +160,31 @@ function mapCatalogueItem(
               status: "active" as const,
             },
           ]
-      ).map((release) => ({
-        version: release.releaseVersion,
-        releaseId: release.releaseId,
-        title: releaseLabel(item.slug, release.releaseVersion),
-        description: releaseDescription(item.slug, release.releaseVersion),
-      }))
+      ).map((release) => {
+        const preview = getAssessmentLibraryPreview(
+          item.slug,
+          release.releaseVersion,
+        );
+        return {
+          version: release.releaseVersion,
+          releaseId: release.releaseId,
+          title: releaseLabel(item.slug, release.releaseVersion),
+          description:
+            releaseDescription(item.slug, release.releaseVersion) ??
+            preview?.overview ??
+            null,
+          previewSamples: preview?.samples ? [...preview.samples] : undefined,
+          audioPreview: preview?.audioPreview ?? null,
+        };
+      })
     : [];
 
   return {
     id: item.definitionId,
     documentId: item.definitionId,
     slug: item.slug,
-    title: item.title,
-    summary: meta.fallbackSummary,
+    title: platform?.title ?? item.title,
+    summary: platform?.description ?? meta.fallbackSummary,
     duration: knownSlug
       ? formatEstimatedCompletion(knownSlug)
       : "Configured release",
