@@ -81,7 +81,7 @@ const fallbackMeta = {
 };
 
 export type GetHiringManagerAssessmentsOptions = {
-  /** Campaign builder needs version banks; the library view does not. */
+  /** Library browse and campaign builder both need available release versions. */
   includeVersions?: boolean;
 };
 
@@ -119,7 +119,7 @@ function mapCatalogueItem(
         version: release.releaseVersion,
         releaseId: release.releaseId,
         title: releaseLabel(item.slug, release.releaseVersion),
-        description: null,
+        description: releaseDescription(item.slug, release.releaseVersion),
       }))
     : [];
 
@@ -155,6 +155,16 @@ function releaseLabel(slug: string, version: string): string {
     return `v${version} — practice + two assessed calls`;
   }
   return `v${version}`;
+}
+
+function releaseDescription(slug: string, version: string): string | null {
+  if (slug === "call-simulation" && version === "1.1.0") {
+    return "Includes one practice call and two assessed calls. Candidates capture caller, system, intelligence, and incident information under timed review.";
+  }
+  if (slug === "call-simulation" && version === "1.0.1") {
+    return "Historical single-call product line. Prefer 1.1.0 for new campaigns.";
+  }
+  return null;
 }
 
 const loadHiringManagerAssessmentsWithVersions = cache(

@@ -17,13 +17,12 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  FileText,
-  Headphones,
   Lock,
   Unlock,
   Save,
   Timer,
 } from "lucide-react";
+import Link from "next/link";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { preferredAssessmentReleaseVersion } from "@/lib/assessment-platform-registry";
 import { isPremiumCatalogueTier } from "@/lib/client/entitlements";
@@ -42,10 +41,8 @@ import {
   portalIconWrapClass,
   portalInputClass,
   portalLabelClass,
-  portalPanelBorderClass,
   portalPanelNestedClass,
   portalPrimaryButtonClass,
-  portalAssessmentPreviewDetailsClass,
   portalSelectableCardClass,
   portalSelectableCardGroupClass,
   portalSelectableCardSelectedClass,
@@ -170,11 +167,6 @@ function defaultVersionFor(assessment: HiringManagerAssessment): string {
   return options[0]?.version ?? preferred;
 }
 
-function getSelectedVersionOption(assessment: HiringManagerAssessment, selectedVersion: string) {
-  return getVersionOptions(assessment).find((version) => version.version === selectedVersion)
-    ?? getVersionOptions(assessment)[0];
-}
-
 function removeRecordKey<T>(record: Record<string, T>, key: string) {
   const next = { ...record };
   delete next[key];
@@ -194,81 +186,6 @@ function formatTotalDuration(seconds: number): string {
   const hours = Math.floor(minutes / 60);
   const remaining = minutes % 60;
   return remaining ? `${hours} hr ${remaining} min` : `${hours} hr`;
-}
-
-function VersionPreviewPanel({
-  assessment,
-  version,
-}: {
-  assessment: HiringManagerAssessment;
-  version: ReturnType<typeof getSelectedVersionOption>;
-}) {
-  const samples = version?.previewSamples?.filter(Boolean).slice(0, 3) ?? [];
-  const audioPreview = version?.audioPreview;
-
-  if (samples.length === 0 && !audioPreview && !version?.description) {
-    return (
-      <details className={portalAssessmentPreviewDetailsClass}>
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-muted-foreground marker:hidden">
-          <span className="flex items-center gap-2">
-            <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-            Quick preview
-          </span>
-          <span className="text-[10px] text-muted-foreground group-open:hidden">Show</span>
-          <span className="hidden text-[10px] text-muted-foreground group-open:inline">Hide</span>
-        </summary>
-        <div className={cn("border-t px-3 py-3 leading-5", portalPanelBorderClass)}>
-          Preview content is not available for this version yet.
-        </div>
-      </details>
-    );
-  }
-
-  return (
-    <details className={portalAssessmentPreviewDetailsClass}>
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 font-bold uppercase tracking-wider text-muted-foreground marker:hidden">
-        <span className="flex items-center gap-2">
-          <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-          Quick preview
-        </span>
-        <span className="text-[10px] text-muted-foreground group-open:hidden">Show</span>
-        <span className="hidden text-[10px] text-muted-foreground group-open:inline">Hide</span>
-      </summary>
-      <div className={cn("space-y-3 border-t p-3", portalPanelBorderClass)}>
-        {version?.description ? (
-          <p className="text-xs leading-5 text-muted-foreground">{version.description}</p>
-        ) : null}
-        {samples.length > 0 ? (
-          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-            {samples.map((sample, index) => (
-              <p
-                key={`${assessment.slug}-${version?.version}-sample-${index}`}
-                className={cn(portalPanelNestedClass, "rounded-md px-3 py-2 text-xs leading-5 text-foreground")}
-              >
-                {sample}
-              </p>
-            ))}
-          </div>
-        ) : null}
-        {audioPreview?.src ? (
-          <div className="rounded-md border border-cyan-400/20 bg-cyan-400/10 p-2.5">
-            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
-              <Headphones className="h-3.5 w-3.5" aria-hidden="true" />
-              {audioPreview.label}
-            </div>
-            <audio
-              controls
-              preload="metadata"
-              src={`${audioPreview.src}#t=${audioPreview.startSeconds},${audioPreview.startSeconds + audioPreview.durationSeconds}`}
-              className="h-8 w-full"
-            >
-              Audio preview is not supported by this browser.
-            </audio>
-          </div>
-        ) : null}
-      </div>
-    </details>
-  );
 }
 
 function ReviewRow({ label, value }: { label: string; value: ReactNode }) {
@@ -888,7 +805,6 @@ export function HiringManagerCampaignBuilder({
               const selectedVersion =
                 draft.assessmentVersions[assessment.slug] ??
                 defaultVersionFor(assessment);
-              const selectedVersionOption = getSelectedVersionOption(assessment, selectedVersion);
               const isLocked = lockedSlugs.includes(assessment.slug);
 
               return (
@@ -1082,6 +998,16 @@ export function HiringManagerCampaignBuilder({
                               ))}
                             </SelectContent>
                           </Select>
+                          <p className="text-xs leading-5 text-muted-foreground">
+                            Browse release notes in the{" "}
+                            <Link
+                              href="/hiring-manager-dashboard/assessments"
+                              className="font-medium text-primary underline-offset-2 hover:underline"
+                            >
+                              Assessment library
+                            </Link>
+                            .
+                          </p>
                         </div>
 
                         {assessment.slug === "typing" ? (
@@ -1131,11 +1057,6 @@ export function HiringManagerCampaignBuilder({
                           </div>
                         ) : null}
                       </div>
-
-                      <VersionPreviewPanel
-                        assessment={assessment}
-                        version={selectedVersionOption}
-                      />
                     </div>
                   ) : null}
                 </div>

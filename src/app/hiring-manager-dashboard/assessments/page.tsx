@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function HiringManagerAssessmentsPage() {
   const { assessments, error } = await getHiringManagerAssessments({
-    includeVersions: false,
+    includeVersions: true,
   });
 
   return (
@@ -18,7 +18,7 @@ export default async function HiringManagerAssessmentsPage() {
       <HiringManagerPageHeader
         eyebrow="Assessment library"
         title="Assessments"
-        description="Browse assessment modules, duration, measured skills, and operational relevance."
+        description="Browse assessment modules and available release versions before you add them to a campaign."
         icon={<BookOpenCheck className="h-5 w-5" aria-hidden="true" />}
         notice={
           error ? (

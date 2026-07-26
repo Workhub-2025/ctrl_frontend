@@ -218,9 +218,3 @@ export const portalAssessmentInsetClass = cn(
   portalPanelNestedClass,
   "rounded-lg bg-background/80 p-3 text-center"
 );
-
-/** Collapsible preview panel in campaign builder assessment stack. */
-export const portalAssessmentPreviewDetailsClass = cn(
-  portalPanelNestedClass,
-  "rounded-lg text-xs text-muted-foreground"
-);
