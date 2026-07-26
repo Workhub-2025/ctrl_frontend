@@ -49,6 +49,7 @@ import {
 } from "@/lib/profile-authority";
 import { PortalStatusBadge } from "@/components/dashboard/portal/portal-data-ui";
 import { useAuthStore } from "@/store/auth.store";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,7 +71,7 @@ interface ProfileData {
 }
 
 const profileTabListClass =
-  "flex h-auto min-h-10 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto rounded-xl border border-border bg-muted/50 p-1 no-scrollbar md:grid md:grid-cols-3 md:overflow-visible";
+  "flex h-auto min-h-10 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto rounded-xl border border-border bg-muted/50 p-1 no-scrollbar md:grid md:overflow-visible";
 
 const profileTabTriggerClass =
   "shrink-0 min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-medium leading-tight whitespace-nowrap transition-[background-color,color,box-shadow] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-3 sm:text-xs md:w-full md:px-2 md:py-2.5 md:text-sm";
@@ -103,6 +104,16 @@ export default function ProfilePage() {
   const userIsAdmin = isAdminRole(user?.role);
   const canUseEqualityMonitoring = canAccessEqualityMonitoring(user?.role);
   const showPortalSecurity = roleSupportsTotp(user?.role);
+  const profileTabCount =
+    2 + (canUseEqualityMonitoring ? 1 : 0) + (showPortalSecurity ? 1 : 0);
+  const profileTabsListClassName = cn(
+    profileTabListClass,
+    profileTabCount === 4
+      ? "md:grid-cols-4"
+      : profileTabCount === 2
+        ? "md:grid-cols-2"
+        : "md:grid-cols-3",
+  );
   const returnPath = routeForRole(user?.role);
   const verificationLabel = emailVerificationLabel(accountFacts.emailVerified);
 
@@ -357,7 +368,7 @@ export default function ProfilePage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`${profileTabListClass} ${showPortalSecurity ? "md:grid-cols-4" : ""}`}>
+          <TabsList className={profileTabsListClassName}>
             <TabsTrigger value="profile" className={profileTabTriggerClass}>
               Profile Information
             </TabsTrigger>
