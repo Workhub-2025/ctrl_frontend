@@ -15,7 +15,7 @@ import {
 } from "@/services/hiring-manager-portal-client.service";
 import { ArrowLeft, Pencil } from "lucide-react";
 
-const DEFAULT_ASSESSMENT_VERSION = "1.0.0";
+const DEFAULT_ASSESSMENT_VERSION = "1.0.1";
 
 function deliveryModeFromCampaign(
   mode: HiringManagerCampaignDetail["deliveryMode"]

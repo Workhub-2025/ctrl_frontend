@@ -5,6 +5,7 @@ import { Check, Clock3, Keyboard, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
+import { useDeferredAdvance } from "../shared/use-deferred-advance";
 import type { LaunchEnvelope } from "../types";
 
 type Passage = { id: string; level: "easy" | "intermediate" | "advanced"; number: number; title: string; sourceText: string; durationSeconds?: number };
@@ -243,63 +244,120 @@ function CountdownBreak({ seconds, nextLabel, onComplete }: { seconds: number; n
 
 function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
   const { passages, durationSeconds, breakSeconds } = launch.content;
+  const reviewStage = 6;
   return (
     <TrackedAssessmentShell<Content, State>
       launch={launch}
       title="Typing Assessment"
       restartNoun="passage set"
       initialState={() => createState(passages)}
-      validateStage={() => null}
+      validateStage={(stage, state) => {
+        if (stage >= reviewStage) {
+          const incomplete = passages.some(
+            (passage) => !state.tests[passage.id]?.complete,
+          );
+          if (incomplete) {
+            return "Complete all three typing tests before submitting.";
+          }
+        }
+        return null;
+      }}
       canManuallyAdvance={(stage) => stage === 0}
       continueLabel={() => "Focus typing field"}
       buildSubmission={(state) => ({
-        tests: passages.map((passage) => ({ passageId: passage.id, typedText: state.tests[passage.id].typedText, events: state.tests[passage.id].events })),
+        tests: passages.map((passage) => ({
+          passageId: passage.id,
+          typedText: state.tests[passage.id].typedText,
+          events: state.tests[passage.id].events,
+        })),
       })}
-      renderStage={({ stageIndex, state, setState, advance, isSaving }) => {
-        if (stageIndex === 0) return (
-          <section className="border border-border bg-card p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
-            <h1 className="mt-2 text-2xl font-semibold">Three timed typing tests</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">Each test lasts 90 seconds and starts with your first keystroke. A 10-second transition follows tests one and two. Continue typing until the test closes automatically.</p>
-          </section>
-        );
-        if (stageIndex === 2 || stageIndex === 4) {
-          const nextTest = stageIndex === 2 ? 2 : 3;
-          return <CountdownBreak seconds={breakSeconds} nextLabel={`Typing test ${nextTest}`} onComplete={() => { if (!isSaving) void advance(); }} />;
-        }
-        if (stageIndex === 1 || stageIndex === 3 || stageIndex === 5) {
-          const passageIndex = stageIndex === 1 ? 0 : stageIndex === 3 ? 1 : 2;
-          const passage = passages[passageIndex];
-          return (
-            <TimedTypingWorkspace
-              passage={passage}
-              durationSeconds={durationSeconds}
-              state={state.tests[passage.id]}
-              onChange={(next) => setState({ tests: { ...state.tests, [passage.id]: next } })}
-              onComplete={(next) => {
-                const nextState = { tests: { ...state.tests, [passage.id]: next } };
-                if (!isSaving) void advance(nextState);
-              }}
-            />
-          );
-        }
-        return (
-          <section className="border border-border bg-card p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Final review</p>
-            <h1 className="mt-2 text-2xl font-semibold">Submit typing performance</h1>
-            <div className="mt-5 grid gap-px bg-border sm:grid-cols-3">
-              {passages.map((passage, index) => (
-                <div key={passage.id} className="bg-card p-4">
-                  <p className="text-xs text-muted-foreground">Test {index + 1}</p>
-                  <p className="mt-1 flex items-center gap-2 font-semibold"><Check className="h-4 w-4 text-primary" aria-hidden="true" /> Complete</p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">Speed, accuracy and stability are calculated after submission. No immediate score is shown.</p>
-          </section>
-        );
-      }}
+      renderStage={({ stageIndex, state, setState, advance, isSaving }) => (
+        <TypingStages
+          stageIndex={stageIndex}
+          state={state}
+          setState={setState}
+          advance={advance}
+          isSaving={isSaving}
+          passages={passages}
+          durationSeconds={durationSeconds}
+          breakSeconds={breakSeconds}
+        />
+      )}
     />
+  );
+}
+
+function TypingStages({
+  stageIndex,
+  state,
+  setState,
+  advance,
+  isSaving,
+  passages,
+  durationSeconds,
+  breakSeconds,
+}: {
+  stageIndex: number;
+  state: State;
+  setState: (state: State) => void;
+  advance: (nextState?: State) => Promise<void>;
+  isSaving: boolean;
+  passages: Passage[];
+  durationSeconds: number;
+  breakSeconds: number;
+}) {
+  const deferAdvance = useDeferredAdvance(isSaving, advance);
+  if (stageIndex === 0) {
+    return (
+      <section className="border border-border bg-card p-6 sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
+        <h1 className="mt-2 text-2xl font-semibold">Three timed typing tests</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">Each test lasts 90 seconds and starts with your first keystroke. A 10-second transition follows tests one and two. Continue typing until the test closes automatically.</p>
+      </section>
+    );
+  }
+  if (stageIndex === 2 || stageIndex === 4) {
+    const nextTest = stageIndex === 2 ? 2 : 3;
+    return (
+      <CountdownBreak
+        seconds={breakSeconds}
+        nextLabel={`Typing test ${nextTest}`}
+        onComplete={() => deferAdvance()}
+      />
+    );
+  }
+  if (stageIndex === 1 || stageIndex === 3 || stageIndex === 5) {
+    const passageIndex = stageIndex === 1 ? 0 : stageIndex === 3 ? 1 : 2;
+    const passage = passages[passageIndex];
+    return (
+      <TimedTypingWorkspace
+        passage={passage}
+        durationSeconds={durationSeconds}
+        state={state.tests[passage.id]}
+        onChange={(next) => setState({ tests: { ...state.tests, [passage.id]: next } })}
+        onComplete={(next) => {
+          deferAdvance({ tests: { ...state.tests, [passage.id]: next } });
+        }}
+      />
+    );
+  }
+  return (
+    <section className="border border-border bg-card p-6 sm:p-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Final review</p>
+      <h1 className="mt-2 text-2xl font-semibold">Submit typing performance</h1>
+      <div className="mt-5 grid gap-px bg-border sm:grid-cols-3">
+        {passages.map((passage, index) => (
+          <div key={passage.id} className="bg-card p-4">
+            <p className="text-xs text-muted-foreground">Test {index + 1}</p>
+            <p className="mt-1 flex items-center gap-2 font-semibold">
+              <Check className="h-4 w-4 text-primary" aria-hidden="true" />{" "}
+              {state.tests[passage.id]?.complete ? "Complete" : "Incomplete"}
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">Speed, accuracy and stability are calculated after submission. No immediate score is shown.</p>
+    </section>
   );
 }
 

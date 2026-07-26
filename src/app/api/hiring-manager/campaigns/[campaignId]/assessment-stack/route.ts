@@ -9,6 +9,10 @@ import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bf
 
 import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import {
+  readAssessmentSettingVersion,
+  resolveCatalogueReleaseId,
+} from "@/lib/hiring-manager/resolve-assessment-release";
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ campaignId: string }> }
@@ -76,9 +80,25 @@ export async function PUT(
         if (!item) {
           throw new Error(`Assessment "${selectedId}" is not an active Firebase release`);
         }
+        const selectedVersion = readAssessmentSettingVersion(
+          assessmentSettings as Record<string, unknown> | undefined,
+          item.slug,
+        );
+        const releaseId = resolveCatalogueReleaseId({
+          slug: item.slug,
+          selectedVersion,
+          fallbackReleaseId: item.releaseId,
+          availableReleases: item.availableReleases ?? [
+            {
+              releaseId: item.releaseId,
+              releaseVersion: item.releaseVersion ?? "0.0.0",
+              status: "active",
+            },
+          ],
+        });
         return {
           definitionId: item.definitionId,
-          releaseId: item.releaseId,
+          releaseId,
           durationMinutes: null,
           maxAttempts: 1,
         };

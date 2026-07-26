@@ -106,8 +106,14 @@ export type FirebaseCandidateWorkspaceItem = Readonly<{
 type FirebaseAssessmentCatalogueItem = Readonly<{
   definitionId: string;
   releaseId: string;
+  releaseVersion?: string | null;
   slug: string;
   title: string;
+  availableReleases?: ReadonlyArray<{
+    releaseId: string;
+    releaseVersion: string;
+    status: "active" | "retired";
+  }>;
 }>;
 
 export type FirebaseDomainRequester = Pick<

@@ -20,7 +20,7 @@ describe("firebase assessment catalogue helpers", () => {
           id: "a",
           moduleId: "ctrl.typing",
           slug: "typing",
-          releaseVersion: "2.0.1",
+          releaseVersion: "1.0.0",
           status: "retired",
           defaultThreshold: 70,
           manifestHash: "m1",
@@ -34,7 +34,7 @@ describe("firebase assessment catalogue helpers", () => {
           id: "b",
           moduleId: "ctrl.typing",
           slug: "typing",
-          releaseVersion: "2.1.0",
+          releaseVersion: "1.0.1",
           status: "active",
           defaultThreshold: 70,
           manifestHash: "m2",
@@ -49,8 +49,8 @@ describe("firebase assessment catalogue helpers", () => {
     );
 
     expect(catalog.typing).toEqual([
-      { version: "2.1.0", title: "v2.1.0", description: null },
-      { version: "2.0.1", title: "v2.0.1", description: "Retired" },
+      { version: "1.0.1", title: "v1.0.1", description: null },
+      { version: "1.0.0", title: "v1.0.0", description: "Retired" },
     ]);
   });
 });

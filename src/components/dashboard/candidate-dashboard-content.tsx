@@ -90,7 +90,7 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
       icon: matchedItem?.icon ?? ClipboardCheck,
       title: assessment.name ?? matchedItem?.title ?? "Assessment",
       description: isAbandoned
-        ? "This assessment was interrupted. Contact your hiring team before continuing."
+        ? "This assessment was interrupted. Open it to restart a fresh attempt if your session is still open."
         : isLocked
         ? "Waiting for assessor to unlock your session."
         : assessment.status === "not_open"
@@ -110,7 +110,6 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
         assessment.isAvailable !== false &&
         assessment.status !== "not_open" &&
         !isLocked &&
-        !isAbandoned &&
         !isSubmitted,
       isLocked,
       availableFromLabel: formatDateTime(assessment.availableFrom),

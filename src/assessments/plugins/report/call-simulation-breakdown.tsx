@@ -38,16 +38,47 @@ type CriterionRow = {
 
 type V2Competency = { id: string; label: string; weight: number; score: number };
 type V2CriticalFlag = { id: string; scenarioId: string; label: string };
+type V2CriterionEvidence = {
+  criterionId: string;
+  matched?: boolean;
+  awarded?: number;
+  timingBand?: "green" | "amber" | "red";
+  delaySeconds?: number | null;
+};
+
 type V2ScenarioEvidence = {
   scenarioId: string;
-  title: string;
+  title?: string;
+  points?: number;
+  maximum?: number;
   capturedFields?: number;
   expectedFields?: number;
   classification?: string;
   incidentType?: string;
   resourceDecision?: string;
   elapsedSeconds?: number | null;
+  criteria?: V2CriterionEvidence[];
 };
+
+function timingBandClass(band: string | undefined) {
+  if (band === "green") return "text-primary";
+  if (band === "amber") return "text-amber-600 dark:text-amber-400";
+  if (band === "red") return "text-destructive";
+  return "text-muted-foreground";
+}
+
+function timingBandSummary(criteria: V2CriterionEvidence[] | undefined) {
+  if (!criteria?.length) return { green: 0, amber: 0, red: 0 };
+  return criteria.reduce(
+    (totals, criterion) => {
+      if (criterion.timingBand === "green") totals.green += 1;
+      else if (criterion.timingBand === "amber") totals.amber += 1;
+      else if (criterion.timingBand === "red") totals.red += 1;
+      return totals;
+    },
+    { green: 0, amber: 0, red: 0 },
+  );
+}
 
 function CallSimulationV2Report({ metrics }: { metrics: Record<string, unknown> }) {
   const competencies = Array.isArray(metrics.competencyScores) ? metrics.competencyScores as V2Competency[] : [];
@@ -93,9 +124,47 @@ function CallSimulationV2Report({ metrics }: { metrics: Record<string, unknown> 
           <BreakdownSectionTitle>Scenario evidence</BreakdownSectionTitle>
           <BreakdownTableShell>
             <BreakdownTable>
-              <BreakdownTableHead><BreakdownTableHeaderRow><BreakdownTableHeaderCell>Incident</BreakdownTableHeaderCell><BreakdownTableHeaderCell>Classification</BreakdownTableHeaderCell><BreakdownTableHeaderCell>Capture</BreakdownTableHeaderCell><BreakdownTableHeaderCell align="right">Time</BreakdownTableHeaderCell></BreakdownTableHeaderRow></BreakdownTableHead>
+              <BreakdownTableHead>
+                <BreakdownTableHeaderRow>
+                  <BreakdownTableHeaderCell>Scenario</BreakdownTableHeaderCell>
+                  <BreakdownTableHeaderCell>Score</BreakdownTableHeaderCell>
+                  <BreakdownTableHeaderCell>Timing bands</BreakdownTableHeaderCell>
+                  <BreakdownTableHeaderCell align="right">Elapsed</BreakdownTableHeaderCell>
+                </BreakdownTableHeaderRow>
+              </BreakdownTableHead>
               <BreakdownTableBody>
-                {scenarios.map((scenario) => <BreakdownTableRow key={scenario.scenarioId}><BreakdownTableCell><p className="font-semibold">{scenario.title}</p><p className="text-[10px] text-muted-foreground">{scenario.resourceDecision}</p></BreakdownTableCell><BreakdownTableCell>{scenario.classification}<br /><span className="text-[10px] text-muted-foreground">{scenario.incidentType}</span></BreakdownTableCell><BreakdownTableCell>{scenario.capturedFields ?? 0} / {scenario.expectedFields ?? 0} fields</BreakdownTableCell><BreakdownTableCell align="right">{scenario.elapsedSeconds ? `${Math.round(scenario.elapsedSeconds / 60)} min` : "—"}</BreakdownTableCell></BreakdownTableRow>)}
+                {scenarios.map((scenario) => {
+                  const bands = timingBandSummary(scenario.criteria);
+                  return (
+                    <BreakdownTableRow key={scenario.scenarioId}>
+                      <BreakdownTableCell>
+                        <p className="font-semibold">
+                          {scenario.title ?? scenario.scenarioId}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {scenario.classification ?? scenario.resourceDecision ?? "—"}
+                        </p>
+                      </BreakdownTableCell>
+                      <BreakdownTableCell>
+                        {scenario.points != null && scenario.maximum != null
+                          ? `${Math.round(scenario.points * 10) / 10} / ${scenario.maximum}`
+                          : `${scenario.capturedFields ?? 0} / ${scenario.expectedFields ?? 0} fields`}
+                      </BreakdownTableCell>
+                      <BreakdownTableCell>
+                        <span className={timingBandClass("green")}>{bands.green} green</span>
+                        {" · "}
+                        <span className={timingBandClass("amber")}>{bands.amber} amber</span>
+                        {" · "}
+                        <span className={timingBandClass("red")}>{bands.red} red</span>
+                      </BreakdownTableCell>
+                      <BreakdownTableCell align="right">
+                        {scenario.elapsedSeconds
+                          ? `${Math.round(scenario.elapsedSeconds / 60)} min`
+                          : "—"}
+                      </BreakdownTableCell>
+                    </BreakdownTableRow>
+                  );
+                })}
               </BreakdownTableBody>
             </BreakdownTable>
           </BreakdownTableShell>

@@ -32,6 +32,8 @@ export type AssessmentReadiness<TPractice = unknown> = {
   media: Record<string, MediaReference>;
   delivery: { deliveryVariant: string; extraTimeMinutes: number };
   monitoringActive: false;
+  /** Resume this attempt and skip readiness/practice when present. */
+  activeAttemptId: string | null;
 };
 
 export type LaunchEnvelope<TContent = unknown> = {

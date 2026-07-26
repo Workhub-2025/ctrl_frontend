@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
 import type { LaunchEnvelope } from "../types";
@@ -21,40 +21,55 @@ type State = {
   sequence: string[];
   corrections: Record<string, string>;
   briefingAvailableUntil: number;
+  briefingRemainingSeconds: number;
 };
 type Content = { exercise: Exercise };
 
 function emptyState(exercise: Exercise, timed: boolean): State {
+  const briefingRemainingSeconds = timed ? exercise.briefing.displaySeconds : 0;
   return {
     interruptionAnswers: {},
     recall: {},
     sequence: exercise.eventOptions.map(() => ""),
     corrections: {},
-    briefingAvailableUntil:
-      Date.now() + (timed ? exercise.briefing.displaySeconds * 1_000 : 0),
+    briefingRemainingSeconds,
+    briefingAvailableUntil: Date.now() + briefingRemainingSeconds * 1_000,
+  };
+}
+
+function restoreBriefingClock(state: State): State {
+  const remaining = Math.max(
+    0,
+    state.briefingRemainingSeconds ??
+      Math.ceil((state.briefingAvailableUntil - Date.now()) / 1_000),
+  );
+  return {
+    ...state,
+    briefingRemainingSeconds: remaining,
+    briefingAvailableUntil: Date.now() + remaining * 1_000,
   };
 }
 
 function Briefing({
   exercise,
   availableUntil,
+  onRemainingChange,
 }: {
   exercise: Exercise;
   availableUntil: number;
+  onRemainingChange?: (remainingSeconds: number) => void;
 }) {
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, Math.ceil((availableUntil - Date.now()) / 1_000)),
   );
   useEffect(() => {
-    const timer = window.setInterval(
-      () =>
-        setRemaining(
-          Math.max(0, Math.ceil((availableUntil - Date.now()) / 1_000)),
-        ),
-      1_000,
-    );
+    const timer = window.setInterval(() => {
+      const next = Math.max(0, Math.ceil((availableUntil - Date.now()) / 1_000));
+      setRemaining(next);
+      onRemainingChange?.(next);
+    }, 1_000);
     return () => window.clearInterval(timer);
-  }, [availableUntil]);
+  }, [availableUntil, onRemainingChange]);
   return (
     <section className="border border-border bg-card p-7  ">
       <div className="flex items-center justify-between gap-4 border-b border-border pb-4 ">
@@ -80,6 +95,43 @@ function Briefing({
         are not available.
       </p>
     </section>
+  );
+}
+
+function BriefingWithResumeClock({
+  exercise,
+  state,
+  setState,
+}: {
+  exercise: Exercise;
+  state: State;
+  setState: (state: State) => void;
+}) {
+  const restored = useRef(false);
+  useEffect(() => {
+    if (restored.current) return;
+    restored.current = true;
+    const next = restoreBriefingClock(state);
+    if (
+      next.briefingAvailableUntil !== state.briefingAvailableUntil ||
+      next.briefingRemainingSeconds !== state.briefingRemainingSeconds
+    ) {
+      setState(next);
+    }
+  }, [setState, state]);
+
+  return (
+    <Briefing
+      exercise={exercise}
+      availableUntil={state.briefingAvailableUntil}
+      onRemainingChange={(remainingSeconds) =>
+        setState({
+          ...state,
+          briefingRemainingSeconds: remainingSeconds,
+          briefingAvailableUntil: Date.now() + remainingSeconds * 1_000,
+        })
+      }
+    />
   );
 }
 
@@ -285,7 +337,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
   return (
     <TrackedAssessmentShell
       launch={launch}
-      title="Short-Term Memory v2"
+      title="Short-Term Memory"
       restartNoun="operational briefing"
       initialState={() => emptyState(exercise, true)}
       validateStage={(stage, state) => {
@@ -332,9 +384,10 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
       renderStage={({ stageIndex, state, setState }) => {
         if (stageIndex === 0)
           return (
-            <Briefing
+            <BriefingWithResumeClock
               exercise={exercise}
-              availableUntil={state.briefingAvailableUntil}
+              state={state}
+              setState={setState}
             />
           );
         if (stageIndex === 1)

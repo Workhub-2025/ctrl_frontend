@@ -54,6 +54,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
     useState<AssessmentReadiness<TPractice> | null>(null);
   const [practiceState, setPracticeState] = useState<TPracticeState | null>(null);
   const [loadingError, setLoadingError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [online, setOnline] = useState(true);
   const [audioReady, setAudioReady] = useState(false);
   const [deviceEligibility, setDeviceEligibility] =
@@ -61,7 +62,9 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [launch, setLaunch] = useState<LaunchEnvelope<TContent> | null>(null);
+  const [resuming, setResuming] = useState(false);
   const [practiceSkipped, setPracticeSkipped] = useState(false);
+  const [skipConfirmOpen, setSkipConfirmOpen] = useState(false);
   const {
     settings: accessibilitySettings,
     updateSettings: updateAccessibilitySettings,
@@ -70,20 +73,45 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
 
   useEffect(() => {
     let active = true;
+    setLoadingError(null);
+    setReadiness(null);
+    setPracticeState(null);
     AssessmentRuntimeClient.readiness<TPractice>(candidateSessionDocumentId, slug)
-      .then((data) => {
+      .then(async (data) => {
         if (!active) return;
+        if (data.activeAttemptId) {
+          setResuming(true);
+          try {
+            const resumed = await AssessmentRuntimeClient.resume<TContent>(
+              data.activeAttemptId,
+            );
+            if (!active) return;
+            setLaunch(resumed);
+            return;
+          } catch (error) {
+            if (!active) return;
+            setLoadingError(
+              error instanceof Error
+                ? error.message
+                : "In-progress attempt could not be resumed",
+            );
+            setResuming(false);
+            return;
+          }
+        }
         setReadiness(data);
         setPracticeState(createPracticeState(data.practice));
+        setResuming(false);
       })
       .catch((error: unknown) => {
         if (!active) return;
         setLoadingError(error instanceof Error ? error.message : "Readiness could not be loaded");
+        setResuming(false);
       });
     return () => {
       active = false;
     };
-  }, [candidateSessionDocumentId, createPracticeState, slug]);
+  }, [candidateSessionDocumentId, createPracticeState, reloadToken, slug]);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -190,22 +218,38 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
   ], [audioReady, deviceEligibility, fullscreenSupported, needsAudio, online, testAudio]);
 
   if (launch) return renderAssessment(launch);
-  if (loadingError) return (
-    <main className="mx-auto max-w-3xl p-6">
-      <div role="alert" className="border border-destructive/40 bg-destructive/10 p-5 text-foreground">
-        <h1 className="font-semibold">Assessment unavailable</h1>
-        <p className="mt-2 text-sm">{loadingError}</p>
-      </div>
-    </main>
-  );
-  if (!readiness || practiceState === null) return (
-    <main className="grid min-h-[70vh] place-items-center bg-background text-foreground">
-      <p className="flex items-center gap-2 text-sm">
-        <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-        Loading assessment preparation…
-      </p>
-    </main>
-  );
+  if (loadingError) {
+    return (
+      <main className="mx-auto max-w-3xl p-6">
+        <div role="alert" className="border border-destructive/40 bg-destructive/10 p-5 text-foreground">
+          <h1 className="font-semibold">Assessment unavailable</h1>
+          <p className="mt-2 text-sm">{loadingError}</p>
+          <Button
+            type="button"
+            className="mt-4 min-h-11 rounded-sm"
+            onClick={() => {
+              setLoadingError(null);
+              setReloadToken((value) => value + 1);
+            }}
+          >
+            Retry
+          </Button>
+        </div>
+      </main>
+    );
+  }
+  if (resuming || !readiness || practiceState === null) {
+    return (
+      <main className="grid min-h-[70vh] place-items-center bg-background text-foreground">
+        <p className="flex items-center gap-2 text-sm">
+          <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          {resuming
+            ? "Resuming your in-progress assessment…"
+            : "Loading assessment preparation…"}
+        </p>
+      </main>
+    );
+  }
 
   const readinessSteps = [
     { label: "Read the brief", complete: true },
@@ -306,15 +350,41 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                   Monitoring and assessed time begin only after you launch the assessed section.
                 </p>
                 {deviceEligibility?.supported && !practiceComplete ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="min-h-10 rounded-sm"
-                    onClick={() => setPracticeSkipped(true)}
-                  >
-                    Skip practice
-                  </Button>
+                  skipConfirmOpen ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-xs text-muted-foreground">Skip practice and continue to checks?</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="min-h-10 rounded-sm"
+                        onClick={() => {
+                          setPracticeSkipped(true);
+                          setSkipConfirmOpen(false);
+                        }}
+                      >
+                        Confirm skip
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="min-h-10 rounded-sm"
+                        onClick={() => setSkipConfirmOpen(false)}
+                      >
+                        Keep practice
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-10 rounded-sm"
+                      onClick={() => setSkipConfirmOpen(true)}
+                    >
+                      Skip practice
+                    </Button>
+                  )
                 ) : null}
                 {practiceSkipped && !isPracticeComplete(practiceState) ? (
                   <p className="text-xs text-muted-foreground" role="status">
@@ -400,7 +470,21 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                 Assessment launch is unavailable on mobile and tablet devices.
               </p>
             ) : null}
-            {launchError ? <p className="mt-4 text-sm text-destructive" role="alert">{launchError}</p> : null}
+            {launchError ? (
+              <div className="mt-4 space-y-2" role="alert">
+                <p className="text-sm text-destructive">{launchError}</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-10 w-full rounded-sm"
+                  onClick={() => void begin()}
+                  disabled={!readyToBegin || launching}
+                >
+                  Retry launch
+                </Button>
+              </div>
+            ) : null}
             <Button
               type="button"
               size="lg"

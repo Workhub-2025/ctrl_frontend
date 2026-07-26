@@ -132,7 +132,7 @@ const DELIVERY_MODES: readonly {
   },
 ];
 
-const DEFAULT_ASSESSMENT_VERSION = "2.0.0";
+const DEFAULT_ASSESSMENT_VERSION = "1.0.1";
 
 const CANDIDATE_VOLUME_PRESETS = [25, 50, 100, 250];
 
@@ -150,9 +150,21 @@ function includesOnSiteDelivery(deliveryMode: DeliveryMode) {
 }
 
 function getVersionOptions(assessment: HiringManagerAssessment) {
-  return assessment.availableVersions.length > 0
-    ? assessment.availableVersions
-    : [{ version: DEFAULT_ASSESSMENT_VERSION, title: `v${DEFAULT_ASSESSMENT_VERSION}`, description: null }];
+  if (assessment.availableVersions.length > 0) {
+    return assessment.availableVersions;
+  }
+  return [
+    {
+      version: DEFAULT_ASSESSMENT_VERSION,
+      title: `v${DEFAULT_ASSESSMENT_VERSION}`,
+      description: null as string | null,
+    },
+  ];
+}
+
+function defaultVersionFor(assessment: HiringManagerAssessment): string {
+  const options = getVersionOptions(assessment);
+  return options[0]?.version ?? DEFAULT_ASSESSMENT_VERSION;
 }
 
 function getSelectedVersionOption(assessment: HiringManagerAssessment, selectedVersion: string) {
@@ -409,6 +421,7 @@ export function HiringManagerCampaignBuilder({
   };
 
   const toggleAssessment = (slug: string) => {
+    const assessment = assessments.find((entry) => entry.slug === slug);
     setDraft((current) => {
       const exists = current.assessmentSlugs.includes(slug);
       const assessmentSlugs = exists
@@ -427,7 +440,9 @@ export function HiringManagerCampaignBuilder({
           ? removeRecordKey(current.assessmentVersions, slug)
           : {
               ...current.assessmentVersions,
-              [slug]: DEFAULT_ASSESSMENT_VERSION,
+              [slug]: assessment
+                ? defaultVersionFor(assessment)
+                : DEFAULT_ASSESSMENT_VERSION,
             },
         assessmentThresholds: exists
           ? removeRecordKey(current.assessmentThresholds, slug)
@@ -524,7 +539,9 @@ export function HiringManagerCampaignBuilder({
     try {
       const perAssessmentSettings = selectedAssessments.reduce<Record<string, Record<string, unknown>>>(
         (settings, assessment) => {
-          const version = draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION;
+          const version =
+            draft.assessmentVersions[assessment.slug] ??
+            defaultVersionFor(assessment);
           settings[assessment.slug] = {
             version,
             threshold: draft.assessmentThresholds[assessment.slug] ?? 70,
@@ -866,7 +883,8 @@ export function HiringManagerCampaignBuilder({
               const checked = draft.assessmentSlugs.includes(assessment.slug);
               const Icon = getAssessmentCatalogueIcon(assessment.slug);
               const selectedVersion =
-                draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION;
+                draft.assessmentVersions[assessment.slug] ??
+                defaultVersionFor(assessment);
               const selectedVersionOption = getSelectedVersionOption(assessment, selectedVersion);
               const isLocked = lockedSlugs.includes(assessment.slug);
 

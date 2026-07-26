@@ -162,8 +162,13 @@ export function TrackedAssessmentShell<TContent, TState>(
       Math.floor((new Date(launch.deadlineAt).getTime() - Date.now()) / 1_000),
     ),
   );
+  const [timeExpired, setTimeExpired] = useState(
+    () => new Date(launch.deadlineAt).getTime() <= Date.now(),
+  );
   const [pauseReason, setPauseReason] = useState<string | null>(null);
-  const [locked, setLocked] = useState(false);
+  const [locked, setLocked] = useState(
+    () => new Date(launch.deadlineAt).getTime() <= Date.now(),
+  );
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -225,6 +230,15 @@ export function TrackedAssessmentShell<TContent, TState>(
   }, [launch.deadlineAt]);
 
   useEffect(() => {
+    if (remaining > 0 || receipt || timeExpired) return;
+    setTimeExpired(true);
+    setLocked(true);
+    setPauseReason(
+      "The assessment time limit has ended. Progress is locked and submission is closed for this attempt.",
+    );
+  }, [remaining, receipt, timeExpired]);
+
+  useEffect(() => {
     const announcement = assessmentTimerAnnouncement(
       previousRemaining.current,
       remaining,
@@ -235,30 +249,25 @@ export function TrackedAssessmentShell<TContent, TState>(
 
   useEffect(() => {
     if (receipt || locked) return;
-    let active = true;
     const heartbeat = async () => {
       try {
         await AssessmentRuntimeClient.heartbeat(launch.attemptId);
         lastHeartbeat.current = Date.now();
-      } catch (heartbeatError) {
+      } catch {
         if (
           Date.now() - lastHeartbeat.current >=
           launch.integrity.heartbeatLockSeconds * 1_000
         ) {
           setLocked(true);
           setPauseReason(
-            "The connection heartbeat was unavailable for 60 seconds.",
+            `The connection heartbeat was unavailable for ${launch.integrity.heartbeatLockSeconds} seconds.`,
           );
           void recordEvent(
             "heartbeat_timeout",
             Date.now() - lastHeartbeat.current,
           );
-        } else if (active)
-          setError(
-            heartbeatError instanceof Error
-              ? heartbeatError.message
-              : "Connection check failed",
-          );
+        }
+        // Transient heartbeat failures are retried; avoid noisy banners.
       }
     };
     void heartbeat();
@@ -267,7 +276,6 @@ export function TrackedAssessmentShell<TContent, TState>(
       launch.integrity.heartbeatIntervalSeconds * 1_000,
     );
     return () => {
-      active = false;
       window.clearInterval(timer);
     };
   }, [
@@ -408,6 +416,10 @@ export function TrackedAssessmentShell<TContent, TState>(
   }, [launch.attemptId, revision, stageIndex, state, validateStage]);
 
   const submit = useCallback(async () => {
+    if (timeExpired || locked) {
+      setError("This attempt is locked and can no longer be submitted.");
+      return;
+    }
     const validationError = validateStage(stageIndex, state);
     if (validationError) {
       setError(validationError);
@@ -444,8 +456,11 @@ export function TrackedAssessmentShell<TContent, TState>(
     buildSubmission,
     launch.attemptId,
     launch.stageGraph.nodes.length,
+    locked,
     stageIndex,
     state,
+    timeExpired,
+    title,
     validateStage,
   ]);
 
@@ -598,7 +613,7 @@ export function TrackedAssessmentShell<TContent, TState>(
                     <Button
                       className="ml-auto min-h-11 rounded-sm px-6"
                       onClick={() => void next()}
-                      disabled={saving}
+                      disabled={saving || locked || timeExpired}
                     >
                       {saving ? (
                         <Loader2
@@ -612,7 +627,7 @@ export function TrackedAssessmentShell<TContent, TState>(
                     <Button
                       className="ml-auto min-h-12 rounded-sm px-7"
                       onClick={submit}
-                      disabled={submitting}
+                      disabled={submitting || locked || timeExpired}
                     >
                       {submitting ? (
                         <Loader2

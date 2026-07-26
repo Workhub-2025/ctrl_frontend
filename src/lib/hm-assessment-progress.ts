@@ -19,6 +19,19 @@ export type FirebaseAssignmentAssessmentReport = Readonly<{
   criticalFlagCount: number | null;
   submittedAt: string | null;
   completedAt: string | null;
+  competencyScores?: ReadonlyArray<{
+    id: string;
+    label: string;
+    weight: number;
+    score: number;
+  }>;
+  criticalFlags?: ReadonlyArray<{
+    id: string;
+    scenarioId: string;
+    label: string;
+  }>;
+  scenarioEvidence?: readonly unknown[];
+  reportMetrics?: Readonly<Record<string, unknown>>;
 }>;
 
 export function mapFirebaseReportToHmResult(
@@ -29,6 +42,35 @@ export function mapFirebaseReportToHmResult(
     result.status === "submitted" || result.status === "scoring";
   const isAbandoned =
     result.status === "abandoned" || result.status === "failed";
+
+  const reportMetrics = result.reportMetrics ?? {};
+    const metrics: Record<string, unknown> = {
+    attemptId: result.attemptId,
+    campaignAssessmentId: result.campaignAssessmentId,
+    releaseVersion: result.releaseVersion,
+    revision: result.revision,
+    criticalFlagCount: result.criticalFlagCount,
+    attemptStatus: result.status,
+    overallScore: result.overallScore,
+    meetsConfiguredStandard: result.meetsConfiguredStandard,
+    competencyScores: result.competencyScores ?? reportMetrics.competencyScores,
+    criticalFlags: result.criticalFlags ?? reportMetrics.criticalFlags,
+    scenarioEvidence: result.scenarioEvidence ?? reportMetrics.scenarioEvidence,
+    evidenceLabel: reportMetrics.evidenceLabel,
+    wpm: reportMetrics.wpm,
+    accuracy: reportMetrics.accuracy,
+    passageEvidence: reportMetrics.passageEvidence,
+    highPriorityAccuracy: reportMetrics.highPriorityAccuracy,
+    mediumPriorityAccuracy: reportMetrics.mediumPriorityAccuracy,
+    lowPriorityAccuracy: reportMetrics.lowPriorityAccuracy,
+    bandAccuracy: reportMetrics.bandAccuracy,
+    factRecallAccuracy: reportMetrics.factRecallAccuracy,
+    criticalFactAccuracy: reportMetrics.criticalFactAccuracy,
+    materialRiskFlagCount: reportMetrics.materialRiskFlagCount,
+    moderateRiskFlagCount: reportMetrics.moderateRiskFlagCount,
+    configuredThreshold: 70,
+  };
+
   return {
     id: result.resultId ?? result.attemptId,
     assessment: result.assessmentSlug,
@@ -46,14 +88,10 @@ export function mapFirebaseReportToHmResult(
             : result.status,
     passed: isScored ? result.meetsConfiguredStandard : null,
     completedAt: result.completedAt ?? result.submittedAt,
-    metrics: {
-      attemptId: result.attemptId,
-      campaignAssessmentId: result.campaignAssessmentId,
-      releaseVersion: result.releaseVersion,
-      revision: result.revision,
-      criticalFlagCount: result.criticalFlagCount,
-      attemptStatus: result.status,
-    },
+    wpm: typeof reportMetrics.wpm === "number" ? reportMetrics.wpm : null,
+    accuracy:
+      typeof reportMetrics.accuracy === "number" ? reportMetrics.accuracy : null,
+    metrics,
     rawData: null,
   };
 }

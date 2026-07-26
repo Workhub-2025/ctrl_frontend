@@ -29,6 +29,7 @@ export type FirebaseAssessmentRelease = Readonly<{
 
 export type AssessmentVersionOption = Readonly<{
   version: string;
+  releaseId?: string;
   title: string;
   description: string | null;
 }>;
@@ -65,6 +66,7 @@ export function groupReleasesAsVersionCatalog(
     const list = catalog[release.slug] ?? (catalog[release.slug] = []);
     list.push({
       version: release.releaseVersion,
+      releaseId: release.id,
       title: `v${release.releaseVersion}`,
       description: release.status === "retired" ? "Retired" : null,
     });

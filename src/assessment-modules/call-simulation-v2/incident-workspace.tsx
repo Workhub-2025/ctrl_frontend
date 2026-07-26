@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Check, Headphones, Play, Radio } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MediaReference } from "../types";
@@ -26,6 +26,7 @@ export type CallResponse = {
   scenarioId: string;
   fields: Record<string, string>;
   fieldTimings: Record<string, number>;
+  elapsedSeconds?: number;
 };
 
 const sectionMeta = [
@@ -42,6 +43,7 @@ export function IncidentWorkspace({
   onChange,
   onPlaybackChange,
   practice = false,
+  audioAlreadyComplete = false,
 }: {
   scenario: CallScenario;
   media: Record<string, MediaReference>;
@@ -49,9 +51,19 @@ export function IncidentWorkspace({
   onChange: (response: CallResponse) => void;
   onPlaybackChange?: (status: "idle" | "live" | "complete") => void;
   practice?: boolean;
+  /** When true (e.g. resumed after save), skip single-play gate. */
+  audioAlreadyComplete?: boolean;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [playback, setPlayback] = useState<"idle" | "live" | "complete">("idle");
+  const [playback, setPlayback] = useState<"idle" | "live" | "complete">(
+    audioAlreadyComplete ? "complete" : "idle",
+  );
+
+  useEffect(() => {
+    if (audioAlreadyComplete) onPlaybackChange?.("complete");
+    // Notify parent once when resumed with completed audio.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioAlreadyComplete]);
   const availableSections = sectionMeta.filter((section) => scenario.fields.some((field) => field.section === section.id));
   const [section, setSection] = useState<string>(availableSections[0]?.id ?? "caller");
   const completed = useMemo(() => scenario.fields.filter((field) => value.fields[field.id]?.trim()).length, [scenario.fields, value.fields]);

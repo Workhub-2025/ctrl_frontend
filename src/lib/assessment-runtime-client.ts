@@ -108,16 +108,11 @@ export const AssessmentRuntimeClient = {
     );
     return body.data;
   },
-  async resume<TContent = unknown>(attemptId: string): Promise<{
-    progressRevision: number;
-    progressData: unknown;
-    launch?: LaunchEnvelope<TContent>;
-  }> {
+  async resume<TContent = unknown>(
+    attemptId: string,
+  ): Promise<LaunchEnvelope<TContent>> {
     const body = await readJson<{
-      data: {
-        progressRevision: number;
-        progressData: unknown;
-      };
+      data: LaunchEnvelope<TContent>;
     }>(
       await fetch(
         `/api/assessment-runtime/attempts/${encodeURIComponent(attemptId)}/resume`,

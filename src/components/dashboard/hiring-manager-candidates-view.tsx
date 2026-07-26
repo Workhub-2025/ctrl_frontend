@@ -551,32 +551,52 @@ export function HiringManagerCandidatesView() {
                           // Tooltip metrics content
                           let metricsContent = null;
                           if (isCompleted && matchedResult) {
+                            const rawFlag = matchedResult.metrics?.criticalFlagCount;
+                            const flagCount =
+                              typeof rawFlag === "number"
+                                ? rawFlag
+                                : Array.isArray(matchedResult.metrics?.criticalFlags)
+                                  ? matchedResult.metrics.criticalFlags.length
+                                  : null;
                             if (key === "typing") {
+                              const wpm = Number(
+                                matchedResult.wpm ?? matchedResult.metrics?.wpm ?? 0,
+                              );
+                              const accuracy = Number(
+                                matchedResult.accuracy ?? matchedResult.metrics?.accuracy ?? 0,
+                              );
                               metricsContent = (
-                                <span>{matchedResult.wpm ?? 0} WPM · {Math.round(matchedResult.accuracy ?? 0)}% Acc</span>
+                                <span>
+                                  {wpm} WPM · {Math.round(accuracy)}% Acc
+                                </span>
                               );
                             } else if (key === "prioritisation" && matchedResult.metrics) {
-                              const m = matchedResult.metrics as any;
+                              const m = matchedResult.metrics as Record<string, unknown>;
                               metricsContent = (
-                                <span>High: {Math.round(m.highPriorityAccuracy ?? 0)}% · Mid: {Math.round(m.mediumPriorityAccuracy ?? 0)}% · Low: {Math.round(m.lowPriorityAccuracy ?? 0)}%</span>
+                                <span>High: {Math.round(Number(m.highPriorityAccuracy ?? 0))}% · Mid: {Math.round(Number(m.mediumPriorityAccuracy ?? 0))}% · Low: {Math.round(Number(m.lowPriorityAccuracy ?? 0))}%</span>
                               );
                             } else if (key === "situational-judgement" && matchedResult.metrics) {
-                              const m = matchedResult.metrics as any;
+                              const m = matchedResult.metrics as Record<string, unknown>;
                               metricsContent = (
-                                <span>Band: {m.decisionBand ?? "—"} · Flags: {Number(m.materialRiskFlagCount ?? 0) + Number(m.moderateRiskFlagCount ?? 0)}</span>
+                                <span>Flags: {Number(m.materialRiskFlagCount ?? flagCount ?? 0)}</span>
                               );
                             } else if (key === "short-term-memory" && matchedResult.metrics) {
                               const m = matchedResult.metrics as Record<string, unknown>;
                               metricsContent = (
                                 <span>
-                                  Recall: {Math.round((m.factRecallAccuracy as number) ?? 0)}% · Critical:{" "}
-                                  {Math.round((m.criticalFactAccuracy as number) ?? 0)}%
+                                  Recall: {Math.round(Number(m.factRecallAccuracy ?? 0))}% · Critical:{" "}
+                                  {Math.round(Number(m.criticalFactAccuracy ?? 0))}%
                                 </span>
                               );
-                            } else if (key === "call-simulation" && typeof matchedResult.durationSeconds === 'number') {
+                            } else if (key === "call-simulation") {
                               metricsContent = (
-                                <span>Duration: {Math.round(matchedResult.durationSeconds / 60)}m {matchedResult.durationSeconds % 60}s</span>
+                                <span>
+                                  Score: {scoreValue}%
+                                  {flagCount != null ? ` · Flags: ${flagCount}` : ""}
+                                </span>
                               );
+                            } else if (flagCount != null) {
+                              metricsContent = <span>Critical flags: {flagCount}</span>;
                             }
                           }
 

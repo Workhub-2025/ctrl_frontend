@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { assessmentTimerAnnouncement } from "@/lib/assessment-accessibility";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
+import { useDeferredAdvance } from "../shared/use-deferred-advance";
 import type { LaunchEnvelope } from "../types";
 
 type Incident = {
@@ -18,7 +19,12 @@ type Incident = {
 type Question = { id: string; number: number; difficulty: string; incidents: Incident[] };
 type Practice = { title: string; instructions: string; questions: Question[] };
 type Content = { questions: Question[] };
-type RankingResponse = { order: string[]; confirmed: boolean; timeTakenSeconds: number };
+type RankingResponse = {
+  order: string[];
+  confirmed: boolean;
+  timeTakenSeconds: number;
+  timerStartedAt?: number;
+};
 type State = { responses: Record<string, RankingResponse>; practiceIndex: number };
 
 function createState(questions: Question[]): State {
@@ -38,6 +44,7 @@ function RankingWorkspace({
   questionSeconds,
   onTimeout,
   practice = false,
+  questionTotal,
 }: {
   question: Question;
   response: RankingResponse;
@@ -45,8 +52,9 @@ function RankingWorkspace({
   questionSeconds?: number;
   onTimeout?: (response: RankingResponse) => void;
   practice?: boolean;
+  questionTotal?: number;
 }) {
-  const [startedAt] = useState(Date.now());
+  const [startedAt] = useState(() => response.timerStartedAt ?? Date.now());
   const [now, setNow] = useState(Date.now());
   const [timerAnnouncement, setTimerAnnouncement] = useState("");
   const previousRemaining = useRef<number | null>(null);
@@ -54,6 +62,13 @@ function RankingWorkspace({
   const incidentById = new Map(question.incidents.map((incident) => [incident.id, incident]));
   const elapsedSeconds = Math.max(0, Math.floor((now - startedAt) / 1_000));
   const remainingSeconds = questionSeconds === undefined ? null : Math.max(0, questionSeconds - elapsedSeconds);
+
+  useEffect(() => {
+    if (response.timerStartedAt) return;
+    onChange({ ...response, timerStartedAt: startedAt });
+    // Persist timer start once for resume honesty.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (questionSeconds === undefined || response.confirmed) return;
@@ -64,8 +79,13 @@ function RankingWorkspace({
   useEffect(() => {
     if (remainingSeconds !== 0 || response.confirmed || timedOut.current || !onTimeout) return;
     timedOut.current = true;
-    onTimeout({ ...response, confirmed: true, timeTakenSeconds: questionSeconds ?? elapsedSeconds });
-  }, [elapsedSeconds, onTimeout, questionSeconds, remainingSeconds, response]);
+    onTimeout({
+      ...response,
+      confirmed: true,
+      timeTakenSeconds: questionSeconds ?? elapsedSeconds,
+      timerStartedAt: startedAt,
+    });
+  }, [elapsedSeconds, onTimeout, questionSeconds, remainingSeconds, response, startedAt]);
 
   useEffect(() => {
     if (remainingSeconds === null) return;
@@ -82,7 +102,7 @@ function RankingWorkspace({
     if (nextIndex < 0 || nextIndex >= response.order.length) return;
     const order = [...response.order];
     [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
-    onChange({ order, confirmed: false, timeTakenSeconds: elapsedSeconds });
+    onChange({ order, confirmed: false, timeTakenSeconds: elapsedSeconds, timerStartedAt: startedAt });
   };
 
   return (
@@ -90,7 +110,9 @@ function RankingWorkspace({
       <div className="flex flex-col gap-2 border-b border-border px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            {practice ? "Practice question" : `Question ${question.number} of 15`}
+            {practice
+              ? "Practice question"
+              : `Question ${question.number} of ${questionTotal ?? question.number}`}
           </p>
           <h1 id={`${question.id}-title`} className="mt-1 text-xl font-semibold">
             Rank the six incidents
@@ -170,7 +192,14 @@ function RankingWorkspace({
           type="button"
           variant={response.confirmed ? "outline" : "default"}
           className="min-h-11 shrink-0 rounded-sm"
-          onClick={() => onChange({ ...response, confirmed: true, timeTakenSeconds: elapsedSeconds })}
+          onClick={() =>
+            onChange({
+              ...response,
+              confirmed: true,
+              timeTakenSeconds: elapsedSeconds,
+              timerStartedAt: startedAt,
+            })
+          }
         >
           <Check className="h-4 w-4" aria-hidden="true" />
           {response.confirmed ? "Order confirmed" : "Confirm this order"}
@@ -207,14 +236,81 @@ function PracticeWorkspace({ practice, state, setState }: { practice: Practice; 
         practice
         question={question}
         response={response}
+        questionTotal={practice.questions.length}
         onChange={(next) => setState({ ...state, responses: { ...state.responses, [question.id]: next } })}
       />
     </div>
   );
 }
 
+function PrioritisationStages({
+  stageIndex,
+  state,
+  setState,
+  advance,
+  isSaving,
+  content,
+  questionSeconds,
+  questionCount,
+}: {
+  stageIndex: number;
+  state: State;
+  setState: (state: State) => void;
+  advance: (nextState?: State) => Promise<void>;
+  isSaving: boolean;
+  content: Content;
+  questionSeconds: number;
+  questionCount: number;
+}) {
+  const deferAdvance = useDeferredAdvance(isSaving, advance);
+  if (stageIndex === 0) {
+    return (
+      <section className="border border-border bg-card p-6 sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
+        <h1 className="mt-2 text-2xl font-semibold">{questionCount} ranking decisions</h1>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+          Each question contains six incidents. Put every incident into a unique position from 1 to 6, then confirm the order. You have up to three minutes per question within the overall assessment time.
+        </p>
+      </section>
+    );
+  }
+  if (stageIndex >= 1 && stageIndex <= questionCount) {
+    const question = content.questions[stageIndex - 1];
+    return (
+      <RankingWorkspace
+        key={question.id}
+        question={question}
+        questionTotal={questionCount}
+        questionSeconds={questionSeconds}
+        response={state.responses[question.id]}
+        onChange={(next) => setState({ ...state, responses: { ...state.responses, [question.id]: next } })}
+        onTimeout={(next) => {
+          const nextState = { ...state, responses: { ...state.responses, [question.id]: next } };
+          setState(nextState);
+          deferAdvance(nextState);
+        }}
+      />
+    );
+  }
+  const confirmed = Object.values(state.responses).filter((response) => response.confirmed).length;
+  return (
+    <section className="border border-border bg-card p-6 sm:p-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Final review</p>
+      <h1 className="mt-2 text-2xl font-semibold">Submit your rankings</h1>
+      <div className="mt-5 flex items-center gap-4 border-y border-border py-4">
+        <span className="grid h-10 w-10 place-items-center bg-primary/10 text-primary"><Check className="h-5 w-5" aria-hidden="true" /></span>
+        <div>
+          <p className="font-semibold tabular-nums">{confirmed} of {questionCount} questions confirmed</p>
+          <p className="text-sm text-muted-foreground">Your score is not shown after submission.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
-  const questionSeconds = Math.round(180 + (launch.extraTimeMinutes * 60) / 15);
+  const questionCount = launch.content.questions.length;
+  const questionSeconds = Math.round(180 + (launch.extraTimeMinutes * 60) / Math.max(questionCount, 1));
   return (
     <TrackedAssessmentShell<Content, State>
       launch={launch}
@@ -222,62 +318,38 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
       restartNoun="question order"
       initialState={(content) => createState(content.questions)}
       validateStage={(stage, state) => {
-        if (stage >= 1 && stage <= 15) {
+        if (stage >= 1 && stage <= questionCount) {
           const question = launch.content.questions[stage - 1];
           if (!state.responses[question.id]?.confirmed) return "Confirm the complete ranking before continuing.";
         }
         return null;
       }}
-      buildSubmission={(state, elapsedSeconds) => ({
+      buildSubmission={(state) => ({
         questions: launch.content.questions.map((question) => ({
           questionId: question.id,
           submittedOrder: state.responses[question.id].order,
-          timeTakenSeconds: Math.max(1, state.responses[question.id].timeTakenSeconds || Math.round(elapsedSeconds / 15)),
+          timeTakenSeconds: Math.max(1, state.responses[question.id].timeTakenSeconds || 1),
         })),
       })}
-      continueLabel={(stage) => stage === 0 ? "Start question 1" : stage < 15 ? "Save and open next question" : "Review responses"}
-      renderStage={({ stageIndex, state, setState, advance, isSaving }, content) => {
-        if (stageIndex === 0) return (
-          <section className="border border-border bg-card p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
-            <h1 className="mt-2 text-2xl font-semibold">Fifteen ranking decisions</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-              Each question contains six incidents. Put every incident into a unique position from 1 to 6, then confirm the order. You have up to three minutes per question within the overall assessment time.
-            </p>
-          </section>
-        );
-        if (stageIndex >= 1 && stageIndex <= 15) {
-          const question = content.questions[stageIndex - 1];
-          return (
-            <RankingWorkspace
-              key={question.id}
-              question={question}
-              questionSeconds={questionSeconds}
-              response={state.responses[question.id]}
-              onChange={(next) => setState({ ...state, responses: { ...state.responses, [question.id]: next } })}
-              onTimeout={(next) => {
-                const nextState = { ...state, responses: { ...state.responses, [question.id]: next } };
-                setState(nextState);
-                if (!isSaving) void advance(nextState);
-              }}
-            />
-          );
-        }
-        const confirmed = Object.values(state.responses).filter((response) => response.confirmed).length;
-        return (
-          <section className="border border-border bg-card p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Final review</p>
-            <h1 className="mt-2 text-2xl font-semibold">Submit your rankings</h1>
-            <div className="mt-5 flex items-center gap-4 border-y border-border py-4">
-              <span className="grid h-10 w-10 place-items-center bg-primary/10 text-primary"><Check className="h-5 w-5" aria-hidden="true" /></span>
-              <div>
-                <p className="font-semibold tabular-nums">{confirmed} of 15 questions confirmed</p>
-                <p className="text-sm text-muted-foreground">Your score is not shown after submission.</p>
-              </div>
-            </div>
-          </section>
-        );
-      }}
+      continueLabel={(stage) =>
+        stage === 0
+          ? "Start question 1"
+          : stage < questionCount
+            ? "Save and open next question"
+            : "Review responses"
+      }
+      renderStage={({ stageIndex, state, setState, advance, isSaving }, content) => (
+        <PrioritisationStages
+          stageIndex={stageIndex}
+          state={state}
+          setState={setState}
+          advance={advance}
+          isSaving={isSaving}
+          content={content}
+          questionSeconds={questionSeconds}
+          questionCount={questionCount}
+        />
+      )}
     />
   );
 }

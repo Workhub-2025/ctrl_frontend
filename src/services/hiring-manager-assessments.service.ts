@@ -12,6 +12,7 @@ import { createFirebaseRecruitmentApi } from "@/lib/firebase-recruitment-api";
 
 export type AssessmentVersionOption = {
   version: string;
+  releaseId?: string;
   title: string;
   description: string | null;
   previewSamples?: string[];
@@ -41,6 +42,8 @@ export type HiringManagerAssessment = {
   maxAttempts: number | null;
   entitlementTier: "core" | "premium" | string;
   availableVersions: AssessmentVersionOption[];
+  /** Default / active release document id for stack writes. */
+  activeReleaseId?: string;
 };
 
 const catalogueMeta: Record<
@@ -81,8 +84,78 @@ export type GetHiringManagerAssessmentsOptions = {
   includeVersions?: boolean;
 };
 
-const loadHiringManagerAssessments = cache(
-  async (): Promise<{
+function mapCatalogueItem(
+  item: {
+    definitionId: string;
+    releaseId: string;
+    releaseVersion?: string | null;
+    slug: string;
+    title: string;
+    availableReleases?: ReadonlyArray<{
+      releaseId: string;
+      releaseVersion: string;
+      status: "active" | "retired";
+    }>;
+  },
+  includeVersions: boolean,
+): HiringManagerAssessment {
+  const meta = catalogueMeta[item.slug] ?? fallbackMeta;
+  const knownSlug = isKnownAssessmentSlug(item.slug) ? item.slug : null;
+  const defaults = knownSlug ? ASSESSMENT_CATALOGUE_DEFAULTS[knownSlug] : null;
+
+  const availableVersions: AssessmentVersionOption[] = includeVersions
+    ? (item.availableReleases?.length
+        ? item.availableReleases
+        : [
+            {
+              releaseId: item.releaseId,
+              releaseVersion: item.releaseVersion ?? "0.0.0",
+              status: "active" as const,
+            },
+          ]
+      ).map((release) => ({
+        version: release.releaseVersion,
+        releaseId: release.releaseId,
+        title: releaseLabel(item.slug, release.releaseVersion),
+        description: null,
+      }))
+    : [];
+
+  return {
+    id: item.definitionId,
+    documentId: item.definitionId,
+    slug: item.slug,
+    title: item.title,
+    summary: meta.fallbackSummary,
+    duration: knownSlug
+      ? formatEstimatedCompletion(knownSlug)
+      : "Configured release",
+    durationSeconds: defaults?.timeLimitSeconds ?? null,
+    skills: meta.skills,
+    whyItMatters: meta.whyItMatters,
+    videoLabel: meta.videoLabel,
+    iconKey: meta.iconKey,
+    configType: meta.configType,
+    isActive: true,
+    passingScore: defaults?.passingScore ?? null,
+    maxAttempts: null,
+    entitlementTier: "core",
+    availableVersions,
+    activeReleaseId: item.releaseId,
+  };
+}
+
+function releaseLabel(slug: string, version: string): string {
+  if (slug === "call-simulation" && version === "1.1.0") {
+    return `v${version} — practice + two assessed calls`;
+  }
+  return `v${version}`;
+}
+
+const loadHiringManagerAssessmentsWithVersions = cache(
+  async (
+    includeVersions: boolean,
+  ): Promise<{
     assessments: HiringManagerAssessment[];
     error: string | null;
   }> => {
@@ -93,40 +166,9 @@ const loadHiringManagerAssessments = cache(
         auth.firebaseSessionCookie,
       );
       const catalogue = await recruitment.listAssessmentCatalogue();
-      const assessments = catalogue.map((item) => {
-        const meta = catalogueMeta[item.slug] ?? fallbackMeta;
-        const knownSlug = isKnownAssessmentSlug(item.slug) ? item.slug : null;
-        const defaults = knownSlug
-          ? ASSESSMENT_CATALOGUE_DEFAULTS[knownSlug]
-          : null;
-        return {
-          id: item.definitionId,
-          documentId: item.definitionId,
-          slug: item.slug,
-          title: item.title,
-          summary: meta.fallbackSummary,
-          duration: knownSlug
-            ? formatEstimatedCompletion(knownSlug)
-            : "Configured release",
-          durationSeconds: defaults?.timeLimitSeconds ?? null,
-          skills: meta.skills,
-          whyItMatters: meta.whyItMatters,
-          videoLabel: meta.videoLabel,
-          iconKey: meta.iconKey,
-          configType: meta.configType,
-          isActive: true,
-          passingScore: defaults?.passingScore ?? null,
-          maxAttempts: null,
-          entitlementTier: "core",
-          availableVersions: [
-            {
-              version: item.releaseId,
-              title: item.title,
-              description: null,
-            },
-          ],
-        } satisfies HiringManagerAssessment;
-      });
+      const assessments = catalogue.map((item) =>
+        mapCatalogueItem(item, includeVersions),
+      );
 
       if (assessments.length > 0) {
         return { assessments, error: null };
@@ -152,10 +194,12 @@ const loadHiringManagerAssessments = cache(
 );
 
 export async function getHiringManagerAssessments(
-  _options: GetHiringManagerAssessmentsOptions = {},
+  options: GetHiringManagerAssessmentsOptions = {},
 ): Promise<{
   assessments: HiringManagerAssessment[];
   error: string | null;
 }> {
-  return loadHiringManagerAssessments();
+  return loadHiringManagerAssessmentsWithVersions(
+    options.includeVersions === true,
+  );
 }

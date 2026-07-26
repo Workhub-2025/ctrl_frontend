@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Check, CircleHelp } from "lucide-react";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
@@ -10,28 +10,72 @@ type Option = { id: string; label: string };
 type Scenario = { id: string; number: number; title: string; stem: string; options: Option[] };
 type Practice = Omit<Scenario, "number">;
 type Content = { scenarios: Scenario[] };
-type Response = { bestOptionId: string; worstOptionId: string };
+type Response = {
+  bestOptionId: string;
+  worstOptionId: string;
+  elapsedSeconds: number;
+  enteredAt?: number;
+};
 type State = { responses: Record<string, Response> };
 
 function responseState(scenarios: Array<Pick<Scenario, "id">>): State {
-  return { responses: Object.fromEntries(scenarios.map((scenario) => [scenario.id, { bestOptionId: "", worstOptionId: "" }])) };
+  return {
+    responses: Object.fromEntries(
+      scenarios.map((scenario) => [
+        scenario.id,
+        { bestOptionId: "", worstOptionId: "", elapsedSeconds: 0 },
+      ]),
+    ),
+  };
 }
 
-function BestWorstWorkspace({ scenario, response, onChange, practice = false }: {
+function BestWorstWorkspace({
+  scenario,
+  response,
+  onChange,
+  practice = false,
+  scenarioTotal,
+}: {
   scenario: Scenario | Practice;
   response: Response;
   onChange: (response: Response) => void;
   practice?: boolean;
+  scenarioTotal?: number;
 }) {
+  const enteredAt = useRef(response.enteredAt ?? Date.now());
+
+  useEffect(() => {
+    if (response.enteredAt) {
+      enteredAt.current = response.enteredAt;
+      return;
+    }
+    onChange({ ...response, enteredAt: enteredAt.current });
+    // Persist entry time once for dwell measurement across resume.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const choose = (kind: "bestOptionId" | "worstOptionId", optionId: string) => {
     const other = kind === "bestOptionId" ? "worstOptionId" : "bestOptionId";
-    onChange({ ...response, [kind]: optionId, ...(response[other] === optionId ? { [other]: "" } : {}) });
+    const elapsedSeconds = Math.max(
+      1,
+      Math.floor((Date.now() - enteredAt.current) / 1_000),
+    );
+    onChange({
+      ...response,
+      [kind]: optionId,
+      elapsedSeconds,
+      enteredAt: enteredAt.current,
+      ...(response[other] === optionId ? { [other]: "" } : {}),
+    });
   };
+
   return (
     <section className="border border-border bg-card" aria-labelledby={`${scenario.id}-title`}>
       <div className="border-b border-border px-5 py-5 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          {practice ? "Unscored practice" : `Scenario ${"number" in scenario ? scenario.number : ""} of 20`}
+          {practice
+            ? "Unscored practice"
+            : `Scenario ${"number" in scenario ? scenario.number : ""} of ${scenarioTotal ?? ""}`}
         </p>
         <h1 id={`${scenario.id}-title`} className="mt-1 text-xl font-semibold">{scenario.title}</h1>
         <p className="mt-3 max-w-4xl text-sm leading-7 text-foreground">{scenario.stem}</p>
@@ -85,6 +129,7 @@ function BestWorstWorkspace({ scenario, response, onChange, practice = false }: 
 }
 
 function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
+  const scenarioCount = launch.content.scenarios.length;
   return (
     <TrackedAssessmentShell<Content, State>
       launch={launch}
@@ -92,7 +137,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
       restartNoun="scenario order"
       initialState={(content) => responseState(content.scenarios)}
       validateStage={(stage, state) => {
-        if (stage >= 1 && stage <= 20) {
+        if (stage >= 1 && stage <= scenarioCount) {
           const scenario = launch.content.scenarios[stage - 1];
           const response = state.responses[scenario.id];
           if (!response?.bestOptionId || !response.worstOptionId) return "Select both the most effective and least effective response.";
@@ -100,29 +145,57 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
         }
         return null;
       }}
-      buildSubmission={(state, elapsedSeconds) => ({
-        scenarios: launch.content.scenarios.map((scenario) => ({
-          scenarioId: scenario.id,
-          ...state.responses[scenario.id],
-          elapsedSeconds: Math.max(1, Math.round(elapsedSeconds / 20)),
-        })),
+      buildSubmission={(state) => ({
+        scenarios: launch.content.scenarios.map((scenario) => {
+          const response = state.responses[scenario.id];
+          const dwell =
+            response.elapsedSeconds ||
+            (response.enteredAt
+              ? Math.max(1, Math.floor((Date.now() - response.enteredAt) / 1_000))
+              : 1);
+          return {
+            scenarioId: scenario.id,
+            bestOptionId: response.bestOptionId,
+            worstOptionId: response.worstOptionId,
+            elapsedSeconds: dwell,
+          };
+        }),
       })}
-      continueLabel={(stage) => stage === 0 ? "Start scenario 1" : stage < 20 ? "Save and open next scenario" : "Review responses"}
+      continueLabel={(stage) =>
+        stage === 0
+          ? "Start scenario 1"
+          : stage < scenarioCount
+            ? "Save and open next scenario"
+            : "Review responses"
+      }
       renderStage={({ stageIndex, state, setState }, content) => {
-        if (stageIndex === 0) return (
-          <section className="border border-border bg-card p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
-            <h1 className="mt-2 text-2xl font-semibold">Twenty judgement scenarios</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-              For each situation, identify the response you consider most effective and the response you consider least effective. Work from the facts shown; no prior role knowledge is required.
-            </p>
-          </section>
-        );
-        if (stageIndex >= 1 && stageIndex <= 20) {
-          const scenario = content.scenarios[stageIndex - 1];
-          return <BestWorstWorkspace scenario={scenario} response={state.responses[scenario.id]} onChange={(next) => setState({ responses: { ...state.responses, [scenario.id]: next } })} />;
+        if (stageIndex === 0) {
+          return (
+            <section className="border border-border bg-card p-6 sm:p-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
+              <h1 className="mt-2 text-2xl font-semibold">{scenarioCount} judgement scenarios</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
+                For each situation, identify the response you consider most effective and the response you consider least effective. Work from the facts shown; no prior role knowledge is required.
+              </p>
+            </section>
+          );
         }
-        const completed = Object.values(state.responses).filter((response) => response.bestOptionId && response.worstOptionId).length;
+        if (stageIndex >= 1 && stageIndex <= scenarioCount) {
+          const scenario = content.scenarios[stageIndex - 1];
+          return (
+            <BestWorstWorkspace
+              scenario={scenario}
+              scenarioTotal={scenarioCount}
+              response={state.responses[scenario.id]}
+              onChange={(next) =>
+                setState({ responses: { ...state.responses, [scenario.id]: next } })
+              }
+            />
+          );
+        }
+        const completed = Object.values(state.responses).filter(
+          (response) => response.bestOptionId && response.worstOptionId,
+        ).length;
         return (
           <section className="border border-border bg-card p-6 sm:p-8">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Final review</p>
@@ -130,7 +203,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
             <div className="mt-5 flex items-center gap-4 border-y border-border py-4">
               <span className="grid h-10 w-10 place-items-center bg-primary/10 text-primary"><Check className="h-5 w-5" aria-hidden="true" /></span>
               <div>
-                <p className="font-semibold tabular-nums">{completed} of 20 scenarios complete</p>
+                <p className="font-semibold tabular-nums">{completed} of {scenarioCount} scenarios complete</p>
                 <p className="text-sm text-muted-foreground">Selections are scored after submission; no immediate result is shown.</p>
               </div>
             </div>
@@ -150,10 +223,15 @@ export function SituationalJudgementModulePage({ candidateSessionDocumentId, slu
       createPracticeState={createPracticeState}
       isPracticeComplete={(state) => {
         const response = Object.values(state.responses)[0];
-        return Boolean(response?.bestOptionId && response.worstOptionId && response.bestOptionId !== response.worstOptionId);
+        return Boolean(response?.bestOptionId && response?.worstOptionId);
       }}
       renderPractice={(practice, state, setState) => (
-        <BestWorstWorkspace practice scenario={practice} response={state.responses[practice.id]} onChange={(response) => setState({ responses: { [practice.id]: response } })} />
+        <BestWorstWorkspace
+          practice
+          scenario={practice}
+          response={state.responses[practice.id]}
+          onChange={(next) => setState({ responses: { [practice.id]: next } })}
+        />
       )}
       renderAssessment={(launch) => <Assessed launch={launch} />}
     />
