@@ -45,6 +45,19 @@ export type CandidateInvitationAcceptanceResponse = Readonly<{
   alreadyAccepted: boolean;
 }>;
 
+export type SessionAccessCodeClaimRequest = Readonly<{
+  accessCode: string;
+  displayName: string;
+  idempotencyKey: string;
+}>;
+
+export type SessionAccessCodeClaimResponse = Readonly<{
+  assignmentId: string;
+  sessionId: string;
+  userId: string;
+  alreadyLinked: boolean;
+}>;
+
 export type InvitationLinkType = "organization" | "candidate";
 
 export function parseDisplayName(value: unknown): string | null {

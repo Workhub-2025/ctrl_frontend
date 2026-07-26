@@ -9,11 +9,10 @@ export default function HiringManagerCampaignsPage() {
         eyebrow="Campaign workspace"
         title="Campaigns"
         description="Manage campaign setup, delivery mode, candidate completion, and report readiness."
-        icon={FolderKanban}
+        icon={<FolderKanban className="h-5 w-5" aria-hidden="true" />}
       />
 
       <HiringManagerCampaignsList />
     </div>
   );
 }
-

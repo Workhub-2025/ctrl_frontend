@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { handleBffRouteError } from "@/lib/auth/bff-session";
-import { toClientDashboardSummary } from "@/lib/firebase-client-portal-api";
+import { toClientOverviewFromScreen } from "@/lib/firebase-client-portal-api";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { createFirebaseScreenApi } from "@/lib/firebase-screen-api";
 import { readHmOverviewOrgGeneration } from "@/lib/portal-cache-invalidation";
@@ -10,8 +10,9 @@ import {
   portalClientDashboardCacheKeyWithGeneration,
 } from "@/lib/portal-cache-keys";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
+import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { context, domainApi, firebaseSessionCookie } =
       await requireFirebaseRecruitmentSession("client");
@@ -22,14 +23,17 @@ export async function GET() {
       );
     }
 
+    const rateLimited = await rejectRateLimitedPortalRead(request, {
+      scope: "client-dashboard",
+      actorId: context.firebaseUid,
+      organizationId: context.organizationId,
+    });
+    if (rateLimited) return rateLimited;
+
     const screens = createFirebaseScreenApi(domainApi, firebaseSessionCookie);
     const loadDashboard = async () => {
       const dashboard = await screens.getClientDashboard();
-      return toClientDashboardSummary(
-        dashboard.workspace,
-        dashboard.campaigns,
-        dashboard.releasedAssignmentCount,
-      );
+      return toClientOverviewFromScreen(dashboard);
     };
 
     // Shares the org generation with the HM overview: seat, campaign and

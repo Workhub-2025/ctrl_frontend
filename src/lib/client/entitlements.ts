@@ -45,6 +45,24 @@ export const DEFAULT_PLATFORM_ASSESSMENTS = [
   },
 ] as const;
 
+/** Premium catalogue assessments that require a paid unlock. */
+export const PREMIUM_PLATFORM_ASSESSMENTS = [
+  {
+    key: "short-term-memory",
+    label: "STM",
+    title: "Short-term memory",
+    description: "Short-term memory assessment content",
+  },
+] as const;
+
+export function resolveAssessmentCatalogueTitle(slug: string): string {
+  const core = DEFAULT_PLATFORM_ASSESSMENTS.find((row) => row.key === slug);
+  if (core) return core.title;
+  const premium = PREMIUM_PLATFORM_ASSESSMENTS.find((row) => row.key === slug);
+  if (premium) return premium.title;
+  return slug;
+}
+
 export const DEFAULT_PLATFORM_ASSESSMENT_VERSION_ENTITLEMENTS = DEFAULT_PLATFORM_ASSESSMENTS.map(
   (assessment) => ({
     key: assessment.key,

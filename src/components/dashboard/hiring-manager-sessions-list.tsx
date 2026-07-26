@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   CalendarClock,
   Copy,
   Eye,
+  Inbox,
   KeyRound,
   MapPin,
   Plus,
@@ -40,8 +40,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
+import {
+  PortalEmptyState,
+  PortalPanel,
+} from "@/components/dashboard/portal/portal-ui";
 import {
   portalAlertErrorClass,
   portalBadgeClass,
@@ -854,17 +857,14 @@ export function HiringManagerSessionsList() {
 
       <div className="space-y-4">
         {filteredSessions.length === 0 ? (
-          <DashboardInfoCard interactive={false} className="border-dashed shadow-none">
-            <CardContent className="p-6 text-sm leading-6 text-muted-foreground">
-              No sessions found in this category.
-            </CardContent>
-          </DashboardInfoCard>
+          <PortalEmptyState
+            icon={Inbox}
+            title="No sessions in this view"
+            description="Switch tabs or create a session when the campaign is approved."
+          />
         ) : (
           filteredSessions.map((session) => (
-            <DashboardInfoCard
-              key={session.id}
-            >
-              <CardContent className="space-y-4 p-5 pl-7">
+            <PortalPanel key={session.id} className="space-y-4 pl-2">
                 {/* Header row: Badges on left, Candidates count with progress bar on right */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-3.5 dark:border-white/5">
                   <div className="flex flex-wrap items-center gap-2">
@@ -986,8 +986,7 @@ export function HiringManagerSessionsList() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </DashboardInfoCard>
+            </PortalPanel>
           ))
         )}
       </div>

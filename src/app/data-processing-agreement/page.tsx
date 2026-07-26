@@ -11,7 +11,7 @@ export default function DataProcessingAgreementPage() {
     <LegalPageShell
       title="Data Processing Agreement Information"
       description={`UK GDPR Article 28 processing terms for ${UK_LEGAL.tradingName} customers`}
-      icon={FileText}
+      icon={<FileText className="h-8 w-8" aria-hidden="true" />}
       iconClassName="bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400"
       version={UK_LEGAL.dpaInformationVersion}
     >

@@ -9,8 +9,35 @@ const getConfiguredOrigin = () => {
   }
 };
 
+/** Apex ↔ www siblings so production mutations work on either hostname. */
+function withApexWwwAliases(origin: string, into: Set<string>) {
+  into.add(origin);
+  try {
+    const url = new URL(origin);
+    const host = url.hostname.toLowerCase();
+    if (host.startsWith("www.")) {
+      url.hostname = host.slice(4);
+      into.add(url.origin);
+    } else if (host.includes(".") && !host.endsWith(".vercel.app")) {
+      url.hostname = `www.${host}`;
+      into.add(url.origin);
+    }
+  } catch {
+    // ignore malformed
+  }
+}
+
 const getExpectedOrigins = () => {
-  const origins = new Set([getConfiguredOrigin()]);
+  const origins = new Set<string>();
+  withApexWwwAliases(getConfiguredOrigin(), origins);
+  const publicApp = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (publicApp) {
+    try {
+      withApexWwwAliases(new URL(publicApp).origin, origins);
+    } catch {
+      // ignore
+    }
+  }
   const vercelUrl = process.env.VERCEL_URL?.trim();
   if (vercelUrl && !vercelUrl.includes("/") && !vercelUrl.includes("*")) {
     origins.add(`https://${vercelUrl}`);

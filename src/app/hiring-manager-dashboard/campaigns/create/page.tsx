@@ -25,7 +25,7 @@ export default async function CreateHiringManagerCampaignPage() {
         eyebrow="Campaign creation"
         title="Create campaign"
         description="Configure the campaign details, choose the assessment stack, and set the weighting before candidates join."
-        icon={FolderPlus}
+        icon={<FolderPlus className="h-5 w-5" aria-hidden="true" />}
         notice={
           error ? (
             <p className={cn(portalAlertErrorClass, "max-w-3xl text-xs leading-5")}>

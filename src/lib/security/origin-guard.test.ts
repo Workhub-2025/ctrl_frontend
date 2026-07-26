@@ -25,6 +25,15 @@ describe("rejectCrossOriginRequest", () => {
     expect(rejectCrossOriginRequest(request)).toBeNull();
   });
 
+  it("accepts the www sibling of the configured production origin", () => {
+    const request = new Request("https://www.ctrl-assess.co.uk/api/example", {
+      method: "POST",
+      headers: { origin: "https://www.ctrl-assess.co.uk" },
+    });
+
+    expect(rejectCrossOriginRequest(request)).toBeNull();
+  });
+
   it("accepts the exact Vercel deployment origin for preview mutations", () => {
     const request = new Request(
       "https://ctrl-preview-team.vercel.app/api/example",

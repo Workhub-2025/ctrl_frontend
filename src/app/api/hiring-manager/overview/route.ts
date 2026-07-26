@@ -17,8 +17,9 @@ import {
   portalHmOverviewCacheKeyWithGeneration,
 } from "@/lib/portal-cache-keys";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
+import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const { context, domainApi, firebaseSessionCookie } =
       await requireFirebaseRecruitmentSession("hiring_manager");
@@ -28,6 +29,13 @@ export async function GET() {
         { status: 403 },
       );
     }
+
+    const rateLimited = await rejectRateLimitedPortalRead(request, {
+      scope: "hm-overview",
+      actorId: context.firebaseUid,
+      organizationId: context.organizationId,
+    });
+    if (rateLimited) return rateLimited;
 
     const screens = createFirebaseScreenApi(domainApi, firebaseSessionCookie);
     const loadOverview = async () => {

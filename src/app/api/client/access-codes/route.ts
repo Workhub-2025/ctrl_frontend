@@ -6,6 +6,7 @@ import {
   requireFirebaseTenancySession,
   toClientAccessCodes,
 } from "@/lib/firebase-tenancy-bff";
+import { invitationAcceptUrl } from "@/lib/public-app-urls";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 import { sanitisePlainText } from "@/lib/security/input-sanitization";
@@ -15,24 +16,6 @@ function parseSeatNumber(value: unknown) {
   if (typeof value !== "string") return undefined;
   const numeric = Number(value.match(/\d+/)?.[0] ?? value);
   return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
-}
-
-function inviteAcceptUrl(request: Request, token: string, email: string) {
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const forwardedProto =
-    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
-  const envBase =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
-    "";
-  const base =
-    forwardedHost && !forwardedHost.includes("localhost")
-      ? `${forwardedProto}://${forwardedHost}`
-      : envBase || "http://localhost:3000";
-  const url = new URL("/auth/accept-invitation", base);
-  url.searchParams.set("token", token);
-  url.searchParams.set("email", email);
-  return url.toString();
 }
 
 export async function GET() {
@@ -142,7 +125,7 @@ export async function POST(request: Request) {
             invitedEmail: email,
             seatNumber: seat.seatNumber,
             seatLabel: seatLabel ?? seat.seatLabel ?? `Seat ${seat.seatNumber}`,
-            inviteAcceptUrl: inviteAcceptUrl(request, replaced.token, email),
+            inviteAcceptUrl: invitationAcceptUrl(request, replaced.token, email),
           },
         },
         { status: 201 },
@@ -167,7 +150,7 @@ export async function POST(request: Request) {
           invitedEmail: email,
           seatNumber: seat.seatNumber,
           seatLabel: seatLabel ?? seat.seatLabel ?? `Seat ${seat.seatNumber}`,
-          inviteAcceptUrl: inviteAcceptUrl(request, invitation.token, email),
+          inviteAcceptUrl: invitationAcceptUrl(request, invitation.token, email),
         },
       },
       { status: 201 },

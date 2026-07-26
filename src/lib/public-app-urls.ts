@@ -1,21 +1,94 @@
 import type { NextRequest } from "next/server";
 
-/**
- * Prefer the live request host on Preview so invite/join links match the
- * deployment the operator is using (not a stale PUBLIC_APP_URL).
- */
-export function publicAppBaseUrl(request: Request | NextRequest): string {
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const forwardedProto =
-    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
-  const envBase =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
-    "";
-  if (forwardedHost && !forwardedHost.includes("localhost")) {
-    return `${forwardedProto}://${forwardedHost}`;
+/** Production customer-facing origin. Never use a Vercel deployment hostname here. */
+export const CANONICAL_PRODUCTION_APP_URL = "https://www.ctrl-assess.co.uk";
+
+function stripTrailingSlash(value: string): string {
+  return value.replace(/\/$/, "");
+}
+
+function isLocalHost(host: string): boolean {
+  return (
+    host === "localhost" ||
+    host.startsWith("localhost:") ||
+    host === "127.0.0.1" ||
+    host.startsWith("127.0.0.1:")
+  );
+}
+
+export function isEphemeralDeploymentHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase();
+  return (
+    normalized.endsWith(".vercel.app") ||
+    normalized.endsWith(".vercel.dev") ||
+    normalized.endsWith(".web.app")
+  );
+}
+
+function hostOf(url: string): string | null {
+  try {
+    return new URL(url).host.toLowerCase();
+  } catch {
+    return null;
   }
-  return envBase || "http://localhost:3000";
+}
+
+/**
+ * Resolve the public app origin used for Stripe redirects, invite emails,
+ * and deep links.
+ *
+ * - Production: env URL if set and not ephemeral; otherwise canonical domain.
+ * - Preview: request host (so operators can test that deployment).
+ * - Never return a `.vercel.app` host from production Stripe/email paths.
+ */
+export function publicAppBaseUrl(request?: Request | NextRequest): string {
+  const isPreview = process.env.VERCEL_ENV === "preview";
+  const envBase = stripTrailingSlash(
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+      process.env.NEXTAUTH_URL?.trim() ||
+      "",
+  );
+
+  if (request && isPreview) {
+    const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const forwardedProto =
+      request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+    if (forwardedHost && !isLocalHost(forwardedHost)) {
+      return `${forwardedProto}://${forwardedHost}`;
+    }
+  }
+
+  if (envBase) {
+    const host = hostOf(envBase);
+    if (host && !isEphemeralDeploymentHost(host)) {
+      return envBase;
+    }
+    // Production must not use a stale preview URL accidentally stored in env.
+    if (!isPreview) {
+      return CANONICAL_PRODUCTION_APP_URL;
+    }
+    return envBase;
+  }
+
+  if (!isPreview) {
+    return CANONICAL_PRODUCTION_APP_URL;
+  }
+
+  if (request) {
+    const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+    const forwardedProto =
+      request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+    if (forwardedHost && !isLocalHost(forwardedHost)) {
+      return `${forwardedProto}://${forwardedHost}`;
+    }
+  }
+
+  return "http://localhost:3000";
+}
+
+/** Stripe success/cancel/return base — always canonical on production. */
+export function stripeReturnAppUrl(): string {
+  return publicAppBaseUrl();
 }
 
 export function invitationAcceptUrl(

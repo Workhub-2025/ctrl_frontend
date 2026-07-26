@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HiringManagerCampaignBuilder } from "@/components/dashboard/hiring-manager-campaign-builder";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { PortalPanel } from "@/components/dashboard/portal/portal-ui";
 import { portalAlertErrorClass, portalPanelNestedClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
@@ -180,7 +181,7 @@ export function HiringManagerCampaignEditView({
       <HiringManagerPageHeader
         eyebrow="Campaign editing"
         title={`Edit ${campaign.name}`}
-        description="Update delivery mode, assessment stack, and weighting. Other campaign details stay unchanged."
+        description="Change which assessments run and how they are weighted. Delivery mode and other campaign details stay unchanged."
         icon={Pencil}
         action={
           <Button variant="outline" asChild>
@@ -193,14 +194,16 @@ export function HiringManagerCampaignEditView({
       />
 
       {initialStackDraft ? (
-        <HiringManagerCampaignBuilder
-          mode="edit-stack"
-          campaignId={campaignId}
-          initialStackDraft={initialStackDraft}
-          assessments={assessments}
-          allowRemoteDelivery={allowRemoteDelivery}
-          allowHybridDelivery={allowHybridDelivery}
-        />
+        <PortalPanel className={portalPanelNestedClass}>
+          <HiringManagerCampaignBuilder
+            mode="edit-stack"
+            campaignId={campaignId}
+            initialStackDraft={initialStackDraft}
+            assessments={assessments}
+            allowRemoteDelivery={allowRemoteDelivery}
+            allowHybridDelivery={allowHybridDelivery}
+          />
+        </PortalPanel>
       ) : null}
     </div>
   );

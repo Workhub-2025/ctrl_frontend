@@ -6,7 +6,6 @@ import {
   BarChart3,
   CalendarClock,
   CreditCard,
-  Loader2,
   PieChart,
   ReceiptText,
   RefreshCw,
@@ -24,6 +23,8 @@ import {
 } from "@/components/ui/table";
 import {
   AdminAlert,
+  AdminEmptyState,
+  AdminInlineLoading,
   AdminPageHeader,
   AdminPanel,
   AdminSectionHeader,
@@ -140,18 +141,24 @@ export default function AdminAnalyticsPage() {
     EMPTY_ANALYTICS
   );
 
-  const money = (pence: number) => formatMoney(pence, data.currency);
+  const summary = data.summary ?? EMPTY_ANALYTICS.summary;
+  const monthlyRevenue = data.monthlyRevenue ?? EMPTY_ANALYTICS.monthlyRevenue;
+  const pipeline = data.pipeline ?? EMPTY_ANALYTICS.pipeline;
+  const byTier = data.byTier ?? EMPTY_ANALYTICS.byTier;
+  const topClients = data.topClients ?? EMPTY_ANALYTICS.topClients;
+  const recentPayments = data.recentPayments ?? EMPTY_ANALYTICS.recentPayments;
+  const money = (pence: number) => formatMoney(pence, data.currency || "gbp");
   const maxMonthlyValue = useMemo(
     () =>
       Math.max(
         1,
-        ...data.monthlyRevenue.map(
+        ...monthlyRevenue.map(
           (row) => row.paidPence + row.invoiceSentPence + row.requestedPence
         )
       ),
-    [data.monthlyRevenue]
+    [monthlyRevenue]
   );
-  const totalPipeline = data.summary.outstandingInvoicePence + data.summary.requestedPipelinePence;
+  const totalPipeline = summary.outstandingInvoicePence + summary.requestedPipelinePence;
 
   return (
     <div className="space-y-8 pb-6">
@@ -166,11 +173,7 @@ export default function AdminAnalyticsPage() {
             onClick={() => void refetch()}
             disabled={loading}
           >
-            {loading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
+            <RefreshCw className={cn("mr-2 h-4 w-4", loading && "motion-safe:animate-spin")} />
             Refresh
           </Button>
         }
@@ -178,30 +181,34 @@ export default function AdminAnalyticsPage() {
 
       {error ? <AdminAlert>{error}</AdminAlert> : null}
 
+      {loading && data.generatedAt === "" ? (
+        <AdminInlineLoading message="Loading analytics…" />
+      ) : null}
+
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <AdminStatTile
           icon={Banknote}
           label="Contract ARR"
-          value={money(data.summary.annualRecurringPence)}
-          detail={`${money(data.summary.monthlyRecurringPence)} monthly run rate`}
+          value={money(summary.annualRecurringPence)}
+          detail={`${money(summary.monthlyRecurringPence)} monthly run rate`}
         />
         <AdminStatTile
           icon={ReceiptText}
           label="Collected this month"
-          value={money(data.summary.collectedThisMonthPence)}
-          detail={`${money(data.summary.collectedYearToDatePence)} paid year to date`}
+          value={money(summary.collectedThisMonthPence)}
+          detail={`${money(summary.collectedYearToDatePence)} paid year to date`}
         />
         <AdminStatTile
           icon={CreditCard}
           label="Open invoices"
-          value={money(data.summary.outstandingInvoicePence)}
-          detail={`${money(data.summary.requestedPipelinePence)} requested pipeline`}
+          value={money(summary.outstandingInvoicePence)}
+          detail={`${money(summary.requestedPipelinePence)} requested pipeline`}
         />
         <AdminStatTile
           icon={Users}
           label="Active clients"
-          value={data.summary.activeClients}
-          detail={`${data.summary.activeSeats} seats · ${money(data.summary.averageRevenuePerClientPence)} ARPA`}
+          value={summary.activeClients}
+          detail={`${summary.activeSeats} seats · ${money(summary.averageRevenuePerClientPence)} ARPA`}
         />
       </div>
 
@@ -214,7 +221,7 @@ export default function AdminAnalyticsPage() {
           />
 
           <div className="flex h-64 items-end gap-2 overflow-x-auto pb-2">
-            {data.monthlyRevenue.map((month) => {
+            {monthlyRevenue.map((month) => {
               const paidHeight = Math.max(2, (month.paidPence / maxMonthlyValue) * 100);
               const invoiceHeight = Math.max(0, (month.invoiceSentPence / maxMonthlyValue) * 100);
               const requestedHeight = Math.max(0, (month.requestedPence / maxMonthlyValue) * 100);
@@ -275,7 +282,7 @@ export default function AdminAnalyticsPage() {
           />
 
           <div className="space-y-4">
-            {data.pipeline.map((stage) => {
+            {pipeline.map((stage) => {
               const percent = totalPipeline
                 ? Math.min(100, Math.round((stage.amountPence / totalPipeline) * 100))
                 : stage.status === "paid"
@@ -317,10 +324,10 @@ export default function AdminAnalyticsPage() {
           <AdminSectionHeader
             eyebrow="Contracts"
             title="Tier mix"
-            description={`${data.summary.activeContracts} active contracts contributing to ARR.`}
+            description={`${summary.activeContracts} active contracts contributing to ARR.`}
           />
           <div className="space-y-4">
-            {data.byTier.length ? data.byTier.map((tier) => (
+            {byTier.length ? byTier.map((tier) => (
               <div key={tier.tier} className="space-y-2">
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="inline-flex items-center gap-2 font-semibold text-foreground">
@@ -336,7 +343,11 @@ export default function AdminAnalyticsPage() {
                 </div>
               </div>
             )) : (
-              <p className="text-sm text-muted-foreground">No active contract revenue yet.</p>
+              <AdminEmptyState
+                icon={PieChart}
+                title="No contract revenue yet"
+                description="Tier mix appears once clients have active contracts."
+              />
             )}
           </div>
         </AdminPanel>
@@ -348,7 +359,7 @@ export default function AdminAnalyticsPage() {
             description="Latest paid billing requests recorded by the platform."
           />
           <div className="space-y-3">
-            {data.recentPayments.length ? data.recentPayments.map((payment) => (
+            {recentPayments.length ? recentPayments.map((payment) => (
               <div
                 key={payment.id}
                 className="flex items-start justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 p-3"
@@ -365,7 +376,11 @@ export default function AdminAnalyticsPage() {
                 </div>
               </div>
             )) : (
-              <p className="text-sm text-muted-foreground">No paid billing requests yet.</p>
+              <AdminEmptyState
+                icon={ReceiptText}
+                title="No paid billing requests"
+                description="Recent paid work appears here after invoices are settled."
+              />
             )}
           </div>
         </AdminPanel>
@@ -391,7 +406,7 @@ export default function AdminAnalyticsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {data.topClients.length ? data.topClients.map((client) => (
+            {topClients.length ? topClients.map((client) => (
               <TableRow key={client.clientId}>
                 <TableCell className="font-medium text-foreground">{client.clientName}</TableCell>
                 <TableCell>{client.tier}</TableCell>
@@ -416,20 +431,20 @@ export default function AdminAnalyticsPage() {
         <AdminStatTile
           icon={BarChart3}
           label="Renewal pipeline"
-          value={money(data.summary.renewalPipelinePence)}
+          value={money(summary.renewalPipelinePence)}
           detail="Requested or invoiced contract renewals"
         />
         <AdminStatTile
           icon={TrendingUp}
           label="Requested upgrades"
-          value={money(data.summary.requestedPipelinePence)}
+          value={money(summary.requestedPipelinePence)}
           detail="Work waiting for invoice or review"
         />
         <AdminStatTile
           icon={CalendarClock}
           label="Last refreshed"
           value={data.generatedAt ? formatDate(data.generatedAt) : "Not loaded"}
-          detail="Live from Strapi admin records"
+          detail="Live from Firebase billing and tenancy"
         />
       </div>
     </div>

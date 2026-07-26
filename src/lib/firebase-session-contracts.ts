@@ -7,7 +7,7 @@ export const FIREBASE_SESSION_CSRF_MAX_AGE_SECONDS = 5 * 60;
 export type FirebaseSessionExchangeRequest = Readonly<{
   idToken: string;
   csrfToken: string;
-  intent?: "invitation_acceptance";
+  intent?: "invitation_acceptance" | "session_access_code_claim";
 }>;
 
 export type FirebaseSessionExchangeResponse = Readonly<{
@@ -23,7 +23,7 @@ export type FirebaseProvisioningSessionExchangeResponse = Readonly<{
   expiresAt: string;
   provisioningRequired: true;
   bootstrapStatus?: "not_staged" | "pending" | "completed";
-  redirectPath: "/auth/bootstrap" | "/auth/accept-invitation";
+  redirectPath: "/auth/bootstrap" | "/auth/accept-invitation" | "/join";
 }>;
 
 export type FirebaseSessionCookiePolicy = Readonly<{

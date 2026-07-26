@@ -13,17 +13,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  PortalSectionHeader,
-} from "@/components/dashboard/portal/portal-ui";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import {
   portalBadgeClass,
   portalPanelClass,
@@ -56,6 +51,20 @@ function getActiveDeliveryFeatures(entitlements: ClientEntitlements | null) {
   } satisfies Record<ClientDeliveryFeatureKey, boolean>;
 }
 
+function AssessmentTierBadge({ tier }: { tier: "core" | "premium" }) {
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "shrink-0 rounded-md text-[10px] font-semibold uppercase tracking-wide",
+        tier === "premium" ? portalBadgeClass : "text-muted-foreground"
+      )}
+    >
+      {tier === "premium" ? "Premium" : "Core"}
+    </Badge>
+  );
+}
+
 export function ClientUpgradeBuilder({
   entitlements,
   canRequestUpgrades,
@@ -74,12 +83,26 @@ export function ClientUpgradeBuilder({
     [activeDeliveryFeatures]
   );
   const showDeliverySection = requestableDeliveryFeatures.length > 0;
+  const activatedAssessments = useMemo(() => {
+    const core = (entitlements?.defaultAssessments ?? []).map((assessment) => ({
+      slug: assessment.slug,
+      title: assessment.title,
+      tier: "core" as const,
+    }));
+    const premium = (entitlements?.additionalAssessments ?? []).map((assessment) => ({
+      slug: assessment.slug,
+      title: assessment.title,
+      tier: "premium" as const,
+    }));
+    return [...core, ...premium];
+  }, [entitlements?.additionalAssessments, entitlements?.defaultAssessments]);
   const requestableAssessments = entitlements?.requestableAssessments ?? [];
 
   const [draft, setDraft] = useState<ClientUpgradeDraft>(() => createEmptyUpgradeDraft(currentSeats));
   const [pricing, setPricing] = useState<ClientUpgradePricing | null>(null);
   const [pricingLoading, setPricingLoading] = useState(true);
   const [fieldError, setFieldError] = useState<string | null>(null);
+  const [assessmentTab, setAssessmentTab] = useState("activated");
 
   useEffect(() => {
     setDraft(createEmptyUpgradeDraft(currentSeats));
@@ -113,7 +136,6 @@ export function ClientUpgradeBuilder({
         draft,
         currentSeats,
         activeDeliveryFeatures,
-        assessments: [],
       }),
     [draft, currentSeats, activeDeliveryFeatures]
   );
@@ -124,7 +146,6 @@ export function ClientUpgradeBuilder({
         draft,
         currentSeats,
         activeDeliveryFeatures,
-        assessments: [],
       }),
     [draft, currentSeats, activeDeliveryFeatures]
   );
@@ -163,20 +184,26 @@ export function ClientUpgradeBuilder({
     }));
   };
 
-  const toggleQueuedAssessment = () => {
-    if (draft.queuedAddonAssessment) {
-      updateDraft({ queuedAddonAssessment: null });
-      return;
-    }
-
-    const slug = draft.selectedAddonSlug;
-    if (!slug) return;
-
-    const match = requestableAssessments.find((assessment) => assessment.slug === slug);
-    if (!match) return;
-
-    updateDraft({
-      queuedAddonAssessment: { slug: match.slug, label: match.title },
+  const toggleQueuedAssessment = (slug: string, label: string) => {
+    setDraft((current) => {
+      const alreadyQueued = current.queuedAddonAssessments.some(
+        (assessment) => assessment.slug === slug
+      );
+      if (alreadyQueued) {
+        return {
+          ...current,
+          queuedAddonAssessments: current.queuedAddonAssessments.filter(
+            (assessment) => assessment.slug !== slug
+          ),
+        };
+      }
+      return {
+        ...current,
+        queuedAddonAssessments: [
+          ...current.queuedAddonAssessments,
+          { slug, label },
+        ],
+      };
     });
   };
 
@@ -195,7 +222,6 @@ export function ClientUpgradeBuilder({
           draft,
           currentSeats,
           activeDeliveryFeatures,
-          assessments: [],
         }),
         lineItems: lineItems.length > 0 ? lineItems : undefined,
       });
@@ -206,17 +232,7 @@ export function ClientUpgradeBuilder({
   };
 
   return (
-    <div className="space-y-5">
-      <PortalSectionHeader
-        eyebrow="Request an upgrade"
-        title="Build your upgrade"
-        description={
-          canRequestUpgrades
-            ? "Stage seats, delivery methods, and add-ons in one billing request."
-            : "Upgrade requests will be available once your organisation has a contract on file."
-        }
-      />
-
+    <div className="space-y-6">
       {!canRequestUpgrades ? (
         <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
           Contact CTRL support if you need help setting up your initial contract.
@@ -224,139 +240,200 @@ export function ClientUpgradeBuilder({
       ) : null}
 
       <div className={cn("space-y-5", !canRequestUpgrades && "pointer-events-none opacity-60")}>
-        <div className={cn("grid gap-4", showDeliverySection ? "md:grid-cols-2" : "md:grid-cols-1")}>
-          <section className={cn(portalPanelClass, "space-y-3 p-4")}>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <Users className="h-4 w-4" aria-hidden="true" />
-              Hiring manager seats
-            </div>
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-9 w-9 rounded-xl"
-                disabled={draft.requestedSeats <= Math.max(currentSeats, 1)}
-                onClick={() =>
-                  updateDraft({ requestedSeats: Math.max(currentSeats, draft.requestedSeats - 1) })
-                }
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <Input
-                type="number"
-                min={Math.max(currentSeats, 1)}
-                value={draft.requestedSeats}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  updateDraft({
-                    requestedSeats: Number.isFinite(next)
-                      ? Math.max(currentSeats, next)
-                      : Math.max(currentSeats, 1),
-                  });
-                }}
-                className="rounded-xl text-center"
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                className="h-9 w-9 rounded-xl"
-                onClick={() => updateDraft({ requestedSeats: draft.requestedSeats + 1 })}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Current allocation: {currentSeats} seat{currentSeats === 1 ? "" : "s"}
-              {draft.requestedSeats <= currentSeats ? " · no seat change staged" : ""}
-            </p>
-          </section>
+        <section className="space-y-3 border-b border-border/60 pb-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Users className="h-4 w-4" aria-hidden="true" />
+            Hiring manager seats
+          </div>
+          <p className="text-sm text-muted-foreground">
+            One-off unlocks. Increase capacity here — seats are not reduced through this portal.
+          </p>
+          <div className="flex max-w-sm items-center gap-3">
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="h-9 w-9 rounded-xl"
+              disabled={draft.requestedSeats <= Math.max(currentSeats, 1)}
+              onClick={() =>
+                updateDraft({ requestedSeats: Math.max(currentSeats, draft.requestedSeats - 1) })
+              }
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <Input
+              type="number"
+              min={Math.max(currentSeats, 1)}
+              value={draft.requestedSeats}
+              onChange={(event) => {
+                const next = Number(event.target.value);
+                updateDraft({
+                  requestedSeats: Number.isFinite(next)
+                    ? Math.max(currentSeats, next)
+                    : Math.max(currentSeats, 1),
+                });
+              }}
+              className="rounded-xl text-center"
+            />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="h-9 w-9 rounded-xl"
+              onClick={() => updateDraft({ requestedSeats: draft.requestedSeats + 1 })}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Current allocation: {currentSeats} seat{currentSeats === 1 ? "" : "s"}
+            {draft.requestedSeats <= currentSeats
+              ? " · no seat change staged"
+              : ` · staging +${draft.requestedSeats - currentSeats}`}
+          </p>
+        </section>
 
-          {showDeliverySection ? (
-            <section className={cn(portalPanelClass, "space-y-3 p-4")}>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <Users className="h-4 w-4" aria-hidden="true" />
-                Delivery methods
-              </div>
-              <ul className="space-y-2">
-                {requestableDeliveryFeatures.map((feature) => {
-                  const queued = draft.deliveryFeatures[feature.key];
-                  return (
-                    <li key={feature.key} className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{feature.label}</p>
-                        <p className="text-xs text-muted-foreground">{feature.group}</p>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={queued ? "default" : "outline"}
-                        className="rounded-xl"
-                        onClick={() => toggleDeliveryFeature(feature.key)}
-                      >
-                        {queued ? "Queued" : "Add"}
-                      </Button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          ) : null}
-        </div>
-
-        {requestableAssessments.length > 0 ? (
-          <section className={cn(portalPanelClass, "space-y-3 p-4")}>
+        {showDeliverySection ? (
+          <section className="space-y-3 border-b border-border/60 pb-5">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              <BookOpenCheck className="h-4 w-4" aria-hidden="true" />
-              Add-on assessment
+              Delivery methods
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <div className="min-w-0 flex-1 space-y-2">
-                <Label>Add-on assessment</Label>
-                <Select
-                  value={draft.selectedAddonSlug ?? "none"}
-                  onValueChange={(value) => {
-                    updateDraft({
-                      selectedAddonSlug: value === "none" ? null : value,
-                      queuedAddonAssessment: null,
-                    });
-                  }}
-                >
-                  <SelectTrigger className="rounded-xl">
-                    <SelectValue placeholder="Select assessment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Select assessment</SelectItem>
-                    {requestableAssessments.map((assessment) => (
-                      <SelectItem key={assessment.slug} value={assessment.slug}>
-                        {assessment.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant={draft.queuedAddonAssessment ? "default" : "outline"}
-                className="rounded-xl sm:mb-0.5"
-                disabled={!draft.selectedAddonSlug && !draft.queuedAddonAssessment}
-                onClick={toggleQueuedAssessment}
-              >
-                {draft.queuedAddonAssessment ? "Queued" : "Add"}
-              </Button>
-            </div>
+            <ul className="space-y-2">
+              {requestableDeliveryFeatures.map((feature) => {
+                const queued = draft.deliveryFeatures[feature.key];
+                return (
+                  <li
+                    key={feature.key}
+                    className={cn(
+                      portalPanelClass,
+                      "flex items-center justify-between gap-3 px-3 py-3"
+                    )}
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{feature.label}</p>
+                      <p className="text-xs text-muted-foreground">{feature.group}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={queued ? "default" : "outline"}
+                      className="rounded-xl"
+                      onClick={() => toggleDeliveryFeature(feature.key)}
+                    >
+                      {queued ? "Queued" : "Add"}
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
         ) : null}
 
-        <section className={cn(portalPanelClass, "space-y-4 p-4")}>
+        <section className="space-y-4 border-b border-border/60 pb-5">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <BookOpenCheck className="h-4 w-4" aria-hidden="true" />
+            Assessments
+          </div>
+
+          <Tabs value={assessmentTab} onValueChange={setAssessmentTab}>
+            <TabsList className="h-9 w-full justify-start rounded-xl bg-muted/50 p-1 sm:w-auto">
+              <TabsTrigger value="activated" className="rounded-lg px-3 text-xs">
+                Activated ({activatedAssessments.length})
+              </TabsTrigger>
+              <TabsTrigger value="unactivated" className="rounded-lg px-3 text-xs">
+                Unactivated ({requestableAssessments.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="activated" className="mt-4 space-y-2">
+              {activatedAssessments.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
+                  No activated assessments yet.
+                </p>
+              ) : (
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {activatedAssessments.map((assessment) => (
+                    <li
+                      key={assessment.slug}
+                      className={cn(
+                        portalPanelClass,
+                        "flex items-center justify-between gap-3 px-3 py-3"
+                      )}
+                    >
+                      <p className="text-sm font-semibold text-foreground">
+                        {assessment.title}
+                      </p>
+                      <AssessmentTierBadge tier={assessment.tier} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </TabsContent>
+
+            <TabsContent value="unactivated" className="mt-4 space-y-2">
+              {requestableAssessments.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border/60 p-4 text-center text-xs text-muted-foreground">
+                  All premium assessments are already activated on this account.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {requestableAssessments.map((assessment) => {
+                    const queued = draft.queuedAddonAssessments.some(
+                      (item) => item.slug === assessment.slug
+                    );
+                    return (
+                      <li
+                        key={assessment.slug}
+                        className={cn(
+                          portalPanelClass,
+                          "flex items-center justify-between gap-3 px-3 py-3"
+                        )}
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground">
+                              {assessment.title}
+                            </p>
+                            <AssessmentTierBadge tier="premium" />
+                          </div>
+                          {assessment.summary ? (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {assessment.summary}
+                            </p>
+                          ) : null}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={queued ? "default" : "outline"}
+                          className="shrink-0 rounded-xl"
+                          onClick={() =>
+                            toggleQueuedAssessment(assessment.slug, assessment.title)
+                          }
+                        >
+                          {queued ? "Queued" : "Add"}
+                        </Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </TabsContent>
+          </Tabs>
+        </section>
+
+        <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-foreground">Pending changes</p>
-              <p className="text-xs text-muted-foreground">Review before submitting one billing request.</p>
+              <p className="text-xs text-muted-foreground">
+                Review before submitting one billing request.
+              </p>
             </div>
-            <Badge variant="outline" className={cn("rounded-lg text-[10px] font-semibold", portalBadgeClass)}>
+            <Badge
+              variant="outline"
+              className={cn("rounded-lg text-[10px] font-semibold", portalBadgeClass)}
+            >
               {pendingChanges.length} change{pendingChanges.length === 1 ? "" : "s"}
             </Badge>
           </div>
@@ -370,7 +447,10 @@ export function ClientUpgradeBuilder({
               {pendingChanges.map((change) => (
                 <li
                   key={change}
-                  className={cn(portalPanelClass, "flex items-center gap-3 px-3 py-2 text-xs font-medium text-foreground")}
+                  className={cn(
+                    portalPanelClass,
+                    "flex items-center gap-3 px-3 py-2 text-xs font-medium text-foreground"
+                  )}
                 >
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                   {change}
@@ -383,7 +463,8 @@ export function ClientUpgradeBuilder({
             <div className="space-y-2 border-t border-border/50 pt-4">
               {discountPercent ? (
                 <div className="mb-3 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-500 dark:bg-emerald-500/20">
-                  Founder loyalty benefit: {discountPercent}% discount applied to all upgrades.
+                  Founder loyalty benefit: {discountPercent}% discount applied to all
+                  upgrades.
                 </div>
               ) : null}
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -391,13 +472,19 @@ export function ClientUpgradeBuilder({
               </p>
               <ul className="space-y-2">
                 {lineItems.map((item) => (
-                  <li key={item.label} className="flex items-center justify-between gap-3 text-xs">
+                  <li
+                    key={item.label}
+                    className="flex items-center justify-between gap-3 text-xs"
+                  >
                     <span className="text-muted-foreground">
                       {item.label} × {item.quantity}
                       {item.billingInterval === "month" ? " / month" : ""}
                     </span>
                     <span className="font-semibold text-foreground">
-                      {formatMoney(item.quantity * item.unitAmountPence, pricing?.currency ?? "gbp")}
+                      {formatMoney(
+                        item.quantity * item.unitAmountPence,
+                        pricing?.currency ?? "gbp"
+                      )}
                       {item.billingInterval === "month" ? "/mo" : ""}
                     </span>
                   </li>
@@ -406,9 +493,12 @@ export function ClientUpgradeBuilder({
               {monthlyRecurringTotal > 0 && oneTimeTotal > 0 ? (
                 <div className="space-y-2 border-t border-border/50 pt-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Monthly recurring (Direct Debit)</span>
+                    <span className="text-muted-foreground">
+                      Monthly recurring (Direct Debit)
+                    </span>
                     <span className="font-semibold text-foreground">
-                      {formatMoney(monthlyRecurringTotal, pricing?.currency ?? "gbp")}/mo
+                      {formatMoney(monthlyRecurringTotal, pricing?.currency ?? "gbp")}
+                      /mo
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
@@ -420,7 +510,11 @@ export function ClientUpgradeBuilder({
                 </div>
               ) : null}
               <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3 text-sm font-semibold">
-                <span>{monthlyRecurringTotal > 0 && oneTimeTotal === 0 ? "Monthly total" : "Total"}</span>
+                <span>
+                  {monthlyRecurringTotal > 0 && oneTimeTotal === 0
+                    ? "Monthly total"
+                    : "Total"}
+                </span>
                 <span>
                   {formatMoney(estimatedTotal, pricing?.currency ?? "gbp")}
                   {monthlyRecurringTotal > 0 && oneTimeTotal === 0 ? "/mo" : ""}
@@ -428,7 +522,8 @@ export function ClientUpgradeBuilder({
               </div>
               {monthlyRecurringTotal > 0 ? (
                 <p className="text-[11px] text-muted-foreground">
-                  {BILLING_CYCLE_PRO_RATA_HINT} Stripe Checkout shows the exact amount due today.
+                  {BILLING_CYCLE_PRO_RATA_HINT} Stripe Checkout shows the exact amount due
+                  today.
                 </p>
               ) : null}
             </div>
@@ -454,7 +549,10 @@ export function ClientUpgradeBuilder({
           >
             {submitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 motion-safe:animate-spin" aria-hidden="true" />
+                <Loader2
+                  className="mr-2 h-4 w-4 motion-safe:animate-spin"
+                  aria-hidden="true"
+                />
                 Submitting request…
               </>
             ) : (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,6 +14,8 @@ import {
 import { useAdminResource, invalidateAdminResource } from "@/lib/admin-resource-cache";
 import {
   AdminAlert,
+  AdminEmptyState,
+  AdminInlineLoading,
   AdminPageHeader,
   AdminTableShell,
 } from "@/components/admin/admin-portal-ui";
@@ -83,8 +85,8 @@ export default function AdminErasureRequestsPage() {
         title="Data erasure queue"
         description="Organisation-linked accounts that requested deletion. Complete after manual review."
         action={
-          <Button variant="outline" size="sm" onClick={() => void refetch()}>
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "motion-safe:animate-spin" : ""}`} />
             Refresh
           </Button>
         }
@@ -99,9 +101,13 @@ export default function AdminErasureRequestsPage() {
 
       <AdminTableShell>
         {loading ? (
-          <p className="p-6 text-sm text-muted-foreground">Loading pending requests…</p>
+          <AdminInlineLoading message="Loading pending requests…" />
         ) : rows.length === 0 ? (
-          <p className="p-6 text-sm text-muted-foreground">No pending erasure requests.</p>
+          <AdminEmptyState
+            icon={ShieldCheck}
+            title="No pending erasure requests"
+            description="Manual review items appear here when organisation-linked users request deletion."
+          />
         ) : (
           <Table>
             <TableHeader>

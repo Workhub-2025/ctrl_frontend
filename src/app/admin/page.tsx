@@ -1,23 +1,17 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import {
-  History,
-} from "lucide-react";
+import { History, Users } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
   AdminAlert,
+  AdminEmptyState,
   AdminPageHeader,
+  AdminPanel,
+  AdminSectionHeader,
 } from "@/components/admin/admin-portal-ui";
-import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { PortalDecisionLedger } from "@/components/dashboard/portal/portal-ui";
+import { portalProgressBarClass } from "@/components/dashboard/portal/portal-design-tokens";
 
 type AdminOverviewData = {
   activeClients: number;
@@ -71,64 +65,80 @@ export default function AdminOverview() {
       {error ? <AdminAlert>{error}</AdminAlert> : null}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        {/* HM Seat Capacity Card */}
-        <DashboardInfoCard interactive={false} className="lg:col-span-4">
-          <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
-            <CardTitle className="text-base font-semibold text-foreground">Hiring-manager seat capacity</CardTitle>
-            <CardDescription className="mt-0.5 text-xs text-muted-foreground">
-              Active hiring-manager occupants versus contracted reusable seats.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-5">
-            {seatUsage.length ? seatUsage.map((client, index) => {
-              const percent = client.seatsAllowed
-                ? Math.min(100, Math.round((client.seatsUsed / client.seatsAllowed) * 100))
-                : 0;
-              return (
-                <div key={`${client.id || "seat-client"}-${index}`} className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground">{client.name}</span>
-                    <span className="font-medium text-muted-foreground">
-                      {client.seatsUsed} / {client.seatsAllowed} Seats
-                    </span>
+        <AdminPanel padding={false} className="overflow-hidden lg:col-span-4">
+          <div className="border-b border-border/40 px-5 py-4 dark:border-white/5">
+            <AdminSectionHeader
+              title="Hiring-manager seat capacity"
+              description="Active hiring-manager occupants versus contracted reusable seats."
+            />
+          </div>
+          <div className="space-y-4 px-5 py-5">
+            {seatUsage.length ? (
+              seatUsage.map((client, index) => {
+                const percent = client.seatsAllowed
+                  ? Math.min(100, Math.round((client.seatsUsed / client.seatsAllowed) * 100))
+                  : 0;
+                return (
+                  <div key={`${client.id || "seat-client"}-${index}`} className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-foreground">{client.name}</span>
+                      <span className="font-medium text-muted-foreground">
+                        {client.seatsUsed} / {client.seatsAllowed} seats
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={portalProgressBarClass}
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-[width] duration-300"
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            }) : (
-              <p className="text-xs text-muted-foreground">No seat usage data available yet.</p>
+                );
+              })
+            ) : (
+              <AdminEmptyState
+                icon={Users}
+                title="No seat usage yet"
+                description="Seat occupancy appears here once clients activate hiring managers."
+              />
             )}
-          </CardContent>
-        </DashboardInfoCard>
+          </div>
+        </AdminPanel>
 
-        {/* Recent Client Movement Card */}
-        <DashboardInfoCard interactive={false} className="lg:col-span-3">
-          <CardHeader className="border-b border-border/40 dark:border-white/5 pb-4">
-            <CardTitle className="text-base font-semibold text-foreground">Recent client activity</CardTitle>
-            <CardDescription className="mt-0.5 text-xs text-muted-foreground">Latest client records returned by the platform API.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-5">
-            {overview.recentActivity.length ? overview.recentActivity.map((activity, index) => (
-              <div key={`${activity.id || "activity"}-${index}`}>
-                <div className="flex items-center gap-4">
-                  <History className="h-[18px] w-[18px] text-muted-foreground" aria-hidden="true" />
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-semibold leading-none text-foreground">{activity.title}</p>
-                    <p className="text-xs text-muted-foreground">{activity.detail}</p>
+        <AdminPanel padding={false} className="overflow-hidden lg:col-span-3">
+          <div className="border-b border-border/40 px-5 py-4 dark:border-white/5">
+            <AdminSectionHeader
+              title="Recent client activity"
+              description="Latest client records returned by the platform API."
+            />
+          </div>
+          <div className="space-y-4 px-5 py-5">
+            {overview.recentActivity.length ? (
+              overview.recentActivity.map((activity, index) => (
+                <div key={`${activity.id || "activity"}-${index}`}>
+                  <div className="flex items-center gap-4">
+                    <History className="h-[18px] w-[18px] text-muted-foreground" aria-hidden="true" />
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-semibold leading-none text-foreground">
+                        {activity.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{activity.detail}</p>
+                    </div>
                   </div>
+                  {index < overview.recentActivity.length - 1 ? (
+                    <div className="mt-4 border-b border-border/40" />
+                  ) : null}
                 </div>
-                {index < overview.recentActivity.length - 1 && <Separator className="mt-4" />}
-              </div>
-            )) : (
-              <p className="text-xs text-muted-foreground">No recent client activity yet.</p>
+              ))
+            ) : (
+              <AdminEmptyState
+                icon={History}
+                title="No recent activity"
+                description="Client movement will appear here as organisations use the platform."
+              />
             )}
-          </CardContent>
-        </DashboardInfoCard>
+          </div>
+        </AdminPanel>
       </div>
 
       <PortalDecisionLedger

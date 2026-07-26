@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Building2, Check, Copy, Globe2, KeyRound, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Building2, Check, Copy, Globe2, KeyRound, Plus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +13,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
+import {
+  OptionalDateField,
+  OptionalTimeField,
+} from "@/components/dashboard/portal/optional-datetime-fields";
 import {
   portalAlertErrorClass,
   portalBadgeClass,
@@ -32,19 +36,55 @@ import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 
 type SessionDeliveryMode = "remote" | "in_person";
 
+const DEFAULT_START_TIME = "09:00";
+const CAPACITY_PRESETS = [5, 12, 25, 50];
+
 function defaultDeliveryMode(
   campaign: HiringManagerCampaignDetail
 ): SessionDeliveryMode {
   return campaign.deliveryMode === "In-person" ? "in_person" : "remote";
 }
 
-function defaultSessionName(campaignName: string) {
-  const date = new Date().toLocaleDateString("en-GB", {
+function toDateInputValue(date: Date) {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+function addDays(days: number) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date;
+}
+
+function nextMonday() {
+  const date = addDays(1);
+  while (date.getDay() !== 1) {
+    date.setDate(date.getDate() + 1);
+  }
+  return date;
+}
+
+function formatDateLabel(value: string) {
+  if (!value) return "";
+  return new Date(`${value}T00:00:00`).toLocaleDateString("en-GB", {
+    weekday: "short",
     day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+    month: "short",
   });
-  return `${campaignName} · Session ${date.replace(/\//g, "-")}`;
+}
+
+function autoSessionName(campaignName: string, dateValue: string) {
+  const source = dateValue ? new Date(`${dateValue}T00:00:00`) : new Date();
+  const stamp = source
+    .toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
+    .replace(/\//g, "-");
+  return `${campaignName} · Session ${stamp}`;
 }
 
 export function HiringManagerSessionCreatePanel({
@@ -59,7 +99,7 @@ export function HiringManagerSessionCreatePanel({
   const [name, setName] = useState("");
   const [candidateLimit, setCandidateLimit] = useState("");
   const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [time, setTime] = useState(DEFAULT_START_TIME);
   const [mode, setMode] = useState<SessionDeliveryMode>(() =>
     defaultDeliveryMode(campaign)
   );
@@ -68,44 +108,60 @@ export function HiringManagerSessionCreatePanel({
   const [isCreating, setIsCreating] = useState(false);
   const [createdSession, setCreatedSession] =
     useState<HiringManagerSessionListItem | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedField, setCopiedField] = useState<"code" | "link" | null>(null);
 
   const campaignId = campaign.documentId ?? campaign.id;
   const isHybrid = campaign.deliveryMode === "Hybrid";
-  const minDate = useMemo(() => {
-    const now = new Date();
-    return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
-      .toISOString()
-      .slice(0, 10);
-  }, []);
+  const minDate = useMemo(() => toDateInputValue(new Date()), []);
+  const scheduleShortcuts = useMemo(
+    () => [
+      { id: "today", label: "Today", value: toDateInputValue(addDays(0)) },
+      { id: "tomorrow", label: "Tomorrow", value: toDateInputValue(addDays(1)) },
+      { id: "next-monday", label: "Next Monday", value: toDateInputValue(nextMonday()) },
+    ],
+    []
+  );
 
-  useEffect(() => {
-    if (!open) return;
-    setName(defaultSessionName(campaign.name));
-    setCandidateLimit(String(Math.max(1, campaign.candidateCount || 12)));
-    setDate("");
-    setTime("");
+  const resetForm = useCallback(() => {
     const deliveryMode = defaultDeliveryMode(campaign);
+    setName("");
+    setCandidateLimit(String(Math.max(1, campaign.candidateCount || 12)));
+    setDate(toDateInputValue(addDays(1)));
+    setTime(DEFAULT_START_TIME);
     setMode(deliveryMode);
     setLocation(deliveryMode === "in_person" ? campaign.location : "");
     setError(null);
     setCreatedSession(null);
-    setCopied(false);
-  }, [campaign, open]);
+    setCopiedField(null);
+  }, [campaign]);
+
+  useEffect(() => {
+    if (!open) return;
+    resetForm();
+  }, [open, resetForm]);
 
   const handlePanelOpenChange = (nextOpen: boolean) => {
     if (isCreating && !nextOpen) return;
     onOpenChange(nextOpen);
   };
 
+  const handleModeChange = (nextMode: SessionDeliveryMode) => {
+    setMode(nextMode);
+    setError(null);
+    if (nextMode === "in_person" && !location.trim()) {
+      setLocation(campaign.location ?? "");
+    }
+  };
+
+  const copyValue = (value: string, field: "code" | "link") => {
+    void navigator.clipboard?.writeText(value);
+    setCopiedField(field);
+  };
+
   const createSession = async () => {
     setError(null);
     const parsedLimit = Number.parseInt(candidateLimit, 10);
 
-    if (!name.trim()) {
-      setError("Enter a session name.");
-      return;
-    }
     if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 500) {
       setError("Candidate capacity must be between 1 and 500.");
       return;
@@ -128,7 +184,7 @@ export function HiringManagerSessionCreatePanel({
     try {
       const created = await HiringManagerPortalClientService.createSession({
         campaignDocumentId: campaignId,
-        name: name.trim(),
+        name: name.trim() || autoSessionName(campaign.name, date),
         candidateLimit: parsedLimit,
         startsAt: startsAt.toISOString(),
         location: mode === "remote" ? "Remote session" : location.trim(),
@@ -136,6 +192,7 @@ export function HiringManagerSessionCreatePanel({
       });
       if (!created) throw new Error("Session was created but could not be loaded.");
       setCreatedSession(created);
+      setCopiedField(null);
     } catch (createError) {
       setError(
         createError instanceof Error
@@ -155,20 +212,31 @@ export function HiringManagerSessionCreatePanel({
       title={createdSession ? "Session created" : "Create session"}
       description={
         createdSession
-          ? "The access code is ready to share with candidates."
-          : `Add a delivery session to ${campaign.name}.`
+          ? "Share the access code with candidates when the session starts."
+          : `Schedule a delivery session for ${campaign.name}.`
       }
       icon={KeyRound}
       width="sm"
       footer={
         createdSession ? (
-          <Button
-            type="button"
-            onClick={() => handlePanelOpenChange(false)}
-            className={cn(portalPrimaryButtonClass, "h-10 w-full")}
-          >
-            Done
-          </Button>
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetForm}
+              className="h-10"
+            >
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Add another
+            </Button>
+            <Button
+              type="button"
+              onClick={() => handlePanelOpenChange(false)}
+              className={cn(portalPrimaryButtonClass, "h-10")}
+            >
+              Done
+            </Button>
+          </div>
         ) : (
           <div className="flex items-center justify-end gap-2">
             <Button
@@ -211,37 +279,36 @@ export function HiringManagerSessionCreatePanel({
             <p className="mt-2 break-all font-mono text-2xl font-bold tracking-[0.18em] text-foreground">
               {createdSession.accessValue}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              This code is shown once. Afterwards, copy the join link from the session list.
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              Shown once here. Afterwards, copy it again from the session in the campaign
+              workspace.
             </p>
             <Button
               type="button"
               variant="outline"
-              aria-live="polite"
-              onClick={() => {
-                void navigator.clipboard?.writeText(createdSession.accessValue);
-                setCopied(true);
-              }}
-              className="mt-4 h-9 w-full"
+              onClick={() => copyValue(createdSession.accessValue, "code")}
+              className="mt-4 h-10 w-full"
             >
-              {copied ? (
+              {copiedField === "code" ? (
                 <Check className="mr-2 h-4 w-4" aria-hidden="true" />
               ) : (
                 <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
               )}
-              {copied ? "Copied" : "Copy access code"}
+              {copiedField === "code" ? "Access code copied" : "Copy access code"}
             </Button>
             {createdSession.joinUrl ? (
               <Button
                 type="button"
-                className="mt-2 h-9 w-full"
-                onClick={() => {
-                  void navigator.clipboard?.writeText(createdSession.joinUrl!);
-                  setCopied(true);
-                }}
+                variant="outline"
+                onClick={() => copyValue(createdSession.joinUrl!, "link")}
+                className="mt-2 h-10 w-full"
               >
-                <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
-                Copy invite / join link
+                {copiedField === "link" ? (
+                  <Check className="mr-2 h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
+                )}
+                {copiedField === "link" ? "Join link copied" : "Copy join link"}
               </Button>
             ) : null}
           </div>
@@ -259,7 +326,7 @@ export function HiringManagerSessionCreatePanel({
                   {campaign.role}
                 </p>
               </div>
-              <span className={cn(portalBadgeClass, "shrink-0 px-2.5 py-1 text-xs font-semibold")}>
+              <span className={cn(portalBadgeClass, "shrink-0 px-2.5 py-1")}>
                 {campaign.deliveryMode}
               </span>
             </div>
@@ -271,24 +338,49 @@ export function HiringManagerSessionCreatePanel({
           </div>
 
           {error ? (
-            <p className={cn(portalAlertErrorClass, "text-xs leading-5")} aria-live="polite">
+            <p className={cn(portalAlertErrorClass, "text-sm leading-5")} aria-live="polite">
               {error}
             </p>
           ) : null}
 
-          <div className="space-y-2">
-            <Label htmlFor="campaignSessionName" className={portalLabelClass}>
-              Session name
-            </Label>
-            <Input
-              id="campaignSessionName"
-              name="campaignSessionName"
-              autoComplete="off"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              maxLength={120}
-              className={portalInputClass}
-            />
+          <div className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <OptionalDateField
+                id="campaignSessionDate"
+                label="Start date"
+                value={date}
+                min={minDate}
+                onChange={(value) => {
+                  setDate(value);
+                  setError(null);
+                }}
+              />
+              <OptionalTimeField
+                id="campaignSessionTime"
+                label="Start time"
+                value={time}
+                onChange={(value) => {
+                  setTime(value);
+                  setError(null);
+                }}
+              />
+            </div>
+            <div className="flex flex-wrap gap-2" aria-label="Start date shortcuts">
+              {scheduleShortcuts.map((shortcut) => (
+                <Button
+                  key={shortcut.id}
+                  type="button"
+                  variant={date === shortcut.value ? "default" : "outline"}
+                  onClick={() => {
+                    setDate(shortcut.value);
+                    setError(null);
+                  }}
+                  className="h-8 px-3 text-xs"
+                >
+                  {shortcut.label}
+                </Button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -304,52 +396,20 @@ export function HiringManagerSessionCreatePanel({
               onChange={(event) =>
                 setCandidateLimit(event.target.value.replace(/\D/g, "").slice(0, 3))
               }
-              className={portalInputClass}
+              className={cn(portalInputClass, "h-10")}
             />
             <div className="flex flex-wrap gap-2" aria-label="Candidate capacity presets">
-              {[5, 12, 25, 50].map((value) => (
+              {CAPACITY_PRESETS.map((value) => (
                 <Button
                   key={value}
                   type="button"
-                  variant="outline"
+                  variant={candidateLimit === String(value) ? "default" : "outline"}
                   onClick={() => setCandidateLimit(String(value))}
                   className="h-8 px-3 text-xs"
                 >
                   {value}
                 </Button>
               ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="campaignSessionDate" className={portalLabelClass}>
-                Start date
-              </Label>
-              <Input
-                id="campaignSessionDate"
-                name="campaignSessionDate"
-                autoComplete="off"
-                type="date"
-                min={minDate}
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
-                className={portalInputClass}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="campaignSessionTime" className={portalLabelClass}>
-                Start time
-              </Label>
-              <Input
-                id="campaignSessionTime"
-                name="campaignSessionTime"
-                autoComplete="off"
-                type="time"
-                value={time}
-                onChange={(event) => setTime(event.target.value)}
-                className={portalInputClass}
-              />
             </div>
           </div>
 
@@ -361,9 +421,9 @@ export function HiringManagerSessionCreatePanel({
               <Select
                 name="campaignSessionMode"
                 value={mode}
-                onValueChange={(value) => setMode(value as SessionDeliveryMode)}
+                onValueChange={(value) => handleModeChange(value as SessionDeliveryMode)}
               >
-                <SelectTrigger id="campaignSessionMode" className={portalInputClass}>
+                <SelectTrigger id="campaignSessionMode" className={cn(portalInputClass, "h-10")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -397,11 +457,31 @@ export function HiringManagerSessionCreatePanel({
                 value={location}
                 onChange={(event) => setLocation(event.target.value)}
                 maxLength={180}
-                placeholder={campaign.location || "e.g. Assessment room…"}
-                className={portalInputClass}
+                placeholder={campaign.location || "e.g. Assessment room"}
+                className={cn(portalInputClass, "h-10")}
               />
             </div>
           ) : null}
+
+          <div className="space-y-2">
+            <Label htmlFor="campaignSessionName" className={portalLabelClass}>
+              Session name (optional)
+            </Label>
+            <Input
+              id="campaignSessionName"
+              name="campaignSessionName"
+              autoComplete="off"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={120}
+              placeholder={autoSessionName(campaign.name, date)}
+              className={cn(portalInputClass, "h-10")}
+            />
+            <p className="text-xs leading-5 text-muted-foreground">
+              Left blank, the session is named after the campaign and
+              {date ? ` ${formatDateLabel(date)}` : " its start date"}.
+            </p>
+          </div>
         </div>
       )}
     </PortalSidePanel>

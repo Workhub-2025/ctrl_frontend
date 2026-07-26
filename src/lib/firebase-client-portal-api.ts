@@ -6,6 +6,7 @@ import {
   type FirebaseDomainRequester,
 } from "@/lib/firebase-recruitment-api";
 import { toClientCampaign } from "@/lib/firebase-recruitment-bff";
+import type { FirebaseClientDashboard } from "@/lib/firebase-screen-api";
 import type { ReturnTypeOfCreateFirebaseDomainApi } from "@/lib/firebase-domain-api-types";
 import type {
   ClientAccessCode,
@@ -291,6 +292,21 @@ function toHiringManagers(
         })),
       } satisfies ClientHiringManagerSeat;
     });
+}
+
+export function toClientOverviewFromScreen(
+  dashboard: FirebaseClientDashboard,
+): ClientOverviewData {
+  return {
+    summary: toClientDashboardSummary(
+      dashboard.workspace,
+      dashboard.campaigns,
+      dashboard.releasedAssignmentCount,
+    ),
+    campaigns: dashboard.campaigns.map((campaign) => toClientCampaign(campaign)),
+    accessCodes: toAccessCodes(dashboard.workspace),
+    hiringManagers: toHiringManagers(dashboard.workspace, dashboard.campaigns),
+  };
 }
 
 export function toClientDashboardSummary(

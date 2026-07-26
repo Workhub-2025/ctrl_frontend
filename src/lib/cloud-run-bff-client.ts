@@ -87,12 +87,17 @@ export function createCloudRunBffClient(config: CloudRunBffClientConfig) {
       const body = (await response.json().catch(() => ({}))) as {
         data?: ResponseBody;
         error?: string;
+        message?: string;
         requestId?: string;
       };
 
       if (!response.ok) {
+        const detail =
+          typeof body.message === "string" && body.message.trim()
+            ? `${body.error ?? "DomainAPIError"}: ${body.message}`
+            : body.error ?? `Domain API request failed (${response.status})`;
         throw new CloudRunDomainError(
-          body.error ?? `Domain API request failed (${response.status})`,
+          detail,
           response.status,
           body.requestId ?? response.headers.get("x-request-id") ?? undefined,
         );

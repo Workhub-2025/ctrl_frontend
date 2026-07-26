@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ArrowRight,
   Building,
@@ -17,17 +16,22 @@ import {
   RefreshCw,
   Users,
 } from "lucide-react";
-import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
-import { PortalDecisionLedger, PortalStatTile } from "@/components/dashboard/portal/portal-ui";
 import {
-  portalAlertErrorClass,
+  PortalDecisionLedger,
+  PortalEmptyState,
+  PortalPanel,
+  PortalSectionHeader,
+  PortalStatTile,
+} from "@/components/dashboard/portal/portal-ui";
+import {
   portalBadgeClass,
   portalIconWrapLgClass,
   portalPanelClass,
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { HmErrorBanner } from "@/components/dashboard/hiring-manager-portal-ui";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
@@ -93,13 +97,7 @@ export function HiringManagerOverview() {
         title="Overview"
         description="A quick operational view of campaign readiness, live sessions, candidate completion, and items needing review."
         icon={LayoutDashboard}
-        notice={
-          error ? (
-            <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>
-              {error}
-            </p>
-          ) : null
-        }
+        notice={error ? <HmErrorBanner>{error}</HmErrorBanner> : undefined}
         action={
           <Button
             type="button"
@@ -142,12 +140,14 @@ export function HiringManagerOverview() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <DashboardInfoCard interactive={false}>
-          <CardHeader className="border-b border-border pb-4 pl-6">
-            <CardTitle className="text-base font-semibold text-foreground">Session queue</CardTitle>
-            <p className="text-xs text-muted-foreground">{formatPortalLastRefresh(lastRefreshAt)}</p>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-5 pl-6">
+        <PortalPanel padding={false} className="overflow-hidden">
+          <div className="border-b border-border px-5 py-4">
+            <PortalSectionHeader
+              title="Session queue"
+              description={formatPortalLastRefresh(lastRefreshAt)}
+            />
+          </div>
+          <div className="space-y-3 p-5">
             {upcomingSessions.length ? (
               upcomingSessions.map((session) => {
                 const isRemote = session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http");
@@ -205,15 +205,14 @@ export function HiringManagerOverview() {
                 );
               })
             ) : (
-              <div className={cn(portalPanelClass, "flex items-center gap-2 border-dashed p-5 text-sm text-muted-foreground")}>
-                <span className={portalIconWrapLgClass}>
-                  <CheckCircle2 className="h-4 w-4" />
-                </span>
-                No sessions need attention.
-              </div>
+              <PortalEmptyState
+                icon={CheckCircle2}
+                title="No sessions need attention"
+                description="Upcoming and live sessions will appear here when scheduled."
+              />
             )}
-          </CardContent>
-        </DashboardInfoCard>
+          </div>
+        </PortalPanel>
 
         <PortalDecisionLedger
           title="Campaign focus"

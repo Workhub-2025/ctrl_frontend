@@ -11,7 +11,7 @@ export default function SubProcessorsPage() {
     <LegalPageShell
       title="Sub-processors"
       description={`Third-party processors used by ${UK_LEGAL.tradingName}`}
-      icon={Globe}
+      icon={<Globe className="h-8 w-8" aria-hidden="true" />}
       iconClassName="bg-cyan-100 dark:bg-cyan-950/30 text-cyan-600 dark:text-cyan-400"
       version={UK_LEGAL.privacyPolicyVersion}
     >

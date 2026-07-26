@@ -76,7 +76,8 @@ export async function POST(request: Request) {
   }
   if (
     payload.intent !== undefined &&
-    payload.intent !== "invitation_acceptance"
+    payload.intent !== "invitation_acceptance" &&
+    payload.intent !== "session_access_code_claim"
   ) {
     return NextResponse.json({ error: "Invalid provisioning intent" }, { status: 400 });
   }
@@ -89,13 +90,19 @@ export async function POST(request: Request) {
       Math.max(1, Math.floor(exchanged.expiresInMilliseconds / 1_000)),
     );
     const expiresAt = new Date(Date.now() + maxAge * 1_000).toISOString();
-    if (payload.intent === "invitation_acceptance") {
+    if (
+      payload.intent === "invitation_acceptance" ||
+      payload.intent === "session_access_code_claim"
+    ) {
       const response = NextResponse.json(
         {
           data: {
             expiresAt,
             provisioningRequired: true,
-            redirectPath: "/auth/accept-invitation",
+            redirectPath:
+              payload.intent === "session_access_code_claim"
+                ? "/join"
+                : "/auth/accept-invitation",
           },
         },
         { headers: { "cache-control": "no-store" } },

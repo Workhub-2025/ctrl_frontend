@@ -166,6 +166,9 @@ export const portalBadgeClass =
 export const portalAlertErrorClass =
   "rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive";
 
+export const portalAlertWarningClass =
+  "rounded-md border border-amber-500/45 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-50";
+
 export const portalAlertInfoClass =
   "rounded-md border border-primary/35 bg-primary/5 px-4 py-3 text-sm text-foreground";
 

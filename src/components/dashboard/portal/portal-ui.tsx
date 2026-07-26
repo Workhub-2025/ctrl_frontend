@@ -1,13 +1,14 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { CheckCircle2, ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronRight, Circle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   portalAlertErrorClass,
   portalAlertInfoClass,
+  portalAlertWarningClass,
   portalFilterChipActiveClass,
   portalFilterChipClass,
   portalIconWrapClass,
@@ -39,6 +40,35 @@ export {
   portalInputClass,
   portalTableShellClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+
+/**
+ * Accept Lucide component refs from Client Components, or already-rendered
+ * nodes from Server Components (passing a function across the RSC boundary
+ * throws "Functions cannot be passed directly to Client Components").
+ */
+export type PortalIconProp = LucideIcon | ReactNode;
+
+function resolvePortalIcon(
+  icon: PortalIconProp | undefined,
+  className: string
+): ReactNode {
+  if (!icon) return null;
+  if (typeof icon === "function") {
+    const Icon = icon as LucideIcon;
+    return <Icon className={className} aria-hidden="true" />;
+  }
+  if (
+    typeof icon === "object" &&
+    icon !== null &&
+    "$$typeof" in icon &&
+    "render" in icon &&
+    typeof (icon as { render?: unknown }).render === "function"
+  ) {
+    const Icon = icon as unknown as LucideIcon;
+    return <Icon className={className} aria-hidden="true" />;
+  }
+  return icon as ReactNode;
+}
 
 /* ── Breadcrumbs ─────────────────────────────────────────────── */
 
@@ -94,33 +124,60 @@ export function PortalPageHeader({
   action,
   notice,
   className,
+  eyebrow,
+  icon,
+  badge,
 }: {
   title: string;
   description?: string;
   action?: ReactNode;
   notice?: ReactNode;
   className?: string;
+  eyebrow?: string;
+  icon?: PortalIconProp;
+  badge?: ReactNode;
 }) {
+  const titleBlock = (
+    <div className="min-w-0 space-y-1.5">
+      {eyebrow ? (
+        <p className="text-sm font-medium text-primary">{eyebrow}</p>
+      ) : null}
+      <div className={cn(badge ? "flex flex-wrap items-center gap-2.5" : undefined)}>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
+          {title}
+        </h1>
+        {badge}
+      </div>
+      {description ? (
+        <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      ) : null}
+      {notice ? <div className="pt-1">{notice}</div> : null}
+    </div>
+  );
+
+  const resolvedIcon = resolvePortalIcon(icon, "h-5 w-5");
+
   return (
     <header className={cn(portalPageHeaderClass, className)}>
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="min-w-0 space-y-1.5">
-          <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-[1.65rem]">
-            {title}
-          </h1>
-          {description ? (
-            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-              {description}
-            </p>
-          ) : null}
-        </div>
+        {resolvedIcon ? (
+          <div className="flex min-w-0 items-start gap-3.5">
+            <span className={cn(portalIconWrapLgClass, "mt-0.5 shrink-0")} aria-hidden="true">
+              {resolvedIcon}
+            </span>
+            {titleBlock}
+          </div>
+        ) : (
+          titleBlock
+        )}
         {action ? (
           <div className="flex min-w-0 flex-wrap items-center gap-2 xl:shrink-0 xl:justify-end">
             {action}
           </div>
         ) : null}
       </div>
-      {notice}
     </header>
   );
 }
@@ -171,24 +228,23 @@ export function PortalStatTile({
   label,
   value,
   detail,
-  icon: Icon,
+  icon,
   tone: _tone,
 }: {
   label: string;
   value: string | number;
   detail?: string;
-  icon?: LucideIcon;
+  icon?: PortalIconProp;
   /** @deprecated Tones removed — all stat tiles use the unified style */
   tone?: string;
 }) {
+  const resolvedIcon = resolvePortalIcon(icon, "h-4 w-4");
   return (
     <div className={portalStatTileClass}>
       <div className="flex items-start justify-between gap-3">
         <p className={portalLabelClass}>{label}</p>
-        {Icon ? (
-          <span className={portalIconWrapClass}>
-            <Icon className="h-4 w-4" aria-hidden="true" />
-          </span>
+        {resolvedIcon ? (
+          <span className={portalIconWrapClass}>{resolvedIcon}</span>
         ) : null}
       </div>
       <p className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
@@ -217,6 +273,69 @@ export function PortalPanel({
 }) {
   return (
     <div className={cn(portalPanelClass, padding && "p-4 sm:p-5", className)}>{children}</div>
+  );
+}
+
+/* ── Requirement list ────────────────────────────────────────── */
+
+export type PortalRequirement = Readonly<{
+  id: string;
+  label: string;
+  met: boolean;
+}>;
+
+/**
+ * Explains why a primary action is still blocked. Outstanding items read as
+ * instructions; satisfied items stay visible so the list never jumps around.
+ */
+export function PortalRequirementList({
+  title,
+  requirements,
+  completeLabel = "Everything needed is in place.",
+  className,
+}: {
+  title: string;
+  requirements: readonly PortalRequirement[];
+  completeLabel?: string;
+  className?: string;
+}) {
+  const outstanding = requirements.filter((requirement) => !requirement.met);
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      <p className={portalLabelClass}>{title}</p>
+      {outstanding.length === 0 ? (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          {completeLabel}
+        </p>
+      ) : (
+        <ul className="space-y-1.5">
+          {requirements.map((requirement) => (
+            <li key={requirement.id} className="flex items-start gap-2 text-sm">
+              {requirement.met ? (
+                <CheckCircle2
+                  className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Circle
+                  className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/60"
+                  aria-hidden="true"
+                />
+              )}
+              <span
+                className={
+                  requirement.met ? "text-muted-foreground line-through" : "text-foreground"
+                }
+              >
+                {requirement.label}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -386,16 +505,18 @@ export function PortalAlert({
   className,
 }: {
   children: ReactNode;
-  tone?: "error" | "info";
+  tone?: "error" | "warning" | "info";
   className?: string;
 }) {
+  const toneClass =
+    tone === "error"
+      ? portalAlertErrorClass
+      : tone === "warning"
+        ? portalAlertWarningClass
+        : portalAlertInfoClass;
   return (
     <div
-      className={cn(
-        tone === "error" ? portalAlertErrorClass : portalAlertInfoClass,
-        "font-medium leading-relaxed",
-        className
-      )}
+      className={cn(toneClass, "font-medium leading-relaxed", className)}
       role={tone === "error" ? "alert" : "status"}
     >
       {children}
@@ -456,6 +577,50 @@ export function PortalFilterChip({
     >
       {children}
     </button>
+  );
+}
+
+/* ── Loading states ──────────────────────────────────────────── */
+
+export function PortalInlineLoading({
+  message = "Loading…",
+  className,
+}: {
+  message?: string;
+  className?: string;
+}) {
+  return (
+    <p
+      className={cn("flex items-center gap-2 p-5 text-sm text-muted-foreground", className)}
+      role="status"
+      aria-live="polite"
+    >
+      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" aria-hidden="true" />
+      {message}
+    </p>
+  );
+}
+
+export function PortalLoadingPanel({
+  message = "Loading…",
+  rows = 3,
+  className,
+}: {
+  message?: string;
+  rows?: number;
+  className?: string;
+}) {
+  return (
+    <PortalPanel padding={false} className={cn("divide-y divide-border", className)} aria-busy="true">
+      <PortalInlineLoading message={message} />
+      {Array.from({ length: rows }, (_, index) => (
+        <div key={index} className="space-y-3 px-5 py-5">
+          <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-4/5 animate-pulse rounded bg-muted/70" />
+          <div className="h-3 w-64 animate-pulse rounded bg-muted/50" />
+        </div>
+      ))}
+    </PortalPanel>
   );
 }
 

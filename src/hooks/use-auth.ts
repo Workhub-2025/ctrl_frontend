@@ -8,10 +8,12 @@ import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 import { clearClientSessionCache, getClientSession, primeClientSession, type ClientAuthSession } from '@/lib/auth/client-session';
 import { useAuthStore } from '@/store/auth.store';
 import {
+    claimSessionAccessCodeWithCookie,
     completeFirebaseTotpLogin,
     loginWithFirebase,
     logoutFirebaseBrowserSession,
 } from '@/lib/firebase-auth-browser';
+import { readPendingSessionJoin } from '@/lib/pending-session-join';
 
 const useFirebaseAuthentication = isFirebaseAuthProvider();
 
@@ -21,6 +23,24 @@ function safeCallbackPathFromLocation(): string | null {
     const raw = new URLSearchParams(window.location.search).get('callbackUrl');
     if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null;
     return raw;
+}
+
+async function claimPendingJoinIfPresent(): Promise<string | null> {
+    const pending = readPendingSessionJoin();
+    if (!pending) return null;
+    const claimed = await claimSessionAccessCodeWithCookie({
+        accessCode: pending.accessCode,
+        displayName: pending.displayName,
+    });
+    return claimed.redirectPath;
+}
+
+function provisioningRedirectForPendingJoin(redirectPath: string): string {
+    const pending = readPendingSessionJoin();
+    if (pending && redirectPath === '/auth/accept-invitation') {
+        return '/join?verified=1';
+    }
+    return redirectPath;
 }
 
 export function useAuth() {
@@ -120,8 +140,11 @@ export function useAuth() {
                     const currentQuery = new URLSearchParams(window.location.search);
                     const invitationToken =
                         currentQuery.get('token') ?? currentQuery.get('invitation');
-                    const destination = new URL(result.session.redirectPath, window.location.origin);
-                    if (result.session.redirectPath === '/auth/accept-invitation' && invitationToken) {
+                    const destinationPath = provisioningRedirectForPendingJoin(
+                        result.session.redirectPath,
+                    );
+                    const destination = new URL(destinationPath, window.location.origin);
+                    if (destination.pathname === '/auth/accept-invitation' && invitationToken) {
                         destination.searchParams.set('token', invitationToken);
                     }
                     // Client navigation preserves Firebase's deliberately
@@ -143,6 +166,13 @@ export function useAuth() {
                 primeClientSession(nextSession);
                 setSession(nextSession);
                 setStatus('authenticated');
+                if (result.session.user.portalRole === 'candidate') {
+                    const claimedPath = await claimPendingJoinIfPresent().catch(() => null);
+                    if (claimedPath) {
+                        window.location.assign(claimedPath);
+                        return { success: true };
+                    }
+                }
                 router.push(safeCallbackPathFromLocation() ?? result.session.redirectPath);
                 return { success: true };
             }
@@ -259,8 +289,11 @@ export function useAuth() {
                     const currentQuery = new URLSearchParams(window.location.search);
                     const invitationToken =
                         currentQuery.get('token') ?? currentQuery.get('invitation');
-                    const destination = new URL(result.session.redirectPath, window.location.origin);
-                    if (result.session.redirectPath === '/auth/accept-invitation' && invitationToken) {
+                    const destinationPath = provisioningRedirectForPendingJoin(
+                        result.session.redirectPath,
+                    );
+                    const destination = new URL(destinationPath, window.location.origin);
+                    if (destination.pathname === '/auth/accept-invitation' && invitationToken) {
                         destination.searchParams.set('token', invitationToken);
                     }
                     router.push(`${destination.pathname}${destination.search}`);
@@ -279,6 +312,13 @@ export function useAuth() {
                 primeClientSession(nextSession);
                 setSession(nextSession);
                 setStatus('authenticated');
+                if (result.session.user.portalRole === 'candidate') {
+                    const claimedPath = await claimPendingJoinIfPresent().catch(() => null);
+                    if (claimedPath) {
+                        window.location.assign(claimedPath);
+                        return { success: true };
+                    }
+                }
                 router.push(safeCallbackPathFromLocation() ?? result.session.redirectPath);
                 return { success: true };
             }

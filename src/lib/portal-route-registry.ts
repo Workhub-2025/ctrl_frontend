@@ -55,6 +55,7 @@ export const PORTAL_ROUTES = [
   { id: "candidate.dashboard", path: "/candidate-dashboard", classification: "canonical", audience: "candidate", owner: "candidate-readiness", implementation: "live" },
   { id: "candidate.support", path: "/candidate-dashboard/support", classification: "canonical", audience: "candidate", owner: "support", implementation: "adapter" },
   { id: "candidate.assessment", path: "/assessment/[slug]", classification: "canonical", audience: "candidate", owner: "assessment-execution", implementation: "live" },
+  { id: "candidate.session-join", path: "/join", classification: "canonical", audience: "public", owner: "candidate-readiness", implementation: "live" },
   { id: "candidate.my-assessments", path: "/candidate-dashboard/my-assessments", classification: "redirect", audience: "candidate", owner: "candidate-readiness", canonicalPath: "/candidate-dashboard", removalDate: RETIREMENT_DATE },
   { id: "candidate.help-support", path: "/candidate-dashboard/help-support", classification: "redirect", audience: "candidate", owner: "support", canonicalPath: "/candidate-dashboard/support", removalDate: RETIREMENT_DATE },
   { id: "candidate.results", path: "/results", classification: "removed", audience: "candidate", owner: "assessment-execution", removalDate: RETIREMENT_DATE },

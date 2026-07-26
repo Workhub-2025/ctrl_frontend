@@ -11,7 +11,7 @@ export default function CookiePolicyPage() {
     <LegalPageShell
       title="Cookie and Local Storage Policy"
       description={`How ${UK_LEGAL.tradingName} uses browser storage`}
-      icon={Cookie}
+      icon={<Cookie className="h-8 w-8" aria-hidden="true" />}
       iconClassName="bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300"
       version={UK_LEGAL.cookiePolicyVersion}
     >

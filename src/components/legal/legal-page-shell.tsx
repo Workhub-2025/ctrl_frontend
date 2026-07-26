@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,7 +15,7 @@ import { UK_LEGAL, formatUkDate } from "@/lib/legal/uk-compliance";
 type LegalPageShellProps = {
   title: string;
   description: string;
-  icon: LucideIcon;
+  icon: React.ReactNode;
   iconClassName?: string;
   version?: string;
   children: React.ReactNode;
@@ -25,7 +24,7 @@ type LegalPageShellProps = {
 export function LegalPageShell({
   title,
   description,
-  icon: Icon,
+  icon,
   iconClassName = "bg-green-100 dark:bg-green-950/30 text-green-600 dark:text-green-400",
   version,
   children,
@@ -64,7 +63,7 @@ export function LegalPageShell({
             <div
               className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${iconClassName}`}
             >
-              <Icon className="h-8 w-8" aria-hidden="true" />
+              {icon}
             </div>
             <h1 className="text-3xl font-semibold leading-none tracking-tight font-headline">
               {title}

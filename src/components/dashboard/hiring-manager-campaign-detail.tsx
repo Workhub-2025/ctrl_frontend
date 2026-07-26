@@ -5,15 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
-  Briefcase,
   Calendar,
   Check,
   ClipboardList,
   Copy,
   Eye,
-  LayoutDashboard,
   MapPin,
-  MoreHorizontal,
   Pencil,
   Plus,
   RefreshCw,
@@ -22,7 +19,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,14 +30,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -49,7 +37,24 @@ import {
 } from "@/components/ui/tooltip";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
-import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
+import { HmErrorBanner } from "@/components/dashboard/hiring-manager-portal-ui";
+import {
+  PortalEmptyState,
+  PortalInlineLoading,
+  PortalPanel,
+  PortalSectionHeader,
+  PortalStatTile,
+} from "@/components/dashboard/portal/portal-ui";
+import {
+  PortalEntityHeader,
+  PortalStatusBadge,
+  PortalWorkQueue,
+  type PortalWorkQueueItem,
+} from "@/components/dashboard/portal/portal-data-ui";
+import {
+  PortalActionMenu,
+  PortalDetailTabs,
+} from "@/components/dashboard/portal/portal-navigation-ui";
 import { HiringManagerSessionCreatePanel } from "@/components/dashboard/hiring-manager-session-create-panel";
 import {
   CandidateResultsDialog,
@@ -60,10 +65,8 @@ import {
   portalAlertErrorClass,
   portalAlertInfoClass,
   portalBadgeClass,
-  portalInputClass,
   portalLabelClass,
   portalPanelBorderClass,
-  portalPanelElevatedClass,
   portalPanelNestedClass,
   portalPrimaryButtonClass,
   portalTableHeaderClass,
@@ -91,15 +94,8 @@ import {
   type HiringManagerCampaignDetail,
 } from "@/services/hiring-manager-portal-client.service";
 
-const hmOutlineButtonClass = cn(
-  portalInputClass,
-  "h-10 bg-background text-sm font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground"
-);
-
-const hmBackButtonClass = cn(
-  hmOutlineButtonClass,
-  "w-fit shrink-0 px-3"
-);
+const hmBackButtonClass =
+  "h-10 w-fit shrink-0 rounded-xl border border-border bg-background px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted";
 
 type CampaignWorkspaceTab = "overview" | "candidates" | "sessions" | "assessments";
 
@@ -212,6 +208,61 @@ export function HiringManagerCampaignDetailView({
     [campaign]
   );
 
+  const tabHref = (tab: CampaignWorkspaceTab) =>
+    `/hiring-manager-dashboard/campaigns/${encodeURIComponent(campaignId)}?tab=${tab}`;
+
+  const workItems = useMemo((): PortalWorkQueueItem[] => {
+    if (!campaign) return [];
+    const items: PortalWorkQueueItem[] = [];
+    const approval = (campaign.approvalStatus ?? "").toLowerCase();
+
+    if (approval.includes("pending")) {
+      items.push({
+        id: "awaiting-approval",
+        title: "Waiting for client approval",
+        reason: "Session creation stays locked until the client approves this campaign.",
+        href: tabHref("overview"),
+        actionLabel: "View status",
+        priority: "attention",
+      });
+    }
+
+    if (
+      canCreateSessionForCampaign(campaign.approvalStatus) &&
+      campaign.assessmentSessions.length === 0
+    ) {
+      items.push({
+        id: "create-first-session",
+        title: "Create the first delivery session",
+        reason: "Candidates cannot join until a session exists with access details.",
+        href: `${tabHref("sessions")}&create=1`,
+        actionLabel: "Create session",
+        priority: "critical",
+      });
+    }
+
+    const incomplete = campaign.joinedCandidates.filter((candidate) => {
+      const stack = candidate.assessmentStack ?? campaign.assessmentStack;
+      const results = candidate.results ?? [];
+      return stack.length > 0 && results.length < stack.length;
+    });
+    if (incomplete.length > 0) {
+      items.push({
+        id: "incomplete-candidates",
+        title:
+          incomplete.length === 1
+            ? `${incomplete[0].name} still in progress`
+            : `${incomplete.length} candidates still in progress`,
+        reason: "Open a session workspace to invite, unlock, or review reports.",
+        href: tabHref("candidates"),
+        actionLabel: "Review",
+        priority: "routine",
+      });
+    }
+
+    return items;
+  }, [campaign, campaignId]);
+
   const selectTab = (tab: CampaignWorkspaceTab) => {
     setActiveTab(tab);
     router.replace(
@@ -262,17 +313,13 @@ export function HiringManagerCampaignDetailView({
   };
 
   if (isLoading) {
-    return (
-      <div className={cn(portalPanelNestedClass, "p-6 text-sm text-muted-foreground")}>
-        Loading campaign…
-      </div>
-    );
+    return <PortalInlineLoading message="Loading campaign…" />;
   }
 
   if (!campaign) {
     return (
       <div className="space-y-4">
-        <Button variant="outline" className="h-9 rounded-lg" asChild>
+        <Button variant="outline" className={hmBackButtonClass} asChild>
           <Link href="/hiring-manager-dashboard/campaigns/">
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             Back to campaigns
@@ -285,11 +332,17 @@ export function HiringManagerCampaignDetailView({
     );
   }
 
-  const editCampaignLockedReason =
-    "Campaign assessments cannot be edited after sessions have been created.";
+  const approvalLower = (campaign.approvalStatus ?? "").toLowerCase();
+  const approvalTone = approvalLower.includes("pending")
+    ? "attention"
+    : approvalLower.includes("approved")
+      ? "complete"
+      : approvalLower.includes("reject")
+        ? "critical"
+        : "neutral";
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-5">
+    <div className="mx-auto w-full max-w-7xl space-y-5 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <Button variant="outline" className={hmBackButtonClass} asChild>
         <Link href="/hiring-manager-dashboard/campaigns/">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -297,26 +350,38 @@ export function HiringManagerCampaignDetailView({
         </Link>
       </Button>
 
-      <HiringManagerPageHeader
-        eyebrow={`Campaign workspace · ${campaign.deliveryMode}`}
+      {wasJustCreated && campaign.approvalStatus === "Pending approval" ? (
+        <p
+          className={cn(portalAlertInfoClass, "text-xs leading-5")}
+          aria-live="polite"
+        >
+          Campaign created and sent for client approval. Session creation unlocks
+          after approval.
+        </p>
+      ) : null}
+      {error ? <HmErrorBanner>{error}</HmErrorBanner> : null}
+
+      <PortalEntityHeader
+        eyebrow={`Campaign · ${campaign.deliveryMode}`}
         title={campaign.name}
         description={`${campaign.role} · ${campaign.location}`}
-        icon={Briefcase}
-        badge={
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              className={cn(
-                "pointer-events-none rounded-md border-none px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider",
-                getStatusTone(campaign.status)
-              )}
-            >
-              {campaign.status}
-            </Badge>
-            <Badge className={cn(portalBadgeClass, "pointer-events-none text-xs font-semibold")}>
-              {campaign.approvalStatus}
-            </Badge>
-          </div>
+        status={
+          <>
+            <PortalStatusBadge
+              label={campaign.status ?? "Unknown"}
+              tone="active"
+            />
+            <PortalStatusBadge
+              label={campaign.approvalStatus ?? "Unknown"}
+              tone={approvalTone}
+            />
+          </>
         }
+        metadata={[
+          { label: "Starts", value: campaign.startDate },
+          { label: "Ends", value: campaign.endDate },
+          { label: "Next", value: campaign.nextMilestone },
+        ]}
         action={
           <TooltipProvider>
             <div className="flex items-center gap-2">
@@ -324,7 +389,7 @@ export function HiringManagerCampaignDetailView({
                 <Button
                   type="button"
                   onClick={openCreateSession}
-                  className={cn(portalPrimaryButtonClass, "h-10")}
+                  className={cn(portalPrimaryButtonClass, "h-11")}
                 >
                   <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                   Create session
@@ -338,7 +403,7 @@ export function HiringManagerCampaignDetailView({
                         disabled
                         className={cn(
                           portalPrimaryButtonClass,
-                          "h-10 disabled:cursor-not-allowed disabled:opacity-50"
+                          "h-11 disabled:cursor-not-allowed disabled:opacity-50"
                         )}
                       >
                         <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -352,149 +417,114 @@ export function HiringManagerCampaignDetailView({
                 </Tooltip>
               )}
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(hmOutlineButtonClass, "w-10 px-0")}
-                    aria-label="Campaign actions"
-                  >
-                    <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  {canEditAssessmentStack ? (
-                    <DropdownMenuItem asChild>
-                      <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
-                        <Pencil className="h-4 w-4" aria-hidden="true" />
-                        Edit campaign
-                      </Link>
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem disabled title={editCampaignLockedReason}>
-                      <Pencil className="h-4 w-4" aria-hidden="true" />
-                      <span className="min-w-0">
-                        <span className="block">Edit campaign</span>
-                        <span className="block text-xs font-normal text-muted-foreground">
-                          Locked after sessions exist
-                        </span>
-                      </span>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    onSelect={() => void loadCampaign(true)}
-                    disabled={isRefreshing}
-                  >
-                    <RefreshCw
-                      className={cn("h-4 w-4", isRefreshing && "animate-spin")}
-                      aria-hidden="true"
-                    />
-                    {isRefreshing ? "Refreshing…" : "Refresh campaign"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onSelect={() => setIsDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    Delete campaign
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PortalActionMenu
+                label="Campaign actions"
+                items={[
+                  {
+                    id: "edit",
+                    label: canEditAssessmentStack
+                      ? "Edit campaign"
+                      : "Edit campaign (locked)",
+                    icon: <Pencil className="h-4 w-4" aria-hidden="true" />,
+                    disabled: !canEditAssessmentStack,
+                    onSelect: () => {
+                      if (!canEditAssessmentStack) return;
+                      router.push(
+                        `/hiring-manager-dashboard/campaigns/${campaignId}/edit`
+                      );
+                    },
+                  },
+                  {
+                    id: "refresh",
+                    label: isRefreshing ? "Refreshing…" : "Refresh campaign",
+                    icon: (
+                      <RefreshCw
+                        className={cn("h-4 w-4", isRefreshing && "animate-spin")}
+                        aria-hidden="true"
+                      />
+                    ),
+                    disabled: isRefreshing,
+                    onSelect: () => {
+                      void loadCampaign(true);
+                    },
+                  },
+                  {
+                    id: "delete",
+                    label: "Delete campaign",
+                    icon: <Trash2 className="h-4 w-4" aria-hidden="true" />,
+                    tone: "destructive",
+                    separatorBefore: true,
+                    onSelect: () => setIsDeleteDialogOpen(true),
+                  },
+                ]}
+              />
             </div>
           </TooltipProvider>
         }
-        notice={
-          wasJustCreated && campaign.approvalStatus === "Pending approval" ? (
-            <p
-              className={cn(portalAlertInfoClass, "text-xs leading-5")}
-              aria-live="polite"
-            >
-              Campaign created and sent for client approval. Session creation unlocks after approval.
-            </p>
-          ) : error ? (
-            <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>{error}</p>
-          ) : null
-        }
       />
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => selectTab(value as CampaignWorkspaceTab)}
-        className="space-y-4"
-      >
-        <div className="sticky top-16 z-10 -mx-1 overflow-x-auto border-b border-border bg-background px-1">
-          <TabsList className="h-12 min-w-max justify-start gap-1 bg-transparent p-0">
-            <TabsTrigger value="overview" className="h-11 gap-2 px-3 text-sm sm:px-4">
-              <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="candidates" className="h-11 gap-2 px-3 text-sm sm:px-4">
-              <Users className="h-4 w-4" aria-hidden="true" />
-              Candidates
-              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-xs")}>
-                {campaign.joinedCandidates.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="h-11 gap-2 px-3 text-sm sm:px-4">
-              <Calendar className="h-4 w-4" aria-hidden="true" />
-              Sessions
-              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-xs")}>
-                {campaign.assessmentSessions.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="assessments" className="h-11 gap-2 px-3 text-sm sm:px-4">
-              <ClipboardList className="h-4 w-4" aria-hidden="true" />
-              Assessments
-              <Badge className={cn(portalBadgeClass, "pointer-events-none px-1.5 py-0 text-xs")}>
-                {campaign.assessmentStack.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-        </div>
+      <div className="sticky top-16 z-10 -mx-1 bg-background px-1">
+        <PortalDetailTabs
+          label="Campaign workspace"
+          activeId={activeTab}
+          tabs={[
+            { id: "overview", label: "Overview", href: tabHref("overview") },
+            {
+              id: "candidates",
+              label: "Candidates",
+              href: tabHref("candidates"),
+              count: campaign.joinedCandidates.length,
+            },
+            {
+              id: "sessions",
+              label: "Sessions",
+              href: tabHref("sessions"),
+              count: campaign.assessmentSessions.length,
+            },
+            {
+              id: "assessments",
+              label: "Assessments",
+              href: tabHref("assessments"),
+              count: campaign.assessmentStack.length,
+            },
+          ]}
+        />
+      </div>
 
-        <TabsContent value="overview" className="mt-0 space-y-4">
+      {activeTab === "overview" ? (
+        <div className="space-y-4">
+          <PortalWorkQueue
+            title="What to do next"
+            description="The single next actions that move this campaign forward."
+            items={workItems}
+            emptyTitle="Campaign is on track"
+            emptyDescription="Create sessions, invite candidates, or wait for completions — nothing needs you right now."
+          />
+
           <div className="grid gap-4 md:grid-cols-3">
-            {[
-              {
-                label: "Sessions",
-                value: campaign.sessions,
-                detail: "delivery windows",
-              },
-              {
-                label: "Candidates",
-                value: campaign.joinedCandidates.length,
-                detail: `of ${campaign.candidateCount} planned`,
-              },
-              {
-                label: "Session capacity",
-                value: campaignCandidateCapacity,
-                detail: "places configured",
-              },
-            ].map((metric) => (
-              <Card key={metric.label} className={portalPanelElevatedClass}>
-                <CardContent className="p-5">
-                  <p className={portalLabelClass}>{metric.label}</p>
-                  <div className="mt-2 flex items-baseline gap-2">
-                    <span className="text-3xl font-bold tracking-tight text-foreground">
-                      {metric.value}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{metric.detail}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <PortalStatTile
+              label="Sessions"
+              value={campaign.sessions}
+              detail="delivery windows"
+            />
+            <PortalStatTile
+              label="Candidates"
+              value={campaign.joinedCandidates.length}
+              detail={`of ${campaign.candidateCount} planned`}
+            />
+            <PortalStatTile
+              label="Session capacity"
+              value={campaignCandidateCapacity}
+              detail="places configured"
+            />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
-            <Card className={portalPanelElevatedClass}>
-              <CardHeader className={cn("border-b p-4", portalPanelBorderClass)}>
-                <CardTitle className="text-sm font-semibold text-foreground">
-                  Operational summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 p-4 sm:grid-cols-2">
+            <PortalPanel padding={false} className="overflow-hidden">
+              <div className={cn("border-b p-4", portalPanelBorderClass)}>
+                <PortalSectionHeader title="Operational summary" />
+              </div>
+              <div className="grid gap-4 p-4 sm:grid-cols-2">
                 <div className={cn(portalPanelNestedClass, "p-4")}>
                   <p className={portalLabelClass}>Next milestone</p>
                   <p className="mt-2 text-sm font-semibold text-foreground">
@@ -511,16 +541,14 @@ export function HiringManagerCampaignDetailView({
                     {campaign.location}
                   </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </PortalPanel>
 
-            <Card className={portalPanelElevatedClass}>
-              <CardHeader className={cn("border-b p-4", portalPanelBorderClass)}>
-                <CardTitle className="text-sm font-semibold text-foreground">
-                  Campaign timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="divide-y divide-border p-4 text-sm">
+            <PortalPanel padding={false} className="overflow-hidden">
+              <div className={cn("border-b p-4", portalPanelBorderClass)}>
+                <PortalSectionHeader title="Campaign timeline" />
+              </div>
+              <div className="divide-y divide-border p-4 text-sm">
                 <div className="flex items-center justify-between gap-4 pb-3">
                   <span className="text-muted-foreground">Starts</span>
                   <span className="text-right font-semibold text-foreground">
@@ -533,17 +561,19 @@ export function HiringManagerCampaignDetailView({
                     {campaign.endDate}
                   </span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </PortalPanel>
           </div>
-        </TabsContent>
+        </div>
+      ) : null}
 
-        <TabsContent value="sessions" className="mt-0 space-y-4">
+      {activeTab === "sessions" ? (
+        <div className="space-y-4">
           <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-foreground">Campaign sessions</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Create delivery windows and manage candidate access for this campaign.
+                Open a session to invite candidates, copy join links, and review progress.
               </p>
             </div>
             {canCreateSession ? (
@@ -563,98 +593,121 @@ export function HiringManagerCampaignDetailView({
           </div>
 
           {campaign.assessmentSessions.length === 0 ? (
-            <div className={cn(portalPanelNestedClass, "border-dashed p-6")}>
-              <h3 className="text-sm font-semibold text-foreground">No sessions yet</h3>
-              <p className="mt-1 max-w-xl text-sm leading-6 text-muted-foreground">
-                {canCreateSession
-                  ? "Create the first session here. The campaign, delivery format, and planned capacity are carried into the form."
-                  : "Session creation becomes available when this campaign is approved."}
-              </p>
-            </div>
+            <PortalEmptyState
+              title="No sessions yet"
+              description={
+                canCreateSession
+                  ? "Create the first session — delivery format and capacity carry into the form."
+                  : "Session creation becomes available when this campaign is approved."
+              }
+              icon={Calendar}
+              action={
+                canCreateSession ? (
+                  <Button
+                    type="button"
+                    onClick={openCreateSession}
+                    className={cn(portalPrimaryButtonClass, "h-10")}
+                  >
+                    <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Create session
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
             <div className="space-y-3">
               {campaign.assessmentSessions.map((session) => (
-                <Card key={session.id} className={portalPanelElevatedClass}>
-                  <CardContent className="p-4 sm:p-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="min-w-0 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge
-                            className={cn(
-                              "pointer-events-none border-none text-[10px] font-semibold",
-                              getStatusTone(session.status)
-                            )}
-                          >
-                            {session.status}
-                          </Badge>
-                          <Badge className={cn(portalBadgeClass, "pointer-events-none text-[10px]")}>
-                            {session.type}
-                          </Badge>
-                        </div>
-                        <h3 className="break-words text-base font-semibold text-foreground">
-                          {getHmSessionDisplayName(session)}
-                        </h3>
-                        <p className="break-words text-xs leading-5 text-muted-foreground">
-                          {session.date} · {session.location} · {session.candidateCount} of{" "}
-                          {session.candidateLimit} joined
-                        </p>
-                      </div>
-
+                <PortalPanel key={session.id}>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-muted/30 px-3">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            Code
-                          </span>
-                          <span className="font-mono text-xs font-bold tracking-wider text-foreground">
-                            {session.accessValue}
-                          </span>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            void (async () => {
-                              try {
-                                if (isSecureAccessCodePlaceholder(session.accessValue)) {
-                                  await copySessionJoinLink(session.id);
-                                } else {
-                                  await navigator.clipboard?.writeText(session.accessValue);
-                                }
-                                setCopiedSessionId(session.id);
-                              } catch {
-                                /* ignore clipboard failures */
-                              }
-                            })();
-                          }}
-                          className="h-9 px-3 text-xs"
-                        >
-                          {copiedSessionId === session.id ? (
-                            <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                          ) : (
-                            <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        <Badge
+                          className={cn(
+                            "pointer-events-none border-none text-[10px] font-semibold",
+                            getStatusTone(session.status)
                           )}
-                          {copiedSessionId === session.id
-                            ? "Copied"
-                            : isSecureAccessCodePlaceholder(session.accessValue)
-                              ? "Copy join link"
-                              : "Copy code"}
-                        </Button>
-                        <Button variant="outline" className="h-9 px-3 text-xs" asChild>
-                          <Link href={`/hiring-manager-dashboard/sessions/${session.id}`}>
-                            <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                            View details
-                          </Link>
-                        </Button>
+                        >
+                          {session.status}
+                        </Badge>
+                        <Badge
+                          className={cn(
+                            portalBadgeClass,
+                            "pointer-events-none text-[10px]"
+                          )}
+                        >
+                          {session.type}
+                        </Badge>
                       </div>
+                      <h3 className="break-words text-base font-semibold text-foreground">
+                        {getHmSessionDisplayName(session)}
+                      </h3>
+                      <p className="break-words text-xs leading-5 text-muted-foreground">
+                        {session.date} · {session.location} ·{" "}
+                        {session.candidateCount} of {session.candidateLimit} joined
+                      </p>
                     </div>
-                  </CardContent>
-                </Card>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        className={cn(portalPrimaryButtonClass, "h-9 px-3 text-xs")}
+                        asChild
+                      >
+                        <Link
+                          href={`/hiring-manager-dashboard/sessions/${session.id}`}
+                        >
+                          <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                          Open session
+                        </Link>
+                      </Button>
+                      <div className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-muted/30 px-3">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Code
+                        </span>
+                        <span className="font-mono text-xs font-bold tracking-wider text-foreground">
+                          {session.accessValue}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          void (async () => {
+                            try {
+                              if (isSecureAccessCodePlaceholder(session.accessValue)) {
+                                await copySessionJoinLink(session.id);
+                              } else {
+                                await navigator.clipboard?.writeText(session.accessValue);
+                              }
+                              setCopiedSessionId(session.id);
+                            } catch {
+                              /* ignore clipboard failures */
+                            }
+                          })();
+                        }}
+                        className="h-9 px-3 text-xs"
+                      >
+                        {copiedSessionId === session.id ? (
+                          <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        ) : (
+                          <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        )}
+                        {copiedSessionId === session.id
+                          ? "Copied"
+                          : isSecureAccessCodePlaceholder(session.accessValue)
+                            ? "Copy join link"
+                            : "Copy code"}
+                      </Button>
+                    </div>
+                  </div>
+                </PortalPanel>
               ))}
             </div>
           )}
-        </TabsContent>
+        </div>
+      ) : null}
 
-        <TabsContent value="candidates" className="mt-0 space-y-4">
+      {activeTab === "candidates" ? (
+        <div className="mt-0 space-y-4">
           <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-foreground">Campaign candidates</h2>
@@ -670,13 +723,14 @@ export function HiringManagerCampaignDetailView({
             </Button>
           </div>
 
-          <Card className={portalPanelElevatedClass}>
-            <CardContent className="p-0 sm:p-4">
-              {campaign.joinedCandidates.length === 0 ? (
-                <p className="p-6 text-sm leading-6 text-muted-foreground">
-                  No candidates have joined a session for this campaign yet.
-                </p>
-              ) : (
+          <PortalPanel padding={false}>
+            {campaign.joinedCandidates.length === 0 ? (
+              <PortalEmptyState
+                title="No candidates joined yet"
+                description="Invite candidates from a session workspace once delivery windows exist."
+                icon={Users}
+              />
+            ) : (
                 <div className={portalTableShellClass}>
                   <table className="w-full border-collapse text-left text-xs text-foreground">
                     <thead className={portalTableHeaderClass}>
@@ -766,12 +820,13 @@ export function HiringManagerCampaignDetailView({
                     </tbody>
                   </table>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            )}
+          </PortalPanel>
+        </div>
+      ) : null}
 
-        <TabsContent value="assessments" className="mt-0 space-y-4">
+      {activeTab === "assessments" ? (
+        <div className="space-y-4">
           <div className="border-b border-border pb-4">
             <h2 className="text-lg font-semibold text-foreground">Assessment stack</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -780,41 +835,49 @@ export function HiringManagerCampaignDetailView({
           </div>
 
           {campaign.assessmentStack.length === 0 ? (
-            <div className={cn(portalPanelNestedClass, "border-dashed p-6 text-sm text-muted-foreground")}>
-              No assessments are linked to this campaign.
-            </div>
+            <PortalEmptyState
+              title="No assessments linked"
+              description="Attach assessments when editing the campaign before sessions are created."
+              icon={ClipboardList}
+            />
           ) : (
             <div className="space-y-3">
               {campaign.assessmentStack.map((assessment) => {
                 const Icon = getAssessmentCatalogueIcon(assessment);
                 const version = getAssessmentVersion(assessment, campaign);
                 return (
-                  <Card key={assessment} className={portalPanelElevatedClass}>
-                    <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex min-w-0 items-start gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30 text-primary">
-                          <Icon className="h-4 w-4" aria-hidden="true" />
-                        </span>
-                        <div className="min-w-0">
-                          <h3 className="break-words text-sm font-semibold text-foreground">
-                            {assessment}
-                          </h3>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                            {version?.detail || "Campaign scoring configuration applied"}
-                          </p>
-                        </div>
+                  <PortalPanel
+                    key={assessment}
+                    className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted/30 text-primary">
+                        <Icon className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <div className="min-w-0">
+                        <h3 className="break-words text-sm font-semibold text-foreground">
+                          {assessment}
+                        </h3>
+                        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                          {version?.detail || "Campaign scoring configuration applied"}
+                        </p>
                       </div>
-                      <Badge className={cn(portalBadgeClass, "w-fit shrink-0 px-2.5 py-1 text-xs font-semibold")}>
-                        {version?.label ?? "Current release"}
-                      </Badge>
-                    </CardContent>
-                  </Card>
+                    </div>
+                    <Badge
+                      className={cn(
+                        portalBadgeClass,
+                        "w-fit shrink-0 px-2.5 py-1 text-xs font-semibold"
+                      )}
+                    >
+                      {version?.label ?? "Current release"}
+                    </Badge>
+                  </PortalPanel>
                 );
               })}
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      ) : null}
 
       <HiringManagerSessionCreatePanel
         campaign={campaign}

@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
     <LegalPageShell
       title="Privacy Policy"
       description={`How ${UK_LEGAL.tradingName} handles personal data`}
-      icon={Shield}
+      icon={<Shield className="h-8 w-8" aria-hidden="true" />}
       version={UK_LEGAL.privacyPolicyVersion}
     >
       <section>

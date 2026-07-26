@@ -58,6 +58,22 @@ describe("Firebase screen aggregates", () => {
     ]);
   });
 
+  it("loads shared candidates in a single authenticated call", async () => {
+    const { domainApi, requests } = recordingDomainApi({
+      items: [],
+    });
+    const screens = createFirebaseScreenApi(domainApi, "opaque-session");
+
+    await screens.getClientSharedCandidates();
+
+    expect(requests).toEqual([
+      {
+        path: "/v1/screens/client-shared-candidates",
+        firebaseSessionCookie: "opaque-session",
+      },
+    ]);
+  });
+
   it("converts the report map into the lookup the mappers expect", () => {
     const reports = toReportsByAssignmentId({
       "assignment-1": [],
@@ -93,7 +109,22 @@ describe("Portal screen BFF routes", () => {
     expect(source).toContain("getClientDashboard");
     expect(source).not.toContain("recruitment.listCampaigns");
     expect(source).not.toContain("listAssignments");
-    expect(source).toContain("toClientDashboardSummary");
+    expect(source).toContain("toClientOverviewFromScreen");
+  });
+
+  it("client overview is a thin alias of the dashboard route", () => {
+    const source = route("../app/api/client/overview/route.ts");
+    expect(source).toContain("getClientDashboard");
+  });
+
+  it("shared candidates reads the screen aggregate instead of fanning out", () => {
+    const source = route("../app/api/client/shared-candidates/route.ts");
+
+    expect(source).toContain("createFirebaseScreenApi");
+    expect(source).toContain("getClientSharedCandidates");
+    expect(source).not.toContain("recruitment.listCampaigns");
+    expect(source).not.toContain("recruitment.listAssignments");
+    expect(source).not.toContain("recruitment.getAssignment");
   });
 
   it("both screens cache on the org generation, not on a bare TTL", () => {

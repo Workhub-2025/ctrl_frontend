@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -14,13 +13,13 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowRight,
-  RefreshCw,
-  Users,
-  CheckCircle2,
-  Search,
   BriefcaseBusiness,
+  CheckCircle2,
+  RefreshCw,
+  Search,
   Share2,
   UserRoundCheck,
+  Users,
   XCircle,
 } from "lucide-react";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
@@ -30,13 +29,15 @@ import type {
   HiringManagerAssessmentResult,
 } from "@/services/hiring-manager-portal-client.service";
 import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-page-header";
-import { PortalStatTile } from "@/components/dashboard/portal/portal-ui";
+import { HmErrorBanner, HmRefreshButton } from "@/components/dashboard/hiring-manager-portal-ui";
 import {
-  portalAlertErrorClass,
+  PortalEmptyState,
+  PortalPanel,
+  PortalStatTile,
+} from "@/components/dashboard/portal/portal-ui";
+import {
   portalBadgeClass,
-  portalCardClass,
   portalCssHoverTooltipClass,
-  portalEmptyPanelClass,
   portalIconWrapLgClass,
   portalInputClass,
   portalLabelClass,
@@ -254,11 +255,7 @@ export function HiringManagerCandidatesView() {
         icon={Users}
       />
 
-      {error && (
-        <p className={cn(portalAlertErrorClass, "text-xs leading-5")}>
-          {error}
-        </p>
-      )}
+      {error ? <HmErrorBanner>{error}</HmErrorBanner> : null}
 
       {/* Stats Summary Widget Row */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
@@ -289,8 +286,7 @@ export function HiringManagerCandidatesView() {
       </div>
 
       {/* Unified Search & Filters Card */}
-      <Card className={portalPanelElevatedClass}>
-        <CardContent className="p-4 space-y-4">
+      <PortalPanel className="space-y-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             {/* Search Input */}
             <div className="flex-1 space-y-2">
@@ -379,8 +375,7 @@ export function HiringManagerCandidatesView() {
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </PortalPanel>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs leading-5 text-muted-foreground">
@@ -388,35 +383,27 @@ export function HiringManagerCandidatesView() {
             ? `Last refresh: ${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(lastRefreshAt))}`
             : "Not refreshed yet"}
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => void handleRefresh()}
-          disabled={isRefreshing}
-          className="w-fit border-border text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
-        >
-          <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
+        <HmRefreshButton onClick={() => void handleRefresh()} loading={isRefreshing} />
       </div>
 
       {/* Candidate List Container */}
       <div className="grid gap-4">
         {filteredCandidates.length === 0 ? (
-          <Card className={portalEmptyPanelClass}>
-            <CardContent className="p-0 leading-6">
-              {candidates.length === 0
-                ? "No candidates have joined a campaign session yet."
-                : "No candidate sessions match the current filters."}
-            </CardContent>
-          </Card>
+          <PortalEmptyState
+            icon={Users}
+            title={candidates.length === 0 ? "No candidates yet" : "No matches"}
+            description={
+              candidates.length === 0
+                ? "Candidates appear here after they join a campaign session."
+                : "Adjust filters or clear the search term to see more results."
+            }
+          />
         ) : (
           filteredCandidates.map((candidate) => (
-            <Card
+            <PortalPanel
               key={`${candidate.campaignId}-${candidate.candidateSessionId}`}
-              className={portalCardClass}
+              className="space-y-5"
             >
-              <CardContent className="p-5 space-y-5">
                 {/* Top Section: Avatar, Meta Info, and Actions */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
@@ -637,8 +624,7 @@ export function HiringManagerCandidatesView() {
                   </div>
                 </div>
 
-              </CardContent>
-            </Card>
+            </PortalPanel>
           ))
         )}
       </div>

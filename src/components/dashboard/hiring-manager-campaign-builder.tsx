@@ -1,11 +1,9 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,17 +13,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
   FileText,
   Headphones,
   Lock,
   Unlock,
   Save,
-  ShieldCheck,
+  Timer,
 } from "lucide-react";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
-import { AssessmentPremiumBadge } from "@/components/dashboard/assessment-premium-badge";
+import { isPremiumCatalogueTier } from "@/lib/client/entitlements";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import {
   HiringManagerPortalClientService,
@@ -49,6 +49,8 @@ import {
   portalSelectableCardGroupClass,
   portalSelectableCardSelectedClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { PortalRequirementList } from "@/components/dashboard/portal/portal-ui";
+import { PortalStepper } from "@/components/dashboard/portal/portal-navigation-ui";
 import { cn } from "@/lib/utils";
 import { OptionalDateField } from "@/components/dashboard/portal/optional-datetime-fields";
 
@@ -76,15 +78,15 @@ type CreateCampaignResponse = {
   error?: string;
 };
 
+type DeliveryMode = "in_person" | "remote" | "hybrid";
+
 type CampaignDraft = {
   campaignName: string;
   roleTitle: string;
   location: string;
-  deliveryMode: "in_person" | "remote" | "hybrid";
-  bypassEmailConfirmation: boolean;
+  deliveryMode: DeliveryMode;
   candidateVolume: string;
   startDate: string;
-  notes: string;
   assessmentSlugs: string[];
   assessmentWeights: Record<string, number>;
   assessmentVersions: Record<string, string>;
@@ -98,10 +100,8 @@ const emptyDraft: CampaignDraft = {
   roleTitle: "",
   location: "",
   deliveryMode: "in_person",
-  bypassEmailConfirmation: true, // default to true for new campaigns (to make it easiest for offline use cases, default is on when in_person)
   candidateVolume: "100",
   startDate: "",
-  notes: "",
   assessmentSlugs: [],
   assessmentWeights: {},
   assessmentVersions: {},
@@ -110,7 +110,44 @@ const emptyDraft: CampaignDraft = {
   prioritisationScoringMode: "Basic",
 };
 
+const DELIVERY_MODES: readonly {
+  id: DeliveryMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    id: "in_person",
+    label: "In-person",
+    description: "Candidates attend a site and start with a session access code.",
+  },
+  {
+    id: "remote",
+    label: "Remote",
+    description: "Candidates join from anywhere using an emailed invite.",
+  },
+  {
+    id: "hybrid",
+    label: "Hybrid",
+    description: "Run on-site and remote sessions under one campaign.",
+  },
+];
+
 const DEFAULT_ASSESSMENT_VERSION = "2.0.0";
+
+const CANDIDATE_VOLUME_PRESETS = [25, 50, 100, 250];
+
+/**
+ * On-site candidates are identity-checked in the room and start from a session
+ * code, so email confirmation is skipped for in-person campaigns. Anything that
+ * can be delivered remotely keeps verification on.
+ */
+function bypassesEmailConfirmation(deliveryMode: DeliveryMode) {
+  return deliveryMode === "in_person";
+}
+
+function includesOnSiteDelivery(deliveryMode: DeliveryMode) {
+  return deliveryMode !== "remote";
+}
 
 function getVersionOptions(assessment: HiringManagerAssessment) {
   return assessment.availableVersions.length > 0
@@ -219,6 +256,17 @@ function VersionPreviewPanel({
   );
 }
 
+function ReviewRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-1.5">
+      <dt className="shrink-0 text-sm text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 break-words text-right text-sm font-medium text-foreground">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
 function toStartDateTime(value: string) {
   return new Date(`${value}T09:00:00`).toISOString();
 }
@@ -247,9 +295,18 @@ export function HiringManagerCampaignBuilder({
   const isEditStackMode = mode === "edit-stack";
   const [draft, setDraft] = useState<CampaignDraft>(emptyDraft);
   const [lockedSlugs, setLockedSlugs] = useState<string[]>([]);
-  const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [step, setStep] = useState<"details" | "stack">(
+    isEditStackMode ? "stack" : "details"
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const today = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+      .toISOString()
+      .slice(0, 10);
+  }, []);
 
   useEffect(() => {
     if (!isEditStackMode || !initialStackDraft) return;
@@ -283,15 +340,47 @@ export function HiringManagerCampaignBuilder({
     0
   );
 
-  const hasRequiredSetup = isEditStackMode
-    ? selectedAssessments.length > 0 && selectedAssessments.every((assessment) => assessment.documentId)
-    : draft.campaignName.trim() &&
-      draft.roleTitle.trim() &&
-      draft.candidateVolume.trim() &&
-      draft.startDate.trim() &&
-      selectedAssessments.length > 0 &&
-      selectedAssessments.every((assessment) => assessment.documentId);
-  const isReady = hasRequiredSetup && assessmentWeightTotal === 100;
+  const candidateVolume = Number.parseInt(draft.candidateVolume, 10);
+  const hasValidCandidateVolume = Number.isInteger(candidateVolume) && candidateVolume >= 1;
+  const hasLoadedAssessments =
+    selectedAssessments.length > 0 &&
+    selectedAssessments.every((assessment) => assessment.documentId);
+
+  const detailRequirements = useMemo(
+    () => [
+      { id: "name", label: "Name the campaign", met: Boolean(draft.campaignName.trim()) },
+      { id: "role", label: "Add the role title", met: Boolean(draft.roleTitle.trim()) },
+      {
+        id: "volume",
+        label: "Set how many candidates you expect",
+        met: hasValidCandidateVolume,
+      },
+      { id: "start", label: "Choose a planned start date", met: Boolean(draft.startDate.trim()) },
+    ],
+    [draft.campaignName, draft.roleTitle, draft.startDate, hasValidCandidateVolume]
+  );
+
+  const stackRequirements = useMemo(
+    () => [
+      {
+        id: "assessments",
+        label: "Select at least one assessment",
+        met: hasLoadedAssessments,
+      },
+      {
+        id: "weights",
+        label: "Balance the weighting to 100%",
+        met: selectedAssessments.length > 0 && assessmentWeightTotal === 100,
+      },
+    ],
+    [assessmentWeightTotal, hasLoadedAssessments, selectedAssessments.length]
+  );
+
+  const requirements = isEditStackMode
+    ? stackRequirements
+    : [...detailRequirements, ...stackRequirements];
+  const detailsComplete = detailRequirements.every((requirement) => requirement.met);
+  const isReady = requirements.every((requirement) => requirement.met);
 
   const updateDraft = <Key extends keyof CampaignDraft>(
     key: Key,
@@ -301,7 +390,6 @@ export function HiringManagerCampaignBuilder({
       ...current,
       [key]: value,
     }));
-    setSavedMessage(null);
     setErrorMessage(null);
   };
 
@@ -346,7 +434,6 @@ export function HiringManagerCampaignBuilder({
           : { ...current.assessmentThresholds, [slug]: 70 },
       };
     });
-    setSavedMessage(null);
     setErrorMessage(null);
   };
 
@@ -414,37 +501,23 @@ export function HiringManagerCampaignBuilder({
         assessmentWeights: newWeights,
       };
     });
-    setSavedMessage(null);
     setErrorMessage(null);
   };
 
   const saveDraft = async () => {
-    setSavedMessage(null);
     setErrorMessage(null);
 
     if (!isReady) {
-      if (assessmentWeightTotal !== 100) {
-        setErrorMessage(
-          isEditStackMode
-            ? "Assessment weights must equal 100% overall before saving."
-            : "Assessment weights must equal 100% overall. Update the selected assessment weights before creating the campaign."
-        );
-      } else {
-        setErrorMessage(
-          isEditStackMode
-            ? "Select at least one assessment before saving."
-            : "Complete the required campaign fields and select assessments loaded from Strapi."
-        );
+      const outstanding = requirements.find((requirement) => !requirement.met);
+      setErrorMessage(
+        outstanding
+          ? `${outstanding.label} before ${isEditStackMode ? "saving" : "creating the campaign"}.`
+          : "Finish the outstanding setup steps first."
+      );
+      if (!isEditStackMode && !detailsComplete) {
+        setStep("details");
       }
       return;
-    }
-
-    if (!isEditStackMode) {
-      const candidateCount = Number.parseInt(draft.candidateVolume, 10);
-      if (!Number.isInteger(candidateCount) || candidateCount < 1) {
-        setErrorMessage("Expected candidates must be at least 1.");
-        return;
-      }
     }
 
     setIsSaving(true);
@@ -455,6 +528,10 @@ export function HiringManagerCampaignBuilder({
           settings[assessment.slug] = {
             version,
             threshold: draft.assessmentThresholds[assessment.slug] ?? 70,
+            ...(assessment.slug === "typing" ? { difficulty: draft.typingDifficulty } : {}),
+            ...(assessment.slug === "prioritisation"
+              ? { scoringMode: draft.prioritisationScoringMode }
+              : {}),
           };
           return settings;
         },
@@ -487,12 +564,7 @@ export function HiringManagerCampaignBuilder({
                 .map((assessment) => assessment.documentId)
                 .filter(Boolean),
               assessmentSettings,
-              assessmentMode:
-                draft.deliveryMode === "remote"
-                  ? "remote"
-                  : draft.deliveryMode === "hybrid"
-                    ? "hybrid"
-                    : "in_person",
+              assessmentMode: draft.deliveryMode,
             }),
           }
         );
@@ -508,7 +580,6 @@ export function HiringManagerCampaignBuilder({
         return;
       }
 
-      const candidateCount = Number.parseInt(draft.candidateVolume, 10);
       const response = await fetch("/api/hiring-manager/campaigns", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -518,15 +589,10 @@ export function HiringManagerCampaignBuilder({
           campaignType: "external",
           startDate: toStartDateTime(draft.startDate),
           isOngoing: false,
-          vacancyCount: candidateCount,
-          location: draft.location.trim(),
-          assessmentMode:
-            draft.deliveryMode === "remote"
-              ? "remote"
-              : draft.deliveryMode === "hybrid"
-                ? "hybrid"
-                : "in_person",
-          bypassEmailConfirmation: draft.bypassEmailConfirmation,
+          vacancyCount: candidateVolume,
+          location: includesOnSiteDelivery(draft.deliveryMode) ? draft.location.trim() : "",
+          assessmentMode: draft.deliveryMode,
+          bypassEmailConfirmation: bypassesEmailConfirmation(draft.deliveryMode),
           assessmentDocumentIds: selectedAssessments
             .map((assessment) => assessment.documentId)
             .filter(Boolean),
@@ -573,46 +639,158 @@ export function HiringManagerCampaignBuilder({
     }
   };
 
-  return (
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)] xl:items-start">
-      <div className="space-y-5">
-        {!isEditStackMode ? (
-        <Card className={portalHeroPanelClass}>
-          <CardHeader className="border-b border-border/50 p-5 dark:border-white/5">
-            <CardTitle className="text-base font-bold text-foreground">Campaign details</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 p-5 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="campaignName" className={portalLabelClass}>
-                Campaign name
-              </Label>
-              <Input
-                id="campaignName"
-                name="campaignName"
-                autoComplete="off"
-                value={draft.campaignName}
-                onChange={(event) => updateDraft("campaignName", event.target.value)}
-                placeholder="e.g. Spring assessment intake…"
-                className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
-              />
+  const selectedDeliveryMode =
+    DELIVERY_MODES.find((option) => option.id === draft.deliveryMode) ?? DELIVERY_MODES[0];
+
+  const detailsPanel = (
+    <div className="space-y-5">
+      <Card className={portalHeroPanelClass}>
+        <CardHeader className="border-b border-border p-5">
+          <CardTitle className="text-base font-bold text-foreground">Campaign details</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Used across the client portal, candidate invites, and session planning.
+          </p>
+        </CardHeader>
+        <CardContent className="grid gap-4 p-5 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="campaignName" className={portalLabelClass}>
+              Campaign name
+            </Label>
+            <Input
+              id="campaignName"
+              name="campaignName"
+              autoComplete="off"
+              value={draft.campaignName}
+              onChange={(event) => updateDraft("campaignName", event.target.value)}
+              placeholder="e.g. Spring assessment intake"
+              className={cn(portalInputClass, "h-10")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="roleTitle" className={portalLabelClass}>
+              Role title
+            </Label>
+            <Input
+              id="roleTitle"
+              name="roleTitle"
+              autoComplete="off"
+              value={draft.roleTitle}
+              onChange={(event) => updateDraft("roleTitle", event.target.value)}
+              placeholder="e.g. Call handler"
+              className={cn(portalInputClass, "h-10")}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="candidateVolume" className={portalLabelClass}>
+              Expected candidates
+            </Label>
+            <Input
+              id="candidateVolume"
+              name="candidateVolume"
+              autoComplete="off"
+              inputMode="numeric"
+              value={draft.candidateVolume}
+              onChange={(event) =>
+                updateDraft("candidateVolume", event.target.value.replace(/\D/g, "").slice(0, 4))
+              }
+              className={cn(portalInputClass, "h-10")}
+            />
+            <div className="flex flex-wrap gap-2" aria-label="Expected candidate presets">
+              {CANDIDATE_VOLUME_PRESETS.map((preset) => (
+                <Button
+                  key={preset}
+                  type="button"
+                  variant="outline"
+                  onClick={() => updateDraft("candidateVolume", String(preset))}
+                  className="h-8 px-3 text-xs"
+                >
+                  {preset}
+                </Button>
+              ))}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="roleTitle" className={portalLabelClass}>
-                Role title
-              </Label>
-              <Input
-                id="roleTitle"
-                name="roleTitle"
-                autoComplete="off"
-                value={draft.roleTitle}
-                onChange={(event) => updateDraft("roleTitle", event.target.value)}
-                placeholder="e.g. Call handler…"
-                className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
-              />
-            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Sets the default capacity for each session you add later.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <OptionalDateField
+              id="startDate"
+              label="Planned start date"
+              value={draft.startDate}
+              onChange={(value) => updateDraft("startDate", value)}
+              min={today}
+            />
+            <p className="text-xs leading-5 text-muted-foreground">
+              Sessions can be scheduled on any date once the campaign is live.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className={portalHeroPanelClass}>
+        <CardHeader className="border-b border-border p-5">
+          <CardTitle className="text-base font-bold text-foreground">Delivery</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            How candidates reach the assessment. This decides how they are verified.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4 p-5">
+          <div className="grid gap-2 sm:grid-cols-3">
+            {DELIVERY_MODES.map((option) => {
+              const locked =
+                (option.id === "remote" && !allowRemoteDelivery) ||
+                (option.id === "hybrid" && !allowHybridDelivery);
+              const selected = draft.deliveryMode === option.id;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  disabled={locked}
+                  aria-pressed={selected}
+                  onClick={() => updateDraft("deliveryMode", option.id)}
+                  className={cn(
+                    selected ? portalSelectableCardSelectedClass : portalSelectableCardClass,
+                    "flex min-h-24 flex-col gap-1.5 p-3.5 text-left",
+                    locked && "cursor-not-allowed opacity-50"
+                  )}
+                >
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-foreground">{option.label}</span>
+                    {locked ? (
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                    ) : selected ? (
+                      <Check className="h-4 w-4 text-primary" aria-hidden="true" />
+                    ) : null}
+                  </span>
+                  <span className="text-xs leading-5 text-muted-foreground">
+                    {option.description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {!allowRemoteDelivery || !allowHybridDelivery ? (
+            <p className={cn(portalAlertInfoClass, "text-xs leading-5")}>
+              Remote and hybrid delivery need to be switched on for your organisation by a CTRL
+              administrator.
+            </p>
+          ) : null}
+
+          <div className={cn(portalPanelNestedClass, "p-4")}>
+            <p className={portalLabelClass}>Candidate verification</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-foreground">
+              {bypassesEmailConfirmation(draft.deliveryMode)
+                ? "Skipped. On-site candidates are identity-checked in the room and start straight from the session access code."
+                : "Required. Candidates confirm their email address before they can start an assessment."}
+            </p>
+          </div>
+
+          {includesOnSiteDelivery(draft.deliveryMode) ? (
             <div className="space-y-2">
               <Label htmlFor="location" className={portalLabelClass}>
-                Location
+                Site or location
               </Label>
               <Input
                 id="location"
@@ -620,416 +798,523 @@ export function HiringManagerCampaignBuilder({
                 autoComplete="off"
                 value={draft.location}
                 onChange={(event) => updateDraft("location", event.target.value)}
-                placeholder="e.g. London assessment centre…"
-                className={cn(portalInputClass, "h-10 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
+                placeholder="e.g. London assessment centre"
+                className={cn(portalInputClass, "h-10")}
               />
+              <p className="text-xs leading-5 text-muted-foreground">
+                Optional. Pre-fills the room field when you create in-person sessions.
+              </p>
             </div>
+          ) : null}
+        </CardContent>
+      </Card>
 
-            <div className="space-y-2">
-              <OptionalDateField
-                id="startDate"
-                label="Planned start"
-                value={draft.startDate}
-                onChange={(value) => updateDraft("startDate", value)}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="notes" className={portalLabelClass}>
-                Operational notes
-              </Label>
-              <Textarea
-                id="notes"
-                value={draft.notes}
-                onChange={(event) => updateDraft("notes", event.target.value)}
-                placeholder="Optional notes for recruiters, assessors, or session planning."
-                className={cn(portalInputClass, "min-h-24 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
-              />
-            </div>
-          </CardContent>
-        </Card>
-        ) : null}
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          onClick={() => setStep("stack")}
+          className={cn(portalPrimaryButtonClass, "h-10 px-5")}
+        >
+          Continue to assessments
+          <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
+    </div>
+  );
 
-        <Card className={portalHeroPanelClass}>
-          <CardHeader className="border-b border-border/50 p-5 dark:border-white/5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+  const stackPanel = (
+    <div className="space-y-5">
+      <Card className={portalHeroPanelClass}>
+        <CardHeader className="border-b border-border p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
               <CardTitle className="text-base font-bold text-foreground">
                 Assessment stack
               </CardTitle>
-              <Badge className="w-fit rounded-md border-primary/20 bg-primary/10 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/10 px-2 py-0.5 pointer-events-none">
-                {assessments.length} active from backend
-              </Badge>
+              <p className="text-sm text-muted-foreground">
+                Pick the assessments candidates will take, then tune each one in place.
+              </p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3 p-5">
-            {assessments.length === 0 ? (
-              <div className={portalEmptyPanelClass}>
-                No active assessments came back from Strapi. Start the backend,
-                check role permissions for `assessments`, then refresh this page.
-              </div>
-            ) : (
-              assessments.map((assessment) => {
-                const checked = draft.assessmentSlugs.includes(assessment.slug);
-                const Icon = getAssessmentCatalogueIcon(assessment.slug);
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <span className={cn(portalBadgeClass, "px-2.5 py-1")}>
+                {selectedAssessments.length} of {assessments.length} selected
+              </span>
+              {selectedAssessments.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setLockedSlugs([]);
+                    updateDraft("assessmentWeights", buildEqualWeights(draft.assessmentSlugs));
+                  }}
+                  className="h-8 px-3 text-xs"
+                >
+                  Distribute equally
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3 p-5">
+          {assessments.length === 0 ? (
+            <div className={portalEmptyPanelClass}>
+              No assessments are available on your plan yet. Refresh the page, and contact your
+              CTRL administrator if this keeps happening.
+            </div>
+          ) : (
+            assessments.map((assessment) => {
+              const checked = draft.assessmentSlugs.includes(assessment.slug);
+              const Icon = getAssessmentCatalogueIcon(assessment.slug);
+              const selectedVersion =
+                draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION;
+              const selectedVersionOption = getSelectedVersionOption(assessment, selectedVersion);
+              const isLocked = lockedSlugs.includes(assessment.slug);
 
-                return (
-                  <div
-                    key={assessment.id}
+              return (
+                <div
+                  key={assessment.id}
+                  className={cn(
+                    checked ? portalSelectableCardSelectedClass : portalSelectableCardClass,
+                    "overflow-hidden"
+                  )}
+                >
+                  <button
+                    type="button"
+                    aria-pressed={checked}
                     onClick={() => toggleAssessment(assessment.slug)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        toggleAssessment(assessment.slug);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                    className={cn(
-                      checked ? portalSelectableCardSelectedClass : portalSelectableCardClass,
-                      "cursor-pointer p-4 text-left"
-                    )}
+                    className="grid w-full gap-3 p-4 text-left sm:grid-cols-[auto_1fr_auto] sm:items-start"
                   >
-                    <div className="grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-start">
-                      <Checkbox
-                        checked={checked}
-                        onCheckedChange={() => toggleAssessment(assessment.slug)}
-                        onClick={(event) => event.stopPropagation()}
-                        className="mt-1.5 border-white/20 data-[state=checked]:border-primary data-[state=checked]:bg-primary rounded-md"
-                        aria-label={`Select ${assessment.title}`}
-                      />
-                      <div className="min-w-0">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <span
-                            className={cn(
-                              portalIconWrapClass,
-                              "h-10 w-10 rounded-xl",
-                              checked && "border-primary/30 bg-primary/15 text-primary"
-                            )}
-                          >
-                            <Icon className="h-4 w-4" />
+                    <span
+                      className={cn(
+                        "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
+                        checked
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background"
+                      )}
+                      aria-hidden="true"
+                    >
+                      {checked ? <Check className="h-3.5 w-3.5" /> : null}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="flex min-w-0 items-center gap-3">
+                        <span
+                          className={cn(
+                            portalIconWrapClass,
+                            "h-10 w-10",
+                            checked && "border-primary/30 bg-primary/15 text-primary"
+                          )}
+                        >
+                          <Icon className="h-4 w-4" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="flex min-w-0 flex-wrap items-center gap-2">
+                            <span className="break-words text-sm font-bold leading-5 text-foreground">
+                              {assessment.title}
+                            </span>
+                            {isPremiumCatalogueTier(assessment.entitlementTier) ? (
+                              <span
+                                className={cn(
+                                  portalBadgeClass,
+                                  "shrink-0 px-2 py-0.5 text-[10px] font-semibold"
+                                )}
+                              >
+                                Premium
+                              </span>
+                            ) : null}
                           </span>
-                          <div className="min-w-0">
-                            <div className="flex min-w-0 flex-wrap items-center gap-2">
-                              <p className="break-words text-sm font-bold leading-5 text-foreground">
-                                {assessment.title}
-                              </p>
-                              <AssessmentPremiumBadge entitlementTier={assessment.entitlementTier} />
-                            </div>
-                            <p className={cn(portalLabelClass, "mt-0.5 normal-case")}>
-                              {assessment.skills.slice(0, 3).join(" · ")}
-                            </p>
+                          <span className={cn(portalLabelClass, "mt-0.5 block normal-case")}>
+                            {assessment.skills.slice(0, 3).join(" · ")}
+                          </span>
+                        </span>
+                      </span>
+                      <span className="mt-3 block text-xs leading-5 text-muted-foreground">
+                        {assessment.summary}
+                      </span>
+                    </span>
+                    <span className="flex flex-wrap gap-1.5 sm:justify-end">
+                      <span className={cn(portalBadgeClass, "px-2 py-0.5")}>
+                        {assessment.duration}
+                      </span>
+                      {assessment.passingScore !== null ? (
+                        <span className={cn(portalBadgeClass, "px-2 py-0.5")}>
+                          Pass {assessment.passingScore}%
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+
+                  {checked ? (
+                    <div className="space-y-4 border-t border-border bg-background/40 p-4">
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor={`weight-${assessment.slug}`}
+                            className={portalLabelClass}
+                          >
+                            Weighting
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id={`weight-${assessment.slug}`}
+                              name={`weight-${assessment.slug}`}
+                              autoComplete="off"
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={draft.assessmentWeights[assessment.slug] ?? 0}
+                              disabled={isLocked}
+                              onChange={(event) =>
+                                updateAssessmentWeight(assessment.slug, event.target.value)
+                              }
+                              className={cn(portalInputClass, "h-10")}
+                            />
+                            <span className="text-xs font-bold text-muted-foreground">%</span>
+                            {draft.assessmentSlugs.length > 1 ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => toggleLockSlug(assessment.slug)}
+                                className="h-10 w-10 shrink-0"
+                                aria-pressed={isLocked}
+                                title={
+                                  isLocked
+                                    ? "Weight locked — other assessments absorb changes"
+                                    : "Lock this weight"
+                                }
+                              >
+                                {isLocked ? (
+                                  <Lock className="h-3.5 w-3.5" aria-hidden="true" />
+                                ) : (
+                                  <Unlock className="h-3.5 w-3.5" aria-hidden="true" />
+                                )}
+                                <span className="sr-only">
+                                  {isLocked ? "Unlock weighting" : "Lock weighting"}
+                                </span>
+                              </Button>
+                            ) : null}
                           </div>
                         </div>
-                        <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                          {assessment.summary}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 sm:justify-end">
-                        <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold", portalBadgeClass)}>
-                          {assessment.duration}
-                        </Badge>
-                        {assessment.passingScore !== null && (
-                          <Badge className={cn("pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold", portalBadgeClass)}>
-                            Pass {assessment.passingScore}%
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      <section className="space-y-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:overscroll-contain">
-        <Card className={portalHeroPanelClass}>
-          <CardHeader className="border-b border-border/50 p-5 dark:border-white/5">
-            <CardTitle className="text-base font-bold text-foreground">
-              {isEditStackMode ? "Update campaign setup" : "Campaign review"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-5">
-            <div className={portalSelectableCardGroupClass}>
-              <p className={portalLabelClass}>
-                Delivery mode
-              </p>
-              <div className="mt-3 grid gap-2">
-                {(["in_person", "remote", "hybrid"] as const).map((mode) => {
-                  const isRemote = mode === "remote";
-                  const isHybrid = mode === "hybrid";
-                  const locked = (isRemote && !allowRemoteDelivery) || (isHybrid && !allowHybridDelivery);
-                  
-                  return (
-                     <button
-                       key={mode}
-                       type="button"
-                       disabled={locked}
-                       onClick={() => {
-                         updateDraft("deliveryMode", mode);
-                         updateDraft("bypassEmailConfirmation", mode === "in_person");
-                       }}
-                       className={cn(
-                         draft.deliveryMode === mode
-                           ? portalSelectableCardSelectedClass
-                           : portalSelectableCardClass,
-                         "flex items-center justify-between px-3.5 py-2.5 text-xs font-bold uppercase tracking-wider",
-                         locked && "cursor-not-allowed opacity-50"
-                       )}
-                     >
-                       {mode.replace("_", " ").replace("-", " ")}
-                       {locked && <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />}
-                     </button>
-                  );
-                })}
-              </div>
-              {(!allowRemoteDelivery || !allowHybridDelivery) && (
-                <p className={cn(portalAlertInfoClass, "mt-3 text-[10px] leading-relaxed")}>
-                  Remote and Hybrid options require client feature activation by an administrator.
-                </p>
-              )}
-              <div className="mt-3.5 flex items-center gap-2">
-                <input
-                  id="bypass-email-confirmation-checkbox"
-                  type="checkbox"
-                  checked={draft.bypassEmailConfirmation}
-                  onChange={(e) => updateDraft("bypassEmailConfirmation", e.target.checked)}
-                  className="h-4 w-4 rounded border-white/10 bg-white/[0.02] text-primary focus:ring-primary cursor-pointer"
-                />
-                <label
-                  htmlFor="bypass-email-confirmation-checkbox"
-                  className="text-xs font-semibold text-foreground/90 cursor-pointer select-none"
-                >
-                  Bypass candidate email verification (recommended for in-person/offline sites)
-                </label>
-              </div>
-            </div>
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor={`threshold-${assessment.slug}`}
+                            className={portalLabelClass}
+                          >
+                            Standard threshold
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id={`threshold-${assessment.slug}`}
+                              name={`threshold-${assessment.slug}`}
+                              autoComplete="off"
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              value={draft.assessmentThresholds[assessment.slug] ?? 70}
+                              onChange={(event) => {
+                                const next = Math.max(
+                                  0,
+                                  Math.min(100, Number.parseInt(event.target.value || "0", 10))
+                                );
+                                setDraft((current) => ({
+                                  ...current,
+                                  assessmentThresholds: {
+                                    ...current.assessmentThresholds,
+                                    [assessment.slug]: next,
+                                  },
+                                }));
+                              }}
+                              className={cn(portalInputClass, "h-10")}
+                            />
+                            <span className="text-xs font-bold text-muted-foreground">%</span>
+                          </div>
+                          <p className="text-xs leading-5 text-muted-foreground">
+                            Snapshotted when a candidate starts. Evidence for reviewers, not an
+                            automated hiring decision.
+                          </p>
+                        </div>
 
-            <div className={portalSelectableCardGroupClass}>
-              <div className="flex items-center justify-between">
-                <p className={portalLabelClass}>
-                  Selected stack
-                </p>
-                {selectedAssessments.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setLockedSlugs([]);
-                      updateDraft("assessmentWeights", buildEqualWeights(draft.assessmentSlugs));
-                    }}
-                    className="h-6 rounded-md px-2 text-[9px] font-bold uppercase tracking-wider text-indigo-400 hover:bg-indigo-400/10 hover:text-indigo-300 transition-colors"
-                  >
-                    Distribute Equally
-                  </Button>
-                )}
-              </div>
-              <div className="mt-3 grid gap-3">
-                {selectedAssessments.length === 0 ? (
-                  <p className="text-xs italic leading-normal text-muted-foreground">
-                    Select at least one assessment from the stack above.
-                  </p>
-                ) : (
-                  selectedAssessments.map((assessment, index) => {
-                    const selectedVersion = draft.assessmentVersions[assessment.slug] ?? DEFAULT_ASSESSMENT_VERSION;
-                    const selectedVersionOption = getSelectedVersionOption(assessment, selectedVersion);
-                    return (
-                    <div
-                      key={assessment.slug}
-                      className={cn(portalPanelNestedClass, "px-3 py-3")}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className={portalLabelClass}>
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                        <span className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 break-words text-xs font-bold text-foreground">
-                          {assessment.title}
-                          <AssessmentPremiumBadge entitlementTier={assessment.entitlementTier} />
-                        </span>
-                        <span className={portalLabelClass}>
-                          {assessment.duration}
-                        </span>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        <Label className={portalLabelClass}>
-                          Module release
-                        </Label>
-                        <Select
-                          value={selectedVersion}
-                          onValueChange={(value) =>
-                            setDraft((current) => ({
-                              ...current,
-                              assessmentVersions: {
-                                ...current.assessmentVersions,
-                                [assessment.slug]: value,
-                              },
-                            }))
-                          }
-                        >
-                          <SelectTrigger className={cn(portalInputClass, "h-9 rounded-xl text-xs")}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {getVersionOptions(assessment).map((version) => (
-                              <SelectItem key={version.version} value={version.version}>
-                                {version.title || `v${version.version}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <VersionPreviewPanel assessment={assessment} version={selectedVersionOption} />
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        <Label htmlFor={`threshold-${assessment.slug}`} className={portalLabelClass}>
-                          Assessment standard threshold
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id={`threshold-${assessment.slug}`}
-                            name={`threshold-${assessment.slug}`}
-                            autoComplete="off"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value={draft.assessmentThresholds[assessment.slug] ?? 70}
-                            onChange={(event) => {
-                              const next = Math.max(0, Math.min(100, Number.parseInt(event.target.value || "0", 10)));
+                        <div className="space-y-2">
+                          <Label className={portalLabelClass}>Module release</Label>
+                          <Select
+                            value={selectedVersion}
+                            onValueChange={(value) =>
                               setDraft((current) => ({
                                 ...current,
-                                assessmentThresholds: { ...current.assessmentThresholds, [assessment.slug]: next },
-                              }));
-                            }}
-                            className={cn(portalInputClass, "h-9")}
-                          />
-                          <span className="text-xs font-bold text-muted-foreground">%</span>
-                        </div>
-                        <p className="text-[11px] leading-5 text-muted-foreground">Snapshotted when the candidate starts. Critical gates still apply; this is evidence, not an automated hiring decision.</p>
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        <Label
-                          htmlFor={`weight-${assessment.slug}`}
-                          className={portalLabelClass}
-                        >
-                          Weighting
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id={`weight-${assessment.slug}`}
-                            name={`weight-${assessment.slug}`}
-                            autoComplete="off"
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={draft.assessmentWeights[assessment.slug] ?? 0}
-                            disabled={lockedSlugs.includes(assessment.slug)}
-                            onChange={(event) =>
-                              updateAssessmentWeight(
-                                assessment.slug,
-                                event.target.value
-                              )
+                                assessmentVersions: {
+                                  ...current.assessmentVersions,
+                                  [assessment.slug]: value,
+                                },
+                              }))
                             }
-                            className={cn(portalInputClass, "h-9 transition-colors focus:border-primary/50 focus:ring-1 focus:ring-primary/50")}
-                          />
-                          <span className="mr-1 text-xs font-bold text-muted-foreground">%</span>
-                          
-                          {draft.assessmentSlugs.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleLockSlug(assessment.slug)}
-                              className={cn(
-                                "h-9 w-9 shrink-0 rounded-lg transition-colors",
-                                lockedSlugs.includes(assessment.slug)
-                                  ? "bg-muted/40 text-foreground hover:bg-muted/60"
-                                  : "bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
-                              )}
-                              title={lockedSlugs.includes(assessment.slug) ? "Weight locked (Click to unlock)" : "Weight unlocked (Click to lock)"}
-                            >
-                              {lockedSlugs.includes(assessment.slug) ? (
-                                <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-                              ) : (
-                                <Unlock className="h-3.5 w-3.5" aria-hidden="true" />
-                              )}
-                            </Button>
-                          )}
+                          >
+                            <SelectTrigger className={cn(portalInputClass, "h-10 text-sm")}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getVersionOptions(assessment).map((version) => (
+                                <SelectItem key={version.version} value={version.version}>
+                                  {version.title || `v${version.version}`}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
-                      </div>
-                    </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
 
-            {selectedAssessments.length > 0 && (
-              <div
+                        {assessment.slug === "typing" ? (
+                          <div className="space-y-2">
+                            <Label className={portalLabelClass}>Typing difficulty</Label>
+                            <Select
+                              value={draft.typingDifficulty}
+                              onValueChange={(value) =>
+                                updateDraft(
+                                  "typingDifficulty",
+                                  value as CampaignDraft["typingDifficulty"]
+                                )
+                              }
+                            >
+                              <SelectTrigger className={cn(portalInputClass, "h-10 text-sm")}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Base">Base</SelectItem>
+                                <SelectItem value="Intermediate">Intermediate</SelectItem>
+                                <SelectItem value="Extreme">Extreme</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : null}
+
+                        {assessment.slug === "prioritisation" ? (
+                          <div className="space-y-2">
+                            <Label className={portalLabelClass}>Scoring mode</Label>
+                            <Select
+                              value={draft.prioritisationScoringMode}
+                              onValueChange={(value) =>
+                                updateDraft(
+                                  "prioritisationScoringMode",
+                                  value as CampaignDraft["prioritisationScoringMode"]
+                                )
+                              }
+                            >
+                              <SelectTrigger className={cn(portalInputClass, "h-10 text-sm")}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Basic">Basic</SelectItem>
+                                <SelectItem value="Advanced">Advanced</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <VersionPreviewPanel
+                        assessment={assessment}
+                        version={selectedVersionOption}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
+      {!isEditStackMode ? (
+        <div className="flex justify-start">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setStep("details")}
+            className="h-10 px-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+            Back to campaign details
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      {!isEditStackMode ? (
+        <PortalStepper
+          label="Campaign setup steps"
+          activeId={step}
+          onSelect={(id) => setStep(id as "details" | "stack")}
+          steps={[
+            {
+              id: "details",
+              label: "Campaign details",
+              description: "Role, volume, delivery",
+              complete: detailsComplete,
+            },
+            {
+              id: "stack",
+              label: "Assessments",
+              description: "Stack and weighting",
+              complete: stackRequirements.every((requirement) => requirement.met),
+            },
+          ]}
+        />
+      ) : null}
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start">
+        {step === "details" && !isEditStackMode ? detailsPanel : stackPanel}
+
+        <section className="space-y-4 xl:sticky xl:top-20 xl:max-h-[calc(100dvh-6rem)] xl:overflow-y-auto xl:overscroll-contain">
+          <Card className={portalHeroPanelClass}>
+            <CardHeader className="border-b border-border p-5">
+              <CardTitle className="text-base font-bold text-foreground">
+                {isEditStackMode ? "Stack review" : "Campaign review"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-5">
+              {!isEditStackMode ? (
+                <dl className="divide-y divide-border">
+                  <ReviewRow
+                    label="Campaign"
+                    value={draft.campaignName.trim() || "Not set"}
+                  />
+                  <ReviewRow label="Role" value={draft.roleTitle.trim() || "Not set"} />
+                  <ReviewRow
+                    label="Candidates"
+                    value={hasValidCandidateVolume ? candidateVolume : "Not set"}
+                  />
+                  <ReviewRow
+                    label="Planned start"
+                    value={
+                      draft.startDate
+                        ? new Date(`${draft.startDate}T09:00:00`).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })
+                        : "Not set"
+                    }
+                  />
+                  <ReviewRow label="Delivery" value={selectedDeliveryMode.label} />
+                  <ReviewRow
+                    label="Email verification"
+                    value={
+                      bypassesEmailConfirmation(draft.deliveryMode) ? "Skipped" : "Required"
+                    }
+                  />
+                  {includesOnSiteDelivery(draft.deliveryMode) && draft.location.trim() ? (
+                    <ReviewRow label="Location" value={draft.location.trim()} />
+                  ) : null}
+                </dl>
+              ) : null}
+
+              <div className={cn(portalSelectableCardGroupClass, "space-y-3")}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className={portalLabelClass}>Selected stack</p>
+                  <span
+                    className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      selectedAssessments.length === 0 || assessmentWeightTotal === 100
+                        ? "text-foreground"
+                        : "text-destructive"
+                    )}
+                  >
+                    {assessmentWeightTotal}%
+                  </span>
+                </div>
+                {selectedAssessments.length === 0 ? (
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    Nothing selected yet. Choose assessments to build the stack.
+                  </p>
+                ) : (
+                  <ol className="space-y-1.5">
+                    {selectedAssessments.map((assessment, index) => (
+                      <li
+                        key={assessment.slug}
+                        className="flex items-center justify-between gap-3 text-sm"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="tabular-nums text-muted-foreground">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                          <span className="truncate font-medium text-foreground">
+                            {assessment.title}
+                          </span>
+                        </span>
+                        <span className="shrink-0 tabular-nums text-muted-foreground">
+                          {draft.assessmentWeights[assessment.slug] ?? 0}%
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                {selectedAssessments.length > 0 && assessmentWeightTotal !== 100 ? (
+                  <p className="text-xs leading-5 text-destructive">
+                    Weighting must total 100%.
+                  </p>
+                ) : null}
+              </div>
+
+              <div className={cn(portalPanelNestedClass, "flex items-center gap-3 p-4")}>
+                <span className={portalIconWrapClass}>
+                  <Timer className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span>
+                  <span className={cn(portalLabelClass, "block")}>Candidate time</span>
+                  <span className="text-lg font-bold text-foreground">
+                    {formatTotalDuration(totalDurationSeconds)}
+                  </span>
+                </span>
+              </div>
+
+              <PortalRequirementList
+                title={isEditStackMode ? "Before you save" : "Before you create"}
+                requirements={requirements}
+                completeLabel={
+                  isEditStackMode
+                    ? "The stack is ready to save."
+                    : "The campaign is ready to create."
+                }
+              />
+
+              <Button
+                type="button"
+                disabled={!isReady || isSaving}
+                onClick={saveDraft}
                 className={cn(
-                  "rounded-xl border p-3.5",
-                  assessmentWeightTotal === 100 ? portalAlertInfoClass : portalAlertErrorClass
+                  portalPrimaryButtonClass,
+                  "h-11 w-full disabled:cursor-not-allowed disabled:opacity-50"
                 )}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold">
-                    Total weighting
-                  </p>
-                  <p className="text-base font-bold text-foreground">
-                    {assessmentWeightTotal}%
-                  </p>
-                </div>
-                {assessmentWeightTotal !== 100 && (
-                  <p className="mt-2 text-[10px] leading-relaxed opacity-80">
-                    {isEditStackMode
-                      ? "Weights must sum to 100% before saving."
-                      : "Weights must sum to 100% before the campaign can be created."}
-                  </p>
-                )}
-              </div>
-            )}
+                <Save className="mr-2 h-4 w-4" aria-hidden="true" />
+                {isSaving
+                  ? isEditStackMode
+                    ? "Saving…"
+                    : "Creating…"
+                  : isEditStackMode
+                    ? "Save changes"
+                    : "Create campaign"}
+              </Button>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5">
-              <div className="flex items-center gap-2 text-primary">
-                <ShieldCheck className="h-4 w-4" />
-                <p className="text-xs uppercase font-bold tracking-wider">Estimated time</p>
-              </div>
-              <p className="mt-2 text-2xl font-bold text-foreground">
-                {formatTotalDuration(totalDurationSeconds)}
-              </p>
-            </div>
+              {!isEditStackMode ? (
+                <p className="text-xs leading-5 text-muted-foreground">
+                  You will land on the campaign workspace next, where you can add the first
+                  session.
+                </p>
+              ) : null}
 
-            <Button
-              type="button"
-              disabled={!hasRequiredSetup || isSaving}
-              onClick={saveDraft}
-              className={cn(portalPrimaryButtonClass, "h-10 w-full disabled:cursor-not-allowed disabled:opacity-50")}
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {isSaving
-                ? isEditStackMode
-                  ? "Saving…"
-                  : "Creating…"
-                : isEditStackMode
-                  ? "Save changes"
-                  : "Create campaign"}
-            </Button>
-
-            {savedMessage && (
-              <p className={cn(portalAlertInfoClass, "text-xs leading-normal")}>
-                {savedMessage}
-              </p>
-            )}
-
-            {errorMessage && (
-              <p className={cn(portalAlertErrorClass, "text-xs leading-normal")}>
-                {errorMessage}
-              </p>
-            )}
-
-          </CardContent>
-        </Card>
-      </section>
+              {errorMessage ? (
+                <p className={cn(portalAlertErrorClass, "text-sm leading-5")} aria-live="polite">
+                  {errorMessage}
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        </section>
+      </div>
     </div>
   );
 }

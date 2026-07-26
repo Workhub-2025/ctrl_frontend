@@ -1,22 +1,17 @@
 "use client";
 
-import { Suspense, useCallback } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
 import { AuthBrandingPane } from "@/components/auth/auth-branding-pane";
-import { SessionAccessCodeForm } from "@/components/auth/session-access-code-form";
+import { SessionJoinForm } from "@/components/auth/session-join-form";
 import { BrandLogo } from "@/components/brand-logo";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
-import { useAuth } from "@/hooks/use-auth";
-import { normalizeRole } from "@/lib/auth/role-model";
-import { candidateDashboardPathWithAccessCode } from "@/lib/public-app-urls";
 import { cn } from "@/lib/utils";
 
 function JoinContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
   const {
     settings,
     updateSettings,
@@ -28,28 +23,7 @@ function JoinContent() {
   const panelVariant = isLightTheme ? "light-panel" : "dark-panel";
   const initialCode =
     searchParams.get("accessCode") ?? searchParams.get("code") ?? "";
-
-  const continueWithCode = useCallback(
-    async (accessCode: string) => {
-      const destination = candidateDashboardPathWithAccessCode(accessCode);
-      const role = normalizeRole(user?.role);
-      if (role === "candidate") {
-        router.push(destination);
-        return;
-      }
-      if (user) {
-        throw new Error(
-          "Session codes are for candidates. Sign out, then join with this code."
-        );
-      }
-      const login = new URL("/auth/login", window.location.origin);
-      login.searchParams.set("mode", "code");
-      login.searchParams.set("accessCode", accessCode);
-      login.searchParams.set("callbackUrl", destination);
-      router.push(`${login.pathname}${login.search}`);
-    },
-    [router, user]
-  );
+  const startOnVerify = searchParams.get("verified") === "1";
 
   return (
     <div className={cn("ctrl-landing-page relative flex min-h-[100svh] w-full", themeClassName)}>
@@ -85,7 +59,7 @@ function JoinContent() {
                 isLightTheme ? "text-slate-950" : "text-white"
               )}
             >
-              Enter your session code
+              Join your assessment
             </h1>
             <p
               className={cn(
@@ -93,35 +67,17 @@ function JoinContent() {
                 isLightTheme ? "text-slate-600" : "text-slate-400"
               )}
             >
-              Use the one-time access code from your invitation or hiring manager
-              to open your assessment session.
+              Enter your session code and create a login you can reuse if you get
+              signed out during assessment day.
             </p>
           </div>
 
-          <SessionAccessCodeForm
+          <SessionJoinForm
             initialCode={initialCode}
+            startOnVerify={startOnVerify}
             panelVariant={panelVariant}
             inputVariant={isLightTheme ? "light" : "dark"}
-            onSubmit={continueWithCode}
           />
-
-          <p
-            className={cn(
-              "mt-8 text-center text-sm",
-              isLightTheme ? "text-slate-600" : "text-slate-400"
-            )}
-          >
-            Already have an account?{" "}
-            <Link
-              href="/auth/login"
-              className={cn(
-                "font-medium underline-offset-4 hover:underline",
-                isLightTheme ? "text-slate-900" : "text-white"
-              )}
-            >
-              Sign in
-            </Link>
-          </p>
         </div>
       </main>
     </div>

@@ -20,6 +20,7 @@ import {
   platformPricingFromFirebasePrices,
 } from "@/lib/firebase-billing-api";
 import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
+import { stripeReturnAppUrl } from "@/lib/public-app-urls";
 import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
 import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import { cmsRequest } from "@/legacy-cms/request";
@@ -53,7 +54,7 @@ type FirebaseContractRow = {
 };
 
 function getAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  return stripeReturnAppUrl();
 }
 
 function getActiveContract(client: AdminClientRecord) {
@@ -277,8 +278,8 @@ export async function POST(
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "subscription",
       subscription_data: buildStripeSubscriptionCheckoutData(),
-      success_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${getAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
+      success_url: `${getAppUrl()}/client-dashboard/billing/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${getAppUrl()}/client-dashboard/billing/?cancelled=1`,
       line_items: [
         {
           quantity: 1,

@@ -17,6 +17,8 @@ import type {
   CandidateInvitationAcceptanceResponse,
   FirebaseAccountProvisioningRequest,
   FirebaseAccountProvisioningResponse,
+  SessionAccessCodeClaimRequest,
+  SessionAccessCodeClaimResponse,
 } from "@/lib/firebase-provisioning-contracts";
 
 export type FirebaseDomainUserContext = Readonly<{
@@ -242,6 +244,18 @@ export function createFirebaseDomainApi(
     ): Promise<CandidateInvitationAcceptanceResponse> {
       return transport.request({
         path: "/v1/assignments/invitations/accept",
+        method: "POST",
+        firebaseSessionCookie,
+        body,
+      });
+    },
+
+    claimSessionAccessCode(
+      firebaseSessionCookie: string,
+      body: SessionAccessCodeClaimRequest,
+    ): Promise<SessionAccessCodeClaimResponse> {
+      return transport.request({
+        path: "/v1/sessions/access-code/claim",
         method: "POST",
         firebaseSessionCookie,
         body,

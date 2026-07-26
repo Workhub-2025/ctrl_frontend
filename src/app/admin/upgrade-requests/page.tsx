@@ -20,6 +20,7 @@ import { PORTAL_CACHE_TTL_MS } from "@/lib/portal-fetch-cache";
 import { cn } from "@/lib/utils";
 import {
   AdminAlert,
+  AdminInlineLoading,
   AdminPageHeader,
   AdminPanel,
 } from "@/components/admin/admin-portal-ui";
@@ -335,12 +336,9 @@ export default function UpgradeRequestsPage() {
               />
             </div>
 
-            {loading && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground px-1">
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                Loading clients...
-              </div>
-            )}
+            {loading ? (
+              <AdminInlineLoading message="Loading clients…" className="px-1 py-2" />
+            ) : null}
 
             <div className="max-h-[640px] space-y-2.5 overflow-y-auto pr-1">
               {!loading && filteredClients.map((client) => (

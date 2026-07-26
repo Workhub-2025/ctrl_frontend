@@ -12,7 +12,6 @@ import { SessionAccessCodeForm } from "@/components/auth/session-access-code-for
 import { BrandLogo } from "@/components/brand-logo";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { useAuth } from "@/hooks/use-auth";
-import { candidateDashboardPathWithAccessCode } from "@/lib/public-app-urls";
 import { cn } from "@/lib/utils";
 
 type LoginMode = "account" | "code";
@@ -96,13 +95,9 @@ function LoginContent() {
   };
 
   const continueWithCode = async (accessCode: string) => {
-    const destination = candidateDashboardPathWithAccessCode(accessCode);
-    const loginUrl = new URL("/auth/login", window.location.origin);
-    loginUrl.searchParams.set("callbackUrl", destination);
-    loginUrl.searchParams.set("accessCode", accessCode);
-    // Switch to account sign-in with the code preserved in the callback.
-    setMode("account");
-    router.replace(`${loginUrl.pathname}${loginUrl.search}`);
+    const join = new URL("/join", window.location.origin);
+    join.searchParams.set("accessCode", accessCode);
+    router.push(`${join.pathname}${join.search}`);
   };
 
   return (
@@ -146,7 +141,7 @@ function LoginContent() {
               {totpStep
                 ? "Enter the code from your authenticator app to finish signing in."
                 : mode === "code"
-                  ? "Paste the one-time access code from your hiring manager, then sign in to open the session."
+                  ? "Paste the access code from your hiring manager to create a reusable candidate login."
                   : "Sign in to your workspace, or join an assessment with a session code."}
             </p>
           </div>
@@ -222,7 +217,7 @@ function LoginContent() {
               disabled={busy}
               panelVariant={panelVariant}
               inputVariant={isLightTheme ? "light" : "dark"}
-              submitLabel="Continue to sign in"
+              submitLabel="Continue to join"
               onSubmit={continueWithCode}
             />
           ) : (
@@ -260,7 +255,7 @@ function LoginContent() {
               </>
             ) : (
               <>
-                New accounts are created from a verified invitation.{" "}
+                New accounts are created from a verified invitation or session code.{" "}
                 <Link
                   href="/join"
                   className={cn(

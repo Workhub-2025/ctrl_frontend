@@ -13,7 +13,8 @@ describe("hiring-manager campaign workspace", () => {
     );
 
     for (const tab of ["overview", "candidates", "sessions", "assessments"]) {
-      expect(source).toContain(`<TabsContent value="${tab}"`);
+      expect(source).toContain(`id: "${tab}"`);
+      expect(source).toContain(`activeTab === "${tab}"`);
     }
     expect(source).toContain("HiringManagerSessionCreatePanel");
     expect(source).toContain("View all candidates");

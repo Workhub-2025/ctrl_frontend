@@ -6,6 +6,7 @@ import {
   defaultInvitationExpiry,
   requireFirebaseTenancySession,
 } from "@/lib/firebase-tenancy-bff";
+import { invitationAcceptUrl } from "@/lib/public-app-urls";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 
@@ -14,24 +15,6 @@ function parseSeatNumber(value: unknown) {
   if (typeof value !== "string") return undefined;
   const numeric = Number(value.match(/\d+/)?.[0] ?? value);
   return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
-}
-
-function inviteAcceptUrl(request: NextRequest, token: string, email: string) {
-  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const forwardedProto =
-    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
-  const envBase =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
-    "";
-  const base =
-    forwardedHost && !forwardedHost.includes("localhost")
-      ? `${forwardedProto}://${forwardedHost}`
-      : envBase || "http://localhost:3000";
-  const url = new URL("/auth/accept-invitation", base);
-  url.searchParams.set("token", token);
-  url.searchParams.set("email", email);
-  return url.toString();
 }
 
 export async function POST(request: NextRequest) {
@@ -107,7 +90,7 @@ export async function POST(request: NextRequest) {
             expiresAt,
           });
 
-    const acceptUrl = inviteAcceptUrl(request, result.token, email);
+    const acceptUrl = invitationAcceptUrl(request, result.token, email);
 
     return NextResponse.json(
       {

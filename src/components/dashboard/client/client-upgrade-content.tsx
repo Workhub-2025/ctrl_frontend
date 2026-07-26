@@ -5,21 +5,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowUpRight,
   CalendarRange,
-  CheckCircle2,
-  Clock3,
+  CreditCard,
   Loader2,
-  TrendingUp,
-  Users,
+  Receipt,
 } from "lucide-react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { formatDate } from "@/components/dashboard/client/client-portal-utils";
 import { ClientUpgradeBuilder } from "@/components/dashboard/client/client-upgrade-builder";
-import { ClientSeatDecreasePanel } from "@/components/dashboard/client/client-seat-decrease-panel";
 import { ClientDataRetentionNotice } from "@/components/dashboard/client/client-data-retention-notice";
+import {
+  ClientPaymentConfirmDialog,
+  type PendingPayment,
+} from "@/components/dashboard/client/client-payment-confirm-dialog";
 import {
   ClientErrorBanner,
   ClientPageHeader,
@@ -29,20 +29,19 @@ import {
   PortalEmptyState,
   PortalPanel,
   PortalSectionHeader,
-  PortalStatTile,
 } from "@/components/dashboard/portal/portal-ui";
 import {
   portalBadgeClass,
+  portalLabelClass,
   portalPanelClass,
+  portalPanelNestedClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { useClientPortal } from "@/context/client-portal-provider";
 import {
   CLIENT_DELIVERY_FEATURES,
-  DEFAULT_PLATFORM_ASSESSMENTS,
   type ClientUpgradeRequestType,
 } from "@/lib/client/entitlements";
 import { formatMoney } from "@/lib/money";
-import { resolveMinimumContractedSeats } from "@/lib/client/contract-seat-limits";
 import { cn } from "@/lib/utils";
 
 const UPGRADE_TYPE_LABELS: Record<ClientUpgradeRequestType, string> = {
@@ -62,7 +61,10 @@ const BILLING_STATUS_LABELS: Record<string, string> = {
   failed: "Payment failed",
 };
 
-function billingStatusLabel(request: { upgradeType: string; billingStatus?: string }) {
+function billingStatusLabel(request: {
+  upgradeType: string;
+  billingStatus?: string;
+}) {
   const status = request.billingStatus ?? "requested";
   if (request.upgradeType === "seat_decrease") {
     if (status === "requested") return "Awaiting processing";
@@ -71,19 +73,47 @@ function billingStatusLabel(request: { upgradeType: string; billingStatus?: stri
   return BILLING_STATUS_LABELS[status] ?? "Requested";
 }
 
-const BILLING_STATUS_CLASSES: Record<string, string> = {
-  requested: portalBadgeClass,
-  invoice_sent: portalBadgeClass,
-  paid: portalBadgeClass,
-  failed: portalBadgeClass,
-};
+function isPayableRequest(request: {
+  billingStatus?: string;
+  upgradeType?: string;
+  amountDuePence?: number | null;
+}) {
+  return (
+    request.upgradeType !== "seat_decrease" &&
+    (request.amountDuePence ?? 0) > 0 &&
+    (request.billingStatus === "invoice_sent" ||
+      request.billingStatus === "requested")
+  );
+}
 
+function pendingPaymentFromRequest(request: {
+  id: string;
+  subject: string;
+  amountDuePence?: number | null;
+  currency?: string | null;
+  payload?: { type?: string; lineItems?: PendingPayment["lineItems"] };
+}): PendingPayment {
+  return {
+    id: request.id,
+    subject: request.subject,
+    amountDuePence: request.amountDuePence ?? null,
+    currency: request.currency ?? "gbp",
+    ...(request.payload?.type === "upgrade_bundle" && request.payload.lineItems
+      ? { lineItems: request.payload.lineItems }
+      : {}),
+  };
+}
+
+/**
+ * Intent: client ops lead managing contract capacity, unlocks, and payments.
+ * Hierarchy: actionable pay / change builder wins; history and retention demoted.
+ * Feel: calm operational ledger — dense, one job per band, no dashboard clutter.
+ */
 export function ClientUpgradeContent() {
   const {
     summary,
     entitlements,
     upgradeRequests,
-    seatSlots,
     entitlementsLoading,
     upgradeRequestsLoading,
     error,
@@ -99,7 +129,11 @@ export function ClientUpgradeContent() {
   } = useClientPortal();
 
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(
+    null
+  );
   const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -116,30 +150,21 @@ export function ClientUpgradeContent() {
   const contract = entitlements?.contract ?? summary?.activeContract ?? null;
   const seats = summary?.seats;
   const canRequestUpgrades = entitlements?.canRequestUpgrades !== false;
-  const currentSeats = contract?.seatCount ?? seats?.limit ?? 0;
-  const minimumContractedSeats =
-    entitlements?.contract?.minimumContractedSeats
-    ?? resolveMinimumContractedSeats({ tier: contract?.tier });
 
   const activationInvoice = useMemo(
     () =>
       upgradeRequests.find(
         (request) =>
-          request.requestKind === "contract_activation" && request.billingStatus === "invoice_sent"
+          request.requestKind === "contract_activation" &&
+          request.billingStatus === "invoice_sent"
       ) ?? null,
     [upgradeRequests]
   );
 
-
-  const defaultAssessments =
-    entitlements?.defaultAssessments ??
-    DEFAULT_PLATFORM_ASSESSMENTS.map((assessment) => ({
-      slug: assessment.key,
-      title: assessment.title,
-      maxVersion: "1.0.0",
-      includedByDefault: true,
-      availableVersions: [],
-    }));
+  const payableRequests = useMemo(
+    () => upgradeRequests.filter(isPayableRequest),
+    [upgradeRequests]
+  );
 
   const deliveryFeatures = useMemo(() => {
     const fromDelivery = entitlements?.deliveryFeatures ?? {};
@@ -151,13 +176,6 @@ export function ClientUpgradeContent() {
     }));
   }, [entitlements?.deliveryFeatures, entitlements?.platformFeatures]);
 
-  const activeDeliveryFeatureCount = deliveryFeatures.filter((feature) => feature.active).length;
-
-  const openRequests = useMemo(
-    () => upgradeRequests.filter((request) => request.billingStatus !== "paid"),
-    [upgradeRequests]
-  );
-
   const refreshAll = () => {
     void loadEntitlements(true);
     void loadUpgradeRequests(true);
@@ -165,12 +183,14 @@ export function ClientUpgradeContent() {
 
   useEffect(() => {
     const paid = searchParams.get("paid");
-    const sessionId = searchParams.get("session_id");
+    const sessionId =
+      searchParams.get("session_id") ?? searchParams.get("invoice_id");
     if (paid !== "1" || !sessionId) return;
 
     let cancelled = false;
     const confirmPayment = async () => {
       setConfirmingPayment(true);
+      setPaymentConfirmed(false);
       setError(null);
       try {
         const response = await fetch("/api/client/billing/confirm", {
@@ -180,20 +200,28 @@ export function ClientUpgradeContent() {
         });
         const body = await response.json().catch(() => ({}));
         if (!response.ok) {
-          throw new Error(body.error ?? "Payment could not be confirmed");
+          throw new Error(
+            typeof body.error === "string"
+              ? body.error
+              : "Payment could not be confirmed. If you were charged, refresh billing or contact CTRL support."
+          );
         }
-        const paidRequestId = (body as { data?: { billingRequestDocumentId?: string } }).data
-          ?.billingRequestDocumentId;
+        const paidRequestId = (
+          body as { data?: { billingRequestDocumentId?: string } }
+        ).data?.billingRequestDocumentId;
         if (paidRequestId) {
           markUpgradeRequestPaid(paidRequestId);
         }
         await Promise.all([loadEntitlements(true), loadUpgradeRequests(true)]);
         if (!cancelled) {
-          router.replace("/client-dashboard/upgrade-requests/");
+          setPaymentConfirmed(true);
+          router.replace("/client-dashboard/billing/");
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Payment could not be confirmed");
+          setError(
+            err instanceof Error ? err.message : "Payment could not be confirmed"
+          );
         }
       } finally {
         if (!cancelled) {
@@ -206,11 +234,19 @@ export function ClientUpgradeContent() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams, loadEntitlements, loadUpgradeRequests, markUpgradeRequestPaid, router, setError]);
+  }, [
+    searchParams,
+    loadEntitlements,
+    loadUpgradeRequests,
+    markUpgradeRequestPaid,
+    router,
+    setError,
+  ]);
 
   const payForUpgrade = async (billingRequestDocumentId: string) => {
     setPayingRequestId(billingRequestDocumentId);
     setError(null);
+    setPaymentConfirmed(false);
     try {
       const response = await fetch("/api/client/billing/checkout", {
         method: "POST",
@@ -219,243 +255,307 @@ export function ClientUpgradeContent() {
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(body.error ?? "Checkout could not be opened");
+        throw new Error(
+          typeof body.error === "string"
+            ? body.error
+            : "Checkout could not be opened"
+        );
       }
-      if (!body.data?.checkoutUrl) {
-        throw new Error("Checkout link is unavailable. Contact CTRL support if this persists.");
+      const data = body.data as
+        | {
+            checkoutUrl?: string | null;
+            fulfilled?: boolean;
+            stripeCheckoutSessionId?: string;
+            billingStatus?: string;
+          }
+        | undefined;
+      if (data?.fulfilled || data?.billingStatus === "paid") {
+        markUpgradeRequestPaid(billingRequestDocumentId);
+        await Promise.all([loadEntitlements(true), loadUpgradeRequests(true)]);
+        setPaymentConfirmed(true);
+        return;
       }
-      window.location.href = body.data.checkoutUrl as string;
+      if (!data?.checkoutUrl) {
+        throw new Error(
+          "Checkout link is unavailable. Contact CTRL support if this persists."
+        );
+      }
+      window.location.href = data.checkoutUrl;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Checkout could not be opened");
+      setError(
+        err instanceof Error ? err.message : "Checkout could not be opened"
+      );
     } finally {
       setPayingRequestId(null);
+      setPendingPayment(null);
     }
   };
 
+  const seatLimit = seats?.limit ?? contract?.seatCount ?? null;
+  const seatUsed = seats?.used ?? 0;
+  const seatAvailable = seats?.available ?? 0;
+
   return (
-    <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
+    <div className="relative mx-auto max-w-6xl space-y-10 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <ClientPageHeader
-        title="Upgrade requests"
-        description="Review your contract entitlements and submit one structured billing request for seats, delivery methods, or assessment add-ons."
+        title="Billing"
+        description="Contract, seat capacity, premium unlocks, and Stripe invoices for this organisation."
         notice={
-          error ? (
-            <ClientErrorBanner message={error} />
-          ) : activationInvoice ? (
+          confirmingPayment ? (
             <ClientErrorBanner tone="info">
+              Confirming your payment with Stripe…
+            </ClientErrorBanner>
+          ) : paymentConfirmed ? (
+            <ClientErrorBanner tone="info">
+              Payment confirmed. Your entitlements are up to date.
+            </ClientErrorBanner>
+          ) : activationInvoice ? (
+            <ClientErrorBanner tone="warning">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p>
-                  Your initial contract activation invoice is ready
+                  Your contract is ready — payment is required to activate it
                   {activationInvoice.amountDuePence
-                    ? ` (${formatMoney(activationInvoice.amountDuePence, activationInvoice.currency ?? "gbp")})`
+                    ? ` (${formatMoney(
+                        activationInvoice.amountDuePence,
+                        activationInvoice.currency ?? "gbp"
+                      )})`
                     : ""}
-                  . Pay now to start your one-year contract term and unlock the platform.
+                  . Pay now to start your one-year term.
                 </p>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="shrink-0"
+                  className="shrink-0 border-amber-600/40 bg-amber-600 text-white hover:bg-amber-700"
                   disabled={payingRequestId === activationInvoice.id}
-                  onClick={() => void payForUpgrade(activationInvoice.id)}
+                  onClick={() =>
+                    setPendingPayment(
+                      pendingPaymentFromRequest(activationInvoice)
+                    )
+                  }
                 >
                   {payingRequestId === activationInvoice.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : null}
-                  Pay activation invoice
+                  Pay now
                 </Button>
               </div>
             </ClientErrorBanner>
+          ) : entitlements?.contractActive === false ? (
+            <ClientErrorBanner tone="warning">
+              <p>
+                {entitlements?.lockState?.userMessage ??
+                  "Your organisation contract is inactive or payment is pending. Complete billing to restore full access."}
+              </p>
+            </ClientErrorBanner>
+          ) : error && !/not operational|no_active_contract/i.test(error) ? (
+            <ClientErrorBanner message={error} />
           ) : entitlementsLoading && !entitlements ? (
-            <ClientErrorBanner tone="info">Loading your entitlements catalogue…</ClientErrorBanner>
+            <ClientErrorBanner tone="info">
+              Loading your billing catalogue…
+            </ClientErrorBanner>
           ) : !entitlements && !entitlementsLoading ? (
             <ClientErrorBanner tone="error">
-              Entitlements could not be loaded. Refresh the page or contact CTRL support.
+              Billing could not be loaded. Refresh the page or contact CTRL
+              support.
             </ClientErrorBanner>
           ) : null
         }
         action={
-          <ClientRefreshButton
-            onClick={refreshAll}
-            loading={entitlementsLoading || upgradeRequestsLoading || confirmingPayment}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl font-semibold"
+              onClick={handleOpenBillingPortal}
+              disabled={billingPortalLoading}
+            >
+              {billingPortalLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <CreditCard className="mr-2 h-4 w-4" aria-hidden="true" />
+              )}
+              Stripe portal
+              <ArrowUpRight className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            </Button>
+            <ClientRefreshButton
+              onClick={refreshAll}
+              loading={
+                entitlementsLoading ||
+                upgradeRequestsLoading ||
+                confirmingPayment
+              }
+            />
+          </div>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <PortalStatTile
-          label="Contracted seats"
-          value={contract?.seatCount ?? seats?.limit ?? "…"}
-          detail={`${seats?.used ?? 0} currently in use`}
-          icon={Users}
-        />
-        <PortalStatTile
-          label="Delivery methods"
-          value={`${activeDeliveryFeatureCount}/${CLIENT_DELIVERY_FEATURES.length}`}
-          detail="Remote and hybrid delivery on your account"
-          icon={CheckCircle2}
-        />
-        <PortalStatTile
-          label="Open upgrade requests"
-          value={openRequests.length}
-          detail="Awaiting CTRL review"
-          icon={Clock3}
-        />
-      </div>
-
-      <div className="space-y-8">
-        <PortalPanel>
-          <div className="space-y-6 p-6">
-            <PortalSectionHeader
-              eyebrow="Your plan"
-              title="Current entitlements"
-              description="Live contract limits and platform access for this client account."
-            />
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className={cn(portalPanelClass, "p-4 flex flex-col justify-between")}>
-                <div>
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <CalendarRange className="h-4 w-4" aria-hidden="true" />
-                    Contract period
-                  </div>
-                  <p className="mt-3 text-sm font-semibold text-foreground">
-                    {contract?.startDate && contract?.endDate
-                      ? `${formatDate(contract.startDate)} – ${formatDate(contract.endDate)}`
-                      : "Pending activation — term starts on payment"}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Billing: {entitlements?.contractActive ? "Active" : "Inactive or payment pending"} ·{" "}
-                    {entitlements?.contract?.paymentStatus?.replace(/_/g, " ") ?? "not required"}
-                    {entitlements?.contract?.daysUntilExpiry != null ? (
-                      <>
-                        {" "}
-                        ·{" "}
-                        {entitlements.contract.daysUntilExpiry <= 30 ? (
-                          <span className="font-medium text-foreground">
-                            {entitlements.contract.daysUntilExpiry} days until renewal
-                          </span>
-                        ) : (
-                          <span>{entitlements.contract.daysUntilExpiry} days remaining</span>
-                        )}
-                      </>
-                    ) : null}
-                  </p>
-                </div>
-                {contract && (
-                  <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="auto-renew" className="text-xs font-semibold text-foreground">
-                        Auto-renew contract
-                      </Label>
-                      <p className="text-[10px] text-muted-foreground">
-                        When enabled, we&apos;ll email you 30 days before your contract ends with a
-                        link to set up Direct Debit for the next year. You won&apos;t be charged
-                        until your renewal starts.
-                      </p>
-                    </div>
-                    <Switch
-                      id="auto-renew"
-                      checked={entitlements?.client?.autoRenew ?? false}
-                      onCheckedChange={(checked) => void updateAutoRenew(checked)}
-                      disabled={autoRenewBusy}
-                    />
-                  </div>
-                )}
-              </div>
-              <div className={cn(portalPanelClass, "p-4")}>
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <Users className="h-4 w-4" aria-hidden="true" />
-                  Seat usage
-                </div>
-                <p className="mt-3 font-display text-2xl font-semibold text-foreground">
-                  {seats?.used ?? 0}/{contract?.seatCount ?? seats?.limit ?? "—"}
+      {/* Contract strip — one composition */}
+      <PortalPanel className="overflow-hidden">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="space-y-5 border-b border-border p-6 lg:border-b-0 lg:border-r">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className={portalLabelClass}>Contract</p>
+                <p className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
+                  {contract?.startDate && contract?.endDate
+                    ? `${formatDate(contract.startDate)} – ${formatDate(contract.endDate)}`
+                    : "Pending activation"}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {seats?.available ?? 0} seat{(seats?.available ?? 0) === 1 ? "" : "s"} available
+                <p className="mt-1.5 text-sm text-muted-foreground">
+                  {entitlements?.contractActive ? "Active" : "Inactive"}
+                  {contract?.tier
+                    ? ` · ${String(contract.tier).replace(/^\w/, (c) =>
+                        c.toUpperCase()
+                      )}`
+                    : ""}
+                  {entitlements?.contract?.daysUntilExpiry != null
+                    ? entitlements.contract.daysUntilExpiry <= 30
+                      ? ` · ${entitlements.contract.daysUntilExpiry} days until renewal`
+                      : ` · ${entitlements.contract.daysUntilExpiry} days remaining`
+                    : null}
                 </p>
               </div>
+              <CalendarRange
+                className="mt-1 h-5 w-5 shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              />
             </div>
 
-            <ClientDataRetentionNotice entitlements={entitlements} />
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Delivery methods
-                </p>
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {deliveryFeatures.map((feature) => (
-                    <li
-                      key={feature.key}
-                      className={cn(portalPanelClass, "flex items-center justify-between gap-3 px-4 py-3")}
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{feature.label}</p>
-                        <p className="text-xs text-muted-foreground">{feature.group}</p>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "shrink-0 rounded-lg text-[10px] font-semibold",
-                          feature.active ? portalBadgeClass : "text-muted-foreground"
-                        )}
-                      >
-                        {feature.active ? "Active" : "Not included"}
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Core assessments
-                </p>
-                <ul className="grid gap-3 sm:grid-cols-2">
-                  {defaultAssessments.map((assessment) => (
-                    <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">Included on platform</p>
-                        </div>
-                        <Badge variant="outline" className="shrink-0 rounded-lg text-[10px] font-semibold">
-                          v{assessment.maxVersion}
-                        </Badge>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {deliveryFeatures.map((feature) => (
+                <Badge
+                  key={feature.key}
+                  variant="outline"
+                  className={cn(
+                    "rounded-md text-[10px] font-semibold",
+                    feature.active ? portalBadgeClass : "text-muted-foreground"
+                  )}
+                >
+                  {feature.label}
+                  {feature.active ? "" : " · off"}
+                </Badge>
+              ))}
             </div>
 
-            {(entitlements?.additionalAssessments?.length ?? 0) > 0 ? (
-              <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Add-on assessments active
-                </p>
-                <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {(entitlements?.additionalAssessments ?? []).map((assessment) => (
-                    <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
-                        <Badge
-                          variant="outline"
-                          className={cn("shrink-0 rounded-lg text-[10px] font-semibold", portalBadgeClass)}
-                        >
-                          v{assessment.maxVersion}
-                        </Badge>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+            {contract ? (
+              <div className="flex items-center justify-between gap-4 border-t border-border/60 pt-4">
+                <div className="min-w-0 space-y-0.5">
+                  <Label
+                    htmlFor="auto-renew"
+                    className="text-sm font-semibold text-foreground"
+                  >
+                    Auto-renew
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Email reminder 30 days before term end — you are not charged
+                    until renewal starts.
+                  </p>
+                </div>
+                <Switch
+                  id="auto-renew"
+                  checked={entitlements?.client?.autoRenew ?? false}
+                  onCheckedChange={(checked) => void updateAutoRenew(checked)}
+                  disabled={autoRenewBusy}
+                />
               </div>
             ) : null}
           </div>
-        </PortalPanel>
 
-        {entitlements ? (
+          <div className="flex flex-col justify-between gap-6 bg-muted/15 p-6">
+            <div>
+              <p className={portalLabelClass}>Hiring manager seats</p>
+              <p className="mt-2 font-display text-4xl font-semibold tabular-nums tracking-tight text-foreground">
+                {seatUsed}
+                <span className="text-2xl text-muted-foreground">
+                  /{seatLimit ?? "—"}
+                </span>
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {seatAvailable} available
+                {contract?.seatCount != null &&
+                seats?.limit != null &&
+                contract.seatCount !== seats.limit
+                  ? ` · contract ${contract.seatCount}`
+                  : ""}
+              </p>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Seats are one-off unlocks. Increase capacity in the change builder
+              below. Stripe portal holds Direct Debit details and invoice PDFs.
+            </p>
+          </div>
+        </div>
+      </PortalPanel>
+
+      {/* Actionable payments */}
+      {payableRequests.length > 0 ? (
+        <section className="space-y-3">
+          <PortalSectionHeader
+            eyebrow="Action needed"
+            title="Invoices ready to pay"
+            description="Complete these to unlock the staged entitlements."
+          />
+          <ul className="space-y-2">
+            {payableRequests.map((request) => (
+              <li
+                key={request.id}
+                className={cn(
+                  portalPanelClass,
+                  "flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                )}
+              >
+                <div className="min-w-0 space-y-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="rounded-md text-[10px] font-semibold"
+                    >
+                      {UPGRADE_TYPE_LABELS[request.upgradeType]}
+                    </Badge>
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      {request.requestNumber || request.ticketNumber}
+                    </span>
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {request.subject}
+                  </p>
+                  {request.amountDuePence ? (
+                    <p className="text-xs text-muted-foreground">
+                      {formatMoney(
+                        request.amountDuePence,
+                        request.currency ?? "gbp"
+                      )}
+                    </p>
+                  ) : null}
+                </div>
+                <Button
+                  size="sm"
+                  className="shrink-0 rounded-xl"
+                  disabled={payingRequestId === request.id}
+                  onClick={() =>
+                    setPendingPayment(pendingPaymentFromRequest(request))
+                  }
+                >
+                  {payingRequestId === request.id ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Pay now
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* Change builder */}
+      {entitlements ? (
+        <section className="space-y-3">
+          <PortalSectionHeader
+            eyebrow="Changes"
+            title="Stage an upgrade"
+            description="Seats, delivery methods, and premium assessments — one billing request when you submit."
+          />
           <PortalPanel>
-            <div className="p-6">
+            <div className="p-5 sm:p-6">
               <ClientUpgradeBuilder
                 entitlements={entitlements}
                 canRequestUpgrades={canRequestUpgrades}
@@ -466,146 +566,122 @@ export function ClientUpgradeContent() {
               />
             </div>
           </PortalPanel>
-        ) : null}
+        </section>
+      ) : null}
 
-        {entitlements && currentSeats > minimumContractedSeats ? (
-          <PortalPanel>
-            <div className="p-6">
-              <ClientSeatDecreasePanel
-                currentSeats={currentSeats}
-                minimumContractedSeats={minimumContractedSeats}
-                seatSlots={seatSlots}
-                canRequestUpgrades={canRequestUpgrades}
-                submitting={submittingUpgrade}
-                onSubmit={async (payload) => {
-                  await submitUpgradeRequest({ payload });
-                }}
-              />
-            </div>
-          </PortalPanel>
-        ) : null}
+      {/* Request ledger */}
+      <section id="upgrade-request-history" className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <PortalSectionHeader
+            eyebrow="CTRL history"
+            title="Upgrade requests"
+            description="Request status in CTRL — not the Stripe invoice list. Open Stripe portal for PDFs and Direct Debit."
+          />
+        </div>
 
         <PortalPanel>
-          <div className="p-6 space-y-4">
-            <PortalSectionHeader
-              eyebrow="Billing"
-              title="Payment methods and invoices"
-              description="Update your Direct Debit details or download past invoices. To change seats, assessments, or delivery features, use the upgrade builder above — CTRL will send a pro-rated invoice aligned to your contract."
-            />
-            <div className="pt-2">
-              <Button
-                variant="outline"
-                onClick={handleOpenBillingPortal}
-                disabled={billingPortalLoading}
-                className="rounded-xl font-semibold px-6 py-2"
-              >
-                {billingPortalLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Opening billing portal…
-                  </>
-                ) : (
-                  <>
-                    Payment methods & invoices
-                    <ArrowUpRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
+          <div className="space-y-1 p-2 sm:p-3">
+            {upgradeRequestsLoading && upgradeRequests.length === 0 ? (
+              <p className="px-3 py-6 text-sm text-muted-foreground">
+                Loading requests…
+              </p>
+            ) : null}
+
+            {!upgradeRequestsLoading && upgradeRequests.length === 0 ? (
+              <PortalEmptyState
+                icon={Receipt}
+                title="No upgrade requests yet"
+                description="Stage seats or premium assessments above to create your first billing request."
+              />
+            ) : null}
+
+            {upgradeRequests.length > 0 ? (
+              <ul className="divide-y divide-border/70">
+                {upgradeRequests.map((request) => (
+                  <li
+                    key={request.id}
+                    className="flex flex-col gap-3 px-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="rounded-md text-[10px] font-semibold"
+                        >
+                          {UPGRADE_TYPE_LABELS[request.upgradeType]}
+                        </Badge>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "rounded-md text-[10px] font-semibold",
+                            portalBadgeClass
+                          )}
+                        >
+                          {billingStatusLabel(request)}
+                        </Badge>
+                        <span className="font-mono text-[11px] text-muted-foreground">
+                          {request.requestNumber || request.ticketNumber}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-foreground">
+                        {request.subject}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Submitted {formatDate(request.createdAt)}
+                        {isPayableRequest(request) && request.amountDuePence
+                          ? ` · ${formatMoney(
+                              request.amountDuePence,
+                              request.currency ?? "gbp"
+                            )}`
+                          : ""}
+                      </p>
+                    </div>
+                    {isPayableRequest(request) ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0 rounded-xl"
+                        disabled={payingRequestId === request.id}
+                        onClick={() =>
+                          setPendingPayment(pendingPaymentFromRequest(request))
+                        }
+                      >
+                        {payingRequestId === request.id ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        Pay now
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </PortalPanel>
 
-        <div id="upgrade-request-history">
-          <PortalPanel>
-            <div className="space-y-5 p-6">
-              <PortalSectionHeader
-                eyebrow="History"
-                title="Your upgrade requests"
-                description="Structured billing requests submitted from this portal. These are separate from general support messages."
-              />
+        <p className={cn(portalPanelNestedClass, "px-4 py-3 text-xs text-muted-foreground")}>
+          Need a past invoice PDF or to update bank details? Use{" "}
+          <button
+            type="button"
+            className="font-semibold text-foreground underline-offset-2 hover:underline"
+            onClick={() => void handleOpenBillingPortal()}
+          >
+            Stripe portal
+          </button>
+          .
+        </p>
+      </section>
 
-              {upgradeRequestsLoading && upgradeRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Loading upgrade requests…</p>
-              ) : null}
+      <ClientDataRetentionNotice entitlements={entitlements} />
 
-              {!upgradeRequestsLoading && upgradeRequests.length === 0 ? (
-                <PortalEmptyState
-                  icon={TrendingUp}
-                  title="No upgrade requests yet"
-                  description="Use the upgrade builder above to stage changes and submit one billing request."
-                />
-              ) : null}
-
-              {upgradeRequests.length > 0 ? (
-                <ul className="space-y-3">
-                  {upgradeRequests.map((request) => (
-                    <li key={request.id} className={cn(portalPanelClass, "p-4")}>
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0 space-y-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline" className="rounded-full text-[10px] font-semibold">
-                              {UPGRADE_TYPE_LABELS[request.upgradeType]}
-                            </Badge>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "rounded-full text-[10px] font-semibold",
-                                BILLING_STATUS_CLASSES[request.billingStatus ?? "requested"] ??
-                                  BILLING_STATUS_CLASSES.requested
-                              )}
-                            >
-                              {billingStatusLabel(request)}
-                            </Badge>
-                          </div>
-                          <p className="font-mono text-xs font-semibold text-muted-foreground">
-                            {request.requestNumber || request.ticketNumber}
-                          </p>
-                          <p className="text-sm font-semibold text-foreground">{request.subject}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Submitted {formatDate(request.createdAt)}
-                          </p>
-                          {request.billingStatus === "invoice_sent" &&
-                          request.upgradeType !== "seat_decrease" ? (
-                            <p className="text-xs font-medium text-muted-foreground">
-                              Invoice ready
-                              {request.amountDuePence
-                                ? ` · ${formatMoney(request.amountDuePence, request.currency ?? "gbp")}`
-                                : ""}
-                            </p>
-                          ) : null}
-                        </div>
-                        {request.billingStatus === "invoice_sent" &&
-                        request.upgradeType !== "seat_decrease" ? (
-                          <Button
-                            size="sm"
-                            className="rounded-xl gap-2"
-                            disabled={payingRequestId === request.id}
-                            onClick={() => void payForUpgrade(request.id)}
-                          >
-                            {payingRequestId === request.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : null}
-                            Pay now
-                          </Button>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-
-              <div className="flex justify-end border-t border-border/50 pt-4">
-                <Button asChild variant="outline" className="rounded-xl gap-2">
-                  <Link href="#upgrade-request-history">
-                    View all requests
-                    <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          </PortalPanel>
-        </div>
-      </div>
+      <ClientPaymentConfirmDialog
+        payment={pendingPayment}
+        busy={payingRequestId !== null}
+        onCancel={() => setPendingPayment(null)}
+        onConfirm={() => {
+          if (pendingPayment) void payForUpgrade(pendingPayment.id);
+        }}
+      />
     </div>
   );
 }

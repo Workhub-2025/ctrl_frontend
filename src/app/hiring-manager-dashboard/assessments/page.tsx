@@ -19,7 +19,7 @@ export default async function HiringManagerAssessmentsPage() {
         eyebrow="Assessment library"
         title="Assessments"
         description="Browse assessment modules, duration, measured skills, and operational relevance."
-        icon={BookOpenCheck}
+        icon={<BookOpenCheck className="h-5 w-5" aria-hidden="true" />}
         notice={
           error ? (
             <p className={cn(portalAlertErrorClass, "max-w-3xl text-xs leading-5")}>

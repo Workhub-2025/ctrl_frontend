@@ -22,7 +22,7 @@ export function ClientErrorBanner({
 }: {
   message?: string;
   children?: React.ReactNode;
-  tone?: "error" | "info";
+  tone?: "error" | "warning" | "info";
 }) {
   return <PortalAlert tone={tone}>{message ?? children}</PortalAlert>;
 }

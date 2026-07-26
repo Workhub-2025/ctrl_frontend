@@ -38,11 +38,12 @@ describe("Firebase admin tenancy BFF", () => {
     ).toContain("/v1/assessment-releases");
   });
 
-  it("keeps analytics honest on Firebase without Strapi 503", () => {
+  it("builds Firebase analytics in the admin page shape", () => {
     const source = route("../app/api/admin/analytics/route.ts");
     expect(source).toContain("requireAdminDualAccess");
-    expect(source).toContain("FIREBASE_PENDING_ANALYTICS");
+    expect(source).toContain("buildFirebaseAdminRevenueAnalytics");
     expect(source).toContain("isFirebaseAdminAuth");
+    expect(source).not.toContain("FIREBASE_PENDING_ANALYTICS");
   });
 
   it("dual-paths seat slots, export, and downgrade helpers", () => {

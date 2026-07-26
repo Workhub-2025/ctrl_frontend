@@ -11,7 +11,7 @@ export default function AccessibilityStatementPage() {
     <LegalPageShell
       title="Accessibility Statement"
       description={`${UK_LEGAL.tradingName}'s approach to inclusive assessment delivery`}
-      icon={Accessibility}
+      icon={<Accessibility className="h-8 w-8" aria-hidden="true" />}
       iconClassName="bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300"
       version="1.1"
     >

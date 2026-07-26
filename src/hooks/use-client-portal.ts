@@ -17,6 +17,7 @@ import type { BackendClientEntitlements } from "@/services/client-upgrade.servic
 import {
   fetchPortalJson,
   invalidatePortalCache,
+  isCommercialLockMessage,
   PORTAL_CACHE_TTL_MS,
 } from "@/lib/portal-fetch-cache";
 import { getClientSharedCandidateReopenBffPath, getClientSharedCandidateStatusBffPath } from "@/lib/client-shared-candidate-routes";
@@ -98,7 +99,7 @@ const EMPTY_OVERVIEW: ClientOverviewData = {
 };
 
 export function invalidateClientOverviewCache() {
-  invalidatePortalCache("client:overview");
+  invalidatePortalCache("client:dashboard");
 }
 
 function applyOverview(state: ClientOverviewData) {
@@ -120,8 +121,8 @@ function parseSeatNumber(value: unknown): number | null {
 
 async function fetchOverviewCached(force = false) {
   return fetchPortalJson<ClientOverviewData>({
-    key: "client:overview",
-    url: "/api/client/overview",
+    key: "client:dashboard",
+    url: "/api/client/dashboard",
     fallback: EMPTY_OVERVIEW,
     force,
     allowEmpty: true,
@@ -216,7 +217,14 @@ export function useClientPortalState(): ClientPortalContextValue {
       setContract(next.contract);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Client dashboard could not be loaded");
+      const message =
+        err instanceof Error ? err.message : "Client dashboard could not be loaded";
+      // Unpaid activation locks operational APIs — show payment CTA, not a red error.
+      if (isCommercialLockMessage(message)) {
+        setError(null);
+      } else {
+        setError(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -302,9 +310,7 @@ export function useClientPortalState(): ClientPortalContextValue {
 
   useEffect(() => {
     void loadOverview(false);
-    void loadEntitlements(false);
-    void loadUpgradeRequests(false);
-  }, [loadEntitlements, loadOverview, loadUpgradeRequests]);
+  }, [loadOverview]);
 
   const reviewCampaign = async (campaignId: string, decision: "approved" | "rejected") => {
     setReviewingId(campaignId);

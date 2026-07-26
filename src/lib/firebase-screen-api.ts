@@ -34,6 +34,27 @@ export type FirebaseClientDashboard = Readonly<{
   releasedAssignmentCount: number;
 }>;
 
+export type FirebaseClientSharedCandidate = Readonly<{
+  documentId: string;
+  reviewStatus:
+    | "pending_review"
+    | "reviewed"
+    | "progressed"
+    | "hired"
+    | "rejected";
+  sharedAt: string;
+  reviewStatusChangedAt: string;
+  candidateName: string;
+  candidateEmail: string;
+  hiringManagerName: string;
+  campaignName: string;
+  role: string;
+}>;
+
+export type FirebaseClientSharedCandidates = Readonly<{
+  items: FirebaseClientSharedCandidate[];
+}>;
+
 export function createFirebaseScreenApi(
   domainApi: FirebaseDomainRequester,
   firebaseSessionCookie: string,
@@ -48,6 +69,12 @@ export function createFirebaseScreenApi(
     getClientDashboard() {
       return domainApi.request<FirebaseClientDashboard>({
         path: "/v1/screens/client-dashboard",
+        firebaseSessionCookie,
+      });
+    },
+    getClientSharedCandidates() {
+      return domainApi.request<FirebaseClientSharedCandidates>({
+        path: "/v1/screens/client-shared-candidates",
         firebaseSessionCookie,
       });
     },

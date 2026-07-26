@@ -5,6 +5,7 @@ import type {
   ClientUpgradeBundleLineItem,
   ClientUpgradeRequestPayload,
 } from "@/lib/client/entitlements";
+import { stripeReturnAppUrl } from "@/lib/public-app-urls";
 import {
   monthlyAssessmentAddonPence,
   monthlySeatPricePence,
@@ -26,8 +27,9 @@ export type BillingRequestCheckoutRow = {
   amountDuePence?: number;
 };
 
+/** @deprecated Prefer stripeReturnAppUrl — kept for existing imports. */
 export function getStripeAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+  return stripeReturnAppUrl();
 }
 
 function sumLineItems(lineItems: ClientUpgradeBundleLineItem[]) {
@@ -289,8 +291,8 @@ export async function createBillingCheckoutSession(
     mode: usesSubscription ? "subscription" : "payment",
     ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
     ...(usesSubscription ? { subscription_data: buildStripeSubscriptionCheckoutData() } : {}),
-    success_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${getStripeAppUrl()}/client-dashboard/upgrade-requests/?cancelled=1`,
+    success_url: `${getStripeAppUrl()}/client-dashboard/billing/?paid=1&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${getStripeAppUrl()}/client-dashboard/billing/?cancelled=1`,
     line_items: buildStripeLineItems(billingRequest, payload, pricing, currency),
     metadata: {
       requestKind,

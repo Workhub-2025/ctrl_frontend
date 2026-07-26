@@ -11,7 +11,7 @@ export default function TermsConditionsPage() {
     <LegalPageShell
       title="Platform Terms of Use"
       description="The rules for accessing and using the CTRL Assessment Platform"
-      icon={Scale}
+      icon={<Scale className="h-8 w-8" aria-hidden="true" />}
       version={UK_LEGAL.termsVersion}
     >
       <section>

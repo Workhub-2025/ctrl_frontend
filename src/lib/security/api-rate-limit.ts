@@ -236,3 +236,44 @@ export async function rejectRateLimitedMutation(
     },
   );
 }
+
+/** Soft GET limits for heavy portal screen aggregates (per user + org). */
+export async function rejectRateLimitedPortalRead(
+  request: Request,
+  {
+    scope,
+    actorId,
+    organizationId,
+    limit = 30,
+    windowMs = 60_000,
+  }: {
+    scope: string;
+    actorId?: string | number | null;
+    organizationId?: string | null;
+    limit?: number;
+    windowMs?: number;
+  },
+) {
+  const identity = actorId ? `user:${String(actorId)}` : `ip:${extractClientIp(request)}`;
+  const orgScope = organizationId ? `:org:${organizationId}` : "";
+  const result = await applyRateLimit({
+    key: `portal-read:${scope}:${identity}${orgScope}`,
+    limit,
+    windowMs,
+  });
+
+  if (result.allowed) return null;
+
+  const { NextResponse } = await import("next/server");
+  return NextResponse.json(
+    { error: "Too many requests. Please wait and try again." },
+    {
+      status: 429,
+      headers: {
+        "Retry-After": String(result.retryAfterSeconds),
+        "X-RateLimit-Limit": String(result.limit),
+        "X-RateLimit-Remaining": "0",
+      },
+    },
+  );
+}

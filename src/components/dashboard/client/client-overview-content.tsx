@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ClipboardCheck,
   KeyRound,
@@ -19,6 +19,10 @@ import { useClientPortal } from "@/context/client-portal-provider";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 import { PortalDecisionLedger } from "@/components/dashboard/portal/portal-ui";
+import {
+  ClientPaymentConfirmDialog,
+  type PendingPayment,
+} from "@/components/dashboard/client/client-payment-confirm-dialog";
 
 export function ClientOverviewContent() {
   const {
@@ -30,10 +34,19 @@ export function ClientOverviewContent() {
     pendingCampaigns,
     pendingSharedCandidates,
     loadOverview,
+    loadEntitlements,
     loadUpgradeRequests,
   } = useClientPortal();
 
+  useEffect(() => {
+    void loadEntitlements(false);
+    void loadUpgradeRequests(false);
+  }, [loadEntitlements, loadUpgradeRequests]);
+
   const [payingRequestId, setPayingRequestId] = useState<string | null>(null);
+  const [pendingPayment, setPendingPayment] = useState<PendingPayment | null>(
+    null
+  );
   const [payError, setPayError] = useState<string | null>(null);
 
   const contractInactive = entitlements?.contractActive === false;
@@ -77,6 +90,10 @@ export function ClientOverviewContent() {
       if (!response.ok) {
         throw new Error(body.error ?? "Checkout could not be opened");
       }
+      if (body.data?.fulfilled || body.data?.billingStatus === "paid") {
+        window.location.href = "/client-dashboard/billing/";
+        return;
+      }
       if (!body.data?.checkoutUrl) {
         throw new Error("Checkout link is unavailable. Contact CTRL support if this persists.");
       }
@@ -85,6 +102,7 @@ export function ClientOverviewContent() {
       setPayError(err instanceof Error ? err.message : "Checkout could not be opened");
     } finally {
       setPayingRequestId(null);
+      setPendingPayment(null);
     }
   };
 
@@ -94,26 +112,30 @@ export function ClientOverviewContent() {
         title={summary?.client?.name ?? "Overview"}
         description="Review hiring-manager capacity, campaign approvals, and candidate progression from one place."
         notice={
-          error ? (
-            <ClientErrorBanner tone="error">{error}</ClientErrorBanner>
-          ) : payError ? (
+          payError ? (
             <ClientErrorBanner tone="error">{payError}</ClientErrorBanner>
           ) : activationInvoice ? (
-            <ClientErrorBanner tone="info">
+            <ClientErrorBanner tone="warning">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p>
-                  Your initial contract activation invoice is ready
+                  Your contract is ready — payment is required to activate it
                   {activationInvoice.amountDuePence
                     ? ` (${formatMoney(activationInvoice.amountDuePence, activationInvoice.currency ?? "gbp")})`
                     : ""}
-                  . Pay now to start your one-year contract term.
+                  . Pay now to start your one-year term and unlock the platform.
                 </p>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="shrink-0 gap-2"
+                  className="shrink-0 gap-2 border-amber-600/40 bg-amber-600 text-white hover:bg-amber-700"
                   disabled={payingRequestId === activationInvoice.id}
-                  onClick={() => void payForActivation(activationInvoice.id)}
+                  onClick={() =>
+                    setPendingPayment({
+                      id: activationInvoice.id,
+                      subject: activationInvoice.subject,
+                      amountDuePence: activationInvoice.amountDuePence ?? null,
+                      currency: activationInvoice.currency ?? "gbp",
+                    })
+                  }
                 >
                   {payingRequestId === activationInvoice.id ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -123,23 +145,26 @@ export function ClientOverviewContent() {
               </div>
             </ClientErrorBanner>
           ) : contractInactive ? (
-            <ClientErrorBanner tone="info">
+            <ClientErrorBanner tone="warning">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p>
                   {entitlements?.lockState?.userMessage ??
                     "Your organisation contract is inactive or payment is pending. Complete billing to restore full access."}
                 </p>
-                <Button asChild size="sm" variant="outline" className="shrink-0">
-                  <Link href="/client-dashboard/upgrade-requests/">View upgrade requests</Link>
+                <Button asChild size="sm" className="shrink-0 border-amber-600/40 bg-amber-600 text-white hover:bg-amber-700">
+                  <Link href="/client-dashboard/billing/">Pay now</Link>
                 </Button>
               </div>
             </ClientErrorBanner>
+          ) : error ? (
+            <ClientErrorBanner tone="error">{error}</ClientErrorBanner>
           ) : null
         }
         action={
           <ClientRefreshButton
             onClick={() => {
               void loadOverview(true);
+              void loadEntitlements(true);
               void loadUpgradeRequests(true);
             }}
             loading={loading}
@@ -189,6 +214,15 @@ export function ClientOverviewContent() {
           count: item.count,
         }))}
         emptyDescription="Campaign reviews and candidate reviews are up to date."
+      />
+
+      <ClientPaymentConfirmDialog
+        payment={pendingPayment}
+        busy={payingRequestId !== null}
+        onCancel={() => setPendingPayment(null)}
+        onConfirm={() => {
+          if (pendingPayment) void payForActivation(pendingPayment.id);
+        }}
       />
     </div>
   );

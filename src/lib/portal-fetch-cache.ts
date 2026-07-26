@@ -46,6 +46,34 @@ function isThrottled(entry: CacheEntry<unknown> | undefined, minRefetchMs: numbe
   return Boolean(entry && Date.now() - entry.lastFetchAttemptAt < minRefetchMs);
 }
 
+function parseRetryAfterSeconds(response: Response): number | null {
+  const header = response.headers.get("Retry-After");
+  if (!header) return null;
+  const seconds = Number.parseInt(header, 10);
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return seconds;
+  }
+  const retryAt = Date.parse(header);
+  if (Number.isFinite(retryAt)) {
+    return Math.max(1, Math.ceil((retryAt - Date.now()) / 1000));
+  }
+  return null;
+}
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+/** True when the org is locked pending activation/payment — not a hard failure. */
+export function isCommercialLockMessage(message: string | null | undefined): boolean {
+  if (!message) return false;
+  return /not operational|no_active_contract|contract_not_paid|billing_past_due|billing_unpaid|organization_suspended|contract_outside_term/i.test(
+    message,
+  );
+}
+
 /** Soften noisy upstream errors for optional portal data. */
 export function normalizePortalError(message: string, allowEmpty = false) {
   const trimmed = message.trim();
@@ -55,8 +83,18 @@ export function normalizePortalError(message: string, allowEmpty = false) {
     return "";
   }
 
+  // Unpaid / inactive contracts block operational APIs by design — callers
+  // should show a payment CTA instead of a hard error banner.
+  if (allowEmpty && isCommercialLockMessage(trimmed)) {
+    return "";
+  }
+
   if (/not found/i.test(trimmed)) {
     return "This information is not available yet.";
+  }
+
+  if (/too many requests|429/i.test(trimmed)) {
+    return "Too many requests. Please wait a moment and try again.";
   }
 
   return trimmed;
@@ -87,6 +125,15 @@ async function readPortalResponse<T>(
     if (allowEmpty && (response.status === 404 || /not found/i.test(record.error ?? ""))) {
       return fallback;
     }
+    if (response.status === 429) {
+      const retryAfterSeconds = parseRetryAfterSeconds(response);
+      const suffix = retryAfterSeconds
+        ? ` Try again in about ${retryAfterSeconds} second${retryAfterSeconds === 1 ? "" : "s"}.`
+        : "";
+      throw new Error(
+        (record.error || "Too many requests. Please wait and try again.") + suffix,
+      );
+    }
     throw new Error(record.error || `Request failed (${response.status})`);
   }
 
@@ -99,6 +146,24 @@ async function readPortalResponse<T>(
   }
 
   return record.data as T;
+}
+
+async function fetchPortalResponse<T>(
+  url: string,
+  fallback: T,
+  allowEmpty: boolean,
+  transform?: (body: unknown) => T,
+): Promise<T> {
+  const response = await fetch(url, { cache: "no-store" });
+  if (response.status !== 429) {
+    return readPortalResponse(response, fallback, allowEmpty, transform);
+  }
+
+  const retryAfterSeconds = parseRetryAfterSeconds(response) ?? 5;
+  await sleep(retryAfterSeconds * 1000);
+
+  const retryResponse = await fetch(url, { cache: "no-store" });
+  return readPortalResponse(retryResponse, fallback, allowEmpty, transform);
 }
 
 export async function fetchPortalJson<T>(options: PortalFetchOptions<T>): Promise<T> {
@@ -116,6 +181,9 @@ export async function fetchPortalJson<T>(options: PortalFetchOptions<T>): Promis
   const existing = stores.get(key) as CacheEntry<T> | undefined;
 
   if (force) {
+    if (isThrottled(existing, minRefetchMs) && existing?.data !== undefined) {
+      return existing.data as T;
+    }
     stores.delete(key);
   } else if (isFresh(existing, ttlMs)) {
     return existing!.data as T;
@@ -126,8 +194,7 @@ export async function fetchPortalJson<T>(options: PortalFetchOptions<T>): Promis
   }
 
   const attemptAt = Date.now();
-  const promise = fetch(url, { cache: "no-store" })
-    .then((response) => readPortalResponse(response, fallback, allowEmpty, transform))
+  const promise = fetchPortalResponse(url, fallback, allowEmpty, transform)
     .then((data) => {
       stores.set(key, {
         data,

@@ -5,11 +5,12 @@ import { BffAuthError } from "@/lib/auth/bff-route-errors";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 
 export type FirebaseBillingCheckoutResult = Readonly<{
-  checkoutUrl: string;
+  checkoutUrl: string | null;
   stripeCheckoutSessionId: string;
   billingStatus: string;
   amountDuePence: number | null;
   currency: string;
+  fulfilled?: boolean;
 }>;
 
 export type FirebaseBillingConfirmResult = Readonly<{
@@ -97,24 +98,105 @@ const PLATFORM_PRICE_KEYS = {
   contractYearly: (tier: string) => `platform.contract.${tier}.yearly`,
 } as const;
 
+const DEFAULT_CONTRACT_TIER_META: Record<
+  "essential" | "professional" | "founder",
+  {
+    label: string;
+    includedSeatCount: number;
+    deliveryRemoteIncluded: boolean;
+    deliveryHybridIncluded: boolean;
+  }
+> = {
+  essential: {
+    label: "Essential",
+    includedSeatCount: 1,
+    deliveryRemoteIncluded: false,
+    deliveryHybridIncluded: false,
+  },
+  professional: {
+    label: "Professional",
+    includedSeatCount: 3,
+    deliveryRemoteIncluded: true,
+    deliveryHybridIncluded: true,
+  },
+  founder: {
+    label: "Founder",
+    includedSeatCount: 3,
+    deliveryRemoteIncluded: true,
+    deliveryHybridIncluded: true,
+  },
+};
+
+function readBooleanMeta(
+  metadata: Record<string, string | number | boolean> | undefined,
+  key: string,
+  fallback: boolean,
+): boolean {
+  const value = metadata?.[key];
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function newestPriceVersion(): string {
+  // Immutable price rows — each save must mint a unique version id.
+  return `${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`.slice(0, 40);
+}
+
 export function platformPricingFromFirebasePrices(
   prices: readonly FirebasePriceRow[],
 ): Record<string, unknown> {
-  const byKey = new Map(prices.map((price) => [price.priceKey, price]));
+  // Prefer the newest version per key (domain list already sorts newest-first,
+  // but keep the Map overwrite order defensive).
+  const byKey = new Map<string, FirebasePriceRow>();
+  for (const price of prices) {
+    if (!byKey.has(price.priceKey)) {
+      byKey.set(price.priceKey, price);
+    }
+  }
   const base = byKey.get(PLATFORM_PRICE_KEYS.baseYearly);
   const featurePrices: Record<string, number> = {};
-  for (const price of prices) {
+  for (const price of byKey.values()) {
     if (price.priceKey.startsWith("platform.feature.")) {
       featurePrices[price.priceKey.slice("platform.feature.".length)] =
         price.amountPence;
     }
   }
-  const contractTypePrices: Record<string, { basePlatformYearlyPence: number }> =
-    {};
+  const contractTypePrices: Record<
+    string,
+    {
+      label: string;
+      basePlatformYearlyPence: number;
+      includedSeatCount: number;
+      deliveryRemoteIncluded: boolean;
+      deliveryHybridIncluded: boolean;
+    }
+  > = {};
   for (const tier of ["essential", "professional", "founder"] as const) {
+    const defaults = DEFAULT_CONTRACT_TIER_META[tier];
     const row = byKey.get(PLATFORM_PRICE_KEYS.contractYearly(tier));
+    const metadata = row?.metadata ?? {};
     contractTypePrices[tier] = {
+      label:
+        typeof metadata.label === "string" && metadata.label.trim()
+          ? metadata.label
+          : defaults.label,
       basePlatformYearlyPence: row?.amountPence ?? base?.amountPence ?? 0,
+      includedSeatCount: Math.max(
+        1,
+        Number(metadata.includedSeatCount ?? defaults.includedSeatCount) ||
+          defaults.includedSeatCount,
+      ),
+      deliveryRemoteIncluded: readBooleanMeta(
+        metadata,
+        "deliveryRemoteIncluded",
+        defaults.deliveryRemoteIncluded,
+      ),
+      deliveryHybridIncluded: readBooleanMeta(
+        metadata,
+        "deliveryHybridIncluded",
+        defaults.deliveryHybridIncluded,
+      ),
     };
   }
   return {
@@ -279,6 +361,7 @@ export function createFirebaseBillingApi(
       priceKey: string;
       priceVersion: string;
       amountPence: number;
+      oneOff: boolean;
       billingInterval: "once" | "month" | "year";
       effectiveFrom: string;
       metadata?: Record<string, string | number | boolean>;
@@ -344,7 +427,7 @@ export function createFirebaseBillingApi(
     },
 
     async savePlatformPricing(pricing: Record<string, unknown>) {
-      const version = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const version = newestPriceVersion();
       const effectiveFrom = new Date().toISOString();
       const writes: Array<Promise<unknown>> = [];
       const baseYearly = Number(pricing.basePlatformYearlyPence ?? 0);
@@ -353,6 +436,7 @@ export function createFirebaseBillingApi(
           priceKey: PLATFORM_PRICE_KEYS.baseYearly,
           priceVersion: version,
           amountPence: Math.max(0, Math.round(baseYearly)),
+          oneOff: false,
           billingInterval: "year",
           effectiveFrom,
           metadata: {
@@ -374,6 +458,7 @@ export function createFirebaseBillingApi(
             0,
             Math.round(Number(pricing.seatOneOffPence ?? 0)),
           ),
+          oneOff: true,
           billingInterval: "once",
           effectiveFrom,
         }),
@@ -386,7 +471,8 @@ export function createFirebaseBillingApi(
             0,
             Math.round(Number(pricing.assessmentAddonPence ?? 0)),
           ),
-          billingInterval: "month",
+          oneOff: true,
+          billingInterval: "once",
           effectiveFrom,
         }),
       );
@@ -400,6 +486,7 @@ export function createFirebaseBillingApi(
             priceKey: PLATFORM_PRICE_KEYS.feature(featureKey),
             priceVersion: version,
             amountPence: Math.max(0, Math.round(Number(amount) || 0)),
+            oneOff: true,
             billingInterval: "once",
             effectiveFrom,
           }),
@@ -410,10 +497,20 @@ export function createFirebaseBillingApi(
         typeof pricing.contractTypePrices === "object"
           ? (pricing.contractTypePrices as Record<
               string,
-              { basePlatformYearlyPence?: number }
+              {
+                label?: string;
+                basePlatformYearlyPence?: number;
+                includedSeatCount?: number;
+                deliveryRemoteIncluded?: boolean;
+                deliveryHybridIncluded?: boolean;
+              }
             >)
           : {};
       for (const [tier, row] of Object.entries(contractTypePrices)) {
+        const defaults =
+          DEFAULT_CONTRACT_TIER_META[
+            tier as keyof typeof DEFAULT_CONTRACT_TIER_META
+          ] ?? DEFAULT_CONTRACT_TIER_META.professional;
         writes.push(
           this.upsertPriceVersion({
             priceKey: PLATFORM_PRICE_KEYS.contractYearly(tier),
@@ -422,8 +519,25 @@ export function createFirebaseBillingApi(
               0,
               Math.round(Number(row?.basePlatformYearlyPence ?? 0)),
             ),
+            oneOff: false,
             billingInterval: "year",
             effectiveFrom,
+            metadata: {
+              label: String(row?.label ?? defaults.label),
+              includedSeatCount: Math.max(
+                1,
+                Number(row?.includedSeatCount ?? defaults.includedSeatCount) ||
+                  defaults.includedSeatCount,
+              ),
+              deliveryRemoteIncluded:
+                typeof row?.deliveryRemoteIncluded === "boolean"
+                  ? row.deliveryRemoteIncluded
+                  : defaults.deliveryRemoteIncluded,
+              deliveryHybridIncluded:
+                typeof row?.deliveryHybridIncluded === "boolean"
+                  ? row.deliveryHybridIncluded
+                  : defaults.deliveryHybridIncluded,
+            },
           }),
         );
       }

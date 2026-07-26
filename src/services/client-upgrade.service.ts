@@ -60,6 +60,7 @@ export type BackendClientEntitlements = {
     title: string;
     maxVersion: string;
     includedByDefault: boolean;
+    entitlementTier?: "core" | "premium" | string;
     availableVersions?: Array<{ version: string; title: string; description: string | null }>;
   }>;
   additionalAssessments: Array<{
@@ -67,12 +68,14 @@ export type BackendClientEntitlements = {
     title: string;
     summary?: string | null;
     maxVersion: string;
+    entitlementTier?: "core" | "premium" | string;
     availableVersions?: Array<{ version: string; title: string; description: string | null }>;
   }>;
   requestableAssessments: Array<{
     slug: string;
     title: string;
     summary?: string | null;
+    entitlementTier?: "core" | "premium" | string;
   }>;
   canRequestUpgrades: boolean;
   lockState?: {

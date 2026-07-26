@@ -14,11 +14,15 @@ export type ClientUpgradePricing = {
   featurePrices?: Record<string, number>;
 };
 
+export type QueuedAddonAssessment = {
+  slug: string;
+  label: string;
+};
+
 export type ClientUpgradeDraft = {
   requestedSeats: number;
   deliveryFeatures: Record<ClientDeliveryFeatureKey, boolean>;
-  selectedAddonSlug: string | null;
-  queuedAddonAssessment: { slug: string; label: string } | null;
+  queuedAddonAssessments: QueuedAddonAssessment[];
 };
 
 export type ClientEntitlementAssessment = {
@@ -37,8 +41,7 @@ export function createEmptyUpgradeDraft(currentSeats: number): ClientUpgradeDraf
       deliveryRemote: false,
       deliveryHybrid: false,
     },
-    selectedAddonSlug: null,
-    queuedAddonAssessment: null,
+    queuedAddonAssessments: [],
   };
 }
 
@@ -50,7 +53,7 @@ export function computePendingChanges(input: {
   draft: ClientUpgradeDraft;
   currentSeats: number;
   activeDeliveryFeatures: Record<ClientDeliveryFeatureKey, boolean>;
-  assessments: ClientEntitlementAssessment[];
+  assessments?: ClientEntitlementAssessment[];
 }) {
   const changes: string[] = [];
 
@@ -66,8 +69,8 @@ export function computePendingChanges(input: {
     }
   }
 
-  if (input.draft.queuedAddonAssessment) {
-    changes.push(`Add assessment: ${input.draft.queuedAddonAssessment.label}`);
+  for (const assessment of input.draft.queuedAddonAssessments) {
+    changes.push(`Add assessment: ${assessment.label}`);
   }
 
   return changes;
@@ -77,7 +80,7 @@ export function buildUpgradeBundleItems(input: {
   draft: ClientUpgradeDraft;
   currentSeats: number;
   activeDeliveryFeatures: Record<ClientDeliveryFeatureKey, boolean>;
-  assessments: ClientEntitlementAssessment[];
+  assessments?: ClientEntitlementAssessment[];
 }): ClientUpgradeBundleItem[] {
   const items: ClientUpgradeBundleItem[] = [];
 
@@ -99,11 +102,11 @@ export function buildUpgradeBundleItems(input: {
     }
   }
 
-  if (input.draft.queuedAddonAssessment) {
+  for (const assessment of input.draft.queuedAddonAssessments) {
     items.push({
       type: "new_assessment",
-      assessmentSlug: input.draft.queuedAddonAssessment.slug,
-      assessmentLabel: input.draft.queuedAddonAssessment.label,
+      assessmentSlug: assessment.slug,
+      assessmentLabel: assessment.label,
     });
   }
 

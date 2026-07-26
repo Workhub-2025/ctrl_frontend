@@ -275,7 +275,8 @@ function HiringManagerSessionWorkspace({
 
   return (
     <>
-      <div className={cn("relative z-10 shrink-0", layout === "dialog" ? "px-6 pb-5 pt-6" : "pb-5")}>
+      {layout === "dialog" ? (
+      <div className="relative z-10 shrink-0 px-6 pb-5 pt-6">
         <PortalDetailHeader
           layout={layout}
           eyebrow="Session workspace"
@@ -392,6 +393,41 @@ function HiringManagerSessionWorkspace({
           }
         />
       </div>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+          {session.candidateCount === 0 && onDeleteSession ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={deletingSessionId === session.id}
+              onClick={() => onDeleteSession(session.id)}
+              className="h-10 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              {deletingSessionId === session.id ? "Deleting…" : "Delete session"}
+            </Button>
+          ) : null}
+          {session.status === "Live" &&
+          session.candidateCount > 0 &&
+          onUpdateSessionStatus &&
+          areAllSessionCandidatesComplete(
+            session.candidates,
+            expectedAssessmentCount
+          ) ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={updatingSessionId === session.id}
+              onClick={() => onUpdateSessionStatus(session.id, "closed")}
+              className="h-10 rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10"
+            >
+              {updatingSessionId === session.id ? "Closing…" : "Close session"}
+            </Button>
+          ) : null}
+        </div>
+      )}
 
               <div className={cn("relative z-10 space-y-6", layout === "dialog" && "flex-1 overflow-y-auto px-6 pb-6")}>
               {/* Metric Cards */}

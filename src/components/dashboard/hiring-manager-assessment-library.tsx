@@ -2,27 +2,15 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
-import {
-  PlayCircle,
-} from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Library, PlayCircle } from "lucide-react";
 import { useState } from "react";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { AssessmentPremiumBadge } from "@/components/dashboard/assessment-premium-badge";
 import {
-  DashboardInfoCard,
-  dashboardInfoPillClassName,
-} from "@/components/dashboard/dashboard-info-card";
-import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
+  PortalEmptyState,
+  PortalPanel,
+} from "@/components/dashboard/portal/portal-ui";
 import {
   PortalDetailHeader,
   portalDetailDialogContentClass,
@@ -30,12 +18,13 @@ import {
 import {
   portalAlertInfoClass,
   portalBadgeClass,
-  portalEmptyPanelClass,
   portalIconWrapLgClass,
   portalLabelClass,
   portalPanelClass,
   portalPanelNestedClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { dashboardInfoPillClassName } from "@/components/dashboard/dashboard-info-card";
+import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import { cn } from "@/lib/utils";
 
 type HiringManagerAssessmentLibraryProps = {
@@ -49,11 +38,11 @@ export function HiringManagerAssessmentLibrary({
 
   if (assessments.length === 0) {
     return (
-      <div className={portalEmptyPanelClass}>
-        No active assessments are currently available from Strapi. Once Nelson
-        enables or seeds the assessment records, they will appear here
-        automatically.
-      </div>
+      <PortalEmptyState
+        icon={Library}
+        title="No assessments available"
+        description="Active assessments from the platform catalogue will appear here once enabled for your organisation."
+      />
     );
   }
 
@@ -63,51 +52,45 @@ export function HiringManagerAssessmentLibrary({
         {assessments.map((assessment) => {
           const Icon = getAssessmentCatalogueIcon(assessment.slug);
           return (
-            <DashboardInfoCard key={assessment.id}>
-              <CardHeader className="space-y-3 pb-3 pl-6">
-                <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <span className={portalIconWrapLgClass} aria-hidden="true">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <Badge
-                    className={cn(
-                      "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
-                      portalBadgeClass
-                    )}
-                  >
-                    {assessment.duration}
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <CardTitle className="break-words text-lg font-semibold leading-snug tracking-tight text-foreground">
-                      {assessment.title}
-                    </CardTitle>
-                    <AssessmentPremiumBadge entitlementTier={assessment.entitlementTier} />
-                  </div>
-                  <CardDescription className="text-sm leading-relaxed text-muted-foreground">
-                    {assessment.summary}
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4 pl-6">
-                <div className="flex flex-wrap gap-1.5">
-                  {assessment.skills.map((skill) => (
-                    <span key={skill} className={dashboardInfoPillClassName}>
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-9 rounded-lg px-4 text-xs font-semibold"
-                  onClick={() => setSelected(assessment)}
+            <PortalPanel key={assessment.id} className="space-y-4">
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <span className={portalIconWrapLgClass} aria-hidden="true">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <Badge
+                  className={cn(
+                    "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
+                    portalBadgeClass
+                  )}
                 >
-                  View more
-                </Button>
-              </CardContent>
-            </DashboardInfoCard>
+                  {assessment.duration}
+                </Badge>
+              </div>
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="break-words text-lg font-semibold leading-snug tracking-tight text-foreground">
+                    {assessment.title}
+                  </h3>
+                  <AssessmentPremiumBadge entitlementTier={assessment.entitlementTier} />
+                </div>
+                <p className="text-sm leading-relaxed text-muted-foreground">{assessment.summary}</p>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {assessment.skills.map((skill) => (
+                  <span key={skill} className={dashboardInfoPillClassName}>
+                    {skill}
+                  </span>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-lg px-4 text-xs font-semibold"
+                onClick={() => setSelected(assessment)}
+              >
+                View more
+              </Button>
+            </PortalPanel>
           );
         })}
       </div>
