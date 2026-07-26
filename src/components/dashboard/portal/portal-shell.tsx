@@ -8,6 +8,7 @@ import { ChevronDown, LogOut, User, UserCircle } from "lucide-react";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
 import { PortalBreadcrumbs, type PortalBreadcrumb } from "@/components/dashboard/portal/portal-ui";
+import { PortalEqualityNudge } from "@/components/dashboard/portal/portal-equality-nudge";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -294,6 +295,7 @@ export function PortalShell({
   accessibilityDescription,
   maxWidthClass = "max-w-[1600px]",
   compactNavigation = false,
+  showEqualityNudge = true,
   children,
 }: {
   brandSubtitle: string;
@@ -304,6 +306,8 @@ export function PortalShell({
   accessibilityDescription: string;
   maxWidthClass?: string;
   compactNavigation?: boolean;
+  /** Soft equality prompt + orange nudge for candidate/client/HM portals. */
+  showEqualityNudge?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -397,6 +401,7 @@ export function PortalShell({
               tabIndex={-1}
               className={cn("mx-auto w-full px-4 py-5 sm:px-6 sm:py-6 lg:px-8", maxWidthClass)}
             >
+              {showEqualityNudge ? <PortalEqualityNudge /> : null}
               {children}
             </main>
           </SidebarInset>

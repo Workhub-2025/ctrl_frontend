@@ -376,11 +376,32 @@ export function TrackedAssessmentShell<TContent, TState>(
       setStageIndex(nextIndex);
       setError(null);
     } catch (saveError) {
-      setError(
+      const message =
         saveError instanceof Error
           ? saveError.message
-          : "Progress could not be saved",
-      );
+          : "Progress could not be saved";
+      if (/revision conflict/i.test(message)) {
+        try {
+          const resumed = await AssessmentRuntimeClient.resume(launch.attemptId);
+          const resumedProgress = resumed.progressData as
+            | { stageIndex?: number; state?: TState }
+            | null;
+          setRevision(resumed.progressRevision);
+          if (typeof resumedProgress?.stageIndex === "number") {
+            setStageIndex(resumedProgress.stageIndex);
+          }
+          if (resumedProgress?.state) {
+            setState(resumedProgress.state);
+          }
+          setError(
+            "Your progress was updated elsewhere. Reloaded the latest version — continue from here.",
+          );
+        } catch {
+          setError(message);
+        }
+      } else {
+        setError(message);
+      }
     } finally {
       setSaving(false);
     }

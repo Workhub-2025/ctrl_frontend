@@ -44,6 +44,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       getBreadcrumbs={getAdminBreadcrumbs}
       getActiveLabel={(currentPath) => getActiveAdminNavItem(currentPath)?.label ?? "Admin"}
       accessibilityDescription="Adjust the admin portal display."
+      showEqualityNudge={false}
     >
       {children}
     </PortalShell>

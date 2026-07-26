@@ -7,7 +7,7 @@ import { BffAuthError } from "@/lib/auth/bff-route-errors";
 import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
 import { getFirebaseSessionCookie } from "@/lib/firebase-session-server";
 import {
-  isAdminPortalRole,
+  isElevatedAdminPortalRole,
   resolveAppRole,
   type AppRole,
   type AdminPortalRoleType,
@@ -40,7 +40,7 @@ export async function requireFirebaseSession(
   }
   if (
     roles.length > 0 &&
-    !(roles.includes("admin") && isAdminPortalRole(session.user.role)) &&
+    !(roles.includes("admin") && isElevatedAdminPortalRole(session.user.role)) &&
     !roles.includes(role)
   ) {
     throw new BffAuthError(`${roles.join(" or ")} access required`, 403);

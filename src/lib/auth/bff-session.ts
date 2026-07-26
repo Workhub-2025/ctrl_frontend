@@ -3,7 +3,7 @@ import "server-only";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { getServerCmsJwt } from "@/legacy-cms/jwt";
-import { resolveAppRole, isAdminPortalRole, type AppRole, type AdminPortalRoleType } from "@/lib/auth/role-model";
+import { resolveAppRole, isElevatedAdminPortalRole, type AppRole, type AdminPortalRoleType } from "@/lib/auth/role-model";
 import { BffAuthError } from "@/lib/auth/bff-route-errors";
 
 export { BffAuthError } from "@/lib/auth/bff-route-errors";
@@ -43,7 +43,7 @@ export async function requireRoleSession(...roles: (AppRole | AdminPortalRoleTyp
     throw new BffAuthError("Authentication required", 401);
   }
 
-  if (roles.includes("admin") && isAdminPortalRole(context.session.user.role)) {
+  if (roles.includes("admin") && isElevatedAdminPortalRole(context.session.user.role)) {
     return context;
   }
 

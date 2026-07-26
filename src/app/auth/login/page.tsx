@@ -8,29 +8,19 @@ import { AdminFirstLoginSecurityDialog } from "@/components/auth/admin-first-log
 import { AuthBrandingPane } from "@/components/auth/auth-branding-pane";
 import { AuthLoginForm } from "@/components/auth/auth-login-form";
 import { AuthTotpForm } from "@/components/auth/auth-totp-form";
-import { SessionAccessCodeForm } from "@/components/auth/session-access-code-form";
+import { authLinkClassName } from "@/components/auth/auth-surface";
 import { BrandLogo } from "@/components/brand-logo";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import { useAuth } from "@/hooks/use-auth";
+import { sanitiseAccessCode } from "@/lib/security/input-sanitization";
 import { cn } from "@/lib/utils";
-
-type LoginMode = "account" | "code";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, verifyTotpLogin } = useAuth();
-  const {
-    settings,
-    updateSettings,
-    resetSettings,
-    themeClassName,
-  } = useAccessibilitySettings();
-  const initialMode: LoginMode =
-    searchParams.get("mode") === "code" || searchParams.get("accessCode")
-      ? "code"
-      : "account";
-  const [mode, setMode] = useState<LoginMode>(initialMode);
+  const { settings, updateSettings, resetSettings, themeClassName } =
+    useAccessibilitySettings();
   const [totpStep, setTotpStep] = useState(searchParams.get("totp") === "1");
   const [busy, setBusy] = useState(false);
   const [bootstrapEmail, setBootstrapEmail] = useState(
@@ -39,25 +29,27 @@ function LoginContent() {
   const [bootstrapOpen, setBootstrapOpen] = useState(
     searchParams.get("bootstrap") === "1",
   );
-  const isLightTheme =
-    settings.theme === "daylight" || settings.theme === "parchment";
-  const panelVariant = isLightTheme ? "light-panel" : "dark-panel";
   const queryMessage =
     searchParams.get("message") ??
     (searchParams.get("error") ? "Credentials not verified." : null);
-  const accessCodeFromQuery = searchParams.get("accessCode") ?? "";
+
+  // Legacy deep-links used ?mode=code or ?accessCode= on login — send them to /join.
+  useEffect(() => {
+    const accessCode = sanitiseAccessCode(
+      searchParams.get("accessCode") ?? searchParams.get("code") ?? "",
+    );
+    if (searchParams.get("mode") === "code" || accessCode) {
+      const join = new URL("/join", window.location.origin);
+      if (accessCode) join.searchParams.set("accessCode", accessCode);
+      router.replace(`${join.pathname}${join.search}`);
+    }
+  }, [router, searchParams]);
 
   useEffect(() => {
     if (searchParams.get("bootstrap") === "1" && bootstrapEmail) {
       setBootstrapOpen(true);
     }
   }, [bootstrapEmail, searchParams]);
-
-  useEffect(() => {
-    if (searchParams.get("mode") === "code" || searchParams.get("accessCode")) {
-      setMode("code");
-    }
-  }, [searchParams]);
 
   const handleLogin = async (credentials: {
     email: string;
@@ -94,15 +86,14 @@ function LoginContent() {
     }
   };
 
-  const continueWithCode = async (accessCode: string) => {
-    const join = new URL("/join", window.location.origin);
-    join.searchParams.set("accessCode", accessCode);
-    router.push(`${join.pathname}${join.search}`);
-  };
-
   return (
-    <div className={cn("ctrl-landing-page relative flex min-h-[100svh] w-full", themeClassName)}>
-      <AuthBrandingPane isLightTheme={isLightTheme} />
+    <div
+      className={cn(
+        "ctrl-landing-page relative flex min-h-[100svh] w-full bg-background text-foreground",
+        themeClassName,
+      )}
+    >
+      <AuthBrandingPane />
       <main className="relative flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-12 xl:px-24">
         <div className="absolute right-6 top-6 z-50 lg:right-8 lg:top-8">
           <AccessibilityDropdown
@@ -120,84 +111,20 @@ function LoginContent() {
           </div>
 
           <div className="mb-8 space-y-2">
-            <h1
-              className={cn(
-                "text-balance font-display text-3xl font-semibold tracking-tight",
-                isLightTheme ? "text-slate-950" : "text-white"
-              )}
-            >
-              {totpStep
-                ? "Verify your sign-in"
-                : mode === "code"
-                  ? "Join with a session code"
-                  : "Welcome back"}
+            <h1 className="text-balance font-display text-3xl font-semibold tracking-tight text-foreground">
+              {totpStep ? "Verify your sign-in" : "Welcome back"}
             </h1>
-            <p
-              className={cn(
-                "text-pretty text-sm leading-6",
-                isLightTheme ? "text-slate-600" : "text-slate-400"
-              )}
-            >
+            <p className="text-pretty text-sm leading-6 text-muted-foreground">
               {totpStep
                 ? "Enter the code from your authenticator app to finish signing in."
-                : mode === "code"
-                  ? "Paste the access code from your hiring manager to create a reusable candidate login."
-                  : "Sign in to your workspace, or join an assessment with a session code."}
+                : "Sign in with the email and password for your CTRL account."}
             </p>
           </div>
-
-          {!totpStep ? (
-            <div
-              role="tablist"
-              aria-label="Sign-in method"
-              className={cn(
-                "mb-6 grid grid-cols-2 gap-1 rounded-xl border p-1",
-                isLightTheme
-                  ? "border-slate-200 bg-white/70"
-                  : "border-white/10 bg-white/[0.03]"
-              )}
-            >
-              {(
-                [
-                  { id: "account" as const, label: "Account" },
-                  { id: "code" as const, label: "Session code" },
-                ] as const
-              ).map((tab) => {
-                const active = mode === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setMode(tab.id)}
-                    className={cn(
-                      "rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2",
-                      active
-                        ? isLightTheme
-                          ? "bg-stone-900 text-white focus-visible:ring-amber-700/40"
-                          : "bg-white text-stone-950 focus-visible:ring-amber-400/40"
-                        : isLightTheme
-                          ? "text-stone-600 hover:text-stone-900 focus-visible:ring-stone-400/40"
-                          : "text-stone-400 hover:text-white focus-visible:ring-white/20"
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          ) : null}
 
           {queryMessage ? (
             <p
               role={searchParams.get("error") ? "alert" : "status"}
-              className={cn(
-                "mb-5 rounded-lg border px-4 py-3 text-sm",
-                isLightTheme
-                  ? "border-slate-300 bg-white text-slate-800"
-                  : "border-white/10 bg-white/[0.04] text-slate-200",
-              )}
+              className="mb-5 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground"
             >
               {queryMessage}
             </p>
@@ -206,68 +133,25 @@ function LoginContent() {
           {totpStep ? (
             <AuthTotpForm
               disabled={busy}
-              panelVariant={panelVariant}
-              inputVariant={isLightTheme ? "light" : "dark"}
               onSubmit={handleTotp}
               onCancel={() => setTotpStep(false)}
-            />
-          ) : mode === "code" ? (
-            <SessionAccessCodeForm
-              initialCode={accessCodeFromQuery}
-              disabled={busy}
-              panelVariant={panelVariant}
-              inputVariant={isLightTheme ? "light" : "dark"}
-              submitLabel="Continue to join"
-              onSubmit={continueWithCode}
             />
           ) : (
             <AuthLoginForm
               initialEmail={searchParams.get("email") ?? ""}
               disabled={busy}
-              panelVariant={panelVariant}
-              inputVariant={isLightTheme ? "light" : "dark"}
               onSubmit={handleLogin}
             />
           )}
 
-          <p
-            className={cn(
-              "mt-8 text-center text-sm",
-              isLightTheme ? "text-slate-600" : "text-slate-400"
-            )}
-          >
-            {mode === "code" ? (
-              <>
-                Prefer the dedicated join page?{" "}
-                <Link
-                  href={
-                    accessCodeFromQuery
-                      ? `/join?accessCode=${encodeURIComponent(accessCodeFromQuery)}`
-                      : "/join"
-                  }
-                  className={cn(
-                    "font-medium underline-offset-4 hover:underline",
-                    isLightTheme ? "text-slate-900" : "text-white"
-                  )}
-                >
-                  Open /join
-                </Link>
-              </>
-            ) : (
-              <>
-                New accounts are created from a verified invitation or session code.{" "}
-                <Link
-                  href="/join"
-                  className={cn(
-                    "font-medium underline-offset-4 hover:underline",
-                    isLightTheme ? "text-slate-900" : "text-white"
-                  )}
-                >
-                  Have a session code?
-                </Link>
-              </>
-            )}
-          </p>
+          {!totpStep ? (
+            <p className="mt-8 text-center text-sm text-muted-foreground">
+              Have a session access code?{" "}
+              <Link href="/join" className={authLinkClassName}>
+                Join your assessment
+              </Link>
+            </p>
+          ) : null}
         </div>
       </main>
 

@@ -22,6 +22,7 @@ export type CompositeAdminRoleType = (typeof COMPOSITE_ADMIN_ROLE_TYPES)[number]
 
 export const ADMIN_PORTAL_ROLE_TYPES = [
   "admin",
+  "admin_restricted",
   "admin_support",
   "admin_ops",
   "admin_billing",
@@ -40,6 +41,8 @@ export const ADMIN_PERMISSIONS = [
   "analytics.read",
   "users.read",
   "users.write",
+  "privacy.read",
+  "privacy.write",
   "comms.send",
   "tickets.read",
   "tickets.write",
@@ -60,12 +63,15 @@ const BASE_GROUP_PERMISSIONS: Record<AdminAssignableGroup, readonly AdminPermiss
     "tickets.write",
     "tickets.escalate",
     "users.read",
+    "privacy.read",
   ],
   admin_ops: [
     "platform.overview",
     "clients.read",
     "clients.write",
     "users.read",
+    "privacy.read",
+    "privacy.write",
     "tickets.read",
     "tickets.write",
     "recovery.read",
@@ -89,6 +95,7 @@ export const ADMIN_ASSIGNABLE_GROUP_LABELS: Record<AdminAssignableGroup, string>
 
 export const ADMIN_ROLE_LABELS: Record<AdminPortalRoleType, string> = {
   admin: "Super admin",
+  admin_restricted: "Admin (recovery)",
   admin_support: "Support",
   admin_ops: "Operations",
   admin_billing: "Billing",
@@ -123,6 +130,8 @@ const COMPOSITE_PERMISSIONS = buildCompositePermissions();
 
 export const ADMIN_ROLE_PERMISSIONS: Record<AdminPortalRoleType, readonly AdminPermission[]> = {
   admin: ADMIN_PERMISSIONS,
+  // Fail-closed recovery: portalRole=admin without platformRoles gets no BFF grants.
+  admin_restricted: [],
   admin_support: BASE_GROUP_PERMISSIONS.admin_support,
   admin_ops: BASE_GROUP_PERMISSIONS.admin_ops,
   admin_billing: BASE_GROUP_PERMISSIONS.admin_billing,
@@ -183,10 +192,40 @@ export function resolveCompositeAdminRole(
   if (groups.length === 0) return null;
   if (groups.length === 1) return groups[0];
   const ordered = ADMIN_ASSIGNABLE_GROUPS.filter((group) => groups.includes(group));
-  const compositeKey = ordered.join("_");
+  // Groups are admin_support / admin_ops / admin_billing; composites drop the
+  // repeated "admin_" prefix: admin_support + admin_ops → admin_support_ops.
+  const compositeKey = `admin_${ordered
+    .map((group) => group.replace(/^admin_/, ""))
+    .join("_")}`;
   return (ADMIN_PORTAL_ROLE_TYPES as readonly string[]).includes(compositeKey)
     ? (compositeKey as AdminPortalRoleType)
     : null;
+}
+
+/**
+ * Map Firebase platform role assignments onto the admin portal role matrix.
+ * Inverse of the invite-time Strapi/composite → platform role mapping.
+ */
+export function mapPlatformRolesToAdminPortalRole(
+  roles: ReadonlyArray<
+    "super_admin" | "support_admin" | "billing_admin" | "operations_admin"
+  >,
+): AdminPortalRoleType {
+  if (roles.length === 0) {
+    return "admin_restricted";
+  }
+  if (roles.includes("super_admin")) {
+    return "admin";
+  }
+  const groups: AdminAssignableGroup[] = [];
+  if (roles.includes("support_admin")) groups.push("admin_support");
+  if (roles.includes("operations_admin")) groups.push("admin_ops");
+  if (roles.includes("billing_admin")) groups.push("admin_billing");
+  return resolveCompositeAdminRole(groups) ?? "admin_restricted";
+}
+
+export function isRestrictedAdminRoleType(value: unknown): boolean {
+  return normalizeAdminPortalRoleType(value) === "admin_restricted";
 }
 
 export function formatAdminRoleLabels(roleType: AdminPortalRoleType): string {

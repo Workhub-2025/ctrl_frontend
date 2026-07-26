@@ -23,26 +23,14 @@ import {
   logCmsConnectivityIssue,
 } from "@/legacy-cms/connectivity";
 import { portalMfaEnrollmentRequired } from "@/lib/auth/portal-mfa-enrollment";
+import { safeCallbackPath } from "@/lib/auth/safe-callback-path";
 
 const wantsJsonResponse = (request: Request) =>
   request.headers.get("accept")?.includes("application/json") ?? false;
 
 const resolveCallbackPath = (value: FormDataEntryValue | null, role: string) => {
   const fallback = routeForRole(role);
-
-  if (typeof value !== "string" || value.length === 0) {
-    return fallback;
-  }
-
-  try {
-    const parsed = value.startsWith("http")
-      ? new URL(value)
-      : new URL(value, "http://localhost");
-
-    return `${parsed.pathname}${parsed.search}${parsed.hash}` || fallback;
-  } catch {
-    return fallback;
-  }
+  return safeCallbackPath(value) ?? fallback;
 };
 
 const lockedResponse = (request: Request, jsonResponse: boolean, retryAfterSeconds?: number) => {

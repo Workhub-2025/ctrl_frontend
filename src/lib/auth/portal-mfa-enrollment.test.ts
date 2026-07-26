@@ -11,10 +11,12 @@ describe("portal MFA enrolment gate", () => {
     expect(portalMfaEnrollmentRequired({ enabled: false, role: "client", totpEnabled: false })).toBe(false);
   });
 
-  it("does not gate candidates, administrators, or enrolled staff", () => {
+  it("gates administrators and allows candidates or MFA-satisfied staff", () => {
     expect(portalMfaEnrollmentRequired({ enabled: true, role: "candidate", totpEnabled: false })).toBe(false);
-    expect(portalMfaEnrollmentRequired({ enabled: true, role: "admin", totpEnabled: false })).toBe(false);
+    expect(portalMfaEnrollmentRequired({ enabled: true, role: "admin", totpEnabled: false })).toBe(true);
+    expect(portalMfaEnrollmentRequired({ enabled: true, role: "admin_billing", totpEnabled: false })).toBe(true);
     expect(portalMfaEnrollmentRequired({ enabled: true, role: "client", totpEnabled: true })).toBe(false);
+    expect(portalMfaEnrollmentRequired({ enabled: true, role: "admin", totpEnabled: true })).toBe(false);
   });
 
   it("keeps only the working enrolment surface available", () => {

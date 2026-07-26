@@ -1,19 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 type RouteContext = { params: Promise<{ userDocumentId: string }> };
 
+/**
+ * Completes a pending privacy erasure request.
+ * Path param is the privacy request id (surfaced as `documentId` in the queue).
+ */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    const auth = await requireFirebaseSession("admin");
-    const { userDocumentId } = await context.params;
+    const auth = await requireAdminDualAccess("privacy.write");
+    if ("error" in auth) return auth.error;
+    if (!isFirebaseAdminAuth(auth)) {
+      return NextResponse.json(
+        { error: "Erasure completion requires the Firebase admin path" },
+        { status: 501 },
+      );
+    }
+
+    const { userDocumentId: requestId } = await context.params;
+    if (!requestId || requestId.length > 128) {
+      return NextResponse.json({ error: "Invalid erasure request id" }, { status: 400 });
+    }
+
     const data = await auth.domainApi.request<unknown>({
-      path: `/v1/privacy/admin/erasure-requests/${encodeURIComponent(userDocumentId)}/complete`,
+      path: `/v1/privacy/admin/erasure-requests/${encodeURIComponent(requestId)}/complete`,
       method: "POST",
       firebaseSessionCookie: auth.firebaseSessionCookie,
       body: {},

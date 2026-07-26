@@ -159,15 +159,6 @@ export default function Home() {
   return (
     <MotionPrefs reduce={reduceMotion}>
       <div className={cn("ctrl-landing-page relative min-h-screen bg-background text-foreground")}>
-        <div className="fixed right-4 top-4 z-[60] sm:right-6 sm:top-5">
-          <AccessibilityDropdown
-            settings={settings}
-            updateSettings={updateSettings}
-            resetSettings={resetSettings}
-            description="Theme, text size, and reading preferences for this device."
-          />
-        </div>
-
         <nav
           ref={navRef}
           className={cn(
@@ -182,7 +173,7 @@ export default function Home() {
               <BrandLogo className="h-8 w-auto sm:h-9" />
             </Link>
 
-            <div className="hidden items-center gap-1 md:flex">
+            <div className="hidden items-center gap-2 md:flex">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
@@ -192,20 +183,34 @@ export default function Home() {
                   {item.label}
                 </Link>
               ))}
-              <Button asChild size="sm" className="ml-2 h-9 px-4">
+              <AccessibilityDropdown
+                settings={settings}
+                updateSettings={updateSettings}
+                resetSettings={resetSettings}
+                description="Theme, text size, and reading preferences for this device."
+              />
+              <Button asChild size="sm" className="h-9 px-4">
                 <Link href="/auth/login">Login</Link>
               </Button>
             </div>
 
-            <button
-              type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-foreground md:hidden"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileMenuOpen}
-              onClick={() => setMobileMenuOpen((open) => !open)}
-            >
-              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </button>
+            <div className="flex items-center gap-2 md:hidden">
+              <AccessibilityDropdown
+                settings={settings}
+                updateSettings={updateSettings}
+                resetSettings={resetSettings}
+                description="Theme, text size, and reading preferences for this device."
+              />
+              <button
+                type="button"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-foreground"
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={mobileMenuOpen}
+                onClick={() => setMobileMenuOpen((open) => !open)}
+              >
+                {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           <AnimatePresence>

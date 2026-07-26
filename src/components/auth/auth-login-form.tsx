@@ -3,16 +3,19 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { AnimatedSubmitButton, type ButtonState, type SubmitButtonPanelVariant } from "@/components/ui/animated-submit-button";
+import {
+  authFieldClassName,
+  authLinkClassName,
+} from "@/components/auth/auth-surface";
+import {
+  AnimatedSubmitButton,
+  type ButtonState,
+  type SubmitButtonPanelVariant,
+} from "@/components/ui/animated-submit-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const AUTH_INPUT_CLASS =
-  "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-[border-color,box-shadow] focus-visible:border-cyan-500/50 focus-visible:ring-1 focus-visible:ring-cyan-500/50";
-const AUTH_INPUT_LIGHT_CLASS =
-  "h-12 rounded-xl border-slate-300 bg-white text-slate-950 placeholder:text-slate-400 shadow-sm transition-[border-color,box-shadow] focus-visible:border-sky-500/60 focus-visible:ring-1 focus-visible:ring-sky-500/30";
+import { cn } from "@/lib/utils";
 
 type AuthLoginFormProps = {
   initialEmail?: string;
@@ -20,7 +23,7 @@ type AuthLoginFormProps = {
   panelVariant?: SubmitButtonPanelVariant;
   inputVariant?: "dark" | "light";
   onSubmit: (
-    credentials: { email: string; password: string }
+    credentials: { email: string; password: string },
   ) => Promise<void | { requiresTotp?: boolean }>;
 };
 
@@ -28,7 +31,6 @@ export const AuthLoginForm = memo(function AuthLoginForm({
   initialEmail = "",
   disabled = false,
   panelVariant = "dark-panel",
-  inputVariant = "dark",
   onSubmit,
 }: AuthLoginFormProps) {
   const [email, setEmail] = useState(initialEmail);
@@ -40,36 +42,23 @@ export const AuthLoginForm = memo(function AuthLoginForm({
   const invalidResetTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    if (initialEmail) {
-      setEmail(initialEmail);
-    }
+    if (initialEmail) setEmail(initialEmail);
   }, [initialEmail]);
 
   useEffect(() => {
     return () => {
-      if (invalidResetTimer.current) {
-        window.clearTimeout(invalidResetTimer.current);
-      }
+      if (invalidResetTimer.current) window.clearTimeout(invalidResetTimer.current);
     };
   }, []);
 
   const inputClassName = useCallback(
     (field: "loginEmail" | "loginPassword", extra?: string) =>
-      cn(
-        inputVariant === "light" ? AUTH_INPUT_LIGHT_CLASS : AUTH_INPUT_CLASS,
-        invalidFields.includes(field) &&
-          (inputVariant === "light"
-            ? "border-red-500/80 bg-red-50 focus-visible:border-red-500/80 focus-visible:ring-red-500/30"
-            : "border-red-500/80 bg-red-950/15 focus-visible:border-red-400/80 focus-visible:ring-red-400/40"),
-        extra
-      ),
-    [inputVariant, invalidFields]
+      authFieldClassName(invalidFields.includes(field), extra),
+    [invalidFields],
   );
 
   const showFieldErrors = useCallback((fields: Array<"loginEmail" | "loginPassword">) => {
-    if (invalidResetTimer.current) {
-      window.clearTimeout(invalidResetTimer.current);
-    }
+    if (invalidResetTimer.current) window.clearTimeout(invalidResetTimer.current);
     setError("");
     setInvalidFields(fields);
     setSubmitStatus("invalid");
@@ -115,10 +104,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
       <div className="space-y-2">
         <Label
           htmlFor="login-email"
-          className={cn(
-            "block text-xs font-semibold uppercase tracking-wider",
-            inputVariant === "light" ? "text-slate-600" : "text-slate-400"
-          )}
+          className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
         >
           Email Address
         </Label>
@@ -144,22 +130,11 @@ export const AuthLoginForm = memo(function AuthLoginForm({
         <div className="flex items-center justify-between">
           <Label
             htmlFor="login-password"
-            className={cn(
-              "block text-xs font-semibold uppercase tracking-wider",
-              inputVariant === "light" ? "text-slate-600" : "text-slate-400"
-            )}
+            className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
           >
             Password
           </Label>
-          <Link
-            href="/auth/forgot-password"
-            className={cn(
-              "text-xs font-medium transition-colors",
-              inputVariant === "light"
-                ? "text-sky-700 hover:text-sky-900"
-                : "text-cyan-400 hover:text-cyan-300"
-            )}
-          >
+          <Link href="/auth/forgot-password" className={cn("text-xs", authLinkClassName)}>
             Forgot Password?
           </Link>
         </div>
@@ -184,12 +159,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
             type="button"
             variant="ghost"
             size="sm"
-            className={cn(
-              "absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0",
-              inputVariant === "light"
-                ? "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                : "text-slate-400 hover:bg-white/5 hover:text-white"
-            )}
+            className="absolute right-1 top-1/2 h-10 w-10 -translate-y-1/2 rounded-lg px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
             onClick={() => setShowPassword((current) => !current)}
             disabled={disabled || submitStatus === "loading"}
             aria-label={showPassword ? "Hide password" : "Show password"}

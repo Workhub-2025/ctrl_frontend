@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { requireFirebaseProvisioningSession } from "@/lib/auth/firebase-bff-session";
+import { attachFirebaseSessionProjection, resolveFirebaseSessionRole } from "@/lib/auth/firebase-session-projection";
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
-import { attachFirebaseSessionProjection } from "@/lib/auth/firebase-session-projection";
+import { requireFirebaseProvisioningSession } from "@/lib/auth/firebase-bff-session";
 import {
   parseDisplayName,
   parseInvitationToken,
@@ -56,7 +56,10 @@ export async function POST(request: Request) {
       auth.firebaseSessionCookie,
     );
     const response = NextResponse.json({
-      data: { ...result, redirectPath: routeForRole(userContext.portalRole) },
+      data: {
+        ...result,
+        redirectPath: routeForRole(resolveFirebaseSessionRole(userContext)),
+      },
     });
     await attachFirebaseSessionProjection(response, userContext);
     return response;

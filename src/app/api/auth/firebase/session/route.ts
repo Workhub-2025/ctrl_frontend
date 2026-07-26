@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { attachFirebaseSessionProjection } from "@/lib/auth/firebase-session-projection";
+import { attachFirebaseSessionProjection, resolveFirebaseSessionRole } from "@/lib/auth/firebase-session-projection";
 import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
 import { CloudRunDomainError } from "@/lib/cloud-run-bff-client";
 import {
@@ -154,16 +154,19 @@ export async function POST(request: Request) {
       user: {
         userId: userContext.userId,
         portalRole: userContext.portalRole,
+        role: resolveFirebaseSessionRole(userContext),
         organizationId: userContext.organizationId,
       },
-      redirectPath: routeForRole(userContext.portalRole),
+      redirectPath: routeForRole(resolveFirebaseSessionRole(userContext)),
     };
     const response = NextResponse.json(
       { data: body },
       { headers: { "cache-control": "no-store" } },
     );
     attachFirebaseSessionCookie(response, exchanged.sessionCookie, maxAge);
-    await attachFirebaseSessionProjection(response, userContext);
+    await attachFirebaseSessionProjection(response, userContext, {
+      secondFactorSatisfied: exchanged.secondFactorSatisfied,
+    });
     clearFirebaseCsrfCookie(response);
     return response;
   } catch (error) {
@@ -172,9 +175,22 @@ export async function POST(request: Request) {
       status: error instanceof CloudRunDomainError ? error.status : undefined,
       message: error instanceof Error ? error.message.slice(0, 160) : undefined,
     });
+    const upstreamStatus =
+      error instanceof CloudRunDomainError
+        ? error.status === 429
+          ? 429
+          : error.status === 403
+            ? 403
+            : error.status >= 500
+              ? 503
+              : 401
+        : 503;
     const response = NextResponse.json(
       { error: "Firebase session could not be established" },
-      { status: 401, headers: { "cache-control": "no-store" } },
+      {
+        status: upstreamStatus,
+        headers: { "cache-control": "no-store" },
+      },
     );
     clearFirebaseCsrfCookie(response);
     return response;

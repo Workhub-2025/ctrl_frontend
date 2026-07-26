@@ -180,12 +180,14 @@ export class SupportTicketService {
     category?: string;
     priority?: string;
     search?: string;
+    escalatedTo?: "billing" | "ops";
   }): Promise<SupportTicket[]> {
     const params = new URLSearchParams();
     if (filters?.status) params.set("status", filters.status);
     if (filters?.category) params.set("category", filters.category);
     if (filters?.priority) params.set("priority", filters.priority);
     if (filters?.search) params.set("search", filters.search);
+    if (filters?.escalatedTo) params.set("escalatedTo", filters.escalatedTo);
 
     const qs = params.toString();
     const url = supportApiPath(`support-tickets${qs ? `?${qs}` : ""}`);

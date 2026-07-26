@@ -8,6 +8,7 @@ import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-sessio
 import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
 import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
 import { requireFirebaseTenancySession } from "@/lib/firebase-tenancy-bff";
+import { invalidateFirebaseClientPortalCaches } from "@/lib/portal-cache-invalidation";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 export async function POST(request: Request) {
@@ -34,6 +35,10 @@ export async function POST(request: Request) {
         domainApi,
         firebaseSessionCookie,
       ).setAutoRenew(autoRenew);
+      void invalidateFirebaseClientPortalCaches({
+        firebaseUid: context.firebaseUid,
+        organizationId: context.organizationId,
+      });
       return NextResponse.json({
         data: {
           documentId: result.organizationId,

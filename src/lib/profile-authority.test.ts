@@ -7,18 +7,19 @@ import {
 } from "@/lib/profile-authority";
 
 describe("profile field authority", () => {
-  it("keeps equality monitoring candidate-only", () => {
+  it("allows optional equality monitoring for candidate, client, and hiring-manager accounts", () => {
     expect(canAccessEqualityMonitoring("candidate")).toBe(true);
-    expect(canAccessEqualityMonitoring("client")).toBe(false);
+    expect(canAccessEqualityMonitoring("client")).toBe(true);
+    expect(canAccessEqualityMonitoring("hiring_manager")).toBe(true);
     expect(canAccessEqualityMonitoring("admin")).toBe(false);
 
-    const denied = buildAuthorizedProfileUpdate(
+    const allowed = buildAuthorizedProfileUpdate(
       { firstName: "A", organization: "Changed", equalityMonitoring: { completed: true } },
       "client",
     );
-    expect(denied).toEqual({
-      data: { firstName: "A" },
-      forbiddenEqualityMonitoring: true,
+    expect(allowed).toEqual({
+      data: { firstName: "A", equalityMonitoring: { completed: true } },
+      forbiddenEqualityMonitoring: false,
     });
   });
 

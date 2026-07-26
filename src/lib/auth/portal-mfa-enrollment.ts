@@ -7,7 +7,11 @@ export function portalMfaEnrollmentRequired(input: {
 }) {
   if (!input.enabled || input.totpEnabled === true) return false;
   const role = resolveAppRole(input.role);
-  return role === "client" || role === "hiring_manager";
+  return (
+    role === "client" ||
+    role === "hiring_manager" ||
+    (typeof role === "string" && role.startsWith("admin"))
+  );
 }
 
 export function isPortalMfaEnrollmentPath(pathname: string) {

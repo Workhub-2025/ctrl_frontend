@@ -22,14 +22,27 @@ import {
 
 const memoryOrgGeneration = new Map<string, string>();
 
+function maxPortalCacheGeneration(left: string, right: string): string {
+  const leftN = Number(left);
+  const rightN = Number(right);
+  if (Number.isFinite(leftN) && Number.isFinite(rightN)) {
+    return leftN >= rightN ? left : right;
+  }
+  return left >= right ? left : right;
+}
+
 export async function readHmOverviewOrgGeneration(
   organizationId: string,
+  options?: { firestoreGeneration?: string | null },
 ): Promise<string> {
   const key = portalHmOverviewOrgGenerationKey(organizationId);
+  let local = "0";
   if (isUpstashConfigured()) {
-    return (await upstashGet(`portal:${key}`)) ?? "0";
+    local = (await upstashGet(`portal:${key}`)) ?? "0";
+  } else {
+    local = memoryOrgGeneration.get(key) ?? "0";
   }
-  return memoryOrgGeneration.get(key) ?? "0";
+  return maxPortalCacheGeneration(local, options?.firestoreGeneration ?? "0");
 }
 
 /**
@@ -82,6 +95,25 @@ export async function invalidateClientEntitlementsServerCache(userSub?: string |
   const sub = userSub ?? (await getServerAuthSub());
   if (!sub) return;
   await portalServerCacheDel(portalClientEntitlementsCacheKey(sub));
+}
+
+/**
+ * Firebase-path client portal bust: entitlements/dashboard keys use
+ * `firebaseUid`, not NextAuth `sub` (domain userId).
+ */
+export async function invalidateFirebaseClientPortalCaches(input: {
+  firebaseUid: string;
+  organizationId?: string | null;
+}): Promise<void> {
+  if (!input.firebaseUid) return;
+  await portalServerCacheDelMany([
+    portalClientEntitlementsCacheKey(input.firebaseUid),
+    portalClientDashboardCacheKey(input.firebaseUid),
+    portalClientOverviewCacheKey(input.firebaseUid),
+  ]);
+  if (input.organizationId) {
+    await bumpHmOverviewOrgGeneration(input.organizationId);
+  }
 }
 
 async function invalidateClientFeaturesServerCache(clientDocumentId: string): Promise<void> {

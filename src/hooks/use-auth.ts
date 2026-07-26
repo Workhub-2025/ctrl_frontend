@@ -14,6 +14,7 @@ import {
     logoutFirebaseBrowserSession,
 } from '@/lib/firebase-auth-browser';
 import { readPendingSessionJoin } from '@/lib/pending-session-join';
+import { safeCallbackPath } from '@/lib/auth/safe-callback-path';
 
 const useFirebaseAuthentication = isFirebaseAuthProvider();
 
@@ -21,8 +22,7 @@ const useFirebaseAuthentication = isFirebaseAuthProvider();
 function safeCallbackPathFromLocation(): string | null {
     if (typeof window === 'undefined') return null;
     const raw = new URLSearchParams(window.location.search).get('callbackUrl');
-    if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null;
-    return raw;
+    return safeCallbackPath(raw);
 }
 
 async function claimPendingJoinIfPresent(): Promise<string | null> {
@@ -41,6 +41,32 @@ function provisioningRedirectForPendingJoin(redirectPath: string): string {
         return '/join?verified=1';
     }
     return redirectPath;
+}
+
+function invitationAcceptanceDestination(defaultRedirectPath: string): string {
+    const currentQuery = new URLSearchParams(window.location.search);
+    const callbackPath = safeCallbackPathFromLocation();
+    const callbackUrl = callbackPath
+        ? new URL(callbackPath, window.location.origin)
+        : null;
+    const preferCallback =
+        callbackUrl?.pathname === '/auth/accept-invitation' ? callbackPath! : defaultRedirectPath;
+    const destinationPath = provisioningRedirectForPendingJoin(preferCallback);
+    const destination = new URL(destinationPath, window.location.origin);
+    if (destination.pathname === '/auth/accept-invitation') {
+        const invitationToken =
+            currentQuery.get('token') ??
+            currentQuery.get('invitation') ??
+            callbackUrl?.searchParams.get('token');
+        const invitationType =
+            currentQuery.get('type') ?? callbackUrl?.searchParams.get('type');
+        const invitationEmail =
+            currentQuery.get('email') ?? callbackUrl?.searchParams.get('email');
+        if (invitationToken) destination.searchParams.set('token', invitationToken);
+        if (invitationType) destination.searchParams.set('type', invitationType);
+        if (invitationEmail) destination.searchParams.set('email', invitationEmail);
+    }
+    return `${destination.pathname}${destination.search}`;
 }
 
 export function useAuth() {
@@ -80,8 +106,10 @@ export function useAuth() {
             return true;
         }
 
-        // For candidates, check if equality monitoring is completed
-        return !!userData.equalityMonitoring && Object.keys(userData.equalityMonitoring).length > 0;
+        // Completed survey, or explicit dismissal (skip without completed: true)
+        if (userData.hasCompletedEqualityMonitoring === true) return true;
+        if (userData.equalityPromptDismissedAt) return true;
+        return userData.equalityMonitoring?.completed === true;
     };
 
     // Helper function to route user after login based on role and profile
@@ -137,19 +165,11 @@ export function useAuth() {
                             redirectPath: result.session.redirectPath,
                         };
                     }
-                    const currentQuery = new URLSearchParams(window.location.search);
-                    const invitationToken =
-                        currentQuery.get('token') ?? currentQuery.get('invitation');
-                    const destinationPath = provisioningRedirectForPendingJoin(
-                        result.session.redirectPath,
-                    );
-                    const destination = new URL(destinationPath, window.location.origin);
-                    if (destination.pathname === '/auth/accept-invitation' && invitationToken) {
-                        destination.searchParams.set('token', invitationToken);
-                    }
                     // Client navigation preserves Firebase's deliberately
                     // in-memory user while bootstrap/enrolment is completed.
-                    router.push(`${destination.pathname}${destination.search}`);
+                    router.push(
+                        invitationAcceptanceDestination(result.session.redirectPath),
+                    );
                     return { success: true, provisioningRequired: true };
                 }
 
@@ -286,17 +306,9 @@ export function useAuth() {
                             redirectPath: result.session.redirectPath,
                         };
                     }
-                    const currentQuery = new URLSearchParams(window.location.search);
-                    const invitationToken =
-                        currentQuery.get('token') ?? currentQuery.get('invitation');
-                    const destinationPath = provisioningRedirectForPendingJoin(
-                        result.session.redirectPath,
+                    router.push(
+                        invitationAcceptanceDestination(result.session.redirectPath),
                     );
-                    const destination = new URL(destinationPath, window.location.origin);
-                    if (destination.pathname === '/auth/accept-invitation' && invitationToken) {
-                        destination.searchParams.set('token', invitationToken);
-                    }
-                    router.push(`${destination.pathname}${destination.search}`);
                     return { success: true, provisioningRequired: true };
                 }
                 const firebaseUser = {

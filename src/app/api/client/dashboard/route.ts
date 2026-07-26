@@ -37,9 +37,17 @@ export async function GET(request: Request) {
     };
 
     // Shares the org generation with the HM overview: seat, campaign and
-    // candidate changes move counts on both screens.
+    // candidate changes move counts on both screens. Max of Upstash + Firestore
+    // covers sync BFF busts and async scoring completion.
+    const portalCache = await domainApi
+      .request<{ generation: string }>({
+        path: `/v1/organizations/${encodeURIComponent(context.organizationId)}/portal-cache-generation`,
+        firebaseSessionCookie,
+      })
+      .catch(() => ({ generation: "0" }));
     const generation = await readHmOverviewOrgGeneration(
       context.organizationId,
+      { firestoreGeneration: portalCache.generation },
     );
     const data = await portalServerCacheGetOrSet(
       portalClientDashboardCacheKeyWithGeneration(

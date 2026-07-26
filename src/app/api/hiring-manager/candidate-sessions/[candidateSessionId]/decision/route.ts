@@ -8,7 +8,6 @@ import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bf
 
 import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
-import { invalidateHmReportServerCache } from "@/lib/portal-cache-invalidation";
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ candidateSessionId: string }> }
@@ -75,7 +74,6 @@ export async function POST(
         },
       ),
     });
-    void invalidateHmReportServerCache(session.user.id, candidateSessionId);
     return NextResponse.json({
       data: {
         documentId: result.decisionId,

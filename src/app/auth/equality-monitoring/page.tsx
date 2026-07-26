@@ -6,7 +6,9 @@ import { useAuth } from '@/hooks/use-auth';
 import EqualityMonitoringForm from '@/components/auth/equality-monitoring-form';
 import { EqualityMonitoringState } from '@/types';
 import { toast } from '@/hooks/use-toast';
-import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
+import { UserProfileService } from '@/services/user-profile.service';
+import { routeForRole } from '@/lib/auth/role-model';
+import { canAccessEqualityMonitoring } from '@/lib/profile-authority';
 
 // Component that uses useSearchParams
 function EqualityMonitoringContent() {
@@ -28,19 +30,21 @@ function EqualityMonitoringContent() {
         return;
       }
       
-      // Check if user is a candidate
-      const isCandidate = normalizeRole(user.role) === 'candidate';
-      
-      if (!isCandidate) {
-        // Non-candidates shouldn't see this form
+      // Check if user can access equality monitoring
+      if (!canAccessEqualityMonitoring(user.role)) {
         router.push(routeForRole(user.role));
         return;
       }
       
-      // Check if already completed (by checking if the object exists and has properties)
-      const hasCompleted = !!user?.equalityMonitoring && Object.keys(user.equalityMonitoring).length > 0;
-      if (hasCompleted) {
-        router.push('/candidate-dashboard/');
+      // Completed or explicitly dismissed (dismissal ≠ survey completion)
+      const settled =
+        user?.hasCompletedEqualityMonitoring === true ||
+        !!(user as { equalityPromptDismissedAt?: string | null })
+          ?.equalityPromptDismissedAt ||
+        (!!user?.equalityMonitoring &&
+          (user.equalityMonitoring as { completed?: boolean }).completed === true);
+      if (settled) {
+        router.push(routeForRole(user.role));
         return;
       }
     }
@@ -60,7 +64,7 @@ function EqualityMonitoringContent() {
         description: 'Your equality monitoring information has been saved.',
       });
       
-      router.push('/candidate-dashboard/');
+      router.push(routeForRole(user.role));
     } catch (error) {
       console.error('Error saving equality monitoring:', error);
       toast({
@@ -73,8 +77,25 @@ function EqualityMonitoringContent() {
     }
   };
 
-  const handleSkip = () => {
-    router.push('/candidate-dashboard/');
+  const handleSkip = async () => {
+    try {
+      setIsLoading(true);
+      await UserProfileService.dismissEqualityPrompt();
+      toast({
+        title: 'Skipped for now',
+        description: 'You can complete equality monitoring later from your profile.',
+      });
+      router.push(routeForRole(user.role));
+    } catch (error) {
+      toast({
+        title: 'Could not skip',
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Show loading while checking authentication

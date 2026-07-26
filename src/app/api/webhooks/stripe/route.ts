@@ -8,6 +8,7 @@ import {
 } from "@/lib/stripe/fulfill-billing";
 import type Stripe from "stripe";
 import { ingestStripeEventViaFirebase } from "@/lib/firebase-billing-api";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
 
 const SUBSCRIPTION_EVENTS = new Set([
   "customer.subscription.created",
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
   if (firebaseBillingConfigured()) {
     try {
       const result = await ingestStripeEventViaFirebase(event);
+      void invalidateAdminPlatformServerCache();
       return NextResponse.json(result);
     } catch (error) {
       return NextResponse.json(

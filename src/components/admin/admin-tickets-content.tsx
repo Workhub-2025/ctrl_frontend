@@ -594,7 +594,11 @@ function TicketDetailDialog({
 
 /* ── main page ─────────────────────────────────────────── */
 
-export function AdminTicketsContent() {
+export function AdminTicketsContent({
+  initialEscalatedTo,
+}: {
+  initialEscalatedTo?: "billing" | "ops";
+} = {}) {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [stats, setStats] = useState<TicketStats>({
     open: 0,
@@ -609,6 +613,9 @@ export function AdminTicketsContent() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
+  const [escalationFilter, setEscalationFilter] = useState<
+    "all" | "billing" | "ops"
+  >(initialEscalatedTo ?? "all");
   const [search, setSearch] = useState("");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(
     null
@@ -620,7 +627,11 @@ export function AdminTicketsContent() {
     else setRefreshing(true);
     try {
       const [ticketsData, statsData] = await Promise.all([
-        SupportTicketService.getAllTickets(),
+        SupportTicketService.getAllTickets(
+          escalationFilter === "all"
+            ? undefined
+            : { escalatedTo: escalationFilter },
+        ),
         SupportTicketService.getTicketStats(),
       ]);
       setTickets(ticketsData);
@@ -631,7 +642,7 @@ export function AdminTicketsContent() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [escalationFilter]);
 
   useEffect(() => {
     fetchData();
@@ -677,8 +688,16 @@ export function AdminTicketsContent() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Support tickets"
-        description="Review, triage, and resolve user-submitted tickets."
+        title={
+          escalationFilter === "billing"
+            ? "Billing escalations"
+            : "Support tickets"
+        }
+        description={
+          escalationFilter === "billing"
+            ? "Tickets escalated to billing for commercial follow-up."
+            : "Review, triage, and resolve user-submitted tickets."
+        }
         action={
           <Button
             variant="outline"
@@ -693,6 +712,26 @@ export function AdminTicketsContent() {
           </Button>
         }
       />
+
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            { key: "all", label: "All tickets" },
+            { key: "billing", label: "Billing escalations" },
+            { key: "ops", label: "Ops escalations" },
+          ] as const
+        ).map((tab) => (
+          <Button
+            key={tab.key}
+            variant={escalationFilter === tab.key ? "default" : "outline"}
+            size="sm"
+            className="rounded-lg"
+            onClick={() => setEscalationFilter(tab.key)}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </div>
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

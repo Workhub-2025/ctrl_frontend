@@ -5,7 +5,11 @@ import {
     guardAuthenticatedApiRoute,
     guardPortalApiRoute,
 } from "@/lib/auth/bff-api-middleware";
-import { isAdminPortalRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
+import {
+    isElevatedAdminPortalRole,
+    normalizeRole,
+    routeForRole,
+} from "@/lib/auth/role-model";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { buildContentSecurityPolicy } from "@/lib/security/content-security-policy";
@@ -111,8 +115,8 @@ export default withAuth(
                 return NextResponse.redirect(loginUrl);
             }
 
-            if (!isAdminPortalRole(token?.role)) {
-                // Redirect authenticated non-admin users to their dashboard.
+            if (!isElevatedAdminPortalRole(token?.role)) {
+                // Redirect authenticated non-admin / restricted-recovery users away.
                 return NextResponse.redirect(new URL(routeForRole(token?.role), req.url));
             }
         }

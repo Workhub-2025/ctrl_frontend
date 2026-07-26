@@ -53,7 +53,8 @@ export async function POST(request: Request) {
       email: string;
       roles: string[];
       alreadyRegistered: boolean;
-      passwordResetLink: string;
+      deliveryQueued: boolean;
+      alreadyQueued: boolean;
     }>({
       path: "/v1/platform-administrators",
       method: "POST",
@@ -72,7 +73,8 @@ export async function POST(request: Request) {
           email: result.email,
           userId: result.userId,
           roles: result.roles,
-          passwordResetLink: result.passwordResetLink,
+          deliveryQueued: result.deliveryQueued,
+          alreadyQueued: result.alreadyQueued,
         },
       },
       { status: result.alreadyRegistered ? 200 : 201 },

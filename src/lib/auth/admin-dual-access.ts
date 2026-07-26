@@ -10,7 +10,7 @@ import {
 import { BffAuthError } from "@/lib/auth/bff-route-errors";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 import { authOptions } from "@/lib/auth/next-auth-options";
-import { isAdminPortalRole } from "@/lib/auth/role-model";
+import { isElevatedAdminPortalRole } from "@/lib/auth/role-model";
 import { getServerCmsJwt } from "@/legacy-cms/jwt";
 import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
 
@@ -82,7 +82,7 @@ export async function requireAdminDualAccess(
       ),
     };
   }
-  if (!isAdminPortalRole(session.user.role)) {
+  if (!isElevatedAdminPortalRole(session.user.role)) {
     return {
       error: NextResponse.json(
         { error: "Administrator access required" },

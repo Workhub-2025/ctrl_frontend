@@ -26,6 +26,8 @@ function toProfileResponse(profile: {
     agreeToMarketing?: boolean | null;
     privacyConsent?: Record<string, unknown> | null;
     equalityMonitoring?: Record<string, unknown> | null;
+    hasCompletedEqualityMonitoring?: boolean;
+    equalityPromptDismissedAt?: string | null;
 }) {
     return {
         id: profile.id,
@@ -40,6 +42,10 @@ function toProfileResponse(profile: {
         agreeToMarketing: profile.agreeToMarketing ?? undefined,
         privacyConsent: profile.privacyConsent ?? null,
         equalityMonitoring: profile.equalityMonitoring ?? null,
+        hasCompletedEqualityMonitoring:
+            profile.hasCompletedEqualityMonitoring ??
+            profile.equalityMonitoring?.completed === true,
+        equalityPromptDismissedAt: profile.equalityPromptDismissedAt ?? null,
     };
 }
 
@@ -107,6 +113,9 @@ export async function GET(request: NextRequest) {
             agreeToMarketing: userData.agreeToMarketing,
             privacyConsent: userData.privacyConsent,
             equalityMonitoring: userData.equalityMonitoring,
+            hasCompletedEqualityMonitoring:
+                userData.equalityMonitoring?.completed === true,
+            equalityPromptDismissedAt: null,
         }, { headers: { 'x-correlation-id': correlationId } });
     } catch (error: unknown) {
         const bffError = handleBffRouteError(error, 'Failed to fetch profile');
@@ -159,9 +168,9 @@ export async function PUT(request: NextRequest) {
 
         const decision = buildAuthorizedProfileUpdate(body, session.user.role);
         if (decision.forbiddenEqualityMonitoring) {
-            trace.failure(new Error('Equality monitoring is candidate-only'));
+            trace.failure(new Error('Equality monitoring is unavailable for this portal'));
             return NextResponse.json(
-                { error: 'Equality monitoring is available to candidate accounts only.' },
+                { error: 'Equality monitoring is not available for this account.' },
                 { status: 403, headers: { 'x-correlation-id': correlationId } },
             );
         }
@@ -209,6 +218,9 @@ export async function PUT(request: NextRequest) {
             agreeToMarketing: updatedUser.agreeToMarketing,
             privacyConsent: updatedUser.privacyConsent,
             equalityMonitoring: updatedUser.equalityMonitoring,
+            hasCompletedEqualityMonitoring:
+                updatedUser.equalityMonitoring?.completed === true,
+            equalityPromptDismissedAt: null,
         }, { headers: { 'x-correlation-id': correlationId } });
     } catch (error: unknown) {
         const bffError = handleBffRouteError(error, 'Failed to update profile');

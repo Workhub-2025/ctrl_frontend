@@ -1,6 +1,7 @@
 import {
   hasAdminPermission,
   isAdminPortalRoleType,
+  isRestrictedAdminRoleType,
   isSuperAdminRoleType,
   normalizeAdminPortalRoleType,
   type AdminPermission,
@@ -31,6 +32,7 @@ const ROLE_ALIASES: Record<string, AppRole | AdminPortalRoleType> = {
   administrator: "admin",
   ctrl_admin: "admin",
   super_admin: "admin",
+  admin_restricted: "admin_restricted",
   admin_ops: "admin_ops",
   admin_billing: "admin_billing",
   admin_support: "admin_support",
@@ -90,8 +92,13 @@ export const isAdminPortalRole = (role: unknown) => {
   return isAdminPortalRoleType(role);
 };
 
+/** Elevated admin portal access — excludes the fail-closed recovery role. */
+export const isElevatedAdminPortalRole = (role: unknown) => {
+  return isAdminPortalRoleType(role) && !isRestrictedAdminRoleType(role);
+};
+
 export const isAdminRole = (role: unknown) => {
-  return isAdminPortalRole(role);
+  return isElevatedAdminPortalRole(role);
 };
 
 export const roleSupportsTotp = (role: unknown) => {
@@ -126,7 +133,10 @@ export const inferDevSeededRole = (email?: string | null): AppRole | AdminPortal
 };
 
 export const routeForRole = (role: unknown): string => {
-  if (isAdminPortalRole(role)) {
+  if (isRestrictedAdminRoleType(role)) {
+    return "/profile";
+  }
+  if (isElevatedAdminPortalRole(role)) {
     return "/admin";
   }
 
@@ -143,4 +153,4 @@ export const routeForRole = (role: unknown): string => {
   }
 };
 
-export { type AdminPermission, type AdminPortalRoleType };
+export { type AdminPermission, type AdminPortalRoleType, isRestrictedAdminRoleType };

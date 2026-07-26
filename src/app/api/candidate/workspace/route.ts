@@ -11,11 +11,19 @@ import {
 } from "@/lib/portal-cache-keys";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import type { CandidatePortalApplication } from "@/services/candidate-session.service";
+import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const { context: actor, recruitment } =
       await requireFirebaseRecruitmentSession("candidate");
+
+    const rateLimited = await rejectRateLimitedPortalRead(request, {
+      scope: "candidate-workspace",
+      actorId: actor.firebaseUid,
+      organizationId: actor.organizationId ?? "candidate",
+    });
+    if (rateLimited) return rateLimited;
 
     const loadWorkspace = async (): Promise<CandidatePortalApplication[]> => {
       const workspace = await recruitment.getCandidateWorkspace();
@@ -41,11 +49,14 @@ export async function GET(_request: NextRequest) {
             ? "completed"
             : assignment.status === "locked" && hasFutureStart
               ? "awaiting_assessment"
-              : assignment.status === "locked" || anyLocked
-                ? "soft_locked"
-                : anyInProgress
-                  ? "in_progress"
-                  : "awaiting_assessment";
+              :           assignment.status === "locked" ||
+          anyLocked ||
+          session?.status === "closed" ||
+          session?.status === "cancelled"
+            ? "soft_locked"
+            : anyInProgress
+              ? "in_progress"
+              : "awaiting_assessment";
         return {
           documentId: assignment.id,
           mode: session?.mode ?? campaign.assessmentMode,

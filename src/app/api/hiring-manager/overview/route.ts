@@ -66,9 +66,17 @@ export async function GET(request: Request) {
     };
 
     // The generation suffix is rotated by every tenant mutation and by
-    // assessment submit, so a stale entry is never served after a change.
+    // assessment submit / scoring completion (Firestore), so a stale entry is
+    // never served after a change.
+    const portalCache = await domainApi
+      .request<{ generation: string }>({
+        path: `/v1/organizations/${encodeURIComponent(context.organizationId)}/portal-cache-generation`,
+        firebaseSessionCookie,
+      })
+      .catch(() => ({ generation: "0" }));
     const generation = await readHmOverviewOrgGeneration(
       context.organizationId,
+      { firestoreGeneration: portalCache.generation },
     );
     const data = await portalServerCacheGetOrSet(
       portalHmOverviewCacheKeyWithGeneration(context.firebaseUid, generation),

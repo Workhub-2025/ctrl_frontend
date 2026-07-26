@@ -6,7 +6,12 @@ export type ProfileUpdateDecision = Readonly<{
 }>;
 
 export function canAccessEqualityMonitoring(role: unknown): boolean {
-  return resolveAppRole(role) === "candidate";
+  const appRole = resolveAppRole(role);
+  return (
+    appRole === "candidate" ||
+    appRole === "client" ||
+    appRole === "hiring_manager"
+  );
 }
 
 export function buildAuthorizedProfileUpdate(

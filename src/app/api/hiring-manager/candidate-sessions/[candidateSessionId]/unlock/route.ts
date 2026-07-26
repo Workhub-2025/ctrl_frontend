@@ -8,7 +8,6 @@ import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
-import { invalidateHmReportServerCache } from "@/lib/portal-cache-invalidation";
 
 export async function POST(
   request: NextRequest,
@@ -64,7 +63,6 @@ export async function POST(
       ),
     });
 
-    void invalidateHmReportServerCache(session.user.id, candidateSessionId);
     return NextResponse.json({
       data: {
         unlocked: true,

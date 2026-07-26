@@ -46,14 +46,14 @@ describe("account and profile consolidation", () => {
     expect(profileApi).toMatch(/userData\.confirmed|emailVerified/);
   });
 
-  it("keeps equality monitoring behind candidate checks", () => {
+  it("keeps equality monitoring behind the shared role authority check", () => {
     const profile = read("src/app/profile/page.tsx");
     const equalityLayout = read(
       "src/app/auth/equality-monitoring/layout.tsx",
     );
     const profileApi = read("src/app/api/user/profile/route.ts");
 
-    expect(profile).toContain("userIsCandidate");
+    expect(profile).toContain("canUseEqualityMonitoring");
     expect(equalityLayout).toContain("canAccessEqualityMonitoring");
     expect(profileApi).toContain("forbiddenEqualityMonitoring");
   });

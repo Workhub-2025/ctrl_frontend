@@ -11,6 +11,8 @@ export interface UserProfileResponse {
     agreeToMarketing?: boolean;
     privacyConsent?: Record<string, unknown> | null;
     equalityMonitoring?: EqualityMonitoringState | null;
+    hasCompletedEqualityMonitoring: boolean;
+    equalityPromptDismissedAt?: string | null;
     createdAt?: string | null;
     emailVerified?: boolean | null;
 }
@@ -64,6 +66,23 @@ export class UserProfileService {
         }
 
         return body as UserProfileResponse;
+    }
+
+    static async dismissEqualityPrompt(): Promise<UserProfileResponse> {
+        const response = await fetch('/api/user/equality-prompt-dismiss', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(
+                typeof body.error === 'string'
+                    ? body.error
+                    : 'Could not dismiss equality prompt'
+            );
+        }
+        return (body.data ?? body) as UserProfileResponse;
     }
 
     static async downloadDataExport(): Promise<void> {

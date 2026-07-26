@@ -112,7 +112,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: "/admin/erasure-requests",
         label: "Data erasure queue",
         icon: ShieldOff,
-        permission: "users.read",
+        permission: "privacy.read",
         isActive: (pathname) => pathname.startsWith("/admin/erasure-requests"),
       },
       {
@@ -156,7 +156,7 @@ const ROUTE_PERMISSIONS: Array<{ prefix: string; permission: AdminPermission; ex
   { prefix: "/admin/analytics", permission: "analytics.read" },
   { prefix: "/admin/upgrade-requests", permission: "entitlements.write" },
   { prefix: "/admin/comms", permission: "comms.send" },
-  { prefix: "/admin/erasure-requests", permission: "users.read" },
+  { prefix: "/admin/erasure-requests", permission: "privacy.read" },
   { prefix: "/admin/tickets", permission: "tickets.read" },
   { prefix: "/admin/assessment-recovery", permission: "recovery.read" },
   { prefix: "/admin/settings", permission: "security.manage" },

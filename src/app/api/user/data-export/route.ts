@@ -33,12 +33,26 @@ export async function GET(request: NextRequest) {
       firebaseSessionCookie: auth.firebaseSessionCookie,
     });
 
+    const manifest =
+      data &&
+      typeof data === "object" &&
+      "manifest" in data &&
+      data.manifest &&
+      typeof data.manifest === "object"
+        ? (data.manifest as { complete?: boolean })
+        : null;
+    const complete = manifest?.complete === true;
+    const filename = complete
+      ? `ctrl-data-export-${auth.session.user.id}.json`
+      : `ctrl-data-export-partial-${auth.session.user.id}.json`;
+
     trace.success({ userId: auth.session.user.id });
     return new NextResponse(JSON.stringify(data, null, 2), {
       status: 200,
       headers: {
         "content-type": "application/json; charset=utf-8",
-        "content-disposition": `attachment; filename="ctrl-data-export-${auth.session.user.id}.json"`,
+        "content-disposition": `attachment; filename="${filename}"`,
+        "x-ctrl-export-complete": complete ? "true" : "false",
         "x-correlation-id": correlationId,
       },
     });

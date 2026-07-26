@@ -37,6 +37,7 @@ export type FirebaseAccountProvisioningRequest = Readonly<{
 
 export type FirebaseAccountProvisioningResponse = Readonly<{
   alreadyProvisioned: boolean;
+  requiresExistingSignIn: boolean;
 }>;
 
 export type CandidateInvitationAcceptanceResponse = Readonly<{

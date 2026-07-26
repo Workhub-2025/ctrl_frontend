@@ -53,11 +53,8 @@ describe("Firebase provisioning contracts", () => {
     expect(invitation).toContain('invitationType === "candidate"');
     expect(invitation).toContain("readOnly={Boolean(linkedEmail)}");
     expect(invitation).toContain('role="alert"');
-    expect(invitation.indexOf("/api/onboarding/firebase-account")).toBeLessThan(
-      invitation.indexOf("loginWithFirebase(email"),
-    );
-    expect(invitation.indexOf("loginWithFirebase(email")).toBeLessThan(
-      invitation.indexOf('"/api/assignments/invitations/accept"'),
-    );
+    expect(invitation).toContain("requiresExistingSignIn");
+    expect(invitation).toContain('mode === "existing"');
+    expect(invitation).toContain("/api/auth/session");
   });
 });

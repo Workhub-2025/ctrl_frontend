@@ -12,11 +12,45 @@ async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const error =
       typeof body.error === "string" ? body.error : body.error?.message;
-    throw new Error(
-      error ?? body.message ?? `Request failed (${response.status})`,
-    );
+    const message =
+      error ?? body.message ?? `Request failed (${response.status})`;
+    const err = new Error(message) as Error & { status?: number };
+    err.status = response.status;
+    throw err;
   }
   return body;
+}
+
+function attemptIdempotencyStorageKey(
+  kind: "submit" | "restart",
+  attemptId: string,
+): string {
+  return `ctrl:assessment:${kind}:${attemptId}`;
+}
+
+function readPersistedIdempotencyKey(
+  kind: "submit" | "restart",
+  attemptId: string,
+): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return sessionStorage.getItem(attemptIdempotencyStorageKey(kind, attemptId));
+  } catch {
+    return null;
+  }
+}
+
+function persistIdempotencyKey(
+  kind: "submit" | "restart",
+  attemptId: string,
+  key: string,
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(attemptIdempotencyStorageKey(kind, attemptId), key);
+  } catch {
+    // sessionStorage may be unavailable; continue with in-memory key.
+  }
 }
 
 export const AssessmentRuntimeClient = {
@@ -74,6 +108,24 @@ export const AssessmentRuntimeClient = {
     );
     return body.data;
   },
+  async resume<TContent = unknown>(attemptId: string): Promise<{
+    progressRevision: number;
+    progressData: unknown;
+    launch?: LaunchEnvelope<TContent>;
+  }> {
+    const body = await readJson<{
+      data: {
+        progressRevision: number;
+        progressData: unknown;
+      };
+    }>(
+      await fetch(
+        `/api/assessment-runtime/attempts/${encodeURIComponent(attemptId)}/resume`,
+        { method: "POST", headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    return body.data;
+  },
   async event(
     attemptId: string,
     event: {
@@ -100,6 +152,9 @@ export const AssessmentRuntimeClient = {
     return body.data;
   },
   async submit(attemptId: string, idempotencyKey: string, submission: unknown) {
+    const key =
+      readPersistedIdempotencyKey("submit", attemptId) ?? idempotencyKey;
+    persistIdempotencyKey("submit", attemptId, key);
     const body = await readJson<{
       data: {
         receiptId: string;
@@ -115,7 +170,7 @@ export const AssessmentRuntimeClient = {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idempotencyKey, submission }),
+          body: JSON.stringify({ idempotencyKey: key, submission }),
         },
       ),
     );
@@ -125,13 +180,16 @@ export const AssessmentRuntimeClient = {
     attemptId: string,
     idempotencyKey: string,
   ): Promise<LaunchEnvelope<TContent>> {
+    const key =
+      readPersistedIdempotencyKey("restart", attemptId) ?? idempotencyKey;
+    persistIdempotencyKey("restart", attemptId, key);
     const body = await readJson<{ data: LaunchEnvelope<TContent> }>(
       await fetch(
         `/api/assessment-runtime/attempts/${encodeURIComponent(attemptId)}/restart`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idempotencyKey }),
+          body: JSON.stringify({ idempotencyKey: key }),
         },
       ),
     );

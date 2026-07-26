@@ -21,14 +21,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const DARK_INPUT =
-  "h-12 rounded-xl border-white/10 bg-white/[0.03] text-white placeholder:text-slate-600 transition-[border-color,box-shadow] focus-visible:border-amber-500/50 focus-visible:ring-1 focus-visible:ring-amber-500/40";
-const LIGHT_INPUT =
-  "h-12 rounded-xl border-slate-300 bg-white text-slate-950 placeholder:text-slate-400 shadow-sm transition-[border-color,box-shadow] focus-visible:border-amber-600/50 focus-visible:ring-1 focus-visible:ring-amber-600/30";
-const DARK_CODE_INPUT =
-  "h-12 rounded-xl border-white/10 bg-white/[0.03] font-mono text-base tracking-[0.18em] text-white placeholder:tracking-normal placeholder:text-slate-600 uppercase transition-[border-color,box-shadow] focus-visible:border-amber-500/50 focus-visible:ring-1 focus-visible:ring-amber-500/40";
-const LIGHT_CODE_INPUT =
-  "h-12 rounded-xl border-slate-300 bg-white font-mono text-base tracking-[0.18em] text-slate-950 placeholder:tracking-normal placeholder:text-slate-400 uppercase shadow-sm transition-[border-color,box-shadow] focus-visible:border-amber-600/50 focus-visible:ring-1 focus-visible:ring-amber-600/30";
+const FIELD_INPUT =
+  "h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground shadow-sm transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring";
+const CODE_INPUT =
+  "h-12 rounded-xl border-border bg-background font-mono text-base tracking-[0.18em] text-foreground placeholder:tracking-normal placeholder:text-muted-foreground uppercase shadow-sm transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring";
 
 type SessionJoinFormProps = {
   initialCode?: string;
@@ -84,12 +80,12 @@ export function SessionJoinForm({
   const [error, setError] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [submitStatus, setSubmitStatus] = useState<ButtonState>("idle");
-  const fieldClass = inputVariant === "light" ? LIGHT_INPUT : DARK_INPUT;
-  const codeClass = inputVariant === "light" ? LIGHT_CODE_INPUT : DARK_CODE_INPUT;
-  const muted = inputVariant === "light" ? "text-slate-500" : "text-slate-500";
+  const fieldClass = FIELD_INPUT;
+  const codeClass = CODE_INPUT;
+  const muted = "text-muted-foreground";
   const labelClass = cn(
     "text-xs font-semibold uppercase tracking-wider",
-    inputVariant === "light" ? "text-slate-600" : "text-slate-400",
+    "text-muted-foreground",
   );
 
   const finishClaim = useCallback(async () => {
@@ -216,16 +212,14 @@ export function SessionJoinForm({
         <div
           className={cn(
             "rounded-xl border px-4 py-3 text-sm leading-6",
-            inputVariant === "light"
-              ? "border-slate-200 bg-white text-slate-700"
-              : "border-white/10 bg-white/[0.03] text-slate-300",
+            "border-border bg-card text-muted-foreground",
           )}
         >
           <p className="flex items-start gap-2">
             <Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
               {statusMessage ||
-                `Check ${email || "your inbox"} for a verification link. After you verify, return here and continue — you can use these same login details again if you get signed out during the assessment.`}
+                `We sent a Firebase verification email to ${email || "your inbox"}. Open the link, then return here and continue. The same email and password work later via Sign in if you get signed out.`}
             </span>
           </p>
         </div>
@@ -287,7 +281,7 @@ export function SessionJoinForm({
             variant="ghost"
             className={cn(
               "h-auto px-0 text-sm",
-              inputVariant === "light" ? "text-slate-700" : "text-slate-300",
+              "text-muted-foreground",
             )}
             onClick={() => void handleResend()}
             disabled={disabled || submitStatus === "loading"}
@@ -299,7 +293,7 @@ export function SessionJoinForm({
             variant="ghost"
             className={cn(
               "h-auto px-0 text-sm",
-              inputVariant === "light" ? "text-slate-700" : "text-slate-300",
+              "text-muted-foreground",
             )}
             onClick={() => {
               setStep("register");
@@ -344,7 +338,7 @@ export function SessionJoinForm({
           className={codeClass}
         />
         <p className={cn("text-xs leading-5", muted)}>
-          Codes expire 24 hours after they are issued.
+          Works for remote and in-person sessions. Codes expire 24 hours after they are issued.
         </p>
       </div>
 
@@ -395,7 +389,7 @@ export function SessionJoinForm({
             type="button"
             className={cn(
               "absolute right-3 top-1/2 -translate-y-1/2",
-              inputVariant === "light" ? "text-slate-500" : "text-slate-400",
+              "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
             onClick={() => setShowPassword((value) => !value)}
             aria-label={showPassword ? "Hide password" : "Show password"}
@@ -452,7 +446,7 @@ export function SessionJoinForm({
           type="button"
           className={cn(
             "font-medium underline-offset-4 hover:underline",
-            inputVariant === "light" ? "text-slate-900" : "text-white",
+            "font-medium text-primary underline-offset-4 hover:underline",
           )}
           onClick={() => setStep("verify")}
         >
@@ -463,7 +457,7 @@ export function SessionJoinForm({
           href="/auth/login"
           className={cn(
             "font-medium underline-offset-4 hover:underline",
-            inputVariant === "light" ? "text-slate-900" : "text-white",
+            "font-medium text-primary underline-offset-4 hover:underline",
           )}
         >
           Sign in

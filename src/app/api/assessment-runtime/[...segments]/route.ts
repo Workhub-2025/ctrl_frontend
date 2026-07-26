@@ -24,7 +24,7 @@ function allowed(method: string, segments: string[]) {
     return path === "readiness" || /^attempts\/[^/]+\/status$/.test(path);
   }
   if (method === "POST") {
-    return path === "start" || /^attempts\/[^/]+\/(heartbeat|events|submit|restart)$/.test(path);
+    return path === "start" || /^attempts\/[^/]+\/(heartbeat|events|submit|restart|resume)$/.test(path);
   }
   return method === "PATCH" && /^attempts\/[^/]+\/progress$/.test(path);
 }

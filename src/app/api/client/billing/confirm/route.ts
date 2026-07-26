@@ -14,7 +14,7 @@ import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 import { getCmsApiBaseUrl, joinCmsApiPath } from "@/legacy-cms/server-url";
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
-import { invalidateClientEntitlementCaches } from "@/lib/portal-cache-invalidation";
+import { invalidateClientEntitlementCaches, invalidateAdminPlatformServerCache, invalidateFirebaseClientPortalCaches } from "@/lib/portal-cache-invalidation";
 import {
   createFirebaseBillingApi,
   tryRequireFirebaseBillingSession,
@@ -61,6 +61,15 @@ export async function POST(request: NextRequest) {
         firebaseAuth.firebaseSessionCookie,
       );
       const confirmation = await billing.confirmCheckout(stripeCheckoutSessionId);
+      void invalidateFirebaseClientPortalCaches({
+        firebaseUid: firebaseAuth.firebaseUid,
+        organizationId:
+          typeof (confirmation as { organizationId?: string }).organizationId ===
+          "string"
+            ? (confirmation as { organizationId?: string }).organizationId
+            : firebaseAuth.session.user.organization ?? null,
+      });
+      void invalidateAdminPlatformServerCache();
       return NextResponse.json({ data: confirmation });
     }
 

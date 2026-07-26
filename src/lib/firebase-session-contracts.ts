@@ -15,6 +15,8 @@ export type FirebaseSessionExchangeResponse = Readonly<{
   user: Readonly<{
     userId: string;
     portalRole: "candidate" | "hiring_manager" | "client" | "admin";
+    /** Scoped admin portal role when portalRole is admin (e.g. admin_billing). */
+    role?: string;
     organizationId?: string;
   }>;
 }>;

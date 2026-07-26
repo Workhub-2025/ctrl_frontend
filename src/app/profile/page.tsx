@@ -101,7 +101,7 @@ export default function ProfilePage() {
     emailVerified: boolean | null;
   }>({ createdAt: null, emailVerified: null });
   const userIsAdmin = isAdminRole(user?.role);
-  const userIsCandidate = canAccessEqualityMonitoring(user?.role);
+  const canUseEqualityMonitoring = canAccessEqualityMonitoring(user?.role);
   const showPortalSecurity = roleSupportsTotp(user?.role);
   const returnPath = routeForRole(user?.role);
   const verificationLabel = emailVerificationLabel(accountFacts.emailVerified);
@@ -129,7 +129,9 @@ export default function ProfilePage() {
       if (cancelled) return;
 
       if (profile) {
-        setUserProfile(profile as IUser);
+        // The auth store still carries the wider legacy public-user shape;
+        // this endpoint intentionally returns the canonical profile subset.
+        setUserProfile(profile as unknown as IUser);
         setProfileData({
           firstName: profile.firstName || "",
           lastName: profile.lastName || "",
@@ -253,11 +255,23 @@ export default function ProfilePage() {
     }
   };
 
-  const handleEqualityMonitoringSkip = () => {
-    toast({
-      title: "No Changes Made",
-      description: "Your equality monitoring information remains unchanged.",
-    });
+  const handleEqualityMonitoringSkip = async () => {
+    try {
+      const updated = await UserProfileService.dismissEqualityPrompt();
+      setUserProfile(updated as unknown as IUser);
+      toast({
+        title: "Prompt dismissed",
+        description:
+          "We will not ask again. You can still complete equality monitoring from your profile later.",
+      });
+    } catch (error: unknown) {
+      toast({
+        title: "Could not dismiss prompt",
+        description:
+          error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDataExport = async () => {
@@ -347,7 +361,7 @@ export default function ProfilePage() {
             <TabsTrigger value="profile" className={profileTabTriggerClass}>
               Profile Information
             </TabsTrigger>
-            {userIsCandidate ? (
+            {canUseEqualityMonitoring ? (
               <TabsTrigger value="equality" className={profileTabTriggerClass}>
                 Equality Monitoring
               </TabsTrigger>
@@ -540,7 +554,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           {/* Equality Monitoring Tab */}
-          {userIsCandidate ? (
+          {canUseEqualityMonitoring ? (
             <TabsContent value="equality" className="focus-visible:outline-none">
             <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
               <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">

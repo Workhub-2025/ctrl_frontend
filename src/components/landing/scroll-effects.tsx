@@ -280,9 +280,9 @@ export function SectionDivider({
       )}
       aria-hidden="true"
     >
-      <div className="absolute w-px h-full bg-gradient-to-b from-transparent via-slate-300/40 dark:via-white/10 to-transparent" />
+      <div className="absolute h-full w-px bg-gradient-to-b from-transparent via-border to-transparent" />
       <motion.div
-        className="absolute w-[2px] h-16 bg-gradient-to-b from-transparent via-slate-500 dark:via-white to-transparent blur-[1px]"
+        className="absolute h-16 w-[2px] bg-gradient-to-b from-transparent via-primary to-transparent blur-[1px]"
         animate={reduce ? {} : { y: [-130, 130] }}
         transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
       />

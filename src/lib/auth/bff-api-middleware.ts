@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { AppRole, AdminPortalRoleType } from "@/lib/auth/role-model";
-import { isAdminPortalRole, resolveAppRole } from "@/lib/auth/role-model";
+import { isElevatedAdminPortalRole, resolveAppRole } from "@/lib/auth/role-model";
 
 type PortalApiRule = {
   prefix: string;
@@ -35,7 +35,7 @@ export function guardPortalApiRoute(
   }
 
   if (rule.role === "admin_portal") {
-    if (!isAdminPortalRole(tokenRole)) {
+    if (!isElevatedAdminPortalRole(tokenRole)) {
       return NextResponse.json({ error: "Administrator access required" }, { status: 403 });
     }
     return null;

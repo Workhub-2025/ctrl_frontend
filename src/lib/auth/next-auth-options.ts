@@ -1,5 +1,6 @@
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { User } from 'next-auth';
+import { isFirebaseAuthProvider } from '@/lib/auth/auth-provider';
 import { logAuthAuditEvent } from '@/lib/security/audit-log';
 import {
     authenticateCredentials,
@@ -52,80 +53,82 @@ const extractRequestContext = (requestLike: unknown) => {
     return { ipAddress, userAgent };
 };
 
-export const authOptions = {
-    providers: [
-        CredentialsProvider({
-            name: 'credentials',
-            credentials: {
-                email: { label: 'Email', type: 'email' },
-                password: { label: 'Password', type: 'password' }
-            },
-            async authorize(credentials, req): Promise<ExtendedUser | null> {
-                if (!credentials?.email || !credentials?.password) {
+const legacyCredentialsProvider = CredentialsProvider({
+    name: 'credentials',
+    credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+    },
+    async authorize(credentials, req): Promise<ExtendedUser | null> {
+        if (!credentials?.email || !credentials?.password) {
+            return null;
+        }
+
+        const normalizedEmail = credentials.email.trim().toLowerCase();
+        const context = extractRequestContext(req);
+
+        try {
+            const { authResponse, role } = await authenticateCredentials({
+                email: normalizedEmail,
+                password: credentials.password,
+                context,
+            });
+
+            const user = authResponse.user!;
+            if (
+                roleSupportsTotp(role)
+                && (user as { totpEnabled?: boolean }).totpEnabled === true
+            ) {
+                // The direct Credentials callback cannot safely complete
+                // the pending-cookie MFA flow. Reject it so callers must
+                // use POST /api/auth/login followed by TOTP verification.
+                return null;
+            }
+
+            return {
+                id: user.id.toString(),
+                email: user.email,
+                name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+                role,
+                jwt: authResponse.jwt!,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                organization: typeof user.organization === 'string' ? user.organization : undefined,
+                phone: typeof user.phone === 'string' ? user.phone : undefined,
+                equalityMonitoring: user.equalityMonitoring,
+                agreeToMarketing: user.agreeToMarketing ?? undefined,
+                agreeToTerms: user.agreeToTerms ?? undefined,
+                agreeToDataPrivacyPolicy: user.agreeToDataPrivacyPolicy ?? undefined,
+                totpEnabled: (user as { totpEnabled?: boolean }).totpEnabled === true,
+            };
+        } catch (error) {
+            if (error instanceof CredentialAuthError) {
+                if (error.code === 'LOCKED') {
+                    throw new Error('LOCKED_OUT');
+                }
+                if (error.code === 'INVALID') {
                     return null;
                 }
-
-                const normalizedEmail = credentials.email.trim().toLowerCase();
-                const context = extractRequestContext(req);
-
-                try {
-                    const { authResponse, role } = await authenticateCredentials({
-                        email: normalizedEmail,
-                        password: credentials.password,
-                        context,
-                    });
-
-                    const user = authResponse.user!;
-                    if (
-                        roleSupportsTotp(role)
-                        && (user as { totpEnabled?: boolean }).totpEnabled === true
-                    ) {
-                        // The direct Credentials callback cannot safely complete
-                        // the pending-cookie MFA flow. Reject it so callers must
-                        // use POST /api/auth/login followed by TOTP verification.
-                        return null;
-                    }
-
-                    return {
-                        id: user.id.toString(),
-                        email: user.email,
-                        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-                        role,
-                        jwt: authResponse.jwt!,
-                        firstName: user.firstName,
-                        lastName: user.lastName,
-                        organization: typeof user.organization === 'string' ? user.organization : undefined,
-                        phone: typeof user.phone === 'string' ? user.phone : undefined,
-                        equalityMonitoring: user.equalityMonitoring,
-                        agreeToMarketing: user.agreeToMarketing ?? undefined,
-                        agreeToTerms: user.agreeToTerms ?? undefined,
-                        agreeToDataPrivacyPolicy: user.agreeToDataPrivacyPolicy ?? undefined,
-                        totpEnabled: (user as { totpEnabled?: boolean }).totpEnabled === true,
-                    };
-                } catch (error) {
-                    if (error instanceof CredentialAuthError) {
-                        if (error.code === 'LOCKED') {
-                            throw new Error('LOCKED_OUT');
-                        }
-                        if (error.code === 'INVALID') {
-                            return null;
-                        }
-                        if (error.code === 'RATE_LIMITED') {
-                            throw new Error('LOCKED_OUT');
-                        }
-                    }
-
-                    logAuthAuditEvent('login_failure', {
-                        email: normalizedEmail,
-                        ipAddress: context.ipAddress,
-                        userAgent: context.userAgent,
-                        reason: 'Auth service unavailable',
-                    });
-                    throw new Error('AUTH_SERVICE_UNAVAILABLE');
+                if (error.code === 'RATE_LIMITED') {
+                    throw new Error('LOCKED_OUT');
                 }
             }
-        })
-    ],
+
+            logAuthAuditEvent('login_failure', {
+                email: normalizedEmail,
+                ipAddress: context.ipAddress,
+                userAgent: context.userAgent,
+                reason: 'Auth service unavailable',
+            });
+            throw new Error('AUTH_SERVICE_UNAVAILABLE');
+        }
+    }
+});
+
+export const authOptions = {
+    // Firebase mode must not register the Strapi Credentials provider even when
+    // legacy CMS secrets remain in the environment.
+    providers: isFirebaseAuthProvider() ? [] : [legacyCredentialsProvider],
     session: {
         strategy: 'jwt' as const,
     },

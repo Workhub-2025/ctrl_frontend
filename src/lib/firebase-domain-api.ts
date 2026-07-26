@@ -30,12 +30,17 @@ export type FirebaseDomainUserContext = Readonly<{
   email?: string;
   organizationId?: string;
   seatId?: string;
+  platformRoles?: ReadonlyArray<
+    "super_admin" | "support_admin" | "billing_admin" | "operations_admin"
+  >;
+  secondFactorSatisfied?: boolean;
   permissions: readonly string[];
 }>;
 
 export type FirebaseDomainSessionExchange = Readonly<{
   sessionCookie: string;
   expiresInMilliseconds: number;
+  secondFactorSatisfied: boolean;
 }>;
 
 type FirebaseDomainEnvironment = Readonly<{

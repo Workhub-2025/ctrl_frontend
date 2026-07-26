@@ -31,20 +31,28 @@ export async function GET() {
           organization.legalName,
         ]),
       );
-      const eventsByOrg = await Promise.all(
-        organizations.map((organization) =>
-          auth.domainApi.request<FirebaseAdminAuditEvent[]>({
-            path: `/v1/organizations/${encodeURIComponent(organization.id)}/audit-events?limit=${AUDIT_EVENTS_PER_ORG}`,
-            firebaseSessionCookie: auth.firebaseSessionCookie,
-          }),
+      const [eventsByOrg, platformEvents] = await Promise.all([
+        Promise.all(
+          organizations.map((organization) =>
+            auth.domainApi.request<FirebaseAdminAuditEvent[]>({
+              path: `/v1/organizations/${encodeURIComponent(organization.id)}/audit-events?limit=${AUDIT_EVENTS_PER_ORG}`,
+              firebaseSessionCookie: auth.firebaseSessionCookie,
+            }),
+          ),
         ),
-      );
-      const events = eventsByOrg.flat();
+        auth.domainApi
+          .request<FirebaseAdminAuditEvent[]>({
+            path: `/v1/admin/platform-audit-events?limit=${AUDIT_EVENTS_PER_ORG}`,
+            firebaseSessionCookie: auth.firebaseSessionCookie,
+          })
+          .catch(() => [] as FirebaseAdminAuditEvent[]),
+      ]);
+      const events = [...platformEvents, ...eventsByOrg.flat()];
       return NextResponse.json({
         data: toAdminAuditLogRows(events, organizationNameById),
         meta: {
           notice:
-            "Firebase audit view aggregates tenant-scoped events across organizations. Platform-scoped events without an organization are not yet included.",
+            "Firebase audit view merges platform-scoped events (organizationId null) with tenant-scoped organization streams.",
         },
       });
     }

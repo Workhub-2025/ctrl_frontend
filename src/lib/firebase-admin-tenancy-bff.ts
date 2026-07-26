@@ -10,6 +10,13 @@ import type {
   AdminUserRow,
   AdminUsersSummary,
 } from "@/services/admin-platform.service";
+import {
+  mapPlatformRolesToAdminPortalRole,
+  type AdminPortalRoleType,
+} from "@/lib/auth/admin-portal-permissions";
+
+export type { AdminPortalRoleType };
+export { mapPlatformRolesToAdminPortalRole };
 
 export type FirebaseOrganization = Readonly<{
   id: string;
@@ -488,3 +495,6 @@ export function mapFirebaseRolesToPlatformRoles(input: {
   }
   return [...roles];
 }
+
+// mapPlatformRolesToAdminPortalRole lives in admin-portal-permissions (shared
+// with browser session priming). Re-exported above for tenancy callers.
