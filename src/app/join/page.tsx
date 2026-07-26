@@ -19,7 +19,7 @@ function JoinContent() {
     themeClassName,
   } = useAccessibilitySettings();
   const isLightTheme =
-    settings.theme === "soft-cream" || settings.theme === "light-blue";
+    settings.theme === "daylight" || settings.theme === "parchment";
   const panelVariant = isLightTheme ? "light-panel" : "dark-panel";
   const initialCode =
     searchParams.get("accessCode") ?? searchParams.get("code") ?? "";

@@ -13,7 +13,7 @@ function EmailConfirmedContent() {
   const hasError = Boolean(searchParams.get("error"));
 
   return (
-    <div className="flex min-h-screen bg-[#030712] text-white">
+    <div className="flex min-h-screen bg-background text-foreground">
       <AuthBrandingPane />
 
       <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16 xl:px-24">
@@ -59,7 +59,7 @@ function EmailConfirmedContent() {
 
 export default function EmailConfirmedPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#030712]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <EmailConfirmedContent />
     </Suspense>
   );

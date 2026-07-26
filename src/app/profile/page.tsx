@@ -70,7 +70,7 @@ interface ProfileData {
 }
 
 const profileTabListClass =
-  "flex h-auto min-h-10 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto rounded-xl border border-border/60 bg-slate-100/80 p-1 no-scrollbar dark:border-white/5 dark:bg-[#090d16] md:grid md:grid-cols-3 md:overflow-visible";
+  "flex h-auto min-h-10 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto rounded-xl border border-border bg-muted/50 p-1 no-scrollbar md:grid md:grid-cols-3 md:overflow-visible";
 
 const profileTabTriggerClass =
   "shrink-0 min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-medium leading-tight whitespace-nowrap transition-[background-color,color,box-shadow] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-3 sm:text-xs md:w-full md:px-2 md:py-2.5 md:text-sm";

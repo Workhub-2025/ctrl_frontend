@@ -5,9 +5,12 @@ import { useReducedMotion } from "framer-motion";
 
 export const ACCESSIBILITY_STORAGE_KEY = "ctrl-accessibility-settings";
 
+export type AccessibilityTheme = "slate" | "obsidian" | "daylight" | "parchment";
+export type AccessibilityTextSize = "100" | "112" | "125";
+
 export type AccessibilitySettings = {
-  theme: "dark-blue" | "black" | "soft-cream" | "light-blue";
-  textSize: "default" | "large" | "extra-large";
+  theme: AccessibilityTheme;
+  textSize: AccessibilityTextSize;
   lineSpacing: "default" | "comfortable" | "spacious";
   contrast: "default" | "high";
   motion: "full" | "reduced";
@@ -20,8 +23,8 @@ export type AccessibilitySettings = {
 };
 
 export const defaultAccessibilitySettings: AccessibilitySettings = {
-  theme: "dark-blue",
-  textSize: "default",
+  theme: "slate",
+  textSize: "100",
   lineSpacing: "default",
   contrast: "default",
   motion: "full",
@@ -33,20 +36,50 @@ export const defaultAccessibilitySettings: AccessibilitySettings = {
   saturation: "default",
 };
 
-export const accessibilityThemeClassName: Record<AccessibilitySettings["theme"], string> = {
-  "dark-blue": "bg-background",
-  black: "bg-background",
-  "soft-cream": "bg-background",
-  "light-blue": "bg-background",
+export const accessibilityThemeClassName: Record<AccessibilityTheme, string> = {
+  slate: "bg-background",
+  obsidian: "bg-background",
+  daylight: "bg-background",
+  parchment: "bg-background",
 };
 
-const themes = ["dark-blue", "black", "soft-cream", "light-blue"] as const;
-const textSizes = ["default", "large", "extra-large"] as const;
+export const LIGHT_THEMES: ReadonlySet<AccessibilityTheme> = new Set([
+  "daylight",
+  "parchment",
+]);
+
+export function isLightAccessibilityTheme(theme: AccessibilityTheme): boolean {
+  return LIGHT_THEMES.has(theme);
+}
+
+const themes = ["slate", "obsidian", "daylight", "parchment"] as const;
+const textSizes = ["100", "112", "125"] as const;
 const lineSpacings = ["default", "comfortable", "spacious"] as const;
 const contrasts = ["default", "high"] as const;
 const motions = ["full", "reduced"] as const;
 const fontFamilies = ["default", "reading", "dyslexia"] as const;
 const saturations = ["default", "reduced"] as const;
+
+/** One-time migration from the pre-2026-07 theme / text-size keys. */
+const THEME_MIGRATION: Record<string, AccessibilityTheme> = {
+  "dark-blue": "slate",
+  black: "obsidian",
+  "light-blue": "daylight",
+  "soft-cream": "parchment",
+  slate: "slate",
+  obsidian: "obsidian",
+  daylight: "daylight",
+  parchment: "parchment",
+};
+
+const TEXT_SIZE_MIGRATION: Record<string, AccessibilityTextSize> = {
+  default: "100",
+  large: "112",
+  "extra-large": "125",
+  "100": "100",
+  "112": "112",
+  "125": "125",
+};
 
 function isOneOf<TValue extends string>(value: unknown, options: readonly TValue[]): value is TValue {
   return typeof value === "string" && options.includes(value as TValue);
@@ -54,6 +87,16 @@ function isOneOf<TValue extends string>(value: unknown, options: readonly TValue
 
 function storedBoolean(value: unknown, fallback: boolean) {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function migrateTheme(value: unknown): AccessibilityTheme {
+  if (typeof value !== "string") return defaultAccessibilitySettings.theme;
+  return THEME_MIGRATION[value] ?? defaultAccessibilitySettings.theme;
+}
+
+function migrateTextSize(value: unknown): AccessibilityTextSize {
+  if (typeof value !== "string") return defaultAccessibilitySettings.textSize;
+  return TEXT_SIZE_MIGRATION[value] ?? defaultAccessibilitySettings.textSize;
 }
 
 export function sanitiseAccessibilitySettings(input: unknown): AccessibilitySettings {
@@ -66,21 +109,17 @@ export function sanitiseAccessibilitySettings(input: unknown): AccessibilitySett
   let migratedFontFamily: AccessibilitySettings["fontFamily"];
   if (isOneOf(candidate.fontFamily, fontFamilies)) {
     migratedFontFamily = candidate.fontFamily;
+  } else if (candidate.dyslexiaFont === true) {
+    migratedFontFamily = "dyslexia";
+  } else if (candidate.readingFont === true) {
+    migratedFontFamily = "reading";
   } else {
-    if (candidate.dyslexiaFont === true) {
-      migratedFontFamily = "dyslexia";
-    } else if (candidate.readingFont === true) {
-      migratedFontFamily = "reading";
-    } else {
-      migratedFontFamily = "default";
-    }
+    migratedFontFamily = "default";
   }
 
   return {
-    theme: isOneOf(candidate.theme, themes) ? candidate.theme : defaultAccessibilitySettings.theme,
-    textSize: isOneOf(candidate.textSize, textSizes)
-      ? candidate.textSize
-      : defaultAccessibilitySettings.textSize,
+    theme: migrateTheme(candidate.theme),
+    textSize: migrateTextSize(candidate.textSize),
     lineSpacing: isOneOf(candidate.lineSpacing, lineSpacings)
       ? candidate.lineSpacing
       : defaultAccessibilitySettings.lineSpacing,
@@ -156,8 +195,7 @@ export function useAccessibilitySettings(options?: { enabled?: boolean }) {
     root.dataset.ctrlSaturation = settings.saturation;
 
     // Synchronise root dark/light class
-    const isLight = settings.theme === "soft-cream" || settings.theme === "light-blue";
-    if (isLight) {
+    if (isLightAccessibilityTheme(settings.theme)) {
       root.classList.remove("dark");
       root.classList.add("light");
     } else {

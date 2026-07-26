@@ -3,15 +3,15 @@
 import type { LucideIcon } from "lucide-react";
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
 import {
-  Accessibility,
   Activity,
   Check,
+  CircleOff,
   Contrast,
   Eye,
   Link2,
   Palette,
   RefreshCw,
-  Type,
+  SlidersHorizontal,
   Volume2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,28 +26,28 @@ const themeOptions: Array<{
   swatches: [string, string, string];
 }> = [
   {
-    label: "Porcelain",
-    description: "Warm light",
-    value: "soft-cream",
-    swatches: ["#f4f1ea", "#ffffff", "#173d69"],
-  },
-  {
-    label: "Mineral",
-    description: "Cool light",
-    value: "light-blue",
-    swatches: ["#eef1f4", "#ffffff", "#18568c"],
-  },
-  {
-    label: "Midnight",
+    label: "Slate",
     description: "Navy dark",
-    value: "dark-blue",
-    swatches: ["#0c1420", "#131f2d", "#79aee3"],
+    value: "slate",
+    swatches: ["#0c1524", "#152033", "#5eb0f5"],
   },
   {
-    label: "Carbon",
+    label: "Obsidian",
     description: "Graphite dark",
-    value: "black",
-    swatches: ["#111315", "#1a1d20", "#a8b2bd"],
+    value: "obsidian",
+    swatches: ["#101214", "#1a1d22", "#8fb0d4"],
+  },
+  {
+    label: "Daylight",
+    description: "Cool light",
+    value: "daylight",
+    swatches: ["#f4f7fa", "#ffffff", "#1a6fa8"],
+  },
+  {
+    label: "Parchment",
+    description: "Warm light",
+    value: "parchment",
+    swatches: ["#f7f3eb", "#fffcf7", "#1f4f7a"],
   },
 ];
 
@@ -172,101 +172,111 @@ export function AccessibilityDropdown({
           variant="outline"
           size="icon"
           className="h-10 w-10 rounded-md bg-background"
-          aria-label="Open accessibility and display settings"
+          aria-label="Display and accessibility options"
         >
-          <Accessibility className="h-4 w-4" aria-hidden="true" />
+          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
         align="end"
         sideOffset={8}
-        aria-label="Accessibility and display settings"
+        aria-label="Display and accessibility options"
         className="ctrl-accessibility-menu max-h-[min(78dvh,46rem)] w-[min(calc(100vw-1rem),25rem)] overflow-y-auto rounded-md border-border bg-popover p-0 shadow-lg"
       >
         <div className="border-b border-border px-4 py-4">
           <div className="flex items-center gap-2">
-            <Accessibility className="h-4 w-4 text-primary" aria-hidden="true" />
-            <h2 className="text-sm font-semibold text-foreground">Accessibility and display</h2>
+            <SlidersHorizontal className="h-4 w-4 text-primary" aria-hidden="true" />
+            <h2 className="text-sm font-semibold text-foreground">Display and accessibility</h2>
           </div>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
 
         <div className="space-y-5 p-4">
-          <fieldset className="space-y-2">
-            <legend className="text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Colour theme
-            </legend>
-            <RadioGroupPrimitive.Root
-              value={settings.theme}
-              onValueChange={(theme) => updateSettings({ theme: theme as AccessibilitySettings["theme"] })}
-              aria-label="Colour theme"
-              className="grid grid-cols-2 gap-2"
-            >
-              {themeOptions.map((option) => {
-                const selected = settings.theme === option.value;
-                return (
-                  <RadioGroupPrimitive.Item
-                    key={option.value}
-                    value={option.value}
-                    className={cn(
-                      "min-h-[4.25rem] border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      selected
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-card hover:border-primary/45 hover:bg-muted/25",
-                    )}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="flex" aria-hidden="true">
-                        {option.swatches.map((swatch, index) => (
-                          <span
-                            key={swatch}
-                            className={cn("h-4 w-4 border border-black/10", index > 0 && "-ml-px")}
-                            style={{ backgroundColor: swatch }}
-                          />
-                        ))}
+          <div className="space-y-4">
+            <SectionLabel>Appearance</SectionLabel>
+
+            <fieldset className="space-y-2">
+              <legend className="sr-only">Colour theme</legend>
+              <RadioGroupPrimitive.Root
+                value={settings.theme}
+                onValueChange={(theme) =>
+                  updateSettings({ theme: theme as AccessibilitySettings["theme"] })
+                }
+                aria-label="Colour theme"
+                className="grid grid-cols-2 gap-2"
+              >
+                {themeOptions.map((option) => {
+                  const selected = settings.theme === option.value;
+                  return (
+                    <RadioGroupPrimitive.Item
+                      key={option.value}
+                      value={option.value}
+                      className={cn(
+                        "min-h-[4.25rem] border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        selected
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-card hover:border-primary/45 hover:bg-muted/25",
+                      )}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="flex" aria-hidden="true">
+                          {option.swatches.map((swatch, index) => (
+                            <span
+                              key={swatch}
+                              className={cn("h-4 w-4 border border-black/10", index > 0 && "-ml-px")}
+                              style={{ backgroundColor: swatch }}
+                            />
+                          ))}
+                        </span>
+                        {selected ? (
+                          <Check className="h-4 w-4 text-primary" aria-hidden="true" />
+                        ) : null}
                       </span>
-                      {selected ? <Check className="h-4 w-4 text-primary" aria-hidden="true" /> : null}
-                    </span>
-                    <span className="mt-2 block text-xs font-semibold text-foreground">{option.label}</span>
-                    <span className="block text-[0.6875rem] text-muted-foreground">{option.description}</span>
-                  </RadioGroupPrimitive.Item>
-                );
-              })}
-            </RadioGroupPrimitive.Root>
-          </fieldset>
+                      <span className="mt-2 block text-xs font-semibold text-foreground">
+                        {option.label}
+                      </span>
+                      <span className="block text-[0.6875rem] text-muted-foreground">
+                        {option.description}
+                      </span>
+                    </RadioGroupPrimitive.Item>
+                  );
+                })}
+              </RadioGroupPrimitive.Root>
+            </fieldset>
 
-          <OptionGroup
-            label="Text size"
-            value={settings.textSize}
-            options={[
-              { label: "Default", value: "default" },
-              { label: "Large", value: "large" },
-              { label: "Extra", value: "extra-large" },
-            ]}
-            onChange={(textSize) => updateSettings({ textSize })}
-          />
+            <OptionGroup
+              label="Text size"
+              value={settings.textSize}
+              options={[
+                { label: "100%", value: "100" },
+                { label: "112%", value: "112" },
+                { label: "125%", value: "125" },
+              ]}
+              onChange={(textSize) => updateSettings({ textSize })}
+            />
 
-          <OptionGroup
-            label="Line spacing"
-            value={settings.lineSpacing}
-            options={[
-              { label: "Default", value: "default" },
-              { label: "Comfort", value: "comfortable" },
-              { label: "Spacious", value: "spacious" },
-            ]}
-            onChange={(lineSpacing) => updateSettings({ lineSpacing })}
-          />
+            <OptionGroup
+              label="Line spacing"
+              value={settings.lineSpacing}
+              options={[
+                { label: "Default", value: "default" },
+                { label: "Comfort", value: "comfortable" },
+                { label: "Spacious", value: "spacious" },
+              ]}
+              onChange={(lineSpacing) => updateSettings({ lineSpacing })}
+            />
 
-          <OptionGroup
-            label="Typeface"
-            value={settings.fontFamily}
-            options={[
-              { label: "Default", value: "default" },
-              { label: "Reading", value: "reading" },
-              { label: "Dyslexia", value: "dyslexia" },
-            ]}
-            onChange={(fontFamily) => updateSettings({ fontFamily })}
-          />
+            <OptionGroup
+              label="Typeface"
+              value={settings.fontFamily}
+              options={[
+                { label: "Default", value: "default" },
+                { label: "Reading", value: "reading" },
+                { label: "Dyslexia", value: "dyslexia" },
+              ]}
+              onChange={(fontFamily) => updateSettings({ fontFamily })}
+            />
+          </div>
 
           <div className="space-y-2">
             <SectionLabel>Reading and focus</SectionLabel>
@@ -314,7 +324,7 @@ export function AccessibilityDropdown({
               description="Remove colour from the interface."
               checked={settings.grayscale}
               onChange={(grayscale) => updateSettings({ grayscale })}
-              icon={Type}
+              icon={CircleOff}
             />
             <PreferenceSwitch
               label="Reduced motion"

@@ -23,8 +23,8 @@ export const AuthBrandingPane = memo(function AuthBrandingPane({
       className={cn(
         "relative hidden w-1/2 flex-col justify-between overflow-hidden border-r p-12 lg:flex xl:p-16",
         isLightTheme
-          ? "border-slate-200 bg-[#f7f4ef] text-slate-950"
-          : "border-white/10 bg-[#07060a] text-white"
+          ? "border-border bg-muted/40 text-foreground"
+          : "border-border bg-card text-foreground"
       )}
     >
       <div className="pointer-events-none absolute inset-0 z-0">

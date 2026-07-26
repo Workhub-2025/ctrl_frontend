@@ -44,7 +44,7 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#030712] text-white">
+    <div className="flex min-h-screen bg-background text-foreground">
       <AuthBrandingPane />
 
       <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16 xl:px-24">
@@ -136,7 +136,7 @@ function ForgotPasswordForm() {
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#030712]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <ForgotPasswordForm />
     </Suspense>
   );

@@ -1,23 +1,18 @@
 "use client";
 
 import { LandingHero } from "@/components/landing/landing-hero";
-import { BrandLogo, CtrlText } from "@/components/brand-logo";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
-  Activity,
-  Menu,
-  Crosshair,
-  X,
   CheckCircle2,
-  Network,
-  ListChecks,
+  ClipboardList,
+  Menu,
   Scale,
-  KeyRound,
-  CalendarClock,
-  Trophy,
+  Target,
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -29,120 +24,31 @@ import {
   RevealGroup,
   RevealItem,
 } from "@/components/landing/scroll-effects";
-import {
-  WorkflowVisual,
-  type WorkflowVisualVariant,
-} from "@/components/landing/workflow-visuals";
 import { UK_LEGAL_FOOTER_LINKS } from "@/lib/legal/uk-compliance";
 
 const navItems = [
-  { label: "Platform", href: "#capabilities" },
-  { label: "How it works", href: "#workflow" },
+  { label: "How it works", href: "#how" },
   { label: "Contracts", href: "#contracts" },
   { label: "Join", href: "/join" },
 ];
 
-const platformPillars: { label: string; icon: typeof Activity; tint: DisciplineTint }[] = [
-  { label: "Clear campaign setup", icon: ListChecks, tint: "rose" },
-  { label: "Managed delivery", icon: Activity, tint: "amber" },
-  { label: "Clear participant journeys", icon: Network, tint: "cyan" },
-  { label: "Structured review", icon: Scale, tint: "violet" },
-];
-
-type DisciplineTint = "rose" | "amber" | "cyan" | "violet";
-
-const disciplineTintStyles: Record<DisciplineTint, { icon: string; ring: string }> = {
-  rose: {
-    icon: "group-hover:text-rose-500 dark:group-hover:text-rose-400",
-    ring: "group-hover:border-rose-300/80 dark:group-hover:border-rose-500/40",
-  },
-  amber: {
-    icon: "group-hover:text-amber-500 dark:group-hover:text-amber-400",
-    ring: "group-hover:border-amber-300/80 dark:group-hover:border-amber-500/40",
-  },
-  cyan: {
-    icon: "group-hover:text-cyan-600 dark:group-hover:text-cyan-400",
-    ring: "group-hover:border-cyan-300/80 dark:group-hover:border-cyan-500/40",
-  },
-  violet: {
-    icon: "group-hover:text-violet-500 dark:group-hover:text-violet-400",
-    ring: "group-hover:border-violet-300/80 dark:group-hover:border-violet-500/40",
-  },
-};
-
-const hiringWorkflowSteps: {
-  step: string;
-  title: string;
-  text: string;
-  icon: typeof Crosshair;
-  visual: WorkflowVisualVariant;
-}[] = [
+const hiringPoints = [
   {
-    step: "01",
-    title: "Define What Good Looks Like",
-    text: "Start by identifying the skills, behaviours and operational standards that matter most to your organisation. CTRL then evaluates candidates against these criteria, creating a consistent and evidence-based recruitment process.",
-    icon: ListChecks,
-    visual: "campaign",
+    title: "Set the standard once",
+    text: "Define the skills and behaviours that matter for the role, then assess every candidate against the same bar.",
+    icon: ClipboardList,
   },
   {
-    step: "02",
-    title: "Simulate the Environment",
-    text: "CTRL recreates realistic operational environments where candidates must manage information, prioritise competing demands and make decisions in real time, giving deeper insight into who is most likely to succeed in role.",
-    icon: Activity,
-    visual: "sessions",
+    title: "See performance, not polish",
+    text: "Structured exercises surface how people think and decide under pressure — beyond interview confidence.",
+    icon: Target,
   },
   {
-    step: "03",
-    title: "Hire with Confidence",
-    text: "Review assessment results, compare candidate performance and identify those best suited to the demands of the role. CTRL provides a structured and objective foundation for more informed recruitment decisions.",
-    icon: Trophy,
-    visual: "tracking",
+    title: "Decide with shared evidence",
+    text: "Hiring managers review clear results together, so decisions stay consistent and defensible.",
+    icon: Scale,
   },
-  {
-    step: "04",
-    title: "Train with Purpose",
-    text: "CTRL helps organisations identify candidates with the skills, judgement and potential to succeed in demanding operational environments, enabling more informed recruitment decisions before investment in training begins.",
-    icon: CalendarClock,
-    visual: "ranking",
-  },
-];
-
-const candidateWorkflowSteps: {
-  step: string;
-  title: string;
-  text: string;
-  icon: typeof Crosshair;
-  visual: WorkflowVisualVariant;
-}[] = [
-  {
-    step: "01",
-    title: "Enter the Assessment Experience",
-    text: "Complete a series of carefully designed assessments that measure the skills and behaviours required for success in high-pressure operational roles.",
-    icon: KeyRound,
-    visual: "access",
-  },
-  {
-    step: "02",
-    title: "Take on Realistic Scenarios",
-    text: "Navigate interactive call simulations and decision-making exercises that reflect the challenges faced by operational teams every day.",
-    icon: CalendarClock,
-    visual: "schedule",
-  },
-  {
-    step: "03",
-    title: "Demonstrate Performance Under Pressure",
-    text: "Show how you communicate, prioritise information and make decisions when faced with realistic demands and competing priorities.",
-    icon: ListChecks,
-    visual: "modules",
-  },
-  {
-    step: "04",
-    title: "Unlock New Opportunities",
-    text: "Help organisations gain a clearer understanding of your strengths, potential and suitability for roles where performance matters most.",
-    icon: CheckCircle2,
-    visual: "outcome",
-  },
-];
+] as const;
 
 type ContractOption = {
   tier: "essential" | "professional" | "founder";
@@ -190,785 +96,212 @@ const fallbackContractOptions: ContractOptionsData = {
 
 const contractDetails: Record<
   ContractOption["tier"],
-  { accent: Accent; summary: string; badge: string; footnote: string }
+  { summary: string; badge: string; footnote: string }
 > = {
   essential: {
-    accent: "cyan",
     summary: "For smaller teams running secure in-person assessment sessions.",
     badge: "Starter",
     footnote: "In-person delivery only",
   },
   professional: {
-    accent: "blue",
-    summary: "For active hiring teams that need three manager seats from day one.",
-    badge: "Standard",
-    footnote: "In-person, remote and hybrid delivery",
+    summary: "For teams that need flexible delivery across sites and remote sessions.",
+    badge: "Teams",
+    footnote: "In-person, remote and hybrid",
   },
   founder: {
-    accent: "emerald",
-    summary: "Launch-window contract with wider delivery modes and a permanent founder upgrade discount.",
-    badge: "Launch only",
-    footnote: "Founder tier remains active",
+    summary: "Professional access with Founder pricing on upgrades and add-ons.",
+    badge: "Limited",
+    footnote: "Founder window pricing",
   },
 };
-
-type Accent = "cyan" | "blue" | "violet" | "emerald";
-
-const accentStyles: Record<Accent, { text: string; dot: string; gradient: string }> = {
-  cyan: {
-    text: "text-cyan-600 dark:text-cyan-400",
-    dot: "bg-cyan-500",
-    gradient: "from-cyan-500 to-blue-600 dark:from-cyan-300 dark:to-blue-400",
-  },
-  blue: {
-    text: "text-blue-600 dark:text-blue-400",
-    dot: "bg-blue-500",
-    gradient: "from-blue-500 to-indigo-600 dark:from-blue-300 dark:to-indigo-400",
-  },
-  violet: {
-    text: "text-violet-600 dark:text-violet-400",
-    dot: "bg-violet-500",
-    gradient: "from-violet-500 to-fuchsia-600 dark:from-violet-300 dark:to-fuchsia-400",
-  },
-  emerald: {
-    text: "text-emerald-600 dark:text-emerald-400",
-    dot: "bg-emerald-500",
-    gradient: "from-emerald-500 to-cyan-600 dark:from-emerald-300 dark:to-cyan-400",
-  },
-};
-
-function GradientText({ accent, children }: { accent: Accent; children: React.ReactNode }) {
-  return (
-    <span className={cn("bg-gradient-to-r bg-clip-text text-transparent", accentStyles[accent].gradient)}>
-      {children}
-    </span>
-  );
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  body,
-  centered = false,
-  accent = "cyan",
-}: {
-  eyebrow: string;
-  title: React.ReactNode;
-  body?: React.ReactNode;
-  centered?: boolean;
-  accent?: Accent;
-}) {
-  const a = accentStyles[accent];
-  return (
-    <Reveal variant="blur">
-      <div className={centered ? "mx-auto max-w-3xl text-center" : "max-w-2xl"}>
-        <div
-          className={cn(
-            "flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.2em] font-mono",
-            a.text,
-            centered && "justify-center"
-          )}
-        >
-          <span className="relative flex h-1.5 w-1.5">
-            <span className={cn("absolute inline-flex h-full w-full animate-ping rounded-full opacity-60", a.dot)} />
-            <span className={cn("relative inline-flex h-1.5 w-1.5 rounded-full", a.dot)} />
-          </span>
-          {eyebrow}
-        </div>
-        <h2 className="mt-4 text-3xl md:text-5xl font-semibold leading-[1.1] tracking-tight text-slate-900 dark:text-white text-balance font-display">
-          {title}
-        </h2>
-        {body && (
-          <p className={cn("mt-6 text-lg leading-relaxed text-slate-600 dark:text-slate-400 font-light", centered && "mx-auto")}>
-            {body}
-          </p>
-        )}
-      </div>
-    </Reveal>
-  );
-}
-
-function scrollToAnchor(id: string) {
-  const target = document.getElementById(id);
-  const nav = document.querySelector("nav");
-
-  if (!target) return;
-
-  const navHeight = nav instanceof HTMLElement ? nav.getBoundingClientRect().height : 0;
-  const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 24;
-
-  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-  window.history.replaceState(null, "", `#${id}`);
-}
-
-function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-  window.history.replaceState(null, "", window.location.pathname);
-}
 
 export default function Home() {
-  const navRef = useRef<HTMLElement | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [navHeight, setNavHeight] = useState(96);
   const [scrolled, setScrolled] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>("");
-  const [workflowAudience, setWorkflowAudience] = useState<"hiring" | "candidate">("hiring");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [navHeight, setNavHeight] = useState(96);
   const [contractData, setContractData] = useState<ContractOptionsData>(fallbackContractOptions);
-  const {
-    settings: accessibilitySettings,
-    updateSettings: updateAccessibilitySettings,
-    resetSettings: resetAccessibilitySettings,
-    reduceMotion,
-    themeClassName: bgColor,
-  } = useAccessibilitySettings();
+  const navRef = useRef<HTMLElement>(null);
+  const { settings, updateSettings, resetSettings, reduceMotion } = useAccessibilitySettings();
 
   useEffect(() => {
-    let cancelled = false;
-
-    fetch("/api/public/contract-options", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("Contract options unavailable"))))
-      .then((body) => {
-        if (!cancelled && body?.data?.options?.length) {
-          setContractData(body.data as ContractOptionsData);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setContractData(fallbackContractOptions);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
     const nav = navRef.current;
     if (!nav) return;
-    const updateNavHeight = () => {
-      const { bottom } = nav.getBoundingClientRect();
-      setNavHeight(Math.ceil(bottom));
-    };
-    updateNavHeight();
-    const observer = new ResizeObserver(updateNavHeight);
+    const update = () => setNavHeight(nav.getBoundingClientRect().height);
+    update();
+    const observer = new ResizeObserver(update);
     observer.observe(nav);
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 40);
-      if (isMobileMenuOpen && window.scrollY > 48) setIsMobileMenuOpen(false);
+    let cancelled = false;
+    fetch("/api/public/contract-options")
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as ContractOptionsData;
+        if (!cancelled && Array.isArray(payload.options) && payload.options.length > 0) {
+          setContractData(payload);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
     };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [isMobileMenuOpen]);
-
-  useEffect(() => {
-    const sections = navItems
-      .map((item) => document.getElementById(item.href.slice(1)))
-      .filter((el): el is HTMLElement => el !== null);
-    if (!sections.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
-        });
-      },
-      { rootMargin: "-45% 0px -50% 0px", threshold: 0 }
-    );
-
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
   }, []);
 
   return (
-    <div className={cn(bgColor, "ctrl-landing-page min-h-screen overflow-x-clip font-sans selection:bg-white/20 transition-colors duration-500")}>
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-full focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary">
-        Skip to content
-      </a>
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.button
-            type="button"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-slate-950/35 dark:bg-black/70 lg:hidden"
-            onClick={() => setIsMobileMenuOpen(false)}
-            aria-label="Close menu"
+    <MotionPrefs reduce={reduceMotion}>
+      <div className={cn("ctrl-landing-page relative min-h-screen bg-background text-foreground")}>
+        <div className="fixed right-4 top-4 z-[60] sm:right-6 sm:top-5">
+          <AccessibilityDropdown
+            settings={settings}
+            updateSettings={updateSettings}
+            resetSettings={resetSettings}
+            description="Theme, text size, and reading preferences for this device."
           />
-        )}
-      </AnimatePresence>
-
-      <motion.nav
-        ref={navRef}
-        initial={reduceMotion ? false : { y: -24, opacity: 0 }}
-        animate={reduceMotion ? {} : { y: 0, opacity: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed top-4 inset-x-0 mx-auto w-full max-w-[1200px] px-4 sm:px-6 z-50 transition-[max-width,padding,top] duration-500"
-      >
-        <div className={cn(
-          "flex items-center justify-between rounded-full border transition-[background-color,border-color,padding,box-shadow] duration-500 px-6",
-          scrolled
-            ? "bg-white dark:bg-[#0a0a0a] border-slate-200 dark:border-white/10 py-3 shadow-md dark:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
-            : "bg-transparent border-transparent py-4"
-        )}>
-          {/* Logo */}
-          <Link
-            href="/"
-            onClick={(e) => {
-              e.preventDefault();
-              setIsMobileMenuOpen(false);
-              scrollToTop();
-            }}
-            aria-label="CTRL — back to top"
-            className="flex items-center group relative z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
-          >
-            <BrandLogo className="h-9 w-[10.5rem] sm:h-10 sm:w-[11.5rem] transition-transform duration-300 group-hover:scale-[1.04] group-hover:opacity-90" />
-          </Link>
-
-          {/* Links (Desktop) */}
-          <div className="hidden lg:flex items-center gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
-            {navItems.map((item) => {
-              const isHash = item.href.startsWith("#");
-              const isActive = isHash && activeSection === item.href.slice(1);
-              if (!isHash) {
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="relative rounded px-1.5 py-0.5 text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
-              return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={(event) => {
-                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-                    event.preventDefault();
-                    scrollToAnchor(item.href.slice(1));
-                  }}
-                  aria-current={isActive ? "location" : undefined}
-                  className={cn(
-                    "relative transition-colors rounded px-1.5 py-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20",
-                    "after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-slate-900 dark:after:bg-white after:transition-transform after:origin-left",
-                    isActive
-                      ? "text-slate-900 dark:text-white after:scale-x-100"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white after:scale-x-0 hover:after:scale-x-100"
-                  )}
-                >
-                  {item.label}
-                </a>
-              );
-            })}
-          </div>
-
-          {/* CTA (Desktop) */}
-          <div className="hidden lg:flex items-center gap-4 relative z-10">
-            <AccessibilityDropdown
-              settings={accessibilitySettings}
-              updateSettings={updateAccessibilitySettings}
-              resetSettings={resetAccessibilitySettings}
-            />
-            <Link href="/auth/login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
-              Log in
-              <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-[opacity,margin] duration-300" aria-hidden="true" />
-            </Link>
-            <Button asChild className="group rounded-full bg-slate-900 dark:bg-amber-400 text-white dark:text-stone-950 hover:bg-slate-800 dark:hover:bg-amber-300 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-amber-300/50">
-              <Link href="/join" className="flex items-center gap-1.5">
-                Enter code
-                <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
-
-          {/* Mobile Menu Toggle & Actions */}
-          <div className="flex items-center gap-2 lg:hidden relative z-10">
-            <AccessibilityDropdown
-              settings={accessibilitySettings}
-              updateSettings={updateAccessibilitySettings}
-              resetSettings={resetAccessibilitySettings}
-            />
-            <button
-              className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle mobile menu"
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-navigation"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
-          </div>
         </div>
 
-        {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              id="mobile-navigation"
-              initial={{ opacity: 0, y: -8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.98 }}
-              transition={{ duration: 0.2 }}
-              className="absolute top-[calc(100%+12px)] inset-x-0 bg-[#fdfaf2] dark:bg-[#0a0a0a] border border-slate-200/80 dark:border-white/10 rounded-3xl overflow-hidden lg:hidden shadow-[0_20px_50px_-12px_rgba(15,23,42,0.18)] dark:shadow-2xl origin-top"
+        <nav
+          ref={navRef}
+          className={cn(
+            "fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300",
+            scrolled
+              ? "border-border bg-background/95 backdrop-blur-md"
+              : "border-transparent bg-transparent",
+          )}
+        >
+          <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-6 lg:h-[4.5rem] lg:px-10">
+            <Link href="/" className="shrink-0" aria-label="CTRL home">
+              <BrandLogo className="h-8 w-auto sm:h-9" />
+            </Link>
+
+            <div className="hidden items-center gap-1 md:flex">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <Button asChild size="sm" className="ml-2 h-9 px-4">
+                <Link href="/auth/login">Login</Link>
+              </Button>
+            </div>
+
+            <button
+              type="button"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-foreground md:hidden"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((open) => !open)}
             >
-              <nav aria-label="Mobile navigation" className="flex flex-col p-2">
-                <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 font-mono">
-                  Explore
-                </p>
-                <div className="flex flex-col gap-0.5">
-                  {navItems.map((item) => {
-                    const isHash = item.href.startsWith("#");
-                    const isActive = isHash && activeSection === item.href.slice(1);
-                    if (!isHash) {
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="w-full flex items-center gap-3 text-left text-base font-medium px-3 py-3 min-h-[44px] rounded-2xl transition-colors text-slate-600 dark:text-slate-300 hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.05] hover:text-slate-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
-                        >
-                          <span
-                            className="h-4 w-[2px] shrink-0 rounded-full bg-slate-300/80 dark:bg-white/20"
-                            aria-hidden="true"
-                          />
-                          {item.label}
-                        </Link>
-                      );
-                    }
-                    return (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        onClick={(event) => {
-                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-                          event.preventDefault();
-                          scrollToAnchor(item.href.slice(1));
-                          setIsMobileMenuOpen(false);
-                        }}
-                        aria-current={isActive ? "location" : undefined}
-                        className={cn(
-                          "w-full flex items-center gap-3 text-left text-base font-medium px-3 py-3 min-h-[44px] rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20",
-                          isActive
-                            ? "bg-slate-900/[0.06] dark:bg-white/[0.08] text-slate-900 dark:text-white"
-                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.05] hover:text-slate-900 dark:hover:text-white"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "h-4 w-[2px] shrink-0 rounded-full transition-colors",
-                            isActive ? "bg-slate-900 dark:bg-white" : "bg-slate-300/80 dark:bg-white/20"
-                          )}
-                          aria-hidden="true"
-                        />
-                        {item.label}
-                      </a>
-                    );
-                  })}
-                </div>
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
 
-                <div className="mx-3 my-2 h-px bg-slate-200/80 dark:bg-white/10" role="separator" />
-
-                <p className="px-3 pt-1 pb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500 font-mono">
-                  Account
-                </p>
-                <div className="flex flex-col gap-2 px-1 pb-1">
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="group w-full flex items-center justify-between gap-2 text-base font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-3 min-h-[44px] rounded-2xl hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
-                  >
-                    Log in
-                    <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity duration-200" aria-hidden="true" />
-                  </Link>
-                  <Button asChild className="rounded-2xl bg-slate-900 dark:bg-amber-400 text-white dark:text-stone-950 hover:bg-slate-800 dark:hover:bg-amber-300 w-full h-11 text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-amber-300/50">
-                    <Link href="/join" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
-                      Enter session code
-                      <KeyRound className="w-4 h-4" aria-hidden="true" />
+          <AnimatePresence>
+            {mobileMenuOpen ? (
+              <motion.div
+                initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
+                className="overflow-hidden border-t border-border bg-background md:hidden"
+              >
+                <div className="flex flex-col gap-1 px-6 py-4">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="rounded-md px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                  <Button asChild className="mt-2">
+                    <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                      Login
                     </Link>
                   </Button>
                 </div>
-              </nav>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </nav>
 
-      <MotionPrefs reduce={reduceMotion}>
-        <main id="main-content" className="relative z-10">
-          <LandingHero navHeight={navHeight} bgColor={bgColor} reduceMotion={reduceMotion} />
+        <main>
+          <LandingHero navHeight={navHeight} reduceMotion={reduceMotion} />
 
-          {/* Platform principles strip */}
-          <section
-            id="disciplines"
-            aria-label="CTRL platform principles"
-            className="relative border-y border-slate-200/70 bg-slate-50 dark:border-white/5 dark:bg-[#0b0b0b]"
-          >
-            <div className="mx-auto max-w-[1440px] px-6 py-8 md:py-10">
-              <RevealGroup
-                stagger={0.1}
-                className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-stretch"
-              >
-                {platformPillars.map((d) => {
-                  const tint = disciplineTintStyles[d.tint];
-                  return (
-                    <RevealItem key={d.label} variant="zoom" className="h-full w-full">
-                      <div className={cn(
-                        "group flex h-full min-h-[5.5rem] w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3.5 transition-transform duration-300 hover:-translate-y-0.5 dark:border-white/10 dark:bg-[#0a0a0a]",
-                        tint.ring
-                      )}>
-                        <span className={cn(
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-white/80 transition-colors",
-                          tint.icon
-                        )}>
-                          <d.icon className="h-4 w-4" aria-hidden="true" />
+          <section id="how" className="border-t border-border bg-background">
+            <div className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10 lg:py-28">
+              <Reveal variant="fade-up" className="mx-auto max-w-2xl text-center">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+                  How hiring gets easier
+                </p>
+                <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+                  A clearer path from role to decision
+                </h2>
+                <p className="mt-4 text-base leading-7 text-muted-foreground">
+                  CTRL keeps assessment delivery simple for hiring teams — one shared process,
+                  structured evidence, and less noise in the room.
+                </p>
+              </Reveal>
+
+              <RevealGroup stagger={0.1} className="mt-14 grid gap-4 md:grid-cols-3">
+                {hiringPoints.map((point, index) => (
+                  <RevealItem key={point.title} variant="fade-up">
+                    <article className="flex h-full flex-col rounded-lg border border-border bg-card p-6 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-primary">
+                          <point.icon className="h-5 w-5" aria-hidden="true" />
                         </span>
-                        <span className="min-w-0 flex-1 text-left text-sm font-medium leading-snug text-slate-700 dark:text-slate-200">{d.label}</span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
                       </div>
-                    </RevealItem>
-                  );
-                })}
+                      <h3 className="mt-6 font-display text-xl font-medium text-foreground">
+                        {point.title}
+                      </h3>
+                      <p className="mt-3 text-sm leading-6 text-muted-foreground">{point.text}</p>
+                    </article>
+                  </RevealItem>
+                ))}
               </RevealGroup>
             </div>
           </section>
 
-          <div className="relative mx-auto flex w-full max-w-[1440px] flex-col gap-24 overflow-hidden px-6 py-20 md:gap-32 md:py-28">
-
-            {/* Narrative Capabilities Section */}
-            <section id="capabilities" className="w-full">
-              <div className="text-center max-w-3xl mx-auto mb-16">
-                <SectionHeading
-                  eyebrow="The platform"
-                  accent="cyan"
-                  title={<>Assess skills. <GradientText accent="cyan">Simulate reality.</GradientText></>}
-                  body="CTRL combines proven recruitment assessments with immersive call simulation technology, providing a more complete picture of candidate suitability. Beyond measuring individual skills, CTRL reveals how candidates apply them in realistic operational scenarios where pressure, judgement and decision-making matter most."
-                  centered
-                />
-              </div>
-
-              <RevealGroup stagger={0.14} amount={0.1} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-                {/* Primary platform overview */}
-                <RevealItem variant="zoom" className="md:col-span-2">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 md:p-12 group transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-cyan-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    {/* reticle tick */}
-                    <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
-                    <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 md:gap-12">
-                      <div className="flex-1">
-                        <div className="mb-6 flex items-center gap-3">
-                          <div className="h-11 w-11 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center">
-                            <ListChecks className="h-5 w-5 text-cyan-500 dark:text-cyan-400" aria-hidden="true" />
-                          </div>
-                          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">01 // Call simulation</span>
-                        </div>
-                        <h3 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-4 text-balance font-display">See beyond the candidate. See the future employee.</h3>
-                        <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                          CTRL&apos;s Call Simulation Assessment recreates realistic operational scenarios that require candidates to think, prioritise and respond in real time. The result is deeper behavioural insight and greater confidence in every recruitment decision.
-                        </p>
-                        <div className="mt-6 flex flex-wrap gap-2">
-                          {["Realistic scenarios", "Real-time decisions", "Behavioural insight"].map((chip) => (
-                            <span key={chip} className="rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-3 py-1 text-xs font-medium text-cyan-700 dark:text-cyan-300">
-                              {chip}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Abstract assessment progress preview */}
-                      <div className="flex-1 w-full relative rounded-2xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden shadow-inner">
-                        <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent_0%,rgba(6,182,212,0.06)_50%,transparent_100%)]" />
-                        <div className="relative z-10 flex flex-col gap-3.5 p-5 font-mono">
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="flex items-center gap-2 uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                              <span className="relative flex h-1.5 w-1.5">
-                                <span
-                                  className={cn(
-                                    "absolute inline-flex h-full w-full rounded-full bg-cyan-500 opacity-60",
-                                    !reduceMotion && "animate-ping"
-                                  )}
-                                  aria-hidden="true"
-                                />
-                                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-500" />
-                              </span>
-                              Assessment // In progress
-                            </span>
-                            <span className="text-slate-400 dark:text-slate-500 tabular-nums">03 / 04</span>
-                          </div>
-
-                          <div className="flex h-16 items-center justify-center gap-1 rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3">
-                            {Array.from({ length: 16 }).map((_, i) => (
-                              <div
-                                key={i}
-                                className={cn("h-1 flex-1 rounded-full", i < 11 ? "bg-cyan-500/70" : "bg-slate-200 dark:bg-white/10")}
-                                style={{ height: "10px" }}
-                              />
-                            ))}
-                          </div>
-
-                          {/* Generic stage progression */}
-                          <div className="space-y-1.5">
-                            <div className="flex items-center justify-between rounded-md bg-white/60 px-2.5 py-1.5 text-[10px] uppercase tracking-wider dark:bg-black/40">
-                              <span className="text-slate-500 dark:text-slate-400">Stage 01</span>
-                              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">Complete <CheckCircle2 className="h-3 w-3" aria-hidden="true" /></span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-md bg-white/60 px-2.5 py-1.5 text-[10px] uppercase tracking-wider dark:bg-black/40">
-                              <span className="text-slate-500 dark:text-slate-400">Stage 02</span>
-                              <span className="flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">Complete <CheckCircle2 className="h-3 w-3" aria-hidden="true" /></span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-md bg-white/60 px-2.5 py-1.5 text-[10px] uppercase tracking-wider dark:bg-black/40">
-                              <span className="text-slate-500 dark:text-slate-400">Stage 03</span>
-                              <span className="tabular-nums text-slate-400 dark:text-slate-500">In progress…</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[10px] uppercase tracking-wider text-slate-500 dark:border-white/5 dark:text-slate-500">
-                            <span>Guided journey</span>
-                            <span>Secure delivery</span>
-                            <span className="text-cyan-600 dark:text-cyan-400">Active</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </RevealItem>
-
-                {/* Card 2: Delivery */}
-                <RevealItem variant="zoom">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-blue-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
-                    <div className="mb-6 flex items-center gap-3 relative z-10">
-                      <div className="h-11 w-11 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center">
-                        <ListChecks className="h-5 w-5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
-                      </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">02 // Insight</span>
-                    </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Understanding performance beyond the interview</h3>
-                    <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      CTRL assesses how candidates process information, adapt to changing circumstances and make decisions under pressure, delivering behavioural insight that traditional recruitment methods often fail to uncover.
-                    </p>
-                    <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4 space-y-2">
-                      {[
-                        { id: "A", label: "Invitation", band: "Ready" },
-                        { id: "B", label: "Readiness", band: "Set" },
-                        { id: "C", label: "Assessment", band: "Next" },
-                      ].map((row) => (
-                        <div key={row.id} className="flex items-center gap-3 rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3 py-2">
-                          <span className="font-mono text-[10px] text-slate-400">{row.id}</span>
-                          <span className="flex-1 truncate text-xs text-slate-600 dark:text-slate-300">{row.label}</span>
-                          <span className={cn(
-                            "rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider",
-                            row.band === "Ready" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-                            row.band === "Set" && "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",
-                            row.band === "Next" && "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                          )}>{row.band}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </RevealItem>
-
-                {/* Card 3: Experience */}
-                <RevealItem variant="zoom">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-violet-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
-                    <div className="mb-6 flex items-center gap-3 relative z-10">
-                      <div className="h-11 w-11 rounded-full border border-violet-500/20 bg-violet-500/10 flex items-center justify-center">
-                        <Scale className="h-5 w-5 text-violet-500 dark:text-violet-400" aria-hidden="true" />
-                      </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-violet-600 dark:text-violet-400">03 // Evidence</span>
-                    </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Recruit with evidence. Decide with confidence.</h3>
-                    <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      CTRL combines objective assessment data with realistic performance insight, helping organisations make fairer, more informed recruitment decisions while reducing risk and increasing confidence in candidate selection.
-                    </p>
-                    <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4 space-y-2">
-                      {[
-                        { label: "Objective data", tag: "Ready", tone: "good" },
-                        { label: "Performance insight", tag: "", tone: "" },
-                        { label: "Informed decision", tag: "Next", tone: "next" },
-                      ].map((row) => (
-                        <div key={row.label} className={cn(
-                          "flex items-center gap-3 rounded-lg border px-3 py-2",
-                          row.tone === "good" && "border-emerald-500/30 bg-emerald-500/[0.06]",
-                          row.tone === "next" && "border-blue-500/30 bg-blue-500/[0.06]",
-                          !row.tone && "border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40"
-                        )}>
-                          <span className="flex-1 truncate text-xs text-slate-600 dark:text-slate-300">{row.label}</span>
-                          {row.tag && (
-                            <span className={cn(
-                              "rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider",
-                              row.tone === "good" && "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
-                              row.tone === "next" && "bg-blue-500/15 text-blue-600 dark:text-blue-400"
-                            )}>{row.tag}</span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </RevealItem>
-
-              </RevealGroup>
-            </section>
-
-            <section id="workflow" className="w-full scroll-mt-32">
-              <div className="mx-auto max-w-4xl text-center">
-                <SectionHeading
-                  eyebrow="One connected workflow"
-                  accent="blue"
-                  title={<>Build stronger talent pipelines <GradientText accent="blue">with confidence.</GradientText></>}
-                  body="CTRL helps organisations identify high-potential candidates earlier in the recruitment process, using behavioural insight and realistic performance data to support smarter, more informed hiring decisions."
-                  centered
-                />
-              </div>
-
-              <div
-                role="tablist"
-                aria-label="Choose a workflow"
-                className="mx-auto mt-10 grid w-full max-w-md grid-cols-2 rounded-lg border border-slate-200 bg-slate-100 p-1 dark:border-white/10 dark:bg-white/[0.04]"
-              >
-                {[
-                  { id: "hiring" as const, label: "Hiring teams" },
-                  { id: "candidate" as const, label: "Candidates" },
-                ].map((audience) => {
-                  const selected = workflowAudience === audience.id;
-                  return (
-                    <button
-                      key={audience.id}
-                      id={"workflow-" + audience.id + "-tab"}
-                      type="button"
-                      role="tab"
-                      aria-selected={selected}
-                      aria-controls="workflow-panel"
-                      tabIndex={selected ? 0 : -1}
-                      onClick={() => setWorkflowAudience(audience.id)}
-                      onKeyDown={(event) => {
-                        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-                        event.preventDefault();
-                        const nextAudience = audience.id === "hiring" ? "candidate" : "hiring";
-                        setWorkflowAudience(nextAudience);
-                        requestAnimationFrame(() => {
-                          document.getElementById("workflow-" + nextAudience + "-tab")?.focus();
-                        });
-                      }}
-                      className={cn(
-                        "min-h-11 rounded-md px-4 py-2.5 text-sm font-semibold transition-[background-color,color,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500",
-                        selected
-                          ? "bg-white text-slate-900 shadow-sm dark:bg-white/10 dark:text-white"
-                          : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                      )}
-                    >
-                      {audience.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div
-                id="workflow-panel"
-                role="tabpanel"
-                aria-labelledby={"workflow-" + workflowAudience + "-tab"}
-                className="mt-10"
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={workflowAudience}
-                    initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-                    animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
-                    exit={reduceMotion ? {} : { opacity: 0, y: -8 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.24 }}
-                  >
-                    {workflowAudience === "candidate" && (
-                      <div className="mx-auto mb-10 max-w-2xl text-center">
-                        <h3 className="font-display text-2xl md:text-3xl font-medium tracking-tight text-slate-900 dark:text-white text-balance">
-                          Where capability speaks for itself
-                        </h3>
-                        <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400 font-light">
-                          Show how you think, respond and perform when faced with realistic operational challenges, helping organisations see your potential with greater clarity and confidence.
-                        </p>
-                      </div>
-                    )}
-                    <div className="grid gap-4 lg:grid-cols-2">
-                    {(workflowAudience === "hiring" ? hiringWorkflowSteps : candidateWorkflowSteps).map((step) => (
-                      <article
-                        key={step.title}
-                        className="grid min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white/75 shadow-sm dark:border-white/10 dark:bg-[#090b0f] sm:grid-cols-[minmax(0,0.8fr)_minmax(15rem,1.2fr)] lg:grid-cols-1 xl:grid-cols-[minmax(0,0.78fr)_minmax(15rem,1.22fr)]"
-                      >
-                        <div className="flex min-w-0 flex-col p-6">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="font-mono text-xs font-semibold text-sky-600 dark:text-sky-400">
-                              {step.step} {"//"}
-                            </span>
-                            <span className="flex h-9 w-9 items-center justify-center rounded-md border border-sky-500/20 bg-sky-500/[0.08] text-sky-600 dark:text-sky-400">
-                              <step.icon className="h-4 w-4" aria-hidden="true" />
-                            </span>
-                          </div>
-                          <h3 className="mt-6 text-balance font-display text-2xl font-medium text-slate-900 dark:text-white">
-                            {step.title}
-                          </h3>
-                          <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                            {step.text}
-                          </p>
-                        </div>
-                        <div className="min-w-0 overflow-hidden border-t border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-black/20 sm:border-l sm:border-t-0 lg:border-l-0 lg:border-t xl:border-l xl:border-t-0">
-                          <WorkflowVisual variant={step.visual} reduceMotion={reduceMotion} />
-                        </div>
-                      </article>
-                    ))}
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              <Reveal variant="fade-up" className="mt-8">
-                <div className="grid divide-y divide-slate-200 border-y border-slate-200 dark:divide-white/10 dark:border-white/10 md:grid-cols-3 md:divide-x md:divide-y-0">
-                  {[
-                    ["Consistent by design", "A shared process keeps assessment delivery clear and considered."],
-                    ["Flexible delivery", "Supported delivery options adapt to the needs of each organisation."],
-                    ["Human-led outcomes", "CTRL supports the review; your team retains the decision."],
-                  ].map(([title, text]) => (
-                    <div key={title} className="px-5 py-6 md:px-7">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">{text}</p>
-                    </div>
-                  ))}
-                </div>
+          <section id="contracts" className="border-t border-border bg-muted/30">
+            <div className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10 lg:py-28">
+              <Reveal variant="fade-up" className="mx-auto mb-14 max-w-2xl text-center">
+                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
+                  Contracts
+                </p>
+                <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+                  Options for hiring teams
+                </h2>
+                <p className="mt-4 text-base leading-7 text-muted-foreground">
+                  Choose the seats and delivery modes your organisation needs. Every option includes
+                  CTRL&apos;s core released assessments.
+                </p>
               </Reveal>
-            </section>
 
-            <section id="contracts" className="w-full">
-              <div className="text-center mb-14 max-w-3xl mx-auto">
-                <SectionHeading
-                  eyebrow="Contract Options"
-                  accent="cyan"
-                  title={<>Contracts for the way you <GradientText accent="cyan">deliver.</GradientText></>}
-                  body="Start with the access and delivery modes your team needs. Every option includes CTRL's core released assessments."
-                  centered
-                />
-              </div>
-
-              <RevealGroup stagger={0.12} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <RevealGroup stagger={0.1} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 {contractData.options.map((option) => {
                   const details = contractDetails[option.tier];
-                  const accent = accentStyles[details.accent];
                   const features = [
                     `${option.includedSeats} hiring manager ${option.includedSeats === 1 ? "seat" : "seats"}`,
-                    "All Core released and future assessments",
+                    "All core released and future assessments",
                     option.tier === "essential"
                       ? "In-person delivery only"
-                      : option.tier === "professional"
-                      ? "In-person, remote and hybrid delivery"
                       : "In-person, remote and hybrid delivery",
                     option.tier === "founder" && option.discountPercent
                       ? `${option.discountPercent}% discount on upgrades and add-on assessments`
@@ -977,30 +310,34 @@ export default function Home() {
 
                   return (
                     <RevealItem key={option.tier} variant="fade-up" className="h-full">
-                      <article className="flex h-full flex-col rounded-lg border border-slate-200 bg-white/75 p-6 shadow-sm transition-[border-color,transform] duration-300 hover:-translate-y-0.5 hover:border-slate-300 dark:border-white/10 dark:bg-white/[0.03] dark:hover:border-white/20">
+                      <article className="flex h-full flex-col rounded-lg border border-border bg-card p-6 shadow-sm">
                         <div className="flex items-start justify-between gap-4">
                           <div>
-                            <span className={cn("font-mono text-[10px] font-semibold uppercase tracking-[0.2em]", accent.text)}>
+                            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
                               {details.badge}
                             </span>
-                            <h3 className="mt-3 font-display text-2xl font-medium tracking-tight text-slate-900 dark:text-white">
+                            <h3 className="mt-3 font-display text-2xl font-medium tracking-tight text-foreground">
                               {option.label}
                             </h3>
                           </div>
-                          <span className={cn("mt-1 h-2 w-2 rounded-full", accent.dot)} aria-hidden="true" />
+                          <span className="mt-1 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
                         </div>
-                        <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                          {details.summary}
-                        </p>
+                        <p className="mt-4 text-sm leading-6 text-muted-foreground">{details.summary}</p>
                         <ul className="mt-6 space-y-3">
                           {features.map((feature) => (
-                            <li key={feature} className="flex gap-3 text-sm leading-5 text-slate-700 dark:text-slate-300">
-                              <CheckCircle2 className={cn("mt-0.5 h-4 w-4 shrink-0", accent.text)} aria-hidden="true" />
+                            <li
+                              key={feature}
+                              className="flex gap-3 text-sm leading-5 text-foreground"
+                            >
+                              <CheckCircle2
+                                className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                                aria-hidden="true"
+                              />
                               <span>{feature}</span>
                             </li>
                           ))}
                         </ul>
-                        <p className="mt-auto pt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                        <p className="mt-auto pt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                           {details.footnote}
                         </p>
                       </article>
@@ -1011,8 +348,8 @@ export default function Home() {
 
               {contractData.founderOfferExpiresAt ? (
                 <Reveal variant="fade-up">
-                  <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Founder availability is controlled by the platform expiry date and is currently listed until{" "}
+                  <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-muted-foreground">
+                    Founder availability is currently listed until{" "}
                     {new Date(contractData.founderOfferExpiresAt).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
@@ -1022,147 +359,99 @@ export default function Home() {
                   </p>
                 </Reveal>
               ) : null}
-            </section>
+            </div>
+          </section>
 
-          </div>
-
-          {/* Contact Section — closing call to action */}
-          <section id="contact" className="relative overflow-hidden border-t border-slate-200 dark:border-white/5">
-            {/* Ambient radial glow — light, not a container */}
-            <motion.div
-              aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-[40rem] w-[40rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(56,189,248,0.14), rgba(37,99,235,0.06) 45%, transparent 70%)",
-              }}
-              initial={reduceMotion ? false : { opacity: 0.65, scale: 0.92 }}
-              animate={reduceMotion ? {} : { opacity: [0.65, 1, 0.65], scale: [0.95, 1.05, 0.95] }}
-              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-            />
-
-            <div className="relative z-10 mx-auto w-full max-w-3xl px-6 py-28 md:py-40 text-center">
-              <Reveal variant="zoom">
-                {/* Crosshair kicker — echoes the logo motif */}
-                <h2 className="mx-auto max-w-3xl text-balance font-display text-5xl font-medium leading-[1.04] tracking-tight text-slate-900 dark:text-white md:text-7xl">
-                  Ready to transform your{" "}
-                  <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent dark:from-sky-300 dark:to-blue-400">
-                    recruitment process?
-                  </span>
+          <section id="contact" className="border-t border-border bg-background">
+            <div className="mx-auto max-w-3xl px-6 py-24 text-center lg:py-32">
+              <Reveal variant="fade-up">
+                <h2 className="font-display text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
+                  Ready when your team is
                 </h2>
-
-                <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">
-                  Discover how CTRL helps organisations identify high-potential candidates,
-                  reduce recruitment risk and make more confident hiring decisions through
-                  realistic assessments and immersive simulation.
+                <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-muted-foreground">
+                  Start with the contract that fits your hiring process, or join a session if you
+                  already have a code.
                 </p>
-
-                <div className="mt-11 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <Button asChild className="group h-12 rounded-full bg-slate-900 px-9 text-sm font-medium text-white shadow-lg shadow-slate-900/10 transition-colors hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400 dark:bg-white dark:text-black dark:shadow-white/10 dark:hover:bg-slate-200 dark:focus-visible:ring-white/50 md:h-14 md:text-base">
-                    <Link href="/pricing" className="flex items-center justify-center">
-                      View plans
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
+                <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <Button asChild className="h-11 px-6">
+                    <Link href="#contracts" className="inline-flex items-center gap-2">
+                      View contracts
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                   </Button>
-                  <Button type="button" variant="ghost" onClick={() => scrollToAnchor("contracts")} className="h-12 rounded-full border border-slate-200 bg-transparent px-9 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-400 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:ring-white/20 md:h-14 md:text-base">
-                    View contracts
+                  <Button asChild variant="outline" className="h-11 px-6">
+                    <Link href="/auth/login">Login</Link>
                   </Button>
                 </div>
               </Reveal>
             </div>
           </section>
-
-          <footer className="relative z-20 overflow-hidden border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-[#020202] pt-20 pb-10">
-            {/* Top accent line */}
-            <div aria-hidden className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-500/40 to-transparent" />
-
-            <Reveal variant="fade-up">
-              <div className="mx-auto max-w-[1440px] px-6">
-                <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5 lg:gap-8 mb-12">
-                  <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
-                    <BrandLogo layout="stacked" className="h-11 w-[15.5rem] self-start" />
-                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light">
-                      Structured assessments and reviewable evidence for organisations making important hiring decisions.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-4">
-                    <h4 className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-slate-900 dark:text-white">
-                      <span className="h-1 w-1 rounded-full bg-sky-500" /> Explore
-                    </h4>
-                    {navItems.map(item => (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        onClick={(event) => {
-                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-                          event.preventDefault();
-                          scrollToAnchor(item.href.slice(1));
-                        }}
-                        className="group flex items-center gap-1.5 text-left text-sm font-light text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/40 dark:focus-visible:ring-white/20 rounded"
-                      >
-                        {item.label}
-                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
-                      </a>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col gap-4">
-                    <h4 className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-slate-900 dark:text-white">
-                      <span className="h-1 w-1 rounded-full bg-sky-500" /> Legal
-                    </h4>
-                    {UK_LEGAL_FOOTER_LINKS.map((l) => (
-                      <Link
-                        key={l.href}
-                        href={l.href}
-                        className="group flex items-center gap-1.5 rounded text-sm font-light text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/40 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
-                      >
-                        {l.label}
-                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
-                      </Link>
-                    ))}
-                  </div>
-
-                  <div className="flex flex-col gap-4">
-                    <h4 className="flex items-center gap-2 font-mono text-[11px] font-medium uppercase tracking-[0.2em] text-slate-900 dark:text-white">
-                      <span className="h-1 w-1 rounded-full bg-sky-500" /> Access
-                    </h4>
-                    {[
-                      { label: "Get Started", href: "/pricing" },
-                      { label: "Log in", href: "/auth/login" },
-                    ].map((l) => (
-                      <Link
-                        key={l.label}
-                        href={l.href}
-                        className="group flex items-center gap-1.5 rounded text-sm font-light text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/40 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
-                      >
-                        {l.label}
-                        <ArrowRight className="h-3 w-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-300 group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-4 border-t border-slate-200 dark:border-white/10 pt-8 md:flex-row md:items-center md:justify-between">
-                  <p className="text-sm font-light text-slate-500 dark:text-slate-400">
-                    © {new Date().getFullYear()} <CtrlText className="h-[0.8em]" /> Recruitment. All rights reserved.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={scrollToTop}
-                    className="group inline-flex items-center gap-2 self-start font-mono text-[11px] uppercase tracking-[0.2em] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 dark:focus-visible:ring-white/20 rounded-full md:self-auto"
-                  >
-                    Back to top
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 transition-colors group-hover:border-slate-400 dark:group-hover:border-white/30">
-                      <ArrowRight className="h-3 w-3 -rotate-90 transition-transform duration-300 group-hover:-translate-y-0.5" aria-hidden="true" />
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </Reveal>
-          </footer>
         </main>
-      </MotionPrefs>
-    </div>
+
+        <footer className="border-t border-border bg-muted/20">
+          <div className="mx-auto flex max-w-[1440px] flex-col gap-10 px-6 py-12 lg:flex-row lg:items-start lg:justify-between lg:px-10">
+            <div className="max-w-sm">
+              <BrandLogo className="h-8 w-auto" />
+              <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                Structured assessment delivery and review for organisational hiring teams.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Explore
+                </p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li>
+                    <Link href="#how" className="text-foreground hover:text-primary">
+                      How it works
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="#contracts" className="text-foreground hover:text-primary">
+                      Contracts
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/join" className="text-foreground hover:text-primary">
+                      Join
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Legal
+                </p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  {UK_LEGAL_FOOTER_LINKS.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="text-foreground hover:text-primary">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Access
+                </p>
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li>
+                    <Link href="/auth/login" className="text-foreground hover:text-primary">
+                      Login
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-border px-6 py-4 text-center text-xs text-muted-foreground lg:px-10">
+            © {new Date().getFullYear()} CTRL Assessment
+          </div>
+        </footer>
+      </div>
+    </MotionPrefs>
   );
 }

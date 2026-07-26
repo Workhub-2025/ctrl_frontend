@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  ArrowDown,
-  ArrowRight,
-  KeyRound,
-} from "lucide-react";
+import { ArrowDown, ArrowRight, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
-import { AnimatedBackground } from "@/components/ui/animated-background";
 
 function scrollToScene(id: string) {
   const target = document.getElementById(id);
@@ -28,13 +23,11 @@ function scrollToScene(id: string) {
 
 type LandingHeroProps = {
   navHeight?: number;
-  bgColor?: string;
   reduceMotion?: boolean;
 };
 
 export function LandingHero({
   navHeight = 96,
-  bgColor = "bg-black",
   reduceMotion = false,
 }: LandingHeroProps) {
   const [mounted, setMounted] = useState(false);
@@ -53,34 +46,26 @@ export function LandingHero({
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
   return (
     <section
       id="landing-hero"
-      className={"relative min-h-[100svh] overflow-hidden " + bgColor}
+      className="relative min-h-[100svh] overflow-hidden bg-background"
     >
-      <AnimatedBackground disabled={reduceMotion} />
-
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 55% 45% at 18% 35%, rgba(245,158,11,0.16), transparent 55%), radial-gradient(ellipse 40% 35% at 82% 28%, rgba(14,165,233,0.1), transparent 50%), linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.55) 100%)",
-        }}
+        className="pointer-events-none absolute inset-0 z-0 bg-gradient-hero opacity-90"
       />
-
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.18] dark:opacity-[0.28]"
+        className="pointer-events-none absolute inset-0 z-0 opacity-[0.12]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
+            "linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)",
           backgroundSize: "72px 72px",
-          color: "rgb(168 162 158 / 0.35)",
           maskImage: "linear-gradient(to bottom, black 8%, black 70%, transparent 96%)",
           WebkitMaskImage:
             "linear-gradient(to bottom, black 8%, black 70%, transparent 96%)",
@@ -95,9 +80,9 @@ export function LandingHero({
           variants={container}
           initial={reduceMotion ? false : "hidden"}
           animate={reduceMotion ? undefined : "show"}
-          className="grid w-full items-end gap-12 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.7fr)] lg:gap-16"
+          className="grid w-full items-end gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.65fr)] lg:gap-16"
         >
-          <div className="min-w-0 max-w-[52rem]">
+          <div className="min-w-0 max-w-[48rem]">
             <motion.div variants={rise} className="mb-8">
               <BrandLogo
                 layout="stacked"
@@ -107,21 +92,21 @@ export function LandingHero({
 
             <motion.h1
               variants={rise}
-              className="text-balance font-display text-[2.75rem] font-medium leading-[1.02] tracking-[-0.04em] text-stone-950 sm:text-5xl lg:text-[4.25rem] dark:text-white"
+              className="text-balance font-display text-[2.75rem] font-medium leading-[1.02] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-[4rem]"
             >
-              Hiring the right people
-              <span className="block text-stone-500 dark:text-stone-400">
-                starts with the right intelligence.
+              Hiring made clearer.
+              <span className="mt-2 block text-muted-foreground">
+                Evidence over guesswork.
               </span>
             </motion.h1>
 
             <motion.p
               variants={rise}
-              className="mt-6 max-w-[38rem] text-lg leading-8 text-stone-600 sm:text-xl dark:text-stone-300"
+              className="mt-6 max-w-[36rem] text-lg leading-8 text-muted-foreground sm:text-xl"
             >
-              CTRL reveals how candidates think, respond and perform under
-              pressure, so you can recruit with confidence and build stronger
-              operational teams.
+              CTRL helps hiring teams run structured assessments and review
+              results with confidence — so you hire for how people perform, not
+              how they interview.
             </motion.p>
 
             <motion.div
@@ -129,25 +114,25 @@ export function LandingHero({
               className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center"
             >
               <Button
+                type="button"
+                onClick={() => scrollToScene("how")}
+                className="group h-12 w-full rounded-md px-7 text-sm font-semibold sm:w-auto"
+              >
+                See how it works
+                <ArrowDown
+                  className="ml-2 h-4 w-4 transition-transform group-hover:translate-y-0.5"
+                  aria-hidden="true"
+                />
+              </Button>
+              <Button
                 asChild
-                className="group h-12 w-full rounded-md bg-stone-950 px-7 text-sm font-semibold text-white hover:bg-stone-800 focus-visible:ring-2 focus-visible:ring-amber-500/50 sm:w-auto dark:bg-amber-400 dark:text-stone-950 dark:hover:bg-amber-300"
+                variant="outline"
+                className="h-12 w-full rounded-md px-7 text-sm font-semibold sm:w-auto"
               >
                 <Link href="/join" className="flex items-center justify-center gap-2">
                   <KeyRound className="h-4 w-4" aria-hidden="true" />
                   Enter session code
                 </Link>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => scrollToScene("capabilities")}
-                className="group h-12 w-full rounded-md border border-stone-300 bg-white/50 px-7 text-sm font-semibold text-stone-800 hover:bg-white focus-visible:ring-2 focus-visible:ring-stone-400 sm:w-auto dark:border-white/15 dark:bg-transparent dark:text-stone-200 dark:hover:bg-white/[0.06]"
-              >
-                Explore the platform
-                <ArrowDown
-                  className="ml-2 h-4 w-4 transition-transform group-hover:translate-y-0.5"
-                  aria-hidden="true"
-                />
               </Button>
             </motion.div>
           </div>
@@ -155,30 +140,20 @@ export function LandingHero({
           <motion.aside
             variants={rise}
             aria-label="Candidate session entry"
-            className="relative overflow-hidden border border-stone-300/90 bg-[#f4f0ea]/80 p-6 shadow-[0_28px_80px_-40px_rgba(28,25,23,0.45)] backdrop-blur-sm dark:border-white/12 dark:bg-[#0c0a09]/85 dark:shadow-[0_28px_80px_-30px_rgba(0,0,0,0.8)] sm:p-7"
+            className="relative overflow-hidden rounded-lg border border-border bg-card p-6 shadow-sm sm:p-7"
           >
-            <span
-              aria-hidden
-              className="absolute -left-px -top-px h-5 w-5 border-l-2 border-t-2 border-amber-600 dark:border-amber-400"
-            />
-            <span
-              aria-hidden
-              className="absolute -bottom-px -right-px h-5 w-5 border-b-2 border-r-2 border-amber-600 dark:border-amber-400"
-            />
-
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:text-amber-400">
+            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
               Candidates
             </p>
-            <h2 className="mt-3 font-display text-2xl font-medium tracking-tight text-stone-950 dark:text-white">
+            <h2 className="mt-3 font-display text-xl font-medium tracking-tight text-foreground">
               Have a one-time code?
             </h2>
-            <p className="mt-3 text-sm leading-6 text-stone-600 dark:text-stone-400">
-              Session access codes live on the join page — enter yours there,
-              sign in, and open the assessment linked to that session.
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">
+              Enter your session code on the join page to open your assessment.
             </p>
             <Link
               href="/join"
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-stone-950 underline-offset-4 hover:underline dark:text-amber-300"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary underline-offset-4 hover:underline"
             >
               Go to join
               <ArrowRight className="h-4 w-4" aria-hidden="true" />

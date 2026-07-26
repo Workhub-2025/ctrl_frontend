@@ -43,6 +43,9 @@ export const metadata: Metadata = {
 // per-request nonce to framework and inline bootstrap scripts.
 export const dynamic = "force-dynamic";
 
+/** Inline bootstrap: apply persisted CTRL theme before first paint to avoid flash. */
+const THEME_BOOTSTRAP = `(function(){try{var k="ctrl-accessibility-settings";var raw=localStorage.getItem(k);var s=raw?JSON.parse(raw):{};var themeMap={"dark-blue":"slate",black:"obsidian","light-blue":"daylight","soft-cream":"parchment",slate:"slate",obsidian:"obsidian",daylight:"daylight",parchment:"parchment"};var sizeMap={default:"100",large:"112","extra-large":"125","100":"100","112":"112","125":"125"};var theme=themeMap[s.theme]||"slate";var textSize=sizeMap[s.textSize]||"100";var light=theme==="daylight"||theme==="parchment";var r=document.documentElement;r.dataset.ctrlTheme=theme;r.dataset.ctrlTextSize=textSize;if(s.lineSpacing)r.dataset.ctrlLineSpacing=s.lineSpacing;if(s.contrast)r.dataset.ctrlContrast=s.contrast;if(s.motion)r.dataset.ctrlMotion=s.motion;if(s.fontFamily)r.dataset.ctrlFontFamily=s.fontFamily;if(s.enhancedFocus)r.dataset.ctrlFocus="enhanced";if(s.grayscale)r.dataset.ctrlGrayscale="enabled";if(s.underlineLinks)r.dataset.ctrlUnderlineLinks="enabled";if(s.saturation)r.dataset.ctrlSaturation=s.saturation;r.classList.remove(light?"dark":"light");r.classList.add(light?"light":"dark");}catch(e){}})();`;
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -62,6 +65,12 @@ export default async function RootLayout({
       )}
       suppressHydrationWarning
     >
+      <head>
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }}
+        />
+      </head>
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased transition-colors duration-300"

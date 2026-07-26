@@ -70,7 +70,7 @@ function ResetPasswordForm() {
 
   if (!code) {
     return (
-      <div className="flex min-h-screen bg-[#030712] text-white">
+      <div className="flex min-h-screen bg-background text-foreground">
         <AuthBrandingPane />
         <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16 xl:px-24">
           <div className="mx-auto w-full max-w-md space-y-6 rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
@@ -88,7 +88,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#030712] text-white">
+    <div className="flex min-h-screen bg-background text-foreground">
       <AuthBrandingPane />
 
       <div className="flex w-full flex-col justify-center px-6 py-12 lg:w-1/2 lg:px-16 xl:px-24">
@@ -196,7 +196,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#030712]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <ResetPasswordForm />
     </Suspense>
   );

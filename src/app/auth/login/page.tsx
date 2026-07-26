@@ -40,7 +40,7 @@ function LoginContent() {
     searchParams.get("bootstrap") === "1",
   );
   const isLightTheme =
-    settings.theme === "soft-cream" || settings.theme === "light-blue";
+    settings.theme === "daylight" || settings.theme === "parchment";
   const panelVariant = isLightTheme ? "light-panel" : "dark-panel";
   const queryMessage =
     searchParams.get("message") ??
