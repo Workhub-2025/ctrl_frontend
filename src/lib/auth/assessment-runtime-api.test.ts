@@ -5,12 +5,15 @@ import { join } from "node:path";
 const root = process.cwd();
 
 describe("assessment runtime BFF boundary", () => {
-  it("authenticates the generic runtime proxy with both app session and Strapi JWT", () => {
-    const source = readFileSync(join(root, "src/lib/assessment-runtime-server.ts"), "utf8");
-    expect(source).toContain("getServerSession");
-    expect(source).toContain("getServerStrapiJwt");
-    expect(source).toContain("Authentication required");
-    expect(source).toContain("Authorization: `Bearer ${jwt}`");
+  it("authenticates the generic runtime proxy with the Firebase candidate session", () => {
+    const source = readFileSync(
+      join(root, "src/lib/firebase-assessment-runtime-server.ts"),
+      "utf8",
+    );
+    expect(source).toContain('requireFirebaseSession("candidate")');
+    expect(source).toContain("auth.domainApi.request");
+    expect(source).toContain("auth.firebaseSessionCookie");
+    expect(source).not.toMatch(/strapi|jwt/i);
   });
 
   it("has no reachable v1 candidate pages or legacy submit handlers", () => {
@@ -29,10 +32,10 @@ describe("assessment runtime BFF boundary", () => {
       join(root, "src/app/api/assessment-runtime/media/[mediaId]/route.ts"),
       "utf8"
     );
-    expect(source).toContain("getServerSession");
-    expect(source).toContain("getServerStrapiJwt");
-    expect(source).toContain("Authorization: `Bearer ${jwt}`");
-    expect(source).toContain("Authentication required");
+    expect(source).toContain('requireFirebaseSession("candidate")');
+    expect(source).toContain("auth.domainApi.request");
+    expect(source).toContain('signedUrl.hostname !== "storage.googleapis.com"');
+    expect(source).not.toMatch(/getServerCmsJwt|joinCmsApiPath/);
     expect(source).not.toContain('slug !== "call-simulation"');
     expect(source).not.toContain('release !== "2.0.0"');
   });
@@ -49,7 +52,7 @@ describe("assessment runtime BFF boundary", () => {
 
     expect(route).toContain("isSupportedAssessmentDeviceRequest");
     expect(route).toContain("launchesAttempt");
-    expect(route).toContain("non-touch desktop or laptop");
+    expect(route).toContain("desktop or laptop with a physical keyboard");
     expect(client).toContain("assessmentDeviceRequestHeaders");
   });
 });

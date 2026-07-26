@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import { getStrapiClient } from "@/lib/strapi";
+import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 type RouteContext = { params: Promise<{ userDocumentId: string }> };
@@ -10,33 +10,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    const auth = await requireAdminApiAccess("users.write");
-    if ("error" in auth) {
-      return auth.error;
-    }
-
+    const auth = await requireFirebaseSession("admin");
     const { userDocumentId } = await context.params;
-    const client = getStrapiClient(auth.strapiJwt);
-    const response = await client.fetch(
-      `/admin/erasure-requests/${encodeURIComponent(userDocumentId)}/complete`,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }
-    );
-    const body = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: body?.error?.message ?? "Erasure could not be completed" },
-        { status: response.status }
-      );
-    }
-
-    return NextResponse.json(body);
+    const data = await auth.domainApi.request<unknown>({
+      path: `/v1/privacy/admin/erasure-requests/${encodeURIComponent(userDocumentId)}/complete`,
+      method: "POST",
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+      body: {},
+    });
+    return NextResponse.json({ data });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Erasure could not be completed",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Erasure could not be completed");
   }
 }

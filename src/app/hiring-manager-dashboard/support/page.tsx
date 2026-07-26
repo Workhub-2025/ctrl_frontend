@@ -58,7 +58,7 @@ export default function HiringManagerSupportPage() {
                 className="h-9 gap-2 rounded-xl text-xs font-semibold"
               >
                 <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                Message support
+                Contact support
               </Button>
             </ContactFormDialog>
           </>

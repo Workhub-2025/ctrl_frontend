@@ -8,6 +8,7 @@
 import { revalidateTag, revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import UsersService from '@/services/users-simple.service';
+import { isFirebaseAuthProvider } from '@/lib/auth/auth-provider';
 import {
     FindUsersParams,
     CreateUserData,
@@ -17,7 +18,7 @@ import {
     UserStats,
     IProgresStatus
 } from '@/types';
-import { debugAuthToken, debugEnvironment } from '@/lib/debug-auth';
+import { debugAuthToken, debugEnvironment } from "@/legacy-cms/debug-auth";
 import {
     applyTenantScope,
     enforceTenantWrite,
@@ -36,9 +37,16 @@ type ActionResult<T> = {
 
 /**
  * Get current user server action
+ * Firebase Preview: prefer GET /api/user/profile (domainApi) instead.
  */
 export const getCurrentUserAction = async (): Promise<ActionResult<IPublicUser>> => {
     try {
+        if (isFirebaseAuthProvider()) {
+            return {
+                success: false,
+                error: 'Use /api/user/profile on the Firebase auth path',
+            };
+        }
         const user = await UsersService.getCurrentUser();
 
         if (!user) {

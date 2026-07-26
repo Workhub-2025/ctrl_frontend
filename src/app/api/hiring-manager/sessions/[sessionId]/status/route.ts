@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
-import { getHmAssessmentSessionCloseStrapiPath } from "@/lib/hiring-manager-session-routes";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { invalidateHmOverviewServerCache } from "@/lib/portal-cache-invalidation";
 
@@ -16,14 +15,14 @@ export async function POST(
   context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    await requireHmSession();
+    const { context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
     const { sessionId } = await context.params;
     const session = await getServerSession(authOptions);
-    const strapiJwt = await getServerStrapiJwt(request);
     const limiter = await applyRateLimit({
       key: `hm-session-status:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
       limit: 15,
@@ -42,7 +41,7 @@ export async function POST(
       );
     }
 
-    if (!session?.user?.id || !strapiJwt) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
@@ -54,31 +53,18 @@ export async function POST(
         return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
       }
 
-      const strapiRes = await fetch(
-        joinStrapiApiPath(
-          getStrapiApiBaseUrl(),
-          getHmAssessmentSessionCloseStrapiPath(sessionId)
+      const current = await recruitment.getSession(sessionId);
+      const data = await recruitment.transitionSession(sessionId, {
+        status: "closed",
+        expectedVersion: current.version,
+        idempotencyKey: recruitmentIdempotencyKey(
+          "session:close",
+          actor.userId,
+          { sessionId, version: current.version },
         ),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${strapiJwt}`,
-          },
-        }
-      );
-
-      if (!strapiRes.ok) {
-        const errBody = await strapiRes.json().catch(() => null);
-        return NextResponse.json(
-          { error: errBody?.error?.message || "Failed to update session status" },
-          { status: strapiRes.status }
-        );
-      }
-
-      const data = await strapiRes.json();
+      });
       void invalidateHmOverviewServerCache();
-      return NextResponse.json({ data: data.data });
+      return NextResponse.json({ data });
     } catch (error) {
       return NextResponse.json(
         { error: error instanceof Error ? error.message : "Internal Server Error" },

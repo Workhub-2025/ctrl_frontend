@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
-import { getClientCampaigns } from "@/services/client-portal.service";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  requireFirebaseRecruitmentSession,
+  toClientCampaign,
+} from "@/lib/firebase-recruitment-bff";
 
 export async function GET(request: NextRequest) {
   try {
-    await requireClientSession();
+    const { context, recruitment } =
+      await requireFirebaseRecruitmentSession("client");
+    if (!context.organizationId) {
+      return NextResponse.json({ error: "Organization membership is required" }, { status: 403 });
+    }
     const status = request.nextUrl.searchParams.get("status");
     if (status && !["pending", "approved", "rejected"].includes(status)) {
       return NextResponse.json(
@@ -12,9 +19,12 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
-    const data = await getClientCampaigns(
-      status as "pending" | "approved" | "rejected" | undefined
-    );
+    const result = await recruitment.listCampaigns(context.organizationId);
+    const firebaseStatus =
+      status === "pending" ? "pending_review" : status;
+    const data = result.items
+      .filter((campaign) => !firebaseStatus || campaign.status === firebaseStatus)
+      .map((campaign) => toClientCampaign(campaign));
     return NextResponse.json({ data });
   } catch (error) {
     return handleBffRouteError(error, "Campaigns could not be loaded");

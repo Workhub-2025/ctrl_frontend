@@ -1,6 +1,7 @@
 type SessionCandidateResult = {
   id?: string;
   assessment?: string;
+  assessmentStatus?: string | null;
   completedAt?: string | null;
   numericScore?: number | null;
 };
@@ -15,7 +16,14 @@ export function getCandidateAssessmentProgress(
 ) {
   const completed = new Set(
     candidate.results
-      .filter((result) => result.completedAt || result.numericScore !== null)
+      .filter((result) => {
+        const status = result.assessmentStatus;
+        if (status === "abandoned") return false;
+        if (status === "submitted" || status === "scoring" || status === "completed") {
+          return true;
+        }
+        return Boolean(result.completedAt || result.numericScore !== null);
+      })
       .map((result) => result.id || result.assessment)
   ).size;
   const total = Math.max(expectedAssessmentCount || 0, candidate.results.length, completed, 1);

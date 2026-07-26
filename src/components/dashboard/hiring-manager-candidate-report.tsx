@@ -41,7 +41,7 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { usePortalBreadcrumbDetail } from "@/components/dashboard/portal/portal-shell";
-import { isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
+import { isAbandonedAssessmentResult, getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
 import {
   findAssessmentResultForStackEntry,
   getAssessmentKey,
@@ -70,18 +70,46 @@ type AssessmentReportRow = {
 function buildAssessmentRows(report: HiringManagerCandidateReport): AssessmentReportRow[] {
   const { results, campaign } = report;
   const stackItems = campaign.resolvedStackSummary?.assessments ?? [];
-  if (stackItems.length === 0) return [];
+  if (stackItems.length > 0) {
+    return stackItems.map(({ displayName: name, slug, weight }) => {
+      const result = findAssessmentResultForStackEntry(
+        { displayName: name, slug },
+        results,
+      );
+      const score = result?.numericScore ?? null;
 
-  return stackItems.map(({ displayName: name, slug, weight }) => {
-    const result = findAssessmentResultForStackEntry({ displayName: name, slug }, results);
+      return {
+        name,
+        weight,
+        result,
+        score,
+        contribution:
+          score === null ? 0 : Number(((score * weight) / 100).toFixed(2)),
+      };
+    });
+  }
+
+  // Firebase Preview path: equal-weight fallback from assessmentStack / live results.
+  const stack =
+    campaign.assessmentStack.length > 0
+      ? campaign.assessmentStack
+      : [...new Set(results.map((result) => result.assessment))];
+  if (stack.length === 0) return [];
+
+  const weight = Math.round((10000 / stack.length)) / 100;
+  return stack.map((name) => {
+    const result =
+      findAssessmentResultForStackEntry({ displayName: name, slug: name }, results) ??
+      results.find((entry) => entry.assessment === name) ??
+      null;
     const score = result?.numericScore ?? null;
-
     return {
-      name,
+      name: result?.assessment ?? name,
       weight,
       result,
       score,
-      contribution: score === null ? 0 : Number(((score * weight) / 100).toFixed(2)),
+      contribution:
+        score === null ? 0 : Number(((score * weight) / 100).toFixed(2)),
     };
   });
 }
@@ -188,7 +216,12 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
   }, [reportData]);
 
   const completedRows = rows.filter((row) => row.score !== null);
+  const submittedRows = rows.filter((row) => {
+    const status = getHmAssessmentItemStatus(row.result);
+    return status === "completed" || status === "submitted";
+  });
   const allAssessmentsCompleted = rows.length > 0 && completedRows.length === rows.length;
+  const allAssessmentsSubmitted = rows.length > 0 && submittedRows.length === rows.length;
   const computedCompositeScore = useMemo(() => {
     if (!reportData) return null;
     const stack = reportData.campaign.resolvedStackSummary?.assessments ?? [];
@@ -205,7 +238,11 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
 
   const overallScore = computedCompositeScore ?? 0;
   const ratingLabel = getRatingLabel(overallScore);
-  const displayedRatingLabel = allAssessmentsCompleted ? ratingLabel : "Pending completion";
+  const displayedRatingLabel = allAssessmentsCompleted
+    ? ratingLabel
+    : allAssessmentsSubmitted
+      ? "Submitted — scoring"
+      : "Pending completion";
 
   const resolvedSessionIdForActions = reportData?.sessionId ?? resolvedSessionId;
   const decisionPending = !hmDecision || hmDecision === "pending";
@@ -431,16 +468,20 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                   </span>
                   <div className="flex flex-wrap gap-1">
                     {rows.map((row, idx) => {
-                      const isDone = row.score !== null;
+                      const status = getHmAssessmentItemStatus(row.result);
+                      const isDone = status === "completed";
+                      const isSubmitted = status === "submitted";
                       return (
                         <div
                           key={`${row.name}-${idx}`}
-                          title={`${row.name}: ${isDone ? "Completed" : "Pending"}`}
+                          title={`${row.name}: ${isDone ? "Completed" : isSubmitted ? "Submitted" : "Pending"}`}
                           className={cn(
                             "h-2.5 w-7 rounded-full border transition-colors",
                             isDone
                               ? "border-primary/40 bg-primary"
-                              : cn("border bg-muted/30 dark:bg-white/[0.04]", portalPanelBorderClass)
+                              : isSubmitted
+                                ? "border-primary/30 bg-primary/50"
+                                : cn("border bg-muted/30 dark:bg-white/[0.04]", portalPanelBorderClass)
                           )}
                         />
                       );
@@ -622,7 +663,11 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                   <div className={cn(portalPanelNestedClass, "flex flex-col justify-between p-3 md:col-span-4")}>
                     <p className="text-xs font-medium text-muted-foreground">Result status</p>
                     <p className="mt-2 text-sm font-semibold text-foreground">
-                      {row.score !== null ? "Submitted and verified" : "Awaiting candidate"}
+                      {row.score !== null
+                        ? "Submitted and verified"
+                        : getHmAssessmentItemStatus(row.result) === "submitted"
+                          ? "Submitted — scoring"
+                          : "Awaiting candidate"}
                     </p>
                   </div>
                 </div>

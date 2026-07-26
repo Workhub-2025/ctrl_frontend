@@ -9,20 +9,12 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
-  Building2,
-  AlertTriangle,
   History,
-  Clock3,
-  KeyRound,
-  CreditCard,
-  ArrowUpRight,
 } from "lucide-react";
 import { useAdminResource } from "@/lib/admin-resource-cache";
 import {
   AdminAlert,
   AdminPageHeader,
-  AdminQuickLinkRow,
-  AdminStatTile,
 } from "@/components/admin/admin-portal-ui";
 import { DashboardInfoCard } from "@/components/dashboard/dashboard-info-card";
 import { PortalDecisionLedger } from "@/components/dashboard/portal/portal-ui";
@@ -76,42 +68,7 @@ export default function AdminOverview() {
         description="Platform health at a glance — client contracts, seat usage, and items that need your attention."
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <AdminStatTile
-          label="Active clients"
-          value={overview.activeClients}
-          detail="Registered contacts with active contracts"
-          icon={Building2}
-        />
-        <AdminStatTile
-          label="Awaiting signup"
-          value={overview.awaitingClientSignups}
-          detail="Contracted clients without a registered contact"
-          icon={Clock3}
-        />
-        <AdminStatTile
-          label="Client invites"
-          value={overview.availableClientCodes}
-          detail="Active admin-issued signup invites"
-          icon={KeyRound}
-        />
-        <AdminStatTile
-          label="Expiring soon"
-          value={overview.contractsExpiringSoon}
-          detail="Contracts expiring in the next 30 days"
-          icon={AlertTriangle}
-        />
-      </div>
-
       {error ? <AdminAlert>{error}</AdminAlert> : null}
-
-      <AdminQuickLinkRow
-        links={[
-          { href: "/admin/clients", label: "Clients", hint: "Manage organisations", icon: Building2 },
-          { href: "/admin/billing", label: "Billing", hint: "Pricing and invoices", icon: CreditCard },
-          { href: "/admin/upgrade-requests", label: "Entitlements", hint: "Seats and features", icon: ArrowUpRight },
-        ]}
-      />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         {/* HM Seat Capacity Card */}
@@ -181,7 +138,7 @@ export default function AdminOverview() {
           id: `${item.id || "attention"}-${index}`,
           title: item.title,
           detail: item.detail,
-          href: "/admin/clients",
+          href: "/admin/organizations",
         }))}
         emptyTitle="No account issues need attention"
         emptyDescription="Contracts, access and client records are currently up to date."

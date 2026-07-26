@@ -30,10 +30,12 @@ export const CANDIDATE_NAV_GROUPS: CandidateNavGroup[] = [
     label: "Support",
     items: [
       {
-        href: "/candidate-dashboard/help-support",
-        label: "Help & support",
+        href: "/candidate-dashboard/support",
+        label: "Support",
         icon: HelpCircle,
-        isActive: (p) => p.startsWith("/candidate-dashboard/help-support"),
+        isActive: (p) =>
+          p.startsWith("/candidate-dashboard/support") ||
+          p.startsWith("/candidate-dashboard/help-support"),
       },
     ],
   },
@@ -48,7 +50,7 @@ export function getCandidateBreadcrumbs(pathname: string) {
     { label: "Candidate", href: "/candidate-dashboard" },
   ];
   if (path.includes("my-assessments")) crumbs.push({ label: "My assessments" });
-  else if (path.includes("help-support")) crumbs.push({ label: "Help & support" });
+  else if (path.includes("support")) crumbs.push({ label: "Support" });
   return crumbs;
 }
 

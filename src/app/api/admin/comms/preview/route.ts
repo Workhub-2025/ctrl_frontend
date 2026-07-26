@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
 import type {
   AdminBroadcastAudience,
   AdminBroadcastContractTier,
   AdminBroadcastTemplateKey,
 } from "@/lib/admin-comms-templates";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { cmsRequest } from "@/legacy-cms/request";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 import { sanitisePlainText } from "@/lib/security/input-sanitization";
@@ -21,25 +24,27 @@ type BroadcastPreviewBody = {
   templateKey?: AdminBroadcastTemplateKey;
 };
 
+type BroadcastPreviewData = {
+  recipientCount: number;
+  exceedsBatchLimit: boolean;
+  personalized?: boolean;
+  samplePreview?: {
+    clientName: string;
+    endDate: string;
+    renewalPrice: string;
+    recipientEmail: string;
+  } | null;
+};
+
 type BroadcastPreviewResponse = {
-  data?: {
-    recipientCount: number;
-    exceedsBatchLimit: boolean;
-    personalized?: boolean;
-    samplePreview?: {
-      clientName: string;
-      endDate: string;
-      renewalPrice: string;
-      recipientEmail: string;
-    } | null;
-  };
+  data?: BroadcastPreviewData;
 };
 
 export async function POST(request: Request) {
   const crossOriginResponse = rejectMutatingCrossOrigin(request);
   if (crossOriginResponse) return crossOriginResponse;
 
-  const auth = await requireAdminApiAccess('comms.send');
+  const auth = await requireAdminDualAccess("comms.send");
   if ("error" in auth) {
     return auth.error;
   }
@@ -62,7 +67,17 @@ export async function POST(request: Request) {
   };
 
   try {
-    const response = await strapiRequest<BroadcastPreviewResponse>("/admin/comms/preview", {
+    if (isFirebaseAdminAuth(auth)) {
+      const response = await auth.domainApi.request<BroadcastPreviewResponse>({
+        path: "/v1/admin/comms/preview",
+        method: "POST",
+        firebaseSessionCookie: auth.firebaseSessionCookie,
+        body,
+      });
+      return NextResponse.json({ data: response.data ?? null });
+    }
+
+    const response = await cmsRequest<BroadcastPreviewResponse>("/admin/comms/preview", {
       method: "POST",
       body: JSON.stringify(body),
     });

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { requireClientSession } from "@/lib/auth/bff-session";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { cmsRequest } from "@/legacy-cms/request";
 
 export type ClientAuditLog = {
   id: string;
@@ -22,6 +22,6 @@ export type ClientAuditLog = {
 
 export async function getClientAuditLogs(): Promise<ClientAuditLog[]> {
   await requireClientSession();
-  const response = await strapiRequest<{ data?: ClientAuditLog[] }>("/client/audit-logs");
+  const response = await cmsRequest<{ data?: ClientAuditLog[] }>("/client/audit-logs");
   return response.data ?? [];
 }

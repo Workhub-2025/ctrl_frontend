@@ -1,26 +1,44 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
+import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
+import { cmsRequest } from "@/legacy-cms/request";
 
 export async function GET(request: Request) {
-  const auth = await requireAdminApiAccess('billing.read');
+  const auth = await requireAdminDualAccess("billing.read");
   if ("error" in auth) {
     return auth.error;
   }
-  const strapiJwt = auth.strapiJwt;
 
   const { searchParams } = new URL(request.url);
   const withinDays = Number(searchParams.get("withinDays") ?? 90);
 
   try {
-    const response = await strapiRequest<{ data?: unknown[] }>(
-      `/admin/billing/expiring-contracts?withinDays=${encodeURIComponent(String(withinDays))}`
+    if (isFirebaseAdminAuth(auth)) {
+      const billing = createFirebaseBillingApi(
+        auth.domainApi,
+        auth.firebaseSessionCookie,
+      );
+      const data = await billing.listExpiringContracts(withinDays);
+      return NextResponse.json({ data: data ?? [] });
+    }
+
+    const response = await cmsRequest<{ data?: unknown[] }>(
+      `/admin/billing/expiring-contracts?withinDays=${encodeURIComponent(String(withinDays))}`,
     );
     return NextResponse.json({ data: response.data ?? [] });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Expiring contracts could not be loaded" },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Expiring contracts could not be loaded",
+      },
+      { status: 500 },
     );
   }
 }

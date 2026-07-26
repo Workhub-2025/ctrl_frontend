@@ -3,17 +3,19 @@ import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { updateHiringManagerCampaignAssessmentStack } from "@/services/hiring-manager-campaigns.service";
 import { validateAssessmentStackPayload } from "@/lib/hiring-manager/campaign-assessment-settings";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ campaignId: string }> }
 ) {
   try {
-    await requireHmSession();
+    const { context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
@@ -39,7 +41,7 @@ export async function PUT(
     try {
       const { campaignId } = await context.params;
       const body = await request.json().catch(() => ({}));
-      const assessmentDocumentIds = Array.isArray(body?.assessmentDocumentIds)
+      const assessmentDocumentIds: string[] = Array.isArray(body?.assessmentDocumentIds)
         ? body.assessmentDocumentIds.filter((value: unknown) => typeof value === "string")
         : [];
 
@@ -60,15 +62,35 @@ export async function PUT(
         return NextResponse.json({ error: weightError }, { status: 400 });
       }
 
-      await updateHiringManagerCampaignAssessmentStack(campaignId, {
-        assessmentDocumentIds,
-        assessmentSettings,
-        assessmentMode:
-          body?.assessmentMode === "remote" ||
-          body?.assessmentMode === "hybrid" ||
-          body?.assessmentMode === "in_person"
-            ? body.assessmentMode
-            : undefined,
+      const [workspace, catalogue] = await Promise.all([
+        recruitment.getCampaign(campaignId),
+        recruitment.listAssessmentCatalogue(),
+      ]);
+      const assessments = assessmentDocumentIds.map((selectedId) => {
+        const item = catalogue.find(
+          (candidate) =>
+            candidate.releaseId === selectedId ||
+            candidate.definitionId === selectedId ||
+            candidate.slug === selectedId,
+        );
+        if (!item) {
+          throw new Error(`Assessment "${selectedId}" is not an active Firebase release`);
+        }
+        return {
+          definitionId: item.definitionId,
+          releaseId: item.releaseId,
+          durationMinutes: null,
+          maxAttempts: 1,
+        };
+      });
+      await recruitment.replaceAssessmentStack(campaignId, {
+        expectedVersion: workspace.campaign.version,
+        assessments,
+        idempotencyKey: recruitmentIdempotencyKey(
+          "campaign:assessment-stack",
+          actor.userId,
+          { campaignId, assessments },
+        ),
       });
 
       return NextResponse.json({ data: { updated: true } });

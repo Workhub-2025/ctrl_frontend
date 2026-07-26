@@ -5,6 +5,14 @@ async function readJson<T>(response: Response): Promise<T> {
   return (await response.json().catch(() => ({}))) as T;
 }
 
+function supportApiPath(path: string): string {
+  const normalized = path.replace(/^\/+/, "");
+  if (process.env.NEXT_PUBLIC_AUTH_PROVIDER === "firebase") {
+    return `/api/${normalized}`;
+  }
+  return `/${normalized}`;
+}
+
 export type SupportTicketStatus =
   | "open"
   | "in_progress"
@@ -106,7 +114,7 @@ export class SupportTicketService {
     priority: string;
     metadata?: Record<string, unknown>;
   }): Promise<SupportTicket> {
-    const response = await fetchClient("/support-tickets", {
+    const response = await fetchClient(supportApiPath("support-tickets"), {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -137,7 +145,7 @@ export class SupportTicketService {
       this.lastMyTicketsForceAt = Date.now();
     }
 
-    this.myTicketsInFlight = fetchClient("/support-tickets/mine", {
+    this.myTicketsInFlight = fetchClient(supportApiPath("support-tickets/mine"), {
       cache: "no-store",
     })
       .then(async (response) => {
@@ -180,7 +188,7 @@ export class SupportTicketService {
     if (filters?.search) params.set("search", filters.search);
 
     const qs = params.toString();
-    const url = `/support-tickets${qs ? `?${qs}` : ""}`;
+    const url = supportApiPath(`support-tickets${qs ? `?${qs}` : ""}`);
 
     const response = await fetchClient(url, { cache: "no-store" });
     const body = await readJson<{ data: SupportTicket[] }>(response);
@@ -188,7 +196,7 @@ export class SupportTicketService {
   }
 
   static async getTicket(id: string): Promise<SupportTicket> {
-    const response = await fetchClient(`/support-tickets/${id}`, {
+    const response = await fetchClient(supportApiPath(`support-tickets/${id}`), {
       cache: "no-store",
     });
     const body = await readJson<{ data: SupportTicket }>(response);
@@ -203,7 +211,7 @@ export class SupportTicketService {
       resolution?: string;
     }
   ): Promise<SupportTicket> {
-    const response = await fetchClient(`/support-tickets/${id}`, {
+    const response = await fetchClient(supportApiPath(`support-tickets/${id}`), {
       method: "PUT",
       body: JSON.stringify(data),
     });
@@ -212,7 +220,7 @@ export class SupportTicketService {
   }
 
   static async getTicketStats(): Promise<TicketStats> {
-    const response = await fetchClient("/support-tickets/stats", {
+    const response = await fetchClient(supportApiPath("support-tickets/stats"), {
       cache: "no-store",
     });
     const body = await readJson<{ data: TicketStats }>(response);
@@ -229,9 +237,12 @@ export class SupportTicketService {
   }
 
   static async getTicketMessages(id: string): Promise<SupportTicketMessage[]> {
-    const response = await fetchClient(`/support-tickets/${id}/messages`, {
-      cache: "no-store",
-    });
+    const response = await fetchClient(
+      supportApiPath(`support-tickets/${id}/messages`),
+      {
+        cache: "no-store",
+      },
+    );
     const body = await readJson<{ data: SupportTicketMessage[] }>(response);
     return Array.isArray(body.data) ? body.data : [];
   }
@@ -240,10 +251,13 @@ export class SupportTicketService {
     id: string,
     data: { body: string; isInternal?: boolean }
   ): Promise<SupportTicketMessage> {
-    const response = await fetchClient(`/support-tickets/${id}/messages`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const response = await fetchClient(
+      supportApiPath(`support-tickets/${id}/messages`),
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
     const body = await readJson<{ data: SupportTicketMessage }>(response);
     this.invalidateMyTickets();
     return body.data;
@@ -254,10 +268,13 @@ export class SupportTicketService {
     action: "confirm" | "reopen",
     body?: string
   ): Promise<SupportTicket> {
-    const response = await fetchClient(`/support-tickets/${id}/confirm-resolution`, {
-      method: "POST",
-      body: JSON.stringify({ action, body }),
-    });
+    const response = await fetchClient(
+      supportApiPath(`support-tickets/${id}/confirm-resolution`),
+      {
+        method: "POST",
+        body: JSON.stringify({ action, body }),
+      },
+    );
     const result = await readJson<{ data: SupportTicket }>(response);
     this.invalidateMyTickets();
     return result.data;
@@ -267,10 +284,13 @@ export class SupportTicketService {
     id: string,
     data: { target: "ops" | "billing"; note?: string },
   ): Promise<SupportTicket> {
-    const response = await fetchClient(`/support-tickets/${id}/escalate`, {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const response = await fetchClient(
+      supportApiPath(`support-tickets/${id}/escalate`),
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+    );
     const body = await readJson<{ data: SupportTicket }>(response);
     return body.data;
   }

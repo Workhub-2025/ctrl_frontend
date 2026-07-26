@@ -26,7 +26,7 @@ describe("campaign session approval", () => {
     );
   });
 
-  it("keeps the session BFF approval-aware and bounds stored text", () => {
+  it("keeps the Firebase session BFF approval-aware and bounds stored text", () => {
     const route = fs.readFileSync(
       path.join(
         process.cwd(),
@@ -35,8 +35,10 @@ describe("campaign session approval", () => {
       "utf8"
     );
 
-    expect(route).toContain("canCreateSessionForCampaign");
-    expect(route).toContain("getHiringManagerCampaignDetail");
+    expect(route).toContain('requireFirebaseRecruitmentSession("hiring_manager")');
+    expect(route).toContain("recruitment.getCampaign");
+    expect(route).toContain('["approved", "active"].includes');
+    expect(route).not.toMatch(/Strapi|strapi|getServerCmsJwt/);
     expect(route).toContain("sanitisePlainText");
     expect(route).toContain("containsHtmlMarkup");
     expect(route).toContain("candidateLimit > 500");

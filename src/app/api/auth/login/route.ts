@@ -3,6 +3,7 @@ import {
   authenticateCredentials,
   CredentialAuthError,
 } from "@/lib/auth/credential-auth";
+import { firebaseAuthRouteGoneResponse } from "@/lib/auth/firebase-auth-route-gone";
 import { routeForRole } from "@/lib/auth/role-model";
 import {
   attachSessionCookie,
@@ -11,16 +12,17 @@ import {
   getAuthRequestContext,
 } from "@/lib/auth/session-config";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
-import { isAdminRole } from "@/lib/auth/role-model";
+import { roleSupportsTotp } from "@/lib/auth/role-model";
 import {
   attachTotpPendingCookie,
   encodeTotpPendingToken,
 } from "@/lib/auth/totp-pending-cookie";
 import {
-  PUBLIC_STRAPI_UNAVAILABLE_MESSAGE,
-  checkStrapiReachability,
-  logStrapiConnectivityIssue,
-} from "@/lib/strapi-connectivity";
+  PUBLIC_CMS_UNAVAILABLE_MESSAGE,
+  checkCmsReachability,
+  logCmsConnectivityIssue,
+} from "@/legacy-cms/connectivity";
+import { portalMfaEnrollmentRequired } from "@/lib/auth/portal-mfa-enrollment";
 
 const wantsJsonResponse = (request: Request) =>
   request.headers.get("accept")?.includes("application/json") ?? false;
@@ -56,7 +58,7 @@ const lockedResponse = (request: Request, jsonResponse: boolean, retryAfterSecon
     );
   }
 
-  const loginUrl = new URL("/auth/register", request.url);
+  const loginUrl = new URL("/auth/login", request.url);
   loginUrl.searchParams.set("mode", "login");
   loginUrl.searchParams.set("error", "LockedOut");
   return NextResponse.redirect(loginUrl, 303);
@@ -66,6 +68,11 @@ export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
   if (forbidden) {
     return forbidden;
+  }
+
+  const firebaseGone = firebaseAuthRouteGoneResponse();
+  if (firebaseGone) {
+    return firebaseGone;
   }
 
   const formData = await request.formData();
@@ -78,22 +85,22 @@ export async function POST(request: Request) {
     if (jsonResponse) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
     }
-    const loginUrl = new URL("/auth/register", request.url);
+    const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
     return NextResponse.redirect(loginUrl, 303);
   }
 
-  const strapiIssue = await checkStrapiReachability();
+  const strapiIssue = await checkCmsReachability();
   if (strapiIssue) {
-    logStrapiConnectivityIssue("auth/login", strapiIssue);
+    logCmsConnectivityIssue("auth/login", strapiIssue);
     if (jsonResponse) {
-      return NextResponse.json({ error: PUBLIC_STRAPI_UNAVAILABLE_MESSAGE }, { status: 503 });
+      return NextResponse.json({ error: PUBLIC_CMS_UNAVAILABLE_MESSAGE }, { status: 503 });
     }
-    const loginUrl = new URL("/auth/register", request.url);
+    const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
-    loginUrl.searchParams.set("message", PUBLIC_STRAPI_UNAVAILABLE_MESSAGE);
+    loginUrl.searchParams.set("message", PUBLIC_CMS_UNAVAILABLE_MESSAGE);
     return NextResponse.redirect(loginUrl, 303);
   }
 
@@ -115,8 +122,18 @@ export async function POST(request: Request) {
 
     const callbackPath = resolveCallbackPath(formData.get("callbackUrl"), role);
     const publicUser = buildPublicUser(authResponse.user!, role);
+    const totpEnabled =
+      (authResponse.user as { totpEnabled?: boolean }).totpEnabled === true;
+    const mustEnrollPortalMfa = portalMfaEnrollmentRequired({
+      enabled: process.env.REQUIRE_PORTAL_MFA_ENROLLMENT === "true",
+      role,
+      totpEnabled,
+    });
+    const authenticatedRedirectPath = mustEnrollPortalMfa
+      ? "/profile?tab=security&enroll=1"
+      : callbackPath;
 
-    if (isAdminRole(role) && (authResponse.user as { totpEnabled?: boolean })?.totpEnabled === true) {
+    if (roleSupportsTotp(role) && totpEnabled) {
       logLoginTiming("totp branch");
       const pendingToken = await encodeTotpPendingToken({
         id: authResponse.user!.id,
@@ -149,7 +166,7 @@ export async function POST(request: Request) {
         return response;
       }
 
-      const totpUrl = new URL("/auth/register", request.url);
+      const totpUrl = new URL("/auth/login", request.url);
       totpUrl.searchParams.set("mode", "login");
       totpUrl.searchParams.set("totp", "1");
       const response = NextResponse.redirect(totpUrl, 303);
@@ -175,6 +192,7 @@ export async function POST(request: Request) {
       agreeToMarketing: authResponse.user!.agreeToMarketing ?? undefined,
       agreeToTerms: authResponse.user!.agreeToTerms ?? undefined,
       agreeToDataPrivacyPolicy: authResponse.user!.agreeToDataPrivacyPolicy ?? undefined,
+      totpEnabled,
     });
 
     logLoginTiming("encodeSessionToken done");
@@ -183,7 +201,7 @@ export async function POST(request: Request) {
       const response = NextResponse.json({
         data: {
           user: publicUser,
-          redirectPath: callbackPath,
+          redirectPath: authenticatedRedirectPath,
         },
       });
       attachSessionCookie(response, token);
@@ -191,7 +209,7 @@ export async function POST(request: Request) {
       return response;
     }
 
-    const response = NextResponse.redirect(new URL(callbackPath, request.url), 303);
+    const response = NextResponse.redirect(new URL(authenticatedRedirectPath, request.url), 303);
     attachSessionCookie(response, token);
     return response;
   } catch (error) {
@@ -208,7 +226,7 @@ export async function POST(request: Request) {
             }
           );
         }
-        const loginUrl = new URL("/auth/register", request.url);
+        const loginUrl = new URL("/auth/login", request.url);
         loginUrl.searchParams.set("mode", "login");
         loginUrl.searchParams.set("error", "CredentialsSignin");
         return NextResponse.redirect(loginUrl, 303);
@@ -222,7 +240,7 @@ export async function POST(request: Request) {
         if (jsonResponse) {
           return NextResponse.json({ error: error.message }, { status: 401 });
         }
-        const loginUrl = new URL("/auth/register", request.url);
+        const loginUrl = new URL("/auth/login", request.url);
         loginUrl.searchParams.set("mode", "login");
         loginUrl.searchParams.set("error", "CredentialsSignin");
         loginUrl.searchParams.set("message", error.message);
@@ -233,7 +251,7 @@ export async function POST(request: Request) {
         if (jsonResponse) {
           return NextResponse.json({ error: error.message }, { status: 503 });
         }
-        const loginUrl = new URL("/auth/register", request.url);
+        const loginUrl = new URL("/auth/login", request.url);
         loginUrl.searchParams.set("mode", "login");
         loginUrl.searchParams.set("error", "CredentialsSignin");
         loginUrl.searchParams.set("message", error.message);
@@ -245,7 +263,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Credentials not verified" }, { status: 401 });
     }
 
-    const loginUrl = new URL("/auth/register", request.url);
+    const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("mode", "login");
     loginUrl.searchParams.set("error", "CredentialsSignin");
     return NextResponse.redirect(loginUrl, 303);

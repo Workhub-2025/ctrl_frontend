@@ -1,20 +1,30 @@
 import { NextResponse } from "next/server";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
-
+import { cmsRequest } from "@/legacy-cms/request";
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  createFirebaseBillingApi,
+  platformPricingFromFirebasePrices,
+  tryRequireFirebaseBillingSession,
+} from "@/lib/firebase-billing-api";
+
 export async function GET() {
   try {
+    const firebaseAuth = await tryRequireFirebaseBillingSession();
+    if (firebaseAuth) {
+      const billing = createFirebaseBillingApi(
+        firebaseAuth.domainApi,
+        firebaseAuth.firebaseSessionCookie,
+      );
+      const prices = await billing.listPrices();
+      return NextResponse.json({
+        data: platformPricingFromFirebasePrices(prices.prices ?? []),
+      });
+    }
+
     await requireClientSession();
-    const response = await strapiRequest<{ data?: Record<string, unknown> }>("/platform-pricing");
+    const response = await cmsRequest<{ data?: Record<string, unknown> }>("/platform-pricing");
     return NextResponse.json({ data: response.data ?? {} });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Pricing could not be loaded";
-    const status =
-      message === "Authentication required"
-        ? 401
-        : message === "Client access required"
-          ? 403
-          : 500;
-    return NextResponse.json({ error: message }, { status });
+    return handleBffRouteError(error, "Pricing could not be loaded");
   }
 }

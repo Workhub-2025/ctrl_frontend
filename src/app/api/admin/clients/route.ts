@@ -1,16 +1,42 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
+import {
+  toAdminClientRow,
+  type FirebaseClientTeamWorkspace,
+  type FirebaseOrganization,
+} from "@/lib/firebase-admin-tenancy-bff";
 import { getAdminClients } from "@/services/admin-platform.service";
 
 export async function GET() {
   try {
-    const auth = await requireAdminApiAccess('clients.read');
-    if ("error" in auth) {
-      return auth.error;
-    }
-    const strapiJwt = auth.strapiJwt;
+    const auth = await requireAdminDualAccess("clients.read");
+    if ("error" in auth) return auth.error;
 
-    const clients = await getAdminClients(strapiJwt);
+    if (isFirebaseAdminAuth(auth)) {
+      const organizations = await auth.domainApi.request<FirebaseOrganization[]>({
+        path: "/v1/organizations",
+        firebaseSessionCookie: auth.firebaseSessionCookie,
+      });
+      const workspaces = await Promise.all(
+        organizations.map((organization) =>
+          auth.domainApi.request<FirebaseClientTeamWorkspace>({
+            path: `/v1/organizations/${encodeURIComponent(organization.id)}/workspace`,
+            firebaseSessionCookie: auth.firebaseSessionCookie,
+          }),
+        ),
+      );
+      return NextResponse.json({
+        data: workspaces.map((workspace) =>
+          toAdminClientRow(workspace.organization, workspace),
+        ),
+      });
+    }
+
+    const clients = await getAdminClients(auth.cmsJwt);
     return NextResponse.json({ data: clients });
   } catch (error) {
     return NextResponse.json(
@@ -18,7 +44,7 @@ export async function GET() {
         error:
           error instanceof Error ? error.message : "Clients could not be loaded",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -17,8 +17,23 @@ import {
   Maximize2,
   RadioTower,
 } from "lucide-react";
+import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
+import {
+  assessmentTimerAnnouncement,
+  restoreAssessmentProgress,
+} from "@/lib/assessment-accessibility";
+import { notifyAssessmentCompleted } from "@/lib/assessment-completion";
 import { AssessmentRuntimeClient } from "@/lib/assessment-runtime-client";
+import { CandidateSessionService } from "@/services/candidate-session.service";
 import type { LaunchEnvelope } from "../types";
 
 type Receipt = { receiptId: string; status: "received"; submittedAt: string };
@@ -47,6 +62,76 @@ function formatRemaining(seconds: number) {
   return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
 }
 
+function IntegrityAlert({
+  open,
+  tone,
+  title,
+  description,
+  actionLabel,
+  actionIcon,
+  actionDisabled,
+  onAction,
+}: {
+  open: boolean;
+  tone: "warning" | "destructive";
+  title: string;
+  description: ReactNode;
+  actionLabel: string;
+  actionIcon: ReactNode;
+  actionDisabled?: boolean;
+  onAction: () => void;
+}) {
+  const actionRef = useRef<HTMLButtonElement>(null);
+  const previousFocus = useRef<HTMLElement | null>(null);
+
+  return (
+    <AlertDialog open={open}>
+      <AlertDialogContent
+        className={`rounded-none ${
+          tone === "warning"
+            ? "border-warning/60"
+            : "border-destructive/60"
+        }`}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          previousFocus.current =
+            document.activeElement instanceof HTMLElement
+              ? document.activeElement
+              : null;
+          actionRef.current?.focus();
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          if (previousFocus.current?.isConnected) previousFocus.current.focus();
+        }}
+      >
+        {tone === "warning" ? (
+          <AlertTriangle
+            className="h-8 w-8 text-amber-300"
+            aria-hidden="true"
+          />
+        ) : (
+          <LockKeyhole className="h-8 w-8 text-red-300" aria-hidden="true" />
+        )}
+        <AlertDialogTitle className="text-xl">{title}</AlertDialogTitle>
+        <AlertDialogDescription className="leading-7">
+          {description}
+        </AlertDialogDescription>
+        <AlertDialogAction
+          ref={actionRef}
+          className="mt-2 rounded-sm"
+          disabled={actionDisabled}
+          onClick={onAction}
+        >
+          {actionIcon}
+          {actionLabel}
+        </AlertDialogAction>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export function TrackedAssessmentShell<TContent, TState>(
   props: Props<TContent, TState>,
 ) {
@@ -61,10 +146,15 @@ export function TrackedAssessmentShell<TContent, TState>(
     canManuallyAdvance = () => true,
     continueLabel = () => "Save and continue",
   } = props;
-  const [stageIndex, setStageIndex] = useState(0);
-  const [state, setState] = useState<TState>(() =>
-    initialState(launch.content),
+  const [restoredProgress] = useState(() =>
+    restoreAssessmentProgress(
+      launch.progressData,
+      initialState(launch.content),
+      launch.stageGraph.nodes.length,
+    ),
   );
+  const [stageIndex, setStageIndex] = useState(restoredProgress.stageIndex);
+  const [state, setState] = useState<TState>(restoredProgress.state);
   const [revision, setRevision] = useState(launch.progressRevision);
   const [remaining, setRemaining] = useState(() =>
     Math.max(
@@ -81,13 +171,20 @@ export function TrackedAssessmentShell<TContent, TState>(
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [replacementLaunch, setReplacementLaunch] =
     useState<LaunchEnvelope<TContent> | null>(null);
+  const [timerAnnouncement, setTimerAnnouncement] = useState("");
   const startedAt = useRef(Date.now());
   const lastHeartbeat = useRef(Date.now());
+  const previousRemaining = useRef<number | null>(null);
   const activeLoss = useRef<{
     type: "tab_hidden" | "focus_lost" | "fullscreen_exit";
     startedAt: number;
     timer?: number;
   } | null>(null);
+  const {
+    settings: accessibilitySettings,
+    updateSettings: updateAccessibilitySettings,
+    resetSettings: resetAccessibilitySettings,
+  } = useAccessibilitySettings({ enabled: true });
 
   const recordEvent = useCallback(
     async (type: string, durationMs?: number) => {
@@ -126,6 +223,15 @@ export function TrackedAssessmentShell<TContent, TState>(
     );
     return () => window.clearInterval(timer);
   }, [launch.deadlineAt]);
+
+  useEffect(() => {
+    const announcement = assessmentTimerAnnouncement(
+      previousRemaining.current,
+      remaining,
+    );
+    previousRemaining.current = remaining;
+    if (announcement) setTimerAnnouncement(announcement);
+  }, [remaining]);
 
   useEffect(() => {
     if (receipt || locked) return;
@@ -175,9 +281,11 @@ export function TrackedAssessmentShell<TContent, TState>(
 
   useEffect(() => {
     if (receipt || locked) return;
-    const endLoss = () => {
+    const endLoss = (
+      type: "tab_hidden" | "fullscreen_exit",
+    ) => {
       const loss = activeLoss.current;
-      if (!loss) return;
+      if (!loss || loss.type !== type) return;
       if (loss.timer) window.clearTimeout(loss.timer);
       activeLoss.current = null;
       void recordEvent(loss.type, Date.now() - loss.startedAt);
@@ -210,24 +318,14 @@ export function TrackedAssessmentShell<TContent, TState>(
             "tab_hidden",
             "The assessment paused because this tab was hidden.",
           )
-        : endLoss();
+        : endLoss("tab_hidden");
     const fullscreen = () =>
       document.fullscreenElement
-        ? endLoss()
+        ? endLoss("fullscreen_exit")
         : beginLoss(
             "fullscreen_exit",
             "The assessment paused because fullscreen ended.",
           );
-    const blur = () => {
-      if (!document.hidden)
-        beginLoss(
-          "focus_lost",
-          "The assessment paused because the window lost focus.",
-        );
-    };
-    const focus = () => {
-      if (!document.hidden) endLoss();
-    };
     const blockClipboard = (event: ClipboardEvent) => {
       event.preventDefault();
       void recordEvent(`clipboard_${event.type}`);
@@ -236,10 +334,10 @@ export function TrackedAssessmentShell<TContent, TState>(
       event.preventDefault();
       void recordEvent("context_menu");
     };
-    document.addEventListener("visibilitychange", visibility);
-    document.addEventListener("fullscreenchange", fullscreen);
-    window.addEventListener("blur", blur);
-    window.addEventListener("focus", focus);
+    if (launch.integrity.pauseOnHidden)
+      document.addEventListener("visibilitychange", visibility);
+    if (launch.integrity.pauseOnFullscreenExit)
+      document.addEventListener("fullscreenchange", fullscreen);
     if (launch.integrity.blockClipboard) {
       document.addEventListener("copy", blockClipboard);
       document.addEventListener("cut", blockClipboard);
@@ -252,8 +350,6 @@ export function TrackedAssessmentShell<TContent, TState>(
         window.clearTimeout(activeLoss.current.timer);
       document.removeEventListener("visibilitychange", visibility);
       document.removeEventListener("fullscreenchange", fullscreen);
-      window.removeEventListener("blur", blur);
-      window.removeEventListener("focus", focus);
       document.removeEventListener("copy", blockClipboard);
       document.removeEventListener("cut", blockClipboard);
       document.removeEventListener("paste", blockClipboard);
@@ -309,6 +405,8 @@ export function TrackedAssessmentShell<TContent, TState>(
           buildSubmission(state, elapsedSeconds),
         ),
       );
+      CandidateSessionService.invalidateApplications();
+      notifyAssessmentCompleted(launch.module.slug ?? title);
       setStageIndex(launch.stageGraph.nodes.length - 1);
       if (document.fullscreenElement)
         await document.exitFullscreen().catch(() => undefined);
@@ -331,12 +429,8 @@ export function TrackedAssessmentShell<TContent, TState>(
   ]);
 
   const resume = useCallback(async () => {
-    if (!document.fullscreenElement) {
-      try {
-        await document.documentElement.requestFullscreen();
-      } catch {
-        return;
-      }
+    if (document.fullscreenEnabled && !document.fullscreenElement) {
+      await document.documentElement.requestFullscreen().catch(() => undefined);
     }
     setPauseReason(null);
   }, []);
@@ -344,8 +438,8 @@ export function TrackedAssessmentShell<TContent, TState>(
   const restart = useCallback(async () => {
     setRestarting(true);
     try {
-      if (!document.fullscreenElement)
-        await document.documentElement.requestFullscreen();
+      if (document.fullscreenEnabled && !document.fullscreenElement)
+        await document.documentElement.requestFullscreen().catch(() => undefined);
       setReplacementLaunch(
         await AssessmentRuntimeClient.restart<TContent>(
           launch.attemptId,
@@ -388,6 +482,15 @@ export function TrackedAssessmentShell<TContent, TState>(
             >
               <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               {formatRemaining(remaining)}
+            </span>
+            <AccessibilityDropdown
+              settings={accessibilitySettings}
+              updateSettings={updateAccessibilitySettings}
+              resetSettings={resetAccessibilitySettings}
+              description="Adjust the assessment display and reading preferences."
+            />
+            <span className="sr-only" aria-live="polite" aria-atomic="true">
+              {timerAnnouncement}
             </span>
           </div>
         </div>
@@ -506,66 +609,45 @@ export function TrackedAssessmentShell<TContent, TState>(
             )}
         </div>
       </div>
-      {pauseReason && !locked ? (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-background p-5"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="pause-title"
-        >
-          <div className="w-full max-w-lg border border-warning/60 bg-card p-7 text-card-foreground">
-            <AlertTriangle
-              className="h-8 w-8 text-amber-300"
+      <IntegrityAlert
+        open={Boolean(pauseReason) && !locked}
+        tone="warning"
+        title="Assessment paused"
+        description={
+          <>
+            {pauseReason} Repeated or prolonged interruptions lock the attempt.
+            Fullscreen is restored when the browser and your access technology
+            support it.
+          </>
+        }
+        actionLabel="Resume assessment"
+        actionIcon={<Maximize2 className="h-4 w-4" aria-hidden="true" />}
+        onAction={() => void resume()}
+      />
+      <IntegrityAlert
+        open={locked}
+        tone="destructive"
+        title="Attempt interrupted and locked"
+        description={
+          <>
+            Restarting voids this exposed attempt and selects fresh{" "}
+            {restartNoun}.
+          </>
+        }
+        actionLabel="Restart assessment"
+        actionIcon={
+          restarting ? (
+            <Loader2
+              className="h-4 w-4 animate-spin motion-reduce:animate-none"
               aria-hidden="true"
             />
-            <h2 id="pause-title" className="mt-4 text-xl font-semibold">
-              Assessment paused
-            </h2>
-            <p className="mt-3 leading-7 text-muted-foreground">
-              {pauseReason} Repeated or prolonged interruptions lock the
-              attempt.
-            </p>
-            <Button
-              className="mt-6 rounded-sm"
-              onClick={resume}
-            >
-              <Maximize2 className="h-4 w-4" aria-hidden="true" /> Return to
-              fullscreen and resume
-            </Button>
-          </div>
-        </div>
-      ) : null}
-      {locked ? (
-        <div
-          className="fixed inset-0 z-50 grid place-items-center bg-background p-5"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="locked-title"
-        >
-          <div className="w-full max-w-lg border border-destructive/60 bg-card p-7 text-card-foreground">
-            <LockKeyhole className="h-8 w-8 text-red-300" aria-hidden="true" />
-            <h2 id="locked-title" className="mt-4 text-xl font-semibold">
-              Attempt interrupted and locked
-            </h2>
-            <p className="mt-3 leading-7 text-muted-foreground">
-              Restarting voids this exposed attempt and selects fresh{" "}
-              {restartNoun}.
-            </p>
-            <Button
-              className="mt-6 rounded-sm"
-              disabled={restarting}
-              onClick={restart}
-            >
-              {restarting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}{" "}
-              Restart assessment
-            </Button>
-          </div>
-        </div>
-      ) : null}
+          ) : (
+            <Maximize2 className="h-4 w-4" aria-hidden="true" />
+          )
+        }
+        actionDisabled={restarting}
+        onAction={() => void restart()}
+      />
     </main>
   );
 }

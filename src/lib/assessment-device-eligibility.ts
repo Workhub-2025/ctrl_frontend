@@ -6,6 +6,7 @@ const MOBILE_USER_AGENT =
 
 export type AssessmentDeviceSignals = {
   userAgent: string;
+  platform?: string;
   mobileClientHint?: boolean;
   maxTouchPoints: number;
   coarsePointer: boolean;
@@ -22,7 +23,9 @@ export function assessAssessmentDevice(
   signals: AssessmentDeviceSignals,
 ): AssessmentDeviceEligibility {
   const mobile =
-    signals.mobileClientHint === true || MOBILE_USER_AGENT.test(signals.userAgent);
+    signals.mobileClientHint === true ||
+    MOBILE_USER_AGENT.test(signals.userAgent) ||
+    (signals.platform === "MacIntel" && signals.maxTouchPoints > 1);
   if (mobile) {
     return {
       supported: false,
@@ -32,23 +35,15 @@ export function assessAssessmentDevice(
     };
   }
 
-  const touch =
-    signals.maxTouchPoints > 0 ||
-    signals.coarsePointer ||
-    signals.anyCoarsePointer;
-  if (touch) {
-    return {
-      supported: false,
-      kind: "touch",
-      detail:
-        "Touch input was detected. Use a non-touch desktop or laptop with a physical keyboard.",
-    };
-  }
-
   return {
     supported: true,
     kind: "desktop-keyboard",
-    detail: "Desktop or laptop with physical keyboard detected",
+    detail:
+      signals.maxTouchPoints > 0 ||
+      signals.coarsePointer ||
+      signals.anyCoarsePointer
+        ? "Desktop or laptop detected; touch input is also available"
+        : "Desktop or laptop with physical keyboard detected",
   };
 }
 
@@ -67,6 +62,7 @@ export function detectAssessmentDevice(): AssessmentDeviceEligibility {
 
   return assessAssessmentDevice({
     userAgent: navigator.userAgent,
+    platform: navigator.platform,
     mobileClientHint: navigatorWithClientHints.userAgentData?.mobile,
     maxTouchPoints: navigator.maxTouchPoints ?? 0,
     coarsePointer: window.matchMedia?.("(pointer: coarse)").matches ?? false,

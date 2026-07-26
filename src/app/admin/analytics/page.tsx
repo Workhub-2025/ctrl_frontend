@@ -222,7 +222,7 @@ export default function AdminAnalyticsPage() {
 
               return (
                 <div key={month.month} className="flex min-w-12 flex-1 flex-col items-center gap-2">
-                  <div className="flex h-48 w-full max-w-12 items-end overflow-hidden rounded-lg border border-border/60 bg-muted/25 dark:border-white/8 dark:bg-white/[0.03]">
+                  <div className="flex h-48 w-full max-w-12 items-end overflow-hidden rounded-lg border border-border/60 bg-muted/25">
                     {hasValue ? (
                       <div className="flex w-full flex-col justify-end">
                         <div
@@ -290,7 +290,7 @@ export default function AdminAnalyticsPage() {
                       {stage.count} · {money(stage.amountPence)}
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-muted dark:bg-white/10">
+                  <div className="h-2 rounded-full bg-muted">
                     <div
                       className={cn(
                         "h-full rounded-full",
@@ -331,7 +331,7 @@ export default function AdminAnalyticsPage() {
                     {tier.clients} clients · {money(tier.annualRecurringPence)}
                   </span>
                 </div>
-                <div className="h-2 rounded-full bg-muted dark:bg-white/10">
+                <div className="h-2 rounded-full bg-muted">
                   <div className="h-full rounded-full bg-primary" style={{ width: `${tier.sharePercent}%` }} />
                 </div>
               </div>
@@ -351,7 +351,7 @@ export default function AdminAnalyticsPage() {
             {data.recentPayments.length ? data.recentPayments.map((payment) => (
               <div
                 key={payment.id}
-                className="flex items-start justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 p-3 dark:border-white/8 dark:bg-white/[0.03]"
+                className="flex items-start justify-between gap-3 rounded-lg border border-border/50 bg-muted/20 p-3"
               >
                 <div className="min-w-0">
                   <p className="break-words text-sm font-semibold text-foreground">{payment.clientName}</p>

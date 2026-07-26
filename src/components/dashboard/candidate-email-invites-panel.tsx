@@ -376,7 +376,7 @@ export function CandidateEmailInvitesPanel({
                 <Badge
                   key={email}
                   variant="secondary"
-                  className="gap-1 rounded-lg border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs text-slate-200"
+                  className="gap-1 rounded-lg border-border bg-muted/30 px-2.5 py-1 text-xs text-foreground"
                 >
                   {email}
                   <button
@@ -384,7 +384,7 @@ export function CandidateEmailInvitesPanel({
                     onClick={() =>
                       setInviteEmails((current) => current.filter((value) => value !== email))
                     }
-                    className="rounded-full p-0.5 hover:bg-white/10"
+                    className="rounded-full p-0.5 hover:bg-muted/60"
                     aria-label={`Remove ${email}`}
                   >
                     <X className="h-3 w-3" />
@@ -393,7 +393,7 @@ export function CandidateEmailInvitesPanel({
               ))}
             </div>
           ) : (
-            <p className="text-xs italic text-slate-500">
+            <p className="text-xs italic text-muted-foreground">
               Paste multiple emails separated by commas or new lines.
             </p>
           )}
@@ -462,9 +462,9 @@ export function CandidateEmailInvitesPanel({
           {inviteError ? <p className="text-xs text-red-400">{inviteError}</p> : null}
 
           {generatedOfflineCodes.length > 0 ? (
-            <div className="space-y-4 rounded-xl border border-white/5 bg-white/[0.01] p-4">
+              <div className="space-y-4 rounded-xl border border-border bg-muted/10 p-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-200">Generated slips list</h4>
+                <h4 className="text-xs font-bold text-foreground">Generated slips list</h4>
                 <Button
                   type="button"
                   size="sm"
@@ -477,15 +477,15 @@ export function CandidateEmailInvitesPanel({
               </div>
               <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto">
                 {generatedOfflineCodes.map((slip, i) => (
-                  <div key={i} className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5 font-mono text-[11px] text-slate-300">
-                    <div className="font-semibold text-slate-400 text-[10px] uppercase">Slip #${i + 1}</div>
+                  <div key={i} className="rounded-lg border border-border bg-muted/20 p-2.5 font-mono text-[11px] text-muted-foreground">
+                    <div className="text-[10px] font-semibold uppercase text-muted-foreground">Slip #${i + 1}</div>
                     <div className="mt-1 flex justify-between">
                       <span>Code:</span>
-                      <span className="text-slate-200 font-bold">{slip.candidateCode}</span>
+                      <span className="font-bold text-foreground">{slip.candidateCode}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Pass:</span>
-                      <span className="text-slate-200 font-bold">{slip.accessToken}</span>
+                      <span className="font-bold text-foreground">{slip.accessToken}</span>
                     </div>
                   </div>
                 ))}
@@ -524,7 +524,7 @@ export function CandidateEmailInvitesPanel({
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-8 min-w-[8rem] rounded-lg border-white/10 bg-white/[0.02] px-2.5 text-xs text-slate-200 hover:bg-white/[0.06] hover:text-white"
+                          className="h-8 min-w-[8rem] rounded-lg border-border bg-muted/20 px-2.5 text-xs text-foreground hover:bg-muted/50 hover:text-foreground"
                           onClick={() => void resendCandidateInvite(invite)}
                           disabled={
                             disabled
@@ -546,7 +546,7 @@ export function CandidateEmailInvitesPanel({
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-8 min-w-[8rem] rounded-lg border-white/10 bg-white/[0.02] px-2.5 text-xs text-slate-200 hover:bg-white/[0.06] hover:text-white"
+                          className="h-8 min-w-[8rem] rounded-lg border-border bg-muted/20 px-2.5 text-xs text-foreground hover:bg-muted/50 hover:text-foreground"
                           onClick={() => handlePrint([invite])}
                           disabled={disabled}
                         >

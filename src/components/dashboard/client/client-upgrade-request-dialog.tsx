@@ -137,7 +137,7 @@ export function ClientUpgradeRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-[1.25rem] border border-border dark:border-white/10 dark:bg-[#0a0f1d]">
+      <DialogContent className="max-w-lg rounded-[1.25rem] border border-border bg-background">
         <DialogHeader>
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
@@ -155,7 +155,7 @@ export function ClientUpgradeRequestDialog({
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5 pt-2">
           {requestType === "seat_increase" && (
             <>
-              <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm dark:border-white/5">
+              <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Current allocation
                 </p>
@@ -179,7 +179,7 @@ export function ClientUpgradeRequestDialog({
 
           {requestType === "new_assessment" && requestableAssessments.length > 0 && (
             <>
-              <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm dark:border-white/5">
+              <div className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm">
                 <p className="text-xs leading-relaxed text-muted-foreground">
                   SJA, TA, PJA, and SCA are already included on every client platform. This request
                   is for add-on assessments only.
@@ -210,7 +210,7 @@ export function ClientUpgradeRequestDialog({
           )}
 
           {requestType === "new_assessment" && requestableAssessments.length === 0 ? (
-            <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground dark:border-white/5">
+            <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
               All available add-on assessments are already on your account, or none are listed in
               the catalogue yet.
             </p>

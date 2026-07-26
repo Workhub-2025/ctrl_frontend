@@ -59,17 +59,17 @@ function HelpSupportContent() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <CandidatePageHeader
-        eyebrow="Help & Support"
-        title="Help & Support"
-        description="Raise a technical ticket or browse common questions. Hiring team messages are sent from your linked assessment session."
+        eyebrow="Support"
+        title="Support"
+        description="Raise a support request or browse common questions. Hiring team messages are sent from your linked assessment session."
         icon={LifeBuoy}
       />
 
       <section className="space-y-4">
         <CandidateSectionHeader
           eyebrow="Get help"
-          title="Technical support"
-          description="IT tickets are for platform issues. For role, scheduling, or process questions, open a session in My Assessments and use Message hiring team."
+          title="Platform support"
+          description="Support requests are for platform issues. For role, scheduling, or process questions, open a session in My Assessments and message the hiring team."
         />
 
         <div className="grid gap-4 lg:grid-cols-2">
@@ -79,8 +79,8 @@ function HelpSupportContent() {
               <Ticket className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="space-y-1.5">
-              <CandidateEyebrow>Technical support</CandidateEyebrow>
-              <h2 className="font-display text-lg font-semibold">Raise an IT ticket</h2>
+              <CandidateEyebrow>Platform support</CandidateEyebrow>
+              <h2 className="font-display text-lg font-semibold">Raise a support request</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 Login problems, broken pages, assessment errors, or access code
                 issues — our engineering desk will investigate.
@@ -98,7 +98,7 @@ function HelpSupportContent() {
               >
                 <Button className="h-10 w-full gap-2 rounded-xl font-semibold sm:w-auto">
                   <Ticket className="h-4 w-4" aria-hidden="true" />
-                  Create IT ticket
+                  Create support request
                 </Button>
               </CreateTicketDialog>
             </div>
@@ -141,7 +141,7 @@ function HelpSupportContent() {
       <CandidateTicketHistory refreshKey={ticketRefreshKey} />
 
       <CandidatePanel>
-        <div className="space-y-1 border-b border-border/40 p-5 dark:border-white/5">
+        <div className="space-y-1 border-b border-border/40 p-5">
           <CandidateEyebrow>Guidance</CandidateEyebrow>
           <h2 className="font-display text-base font-semibold">Common questions</h2>
           <p className="text-xs text-muted-foreground">
@@ -156,7 +156,7 @@ function HelpSupportContent() {
                 <AccordionItem
                   key={item.title}
                   value={`guidance-${index}`}
-                  className="border-border/40 dark:border-white/5"
+                  className="border-border/40"
                 >
                   <AccordionTrigger className="gap-3 text-left text-sm font-semibold hover:no-underline">
                     <span className="flex items-center gap-3">

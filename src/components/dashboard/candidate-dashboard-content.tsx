@@ -69,6 +69,7 @@ import {
 import { CandidateSessionService } from "@/services/candidate-session.service";
 import { portalIconWrapClass, portalIconWrapLgClass } from "@/components/dashboard/portal/portal-design-tokens";
 
+import { isCandidateAssessmentSubmitted } from "@/lib/candidate/assessment-progress";
 import { getAssessmentPagePath } from "@/assessments/plugins/helpers";
 import { resolveCandidateAssessmentCatalogItem } from "@/lib/candidate/assessment-catalog";
 import { sanitiseAccessCode } from "@/lib/security/input-sanitization";
@@ -82,6 +83,8 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
 
     const isLocked = assessment.status === "locked";
     const isAbandoned = assessment.status === "abandoned";
+    const isSubmitted = isCandidateAssessmentSubmitted(assessment.status);
+    const isComplete = assessment.status === "completed";
 
     return {
       icon: matchedItem?.icon ?? ClipboardCheck,
@@ -92,17 +95,23 @@ function getAssessmentItemsForApplication(application: CandidateApplicationView)
         ? "Waiting for assessor to unlock your session."
         : assessment.status === "not_open"
           ? `Opens${formatDateTime(assessment.availableFrom) ? ` at ${formatDateTime(assessment.availableFrom)}` : " soon"}.`
+          : isSubmitted
+            ? isComplete
+              ? "Submitted and scored. No further action needed."
+              : "Submitted — scoring in progress."
           : matchedItem?.description ?? "Complete this assigned assessment.",
       duration: matchedItem?.duration,
       href: `${getAssessmentPagePath(resolvedSlug)}?candidateSessionDocumentId=${encodeURIComponent(application.key)}`,
       slug: resolvedSlug,
-      isCompleted: assessment.status === "completed",
+      isCompleted: isSubmitted,
+      isScoring: isSubmitted && !isComplete,
       isAbandoned,
       isAvailable:
         assessment.isAvailable !== false &&
         assessment.status !== "not_open" &&
         !isLocked &&
-        !isAbandoned,
+        !isAbandoned &&
+        !isSubmitted,
       isLocked,
       availableFromLabel: formatDateTime(assessment.availableFrom),
       completedAt: assessment.completedAt ?? null,
@@ -267,9 +276,11 @@ function AssessmentListItem({
               {isCompleted ? (
                 <div className="inline-flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-sm font-semibold text-foreground">
                   <CheckCircle2 className="h-4 w-4 text-primary" aria-hidden="true" />
-                  {item.completedAt
-                    ? `Submitted ${formatDate(item.completedAt)}`
-                    : "Submitted"}
+                  {item.isScoring
+                    ? "Submitted — scoring…"
+                    : item.completedAt
+                      ? `Submitted ${formatDate(item.completedAt)}`
+                      : "Submitted"}
                 </div>
               ) : isAbandoned ? (
                 <div className="inline-flex items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/5 px-3 py-2 text-xs font-semibold text-orange-800 dark:text-orange-200">
@@ -422,6 +433,7 @@ export function CandidateDashboardContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const sessionParam = searchParams.get("session");
+  const accessCodeParam = searchParams.get("accessCode");
 
   const {
     applications,
@@ -436,7 +448,7 @@ export function CandidateDashboardContent() {
     sessionParam
   );
   const [sortBy, setSortBy] = useState<AssessmentSortOption>("attention");
-  const [accessCodeInput, setAccessCodeInput] = useState("");
+  const [accessCodeInput, setAccessCodeInput] = useState(accessCodeParam ?? "");
   const [isJoinSubmitting, setIsJoinSubmitting] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [joinSuccess, setJoinSuccess] = useState("");
@@ -444,6 +456,12 @@ export function CandidateDashboardContent() {
   useEffect(() => {
     setSelectedApplicationKey(sessionParam);
   }, [sessionParam]);
+
+  useEffect(() => {
+    if (accessCodeParam) {
+      setAccessCodeInput(accessCodeParam);
+    }
+  }, [accessCodeParam]);
 
   const updateSelection = useCallback(
     (key: string | null) => {

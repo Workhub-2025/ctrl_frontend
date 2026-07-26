@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { ClientMessagesContent } from "@/components/dashboard/client";
-
-export default function ClientMessagesPage() {
-  return <ClientMessagesContent />;
+/** @deprecated Use /client-dashboard/support. Remove after 2026-10-31. */
+export default function ClientMessagesRedirect() {
+  redirect("/client-dashboard/support");
 }

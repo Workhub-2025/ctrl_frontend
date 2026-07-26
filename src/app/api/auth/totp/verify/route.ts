@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { joinStrapiApiPath, getStrapiApiBaseUrl } from "@/lib/strapi-server";
+import { firebaseAuthRouteGoneResponse } from "@/lib/auth/firebase-auth-route-gone";
+import { joinCmsApiPath, getCmsApiBaseUrl } from "@/legacy-cms/server-url";
 import {
   attachSessionCookie,
   buildPublicUser,
@@ -23,6 +24,11 @@ export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
   if (forbidden) {
     return forbidden;
+  }
+
+  const firebaseGone = firebaseAuthRouteGoneResponse();
+  if (firebaseGone) {
+    return firebaseGone;
   }
 
   const pendingToken = readTotpPendingCookie(request);
@@ -65,7 +71,7 @@ export async function POST(request: Request) {
   }
 
   const verifyResponse = await fetch(
-    joinStrapiApiPath(getStrapiApiBaseUrl(), "/auth/admin/totp/verify-login"),
+    joinCmsApiPath(getCmsApiBaseUrl(), "/auth/totp/verify-login"),
     {
       method: "POST",
       headers: {
@@ -129,6 +135,7 @@ export async function POST(request: Request) {
     agreeToMarketing: pending.agreeToMarketing,
     agreeToTerms: pending.agreeToTerms,
     agreeToDataPrivacyPolicy: pending.agreeToDataPrivacyPolicy,
+    totpEnabled: true,
   });
 
   const publicUser = buildPublicUser(

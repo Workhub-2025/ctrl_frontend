@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Check, Clock3, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { assessmentTimerAnnouncement } from "@/lib/assessment-accessibility";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
 import type { LaunchEnvelope } from "../types";
@@ -47,6 +48,8 @@ function RankingWorkspace({
 }) {
   const [startedAt] = useState(Date.now());
   const [now, setNow] = useState(Date.now());
+  const [timerAnnouncement, setTimerAnnouncement] = useState("");
+  const previousRemaining = useRef<number | null>(null);
   const timedOut = useRef(false);
   const incidentById = new Map(question.incidents.map((incident) => [incident.id, incident]));
   const elapsedSeconds = Math.max(0, Math.floor((now - startedAt) / 1_000));
@@ -63,6 +66,16 @@ function RankingWorkspace({
     timedOut.current = true;
     onTimeout({ ...response, confirmed: true, timeTakenSeconds: questionSeconds ?? elapsedSeconds });
   }, [elapsedSeconds, onTimeout, questionSeconds, remainingSeconds, response]);
+
+  useEffect(() => {
+    if (remainingSeconds === null) return;
+    const announcement = assessmentTimerAnnouncement(
+      previousRemaining.current,
+      remainingSeconds,
+    );
+    previousRemaining.current = remainingSeconds;
+    if (announcement) setTimerAnnouncement(announcement);
+  }, [remainingSeconds]);
 
   const move = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
@@ -86,10 +99,16 @@ function RankingWorkspace({
         <div className="text-right">
           <p className="text-sm text-muted-foreground">1 = highest priority · 6 = lowest priority</p>
           {remainingSeconds !== null ? (
-            <p className="mt-1 font-mono text-sm font-semibold tabular-nums" aria-live="polite">
+            <p
+              className="mt-1 font-mono text-sm font-semibold tabular-nums"
+              aria-label={`${remainingSeconds} seconds remaining for this question`}
+            >
               {String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:{String(remainingSeconds % 60).padStart(2, "0")} remaining
             </p>
           ) : null}
+          <p className="sr-only" aria-live="polite" aria-atomic="true">
+            {timerAnnouncement}
+          </p>
         </div>
       </div>
 

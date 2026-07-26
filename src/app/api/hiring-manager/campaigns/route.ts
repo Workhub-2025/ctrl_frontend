@@ -4,11 +4,12 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import {
-  createHiringManagerCampaign,
-  getStrapiErrorStatus,
-  getHiringManagerCampaigns,
-  type HiringManagerCampaignCreateInput,
-} from "@/services/hiring-manager-campaigns.service";
+  recruitmentIdempotencyKey,
+} from "@/lib/firebase-recruitment-api";
+import {
+  requireFirebaseRecruitmentSession,
+  toHiringManagerCampaign,
+} from "@/lib/firebase-recruitment-bff";
 
 function validateCreatePayload(
   body: unknown
@@ -91,22 +92,38 @@ async function enforceRateLimit(request: NextRequest, action: "get" | "post") {
   );
 }
 
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+
+type HiringManagerCampaignCreateInput = {
+  name: string;
+  jobRole: string;
+  campaignType?: string;
+  startDate: string;
+  endDate?: string | null;
+  isOngoing?: boolean;
+  vacancyCount: number;
+  location?: string;
+  assessmentMode: "in_person" | "remote" | "hybrid";
+  bypassEmailConfirmation?: boolean;
+  assessmentDocumentIds: string[];
+  assessmentSettings?: Record<string, unknown>;
+};
 export async function GET(request: NextRequest) {
   try {
-    await requireHmSession();
+    const { context, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
+    if (!context.organizationId) {
+      return NextResponse.json({ error: "Organization membership is required" }, { status: 403 });
+    }
 
     const limited = await enforceRateLimit(request, "get");
     if (limited) return limited;
 
-    const result = await getHiringManagerCampaigns();
-
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
-    }
-
-    return NextResponse.json({ data: result.campaigns });
+    const result = await recruitment.listCampaigns(context.organizationId);
+    return NextResponse.json({
+      data: result.items.map((campaign) => toHiringManagerCampaign(campaign)),
+    });
   } catch (error) {
     return handleBffRouteError(error, "Campaigns could not be loaded");
   }
@@ -114,7 +131,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireHmSession();
+    const { context, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
+    if (!context.organizationId || !context.seatId) {
+      return NextResponse.json(
+        { error: "An active organization seat is required" },
+        { status: 403 },
+      );
+    }
 
   const crossOriginResponse = rejectMutatingCrossOrigin(request);
   if (crossOriginResponse) return crossOriginResponse;
@@ -129,23 +153,64 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const result = await createHiringManagerCampaign(validation.data);
-    return NextResponse.json({ data: result }, { status: 201 });
-  } catch (error) {
-    const upstreamStatus = getStrapiErrorStatus(error);
-    const message =
-      error instanceof Error ? error.message : "Campaign could not be created";
-
-    console.error("[POST /api/hiring-manager/campaigns] Failed", {
-      upstreamStatus,
-      message,
+    const payload = validation.data;
+    const operationKey = recruitmentIdempotencyKey(
+      "campaign:create",
+      context.userId,
+      payload,
+    );
+    const result = await recruitment.createCampaign({
+      organizationId: context.organizationId,
+      ownerSeatId: context.seatId,
+      title: payload.name.trim(),
+      description: "",
+      jobRole: payload.jobRole.trim(),
+      campaignType: payload.campaignType || "standard",
+      assessmentMode: payload.assessmentMode,
+      startDate: new Date(payload.startDate).toISOString(),
+      endDate:
+        payload.isOngoing || !payload.endDate
+          ? null
+          : new Date(payload.endDate).toISOString(),
+      isOngoing: Boolean(payload.isOngoing),
+      vacancyCount: payload.vacancyCount,
+      location: payload.location?.trim() || null,
+      idempotencyKey: operationKey,
     });
 
+    const catalogue = await recruitment.listAssessmentCatalogue();
+    const assessments = payload.assessmentDocumentIds.map((selectedId) => {
+      const item = catalogue.find(
+        (candidate) =>
+          candidate.releaseId === selectedId ||
+          candidate.definitionId === selectedId ||
+          candidate.slug === selectedId,
+      );
+      if (!item) {
+        throw new Error(`Assessment "${selectedId}" is not an active Firebase release`);
+      }
+      return {
+        definitionId: item.definitionId,
+        releaseId: item.releaseId,
+        durationMinutes: null,
+        maxAttempts: 1,
+      };
+    });
+    await recruitment.replaceAssessmentStack(result.campaignId, {
+      expectedVersion: 0,
+      assessments,
+      idempotencyKey: recruitmentIdempotencyKey(
+        "campaign:assessment-stack",
+        context.userId,
+        { campaignId: result.campaignId, assessments },
+      ),
+    });
+    const workspace = await recruitment.getCampaign(result.campaignId);
     return NextResponse.json(
-      {
-        error: message,
-      },
-      { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 }
+      { data: { campaign: toHiringManagerCampaign(workspace.campaign, workspace) } },
+      { status: result.alreadyCreated ? 200 : 201 },
     );
+  } catch (error) {
+    return handleBffRouteError(error, "Campaign could not be created");
   }
 }

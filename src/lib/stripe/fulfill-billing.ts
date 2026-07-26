@@ -1,7 +1,7 @@
 import "server-only";
 
 import type Stripe from "stripe";
-import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
+import { getCmsApiBaseUrl, joinCmsApiPath } from "@/legacy-cms/server-url";
 import {
   parseBillingCheckoutMetadata,
   type BillingCheckoutMetadata,
@@ -38,7 +38,7 @@ export async function fulfillBillingRequest(input: {
     throw new Error("BILLING_INTERNAL_SECRET is not configured");
   }
 
-  const response = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), "/internal/billing/fulfill"), {
+  const response = await fetch(joinCmsApiPath(getCmsApiBaseUrl(), "/internal/billing/fulfill"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -70,7 +70,7 @@ export async function syncStripeSubscription(
     throw new Error("BILLING_INTERNAL_SECRET is not configured");
   }
 
-  const response = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), "/internal/billing/sync-subscription"), {
+  const response = await fetch(joinCmsApiPath(getCmsApiBaseUrl(), "/internal/billing/sync-subscription"), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

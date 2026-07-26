@@ -6,6 +6,7 @@ import {
     CredentialAuthError,
 } from '@/lib/auth/credential-auth';
 import { SESSION_IDLE_MAX_AGE } from '@/lib/auth/session-config';
+import { roleSupportsTotp } from '@/lib/auth/role-model';
 
 interface ExtendedUser extends User {
     role: string;
@@ -18,6 +19,7 @@ interface ExtendedUser extends User {
     agreeToMarketing?: boolean;
     agreeToTerms?: boolean;
     agreeToDataPrivacyPolicy?: boolean;
+    totpEnabled?: boolean;
 }
 
 const getHeaderValue = (headers: unknown, name: string): string | undefined => {
@@ -74,6 +76,15 @@ export const authOptions = {
                     });
 
                     const user = authResponse.user!;
+                    if (
+                        roleSupportsTotp(role)
+                        && (user as { totpEnabled?: boolean }).totpEnabled === true
+                    ) {
+                        // The direct Credentials callback cannot safely complete
+                        // the pending-cookie MFA flow. Reject it so callers must
+                        // use POST /api/auth/login followed by TOTP verification.
+                        return null;
+                    }
 
                     return {
                         id: user.id.toString(),
@@ -89,6 +100,7 @@ export const authOptions = {
                         agreeToMarketing: user.agreeToMarketing ?? undefined,
                         agreeToTerms: user.agreeToTerms ?? undefined,
                         agreeToDataPrivacyPolicy: user.agreeToDataPrivacyPolicy ?? undefined,
+                        totpEnabled: (user as { totpEnabled?: boolean }).totpEnabled === true,
                     };
                 } catch (error) {
                     if (error instanceof CredentialAuthError) {
@@ -124,6 +136,8 @@ export const authOptions = {
             if (user) {
                 token.role = user.role;
                 token.jwt = user.jwt;
+                token.authProvider = user.authProvider ?? 'strapi';
+                token.firebaseUid = user.firebaseUid;
                 token.firstName = user.firstName;
                 token.lastName = user.lastName;
                 token.organization = user.organization;
@@ -132,6 +146,7 @@ export const authOptions = {
                 token.agreeToMarketing = user.agreeToMarketing;
                 token.agreeToTerms = user.agreeToTerms;
                 token.agreeToDataPrivacyPolicy = user.agreeToDataPrivacyPolicy;
+                token.totpEnabled = user.totpEnabled === true;
                 token.lastActivity = now;
                 return token;
             }
@@ -151,7 +166,15 @@ export const authOptions = {
 
             if (token) {
                 session.user.id = token.sub || '';
+                session.user.email = token.email ?? session.user.email;
+                session.user.name =
+                  typeof token.name === 'string' && token.name.trim()
+                    ? token.name
+                    : `${token.firstName || ''} ${token.lastName || ''}`.trim() ||
+                      session.user.name;
                 session.user.role = token.role;
+                session.user.authProvider = token.authProvider;
+                session.user.firebaseUid = token.firebaseUid;
                 session.user.firstName = token.firstName;
                 session.user.lastName = token.lastName;
                 session.user.organization = token.organization;
@@ -160,6 +183,7 @@ export const authOptions = {
                 session.user.agreeToMarketing = token.agreeToMarketing;
                 session.user.agreeToTerms = token.agreeToTerms;
                 session.user.agreeToDataPrivacyPolicy = token.agreeToDataPrivacyPolicy;
+                session.user.totpEnabled = token.totpEnabled === true;
             }
             return session;
         },

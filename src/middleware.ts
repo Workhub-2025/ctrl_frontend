@@ -9,6 +9,10 @@ import { isAdminPortalRole, normalizeRole, routeForRole } from "@/lib/auth/role-
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { buildContentSecurityPolicy } from "@/lib/security/content-security-policy";
+import {
+    isPortalMfaEnrollmentPath,
+    portalMfaEnrollmentRequired,
+} from "@/lib/auth/portal-mfa-enrollment";
 
 export default withAuth(
     async function middleware(req) {
@@ -63,6 +67,27 @@ export default withAuth(
             }
         }
 
+        const mustEnrollPortalMfa = portalMfaEnrollmentRequired({
+            enabled: process.env.REQUIRE_PORTAL_MFA_ENROLLMENT === "true",
+            role: token?.role,
+            totpEnabled: token?.totpEnabled,
+        });
+        if (mustEnrollPortalMfa && !isPortalMfaEnrollmentPath(pathname)) {
+            if (pathname.startsWith("/api/")) {
+                return NextResponse.json(
+                    {
+                        error: "Two-factor authentication enrolment is required.",
+                        code: "PORTAL_MFA_ENROLLMENT_REQUIRED",
+                    },
+                    { status: 403 },
+                );
+            }
+            const enrollmentUrl = new URL("/profile", req.url);
+            enrollmentUrl.searchParams.set("tab", "security");
+            enrollmentUrl.searchParams.set("enroll", "1");
+            return NextResponse.redirect(enrollmentUrl);
+        }
+
         const portalApiResponse = guardPortalApiRoute(pathname, !!token, token?.role);
         if (portalApiResponse) {
             return portalApiResponse;
@@ -81,8 +106,7 @@ export default withAuth(
         // Protect admin routes - only allow admin users
         if (pathname.startsWith('/admin')) {
             if (!token) {
-                const loginUrl = new URL('/auth/register', req.url);
-                loginUrl.searchParams.set('mode', 'login');
+                const loginUrl = new URL('/auth/login', req.url);
                 loginUrl.searchParams.set('callbackUrl', pathname);
                 return NextResponse.redirect(loginUrl);
             }

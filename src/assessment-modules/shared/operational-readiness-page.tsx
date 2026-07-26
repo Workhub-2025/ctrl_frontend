@@ -18,7 +18,9 @@ import {
   Network,
   ShieldCheck,
 } from "lucide-react";
+import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
 import { Button } from "@/components/ui/button";
+import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import {
   detectAssessmentDevice,
   type AssessmentDeviceEligibility,
@@ -59,6 +61,12 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
   const [launching, setLaunching] = useState(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [launch, setLaunch] = useState<LaunchEnvelope<TContent> | null>(null);
+  const [practiceSkipped, setPracticeSkipped] = useState(false);
+  const {
+    settings: accessibilitySettings,
+    updateSettings: updateAccessibilitySettings,
+    resetSettings: resetAccessibilitySettings,
+  } = useAccessibilitySettings({ enabled: true });
 
   useEffect(() => {
     let active = true;
@@ -94,11 +102,12 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
 
   const needsAudio = readiness?.checks.includes("audio-output") ?? false;
   const fullscreenSupported = typeof document !== "undefined" && Boolean(document.fullscreenEnabled);
-  const practiceComplete = practiceState !== null && isPracticeComplete(practiceState);
+  const practiceComplete =
+    practiceSkipped ||
+    (practiceState !== null && isPracticeComplete(practiceState));
   const checksComplete =
     deviceEligibility?.supported === true &&
     online &&
-    fullscreenSupported &&
     (!needsAudio || audioReady);
   const readyToBegin = checksComplete && practiceComplete;
 
@@ -131,7 +140,9 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
     setLaunching(true);
     setLaunchError(null);
     try {
-      await document.documentElement.requestFullscreen();
+      if (fullscreenSupported && !document.fullscreenElement) {
+        await document.documentElement.requestFullscreen().catch(() => undefined);
+      }
       setLaunch(await AssessmentRuntimeClient.start<TContent>(
         candidateSessionDocumentId,
         slug,
@@ -143,7 +154,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
     } finally {
       setLaunching(false);
     }
-  }, [candidateSessionDocumentId, launching, readyToBegin, slug]);
+  }, [candidateSessionDocumentId, fullscreenSupported, launching, readyToBegin, slug]);
 
   const technicalChecks = useMemo(() => [
     {
@@ -168,9 +179,11 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
       action: undefined,
     },
     {
-      label: "Fullscreen",
-      detail: fullscreenSupported ? "Supported by this browser" : "Not available",
-      ready: fullscreenSupported,
+      label: "Immersive fullscreen",
+      detail: fullscreenSupported
+        ? "Available when compatible with your access technology"
+        : "Unavailable; this does not prevent assessment access",
+      ready: true,
       icon: Maximize2,
       action: undefined,
     },
@@ -197,7 +210,10 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
   const readinessSteps = [
     { label: "Read the brief", complete: true },
     { label: "Check your setup", complete: checksComplete },
-    { label: "Complete practice", complete: practiceComplete },
+    {
+      label: practiceSkipped ? "Practice skipped" : "Complete practice",
+      complete: practiceComplete,
+    },
     { label: "Begin assessment", complete: false },
   ];
 
@@ -217,7 +233,8 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                 {readiness.module.description}
               </p>
             </div>
-            <dl className="grid grid-cols-3 divide-x divide-border border border-border bg-background text-sm">
+            <div className="flex items-start gap-3">
+              <dl className="grid grid-cols-3 divide-x divide-border border border-border bg-background text-sm">
               <div className="px-4 py-3">
                 <dt className="text-xs text-muted-foreground">Duration</dt>
                 <dd className="mt-1 font-semibold tabular-nums">
@@ -234,7 +251,14 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                   {readiness.delivery.deliveryVariant.replaceAll("-", " ")}
                 </dd>
               </div>
-            </dl>
+              </dl>
+              <AccessibilityDropdown
+                settings={accessibilitySettings}
+                updateSettings={updateAccessibilitySettings}
+                resetSettings={resetAccessibilitySettings}
+                description="Adjust the assessment display and reading preferences."
+              />
+            </div>
           </div>
         </div>
       </header>
@@ -277,9 +301,27 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Unscored</p>
                 <h2 id="practice-title" className="mt-1 text-xl font-semibold">Practice workspace</h2>
               </div>
-              <p className="max-w-xl text-sm text-muted-foreground">
-                Monitoring and assessed time begin only after you launch the assessed section.
-              </p>
+              <div className="flex max-w-xl flex-col items-start gap-2 sm:items-end">
+                <p className="text-sm text-muted-foreground">
+                  Monitoring and assessed time begin only after you launch the assessed section.
+                </p>
+                {deviceEligibility?.supported && !practiceComplete ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-10 rounded-sm"
+                    onClick={() => setPracticeSkipped(true)}
+                  >
+                    Skip practice
+                  </Button>
+                ) : null}
+                {practiceSkipped && !isPracticeComplete(practiceState) ? (
+                  <p className="text-xs text-muted-foreground" role="status">
+                    Practice skipped. Complete the technical checks, then begin the assessed section.
+                  </p>
+                ) : null}
+              </div>
             </div>
             {deviceEligibility === null ? (
               <div className="flex min-h-40 items-center justify-center border border-border bg-card p-5 text-sm text-muted-foreground">
@@ -301,7 +343,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
                       {deviceEligibility.detail} Practice and assessed content remain locked on this device.
                     </p>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                      No assessed attempt has started. Open this session on the supported device and reload the page.
+                      No assessed attempt has started. Open this session on a desktop or laptop and reload the page.
                     </p>
                   </div>
                 </div>
@@ -349,13 +391,13 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
             {deviceEligibility?.supported && !practiceComplete ? (
               <p className="mt-4 flex gap-2 border border-warning/40 bg-warning/10 p-3 text-xs leading-5 text-foreground">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                Complete the practice exercise to unlock the assessment.
+                Complete or skip practice to unlock the assessment. Technical readiness is still required.
               </p>
             ) : null}
             {deviceEligibility && !deviceEligibility.supported ? (
               <p className="mt-4 flex gap-2 border border-destructive/40 bg-destructive/10 p-3 text-xs leading-5 text-foreground" role="alert">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
-                Assessment launch is unavailable on mobile and touch-capable devices.
+                Assessment launch is unavailable on mobile and tablet devices.
               </p>
             ) : null}
             {launchError ? <p className="mt-4 text-sm text-destructive" role="alert">{launchError}</p> : null}

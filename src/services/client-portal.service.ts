@@ -12,10 +12,8 @@ import {
   invalidateHmOverviewServerCache,
   invalidateHmReportServerCache,
 } from "@/lib/portal-cache-invalidation";
-import {
-  strapiRequest,
-  type HiringManagerCampaignListItem,
-} from "@/services/hiring-manager-campaigns.service";
+import { cmsRequest } from "@/legacy-cms/request";
+import type { HiringManagerCampaignListItem } from "@/types/hiring-manager.types";
 
 type StrapiListResponse<T> = {
   data?: T[];
@@ -255,7 +253,7 @@ function normalizeCampaign(campaign: RawCampaign): ClientCampaignApprovalItem {
 
 export async function getClientCampaignApprovals(status?: "pending" | "approved" | "rejected") {
   const query = status ? `?status=${status}` : "";
-  const response = await strapiRequest<StrapiListResponse<RawCampaign>>(
+  const response = await cmsRequest<StrapiListResponse<RawCampaign>>(
     `/client/campaign-approvals${query}`
   );
 
@@ -264,7 +262,7 @@ export async function getClientCampaignApprovals(status?: "pending" | "approved"
 
 export async function getClientCampaigns(status?: "pending" | "approved" | "rejected") {
   const query = status ? `?status=${status}` : "";
-  const response = await strapiRequest<StrapiListResponse<RawCampaign>>(
+  const response = await cmsRequest<StrapiListResponse<RawCampaign>>(
     `/client/campaigns${query}`
   );
   return (response.data ?? []).map(normalizeCampaign);
@@ -273,7 +271,7 @@ export async function getClientCampaigns(status?: "pending" | "approved" | "reje
 export async function getClientCampaignWorkspace(
   campaignDocumentId: string
 ): Promise<ClientCampaignWorkspace | null> {
-  const response = await strapiRequest<StrapiSingleResponse<RawCampaign & {
+  const response = await cmsRequest<StrapiSingleResponse<RawCampaign & {
     sessions?: Array<{
       documentId?: string;
       name?: string;
@@ -310,7 +308,7 @@ export async function getClientCampaignWorkspace(
 }
 
 async function loadClientDashboardSummary() {
-  const response = await strapiRequest<{ data?: ClientDashboardSummary }>(
+  const response = await cmsRequest<{ data?: ClientDashboardSummary }>(
     "/client/dashboard"
   );
 
@@ -338,7 +336,7 @@ export async function updateClientCampaignApprovalMode(
     throw new Error("Client account could not be resolved");
   }
 
-  const response = await strapiRequest<StrapiSingleResponse<ClientDashboardSummary["client"]>>(
+  const response = await cmsRequest<StrapiSingleResponse<ClientDashboardSummary["client"]>>(
     `/clients/${encodeURIComponent(clientDocumentId)}/approval-mode`,
     {
       method: "POST",
@@ -359,7 +357,7 @@ export async function updateClientAutoRenew(
     throw new Error("Client account could not be resolved");
   }
 
-  const response = await strapiRequest<StrapiSingleResponse<any>>(
+  const response = await cmsRequest<StrapiSingleResponse<any>>(
     `/clients/${encodeURIComponent(clientDocumentId)}/auto-renew`,
     {
       method: "POST",
@@ -412,7 +410,7 @@ export async function reviewClientCampaign(input: {
   decision: "approved" | "rejected";
   note?: string;
 }) {
-  const response = await strapiRequest<StrapiSingleResponse<RawCampaign>>(
+  const response = await cmsRequest<StrapiSingleResponse<RawCampaign>>(
     `/client/campaign-approvals/${input.campaignDocumentId}/review`,
     {
       method: "POST",
@@ -439,7 +437,7 @@ export async function reviewClientCampaign(input: {
 }
 
 export async function getClientAccessCodes() {
-  const response = await strapiRequest<{ data?: ClientAccessCode[] }>(
+  const response = await cmsRequest<{ data?: ClientAccessCode[] }>(
     "/access-codes"
   );
 
@@ -450,7 +448,7 @@ export async function generateHiringManagerAccessCode(input?: {
   seatNumber?: number;
   seatLabel?: string;
 }) {
-  const response = await strapiRequest<{ data?: ClientAccessCode }>(
+  const response = await cmsRequest<{ data?: ClientAccessCode }>(
     "/access-codes/generate",
     {
       method: "POST",
@@ -473,7 +471,7 @@ export async function refreshHiringManagerAccessCode(
     seatLabel?: string;
   }
 ) {
-  const response = await strapiRequest<{ data?: ClientAccessCode }>(
+  const response = await cmsRequest<{ data?: ClientAccessCode }>(
     "/access-codes/generate",
     {
       method: "POST",
@@ -497,7 +495,7 @@ export async function inviteHiringManagerByEmail(input: {
   seatNumber?: number;
   seatLabel?: string;
 }) {
-  const response = await strapiRequest<{ data?: ClientAccessCode & { invitedEmail?: string } }>(
+  const response = await cmsRequest<{ data?: ClientAccessCode & { invitedEmail?: string } }>(
     `/clients/${encodeURIComponent(input.clientDocumentId)}/hiring-manager-invites`,
     {
       method: "POST",
@@ -516,7 +514,7 @@ export async function inviteHiringManagerByEmail(input: {
 }
 
 export async function getClientHiringManagers(clientDocumentId: string) {
-  const response = await strapiRequest<{ data?: Array<{
+  const response = await cmsRequest<{ data?: Array<{
     documentId?: string;
     firstName?: string | null;
     lastName?: string | null;
@@ -567,7 +565,7 @@ export async function releaseClientHiringManagerSeat(
   clientDocumentId: string,
   managerDocumentId: string
 ) {
-  const response = await strapiRequest<StrapiSingleResponse<{
+  const response = await cmsRequest<StrapiSingleResponse<{
     documentId?: string;
     blocked?: boolean;
   }>>(
@@ -631,7 +629,7 @@ async function invalidateSharedCandidateCaches(raw: Record<string, unknown>) {
 }
 
 export async function getClientContract(clientDocumentId: string) {
-  const response = await strapiRequest<{ data?: ClientContract | null }>(
+  const response = await cmsRequest<{ data?: ClientContract | null }>(
     `/clients/${encodeURIComponent(clientDocumentId)}/contract`
   );
   return response.data ?? null;
@@ -639,7 +637,7 @@ export async function getClientContract(clientDocumentId: string) {
 
 export async function listClientSharedCandidates(reviewStatus?: string) {
   const query = reviewStatus ? `?reviewStatus=${encodeURIComponent(reviewStatus)}` : "";
-  const response = await strapiRequest<{ data?: Array<Record<string, unknown>> }>(
+  const response = await cmsRequest<{ data?: Array<Record<string, unknown>> }>(
     `/shared-candidates${query}`
   );
   return (response.data ?? []).map(normalizeSharedCandidate);
@@ -649,7 +647,7 @@ export async function updateSharedCandidateReviewStatus(
   sharedCandidateDocumentId: string,
   reviewStatus: ClientSharedCandidate["reviewStatus"]
 ) {
-  const response = await strapiRequest<{ data?: Record<string, unknown> }>(
+  const response = await cmsRequest<{ data?: Record<string, unknown> }>(
     `/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/status`,
     {
       method: "POST",
@@ -664,7 +662,7 @@ export async function reopenSharedCandidateReviewStatus(
   sharedCandidateDocumentId: string,
   reason: string
 ) {
-  const response = await strapiRequest<{ data?: Record<string, unknown> }>(
+  const response = await cmsRequest<{ data?: Record<string, unknown> }>(
     `/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/reopen`,
     { method: "POST", body: JSON.stringify({ reason }) }
   );
@@ -675,7 +673,7 @@ export async function reopenSharedCandidateReviewStatus(
 export async function getSharedCandidateMessageTemplates(
   sharedCandidateDocumentId: string
 ): Promise<ClientOutreachTemplates> {
-  const response = await strapiRequest<{ data?: ClientOutreachTemplates }>(
+  const response = await cmsRequest<{ data?: ClientOutreachTemplates }>(
     `/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/message-templates`
   );
   return (
@@ -694,7 +692,7 @@ export async function sendSharedCandidateMessage(
     templateKey?: ClientOutreachTemplateKey;
   }
 ): Promise<{ sent: string[]; failed: string[] }> {
-  const response = await strapiRequest<{
+  const response = await cmsRequest<{
     data?: { sent?: string[]; failed?: string[] };
   }>(`/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/message`, {
     method: "POST",

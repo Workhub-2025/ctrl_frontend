@@ -36,10 +36,12 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
         isActive: (pathname) => normalizePath(pathname) === "/client-dashboard",
       },
       {
-        href: "/client-dashboard/hiring-managers",
-        label: "Hiring managers",
+        href: "/client-dashboard/team",
+        label: "Team",
         icon: Users,
-        isActive: (pathname) => pathname.startsWith("/client-dashboard/hiring-managers"),
+        isActive: (pathname) =>
+          pathname.startsWith("/client-dashboard/team") ||
+          pathname.startsWith("/client-dashboard/hiring-managers"),
       },
       {
         href: "/client-dashboard/campaigns",
@@ -50,11 +52,13 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
           pathname.startsWith("/client-dashboard/campaign-approvals"),
       },
       {
-        href: "/client-dashboard/client-approved-candidates",
-        label: "Candidate reviews",
+        href: "/client-dashboard/candidates",
+        label: "Candidates",
         icon: UserCheck,
         isActive: (pathname) =>
-          pathname.startsWith("/client-dashboard/client-approved-candidates"),
+          pathname.startsWith("/client-dashboard/candidates") ||
+          pathname.startsWith("/client-dashboard/client-approved-candidates") ||
+          pathname.startsWith("/client-dashboard/candidate-approvals"),
       },
     ],
   },
@@ -63,22 +67,28 @@ export const CLIENT_NAV_GROUPS: ClientNavGroup[] = [
     collapsible: true,
     items: [
       {
-        href: "/client-dashboard/activity-logs",
-        label: "Activity logs",
+        href: "/client-dashboard/activity",
+        label: "Activity",
         icon: ScrollText,
-        isActive: (pathname) => pathname.startsWith("/client-dashboard/activity-logs"),
+        isActive: (pathname) =>
+          pathname.startsWith("/client-dashboard/activity") ||
+          pathname.startsWith("/client-dashboard/activity-logs"),
       },
       {
-        href: "/client-dashboard/upgrade-requests",
-        label: "Upgrade requests",
+        href: "/client-dashboard/billing",
+        label: "Billing",
         icon: TrendingUp,
-        isActive: (pathname) => pathname.startsWith("/client-dashboard/upgrade-requests"),
+        isActive: (pathname) =>
+          pathname.startsWith("/client-dashboard/billing") ||
+          pathname.startsWith("/client-dashboard/upgrade-requests"),
       },
       {
-        href: "/client-dashboard/messages",
-        label: "Messages",
+        href: "/client-dashboard/support",
+        label: "Support",
         icon: MessageSquare,
-        isActive: (pathname) => pathname.startsWith("/client-dashboard/messages"),
+        isActive: (pathname) =>
+          pathname.startsWith("/client-dashboard/support") ||
+          pathname.startsWith("/client-dashboard/messages"),
       },
     ],
   },
@@ -90,16 +100,21 @@ export type ClientBreadcrumb = { label: string; href?: string };
 
 const SEGMENT_LABELS: Record<string, string> = {
   "client-dashboard": "Client",
-  "hiring-managers": "Hiring managers",
+  team: "Team",
+  "hiring-managers": "Team",
   campaigns: "Campaigns",
   "campaign-approvals": "Campaigns",
-  "client-approved-candidates": "Candidate reviews",
-  "candidate-approvals": "Candidate reviews",
+  candidates: "Candidates",
+  "client-approved-candidates": "Candidates",
+  "candidate-approvals": "Candidates",
   progressed: "Campaigns",
-  "upgrade-requests": "Upgrade requests",
+  billing: "Billing",
+  "upgrade-requests": "Billing",
   "assessment-recovery": "Assessment recovery",
-  "activity-logs": "Activity logs",
-  messages: "Messages",
+  activity: "Activity",
+  "activity-logs": "Activity",
+  support: "Support",
+  messages: "Support",
 };
 
 export function getClientBreadcrumbs(pathname: string): ClientBreadcrumb[] {

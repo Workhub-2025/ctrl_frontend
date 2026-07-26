@@ -1,19 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/next-auth-options';
-import { getServerStrapiJwt } from '@/lib/auth/strapi-jwt';
+import { requireFirebaseSession } from '@/lib/auth/firebase-bff-session';
+import { handleBffRouteError } from '@/lib/auth/bff-route-errors';
+import { getServerCmsJwt } from "@/legacy-cms/jwt";
+import {
+    getFirebaseUserProfile,
+    updateFirebaseUserProfile,
+} from '@/lib/firebase-profile-api';
 import { resolveCorrelationId, startServerActionTrace } from '@/lib/observability/server-observability';
 import { applyRateLimit, extractClientIp } from '@/lib/security/api-rate-limit';
 import { rejectMutatingCrossOrigin } from '@/lib/security/bff-mutation-guard';
+import { buildAuthorizedProfileUpdate } from '@/lib/profile-authority';
+
+function toProfileResponse(profile: {
+    id: string | number;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    organization?: string | null;
+    phone?: string | null;
+    role?: string;
+    createdAt?: string | null;
+    emailVerified?: boolean | null;
+    agreeToMarketing?: boolean | null;
+    privacyConsent?: Record<string, unknown> | null;
+    equalityMonitoring?: Record<string, unknown> | null;
+}) {
+    return {
+        id: profile.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+        organization: profile.organization ?? null,
+        phone: profile.phone ?? undefined,
+        role: profile.role,
+        createdAt: profile.createdAt ?? null,
+        emailVerified: profile.emailVerified ?? null,
+        agreeToMarketing: profile.agreeToMarketing ?? undefined,
+        privacyConsent: profile.privacyConsent ?? null,
+        equalityMonitoring: profile.equalityMonitoring ?? null,
+    };
+}
 
 export async function GET(request: NextRequest) {
     const correlationId = resolveCorrelationId();
     const trace = startServerActionTrace('profile.get', { correlationId });
     try {
         const session = await getServerSession(authOptions);
-        const strapiJwt = await getServerStrapiJwt(request);
-
-        if (!session?.user?.id || !strapiJwt) {
+        if (!session?.user?.id) {
             trace.failure(new Error('Unauthorized'));
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
@@ -37,12 +72,26 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Fetch complete user profile from Strapi
-        const { getStrapiClient } = await import('@/lib/strapi');
-        const strapiClient = getStrapiClient(strapiJwt);
-        const meResponse = await strapiClient.fetch('/users/me?populate=*');
+        if (session.user.authProvider === 'firebase') {
+            const firebaseAuth = await requireFirebaseSession();
+            const profile = await getFirebaseUserProfile(firebaseAuth.firebaseSessionCookie);
+            trace.success({ userId: session.user.id, provider: 'firebase' });
+            return NextResponse.json(toProfileResponse(profile), {
+                headers: { 'x-correlation-id': correlationId },
+            });
+        }
+
+        const cmsJwt = await getServerCmsJwt(request);
+        if (!cmsJwt) {
+            trace.failure(new Error('Unauthorized'));
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
+        }
+
+        // Fetch complete user profile from Strapi (legacy dual-path).
+        const { getCmsClient } = await import("@/legacy-cms/client");
+        const strapiClient = getCmsClient(cmsJwt);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userData: any = await meResponse.json();
+        const userData: any = await strapiClient.fetch('/users/me?populate=*');
 
         trace.success({ userId: session.user.id });
         return NextResponse.json({
@@ -50,15 +99,22 @@ export async function GET(request: NextRequest) {
             firstName: userData.firstName,
             lastName: userData.lastName,
             email: userData.email,
-            organization: userData.organization,
+            organization: userData.client?.name ?? null,
             phone: userData.phone,
             role: userData.role?.name || session.user.role || 'Candidate',
+            createdAt: userData.createdAt ?? null,
+            emailVerified: typeof userData.confirmed === 'boolean' ? userData.confirmed : null,
             agreeToMarketing: userData.agreeToMarketing,
             privacyConsent: userData.privacyConsent,
             equalityMonitoring: userData.equalityMonitoring,
         }, { headers: { 'x-correlation-id': correlationId } });
-    } catch (error: any) {
-        trace.failure(error);
+    } catch (error: unknown) {
+        const bffError = handleBffRouteError(error, 'Failed to fetch profile');
+        if (bffError.status !== 500) {
+            trace.failure(error instanceof Error ? error : new Error('profile.get failed'));
+            return bffError;
+        }
+        trace.failure(error instanceof Error ? error : new Error('profile.get failed'));
         console.error('Error fetching user profile:', error);
         return NextResponse.json(
             { error: 'Failed to fetch profile' },
@@ -75,9 +131,7 @@ export async function PUT(request: NextRequest) {
         if (crossOriginResponse) return crossOriginResponse;
 
         const session = await getServerSession(authOptions);
-        const strapiJwt = await getServerStrapiJwt(request);
-
-        if (!session?.user?.id || !strapiJwt) {
+        if (!session?.user?.id) {
             trace.failure(new Error('Unauthorized'));
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
         }
@@ -103,40 +157,43 @@ export async function PUT(request: NextRequest) {
 
         const body = await request.json();
 
-        const {
-            firstName,
-            lastName,
-            organization,
-            phone,
-            agreeToMarketing,
-            privacyConsent,
-            equalityMonitoring
-        } = body;
+        const decision = buildAuthorizedProfileUpdate(body, session.user.role);
+        if (decision.forbiddenEqualityMonitoring) {
+            trace.failure(new Error('Equality monitoring is candidate-only'));
+            return NextResponse.json(
+                { error: 'Equality monitoring is available to candidate accounts only.' },
+                { status: 403, headers: { 'x-correlation-id': correlationId } },
+            );
+        }
+        const updateData = decision.data;
 
-        // Prepare update data, only including defined fields
-        const updateData: any = {};
-        if (firstName !== undefined) updateData.firstName = firstName;
-        if (lastName !== undefined) updateData.lastName = lastName;
-        if (organization !== undefined) updateData.organization = organization;
-        if (phone !== undefined) updateData.phone = phone;
-        if (agreeToMarketing !== undefined) updateData.agreeToMarketing = agreeToMarketing;
-        if (privacyConsent !== undefined) updateData.privacyConsent = privacyConsent;
-        if (equalityMonitoring !== undefined) updateData.equalityMonitoring = equalityMonitoring;
+        if (session.user.authProvider === 'firebase') {
+            const firebaseAuth = await requireFirebaseSession();
+            const profile = await updateFirebaseUserProfile(
+                firebaseAuth.firebaseSessionCookie,
+                updateData,
+            );
+            trace.success({ userId: session.user.id, provider: 'firebase' });
+            return NextResponse.json(toProfileResponse(profile), {
+                headers: { 'x-correlation-id': correlationId },
+            });
+        }
+
+        const cmsJwt = await getServerCmsJwt(request);
+        if (!cmsJwt) {
+            trace.failure(new Error('Unauthorized'));
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
+        }
 
         // Update the signed-in user's own profile without requiring broad user.update permissions.
-        const { getStrapiClient } = await import('@/lib/strapi');
-        const strapiClient = getStrapiClient(strapiJwt);
-        const updateResponse = await strapiClient.fetch('/users/me', {
+        const { getCmsClient } = await import("@/legacy-cms/client");
+        const strapiClient = getCmsClient(cmsJwt);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const updatedUser: any = await strapiClient.fetch('/users/me', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updateData),
         });
-
-        if (!updateResponse.ok) {
-            throw new Error(`Profile update failed with status ${updateResponse.status}`);
-        }
-
-        const updatedUser = await updateResponse.json() as any;
 
         trace.success({ userId: session.user.id });
         return NextResponse.json({
@@ -144,15 +201,22 @@ export async function PUT(request: NextRequest) {
             firstName: updatedUser.firstName,
             lastName: updatedUser.lastName,
             email: updatedUser.email,
-            organization: updatedUser.organization,
+            organization: updatedUser.client?.name ?? null,
             phone: updatedUser.phone,
             role: updatedUser.role?.name || session.user.role || 'Candidate',
+            createdAt: updatedUser.createdAt ?? null,
+            emailVerified: typeof updatedUser.confirmed === 'boolean' ? updatedUser.confirmed : null,
             agreeToMarketing: updatedUser.agreeToMarketing,
             privacyConsent: updatedUser.privacyConsent,
             equalityMonitoring: updatedUser.equalityMonitoring,
         }, { headers: { 'x-correlation-id': correlationId } });
-    } catch (error: any) {
-        trace.failure(error);
+    } catch (error: unknown) {
+        const bffError = handleBffRouteError(error, 'Failed to update profile');
+        if (bffError.status !== 500) {
+            trace.failure(error instanceof Error ? error : new Error('profile.put failed'));
+            return bffError;
+        }
+        trace.failure(error instanceof Error ? error : new Error('profile.put failed'));
         console.error('Error updating user profile:', error);
         return NextResponse.json(
             { error: 'Failed to update profile' },

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { postStrapiAuth } from "@/lib/auth/strapi-public-auth";
+import { firebaseAuthRouteGoneResponse } from "@/lib/auth/firebase-auth-route-gone";
+import { postCmsAuth } from "@/legacy-cms/public-auth";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 import {
-  PUBLIC_STRAPI_UNAVAILABLE_MESSAGE,
-  checkStrapiReachability,
-  logStrapiConnectivityIssue,
-} from "@/lib/strapi-connectivity";
+  PUBLIC_CMS_UNAVAILABLE_MESSAGE,
+  checkCmsReachability,
+  logCmsConnectivityIssue,
+} from "@/legacy-cms/connectivity";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,6 +16,11 @@ export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
   if (forbidden) {
     return forbidden;
+  }
+
+  const firebaseGone = firebaseAuthRouteGoneResponse();
+  if (firebaseGone) {
+    return firebaseGone;
   }
 
   const ipAddress = extractClientIp(request);
@@ -43,13 +49,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
   }
 
-  const strapiIssue = await checkStrapiReachability();
+  const strapiIssue = await checkCmsReachability();
   if (strapiIssue) {
-    logStrapiConnectivityIssue("auth/forgot-password", strapiIssue);
-    return NextResponse.json({ error: PUBLIC_STRAPI_UNAVAILABLE_MESSAGE }, { status: 503 });
+    logCmsConnectivityIssue("auth/forgot-password", strapiIssue);
+    return NextResponse.json({ error: PUBLIC_CMS_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
-  await postStrapiAuth("auth/forgot-password", { email });
+  await postCmsAuth("auth/forgot-password", { email });
 
   logAuthAuditEvent("password_reset_request", { email, ipAddress });
 

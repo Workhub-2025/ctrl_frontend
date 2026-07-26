@@ -1,7 +1,7 @@
 import "server-only";
 
-import { getStrapiClient } from "@/lib/strapi";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { getCmsClient } from "@/legacy-cms/client";
+import { cmsRequest } from "@/legacy-cms/request";
 import type { SharedCandidateNote } from "@/types/shared-candidate-note.types";
 
 type StrapiListResponse<T> = { data?: T[] };
@@ -22,10 +22,9 @@ type RawNote = {
   } | null;
 };
 
-async function getCurrentUserDocumentId(strapiJwt: string) {
-  const client = getStrapiClient(strapiJwt);
-  const response = await client.fetch("/users/me");
-  const body = (await response.json().catch(() => ({}))) as {
+async function getCurrentUserDocumentId(cmsJwt: string) {
+  const client = getCmsClient(cmsJwt);
+  const body = (await client.fetch("/users/me").catch(() => ({}))) as {
     documentId?: string;
     id?: number;
   };
@@ -56,13 +55,13 @@ function normalizeNote(raw: RawNote, currentUserDocumentId: string | null): Shar
 
 export async function listSharedCandidateNotes(
   sharedCandidateDocumentId: string,
-  strapiJwt: string
+  cmsJwt: string
 ): Promise<SharedCandidateNote[]> {
   const [response, currentUserDocumentId] = await Promise.all([
-    strapiRequest<StrapiListResponse<RawNote>>(
+    cmsRequest<StrapiListResponse<RawNote>>(
       `/shared-candidates/${encodeURIComponent(sharedCandidateDocumentId)}/notes`
     ),
-    getCurrentUserDocumentId(strapiJwt),
+    getCurrentUserDocumentId(cmsJwt),
   ]);
 
   return (response.data ?? []).map((note) => normalizeNote(note, currentUserDocumentId));
@@ -71,20 +70,20 @@ export async function listSharedCandidateNotes(
 export async function createSharedCandidateNote(
   sharedCandidateDocumentId: string,
   content: string,
-  strapiJwt: string
+  cmsJwt: string
 ): Promise<SharedCandidateNote | null> {
-  const response = await strapiRequest<StrapiSingleResponse<RawNote>>("/notes", {
+  const response = await cmsRequest<StrapiSingleResponse<RawNote>>("/notes", {
     method: "POST",
     body: JSON.stringify({ sharedCandidateDocumentId, content }),
   });
 
   if (!response.data) return null;
-  const currentUserDocumentId = await getCurrentUserDocumentId(strapiJwt);
+  const currentUserDocumentId = await getCurrentUserDocumentId(cmsJwt);
   return normalizeNote(response.data, currentUserDocumentId);
 }
 
 export async function deleteSharedCandidateNote(noteDocumentId: string): Promise<void> {
-  await strapiRequest(`/notes/${encodeURIComponent(noteDocumentId)}`, {
+  await cmsRequest(`/notes/${encodeURIComponent(noteDocumentId)}`, {
     method: "DELETE",
   });
 }

@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { invalidateAdminResource, useAdminResource } from "@/lib/admin-resource-cache";
+import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
 import { downloadCsv } from "@/lib/export-csv";
 import {
   AdminAlert,
@@ -61,6 +62,7 @@ type AdminClientRow = {
 };
 
 export default function ClientsListPage() {
+  const firebaseAuth = isFirebaseAuthProvider();
   const [searchTerm, setSearchTerm] = useState("");
   const [generatedCode, setGeneratedCode] = useState<{
     clientName: string;
@@ -224,7 +226,7 @@ export default function ClientsListPage() {
       {generatedCode ? (
         <AdminAlert tone="info">
           <p className="font-semibold">Client access code for {generatedCode.clientName}</p>
-          <p className="mt-2 w-fit rounded-lg border border-border/60 bg-background px-3 py-1.5 font-mono text-lg tracking-wide dark:bg-black/20">
+          <p className="mt-2 w-fit rounded-lg border border-border/60 bg-muted/20 px-3 py-1.5 font-mono text-lg tracking-wide">
             {generatedCode.code}
           </p>
           <p className="mt-2 text-xs opacity-80">
@@ -306,12 +308,12 @@ export default function ClientsListPage() {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-200/50 dark:hover:bg-white/10 rounded-full">
+                        <Button variant="ghost" className="h-8 w-8 rounded-full p-0 hover:bg-muted/50">
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-[18px] w-[18px]" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-xl border border-border/80 dark:border-white/10 shadow-xl">
+                      <DropdownMenuContent align="end" className="rounded-xl border border-border/80 shadow-xl">
                         <DropdownMenuLabel className="text-xs text-muted-foreground font-bold">Actions</DropdownMenuLabel>
                         <DropdownMenuItem asChild>
                           <Link href={`/admin/clients/${client.id}`} className="rounded-lg text-xs font-medium cursor-pointer">Open client</Link>
@@ -321,13 +323,24 @@ export default function ClientsListPage() {
                             Review entitlements
                           </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={!client.canGenerateClientCode || generatingClientId === client.id}
-                          onClick={() => generateClientCode(client)}
-                          className="rounded-lg text-xs font-medium cursor-pointer"
-                        >
-                          {client.canGenerateClientCode ? "Generate client invite" : "Client invite handled"}
-                        </DropdownMenuItem>
+                        {firebaseAuth ? (
+                          <DropdownMenuItem asChild>
+                            <Link
+                              href={`/admin/clients/${client.id}`}
+                              className="rounded-lg text-xs font-medium cursor-pointer"
+                            >
+                              {client.canGenerateClientCode ? "Invite client contact" : "Client invite handled"}
+                            </Link>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            disabled={!client.canGenerateClientCode || generatingClientId === client.id}
+                            onClick={() => generateClientCode(client)}
+                            className="rounded-lg text-xs font-medium cursor-pointer"
+                          >
+                            {client.canGenerateClientCode ? "Generate client invite" : "Client invite handled"}
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

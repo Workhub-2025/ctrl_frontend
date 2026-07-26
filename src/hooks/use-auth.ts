@@ -3,9 +3,17 @@ import { useRouter } from 'next/navigation';
 import { AuthAPI } from '@/services/auth-api';
 import { IUser } from '@/types/users.types';
 import { UserProfileService } from '@/services/user-profile.service';
+import { isFirebaseAuthProvider } from '@/lib/auth/auth-provider';
 import { normalizeRole, routeForRole } from '@/lib/auth/role-model';
 import { clearClientSessionCache, getClientSession, primeClientSession, type ClientAuthSession } from '@/lib/auth/client-session';
 import { useAuthStore } from '@/store/auth.store';
+import {
+    completeFirebaseTotpLogin,
+    loginWithFirebase,
+    logoutFirebaseBrowserSession,
+} from '@/lib/firebase-auth-browser';
+
+const useFirebaseAuthentication = isFirebaseAuthProvider();
 
 export function useAuth() {
     const [session, setSession] = useState<ClientAuthSession>(null);
@@ -84,6 +92,53 @@ export function useAuth() {
             setSession(null);
             setStatus('loading');
 
+            if (useFirebaseAuthentication) {
+                const result = await loginWithFirebase(email, password);
+                if (result.requiresTotp) {
+                    setStatus('unauthenticated');
+                    return { success: true, requiresTotp: true };
+                }
+                if (result.session.provisioningRequired) {
+                    setStatus('unauthenticated');
+                    if (result.session.redirectPath === '/auth/bootstrap') {
+                        return {
+                            success: true,
+                            provisioningRequired: true,
+                            bootstrapRequired: true,
+                            bootstrapStatus: result.session.bootstrapStatus,
+                            redirectPath: result.session.redirectPath,
+                        };
+                    }
+                    const currentQuery = new URLSearchParams(window.location.search);
+                    const invitationToken =
+                        currentQuery.get('token') ?? currentQuery.get('invitation');
+                    const destination = new URL(result.session.redirectPath, window.location.origin);
+                    if (result.session.redirectPath === '/auth/accept-invitation' && invitationToken) {
+                        destination.searchParams.set('token', invitationToken);
+                    }
+                    // Client navigation preserves Firebase's deliberately
+                    // in-memory user while bootstrap/enrolment is completed.
+                    router.push(`${destination.pathname}${destination.search}`);
+                    return { success: true, provisioningRequired: true };
+                }
+
+                const firebaseUser = {
+                    id: result.session.user.userId,
+                    role: result.session.user.portalRole,
+                    organization: result.session.user.organizationId,
+                    authProvider: 'firebase',
+                };
+                const nextSession: ClientAuthSession = {
+                    user: firebaseUser,
+                    expires: result.session.expiresAt,
+                };
+                primeClientSession(nextSession);
+                setSession(nextSession);
+                setStatus('authenticated');
+                router.push(result.session.redirectPath);
+                return { success: true };
+            }
+
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: {
@@ -109,7 +164,7 @@ export function useAuth() {
                 if (response.status === 503) {
                     throw new Error(
                         body.error ??
-                            'Authentication service is unavailable. Check server configuration (STRAPI_API_URL).'
+                            'Authentication service is unavailable. Please try again shortly.'
                     );
                 }
                 throw new Error(body.error ?? 'Authentication failed: wrong user or password');
@@ -162,7 +217,7 @@ export function useAuth() {
                 (error.name === 'TimeoutError' || error.name === 'AbortError')
             ) {
                 throw new Error(
-                    'Login timed out. Check your connection and that the Strapi backend is reachable.'
+                    'Login timed out. Check your connection and try again.'
                 );
             }
             throw error;
@@ -174,6 +229,49 @@ export function useAuth() {
 
         try {
             setStatus('loading');
+            if (useFirebaseAuthentication) {
+                const result = await completeFirebaseTotpLogin(code);
+                if (result.requiresTotp) {
+                    throw new Error('Additional verification is required');
+                }
+                if (result.session.provisioningRequired) {
+                    setStatus('unauthenticated');
+                    if (result.session.redirectPath === '/auth/bootstrap') {
+                        return {
+                            success: true,
+                            provisioningRequired: true,
+                            bootstrapRequired: true,
+                            bootstrapStatus: result.session.bootstrapStatus,
+                            redirectPath: result.session.redirectPath,
+                        };
+                    }
+                    const currentQuery = new URLSearchParams(window.location.search);
+                    const invitationToken =
+                        currentQuery.get('token') ?? currentQuery.get('invitation');
+                    const destination = new URL(result.session.redirectPath, window.location.origin);
+                    if (result.session.redirectPath === '/auth/accept-invitation' && invitationToken) {
+                        destination.searchParams.set('token', invitationToken);
+                    }
+                    router.push(`${destination.pathname}${destination.search}`);
+                    return { success: true, provisioningRequired: true };
+                }
+                const firebaseUser = {
+                    id: result.session.user.userId,
+                    role: result.session.user.portalRole,
+                    organization: result.session.user.organizationId,
+                    authProvider: 'firebase',
+                };
+                const nextSession: ClientAuthSession = {
+                    user: firebaseUser,
+                    expires: result.session.expiresAt,
+                };
+                primeClientSession(nextSession);
+                setSession(nextSession);
+                setStatus('authenticated');
+                router.push(result.session.redirectPath);
+                return { success: true };
+            }
+
             const response = await fetch('/api/auth/totp/verify', {
                 method: 'POST',
                 headers: {
@@ -222,6 +320,12 @@ export function useAuth() {
 
     const register = async (userData: Partial<IUser>) => {
         try {
+            if (useFirebaseAuthentication) {
+                throw new Error(
+                    'Public registration is closed. Create an account from a verified invitation.'
+                );
+            }
+
             console.log('🚀 Starting registration process...');
 
             const response = await fetch('/api/auth/register', {
@@ -263,6 +367,9 @@ export function useAuth() {
             setSession(null);
             setStatus('unauthenticated');
 
+            if (useFirebaseAuthentication) {
+                await logoutFirebaseBrowserSession();
+            }
             await fetch('/api/auth/logout', {
                 method: 'POST',
                 headers: { Accept: 'application/json' },

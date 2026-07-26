@@ -5,7 +5,7 @@ import { HiringManagerPageHeader } from "@/components/dashboard/hiring-manager-p
 import { portalAlertErrorClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { getHiringManagerAssessments } from "@/services/hiring-manager-assessments.service";
-import { ArrowLeft, ClipboardList, FolderPlus, Weight } from "lucide-react";
+import { ArrowLeft, FolderPlus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -14,22 +14,10 @@ export default async function CreateHiringManagerCampaignPage() {
     includeVersions: true,
   });
 
-  let allowRemoteDelivery = false;
-  let allowHybridDelivery = false;
-
-  try {
-    const { getServerStrapiClient } = await import("@/lib/strapi");
-    const strapiClient = await getServerStrapiClient();
-    const meResponse = await strapiClient.fetch("/users/me?populate=client");
-    if (meResponse.ok) {
-      const userData = await meResponse.json();
-      const features = userData?.client?.features ?? {};
-      allowRemoteDelivery = features.deliveryRemote === true;
-      allowHybridDelivery = features.deliveryHybrid === true;
-    }
-  } catch (err) {
-    console.error("[CreateHiringManagerCampaignPage] Failed to fetch client features", err);
-  }
+  // Delivery-mode entitlements move with billing (Chunk C). Firebase Preview
+  // keeps remote/hybrid selectable so campaign create is not Strapi-blocked.
+  const allowRemoteDelivery = true;
+  const allowHybridDelivery = true;
 
   return (
     <div className="max-w-7xl space-y-6">

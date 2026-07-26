@@ -719,7 +719,7 @@ export default function AdminTicketsPage() {
       </div>
 
       {/* Status Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-border/40 dark:border-white/5 pb-4">
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-border/40 pb-4">
         {statusTabs.map((tab) => (
           <button
             key={tab.key}
@@ -727,7 +727,7 @@ export default function AdminTicketsPage() {
             className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors duration-200 ${
               statusFilter === tab.key
                 ? "bg-primary/15 text-primary border border-primary/20"
-                : "text-slate-400 hover:text-foreground hover:bg-white/5 border border-transparent"
+                : "border border-transparent text-muted-foreground hover:bg-muted/30 hover:text-foreground"
             }`}
           >
             {tab.label}
@@ -735,7 +735,7 @@ export default function AdminTicketsPage() {
               className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold tabular-nums ${
                 statusFilter === tab.key
                   ? "bg-primary/20 text-primary"
-                  : "bg-white/8 text-slate-500"
+                  : "bg-muted/40 text-muted-foreground"
               }`}
             >
               {tab.count}
@@ -750,13 +750,13 @@ export default function AdminTicketsPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search ticket # or subject…"
-            className="pl-9 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+            className="pl-9 rounded-xl border-border/70 focus-visible:ring-primary"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-[150px] h-9 rounded-xl border-border/70 dark:border-white/10 text-xs">
+          <SelectTrigger className="w-[150px] h-9 rounded-xl border-border/70 text-xs">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -769,7 +769,7 @@ export default function AdminTicketsPage() {
           </SelectContent>
         </Select>
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-          <SelectTrigger className="w-[130px] h-9 rounded-xl border-border/70 dark:border-white/10 text-xs">
+          <SelectTrigger className="w-[130px] h-9 rounded-xl border-border/70 text-xs">
             <SelectValue placeholder="Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -799,13 +799,13 @@ export default function AdminTicketsPage() {
           </div>
         ) : filteredTickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="h-14 w-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-              <Inbox className="h-6 w-6 text-slate-500" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-muted/30">
+              <Inbox className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm font-semibold text-slate-400">
+            <p className="text-sm font-semibold text-muted-foreground">
               No tickets found
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               {search || statusFilter !== "all" || categoryFilter !== "all" || priorityFilter !== "all"
                 ? "Try adjusting your filters."
                 : "No support tickets have been submitted yet."}
@@ -820,7 +820,7 @@ export default function AdminTicketsPage() {
                   setSelectedTicket(ticket);
                   setDetailOpen(true);
                 }}
-                className="w-full px-5 py-4 flex items-center gap-4 hover:bg-slate-100/10 dark:hover:bg-white/[0.02] transition-colors text-left group"
+                className="group flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-muted/20"
               >
                 {/* Ticket # */}
                 <span className="font-mono text-xs font-bold text-primary shrink-0 w-[90px]">
@@ -858,24 +858,24 @@ export default function AdminTicketsPage() {
 
                 {/* Submitted by */}
                 <div className="hidden lg:flex items-center gap-1.5 shrink-0 w-[140px]">
-                  <span className="text-xs text-slate-400 truncate">
+                  <span className="truncate text-xs text-muted-foreground">
                     {userDisplayName(ticket.submittedBy)}
                   </span>
                   <Badge
                     variant="outline"
-                    className="text-[9px] border-white/10 bg-white/5 text-slate-500"
+                    className="border-border bg-muted/30 text-[9px] text-muted-foreground"
                   >
                     {userRoleBadge(ticket.submittedBy)}
                   </Badge>
                 </div>
 
                 {/* Time */}
-                <span className="text-[11px] text-slate-500 shrink-0 w-[70px] text-right">
+                <span className="w-[70px] shrink-0 text-right text-[11px] text-muted-foreground">
                   {relativeTime(ticket.createdAt)}
                 </span>
 
                 {/* Arrow */}
-                <ChevronDown className="h-4 w-4 text-slate-500 shrink-0 group-hover:text-primary transition-colors" />
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
               </button>
             ))}
           </div>

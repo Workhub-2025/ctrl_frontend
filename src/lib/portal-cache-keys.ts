@@ -23,8 +23,31 @@ export function portalHmOverviewCacheKey(sub: string) {
   return `hm:overview:user:${sub}`;
 }
 
+/**
+ * Org-scoped generation for the screen aggregates. Bumped on assessment submit
+ * and on any tenant mutation that can change the HM overview or the client
+ * dashboard, so a mutation is visible on the next read instead of after a TTL.
+ */
+export function portalHmOverviewOrgGenerationKey(organizationId: string) {
+  return `hm:overview:org-gen:${organizationId}`;
+}
+
+export function portalHmOverviewCacheKeyWithGeneration(
+  sub: string,
+  generation: string,
+) {
+  return `hm:overview:user:${sub}:g:${generation}`;
+}
+
 export function portalClientDashboardCacheKey(sub: string) {
   return `client:dashboard:user:${sub}`;
+}
+
+export function portalClientDashboardCacheKeyWithGeneration(
+  sub: string,
+  generation: string,
+) {
+  return `client:dashboard:user:${sub}:g:${generation}`;
 }
 
 export function portalClientOverviewCacheKey(sub: string) {

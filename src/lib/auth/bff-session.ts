@@ -2,22 +2,37 @@ import "server-only";
 
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
+import { getServerCmsJwt } from "@/legacy-cms/jwt";
 import { resolveAppRole, isAdminPortalRole, type AppRole, type AdminPortalRoleType } from "@/lib/auth/role-model";
 import { BffAuthError } from "@/lib/auth/bff-route-errors";
 
 export { BffAuthError } from "@/lib/auth/bff-route-errors";
 export { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 
+/**
+ * Legacy Strapi BFF session helper. Firebase Preview routes must use
+ * `requireFirebaseSession` instead — this path still requires a Strapi JWT.
+ */
 export async function requireAuthenticatedSession() {
   const session = await getServerSession(authOptions);
-  const strapiJwt = await getServerStrapiJwt();
 
-  if (!session?.user?.id || !strapiJwt) {
+  if (!session?.user?.id) {
     throw new BffAuthError("Authentication required", 401);
   }
 
-  return { session, strapiJwt };
+  if (session.user.authProvider === "firebase") {
+    throw new BffAuthError(
+      "This operation still requires the legacy Strapi API and is not available on the Firebase Preview path yet.",
+      503,
+    );
+  }
+
+  const cmsJwt = await getServerCmsJwt();
+  if (!cmsJwt) {
+    throw new BffAuthError("Authentication required", 401);
+  }
+
+  return { session, cmsJwt };
 }
 
 export async function requireRoleSession(...roles: (AppRole | AdminPortalRoleType)[]) {

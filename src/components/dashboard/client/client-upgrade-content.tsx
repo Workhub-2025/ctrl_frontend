@@ -341,7 +341,7 @@ export function ClientUpgradeContent() {
                   </p>
                 </div>
                 {contract && (
-                  <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3 dark:border-white/5">
+                  <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
                     <div className="space-y-0.5">
                       <Label htmlFor="auto-renew" className="text-xs font-semibold text-foreground">
                         Auto-renew contract
@@ -428,13 +428,13 @@ export function ClientUpgradeContent() {
               </div>
             </div>
 
-            {(entitlements?.additionalAssessments.length ?? 0) > 0 ? (
+            {(entitlements?.additionalAssessments?.length ?? 0) > 0 ? (
               <div className="space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Add-on assessments active
                 </p>
                 <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {entitlements?.additionalAssessments.map((assessment) => (
+                  {(entitlements?.additionalAssessments ?? []).map((assessment) => (
                     <li key={assessment.slug} className={cn(portalPanelClass, "px-4 py-3")}>
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
@@ -594,7 +594,7 @@ export function ClientUpgradeContent() {
                 </ul>
               ) : null}
 
-              <div className="flex justify-end border-t border-border/50 pt-4 dark:border-white/5">
+              <div className="flex justify-end border-t border-border/50 pt-4">
                 <Button asChild variant="outline" className="rounded-xl gap-2">
                   <Link href="#upgrade-request-history">
                     View all requests

@@ -1,18 +1,26 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
-import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
-import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
+import {
+  normalizeContractTierForLock,
+  resolveEffectiveAnnualPlatformPence,
+} from "@/lib/billing/contract-pricing-lock";
 import {
   buildUpgradeRequestDescription,
   buildUpgradeRequestSubject,
   type ClientUpgradeRequestPayload,
 } from "@/lib/client/entitlements";
 import {
-  normalizeContractTierForLock,
-  resolveEffectiveAnnualPlatformPence,
-} from "@/lib/billing/contract-pricing-lock";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+  createFirebaseBillingApi,
+  platformPricingFromFirebasePrices,
+} from "@/lib/firebase-billing-api";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
+import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
+import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
+import { cmsRequest } from "@/legacy-cms/request";
 
 type AdminClientRecord = {
   documentId?: string;
@@ -30,6 +38,19 @@ type AdminClientRecord = {
   }>;
 };
 
+type FirebaseContractRow = {
+  documentId: string;
+  id: string;
+  tier: string;
+  status: string;
+  seatCount: number;
+  startDate: string | null;
+  endDate: string | null;
+  paymentStatus: string;
+  lockedAnnualPlatformPence: number | null;
+  pricingLockedUntil: string | null;
+};
+
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 }
@@ -40,8 +61,27 @@ function getPendingContract(client: AdminClientRecord) {
   );
 }
 
+function getFirebasePendingContract(contracts: FirebaseContractRow[]) {
+  return (
+    contracts.find(
+      (contract) =>
+        (contract.status === "draft" || contract.status === "pending_payment") &&
+        contract.paymentStatus === "unpaid",
+    ) ??
+    contracts.find(
+      (contract) =>
+        contract.status === "active" && contract.paymentStatus === "unpaid",
+    ) ??
+    null
+  );
+}
+
 function resolveAnnualContractPrice(
-  contract: NonNullable<AdminClientRecord["contracts"]>[number],
+  contract: {
+    tier?: string;
+    lockedAnnualPlatformPence?: number | null;
+    pricingLockedUntil?: string | null;
+  },
   pricing: Record<string, unknown>
 ) {
   const asOfDate = new Date().toISOString().split("T")[0];
@@ -67,26 +107,94 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
-  const auth = await requireAdminApiAccess('billing.write');
+  const auth = await requireAdminDualAccess("billing.write");
   if ("error" in auth) {
     return auth.error;
-  }
-  const strapiJwt = auth.strapiJwt;
-
-  if (!isStripeCheckoutConfigured()) {
-    return NextResponse.json(
-      {
-        error:
-          "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
-      },
-      { status: 503 }
-    );
   }
 
   const { clientId } = await params;
 
   try {
-    const clientsResponse = await strapiRequest<{ data?: AdminClientRecord[] }>("/admin/clients");
+    if (isFirebaseAdminAuth(auth)) {
+      const billing = createFirebaseBillingApi(
+        auth.domainApi,
+        auth.firebaseSessionCookie,
+      );
+      const [org, contracts, prices] = await Promise.all([
+        auth.domainApi.request<{ id: string; legalName: string }>({
+          path: `/v1/organizations/${encodeURIComponent(clientId)}`,
+          firebaseSessionCookie: auth.firebaseSessionCookie,
+        }),
+        billing.listOrganizationContracts(clientId),
+        billing.listPrices(),
+      ]);
+      const contract = getFirebasePendingContract(contracts);
+      if (!contract?.documentId) {
+        return NextResponse.json(
+          { error: "No pending contract found for this client" },
+          { status: 400 },
+        );
+      }
+
+      const pricing = platformPricingFromFirebasePrices(prices.prices ?? []);
+      const amountPence = resolveAnnualContractPrice(contract, pricing);
+      if (amountPence <= 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Annual platform price is not configured. Set it in Admin → Billing → Pricing.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const clientName = org.legalName || "Client";
+      const payload: ClientUpgradeRequestPayload = {
+        type: "contract_activation",
+        contractDocumentId: contract.documentId,
+        clientDocumentId: clientId,
+        clientName,
+        seatCount: contract.seatCount ?? 1,
+      };
+      const subject = buildUpgradeRequestSubject(payload);
+      const created = await billing.createAdminBillingRequest({
+        organizationId: clientId,
+        subject,
+        payload,
+        amountDuePence: amountPence,
+      });
+      const billingRequestDocumentId = created.id;
+      if (!billingRequestDocumentId) {
+        return NextResponse.json(
+          { error: "Activation billing request could not be created" },
+          { status: 500 },
+        );
+      }
+
+      const checkout = await billing.createAdminCheckout(billingRequestDocumentId);
+      void invalidateAdminPlatformServerCache();
+      return NextResponse.json({
+        data: {
+          billingRequestDocumentId,
+          checkoutSessionId: checkout.checkoutSessionId ?? checkout.stripeCheckoutSessionId,
+          checkoutUrl: checkout.checkoutUrl,
+          amountDuePence: checkout.amountDuePence ?? amountPence,
+          currency: checkout.currency ?? "gbp",
+        },
+      });
+    }
+
+    if (!isStripeCheckoutConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
+        },
+        { status: 503 }
+      );
+    }
+
+    const clientsResponse = await cmsRequest<{ data?: AdminClientRecord[] }>("/admin/clients");
     const client = (clientsResponse.data ?? []).find(
       (row) => row.documentId === clientId || row.id === clientId
     );
@@ -102,7 +210,7 @@ export async function POST(
       );
     }
 
-    const pricingResponse = await strapiRequest<{ data?: Record<string, unknown> }>(
+    const pricingResponse = await cmsRequest<{ data?: Record<string, unknown> }>(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
@@ -129,7 +237,7 @@ export async function POST(
     const subject = buildUpgradeRequestSubject(payload);
     const description = buildUpgradeRequestDescription(payload, clientName);
 
-    const billingResponse = await strapiRequest<{ data?: { documentId?: string; id?: string } }>(
+    const billingResponse = await cmsRequest<{ data?: { documentId?: string; id?: string } }>(
       "/admin/billing/requests",
       {
         method: "POST",
@@ -185,7 +293,7 @@ export async function POST(
       },
     });
 
-    await strapiRequest(
+    await cmsRequest(
       `/admin/billing/requests/${encodeURIComponent(String(billingRequestDocumentId))}/invoice-sent`,
       {
         method: "POST",

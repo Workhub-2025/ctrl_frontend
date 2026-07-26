@@ -10,9 +10,57 @@ import {
   portalClientFeaturesClientCacheKey,
   portalClientOverviewCacheKey,
   portalHmOverviewCacheKey,
+  portalHmOverviewOrgGenerationKey,
   portalHmReportCacheKey,
 } from "@/lib/portal-cache-keys";
 import { portalServerCacheDel, portalServerCacheDelMany } from "@/lib/portal-server-cache";
+import {
+  isUpstashConfigured,
+  upstashGet,
+  upstashSet,
+} from "@/lib/security/upstash-rest";
+
+const memoryOrgGeneration = new Map<string, string>();
+
+export async function readHmOverviewOrgGeneration(
+  organizationId: string,
+): Promise<string> {
+  const key = portalHmOverviewOrgGenerationKey(organizationId);
+  if (isUpstashConfigured()) {
+    return (await upstashGet(`portal:${key}`)) ?? "0";
+  }
+  return memoryOrgGeneration.get(key) ?? "0";
+}
+
+/**
+ * Bust every screen-aggregate cache for the org by rotating the generation
+ * suffix. One generation covers both the HM overview and the client dashboard
+ * because a campaign, session, seat or candidate change can move counts on
+ * either screen.
+ */
+export async function bumpHmOverviewOrgGeneration(
+  organizationId: string,
+): Promise<void> {
+  if (!organizationId) return;
+  const key = portalHmOverviewOrgGenerationKey(organizationId);
+  const next = String(Date.now());
+  memoryOrgGeneration.set(key, next);
+  if (isUpstashConfigured()) {
+    await upstashSet(`portal:${key}`, next, 86_400_000);
+  }
+}
+
+/**
+ * Firebase-path invalidation entry point for tenant mutations. The legacy
+ * Strapi path keys caches on the NextAuth `sub`, which does not exist on a
+ * Firebase session, so BFF routes bump the org generation instead.
+ */
+export async function invalidateOrganizationScreenCaches(
+  organizationId?: string | null,
+): Promise<void> {
+  if (!organizationId) return;
+  await bumpHmOverviewOrgGeneration(organizationId);
+}
 
 export async function invalidateHmOverviewServerCache(userSub?: string | null): Promise<void> {
   const sub = userSub ?? (await getServerAuthSub());
@@ -76,4 +124,18 @@ export async function invalidateCandidateWorkspaceServerCache(
   const sub = userSub ?? (await getServerAuthSub());
   if (!sub) return;
   await portalServerCacheDel(portalCandidateWorkspaceCacheKey(sub));
+}
+
+/** After assessment submit: candidate workspace + HM overview for the org. */
+export async function invalidateAfterAssessmentSubmit(input: {
+  candidateFirebaseUid: string;
+  organizationId: string;
+  assignmentId?: string | null;
+  hmFirebaseUid?: string | null;
+}): Promise<void> {
+  await invalidateCandidateWorkspaceServerCache(input.candidateFirebaseUid);
+  await bumpHmOverviewOrgGeneration(input.organizationId);
+  if (input.hmFirebaseUid && input.assignmentId) {
+    await invalidateHmReportServerCache(input.hmFirebaseUid, input.assignmentId);
+  }
 }

@@ -75,6 +75,15 @@ export function useHiringManagerPortal() {
     void loadOverview();
   }, [loadOverview]);
 
+  useEffect(() => {
+    const onFocus = () => {
+      invalidateHiringManagerOverviewCache();
+      void loadOverview(true);
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [loadOverview]);
+
   return {
     campaigns: overview.campaigns,
     campaignDetails: overview.campaignDetails,

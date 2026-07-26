@@ -161,7 +161,10 @@ export class HiringManagerPortalClientService {
       `/api/hiring-manager/sessions/${input.sessionId}/candidates/${input.candidateSessionId}/remove`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         body: JSON.stringify({ reason: input.reason }),
       }
     );
@@ -191,7 +194,10 @@ export class HiringManagerPortalClientService {
       `/api/hiring-manager/candidate-sessions/${candidateSessionId}/unlock`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
       }
     );
     await readJson<{ data?: unknown; error?: string }>(response);
@@ -207,7 +213,10 @@ export class HiringManagerPortalClientService {
       `/api/hiring-manager/candidate-sessions/${encodeURIComponent(input.candidateSessionId)}/decision`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         body: JSON.stringify({
           decision: input.decision,
           note: input.note,
@@ -274,7 +283,10 @@ export class HiringManagerPortalClientService {
       `/api/hiring-manager/candidate-sessions/${encodeURIComponent(candidateSessionId)}/resend`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
       }
     );
     await readJson<{ data?: unknown; error?: string }>(response);

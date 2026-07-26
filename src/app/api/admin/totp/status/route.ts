@@ -1,6 +1,2 @@
-import type { NextRequest } from "next/server";
-import { forwardAdminTotpRequest } from "@/lib/auth/admin-totp-bff";
-
-export async function GET(request: NextRequest) {
-  return forwardAdminTotpRequest(request, "/auth/admin/totp/status", "GET");
-}
+/** @deprecated Use /api/account/totp/status. Remove after 2026-10-31. */
+export { GET } from "@/app/api/account/totp/status/route";

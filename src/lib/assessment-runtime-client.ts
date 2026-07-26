@@ -101,7 +101,14 @@ export const AssessmentRuntimeClient = {
   },
   async submit(attemptId: string, idempotencyKey: string, submission: unknown) {
     const body = await readJson<{
-      data: { receiptId: string; status: "received"; submittedAt: string };
+      data: {
+        receiptId: string;
+        status: "received";
+        submittedAt: string;
+        assignmentId?: string;
+        organizationId?: string;
+        campaignId?: string;
+      };
     }>(
       await fetch(
         `/api/assessment-runtime/attempts/${encodeURIComponent(attemptId)}/submit`,

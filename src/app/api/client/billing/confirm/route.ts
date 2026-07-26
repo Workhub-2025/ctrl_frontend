@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
+import { getServerCmsJwt } from "@/legacy-cms/jwt";
 import { normalizeRole } from "@/lib/auth/role-model";
 import {
   fulfillBillingRequest,
@@ -11,13 +11,59 @@ import {
 import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
-import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
-
+import { getCmsApiBaseUrl, joinCmsApiPath } from "@/legacy-cms/server-url";
 import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { invalidateClientEntitlementCaches } from "@/lib/portal-cache-invalidation";
+import {
+  createFirebaseBillingApi,
+  tryRequireFirebaseBillingSession,
+} from "@/lib/firebase-billing-api";
+
 export async function POST(request: NextRequest) {
   try {
+    const firebaseAuth = await tryRequireFirebaseBillingSession();
+    if (firebaseAuth) {
+      const crossOriginResponse = rejectMutatingCrossOrigin(request);
+      if (crossOriginResponse) return crossOriginResponse;
+      const originRejected = rejectCrossOriginRequest(request);
+      if (originRejected) return originRejected;
+
+      const rateLimit = await applyRateLimit({
+        key: `billing:confirm:${extractClientIp(request)}`,
+        limit: 20,
+        windowMs: 60_000,
+      });
+      if (!rateLimit.allowed) {
+        return NextResponse.json(
+          { error: "Too many requests. Please try again later." },
+          {
+            status: 429,
+            headers: { "Retry-After": String(rateLimit.retryAfterSeconds ?? 60) },
+          },
+        );
+      }
+
+      const body = (await request.json().catch(() => ({}))) as {
+        stripeCheckoutSessionId?: string;
+        sessionId?: string;
+      };
+      const stripeCheckoutSessionId = body.stripeCheckoutSessionId ?? body.sessionId;
+      if (!stripeCheckoutSessionId) {
+        return NextResponse.json(
+          { error: "stripeCheckoutSessionId is required" },
+          { status: 400 },
+        );
+      }
+
+      const billing = createFirebaseBillingApi(
+        firebaseAuth.domainApi,
+        firebaseAuth.firebaseSessionCookie,
+      );
+      const confirmation = await billing.confirmCheckout(stripeCheckoutSessionId);
+      return NextResponse.json({ data: confirmation });
+    }
+
     await requireClientSession();
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
@@ -41,9 +87,9 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await getServerSession(authOptions);
-    const strapiJwt = await getServerStrapiJwt(request);
+    const cmsJwt = await getServerCmsJwt(request);
 
-    if (!session?.user?.id || !strapiJwt) {
+    if (!session?.user?.id || !cmsJwt) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
     if (normalizeRole(session.user.role) !== "client") {
@@ -63,11 +109,11 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const entitlementsResponse = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), "/client/entitlements"), {
+      const entitlementsResponse = await fetch(joinCmsApiPath(getCmsApiBaseUrl(), "/client/entitlements"), {
         cache: "no-store",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${strapiJwt}`,
+          Authorization: `Bearer ${cmsJwt}`,
         },
       });
       const entitlementsBody = (await entitlementsResponse.json().catch(() => null)) as {

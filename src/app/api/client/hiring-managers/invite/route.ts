@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
-import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import {
-  getClientDashboardSummary,
-  inviteHiringManagerByEmail,
-} from "@/services/client-portal.service";
 
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  defaultInvitationExpiry,
+  requireFirebaseTenancySession,
+} from "@/lib/firebase-tenancy-bff";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
+import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 
 function parseSeatNumber(value: unknown) {
   if (typeof value === "number" && Number.isInteger(value) && value > 0) return value;
@@ -19,63 +16,116 @@ function parseSeatNumber(value: unknown) {
   return Number.isInteger(numeric) && numeric > 0 ? numeric : undefined;
 }
 
+function inviteAcceptUrl(request: NextRequest, token: string, email: string) {
+  const forwardedHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const forwardedProto =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+  const envBase =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
+    "";
+  const base =
+    forwardedHost && !forwardedHost.includes("localhost")
+      ? `${forwardedProto}://${forwardedHost}`
+      : envBase || "http://localhost:3000";
+  const url = new URL("/auth/accept-invitation", base);
+  url.searchParams.set("token", token);
+  url.searchParams.set("email", email);
+  return url.toString();
+}
+
 export async function POST(request: NextRequest) {
   try {
-    await requireClientSession();
-
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    const originRejected = rejectCrossOriginRequest(request);
-    if (originRejected) {
-      return originRejected;
-    }
-
-    const session = await getServerSession(authOptions);
-    const limiter = await applyRateLimit({
-      key: `client-hm-invite:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
-      limit: 10,
-      windowMs: 60_000,
-    });
-
-    if (!limiter.allowed) {
+    const { session, context, tenancy } =
+      await requireFirebaseTenancySession("client");
+    if (!context.organizationId) {
       return NextResponse.json(
-        { error: "Too many requests. Please retry shortly." },
-        { status: 429, headers: { "retry-after": String(limiter.retryAfterSeconds) } }
+        { error: "Organization membership is required" },
+        { status: 403 },
       );
     }
+
+    const rateLimited = await rejectRateLimitedMutation(request, {
+      scope: "client:hm-invite",
+      actorId: session.user.id,
+      limit: 10,
+    });
+    if (rateLimited) return rateLimited;
 
     const body = await request.json().catch(() => ({}));
     const email = typeof body?.email === "string" ? body.email.trim() : "";
     const seatNumber = parseSeatNumber(body?.seatNumber ?? body?.seatLabel);
-    const seatLabel = typeof body?.seatLabel === "string" ? body.seatLabel : undefined;
+    const accessCodeDocumentId =
+      typeof body?.accessCodeDocumentId === "string"
+        ? body.accessCodeDocumentId
+        : undefined;
 
     if (!email) {
-      return NextResponse.json({ error: "A valid email address is required" }, { status: 400 });
-    }
-
-    const summary = await getClientDashboardSummary();
-    const clientDocumentId = summary?.client?.documentId;
-
-    if (!clientDocumentId) {
       return NextResponse.json(
-        { error: "Client account could not be resolved" },
-        { status: 403 }
+        { error: "A valid email address is required" },
+        { status: 400 },
       );
     }
 
-    const result = await inviteHiringManagerByEmail({
-      clientDocumentId,
-      email,
-      accessCodeDocumentId:
-        typeof body?.accessCodeDocumentId === "string"
-          ? body.accessCodeDocumentId
-          : undefined,
-      seatNumber,
-      seatLabel,
-    });
+    const workspace = await tenancy.getClientTeamWorkspace(context.organizationId);
+    const seatFromAccessCode = accessCodeDocumentId
+      ? workspace.seats.find(
+          (item) =>
+            item.id === accessCodeDocumentId ||
+            item.pendingInvitationId === accessCodeDocumentId,
+        )
+      : undefined;
+    const seat =
+      seatFromAccessCode ??
+      (seatNumber
+        ? workspace.seats.find((item) => item.seatNumber === seatNumber)
+        : undefined) ??
+      workspace.seats.find((item) => item.status === "available");
 
-    return NextResponse.json({ data: result }, { status: 201 });
+    if (!seat) {
+      return NextResponse.json(
+        { error: "No available hiring-manager seat for this invitation" },
+        { status: 409 },
+      );
+    }
+
+    const expiresAt = defaultInvitationExpiry();
+    const result =
+      seat.status === "available"
+        ? await tenancy.createInvitation({
+            organizationId: context.organizationId,
+            email,
+            role: "hiring_manager",
+            seatId: seat.id,
+            expiresAt,
+          })
+        : await tenancy.replaceSeatOccupant(context.organizationId, seat.id, {
+            email,
+            expiresAt,
+          });
+
+    const acceptUrl = inviteAcceptUrl(request, result.token, email);
+
+    return NextResponse.json(
+      {
+        data: {
+          documentId: result.invitationId,
+          invitedEmail: email,
+          seatNumber: seat.seatNumber,
+          seatLabel: seat.seatLabel ?? `Seat ${seat.seatNumber}`,
+          status: "reserved",
+          targetRole: "hiring_manager",
+          expiresAt,
+          inviteAcceptUrl: acceptUrl,
+          /** @deprecated Prefer inviteAcceptUrl — kept for older UI copies */
+          inviteUrl: acceptUrl,
+        },
+      },
+      { status: 201 },
+    );
   } catch (error) {
     return handleBffRouteError(error, "Hiring-manager invite could not be sent");
   }

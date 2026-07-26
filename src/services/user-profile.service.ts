@@ -5,18 +5,19 @@ export interface UserProfileResponse {
     firstName?: string;
     lastName?: string;
     email?: string;
-    organization?: string;
+    organization?: string | null;
     phone?: string;
     role?: string;
     agreeToMarketing?: boolean;
     privacyConsent?: Record<string, unknown> | null;
     equalityMonitoring?: EqualityMonitoringState | null;
+    createdAt?: string | null;
+    emailVerified?: boolean | null;
 }
 
 export type UserProfileUpdatePayload = Partial<{
     firstName: string | null;
     lastName: string | null;
-    organization: string | null;
     phone: string | null;
     agreeToMarketing: boolean | null;
     privacyConsent: Record<string, unknown> | null;

@@ -211,6 +211,9 @@ export function HiringManagerSessionCreatePanel({
             <p className="mt-2 break-all font-mono text-2xl font-bold tracking-[0.18em] text-foreground">
               {createdSession.accessValue}
             </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              This code is shown once. Afterwards, copy the join link from the session list.
+            </p>
             <Button
               type="button"
               variant="outline"
@@ -228,6 +231,19 @@ export function HiringManagerSessionCreatePanel({
               )}
               {copied ? "Copied" : "Copy access code"}
             </Button>
+            {createdSession.joinUrl ? (
+              <Button
+                type="button"
+                className="mt-2 h-9 w-full"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(createdSession.joinUrl!);
+                  setCopied(true);
+                }}
+              >
+                <Copy className="mr-2 h-4 w-4" aria-hidden="true" />
+                Copy invite / join link
+              </Button>
+            ) : null}
           </div>
         </div>
       ) : (

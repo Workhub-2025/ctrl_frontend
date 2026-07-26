@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
 
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { invalidateHmReportServerCache } from "@/lib/portal-cache-invalidation";
 export async function POST(
@@ -14,14 +13,13 @@ export async function POST(
   context: { params: Promise<{ candidateSessionId: string }> }
 ) {
   try {
-    await requireHmSession();
+    await requireFirebaseRecruitmentSession("hiring_manager");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
     const { candidateSessionId } = await context.params;
     const session = await getServerSession(authOptions);
-    const strapiJwt = await getServerStrapiJwt(request);
     const limiter = await applyRateLimit({
       key: `hm-candidate-unlock:post:${session?.user?.id ?? "anonymous"}:${extractClientIp(request)}`,
       limit: 15,
@@ -40,39 +38,18 @@ export async function POST(
       );
     }
 
-    if (!session?.user?.id || !strapiJwt) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    try {
-      const strapiRes = await fetch(
-        joinStrapiApiPath(getStrapiApiBaseUrl(), `/candidate-sessions/${encodeURIComponent(candidateSessionId)}/unlock`),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${strapiJwt}`,
-          },
-        }
-      );
-
-      if (!strapiRes.ok) {
-        const body = await strapiRes.json().catch(() => null);
-        return NextResponse.json(
-          { error: body?.error?.message || "Failed to unlock candidate" },
-          { status: strapiRes.status }
-        );
-      }
-
-      const data = await strapiRes.json();
-      void invalidateHmReportServerCache(session.user.id, candidateSessionId);
-      return NextResponse.json({ data: data.data });
-    } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : "Internal Server Error" },
-        { status: 500 }
-      );
-    }
+    void invalidateHmReportServerCache(session.user.id, candidateSessionId);
+    return NextResponse.json(
+      {
+        error:
+          "Legacy candidate-session unlock has been retired. Assessment recovery now requires an administrator to recover the specific Firebase attempt.",
+      },
+      { status: 409 },
+    );
   } catch (error) {
     return handleBffRouteError(error, "Candidate could not be unlocked");
   }

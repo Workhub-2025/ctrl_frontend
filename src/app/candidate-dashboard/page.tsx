@@ -3,6 +3,7 @@ import {
   CandidateAssessmentsLoadingSkeleton,
   CandidateDashboardContent,
 } from "@/components/dashboard/candidate-dashboard-content";
+import { CandidatePortalProvider } from "@/context/candidate-portal-provider";
 
 export const metadata = {
   title: "My Assessments",
@@ -10,8 +11,10 @@ export const metadata = {
 
 export default function CandidateDashboardOverviewPage() {
   return (
-    <Suspense fallback={<CandidateAssessmentsLoadingSkeleton />}>
-      <CandidateDashboardContent />
-    </Suspense>
+    <CandidatePortalProvider>
+      <Suspense fallback={<CandidateAssessmentsLoadingSkeleton />}>
+        <CandidateDashboardContent />
+      </Suspense>
+    </CandidatePortalProvider>
   );
 }

@@ -218,7 +218,7 @@ export function ClientUpgradeBuilder({
       />
 
       {!canRequestUpgrades ? (
-        <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground dark:border-white/5">
+        <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
           Contact CTRL support if you need help setting up your initial contract.
         </p>
       ) : null}
@@ -380,7 +380,7 @@ export function ClientUpgradeBuilder({
           )}
 
           {lineItems.length > 0 ? (
-            <div className="space-y-2 border-t border-border/50 pt-4 dark:border-white/5">
+            <div className="space-y-2 border-t border-border/50 pt-4">
               {discountPercent ? (
                 <div className="mb-3 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-500 dark:bg-emerald-500/20">
                   Founder loyalty benefit: {discountPercent}% discount applied to all upgrades.
@@ -404,7 +404,7 @@ export function ClientUpgradeBuilder({
                 ))}
               </ul>
               {monthlyRecurringTotal > 0 && oneTimeTotal > 0 ? (
-                <div className="space-y-2 border-t border-border/50 pt-3 text-sm dark:border-white/5">
+                <div className="space-y-2 border-t border-border/50 pt-3 text-sm">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-muted-foreground">Monthly recurring (Direct Debit)</span>
                     <span className="font-semibold text-foreground">
@@ -419,7 +419,7 @@ export function ClientUpgradeBuilder({
                   </div>
                 </div>
               ) : null}
-              <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3 text-sm font-semibold dark:border-white/5">
+              <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3 text-sm font-semibold">
                 <span>{monthlyRecurringTotal > 0 && oneTimeTotal === 0 ? "Monthly total" : "Total"}</span>
                 <span>
                   {formatMoney(estimatedTotal, pricing?.currency ?? "gbp")}

@@ -29,6 +29,7 @@ type AuthUserLike = {
   agreeToMarketing?: boolean | null;
   agreeToTerms?: boolean | null;
   agreeToDataPrivacyPolicy?: boolean | null;
+  totpEnabled?: boolean;
 };
 
 export function buildPublicUser(user: AuthUserLike, role: string) {
@@ -45,6 +46,7 @@ export function buildPublicUser(user: AuthUserLike, role: string) {
     agreeToMarketing: user.agreeToMarketing ?? undefined,
     agreeToTerms: user.agreeToTerms ?? undefined,
     agreeToDataPrivacyPolicy: user.agreeToDataPrivacyPolicy ?? undefined,
+    totpEnabled: user.totpEnabled === true,
   };
 }
 
@@ -68,13 +70,17 @@ type SessionUserFields = {
   firstName?: string;
   lastName?: string;
   role: string;
-  jwt: string;
+  /** Present only while a legacy Strapi-backed route still needs it. */
+  jwt?: string;
+  authProvider?: "firebase" | "strapi";
+  firebaseUid?: string;
   organization?: string;
   phone?: string;
   equalityMonitoring?: { completed?: boolean } | Record<string, unknown>;
   agreeToMarketing?: boolean;
   agreeToTerms?: boolean;
   agreeToDataPrivacyPolicy?: boolean;
+  totpEnabled?: boolean;
 };
 
 export async function encodeSessionToken(user: SessionUserFields) {
@@ -93,7 +99,9 @@ export async function encodeSessionToken(user: SessionUserFields) {
       email: user.email,
       name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
       role: user.role,
-      jwt: user.jwt,
+      ...(user.jwt ? { jwt: user.jwt } : {}),
+      authProvider: user.authProvider ?? (user.jwt ? "strapi" : "firebase"),
+      firebaseUid: user.firebaseUid,
       firstName: user.firstName,
       lastName: user.lastName,
       organization: user.organization,
@@ -102,6 +110,7 @@ export async function encodeSessionToken(user: SessionUserFields) {
       agreeToMarketing: user.agreeToMarketing,
       agreeToTerms: user.agreeToTerms,
       agreeToDataPrivacyPolicy: user.agreeToDataPrivacyPolicy,
+      totpEnabled: user.totpEnabled === true,
       lastActivity: now,
     },
   });

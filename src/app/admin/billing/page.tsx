@@ -357,7 +357,7 @@ export default function AdminBillingPage() {
 
         <TabsContent value="pricing" className="space-y-6">
           <AdminPanel className="space-y-6">
-            <div className="flex items-start gap-3 border-b border-border/50 pb-4 dark:border-white/6">
+            <div className="flex items-start gap-3 border-b border-border/50 pb-4">
               <span className={portalIconWrapLgClass}>
                 <CalendarClock className="h-5 w-5" aria-hidden="true" />
               </span>
@@ -373,7 +373,7 @@ export default function AdminBillingPage() {
                 return (
                   <div
                     key={tier}
-                    className="space-y-4 rounded-lg border border-border/60 bg-background/45 p-4 dark:border-white/8"
+                    className="space-y-4 rounded-lg border border-border/60 bg-background/45 p-4"
                   >
                     <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
                       <div className="space-y-2">
@@ -484,7 +484,7 @@ export default function AdminBillingPage() {
           </AdminPanel>
 
           <AdminPanel className="space-y-6">
-            <div className="flex items-start gap-3 border-b border-border/50 pb-4 dark:border-white/6">
+            <div className="flex items-start gap-3 border-b border-border/50 pb-4">
               <span className={portalIconWrapLgClass}>
                 <Sparkles className="h-5 w-5" aria-hidden="true" />
               </span>

@@ -1,7 +1,5 @@
-"use client";
-
-import { AdminTotpSecurityPanel } from "@/components/admin/admin-totp-security-panel";
+import { redirect } from "next/navigation";
 
 export default function AdminSecuritySettingsPage() {
-  return <AdminTotpSecurityPanel />;
+  redirect("/profile?tab=security");
 }

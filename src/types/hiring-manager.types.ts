@@ -47,6 +47,8 @@ export type HiringManagerSessionListItem = {
   candidateLimit: number;
   accessMode: string;
   accessValue: string;
+  /** Shareable login→dashboard deep link; preferred after first code reveal. */
+  joinUrl?: string | null;
   pendingInvites: Array<{
     id: string;
     email: string;

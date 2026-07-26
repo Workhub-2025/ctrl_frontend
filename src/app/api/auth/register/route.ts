@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { registerWithStrapi } from "@/lib/auth/strapi-auth-server";
+import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
+import { registerWithCms } from "@/legacy-cms/auth-server";
 import { inferDevSeededRole, normalizeRole, routeForRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import {
@@ -14,15 +15,24 @@ import {
 } from "@/lib/auth/session-config";
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 import {
-  PUBLIC_STRAPI_UNAVAILABLE_MESSAGE,
-  checkStrapiReachability,
-  logStrapiConnectivityIssue,
-} from "@/lib/strapi-connectivity";
+  PUBLIC_CMS_UNAVAILABLE_MESSAGE,
+  checkCmsReachability,
+  logCmsConnectivityIssue,
+} from "@/legacy-cms/connectivity";
 
 export async function POST(request: Request) {
   const forbidden = rejectCrossOriginRequest(request);
   if (forbidden) {
     return forbidden;
+  }
+  if (isFirebaseAuthProvider()) {
+    return NextResponse.json(
+      {
+        error:
+          "Public registration is closed. Create an account from a verified invitation.",
+      },
+      { status: 410 },
+    );
   }
 
   const body = await request.json().catch(() => null);
@@ -37,10 +47,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const strapiIssue = await checkStrapiReachability();
+  const strapiIssue = await checkCmsReachability();
   if (strapiIssue) {
-    logStrapiConnectivityIssue("auth/register", strapiIssue);
-    return NextResponse.json({ error: PUBLIC_STRAPI_UNAVAILABLE_MESSAGE }, { status: 503 });
+    logCmsConnectivityIssue("auth/register", strapiIssue);
+    return NextResponse.json({ error: PUBLIC_CMS_UNAVAILABLE_MESSAGE }, { status: 503 });
   }
 
   try {
@@ -52,7 +62,7 @@ export async function POST(request: Request) {
       userAgent: context.userAgent,
     });
 
-    const authResponse = await registerWithStrapi({
+    const authResponse = await registerWithCms({
       ...body,
       email,
       username: body?.username || email,

@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { updateSharedCandidateReviewStatus } from "@/services/client-portal.service";
-import type { ClientSharedCandidate } from "@/services/client-portal.service";
 
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { session } = await requireClientSession();
+    const { session, context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("client");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
@@ -24,14 +25,47 @@ export async function POST(
 
     const { id } = await context.params;
     const body = (await request.json().catch(() => ({}))) as {
-      reviewStatus?: ClientSharedCandidate["reviewStatus"];
+      reviewStatus?:
+        | "pending_review"
+        | "reviewed"
+        | "progressed"
+        | "hired"
+        | "rejected";
     };
 
     if (!body.reviewStatus || !["pending_review", "reviewed", "progressed", "hired", "rejected"].includes(body.reviewStatus)) {
       return NextResponse.json({ error: "reviewStatus is required" }, { status: 400 });
     }
 
-    const data = await updateSharedCandidateReviewStatus(id, body.reviewStatus);
+    const decision =
+      body.reviewStatus === "progressed"
+        ? "progress"
+        : body.reviewStatus === "hired"
+          ? "hire"
+          : body.reviewStatus === "rejected"
+            ? "reject"
+            : body.reviewStatus === "pending_review"
+              ? "reopen"
+              : "hold";
+    const result = await recruitment.addDecision(id, {
+      decision,
+      rationale: `Client review status changed to ${body.reviewStatus}`,
+      idempotencyKey: recruitmentIdempotencyKey(
+        "candidate-assignment:client-decision",
+        actor.userId,
+        {
+          id,
+          reviewStatus: body.reviewStatus,
+          browserOperationId: request.headers.get("idempotency-key") ?? id,
+        },
+      ),
+    });
+    const data = {
+      documentId: id,
+      reviewStatus: body.reviewStatus,
+      decisionId: result.decisionId,
+      reviewStatusChangedAt: new Date().toISOString(),
+    };
     return NextResponse.json({ data });
   } catch (error) {
     return handleBffRouteError(error, "Review status could not be updated");

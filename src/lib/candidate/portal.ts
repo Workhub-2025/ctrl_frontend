@@ -216,6 +216,8 @@ export function getAttentionRank(application: CandidateApplicationView) {
   const hasAvailableAssessment = application.assessments.some(
     (assessment) =>
       assessment.status !== "completed" &&
+      assessment.status !== "submitted" &&
+      assessment.status !== "scoring" &&
       assessment.status !== "not_open" &&
       assessment.status !== "locked" &&
       assessment.status !== "abandoned" &&
@@ -265,6 +267,8 @@ export function hasAvailableAssessment(application: CandidateApplicationView) {
   return application.assessments.some(
     (assessment) =>
       assessment.status !== "completed" &&
+      assessment.status !== "submitted" &&
+      assessment.status !== "scoring" &&
       assessment.status !== "not_open" &&
       assessment.status !== "locked" &&
       assessment.status !== "abandoned" &&

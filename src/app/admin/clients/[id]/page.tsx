@@ -197,12 +197,17 @@ export default function ClientDetailPage() {
       const response = await fetch("/api/admin/access-codes/client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientDocumentId: clientId }),
+        // email is used by the Firebase invitation flow and ignored on the
+        // legacy Strapi access-code path.
+        body: JSON.stringify({
+          clientDocumentId: clientId,
+          ...(inviteEmail.trim() ? { email: inviteEmail.trim().toLowerCase() } : {}),
+        }),
       });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(body.error || "Client access code could not be generated");
       setGeneratedCode({
-        code: body.data?.code ?? "",
+        code: body.data?.inviteAcceptUrl ?? body.data?.code ?? "",
         expiresAt: body.data?.expiresAt ?? "",
       });
       mutateClient(

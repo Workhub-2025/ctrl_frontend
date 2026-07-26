@@ -36,7 +36,18 @@ import { EqualityMonitoringState, IUser } from "@/types";
 import Link from "next/link";
 import { TelInput } from "@/components/ui/telInput";
 import { PortalMinimalShell } from "@/components/dashboard/portal/portal-minimal-shell";
-import { isAdminRole, routeForRole } from "@/lib/auth/role-model";
+import { AccountSecurityPanel } from "@/components/account/account-security-panel";
+import {
+  isAdminRole,
+  roleSupportsTotp,
+  routeForRole,
+} from "@/lib/auth/role-model";
+import {
+  canAccessEqualityMonitoring,
+  emailVerificationLabel,
+  formatMemberSince,
+} from "@/lib/profile-authority";
+import { PortalStatusBadge } from "@/components/dashboard/portal/portal-data-ui";
 import { useAuthStore } from "@/store/auth.store";
 import {
   AlertDialog,
@@ -84,8 +95,21 @@ export default function ProfilePage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isErasing, setIsErasing] = useState(false);
+  const [activeTab, setActiveTab] = useState("profile");
+  const [accountFacts, setAccountFacts] = useState<{
+    createdAt: string | Date | null;
+    emailVerified: boolean | null;
+  }>({ createdAt: null, emailVerified: null });
   const userIsAdmin = isAdminRole(user?.role);
+  const userIsCandidate = canAccessEqualityMonitoring(user?.role);
+  const showPortalSecurity = roleSupportsTotp(user?.role);
   const returnPath = routeForRole(user?.role);
+  const verificationLabel = emailVerificationLabel(accountFacts.emailVerified);
+
+  useEffect(() => {
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    if (requestedTab === "security") setActiveTab("security");
+  }, []);
 
   // Load fresh profile from BFF (phone, privacy, equality fields)
   useEffect(() => {
@@ -97,6 +121,10 @@ export default function ProfilePage() {
 
     const loadProfile = async () => {
       setIsProfileLoading(true);
+      if (new URLSearchParams(window.location.search).get("enroll") === "1") {
+        setIsProfileLoading(false);
+        return;
+      }
       const profile = await UserProfileService.getProfile();
       if (cancelled) return;
 
@@ -108,6 +136,10 @@ export default function ProfilePage() {
           email: profile.email || "",
           organization: profile.organization || "",
           phone: profile.phone || "",
+        });
+        setAccountFacts({
+          createdAt: profile.createdAt ?? null,
+          emailVerified: profile.emailVerified ?? null,
         });
       }
       setIsProfileLoading(false);
@@ -133,13 +165,23 @@ export default function ProfilePage() {
         organization: source.organization || "",
         phone: (source as IUser).phone || "",
       });
+      setAccountFacts((current) => {
+        if (current.createdAt !== null || current.emailVerified !== null) {
+          return current;
+        }
+        return {
+          createdAt: source.createdAt ?? null,
+          emailVerified:
+            typeof source.confirmed === "boolean" ? source.confirmed : null,
+        };
+      });
     }
   }, [userProfile, user, isProfileLoading]);
 
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      window.location.href = "/auth/register?mode=login";
+      window.location.href = "/auth/login";
     }
   }, [authLoading, isAuthenticated]);
 
@@ -155,7 +197,6 @@ export default function ProfilePage() {
       await updateProfile({
         firstName: profileData.firstName,
         lastName: profileData.lastName,
-        organization: profileData.organization,
         phone: profileData.phone,
         // Note: Email updates might require additional verification
       });
@@ -251,7 +292,7 @@ export default function ProfilePage() {
         description: result.data.message,
       });
       if (result.data.status === "completed") {
-        window.location.href = "/auth/register?mode=login";
+        window.location.href = "/auth/login";
       }
     } catch (error: unknown) {
       toast({
@@ -301,17 +342,24 @@ export default function ProfilePage() {
           </Link>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className={profileTabListClass}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className={`${profileTabListClass} ${showPortalSecurity ? "md:grid-cols-4" : ""}`}>
             <TabsTrigger value="profile" className={profileTabTriggerClass}>
               Profile Information
             </TabsTrigger>
-            <TabsTrigger value="equality" className={profileTabTriggerClass}>
-              Equality Monitoring
-            </TabsTrigger>
+            {userIsCandidate ? (
+              <TabsTrigger value="equality" className={profileTabTriggerClass}>
+                Equality Monitoring
+              </TabsTrigger>
+            ) : null}
             <TabsTrigger value="privacy" className={profileTabTriggerClass}>
               Privacy Settings
             </TabsTrigger>
+            {showPortalSecurity ? (
+              <TabsTrigger value="security" className={profileTabTriggerClass}>
+                Account Security
+              </TabsTrigger>
+            ) : null}
           </TabsList>
 
           {/* Profile Information Tab */}
@@ -378,13 +426,16 @@ export default function ProfilePage() {
                     <Input
                       id="organization"
                       value={profileData.organization}
-                      onChange={(e) =>
-                        handleInputChange("organization", e.target.value)
-                      }
-                      placeholder="Enter your organization"
-                      className="pl-10 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+                      readOnly
+                      disabled
+                      aria-describedby="organization-authority"
+                      placeholder="No organization membership"
+                      className="pl-10 rounded-xl bg-muted/35 text-muted-foreground"
                     />
                   </div>
+                  <p id="organization-authority" className="text-xs text-muted-foreground">
+                    Organization is assigned from your account membership and cannot be changed here.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -426,13 +477,23 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2.5 text-muted-foreground">
                       <Calendar className="h-[18px] w-[18px] text-primary/70" />
                       <span>
-                        Member since: <span className="font-medium text-foreground">{new Date().toLocaleDateString()}</span>
+                        Member since: <span className="font-medium text-foreground">{formatMemberSince(accountFacts.createdAt)}</span>
                       </span>
                     </div>
                     <div className="flex items-center gap-2.5 text-muted-foreground">
                       <Mail className="h-[18px] w-[18px] text-primary/70" />
                       <span className="flex items-center gap-1.5">
-                        Email verified: <span className="inline-flex items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 text-xs font-semibold">Verified</span>
+                        Email verified:{" "}
+                        <PortalStatusBadge
+                          label={verificationLabel}
+                          tone={
+                            accountFacts.emailVerified === true
+                              ? "complete"
+                              : accountFacts.emailVerified === false
+                                ? "attention"
+                                : "neutral"
+                          }
+                        />
                       </span>
                     </div>
                   </div>
@@ -479,7 +540,8 @@ export default function ProfilePage() {
           </TabsContent>
 
           {/* Equality Monitoring Tab */}
-          <TabsContent value="equality" className="focus-visible:outline-none">
+          {userIsCandidate ? (
+            <TabsContent value="equality" className="focus-visible:outline-none">
             <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
               <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
@@ -500,7 +562,8 @@ export default function ProfilePage() {
                 />
               </CardContent>
             </Card>
-          </TabsContent>
+            </TabsContent>
+          ) : null}
 
           {/* Privacy Settings Tab */}
           <TabsContent value="privacy" className="focus-visible:outline-none">
@@ -637,6 +700,12 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {showPortalSecurity ? (
+            <TabsContent value="security" className="focus-visible:outline-none">
+              <AccountSecurityPanel continueHref={returnPath} />
+            </TabsContent>
+          ) : null}
         </Tabs>
       </div>
     </PortalMinimalShell>

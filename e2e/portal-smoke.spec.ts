@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 type RoleKey = "admin" | "client" | "hm" | "candidate";
 
@@ -61,4 +62,27 @@ test("candidate can open an assessment route when seeded session data exists", a
   await page.goto(`/assessment/typing?candidateSessionDocumentId=${process.env.E2E_CANDIDATE_SESSION_ID}`);
   await expect(page).toHaveURL(/\/assessment\/typing/);
   await expect(page.getByText(/typing/i).first()).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: /open accessibility and display settings/i,
+    }),
+  ).toBeVisible();
+
+  const accessibilityScan = await new AxeBuilder({ page })
+    .include("#main-content")
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+    .analyze();
+  const blockingViolations = accessibilityScan.violations.filter(
+    ({ impact }) => impact === "critical" || impact === "serious",
+  );
+  expect(
+    blockingViolations,
+    blockingViolations
+      .map(({ id, help, nodes }) => `${id}: ${help} (${nodes.length} node(s))`)
+      .join("\n"),
+  ).toEqual([]);
+
+  const startPractice = page.getByRole("button", { name: /start practice/i });
+  if (await startPractice.isVisible()) await startPractice.click();
+  await expect(page.getByLabel("Typing response")).toBeVisible();
 });

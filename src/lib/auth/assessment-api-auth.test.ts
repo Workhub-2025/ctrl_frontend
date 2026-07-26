@@ -31,10 +31,14 @@ describe('guardAssessmentApiRoute', () => {
   });
 });
 
-const SECURE_ASSESSMENT_HANDLERS = ['getServerSession', 'handleAssessmentSubmit'];
+const SECURE_ASSESSMENT_HANDLERS = [
+  'getServerSession',
+  'handleAssessmentSubmit',
+  'requireFirebaseSession',
+];
 
 describe('assessment API route handlers', () => {
-  it('enforce session + Strapi JWT checks in every route file', () => {
+  it('enforce Firebase session or retired-submit guards in every route file', () => {
     const routeFiles = listAssessmentRouteFiles(ASSESSMENT_API_ROOT);
     expect(routeFiles.length).toBeGreaterThan(0);
 
@@ -43,8 +47,15 @@ describe('assessment API route handlers', () => {
       const usesSecureHandler = SECURE_ASSESSMENT_HANDLERS.some((marker) => content.includes(marker));
       expect(usesSecureHandler, `${file} must authenticate via session helper or handleAssessmentSubmit`).toBe(true);
 
+      if (content.includes('requireFirebaseSession')) {
+        expect(content, `${file} must not call Strapi JWT helpers`).not.toMatch(
+          /getServerCmsJwt|requireAdminApiAccess|getCmsClient/,
+        );
+        continue;
+      }
+
       if (content.includes('getServerSession')) {
-        expect(content, `${file} must call getServerStrapiJwt`).toContain('getServerStrapiJwt');
+        expect(content, `${file} must call getServerCmsJwt`).toContain('getServerCmsJwt');
         expect(content, `${file} must return 401 when unauthenticated`).toMatch(/status:\s*401/);
       }
     }

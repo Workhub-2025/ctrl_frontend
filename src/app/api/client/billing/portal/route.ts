@@ -5,10 +5,26 @@ import { getClientDashboardSummary } from "@/services/client-portal.service";
 import { getStripeClient } from "@/lib/stripe/server";
 import { getStripeAppUrl } from "@/lib/stripe/billing-checkout";
 import { resolveBillingPortalConfigurationId } from "@/lib/stripe/billing-portal";
-import { strapiServerClient } from "@/lib/strapi";
+import { cmsServerClient } from "@/legacy-cms/client";
+import {
+  createFirebaseBillingApi,
+  tryRequireFirebaseBillingSession,
+} from "@/lib/firebase-billing-api";
 
 export async function POST(request: Request) {
   try {
+    const firebaseAuth = await tryRequireFirebaseBillingSession();
+    if (firebaseAuth) {
+      const crossOriginResponse = rejectMutatingCrossOrigin(request);
+      if (crossOriginResponse) return crossOriginResponse;
+      const billing = createFirebaseBillingApi(
+        firebaseAuth.domainApi,
+        firebaseAuth.firebaseSessionCookie,
+      );
+      const portal = await billing.openPortal();
+      return NextResponse.json({ data: portal });
+    }
+
     const { session } = await requireClientSession();
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
@@ -29,7 +45,6 @@ export async function POST(request: Request) {
     const stripe = getStripeClient();
 
     if (!stripeCustomerId) {
-      // Create Stripe customer on-the-fly
       const customer = await stripe.customers.create({
         email: session.user.email ?? undefined,
         name: session.user.name ?? undefined,
@@ -39,8 +54,7 @@ export async function POST(request: Request) {
       });
       stripeCustomerId = customer.id;
 
-      // Update Client record in Strapi
-      await strapiServerClient.fetch(`/clients/${clientDocumentId}`, {
+      await cmsServerClient.fetch(`/clients/${clientDocumentId}`, {
         method: "PUT",
         body: JSON.stringify({
           data: { stripeCustomerId },

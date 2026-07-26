@@ -71,7 +71,11 @@ type ClientPortalContextValue = {
   reopenSharedCandidateStatus: (id: string, reason: string) => Promise<void>;
   generateSeatCode: (seatLabel: string) => Promise<void>;
   refreshSeatCode: (seatLabel: string, refreshCodeDocumentId: string) => Promise<void>;
-  sendSeatInvite: (seatLabel: string, email: string, accessCodeDocumentId?: string) => Promise<void>;
+  sendSeatInvite: (
+    seatLabel: string,
+    email: string,
+    accessCodeDocumentId?: string,
+  ) => Promise<{ inviteAcceptUrl: string | null }>;
   releaseHiringManager: (manager: ClientHiringManagerSeat) => Promise<any>;
   updateApprovalMode: (checked: boolean) => Promise<void>;
   updateAutoRenew: (checked: boolean) => Promise<void>;
@@ -307,7 +311,10 @@ export function useClientPortalState(): ClientPortalContextValue {
     try {
       const response = await fetch(`/api/client/campaign-approvals/${campaignId}/review`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         body: JSON.stringify({ decision }),
       });
       if (!response.ok) {
@@ -331,7 +338,10 @@ export function useClientPortalState(): ClientPortalContextValue {
     try {
       const response = await fetch(getClientSharedCandidateStatusBffPath(id), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         body: JSON.stringify({ reviewStatus }),
       });
       if (!response.ok) {
@@ -352,7 +362,10 @@ export function useClientPortalState(): ClientPortalContextValue {
     try {
       const response = await fetch(getClientSharedCandidateReopenBffPath(id), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID(),
+        },
         body: JSON.stringify({ reason }),
       });
       if (!response.ok) {
@@ -432,8 +445,15 @@ export function useClientPortalState(): ClientPortalContextValue {
         const body = await response.json().catch(() => ({}));
         throw new Error((body as { error?: string }).error || "Invite could not be sent");
       }
+      const body = (await response.json().catch(() => ({}))) as {
+        data?: { inviteAcceptUrl?: string; inviteUrl?: string };
+      };
       invalidateClientOverviewCache();
       await loadOverview(true);
+      return {
+        inviteAcceptUrl:
+          body.data?.inviteAcceptUrl ?? body.data?.inviteUrl ?? null,
+      };
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invite could not be sent");
       throw err;
@@ -550,9 +570,13 @@ export function useClientPortalState(): ClientPortalContextValue {
       if (!response.ok) {
         throw new Error((body as { error?: string }).error || "Upgrade request could not be submitted");
       }
+      const data = (body as { data: ClientUpgradeRequestRecord }).data;
       invalidatePortalCache("client:upgrade-requests");
       await loadUpgradeRequests(true);
-      return (body as { data: ClientUpgradeRequestRecord }).data;
+      if (data?.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upgrade request could not be submitted");
       throw err;

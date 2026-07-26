@@ -12,7 +12,8 @@ interface AuthState {
 
 /**
  * Cache de sesión para el perfil del usuario.
- * El servidor (Strapi) es siempre la fuente de verdad.
+ * The Firebase domain API is authoritative for newly ported screens. Legacy
+ * Strapi routes remain authoritative only until their individual cutover.
  * Este store evita re-fetches dentro de la misma sesión.
  * No usa persist — los datos de servidor no deben vivir en localStorage.
  */

@@ -256,7 +256,7 @@ export function TicketDetailDialog({
             ) : null}
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-muted/15 p-4 dark:border-white/5">
+          <div className="rounded-xl border border-border/60 bg-muted/15 p-4">
             <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
               Original message
             </p>
@@ -280,7 +280,7 @@ export function TicketDetailDialog({
                 {messages.map((message) => (
                   <li
                     key={message.documentId || message.id}
-                    className="rounded-xl border border-border/60 bg-muted/10 p-3 dark:border-white/5"
+                    className="rounded-xl border border-border/60 bg-muted/10 p-3"
                   >
                     <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                       <span className="font-semibold text-foreground">

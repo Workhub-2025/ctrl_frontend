@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BriefcaseBusiness,
-  ClipboardCheck,
-  KeyRound,
   Mail,
   RefreshCw,
   UserCheck,
   Users,
+  UserPlus,
   XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -27,16 +26,15 @@ import {
 } from "@/components/dashboard/portal/portal-ui";
 import {
   portalBadgeClass,
-  portalIconWrapClass,
   portalCardClass,
   portalCardInteractiveClass,
   portalPanelClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
-import { formatDateTime } from "@/components/dashboard/client/client-portal-utils";
 import type { SeatSlot } from "@/hooks/use-client-portal";
 import { useClientPortal } from "@/context/client-portal-provider";
 import type { ClientHiringManagerSeat } from "@/services/client-portal.service";
+import { fetchInvitationAcceptLink } from "@/lib/copy-share-links";
 import { cn } from "@/lib/utils";
 
 export function ClientHiringManagersContent() {
@@ -46,80 +44,50 @@ export function ClientHiringManagersContent() {
     previousHiringManagers,
     loading,
     error,
-    codeBusy,
     inviteBusy,
     releasingManagerId,
     loadOverview,
-    generateSeatCode,
-    refreshSeatCode,
     sendSeatInvite,
     releaseHiringManager,
   } = useClientPortal();
 
   const [selectedSeat, setSelectedSeat] = useState<SeatSlot | null>(null);
-  const [pendingSeatLabel, setPendingSeatLabel] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [lastInviteAcceptUrl, setLastInviteAcceptUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!pendingSeatLabel) return;
-    const seat = seatSlots.find(
-      (slot) =>
-        slot.label === pendingSeatLabel &&
-        slot.type === "empty" &&
-        Boolean(slot.accessCode?.code)
-    );
-    if (seat) {
-      setSelectedSeat(seat);
-      setPendingSeatLabel(null);
-    }
-  }, [pendingSeatLabel, seatSlots]);
-
-  const openEmptySeat = async (seat: Extract<SeatSlot, { type: "empty" }>) => {
-    if (seat.accessCode?.code) {
-      setSelectedSeat(seat);
-      return;
-    }
-    setPendingSeatLabel(seat.label);
-    await generateSeatCode(seat.label);
-  };
-
-  const handleRefreshCode = async (seat: Extract<SeatSlot, { type: "empty" }>) => {
-    if (!seat.accessCode?.documentId) return;
-    await refreshSeatCode(seat.label, seat.accessCode.documentId);
+  const openEmptySeat = (seat: Extract<SeatSlot, { type: "empty" }>) => {
+    setInviteEmail(seat.accessCode?.invitedEmail ?? "");
     setSelectedSeat(seat);
+    setLastInviteAcceptUrl(null);
+    if (seat.accessCode?.status === "reserved" && seat.accessCode.documentId) {
+      const invitationId = seat.accessCode.documentId;
+      void (async () => {
+        try {
+          setLastInviteAcceptUrl(await fetchInvitationAcceptLink(invitationId));
+        } catch {
+          setLastInviteAcceptUrl(null);
+        }
+      })();
+    }
   };
 
   const handleRelease = async (manager: ClientHiringManagerSeat) => {
-    const result = await releaseHiringManager(manager);
-    const releasedCode = result?.releasedSeatCode;
-    if (releasedCode) {
-      const emptySlot: SeatSlot = {
-        type: "empty",
-        label: releasedCode.seatLabel || `Seat ${releasedCode.seatNumber}`,
-        seatNumber: releasedCode.seatNumber,
-        accessCode: {
-          documentId: releasedCode.documentId,
-          code: releasedCode.code,
-          expiresAt: releasedCode.expiresAt,
-          status: releasedCode.status,
-          targetRole: releasedCode.targetRole,
-          invitedEmail: releasedCode.invitedEmail,
-          seatNumber: releasedCode.seatNumber,
-          seatLabel: releasedCode.seatLabel,
-        },
-      };
-      setSelectedSeat(emptySlot);
-    } else {
-      setSelectedSeat(null);
-    }
+    await releaseHiringManager(manager);
+    setSelectedSeat(null);
   };
 
   const handleSendInvite = async (seat: Extract<SeatSlot, { type: "empty" }>) => {
     const email = inviteEmail.trim();
     if (!email) return;
 
-    await sendSeatInvite(seat.label, email, seat.accessCode?.documentId);
-    setInviteEmail("");
+    const result = await sendSeatInvite(
+      seat.label,
+      email,
+      seat.accessCode?.status === "reserved"
+        ? seat.accessCode.documentId
+        : undefined,
+    );
+    setLastInviteAcceptUrl(result?.inviteAcceptUrl ?? null);
   };
 
   return (
@@ -145,7 +113,7 @@ export function ClientHiringManagersContent() {
           <PortalSectionHeader
             eyebrow="Seat matrix"
             title="Active seats"
-            description="Occupied seats show hiring-manager workspaces. Empty seats can issue invite codes."
+            description="Occupied seats show hiring-manager workspaces. Empty seats send an email invitation with a copyable accept link."
           />
 
           {loading && (
@@ -169,14 +137,10 @@ export function ClientHiringManagersContent() {
                 <SeatCard
                   key={seat.label}
                   seat={seat}
-                  codeBusy={codeBusy === seat.label}
                   releasingManagerId={releasingManagerId}
                   onOpenOccupied={() => setSelectedSeat(seat)}
                   onOpenEmpty={() => {
-                    if (seat.type === "empty") void openEmptySeat(seat);
-                  }}
-                  onRefreshCode={() => {
-                    if (seat.type === "empty") void handleRefreshCode(seat);
+                    if (seat.type === "empty") openEmptySeat(seat);
                   }}
                   onRelease={(manager) => void handleRelease(manager)}
                 />
@@ -185,13 +149,13 @@ export function ClientHiringManagersContent() {
           )}
 
           {!loading && previousHiringManagers.length > 0 && (
-            <div className="border-t border-border/50 pt-6 dark:border-white/5">
+            <div className="border-t border-border/50 pt-6">
               <PortalSectionHeader
                 eyebrow="History"
                 title="Previous seat occupants"
                 description="Retained for historical campaigns and candidate records only."
                 action={
-                  <Badge variant="outline" className="rounded-lg border-border bg-card text-muted-foreground dark:border-white/10">
+                  <Badge variant="outline" className="rounded-lg border-border bg-card text-muted-foreground">
                     {previousHiringManagers.length} previous
                   </Badge>
                 }
@@ -217,7 +181,7 @@ export function ClientHiringManagersContent() {
                         <p className="break-words text-sm font-semibold text-foreground">{manager.name}</p>
                         <p className="break-all text-[0.8125rem] leading-relaxed text-muted-foreground">{manager.email}</p>
                       </div>
-                      <Badge variant="outline" className="rounded-md border-slate-500/20 text-muted-foreground">
+                      <Badge variant="outline" className="rounded-md border-border text-muted-foreground">
                         Previous
                       </Badge>
                     </div>
@@ -236,18 +200,18 @@ export function ClientHiringManagersContent() {
       <PortalSidePanel
         open={Boolean(selectedSeat)}
         onOpenChange={(open) => !open && setSelectedSeat(null)}
-        eyebrow={selectedSeat?.type === "empty" ? "Seat access" : "Hiring manager"}
+        eyebrow={selectedSeat?.type === "empty" ? "Seat invite" : "Hiring manager"}
         title={
           selectedSeat?.type === "empty"
-            ? `${selectedSeat.label} access code`
+            ? `Invite to ${selectedSeat.label}`
             : selectedSeat?.manager.name ?? "Hiring manager"
         }
         description={
           selectedSeat?.type === "empty"
-            ? "Email an invite or share the access code manually with the hiring manager."
+            ? "Send an invitation email. If SMTP is gated on Preview, copy the accept link below."
             : selectedSeat?.manager.email
         }
-        icon={selectedSeat?.type === "empty" ? KeyRound : BriefcaseBusiness}
+        icon={selectedSeat?.type === "empty" ? UserPlus : BriefcaseBusiness}
         width="md"
       >
           {selectedSeat?.type === "empty" && (
@@ -277,38 +241,35 @@ export function ClientHiringManagersContent() {
                   </div>
                   {selectedSeat.accessCode?.invitedEmail ? (
                     <p className="text-xs text-muted-foreground">
-                      Last invited: {selectedSeat.accessCode.invitedEmail}
+                      Pending invite: {selectedSeat.accessCode.invitedEmail}
                     </p>
                   ) : null}
+                  {lastInviteAcceptUrl ? (
+                    <div className="space-y-2 rounded-md border border-border bg-muted/20 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Invite accept link
+                      </p>
+                      <p className="break-all font-mono text-xs text-foreground">
+                        {lastInviteAcceptUrl}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-md"
+                        onClick={() => {
+                          void navigator.clipboard.writeText(lastInviteAcceptUrl);
+                        }}
+                      >
+                        Copy invite link
+                      </Button>
+                      <p className="text-[11px] text-muted-foreground">
+                        Share this link if the invitation email is delayed. It opens the accept
+                        page with the invite token and email prefilled.
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
-
-                <div className="relative overflow-hidden rounded-md border border-border bg-muted/30 p-5">
-                  <p className="break-all text-center font-mono text-2xl font-bold tracking-widest text-primary">
-                    {selectedSeat.accessCode?.code ?? "No code available"}
-                  </p>
-                </div>
-                <div className="grid gap-1.5 text-xs text-muted-foreground">
-                  <p>
-                    Last refresh:{" "}
-                    {formatDateTime(
-                      selectedSeat.accessCode?.updatedAt ?? selectedSeat.accessCode?.createdAt
-                    )}
-                  </p>
-                  <p>Expires: {formatDateTime(selectedSeat.accessCode?.expiresAt)}</p>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2 rounded-md"
-                  onClick={() => void handleRefreshCode(selectedSeat)}
-                  disabled={!selectedSeat.accessCode || codeBusy === selectedSeat.label}
-                >
-                  <RefreshCw
-                    className={cn("h-4 w-4", codeBusy === selectedSeat.label && "motion-safe:animate-spin")}
-                    aria-hidden="true"
-                  />
-                  {codeBusy === selectedSeat.label ? "Refreshing…" : "Refresh code"}
-                </Button>
               </div>
           )}
           {selectedSeat?.type === "occupied" && (
@@ -353,10 +314,10 @@ export function ClientHiringManagersContent() {
                         <Badge variant="outline" className="rounded-md px-2 py-0.5 text-xs">
                           {campaign.campaignStatus}
                         </Badge>
-                        <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-xs dark:bg-white/5">
+                        <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-xs">
                           {campaign.approvalStatus}
                         </Badge>
-                        <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-xs dark:bg-white/5">
+                        <Badge variant="secondary" className="rounded-md px-2 py-0.5 text-xs">
                           {campaign.candidatesOnboarded} candidates
                         </Badge>
                       </div>
@@ -390,19 +351,15 @@ export function ClientHiringManagersContent() {
 
 function SeatCard({
   seat,
-  codeBusy,
   releasingManagerId,
   onOpenOccupied,
   onOpenEmpty,
-  onRefreshCode,
   onRelease,
 }: {
   seat: SeatSlot;
-  codeBusy: boolean;
   releasingManagerId: string | null;
   onOpenOccupied: () => void;
   onOpenEmpty: () => void;
-  onRefreshCode: () => void;
   onRelease: (manager: ClientHiringManagerSeat) => void;
 }) {
   return (
@@ -491,63 +448,47 @@ function SeatCard({
         <div className="flex h-full flex-col justify-between space-y-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Capacity limit
+              Open seat
             </span>
             <Badge className="rounded-lg border-border bg-card px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
               {seat.label}
             </Badge>
           </div>
 
-          {seat.accessCode ? (
+          {seat.accessCode?.invitedEmail ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className={cn("flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest", portalBadgeClass)}>
                   <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  {seat.accessCode.invitedEmail ? "Invited" : "Invite code active"}
+                  Invite pending
                 </span>
-                <span className="text-[9px] text-muted-foreground">Expires in 7 days</span>
               </div>
-              <div className={cn(portalPanelClass, "flex items-center gap-1.5 px-3 py-2 font-mono text-sm font-semibold shadow-inner")}>
-                <span className="flex-1 select-all truncate">{seat.accessCode.code}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(portalIconWrapClass, "h-6 w-6 rounded-md")}
-                  onClick={() => {
-                    if (seat.accessCode?.code) {
-                      void navigator.clipboard.writeText(seat.accessCode.code);
-                    }
-                  }}
-                  aria-label="Copy invite code"
-                  title="Copy code"
-                >
-                  <ClipboardCheck className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              <p className="break-all text-sm font-medium text-foreground">
+                {seat.accessCode.invitedEmail}
+              </p>
               <Button
                 variant="outline"
                 size="sm"
                 className="w-full rounded-xl text-xs font-semibold"
-                onClick={onRefreshCode}
-                disabled={codeBusy}
+                onClick={onOpenEmpty}
               >
-                <RefreshCw className={cn("mr-1.5 h-3 w-3", codeBusy && "motion-safe:animate-spin")} />
-                Regenerate key
+                Resend or copy link
               </Button>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-2 text-center">
-              <KeyRound className="mb-2.5 h-7 w-7 text-muted-foreground" />
-              <p className="text-xs font-semibold text-foreground">Available slot</p>
-              <p className="mt-0.5 text-[10px] text-muted-foreground">Issue key to invite a manager.</p>
+              <UserPlus className="mb-2.5 h-7 w-7 text-muted-foreground" />
+              <p className="text-xs font-semibold text-foreground">Available seat</p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
+                Invite a hiring manager by email.
+              </p>
               <Button
                 variant="outline"
                 size="sm"
                 className="mt-4 w-full rounded-xl text-xs font-semibold hover:border-primary/50"
                 onClick={onOpenEmpty}
-                disabled={codeBusy}
               >
-                {codeBusy ? "Generating…" : "Generate invite key"}
+                Invite hiring manager
               </Button>
             </div>
           )}
@@ -567,7 +508,7 @@ function MiniPanel({
   value: string | number;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card/60 p-3 shadow-inner dark:border-white/5 dark:bg-[#04070d]/50">
+    <div className="rounded-xl border border-border bg-card/60 p-3 shadow-inner">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
         <Icon className="h-4 w-4 text-primary" aria-hidden="true" />

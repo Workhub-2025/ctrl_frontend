@@ -69,7 +69,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       },
       {
         href: "/admin/tickets",
-        label: "Support tickets",
+        label: "Support",
         icon: Ticket,
         permission: "tickets.read",
         isActive: (pathname) => pathname.startsWith("/admin/tickets"),
@@ -202,7 +202,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   users: "Users",
   invite: "Invite admin",
   comms: "Operational email",
-  tickets: "Support tickets",
+  tickets: "Support",
   "erasure-requests": "Data erasure queue",
   "assessment-recovery": "Assessment recovery",
   settings: "Security",

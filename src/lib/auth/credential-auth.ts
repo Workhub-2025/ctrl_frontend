@@ -1,4 +1,4 @@
-import { loginWithStrapiCredentials } from "@/lib/auth/strapi-auth-server";
+import { loginWithStrapiCredentials } from "@/legacy-cms/auth-server";
 import { inferDevSeededRole, resolveSessionRole } from "@/lib/auth/role-model";
 import { logAuthAuditEvent } from "@/lib/security/audit-log";
 import { applyRateLimit } from "@/lib/security/api-rate-limit";
@@ -143,7 +143,7 @@ export async function authenticateCredentials(params: {
       });
       throw new CredentialAuthError(
         "UNAVAILABLE",
-        "Authentication service timed out. On Vercel, set STRAPI_API_URL=https://be.ctrl-assess.co.uk/api (not a private LAN IP)."
+        "Authentication service timed out. On Vercel, set the public legacy CMS API URL (not a private LAN IP)."
       );
     }
 

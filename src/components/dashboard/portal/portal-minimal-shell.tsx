@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import type { AccessibilitySettings } from "@/hooks/use-accessibility-settings";
+import { formatPortalUserLabel } from "@/lib/portal-user-label";
 import { cn } from "@/lib/utils";
 
 type PortalMinimalShellProps = Readonly<{
@@ -41,11 +42,7 @@ function PortalMinimalHeader({
   resetAccessibilitySettings: () => void;
 }) {
   const { user, logout } = useAuth();
-
-  const displayName =
-    user?.name ||
-    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-    "User";
+  const displayName = formatPortalUserLabel(user);
 
   return (
     <header className="sticky top-0 z-20 flex h-14 min-w-0 items-center gap-3 border-b border-border bg-background px-3 sm:px-5">
@@ -87,7 +84,7 @@ function PortalMinimalHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg border border-border/60 dark:border-white/10"
+              className="h-9 w-9 rounded-lg border border-border/60"
             >
               <User className="h-4 w-4" aria-hidden="true" />
               <span className="sr-only">Profile menu</span>

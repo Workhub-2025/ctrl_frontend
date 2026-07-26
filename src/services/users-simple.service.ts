@@ -1,10 +1,12 @@
-import { getServerStrapiClient } from '@/lib/strapi';
+import { getServerCmsClient } from "@/legacy-cms/client";
+import { isFirebaseAuthProvider } from '@/lib/auth/auth-provider';
 import { PaginatedResponse, FindUsersParams, CreateUserData, UserUpdateData, IPublicUser, UserStats, IProgresStatus } from "@/types";
 import BaseServiceHelper, { ServiceConfig } from './base-service.helper';
 
 /**
  * Simplified Users Service for Server Actions
- * Direct integration with fetch-client without unnecessary abstraction layers
+ * Direct integration with fetch-client without unnecessary abstraction layers.
+ * Firebase Preview must use `/api/user/profile` + domainApi instead.
  */
 export default class UsersService {
 
@@ -18,17 +20,29 @@ export default class UsersService {
         defaultSort: 'createdAt:desc'
     };
 
+    private static assertLegacyStrapiPath() {
+        if (isFirebaseAuthProvider()) {
+            throw new Error(
+                'UsersService is not available on the Firebase auth path. Use /api/user/profile or Firebase domain adapters.'
+            );
+        }
+    }
+
+    private static async getLegacyClient() {
+        this.assertLegacyStrapiPath();
+        return getServerCmsClient();
+    }
+
     /**
      * Get current authenticated user
      */
     static async getCurrentUser(): Promise<IPublicUser | null> {
         try {
-            const client = await getServerStrapiClient();
-            const response = await client.fetch(
+            const client = await this.getLegacyClient();
+            return await client.fetch<IPublicUser>(
                 `${this.ME_URL}?populate[0]=role&populate[1]=assessment_results`,
                 { method: 'GET' }
             );
-            return response.json() as Promise<IPublicUser>;
         } catch (error) {
             console.error('[UsersService] Error fetching current user:', error);
             return null;
@@ -47,9 +61,8 @@ export default class UsersService {
                 console.log('[UsersService] Making request to:', url);
             }
 
-            const client = await getServerStrapiClient();
-            const response = await client.fetch(url, { method: 'GET' });
-            const data = await response.json() as PaginatedResponse<IPublicUser>;
+            const client = await this.getLegacyClient();
+            const data = await client.fetch<PaginatedResponse<IPublicUser>>(url, { method: 'GET' });
 
             if (process.env.NODE_ENV === 'development') {
                 console.log('[UsersService] Response received:', {
@@ -123,12 +136,11 @@ export default class UsersService {
      */
     static async getUserById(id: string | number): Promise<IPublicUser | null> {
         try {
-            const client = await getServerStrapiClient();
-            const response = await client.fetch(
+            const client = await this.getLegacyClient();
+            return await client.fetch<IPublicUser>(
                 `/${this.COLLECTION}/${id}?populate[0]=role&populate[1]=assessment_results`,
                 { method: 'GET' }
             );
-            return response.json() as Promise<IPublicUser>;
         } catch (error) {
             console.error('[UsersService] Error fetching user by ID:', error);
             return null;
@@ -140,12 +152,11 @@ export default class UsersService {
      */
     static async getUserByEmail(email: string): Promise<IPublicUser | null> {
         try {
-            const client = await getServerStrapiClient();
-            const response = await client.fetch(
+            const client = await this.getLegacyClient();
+            const data = await client.fetch<PaginatedResponse<IPublicUser>>(
                 `/${this.COLLECTION}?filters[email][$eq]=${encodeURIComponent(email)}&populate[0]=role&populate[1]=assessment_results`,
                 { method: 'GET' }
             );
-            const data = await response.json() as PaginatedResponse<IPublicUser>;
             return data.data?.[0] ?? null;
         } catch (error) {
             console.error('[UsersService] Error fetching user by email:', error);
@@ -158,7 +169,7 @@ export default class UsersService {
      */
     static async createUser(userData: CreateUserData): Promise<IPublicUser | null> {
         try {
-            const client = await getServerStrapiClient();
+            const client = await this.getLegacyClient();
             return client.collection(this.COLLECTION).create(userData as Record<string, unknown>) as unknown as Promise<IPublicUser>;
         } catch (error) {
             console.error('[UsersService] Error creating user:', error);
@@ -171,7 +182,7 @@ export default class UsersService {
      */
     static async updateUser(id: string | number, data: UserUpdateData): Promise<IPublicUser | null> {
         try {
-            const client = await getServerStrapiClient();
+            const client = await this.getLegacyClient();
             return client.collection(this.COLLECTION).update(String(id), data as Record<string, unknown>) as unknown as Promise<IPublicUser>;
         } catch (error) {
             console.error('[UsersService] Error updating user:', error);
@@ -198,7 +209,7 @@ export default class UsersService {
      */
     static async deleteUser(id: string | number): Promise<boolean> {
         try {
-            const client = await getServerStrapiClient();
+            const client = await this.getLegacyClient();
             await client.collection(this.COLLECTION).delete(String(id));
             return true;
         } catch (error) {
@@ -212,9 +223,8 @@ export default class UsersService {
      */
     static async getUserStats(): Promise<UserStats | null> {
         try {
-            const client = await getServerStrapiClient();
-            const response = await client.fetch(this.STATS_URL, { method: 'GET' });
-            const data = await response.json() as { data: UserStats };
+            const client = await this.getLegacyClient();
+            const data = await client.fetch<{ data: UserStats }>(this.STATS_URL, { method: 'GET' });
             return data.data;
         } catch (error) {
             console.error('[UsersService] Error fetching user stats:', error);
@@ -227,9 +237,8 @@ export default class UsersService {
      */
     static async getRoles(): Promise<any[] | null> {
         try {
-            const client = await getServerStrapiClient();
-            const response = await client.fetch(this.ROLES_URL, { method: 'GET' });
-            const data = await response.json() as { roles: any[] } | any[];
+            const client = await this.getLegacyClient();
+            const data = await client.fetch<{ roles: any[] } | any[]>(this.ROLES_URL, { method: 'GET' });
 
             if (data && typeof data === 'object' && 'roles' in data) {
                 return data.roles;

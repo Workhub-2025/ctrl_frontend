@@ -1,0 +1,23 @@
+import "server-only";
+
+import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
+import { createFirebaseSupportApi } from "@/lib/firebase-support-api";
+
+export async function requireFirebaseSupportSession(
+  ...roles: Array<"candidate" | "hiring_manager" | "client" | "admin">
+) {
+  const auth = await requireFirebaseSession(...roles);
+  const context = await auth.domainApi.getUserContext(auth.firebaseSessionCookie);
+  if (context.accountStatus !== "active") {
+    throw new Error("Account is not active");
+  }
+  return {
+    ...auth,
+    context,
+    support: createFirebaseSupportApi(auth.domainApi, auth.firebaseSessionCookie),
+  };
+}
+
+export function isFirebaseAuthProvider(): boolean {
+  return process.env.NEXT_PUBLIC_AUTH_PROVIDER === "firebase";
+}

@@ -1,8 +1,14 @@
 import type { NextConfig } from 'next';
 
+if (process.env.CLOUDFLARE_PAGES === 'true') {
+  throw new Error(
+    'CLOUDFLARE_PAGES static export is unsupported: CTRL requires NextAuth, route handlers, middleware and the server-side BFF. Deploy with a supported Next.js server adapter instead.',
+  );
+}
+
 const nextConfig: NextConfig = {
   /* config options here */
-  output: process.env.CLOUDFLARE_PAGES ? 'export' : 'standalone',
+  output: 'standalone',
   async headers() {
     const securityHeaders = [
       { key: 'X-Frame-Options', value: 'DENY' },
@@ -30,10 +36,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // trailingSlash is only needed for Cloudflare Pages static export.
-  // In standalone mode it redirects Route Handlers (e.g. /api/auth/session → 308)
+  // A trailing slash redirects Route Handlers (e.g. /api/auth/session → 308),
   // which breaks next-auth client-side session fetches.
-  trailingSlash: process.env.CLOUDFLARE_PAGES === 'true',
+  trailingSlash: false,
 
   experimental: {
     serverActions: {
@@ -41,8 +46,6 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    // Disable image optimization for static export on Cloudflare Pages
-    unoptimized: process.env.CLOUDFLARE_PAGES === 'true',
     remotePatterns: [
       {
         protocol: 'https',

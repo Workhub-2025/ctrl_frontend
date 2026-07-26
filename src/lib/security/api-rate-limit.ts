@@ -18,6 +18,31 @@ const toSeconds = (ms: number) => Math.max(1, Math.ceil(ms / 1000));
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
+/** Keep Preview rehearsal buckets from colliding with production counters. */
+function rateLimitEnvPrefix(): string {
+  return process.env.VERCEL_ENV || process.env.NODE_ENV || "local";
+}
+
+function scopedRateLimitKey(key: string): string {
+  return `${rateLimitEnvPrefix()}:${key}`;
+}
+
+/**
+ * Invitation / Firebase account provisioning is abuse-sensitive but also easy
+ * to burn through during Preview rehearsal (retries, shared NAT, failed
+ * backend round-trips). Production stays tight; Preview is loftier.
+ */
+export function accountProvisioningRateLimit(): {
+  limit: number;
+  windowMs: number;
+} {
+  const windowMs = 60 * 60 * 1_000;
+  if (process.env.VERCEL_ENV === "preview") {
+    return { limit: 30, windowMs };
+  }
+  return { limit: 10, windowMs };
+}
+
 export const extractClientIp = (request: Request): string => {
   const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
@@ -169,7 +194,12 @@ export const applyRateLimit = async ({
   key: string;
   limit: number;
   windowMs: number;
-}): Promise<RateLimitResult> => applyUpstashRateLimit({ key, limit, windowMs });
+}): Promise<RateLimitResult> =>
+  applyUpstashRateLimit({
+    key: scopedRateLimitKey(key),
+    limit,
+    windowMs,
+  });
 
 /**
  * Shared mutation limiter for BFF routes. Use the authenticated user id when it

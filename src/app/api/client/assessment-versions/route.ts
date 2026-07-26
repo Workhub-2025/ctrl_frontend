@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server";
-import { getAdminAssessmentVersions } from "@/services/admin-platform.service";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { getClientEntitlementsBundle } from "@/services/client-upgrade.service";
 
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
+import {
+  FIREBASE_ASSESSMENT_SLUGS,
+  loadFirebaseAssessmentVersionCatalog,
+} from "@/lib/firebase-assessment-catalogue-api";
+
 export async function GET() {
   try {
-    await requireClientSession();
-    const strapiJwt = await getServerStrapiJwt();
-    if (!strapiJwt) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-    const entitlements = await getClientEntitlementsBundle();
-    const slugs = [
-      ...(entitlements?.defaultAssessments ?? []).map((assessment) => assessment.slug),
-      ...(entitlements?.additionalAssessments ?? []).map((assessment) => assessment.slug),
-    ];
-    const data = await getAdminAssessmentVersions(slugs, strapiJwt).catch(() => ({}));
+    const auth = await requireFirebaseSession("client");
+    const data = await loadFirebaseAssessmentVersionCatalog(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
+      FIREBASE_ASSESSMENT_SLUGS,
+    );
     return NextResponse.json({ data });
   } catch (error) {
-    return handleBffRouteError(error, "Assessment versions could not be loaded");
+    return handleBffRouteError(
+      error,
+      "Assessment versions could not be loaded",
+    );
   }
 }

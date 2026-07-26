@@ -57,10 +57,10 @@ const DEFAULT_LABELS: TicketHistoryLabels = {
   sectionDescriptionOpen: (count) =>
     `${count} open item${count !== 1 ? "s" : ""} — tap any row for full details.`,
   sectionDescriptionEmpty:
-    "All your IT tickets and hiring team messages in one place.",
+    "All your support requests and hiring team messages in one place.",
   emptyTitle: "No tickets yet",
   emptyDescription:
-    "IT tickets and hiring team messages appear here with their status and any resolution notes.",
+    "Support requests and hiring team messages appear here with their status and any resolution notes.",
   historyLabel: "History",
   contactBadgeLabel: "Hiring team",
 };

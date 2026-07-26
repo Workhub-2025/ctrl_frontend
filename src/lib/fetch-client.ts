@@ -1,32 +1,32 @@
 import { getClientSession } from "@/lib/auth/client-session";
-
-const normalizeApiBaseUrl = (value: string | undefined, fallback: string) => {
-    const trimmed = value?.trim() || fallback;
-    const withoutTrailingSlash = trimmed.replace(/\/+$/, '');
-
-    return withoutTrailingSlash.endsWith('/api')
-        ? withoutTrailingSlash
-        : `${withoutTrailingSlash}/api`;
-};
+import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
+import { getCmsApiBaseUrl } from "@/legacy-cms/server-url";
 
 const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, '');
 
-// Use different URLs for client-side and server-side requests
+/**
+ * Base URL for relative fetchClient calls.
+ * Firebase Preview: same-origin only (callers pass `/api/...` BFF paths).
+ * Legacy production: browser uses quarantined CMS proxy; server uses CMS base URL.
+ */
 const getBaseUrl = () => {
-    if (typeof window === 'undefined') {
-        return normalizeApiBaseUrl(
-            process.env.STRAPI_API_URL || process.env.NEXT_PUBLIC_STRAPI_API_URL,
-            'http://strapi:1337/api'
-        );
+    if (isFirebaseAuthProvider()) {
+        return '';
     }
 
-    // Browser calls go through the Next.js BFF — Strapi JWT stays server-side.
-    return '/api/strapi-proxy';
+    if (typeof window === 'undefined') {
+        return getCmsApiBaseUrl();
+    }
+
+    return '/api/legacy-cms-proxy';
 };
 
 const joinUrl = (baseUrl: string, url: string) => {
     if (url.startsWith('http')) {
         return url;
+    }
+    if (!baseUrl) {
+        return url.startsWith('/') ? url : `/${stripLeadingSlashes(url)}`;
     }
 
     return `${baseUrl}/${stripLeadingSlashes(url)}`;

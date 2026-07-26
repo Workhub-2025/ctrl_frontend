@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
-import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
-import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
+import {
+  addOneDayToDate,
+  normalizeContractTierForLock,
+  resolveEffectiveAnnualPlatformPence,
+} from "@/lib/billing/contract-pricing-lock";
 import {
   addOneYearToDate,
   buildUpgradeRequestDescription,
@@ -10,11 +16,13 @@ import {
   type ClientUpgradeRequestPayload,
 } from "@/lib/client/entitlements";
 import {
-  addOneDayToDate,
-  normalizeContractTierForLock,
-  resolveEffectiveAnnualPlatformPence,
-} from "@/lib/billing/contract-pricing-lock";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+  createFirebaseBillingApi,
+  platformPricingFromFirebasePrices,
+} from "@/lib/firebase-billing-api";
+import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
+import { buildStripeSubscriptionCheckoutData } from "@/lib/stripe/subscription-checkout";
+import { getStripeClient, isStripeCheckoutConfigured } from "@/lib/stripe/server";
+import { cmsRequest } from "@/legacy-cms/request";
 
 type AdminClientRecord = {
   documentId?: string;
@@ -31,6 +39,19 @@ type AdminClientRecord = {
   }>;
 };
 
+type FirebaseContractRow = {
+  documentId: string;
+  id: string;
+  tier: string;
+  status: string;
+  seatCount: number;
+  startDate: string | null;
+  endDate: string | null;
+  paymentStatus: string;
+  lockedAnnualPlatformPence: number | null;
+  pricingLockedUntil: string | null;
+};
+
 function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 }
@@ -42,11 +63,36 @@ function getActiveContract(client: AdminClientRecord) {
   );
 }
 
+function getFirebaseActiveContract(contracts: FirebaseContractRow[]) {
+  const today = new Date().toISOString().split("T")[0];
+  return (
+    contracts.find(
+      (contract) =>
+        contract.status === "active" &&
+        contract.paymentStatus === "paid" &&
+        contract.endDate &&
+        contract.endDate.slice(0, 10) >= today,
+    ) ??
+    contracts.find(
+      (contract) =>
+        contract.status === "active" &&
+        contract.endDate &&
+        contract.endDate.slice(0, 10) >= today,
+    ) ??
+    null
+  );
+}
+
 function resolveAnnualContractPrice(
-  contract: NonNullable<AdminClientRecord["contracts"]>[number],
+  contract: {
+    tier?: string;
+    endDate?: string | null;
+    lockedAnnualPlatformPence?: number | null;
+    pricingLockedUntil?: string | null;
+  },
   pricing: Record<string, unknown>
 ) {
-  const renewalStartDate = contract.endDate ? addOneDayToDate(contract.endDate) : undefined;
+  const renewalStartDate = contract.endDate ? addOneDayToDate(contract.endDate.slice(0, 10)) : undefined;
   const tier = normalizeContractTierForLock(contract.tier);
   const effective = resolveEffectiveAnnualPlatformPence(contract, pricing, renewalStartDate);
   if (effective && effective > 0) {
@@ -69,26 +115,99 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ clientId: string }> }
 ) {
-  const auth = await requireAdminApiAccess('billing.write');
+  const auth = await requireAdminDualAccess("billing.write");
   if ("error" in auth) {
     return auth.error;
-  }
-  const strapiJwt = auth.strapiJwt;
-
-  if (!isStripeCheckoutConfigured()) {
-    return NextResponse.json(
-      {
-        error:
-          "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
-      },
-      { status: 503 }
-    );
   }
 
   const { clientId } = await params;
 
   try {
-    const clientsResponse = await strapiRequest<{ data?: AdminClientRecord[] }>("/admin/clients");
+    if (isFirebaseAdminAuth(auth)) {
+      const billing = createFirebaseBillingApi(
+        auth.domainApi,
+        auth.firebaseSessionCookie,
+      );
+      const [org, contracts, prices] = await Promise.all([
+        auth.domainApi.request<{ id: string; legalName: string }>({
+          path: `/v1/organizations/${encodeURIComponent(clientId)}`,
+          firebaseSessionCookie: auth.firebaseSessionCookie,
+        }),
+        billing.listOrganizationContracts(clientId),
+        billing.listPrices(),
+      ]);
+      const contract = getFirebaseActiveContract(contracts);
+      if (!contract?.documentId || !contract.endDate) {
+        return NextResponse.json(
+          { error: "No active contract found for this client" },
+          { status: 400 },
+        );
+      }
+
+      const pricing = platformPricingFromFirebasePrices(prices.prices ?? []);
+      const amountPence = resolveAnnualContractPrice(contract, pricing);
+      if (amountPence <= 0) {
+        return NextResponse.json(
+          {
+            error:
+              "Annual platform price is not configured. Set it in Admin → Billing → Pricing.",
+          },
+          { status: 400 },
+        );
+      }
+
+      const clientName = org.legalName || "Client";
+      const currentEndDate = contract.endDate.slice(0, 10);
+      const newEndDate = addOneYearToDate(currentEndDate);
+      const payload: ClientUpgradeRequestPayload = {
+        type: "contract_extension",
+        contractDocumentId: contract.documentId,
+        clientDocumentId: clientId,
+        clientName,
+        currentEndDate,
+        newEndDate,
+        seatCount: contract.seatCount ?? 1,
+      };
+      const subject = buildUpgradeRequestSubject(payload);
+      const created = await billing.createAdminBillingRequest({
+        organizationId: clientId,
+        subject,
+        payload,
+        amountDuePence: amountPence,
+      });
+      const billingRequestDocumentId = created.id;
+      if (!billingRequestDocumentId) {
+        return NextResponse.json(
+          { error: "Renewal billing request could not be created" },
+          { status: 500 },
+        );
+      }
+
+      const checkout = await billing.createAdminCheckout(billingRequestDocumentId);
+      void invalidateAdminPlatformServerCache();
+      return NextResponse.json({
+        data: {
+          billingRequestDocumentId,
+          checkoutSessionId: checkout.checkoutSessionId ?? checkout.stripeCheckoutSessionId,
+          checkoutUrl: checkout.checkoutUrl,
+          amountDuePence: checkout.amountDuePence ?? amountPence,
+          currency: checkout.currency ?? "gbp",
+          newEndDate,
+        },
+      });
+    }
+
+    if (!isStripeCheckoutConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
+        },
+        { status: 503 }
+      );
+    }
+
+    const clientsResponse = await cmsRequest<{ data?: AdminClientRecord[] }>("/admin/clients");
     const client = (clientsResponse.data ?? []).find(
       (row) => row.documentId === clientId || row.id === clientId
     );
@@ -101,7 +220,7 @@ export async function POST(
       return NextResponse.json({ error: "No active contract found for this client" }, { status: 400 });
     }
 
-    const pricingResponse = await strapiRequest<{ data?: Record<string, unknown> }>(
+    const pricingResponse = await cmsRequest<{ data?: Record<string, unknown> }>(
       "/platform-pricing"
     );
     const pricing = pricingResponse.data ?? {};
@@ -131,7 +250,7 @@ export async function POST(
     const subject = buildUpgradeRequestSubject(payload);
     const description = buildUpgradeRequestDescription(payload, clientName);
 
-    const billingResponse = await strapiRequest<{ data?: { documentId?: string; id?: string } }>(
+    const billingResponse = await cmsRequest<{ data?: { documentId?: string; id?: string } }>(
       "/admin/billing/requests",
       {
         method: "POST",
@@ -184,7 +303,7 @@ export async function POST(
       },
     });
 
-    await strapiRequest(
+    await cmsRequest(
       `/admin/billing/requests/${encodeURIComponent(String(billingRequestDocumentId))}/invoice-sent`,
       {
         method: "POST",

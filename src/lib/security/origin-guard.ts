@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const getExpectedOrigin = () => {
+const getConfiguredOrigin = () => {
   const base = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   try {
     return new URL(base).origin;
@@ -9,13 +9,22 @@ const getExpectedOrigin = () => {
   }
 };
 
+const getExpectedOrigins = () => {
+  const origins = new Set([getConfiguredOrigin()]);
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  if (vercelUrl && !vercelUrl.includes("/") && !vercelUrl.includes("*")) {
+    origins.add(`https://${vercelUrl}`);
+  }
+  return origins;
+};
+
 const matchesExpectedOrigin = (value: string | null) => {
   if (!value) {
     return false;
   }
 
   try {
-    return new URL(value).origin === getExpectedOrigin();
+    return getExpectedOrigins().has(new URL(value).origin);
   } catch {
     return false;
   }

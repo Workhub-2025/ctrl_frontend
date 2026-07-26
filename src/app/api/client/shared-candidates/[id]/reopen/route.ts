@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 import { containsHtmlMarkup, sanitisePlainText } from "@/lib/security/input-sanitization";
-import { reopenSharedCandidateReviewStatus } from "@/services/client-portal.service";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
 export async function POST(
   request: NextRequest,
@@ -12,7 +13,8 @@ export async function POST(
   try {
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
-    const { session } = await requireClientSession();
+    const { session, context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("client");
     const rateLimited = await rejectRateLimitedMutation(request, {
       scope: "client:candidate-outcome:reopen",
       actorId: session.user.id,
@@ -29,7 +31,25 @@ export async function POST(
       return NextResponse.json({ error: "A reopen reason is required" }, { status: 400 });
     }
     const { id } = await context.params;
-    const data = await reopenSharedCandidateReviewStatus(id, reason);
+    const result = await recruitment.addDecision(id, {
+      decision: "reopen",
+      rationale: reason,
+      idempotencyKey: recruitmentIdempotencyKey(
+        "candidate-assignment:client-reopen",
+        actor.userId,
+        {
+          id,
+          reason,
+          browserOperationId: request.headers.get("idempotency-key") ?? id,
+        },
+      ),
+    });
+    const data = {
+      documentId: id,
+      reviewStatus: "pending_review",
+      decisionId: result.decisionId,
+      reviewStatusChangedAt: new Date().toISOString(),
+    };
     return NextResponse.json({ data });
   } catch (error) {
     return handleBffRouteError(error, "Candidate outcome could not be reopened");

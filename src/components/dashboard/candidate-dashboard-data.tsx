@@ -37,12 +37,12 @@ export const candidateGuidanceItems: Array<{
   },
   {
     title: "I lost my access code",
-    body: "Access codes are single-use and tied to your campaign. If you've misplaced yours or it has already been used, raise an IT ticket below and the team can reissue one for you.",
+    body: "Access codes are single-use and tied to your campaign. If you've misplaced yours or it has already been used, raise a support request below and the team can reissue one for you.",
     icon: RefreshCw,
   },
   {
     title: "Something broke mid-assessment",
-    body: "If the page freezes or you're disconnected, don't refresh repeatedly. Raise an IT ticket describing what happened — your progress is saved securely and support can help you resume.",
+    body: "If the page freezes or you're disconnected, don't refresh repeatedly. Raise a support request describing what happened — your progress is saved securely and support can help you resume.",
     icon: LifeBuoy,
   },
   {

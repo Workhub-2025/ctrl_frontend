@@ -25,7 +25,7 @@ export function ClientMessagesContent() {
   return (
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <ClientPageHeader
-        title="Messages"
+        title="Support"
         description="Raise a support ticket or message CTRL Support. All messages are tracked so you can follow up."
       />
 
@@ -43,7 +43,7 @@ export function ClientMessagesContent() {
                 <Ticket className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1.5">
-                <PortalEyebrow>Technical support</PortalEyebrow>
+                <PortalEyebrow>Support request</PortalEyebrow>
                 <h2 className="font-display text-lg font-semibold">Raise a support ticket</h2>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Login problems, broken pages, access issues, or platform errors — our support

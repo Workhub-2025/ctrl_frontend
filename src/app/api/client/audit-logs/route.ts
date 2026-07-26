@@ -1,12 +1,28 @@
 import { NextResponse } from "next/server";
-import { getClientAuditLogs } from "@/services/client-logs.service";
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  createFirebaseClientPortalApi,
+  toClientAuditLogs,
+} from "@/lib/firebase-client-portal-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
 export async function GET() {
   try {
-    await requireClientSession();
-    const data = await getClientAuditLogs();
-    return NextResponse.json({ data });
+    const { context, domainApi, firebaseSessionCookie } =
+      await requireFirebaseRecruitmentSession("client");
+    if (!context.organizationId) {
+      return NextResponse.json(
+        { error: "Organization membership is required" },
+        { status: 403 },
+      );
+    }
+    const portal = createFirebaseClientPortalApi(
+      domainApi,
+      firebaseSessionCookie,
+    );
+    const events = await portal.listAuditEvents(context.organizationId);
+    return NextResponse.json({ data: toClientAuditLogs(events) });
   } catch (error) {
     return handleBffRouteError(error, "Audit logs could not be loaded");
   }

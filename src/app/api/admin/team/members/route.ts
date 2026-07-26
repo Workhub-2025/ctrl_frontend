@@ -1,36 +1,105 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import { joinStrapiApiPath, getStrapiApiBaseUrl } from "@/lib/strapi-server";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
+import { mapFirebaseRolesToPlatformRoles } from "@/lib/firebase-admin-tenancy-bff";
+import { joinCmsApiPath, getCmsApiBaseUrl } from "@/legacy-cms/server-url";
 
 export async function POST(request: Request) {
-  const auth = await requireAdminApiAccess("admins.manage");
-  if ("error" in auth) {
-    return auth.error;
-  }
+  const auth = await requireAdminDualAccess("admins.manage");
+  if ("error" in auth) return auth.error;
 
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const response = await fetch(joinStrapiApiPath(getStrapiApiBaseUrl(), "/admin/team/members"), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${auth.strapiJwt}`,
+  if (isFirebaseAdminAuth(auth)) {
+    const firstName =
+      typeof (body as { firstName?: unknown }).firstName === "string"
+        ? (body as { firstName: string }).firstName.trim()
+        : "";
+    const lastName =
+      typeof (body as { lastName?: unknown }).lastName === "string"
+        ? (body as { lastName: string }).lastName.trim()
+        : "";
+    const email =
+      typeof (body as { email?: unknown }).email === "string"
+        ? (body as { email: string }).email.trim().toLowerCase()
+        : "";
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    }
+    const displayName = [firstName, lastName].filter(Boolean).join(" ").trim() || email;
+    const roles = mapFirebaseRolesToPlatformRoles({
+      isSuperAdmin: Boolean((body as { isSuperAdmin?: unknown }).isSuperAdmin),
+      roleTypes: Array.isArray((body as { roleTypes?: unknown }).roleTypes)
+        ? ((body as { roleTypes: string[] }).roleTypes)
+        : [],
+    });
+    if (roles.length === 0) {
+      return NextResponse.json(
+        { error: "Select at least one role or enable full super admin access." },
+        { status: 400 },
+      );
+    }
+
+    const baseUrl = process.env.NEXTAUTH_URL?.replace(/\/$/, "");
+    const continueUrl = baseUrl ? `${baseUrl}/auth/login` : undefined;
+    const result = await auth.domainApi.request<{
+      userId: string;
+      email: string;
+      roles: string[];
+      alreadyRegistered: boolean;
+      passwordResetLink: string;
+    }>({
+      path: "/v1/platform-administrators",
+      method: "POST",
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+      body: {
+        email,
+        displayName,
+        roles,
+        ...(continueUrl ? { continueUrl } : {}),
+      },
+    });
+
+    return NextResponse.json(
+      {
+        data: {
+          email: result.email,
+          userId: result.userId,
+          roles: result.roles,
+          passwordResetLink: result.passwordResetLink,
+        },
+      },
+      { status: result.alreadyRegistered ? 200 : 201 },
+    );
+  }
+
+  const response = await fetch(
+    joinCmsApiPath(getCmsApiBaseUrl(), "/admin/team/members"),
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.cmsJwt}`,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
     },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+  );
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     return NextResponse.json(
       {
         error:
-          (payload as { error?: { message?: string } }).error?.message
-          ?? (payload as { error?: string }).error
-          ?? "Admin user could not be created",
+          (payload as { error?: { message?: string } }).error?.message ??
+          (payload as { error?: string }).error ??
+          "Admin user could not be created",
       },
       { status: response.status },
     );

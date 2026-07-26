@@ -1,18 +1,22 @@
 import { NextResponse } from "next/server";
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
-import { getClientCampaignWorkspace } from "@/services/client-portal.service";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  requireFirebaseRecruitmentSession,
+  toClientCampaignWorkspace,
+} from "@/lib/firebase-recruitment-bff";
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ campaignId: string }> }
 ) {
   try {
-    await requireClientSession();
+    const { recruitment } = await requireFirebaseRecruitmentSession("client");
     const { campaignId } = await context.params;
-    const data = await getClientCampaignWorkspace(campaignId);
-    if (!data) {
-      return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
-    }
+    const [workspace, assignments] = await Promise.all([
+      recruitment.getCampaign(campaignId),
+      recruitment.listAssignments(campaignId),
+    ]);
+    const data = toClientCampaignWorkspace(workspace, assignments.items);
     return NextResponse.json({ data });
   } catch (error) {
     return handleBffRouteError(error, "Campaign could not be loaded");

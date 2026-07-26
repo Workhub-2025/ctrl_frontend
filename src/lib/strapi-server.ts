@@ -1,25 +1,15 @@
 import "server-only";
 
-export const stripTrailingSlashes = (value: string) => value.replace(/\/+$/, "");
-export const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, "");
-
-/** Server-side Strapi REST base URL (includes `/api`). */
-export function getStrapiApiBaseUrl() {
-  const baseUrl = stripTrailingSlashes(
-    process.env.STRAPI_API_URL ??
-      process.env.NEXT_PUBLIC_STRAPI_API_URL ??
-      "http://localhost:1337/api"
-  );
-
-  return baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
-}
-
-/** Strapi host root without `/api` — for public media URLs. */
-export function getStrapiPublicBaseUrl() {
-  const apiBase = getStrapiApiBaseUrl();
-  return stripTrailingSlashes(apiBase.replace(/\/api$/, ""));
-}
-
-export function joinStrapiApiPath(baseUrl: string, path: string) {
-  return `${stripTrailingSlashes(baseUrl)}/${stripLeadingSlashes(path)}`;
-}
+/**
+ * Compatibility shim — prefer `@/legacy-cms/server-url`.
+ */
+export {
+  stripTrailingSlashes,
+  stripLeadingSlashes,
+  getCmsApiBaseUrl,
+  getCmsPublicBaseUrl,
+  joinCmsApiPath,
+  getStrapiApiBaseUrl,
+  joinStrapiApiPath,
+  getStrapiPublicBaseUrl,
+} from "@/legacy-cms/server-url";

@@ -1,25 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import { forwardAssessmentAttemptRequest } from "@/lib/assessment-attempt-server";
+import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
+import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireAdminApiAccess('recovery.write');
-    if ("error" in auth) {
-      return auth.error;
-    }
-    const strapiJwt = auth.strapiJwt;const payload = await request.json().catch(() => ({}));
-    const { response, body } = await forwardAssessmentAttemptRequest(
-      "/candidate-assessment-attempts/admin/force-abandon",
-      { method: "POST", body: JSON.stringify(payload) },
-      strapiJwt
-    );
-
-    return NextResponse.json(body, { status: response.status });
+    const crossOriginResponse = rejectMutatingCrossOrigin(request);
+    if (crossOriginResponse) return crossOriginResponse;
+    const auth = await requireFirebaseSession("admin");
+    const payload = await request.json().catch(() => ({}));
+    const data = await auth.domainApi.request<unknown>({
+      path: "/v1/assessment-runtime/admin/attempts/force-abandon",
+      method: "POST",
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+      body: payload,
+    });
+    return NextResponse.json({ data });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Force abandon failed" },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Force abandon failed");
   }
 }

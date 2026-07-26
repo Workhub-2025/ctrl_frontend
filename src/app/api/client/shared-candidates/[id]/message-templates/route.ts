@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
-import { getSharedCandidateMessageTemplates } from "@/services/client-portal.service";
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import { createFirebaseClientPortalApi } from "@/lib/firebase-client-portal-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
 export async function GET(
   _request: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    await requireClientSession();
+    const auth = await requireFirebaseRecruitmentSession("client");
     const { id } = await context.params;
-    const data = await getSharedCandidateMessageTemplates(id);
+    const portal = createFirebaseClientPortalApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
+    );
+    const data = await portal.getOutreachTemplates(id);
     return NextResponse.json({ data });
   } catch (error) {
     return handleBffRouteError(error, "Message templates could not be loaded");

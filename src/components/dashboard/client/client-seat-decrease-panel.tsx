@@ -121,7 +121,7 @@ export function ClientSeatDecreasePanel({
       />
 
       {!canRequestUpgrades ? (
-        <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground dark:border-white/5">
+        <p className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
           Contact CTRL support if you need help reducing your seat allocation.
         </p>
       ) : null}

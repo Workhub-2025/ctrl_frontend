@@ -3,16 +3,18 @@ import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { deleteHiringManagerAssessmentSession } from "@/services/hiring-manager-campaigns.service";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    await requireHmSession();
+    const { context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
@@ -42,7 +44,16 @@ export async function DELETE(
     }
 
     try {
-      await deleteHiringManagerAssessmentSession(sessionId);
+      const current = await recruitment.getSession(sessionId);
+      await recruitment.transitionSession(sessionId, {
+        expectedVersion: current.version,
+        status: "cancelled",
+        idempotencyKey: recruitmentIdempotencyKey(
+          "session:cancel",
+          actor.userId,
+          { sessionId, version: current.version },
+        ),
+      });
       return NextResponse.json({ data: { deleted: true } });
     } catch (error) {
       return NextResponse.json(

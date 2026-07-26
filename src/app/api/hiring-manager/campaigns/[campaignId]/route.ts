@@ -3,10 +3,11 @@ import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
 import {
-  deleteHiringManagerCampaign,
-  getHiringManagerCampaignDetail,
-} from "@/services/hiring-manager-campaigns.service";
+  requireFirebaseRecruitmentSession,
+  toHiringManagerCampaignDetail,
+} from "@/lib/firebase-recruitment-bff";
 
 async function enforceRateLimit(request: NextRequest, action: "get" | "delete") {
   const session = await getServerSession(authOptions);
@@ -24,26 +25,25 @@ async function enforceRateLimit(request: NextRequest, action: "get" | "delete") 
   );
 }
 
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 export async function GET(
   request: NextRequest,
   context: { params: Promise<any> }
 ) {
   try {
-    await requireHmSession();
+    const { recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
 
     const limited = await enforceRateLimit(request, "get");
     if (limited) return limited;
 
     const { campaignId } = await context.params;
-    const result = await getHiringManagerCampaignDetail(campaignId);
-
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 404 });
-    }
-
-    return NextResponse.json({ data: result.campaign });
+    const workspace = await recruitment.getCampaign(campaignId);
+    const assignments = await recruitment.listAssignments(campaignId);
+    return NextResponse.json({
+      data: toHiringManagerCampaignDetail(workspace, assignments.items),
+    });
   } catch (error) {
     return handleBffRouteError(error, "Campaign could not be loaded");
   }
@@ -54,7 +54,8 @@ export async function DELETE(
   context: { params: Promise<any> }
 ) {
   try {
-    await requireHmSession();
+    const { context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
@@ -62,21 +63,17 @@ export async function DELETE(
     const limited = await enforceRateLimit(request, "delete");
     if (limited) return limited;
 
-    try {
-      const { campaignId } = await context.params;
-      await deleteHiringManagerCampaign(campaignId);
-      return NextResponse.json({ data: { deleted: true } });
-    } catch (error) {
-      return NextResponse.json(
-        {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Campaign could not be deleted",
-        },
-        { status: 500 }
-      );
-    }
+    const { campaignId } = await context.params;
+    const workspace = await recruitment.getCampaign(campaignId);
+    await recruitment.archiveCampaign(campaignId, {
+      expectedVersion: workspace.campaign.version,
+      idempotencyKey: recruitmentIdempotencyKey(
+        "campaign:archive",
+        actor.userId,
+        { campaignId, version: workspace.campaign.version },
+      ),
+    });
+    return NextResponse.json({ data: { deleted: true } });
   } catch (error) {
     return handleBffRouteError(error, "Campaign could not be loaded");
   }

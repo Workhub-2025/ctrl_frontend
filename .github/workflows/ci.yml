@@ -17,13 +17,15 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
+      - run: npm run check:source-hygiene
+      - run: npm run check:migration-gate
       - run: npm run audit:security
       - run: npm run typecheck
       - run: npm run test
       - run: npm run lint
       - run: npm run build
 
-  api-contract-e2e:
+  browser-e2e:
     runs-on: ubuntu-latest
     env:
       E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
@@ -36,6 +38,9 @@ jobs:
       E2E_HM_EMAIL: ${{ secrets.E2E_HM_EMAIL }}
       E2E_HM_PASSWORD: ${{ secrets.E2E_HM_PASSWORD }}
       E2E_ASSESSMENT_SESSION_ID: ${{ secrets.E2E_ASSESSMENT_SESSION_ID }}
+      E2E_CANDIDATE_EMAIL: ${{ secrets.E2E_CANDIDATE_EMAIL }}
+      E2E_CANDIDATE_PASSWORD: ${{ secrets.E2E_CANDIDATE_PASSWORD }}
+      E2E_CANDIDATE_SESSION_ID: ${{ secrets.E2E_CANDIDATE_SESSION_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,5 +50,5 @@ jobs:
           cache-dependency-path: package-lock.json
       - run: npm ci
       - run: npx playwright install chromium --with-deps
-      - run: npm run test:e2e -- e2e/api-contract.spec.ts
+      - run: npm run test:e2e
         continue-on-error: false

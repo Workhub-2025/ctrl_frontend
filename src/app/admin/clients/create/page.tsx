@@ -563,7 +563,7 @@ export default function CreateClientPage() {
                 ? `${form.assessmentDataRetentionMonths} month assessment retention`
                 : "Retention period required"}
             </div>
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-3.5 transition-colors hover:bg-muted/30 dark:border-white/8">
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/60 bg-muted/20 p-3.5 transition-colors hover:bg-muted/30">
               <Checkbox
                 checked={form.issueAccessCode}
                 onCheckedChange={(checked) => updateField("issueAccessCode", checked === true)}

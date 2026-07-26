@@ -41,6 +41,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
 import type { AccessibilitySettings } from "@/hooks/use-accessibility-settings";
+import { formatPortalUserLabel } from "@/lib/portal-user-label";
 import { cn } from "@/lib/utils";
 
 const PortalBreadcrumbDetailContext = createContext<((label: string | null) => void) | null>(null);
@@ -91,10 +92,7 @@ function PortalHeaderBar({
 }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
-  const displayName =
-    user?.name ||
-    `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-    "User";
+  const displayName = formatPortalUserLabel(user);
 
   return (
     <header className="sticky top-0 z-20 flex min-h-16 min-w-0 items-center gap-2 border-b border-border bg-card px-3 sm:gap-3 sm:px-5">

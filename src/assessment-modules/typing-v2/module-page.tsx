@@ -146,8 +146,10 @@ function TimedTypingWorkspace({
       <div className="p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <label htmlFor={`${passage.id}-entry`} className="text-sm font-semibold">Type directly through the passage</label>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">Keep a steady rhythm. You can use Backspace to correct your latest entry.</p>
+            <label htmlFor={`${passage.id}-entry`} className="text-sm font-semibold">Typing response</label>
+            <p id={`${passage.id}-instructions`} className="mt-1 text-xs leading-5 text-muted-foreground">
+              Type the target passage directly into this field. Keep a steady rhythm; you can use Backspace to correct your latest entry.
+            </p>
           </div>
           <div className="flex gap-4 text-xs text-muted-foreground" aria-hidden="true">
             <span className="tabular-nums">{state.typedText.length} entered</span>
@@ -184,8 +186,7 @@ function TimedTypingWorkspace({
             value={state.typedText}
             disabled={state.complete}
             spellCheck={false}
-            aria-describedby={`${passage.id}-source`}
-            aria-label="Typing entry. Type directly through the displayed passage."
+            aria-describedby={`${passage.id}-instructions ${passage.id}-source`}
             autoCapitalize="off"
             autoCorrect="off"
             onSelect={(event) => setCaretPosition(event.currentTarget.selectionStart)}
@@ -223,11 +224,19 @@ function CountdownBreak({ seconds, nextLabel, onComplete }: { seconds: number; n
     onComplete();
   }, [onComplete, remaining]);
   return (
-    <section className="border border-border bg-card p-8 text-center" aria-live="polite">
+    <section className="border border-border bg-card p-8 text-center">
+      <p className="sr-only" role="status">
+        Controlled transition. {nextLabel} opens in {seconds} seconds.
+      </p>
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Controlled transition</p>
-      <p className="mt-4 font-mono text-5xl font-semibold tabular-nums">{remaining}</p>
+      <p
+        className="mt-4 font-mono text-5xl font-semibold tabular-nums"
+        aria-label={`${remaining} seconds remaining`}
+      >
+        {remaining}
+      </p>
       <h1 className="mt-4 text-xl font-semibold">{nextLabel} opens automatically</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Rest your hands and remain in fullscreen.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Rest your hands and remain on this assessment page.</p>
     </section>
   );
 }

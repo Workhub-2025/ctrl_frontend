@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/fetch-client';
+import { isFirebaseAuthProvider } from '@/lib/auth/auth-provider';
 import { IUser, StrapiAuthResponse, LoginUserData } from '@/types/users.types';
 import { IRole } from '@/types/role.types';
 
@@ -41,6 +42,15 @@ export class AuthAPI {
     static async forgotPassword(email: string): Promise<{ ok: boolean }> {
         try {
             const normalizedEmail = email.trim().toLowerCase();
+            if (isFirebaseAuthProvider()) {
+                const { sendFirebasePasswordRecovery } = await import(
+                    '@/lib/firebase-totp-browser'
+                );
+                // Keep the response non-enumerating even if Firebase reports
+                // that an address is not registered.
+                await sendFirebasePasswordRecovery(normalizedEmail).catch(() => undefined);
+                return { ok: true };
+            }
 
             const response = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
@@ -71,6 +81,17 @@ export class AuthAPI {
         passwordConfirmation: string
     ): Promise<{ ok: boolean }> {
         try {
+            if (isFirebaseAuthProvider()) {
+                if (password !== passwordConfirmation) {
+                    throw new Error('Passwords do not match');
+                }
+                const { confirmFirebasePasswordRecovery } = await import(
+                    '@/lib/firebase-totp-browser'
+                );
+                await confirmFirebasePasswordRecovery(code, password);
+                return { ok: true };
+            }
+
             const response = await fetch('/api/auth/reset-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

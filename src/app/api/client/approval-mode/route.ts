@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  getClientDashboardSummary,
-  updateClientCampaignApprovalMode,
-} from "@/services/client-portal.service";
 
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import { createFirebaseClientPortalApi } from "@/lib/firebase-client-portal-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 type ApprovalMode = "auto_approve" | "require_approval";
@@ -23,10 +21,17 @@ function resolveApprovalMode(body: Record<string, unknown>): ApprovalMode | null
 
 export async function POST(request: Request) {
   try {
-    await requireClientSession();
-
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
+
+    const { context, domainApi, firebaseSessionCookie } =
+      await requireFirebaseRecruitmentSession("client");
+    if (!context.organizationId) {
+      return NextResponse.json(
+        { error: "Organization membership is required" },
+        { status: 403 },
+      );
+    }
 
     const body = await request.json().catch(() => ({}));
     const mode = resolveApprovalMode(body as Record<string, unknown>);
@@ -34,22 +39,25 @@ export async function POST(request: Request) {
     if (!mode) {
       return NextResponse.json(
         { error: "mode must be auto_approve or require_approval" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const summary = await getClientDashboardSummary();
-    const clientDocumentId = summary?.client?.documentId;
-
-    if (!clientDocumentId) {
-      return NextResponse.json(
-        { error: "Client account could not be resolved" },
-        { status: 400 }
-      );
-    }
-
-    const client = await updateClientCampaignApprovalMode(clientDocumentId, mode);
-    return NextResponse.json({ data: client });
+    const portal = createFirebaseClientPortalApi(
+      domainApi,
+      firebaseSessionCookie,
+    );
+    const organization = await portal.updateApprovalMode(
+      context.organizationId,
+      mode,
+    );
+    return NextResponse.json({
+      data: {
+        documentId: organization.id,
+        name: organization.legalName,
+        campaignApprovalMode: organization.campaignApprovalMode,
+      },
+    });
   } catch (error) {
     return handleBffRouteError(error, "Approval mode could not be updated");
   }

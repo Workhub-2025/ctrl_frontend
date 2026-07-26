@@ -65,6 +65,8 @@ export type LaunchEnvelope<TContent = unknown> = {
   deliveryVariant: string;
   extraTimeMinutes: number;
   progressRevision: number;
+  /** Candidate-owned, module-validated state from the latest saved revision. */
+  progressData: unknown | null;
 };
 
 export type AssessmentRenderer = {

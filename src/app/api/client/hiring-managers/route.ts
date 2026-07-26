@@ -1,28 +1,23 @@
 import { NextResponse } from "next/server";
-import {
-  getClientDashboardSummary,
-  getClientHiringManagers,
-} from "@/services/client-portal.service";
 
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  requireFirebaseTenancySession,
+  toClientHiringManagers,
+} from "@/lib/firebase-tenancy-bff";
+
 export async function GET() {
   try {
-    await requireClientSession();
-
-    const summary = await getClientDashboardSummary();
-    const clientDocumentId = summary?.client?.documentId;
-
-    if (!clientDocumentId) {
+    const { context, tenancy } = await requireFirebaseTenancySession("client");
+    if (!context.organizationId) {
       return NextResponse.json(
-        { error: "Client account could not be resolved" },
-        { status: 403 }
+        { error: "Organization membership is required" },
+        { status: 403 },
       );
     }
-
-    const managers = await getClientHiringManagers(clientDocumentId);
-    return NextResponse.json({ data: managers });
+    const workspace = await tenancy.getClientTeamWorkspace(context.organizationId);
+    return NextResponse.json({ data: toClientHiringManagers(workspace) });
   } catch (error) {
     return handleBffRouteError(error, "Hiring managers could not be loaded");
-  
   }
 }

@@ -1,24 +1,38 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
+import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
 import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { cmsRequest } from "@/legacy-cms/request";
 
 export async function POST(
   _request: Request,
-  { params }: { params: Promise<{ requestId: string }> }
+  { params }: { params: Promise<{ requestId: string }> },
 ) {
-  const auth = await requireAdminApiAccess('billing.write');
+  const auth = await requireAdminDualAccess("billing.write");
   if ("error" in auth) {
     return auth.error;
   }
-  const strapiJwt = auth.strapiJwt;
 
   const { requestId } = await params;
 
   try {
-    const response = await strapiRequest<{ data?: Record<string, unknown> }>(
+    if (isFirebaseAdminAuth(auth)) {
+      const billing = createFirebaseBillingApi(
+        auth.domainApi,
+        auth.firebaseSessionCookie,
+      );
+      const data = await billing.processSeatDecrease(requestId);
+      void invalidateAdminPlatformServerCache();
+      return NextResponse.json({ data });
+    }
+
+    const response = await cmsRequest<{ data?: Record<string, unknown> }>(
       `/admin/billing/requests/${encodeURIComponent(requestId)}/process-seat-decrease`,
-      { method: "POST" }
+      { method: "POST" },
     );
 
     void invalidateAdminPlatformServerCache();
@@ -26,8 +40,13 @@ export async function POST(
     return NextResponse.json({ data: response.data ?? null });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Seat reduction could not be processed" },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Seat reduction could not be processed",
+      },
+      { status: 500 },
     );
   }
 }

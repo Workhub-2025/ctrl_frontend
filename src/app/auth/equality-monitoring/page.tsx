@@ -20,7 +20,7 @@ function EqualityMonitoringContent() {
   useEffect(() => {
     if (!authLoading) {
       if (!isAuthenticated) {
-        router.push('/auth/register');
+        router.push('/auth/login');
         return;
       }
       

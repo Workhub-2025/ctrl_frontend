@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getStrapiApiBaseUrl, joinStrapiApiPath } from "@/lib/strapi-server";
+import { getCmsApiBaseUrl, joinCmsApiPath } from "@/legacy-cms/server-url";
 import { resolveEffectiveRetentionMonths } from "@/lib/legal/retention-format";
 import { ContractTier, ContractStatus } from "@/types";
 import {
@@ -25,7 +25,7 @@ class AdminStrapiRequestError extends Error {
   }
 }
 
-export function getStrapiErrorStatus(error: unknown) {
+export function getCmsErrorStatus(error: unknown) {
   if (error instanceof AdminStrapiRequestError) return error.status;
   return null;
 }
@@ -38,7 +38,7 @@ async function adminStrapiRequest<T>(
   if (!authToken) throw new Error("Authenticated admin session is required");
 
   const response = await fetch(
-    joinStrapiApiPath(getStrapiApiBaseUrl(), path),
+    joinCmsApiPath(getCmsApiBaseUrl(), path),
     {
       cache: "no-store",
       ...init,

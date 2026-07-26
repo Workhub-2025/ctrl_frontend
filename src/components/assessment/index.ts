@@ -1,2 +1,2 @@
 export { AssessmentGameShell } from './shared';
-export { SecureAssessmentShell } from './security';
+export { SecureAssessmentShell, SecurePreflightModal } from './security';

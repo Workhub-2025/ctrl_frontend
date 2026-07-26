@@ -45,7 +45,7 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
       },
       {
         href: "/hiring-manager-dashboard/support",
-        label: "Help & support",
+        label: "Support",
         icon: Headset,
         isActive: (p) => p.startsWith("/hiring-manager-dashboard/support"),
       },
@@ -56,10 +56,12 @@ export const HM_NAV_GROUPS: HmNavGroup[] = [
     collapsible: true,
     items: [
       {
-        href: "/hiring-manager-dashboard/activity-logs",
-        label: "Activity logs",
+        href: "/hiring-manager-dashboard/activity",
+        label: "Activity",
         icon: ScrollText,
-        isActive: (p) => p.startsWith("/hiring-manager-dashboard/activity-logs"),
+        isActive: (p) =>
+          p.startsWith("/hiring-manager-dashboard/activity") ||
+          p.startsWith("/hiring-manager-dashboard/activity-logs"),
       },
     ],
   },
@@ -95,8 +97,9 @@ export function getHmBreadcrumbs(pathname: string) {
     candidates: "Candidates",
     assessments: "Assessments",
     "assessment-recovery": "Assessment recovery",
-    support: "Help & support",
-    "activity-logs": "Activity logs",
+    support: "Support",
+    activity: "Activity",
+    "activity-logs": "Activity",
     create: "Create campaign",
     edit: "Edit campaign",
   };

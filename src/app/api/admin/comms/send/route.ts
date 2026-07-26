@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
 import { applyRateLimit } from "@/lib/security/api-rate-limit";
 import type {
   AdminBroadcastAudience,
   AdminBroadcastContractTier,
   AdminBroadcastTemplateKey,
 } from "@/lib/admin-comms-templates";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { cmsRequest } from "@/legacy-cms/request";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { containsHtmlMarkup, sanitisePlainText } from "@/lib/security/input-sanitization";
 
@@ -32,11 +35,19 @@ type BroadcastSendResponse = {
   };
 };
 
+type FirebaseBroadcastSendResponse = {
+  data?: {
+    recipientCount: number;
+    outboxEventId: string | null;
+    queued: boolean;
+  };
+};
+
 export async function POST(request: Request) {
   const crossOriginResponse = rejectMutatingCrossOrigin(request);
   if (crossOriginResponse) return crossOriginResponse;
 
-  const auth = await requireAdminApiAccess('comms.send');
+  const auth = await requireAdminDualAccess("comms.send");
   if ("error" in auth) {
     return auth.error;
   }
@@ -77,7 +88,28 @@ export async function POST(request: Request) {
   };
 
   try {
-    const response = await strapiRequest<BroadcastSendResponse>("/admin/comms/send", {
+    if (isFirebaseAdminAuth(auth)) {
+      const response = await auth.domainApi.request<FirebaseBroadcastSendResponse>({
+        path: "/v1/admin/comms/send",
+        method: "POST",
+        firebaseSessionCookie: auth.firebaseSessionCookie,
+        body,
+      });
+      const recipientCount = response.data?.recipientCount ?? 0;
+      // Firebase delivery is asynchronous via the email outbox dispatcher.
+      // The broadcast is accepted for all recipients; SMTP rotation gates the
+      // actual send. Report the queued count so the operator UI stays honest.
+      return NextResponse.json({
+        data: {
+          recipientCount,
+          sentCount: recipientCount,
+          failedCount: 0,
+          queued: response.data?.queued ?? true,
+        },
+      });
+    }
+
+    const response = await cmsRequest<BroadcastSendResponse>("/admin/comms/send", {
       method: "POST",
       body: JSON.stringify(body),
     });

@@ -1,21 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  createSharedCandidateNote,
-  listSharedCandidateNotes,
-} from "@/services/shared-candidate-notes.service";
-import { requireClientSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 import { containsHtmlMarkup, sanitisePlainText } from "@/lib/security/input-sanitization";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { strapiJwt } = await requireClientSession();
+    const { recruitment } = await requireFirebaseRecruitmentSession("client");
     const { id } = await context.params;
-    const data = await listSharedCandidateNotes(id, strapiJwt);
+    const detail = await recruitment.getAssignment(id);
+    const data = detail.notes.map((note) => ({
+      documentId: note.id,
+      content: note.content,
+      authorRole:
+        note.actorPortalRole === "client" ? "client" : "hiring_manager",
+      visibility:
+        note.visibility === "internal"
+          ? "client_only"
+          : "hiring_manager_and_client",
+      createdAt: note.createdAt,
+      authorName: note.actorUserId,
+      canDelete: false,
+    }));
     return NextResponse.json({ data });
   } catch (error) {
     return handleBffRouteError(error, "Notes could not be loaded");
@@ -30,7 +41,8 @@ export async function POST(
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    const { session, strapiJwt } = await requireClientSession();
+    const { session, context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("client");
     const rateLimited = await rejectRateLimitedMutation(request, {
       scope: "client:candidate-note:create",
       actorId: session.user.id,
@@ -49,7 +61,24 @@ export async function POST(
       return NextResponse.json({ error: "content is required" }, { status: 400 });
     }
 
-    const data = await createSharedCandidateNote(id, content, strapiJwt);
+    const result = await recruitment.addNote(id, {
+      visibility: "organization",
+      content,
+      idempotencyKey: recruitmentIdempotencyKey(
+        "candidate-assignment:note",
+        actor.userId,
+        { id, content },
+      ),
+    });
+    const data = {
+      documentId: result.noteId,
+      content,
+      authorRole: "client",
+      visibility: "hiring_manager_and_client",
+      authorName: actor.userId,
+      createdAt: new Date().toISOString(),
+      canDelete: false,
+    };
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
     return handleBffRouteError(error, "Note could not be saved");

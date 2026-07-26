@@ -4,7 +4,10 @@ import {
   getCampaignWeights,
   normalizeResolvedStackSummary,
 } from "@/lib/hiring-manager/campaign-stack-score";
-import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
+import {
+  computeDecisionReadyCompositeScore,
+  computeWeightedCompositeScore,
+} from "@/lib/hiring-manager/composite-score";
 
 describe("buildCompositeStackEntries", () => {
   const assessmentStack = ["Typing", "Situational judgement", "Call simulation"];
@@ -62,6 +65,28 @@ describe("buildCompositeStackEntries", () => {
     ]);
 
     expect(score).toBe(50);
+  });
+
+  it("calculates a deterministic decision-ready equal-weight composite", () => {
+    const stack = buildCompositeStackEntries({
+      assessmentStack,
+    });
+    const score = computeDecisionReadyCompositeScore(stack, [
+      { assessment: "Typing", numericScore: 80, assessmentStatus: "completed" },
+      {
+        assessment: "Situational judgement",
+        numericScore: 70,
+        assessmentStatus: "completed",
+      },
+      {
+        assessment: "Call simulation",
+        numericScore: 90,
+        assessmentStatus: "completed",
+      },
+    ]);
+
+    expect(stack.map((entry) => entry.weight)).toEqual([34, 33, 33]);
+    expect(score).toBe(80);
   });
 });
 

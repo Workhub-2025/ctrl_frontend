@@ -9,6 +9,7 @@ import {
 const desktop = {
   userAgent:
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15",
+  platform: "MacIntel",
   mobileClientHint: false,
   maxTouchPoints: 0,
   coarsePointer: false,
@@ -34,19 +35,27 @@ describe("assessment device eligibility", () => {
     });
   });
 
-  it("blocks an iPad using desktop-style user agent detection", () => {
+  it("blocks an iPad using a desktop-style user agent", () => {
     expect(
       assessAssessmentDevice({ ...desktop, maxTouchPoints: 5 }),
-    ).toMatchObject({ supported: false, kind: "touch" });
+    ).toMatchObject({ supported: false, kind: "mobile" });
   });
 
-  it("blocks a touchscreen laptop and coarse-pointer device", () => {
+  it("allows a touch-capable laptop when the user agent is not mobile", () => {
     expect(
-      assessAssessmentDevice({ ...desktop, maxTouchPoints: 10 }),
-    ).toMatchObject({ supported: false, kind: "touch" });
+      assessAssessmentDevice({
+        ...desktop,
+        platform: "Win32",
+        maxTouchPoints: 10,
+      }),
+    ).toMatchObject({ supported: true, kind: "desktop-keyboard" });
     expect(
-      assessAssessmentDevice({ ...desktop, anyCoarsePointer: true }),
-    ).toMatchObject({ supported: false, kind: "touch" });
+      assessAssessmentDevice({
+        ...desktop,
+        platform: "Linux x86_64",
+        anyCoarsePointer: true,
+      }),
+    ).toMatchObject({ supported: true, kind: "desktop-keyboard" });
   });
 
   it("requires the desktop attestation and rejects mobile request headers", () => {

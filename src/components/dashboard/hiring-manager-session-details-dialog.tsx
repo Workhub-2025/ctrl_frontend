@@ -54,6 +54,10 @@ import {
   isCandidateJoined,
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
+import {
+  copySessionJoinLink,
+  isSecureAccessCodePlaceholder,
+} from "@/lib/copy-share-links";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 import type { HiringManagerResolvedStackSummary } from "@/types/hiring-manager.types";
 
@@ -406,16 +410,35 @@ function HiringManagerSessionWorkspace({
                     <button
                       type="button"
                       onClick={() => {
-                        void navigator.clipboard?.writeText(session.accessValue);
-                        setCopiedCode(true);
-                        setTimeout(() => setCopiedCode(false), 2000);
+                        void (async () => {
+                          try {
+                            if (isSecureAccessCodePlaceholder(session.accessValue)) {
+                              await copySessionJoinLink(session.id);
+                            } else {
+                              await navigator.clipboard?.writeText(session.accessValue);
+                            }
+                            setCopiedCode(true);
+                            setTimeout(() => setCopiedCode(false), 2000);
+                          } catch {
+                            /* ignore */
+                          }
+                        })();
                       }}
                       className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      aria-label="Copy session code"
+                      aria-label={
+                        isSecureAccessCodePlaceholder(session.accessValue)
+                          ? "Copy join link"
+                          : "Copy session code"
+                      }
                     >
                       {copiedCode ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
                   </div>
+                  {isSecureAccessCodePlaceholder(session.accessValue) ? (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Plaintext code is only shown at creation. Use Copy to share the join link.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className={portalStatTileClass}>
@@ -708,6 +731,7 @@ function HiringManagerSessionWorkspace({
                               <div className="flex h-4 w-full gap-1.5">
                                 {finalDisplayList.map((item, idx) => {
                                   const isCompleted = item.status === "completed";
+                                  const isSubmitted = item.status === "submitted";
                                   const isAbandoned = item.status === "abandoned";
                                   const scoreVal = item.result?.numericScore ?? 0;
                                   return (
@@ -717,14 +741,14 @@ function HiringManagerSessionWorkspace({
                                         "relative h-full flex-1 overflow-hidden rounded-full border bg-muted/20 dark:bg-white/[0.04]",
                                         portalPanelBorderClass
                                       )}
-                                      title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? `${scoreVal}%` : "Pending"}`}
+                                      title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? `${scoreVal}%` : isSubmitted ? "Submitted" : "Pending"}`}
                                     >
                                       <div
                                         className={cn(
                                           "h-full rounded-full transition-[width] duration-500",
                                           isAbandoned ? "bg-muted-foreground/40" : "bg-primary"
                                         )}
-                                        style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreVal : 0}%` }}
+                                        style={{ width: `${isAbandoned ? 100 : isCompleted ? scoreVal : isSubmitted ? 100 : 0}%` }}
                                       />
                                     </div>
                                   );
@@ -733,12 +757,19 @@ function HiringManagerSessionWorkspace({
                               <div className="flex gap-1.5">
                                 {finalDisplayList.map((item, idx) => {
                                   const isCompleted = item.status === "completed";
+                                  const isSubmitted = item.status === "submitted";
                                   const isAbandoned = item.status === "abandoned";
                                   const scoreVal = item.result?.numericScore ?? 0;
                                   return (
                                     <div key={idx} className="flex flex-1 flex-col items-center gap-0.5">
                                       <span className="w-full truncate text-center text-sm font-semibold tabular-nums text-foreground">
-                                        {isAbandoned ? "Abd." : isCompleted ? `${scoreVal}%` : "—"}
+                                        {isAbandoned
+                                          ? "Abd."
+                                          : isCompleted
+                                            ? `${scoreVal}%`
+                                            : isSubmitted
+                                              ? "Sub."
+                                              : "—"}
                                       </span>
                                       <span className="w-full truncate text-center text-xs font-medium leading-tight text-muted-foreground">
                                         {item.name.split(" ")[0]}
@@ -825,11 +856,10 @@ export function CandidateResultsDialog({
 function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCount?: number) {
   const completed = new Set(
     candidate.results
-      .filter(
-        (result) =>
-          !isAbandonedAssessmentResult(result.assessmentStatus)
-          && (result.completedAt || result.numericScore !== null)
-      )
+      .filter((result) => {
+        const status = getHmAssessmentItemStatus(result);
+        return status === "completed" || status === "submitted";
+      })
       .map((r) => r.id || r.assessment)
   ).size;
   const total = Math.max(expectedAssessmentCount || 0, candidate.results.length, completed, 1);

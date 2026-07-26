@@ -1,39 +1,32 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth/next-auth-options";
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import { getAdminAssessmentVersions } from "@/services/admin-platform.service";
 
-const ASSESSMENT_SLUGS = ["call-simulation", "prioritisation", "situational-judgement", "short-term-memory", "typing"];
-
-function resolveRequestedSlugs(request: NextRequest) {
-  const slug = request.nextUrl.searchParams.get("slug")?.trim();
-  if (slug && ASSESSMENT_SLUGS.includes(slug)) {
-    return [slug];
-  }
-  return ASSESSMENT_SLUGS;
-}
+import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
+import {
+  loadFirebaseAssessmentVersionCatalog,
+  resolveRequestedAssessmentSlugs,
+} from "@/lib/firebase-assessment-catalogue-api";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    const strapiJwt = await getServerStrapiJwt(request);
-    if (!session?.user?.id || !strapiJwt) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-
-    const slugs = resolveRequestedSlugs(request);
-    const versions = await getAdminAssessmentVersions(slugs, strapiJwt);
+    const auth = await requireFirebaseSession();
     const slug = request.nextUrl.searchParams.get("slug")?.trim();
-    if (slug && ASSESSMENT_SLUGS.includes(slug)) {
-      return NextResponse.json({ data: versions[slug] ?? [] });
+    const slugs = resolveRequestedAssessmentSlugs(slug);
+    const versions = await loadFirebaseAssessmentVersionCatalog(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
+      slugs,
+    );
+
+    if (slug && slugs.length === 1) {
+      return NextResponse.json({ data: versions[slugs[0]] ?? [] });
     }
     return NextResponse.json({ data: versions });
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Assessment versions could not be loaded" },
-      { status: 500 }
+    return handleBffRouteError(
+      error,
+      "Assessment versions could not be loaded",
     );
   }
 }

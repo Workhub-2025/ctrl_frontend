@@ -21,7 +21,7 @@ import {
   invalidateClientEntitlementsServerCache,
   invalidateClientPortalServerCache,
 } from "@/lib/portal-cache-invalidation";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { cmsRequest } from "@/legacy-cms/request";
 
 export { requireClientSession, handleBffRouteError };
 
@@ -128,7 +128,7 @@ function mapBillingRequest(row: BillingRequestRow): ClientUpgradeRequestRecord {
 
 /** Backend-resolved entitlements — never compute unlock state in the browser. */
 async function loadClientEntitlementsBundle(): Promise<BackendClientEntitlements> {
-  const response = await strapiRequest<{ data?: BackendClientEntitlements }>("/client/entitlements");
+  const response = await cmsRequest<{ data?: BackendClientEntitlements }>("/client/entitlements");
   if (!response.data) {
     throw new Error("Entitlements could not be loaded");
   }
@@ -153,7 +153,7 @@ export async function getClientEntitlementsBundle(): Promise<BackendClientEntitl
 export async function listClientUpgradeRequests(): Promise<ClientUpgradeRequestRecord[]> {
   await requireClientSession();
 
-  const response = await strapiRequest<{ data?: BillingRequestRow[] }>("/client/billing-requests");
+  const response = await cmsRequest<{ data?: BillingRequestRow[] }>("/client/billing-requests");
   return (response.data ?? [])
     .map((row) => {
       try {
@@ -171,7 +171,7 @@ export async function createClientUpgradeRequest(input: {
 }) {
   await requireClientSession();
 
-  const response = await strapiRequest<{ data?: BillingRequestRow }>("/client/upgrade-requests", {
+  const response = await cmsRequest<{ data?: BillingRequestRow }>("/client/upgrade-requests", {
     method: "POST",
     body: JSON.stringify({
       payload: input.payload,

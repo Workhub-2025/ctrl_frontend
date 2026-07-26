@@ -463,12 +463,12 @@ export default function Home() {
               updateSettings={updateAccessibilitySettings}
               resetSettings={resetAccessibilitySettings}
             />
-            <Link href="/auth/register?mode=login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
+            <Link href="/auth/login" className="group flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20">
               Log in
               <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-[opacity,margin] duration-300" aria-hidden="true" />
             </Link>
             <Button asChild className="group rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
-              <Link href="/auth/register?mode=register" className="flex items-center gap-1.5">
+              <Link href="/pricing" className="flex items-center gap-1.5">
                 Get Started
                 <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-[opacity,margin] duration-300" aria-hidden="true" />
               </Link>
@@ -554,7 +554,7 @@ export default function Home() {
                 </p>
                 <div className="flex flex-col gap-2 px-1 pb-1">
                   <Link
-                    href="/auth/register?mode=login"
+                    href="/auth/login"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="group w-full flex items-center justify-between gap-2 text-base font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-[background-color,color] px-3 py-3 min-h-[44px] rounded-2xl hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
                   >
@@ -562,7 +562,7 @@ export default function Home() {
                     <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity duration-200" aria-hidden="true" />
                   </Link>
                   <Button asChild className="rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 w-full h-11 text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
-                    <Link href="/auth/register?mode=register" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
+                    <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
                       Get Started
                       <ArrowRight className="w-4 h-4" aria-hidden="true" />
                     </Link>
@@ -1062,8 +1062,8 @@ export default function Home() {
 
                 <div className="mt-11 flex flex-col items-center justify-center gap-4 sm:flex-row">
                   <Button asChild className="group h-12 rounded-full bg-slate-900 px-9 text-sm font-medium text-white shadow-lg shadow-slate-900/10 transition-colors hover:bg-slate-800 focus-visible:ring-2 focus-visible:ring-slate-400 dark:bg-white dark:text-black dark:shadow-white/10 dark:hover:bg-slate-200 dark:focus-visible:ring-white/50 md:h-14 md:text-base">
-                    <Link href="/auth/register?mode=register" className="flex items-center justify-center">
-                      Create your account
+                    <Link href="/pricing" className="flex items-center justify-center">
+                      View plans
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" aria-hidden="true" />
                     </Link>
                   </Button>
@@ -1143,8 +1143,8 @@ export default function Home() {
                       <span className="h-1 w-1 rounded-full bg-sky-500" /> Access
                     </h4>
                     {[
-                      { label: "Get Started", href: "/auth/register?mode=register" },
-                      { label: "Log in", href: "/auth/register?mode=login" },
+                      { label: "Get Started", href: "/pricing" },
+                      { label: "Log in", href: "/auth/login" },
                     ].map((l) => (
                       <Link
                         key={l.label}

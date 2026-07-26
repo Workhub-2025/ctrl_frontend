@@ -1,34 +1,49 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
+
+import {
+  isFirebaseAdminAuth,
+  requireAdminDualAccess,
+} from "@/lib/auth/admin-dual-access";
+import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
 import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
 import { isStripeCheckoutConfigured } from "@/lib/stripe/server";
-import { strapiRequest } from "@/services/hiring-manager-campaigns.service";
+import { cmsRequest } from "@/legacy-cms/request";
 
 export async function POST(
   _request: Request,
-  { params }: { params: Promise<{ billingRequestId: string }> }
+  { params }: { params: Promise<{ billingRequestId: string }> },
 ) {
-  const auth = await requireAdminApiAccess('billing.write');
+  const auth = await requireAdminDualAccess("billing.write");
   if ("error" in auth) {
     return auth.error;
-  }
-
-  if (!isStripeCheckoutConfigured()) {
-    return NextResponse.json(
-      {
-        error:
-          "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
-      },
-      { status: 503 }
-    );
   }
 
   const { billingRequestId } = await params;
 
   try {
-    const response = await strapiRequest<{ data?: Record<string, unknown> }>(
+    if (isFirebaseAdminAuth(auth)) {
+      const billing = createFirebaseBillingApi(
+        auth.domainApi,
+        auth.firebaseSessionCookie,
+      );
+      const data = await billing.createAdminCheckout(billingRequestId);
+      void invalidateAdminPlatformServerCache();
+      return NextResponse.json({ data });
+    }
+
+    if (!isStripeCheckoutConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
+        },
+        { status: 503 },
+      );
+    }
+
+    const response = await cmsRequest<{ data?: Record<string, unknown> }>(
       `/admin/billing/requests/${encodeURIComponent(billingRequestId)}/create-checkout`,
-      { method: "POST" }
+      { method: "POST" },
     );
 
     void invalidateAdminPlatformServerCache();
@@ -38,8 +53,13 @@ export async function POST(
     });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Invoice could not be created" },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Invoice could not be created",
+      },
+      { status: 500 },
     );
   }
 }

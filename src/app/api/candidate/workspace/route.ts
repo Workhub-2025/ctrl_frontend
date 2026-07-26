@@ -1,61 +1,92 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getStrapiClient } from "@/lib/strapi";
-import { requireCandidateSession, handleBffRouteError } from "@/lib/auth/bff-session";
+
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import {
+  isCandidateAssessmentSubmitted,
+} from "@/lib/candidate/assessment-progress";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import {
   PORTAL_CANDIDATE_WORKSPACE_TTL_MS,
   portalCandidateWorkspaceCacheKey,
 } from "@/lib/portal-cache-keys";
-import { getServerAuthSub } from "@/lib/portal-server-auth";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
+import type { CandidatePortalApplication } from "@/services/candidate-session.service";
 
-async function fetchCandidateWorkspace(client: ReturnType<typeof getStrapiClient>, query: string) {
-  return client.fetch(`/candidate/workspace${query ? `?${query}` : ""}`, { method: "GET" });
-}
-
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
-    const { strapiJwt } = await requireCandidateSession();
-    const client = getStrapiClient(strapiJwt);
-    const query = request.nextUrl.searchParams.toString();
-    const userSub = await getServerAuthSub();
+    const { context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("candidate");
 
-    const loadWorkspace = async () => {
-      const response = await fetchCandidateWorkspace(client, query);
-      const payload = await response.json();
-
-      if (!response.ok) {
-        throw Object.assign(
-          new Error(payload?.error?.message ?? "Candidate workspace could not be loaded"),
-          { status: response.status },
+    const loadWorkspace = async (): Promise<CandidatePortalApplication[]> => {
+      const workspace = await recruitment.getCandidateWorkspace();
+      return workspace.map(({ assignment, campaign, session, assessments }) => {
+        const submittedCount = assessments.filter((assessment) =>
+          isCandidateAssessmentSubmitted(assessment.status),
+        ).length;
+        const allSubmitted =
+          assessments.length > 0 && submittedCount === assessments.length;
+        const anyInProgress = assessments.some(
+          (assessment) => assessment.status === "in_progress",
         );
-      }
-
-      return payload.data ?? [];
+        return {
+          documentId: assignment.id,
+          mode: session?.mode ?? campaign.assessmentMode,
+          sessionStatus: session?.status ?? assignment.status,
+          sessionStartsAt: session?.startsAt ?? null,
+          portalStatus:
+            assignment.status === "completed" || allSubmitted
+              ? "completed"
+              : anyInProgress
+                ? "in_progress"
+                : "awaiting_assessment",
+          usedAt: assignment.updatedAt,
+          completedAt:
+            assignment.status === "completed" || allSubmitted
+              ? assignment.updatedAt
+              : null,
+          completion: {
+            completed: submittedCount,
+            total: assessments.length,
+          },
+          campaign: {
+            documentId: campaign.id,
+            name: campaign.title,
+            jobRole: campaign.jobRole,
+            startDate: campaign.startDate,
+            endDate: campaign.endDate,
+            location: campaign.location,
+          },
+          assessmentSession: session
+            ? {
+                documentId: session.id,
+                name: session.name,
+                startsAt: session.startsAt,
+                sessionStatus: session.status,
+              }
+            : null,
+          assessments: assessments.map((assessment) => {
+            const submitted = isCandidateAssessmentSubmitted(assessment.status);
+            return {
+              documentId: assessment.campaignAssessmentId,
+              slug: assessment.slug,
+              name: assessment.title,
+              // Preserve submitted vs completed so the UI can show scoring vs done.
+              status: assessment.status,
+              isAvailable: !submitted,
+              completedAt: submitted ? assignment.updatedAt : null,
+            };
+          }),
+        };
+      });
     };
 
-    const data =
-      userSub != null
-        ? await portalServerCacheGetOrSet(
-            portalCandidateWorkspaceCacheKey(userSub),
-            PORTAL_CANDIDATE_WORKSPACE_TTL_MS,
-            loadWorkspace,
-          )
-        : await loadWorkspace();
-
+    const data = await portalServerCacheGetOrSet(
+      portalCandidateWorkspaceCacheKey(actor.firebaseUid),
+      PORTAL_CANDIDATE_WORKSPACE_TTL_MS,
+      loadWorkspace,
+    );
     return NextResponse.json({ data });
   } catch (error) {
-    const status =
-      error instanceof Error && "status" in error && typeof error.status === "number"
-        ? error.status
-        : undefined;
-
-    if (status != null) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : "Candidate workspace could not be loaded" },
-        { status },
-      );
-    }
-
     return handleBffRouteError(error, "Candidate workspace could not be loaded");
   }
 }

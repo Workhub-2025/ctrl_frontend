@@ -206,6 +206,7 @@ export type ClientUpgradeRequestRecord = {
   amountDuePence?: number | null;
   currency?: string;
   stripeCheckoutSessionId?: string | null;
+  checkoutUrl?: string | null;
   clientName?: string;
 };
 

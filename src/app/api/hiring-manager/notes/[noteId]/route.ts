@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteSharedCandidateNote } from "@/services/shared-candidate-notes.service";
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
+import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 
@@ -12,16 +12,19 @@ export async function DELETE(
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
 
-    const { session } = await requireHmSession();
+    const { session } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
     const rateLimited = await rejectRateLimitedMutation(request, {
       scope: "hm:candidate-note:delete",
       actorId: session.user.id,
       limit: 30,
     });
     if (rateLimited) return rateLimited;
-    const { noteId } = await context.params;
-    await deleteSharedCandidateNote(noteId);
-    return new NextResponse(null, { status: 204 });
+    await context.params;
+    return NextResponse.json(
+      { error: "Candidate notes are append-only audit evidence and cannot be deleted." },
+      { status: 405, headers: { Allow: "GET, POST" } },
+    );
   } catch (error) {
     return handleBffRouteError(error, "Note could not be deleted");
   }

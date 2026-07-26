@@ -78,7 +78,7 @@ function ForgotPasswordForm() {
                 </div>
               </div>
               <Button asChild variant="outline" className="w-full rounded-xl border-white/10">
-                <Link href="/auth/register?mode=login">Back to sign in</Link>
+                <Link href="/auth/login">Back to sign in</Link>
               </Button>
             </div>
           ) : (
@@ -121,7 +121,7 @@ function ForgotPasswordForm() {
                 variant="ghost"
                 className={cn("w-full rounded-xl text-slate-400 hover:text-white")}
               >
-                <Link href="/auth/register?mode=login">
+                <Link href="/auth/login">
                   <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
                   Back to sign in
                 </Link>

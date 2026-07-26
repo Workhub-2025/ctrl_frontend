@@ -320,7 +320,7 @@ export default function UpgradeRequestsPage() {
 
       <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
         <AdminPanel padding={false} className="overflow-hidden">
-          <div className="border-b border-border/50 bg-muted/20 p-4 dark:border-white/6 dark:bg-black/10">
+          <div className="border-b border-border/50 bg-muted/20 p-4">
             <h2 className="text-base font-bold font-display text-foreground">Clients</h2>
             <p className="text-xs text-muted-foreground">Select a client to stage changes.</p>
           </div>
@@ -329,7 +329,7 @@ export default function UpgradeRequestsPage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search clients"
-                className="pl-9 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+                className="pl-9 rounded-xl border-border/70 focus-visible:ring-primary"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
               />
@@ -351,7 +351,7 @@ export default function UpgradeRequestsPage() {
                   className={`w-full rounded-md border p-3.5 text-left transition-colors duration-200 ${
                     selectedClient?.id === client.id
                       ? "bg-primary/10 border-primary/20 text-primary shadow-sm"
-                      : "border-border/60 dark:border-white/5 text-muted-foreground hover:bg-slate-100/50 dark:hover:bg-white/[0.02]"
+                      : "border-border/60 text-muted-foreground hover:bg-muted/30"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -376,7 +376,7 @@ export default function UpgradeRequestsPage() {
         ) : (
           <div className="space-y-4">
             <AdminPanel padding={false} className="overflow-hidden">
-              <div className="space-y-3 border-b border-border/40 bg-muted/20 p-6 dark:border-white/5 dark:bg-black/10">
+              <div className="space-y-3 border-b border-border/40 bg-muted/20 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-bold font-display text-foreground">{selectedClient.name}</h2>
@@ -411,14 +411,14 @@ export default function UpgradeRequestsPage() {
               <div className="space-y-6 p-6">
                 <div className="grid gap-4 lg:grid-cols-[200px_220px_minmax(0,1fr)]">
                   <div className="space-y-2">
-                    <Label htmlFor="hmSeatCount" className="text-xs font-bold text-slate-400 uppercase tracking-wider">HM seats</Label>
+                    <Label htmlFor="hmSeatCount" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">HM seats</Label>
                     <div className="relative">
                       <Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         id="hmSeatCount"
                         type="number"
                         min={Math.max(1, selectedClient.seatsUsed)}
-                        className="pl-9 rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+                        className="pl-9 rounded-xl border-border/70 focus-visible:ring-primary"
                         value={selectedDraft.seatCount}
                         onChange={(event) => updateSeatDraft(selectedClient.id, event.target.value)}
                       />
@@ -428,13 +428,13 @@ export default function UpgradeRequestsPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="contractStatus" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Contract status</Label>
+                    <Label htmlFor="contractStatus" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Contract status</Label>
                     <Select
                       value={selectedDraft.status}
                       onValueChange={(value) => updateStatusDraft(selectedClient.id, value as ContractStatus)}
                       disabled={!selectedClient.activeContract}
                     >
-                      <SelectTrigger id="contractStatus" className="rounded-xl border-border/70 dark:border-white/10 focus:ring-primary">
+                      <SelectTrigger id="contractStatus" className="rounded-xl border-border/70 focus:ring-primary">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -450,13 +450,13 @@ export default function UpgradeRequestsPage() {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="entitlementNotes" className="text-xs font-bold text-slate-400 uppercase tracking-wider">Review note</Label>
+                    <Label htmlFor="entitlementNotes" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Review note</Label>
                     <Input
                       id="entitlementNotes"
                       value={selectedDraft.notes}
                       onChange={(event) => updateNotesDraft(selectedClient.id, event.target.value)}
                       placeholder="Approval reference, payment note, or commercial context"
-                      className="rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+                      className="rounded-xl border-border/70 focus-visible:ring-primary"
                     />
                   </div>
                 </div>
@@ -485,7 +485,7 @@ export default function UpgradeRequestsPage() {
             </AdminPanel>
 
             <AdminPanel padding={false} className="overflow-hidden">
-              <div className="border-b border-border/40 bg-muted/20 p-6 dark:border-white/5 dark:bg-black/10">
+              <div className="border-b border-border/40 bg-muted/20 p-6">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-base font-bold font-display text-foreground">Final review</h2>
@@ -496,7 +496,7 @@ export default function UpgradeRequestsPage() {
               </div>
               <div className="space-y-4 p-6">
                 {pendingChanges.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-border/60 p-5 text-center text-xs text-muted-foreground/75 bg-slate-100/5 dark:bg-black/5">
+                  <p className="rounded-xl border border-dashed border-border/60 bg-muted/10 p-5 text-center text-xs text-muted-foreground/75">
                     No staged changes yet.
                   </p>
                 ) : (
@@ -546,8 +546,8 @@ function FeatureList({
   onAction: (featureKey: string) => void;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 dark:border-white/5 overflow-hidden bg-slate-100/5 dark:bg-black/5">
-      <div className="border-b border-border/40 dark:border-white/5 p-4 bg-slate-100/20 dark:bg-black/10">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/10">
+      <div className="border-b border-border/40 bg-muted/20 p-4">
         <h2 className="text-sm font-bold text-foreground">{title}</h2>
         <p className="mt-1 text-xs text-muted-foreground/80">{description}</p>
       </div>
@@ -576,7 +576,7 @@ function FeatureList({
 function MiniStat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-md border border-border bg-muted/25 p-3.5 transition-colors duration-150 hover:border-primary/40">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-1.5 text-lg font-extrabold text-foreground font-display">{value}</p>
     </div>
   );

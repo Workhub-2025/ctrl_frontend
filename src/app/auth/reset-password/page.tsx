@@ -23,7 +23,10 @@ const AUTH_INPUT_CLASS =
 function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const code = searchParams.get("code")?.trim() ?? "";
+  const code =
+    searchParams.get("oobCode")?.trim() ??
+    searchParams.get("code")?.trim() ??
+    "";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -57,7 +60,7 @@ function ResetPasswordForm() {
       await AuthAPI.resetPassword(code, password, confirmPassword);
       setSubmitStatus("success");
       window.setTimeout(() => {
-        router.push("/auth/register?mode=login");
+        router.push("/auth/login");
       }, 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Password could not be reset.");
@@ -174,7 +177,7 @@ function ResetPasswordForm() {
               variant="ghost"
               className="w-full rounded-xl text-slate-400 hover:text-white"
             >
-              <Link href="/auth/register?mode=login">
+              <Link href="/auth/login">
                 <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
                 Back to sign in
               </Link>

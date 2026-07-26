@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { ClientCandidateApprovalsContent } from "@/components/dashboard/client";
-
-export default function ClientApprovedCandidatesPage() {
-  return <ClientCandidateApprovalsContent />;
+/** @deprecated Use /client-dashboard/candidates. Remove after 2026-10-31. */
+export default function ClientApprovedCandidatesRedirect() {
+  redirect("/client-dashboard/candidates");
 }

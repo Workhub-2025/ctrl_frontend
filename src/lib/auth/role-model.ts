@@ -94,6 +94,15 @@ export const isAdminRole = (role: unknown) => {
   return isAdminPortalRole(role);
 };
 
+export const roleSupportsTotp = (role: unknown) => {
+  const resolved = resolveAppRole(role);
+  return (
+    isAdminPortalRole(role) ||
+    resolved === "client" ||
+    resolved === "hiring_manager"
+  );
+};
+
 export const isSuperAdminRole = (role: unknown) => {
   return isSuperAdminRoleType(role);
 };

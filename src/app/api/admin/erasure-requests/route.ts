@@ -1,33 +1,16 @@
 import { NextResponse } from "next/server";
-import { requireAdminApiAccess } from "@/lib/auth/admin-api-auth";
-import { getStrapiClient } from "@/lib/strapi";
+import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 
 export async function GET() {
   try {
-    const auth = await requireAdminApiAccess("users.read");
-    if ("error" in auth) {
-      return auth.error;
-    }
-
-    const client = getStrapiClient(auth.strapiJwt);
-    const response = await client.fetch("/admin/erasure-requests");
-    const body = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: body?.error?.message ?? "Erasure queue could not be loaded" },
-        { status: response.status }
-      );
-    }
-
-    return NextResponse.json(body);
+    const auth = await requireFirebaseSession("admin");
+    const data = await auth.domainApi.request<unknown[]>({
+      path: "/v1/privacy/admin/erasure-requests",
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+    });
+    return NextResponse.json({ data });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Erasure queue could not be loaded",
-      },
-      { status: 500 }
-    );
+    return handleBffRouteError(error, "Erasure queue could not be loaded");
   }
 }

@@ -80,6 +80,10 @@ import {
   isCandidateJoined,
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
+import {
+  copySessionJoinLink,
+  isSecureAccessCodePlaceholder,
+} from "@/lib/copy-share-links";
 import { cn } from "@/lib/utils";
 import { usePortalBreadcrumbDetail } from "@/components/dashboard/portal/portal-shell";
 import {
@@ -609,8 +613,18 @@ export function HiringManagerCampaignDetailView({
                           type="button"
                           variant="outline"
                           onClick={() => {
-                            void navigator.clipboard?.writeText(session.accessValue);
-                            setCopiedSessionId(session.id);
+                            void (async () => {
+                              try {
+                                if (isSecureAccessCodePlaceholder(session.accessValue)) {
+                                  await copySessionJoinLink(session.id);
+                                } else {
+                                  await navigator.clipboard?.writeText(session.accessValue);
+                                }
+                                setCopiedSessionId(session.id);
+                              } catch {
+                                /* ignore clipboard failures */
+                              }
+                            })();
                           }}
                           className="h-9 px-3 text-xs"
                         >
@@ -619,7 +633,11 @@ export function HiringManagerCampaignDetailView({
                           ) : (
                             <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
                           )}
-                          {copiedSessionId === session.id ? "Copied" : "Copy code"}
+                          {copiedSessionId === session.id
+                            ? "Copied"
+                            : isSecureAccessCodePlaceholder(session.accessValue)
+                              ? "Copy join link"
+                              : "Copy code"}
                         </Button>
                         <Button variant="outline" className="h-9 px-3 text-xs" asChild>
                           <Link href={`/hiring-manager-dashboard/sessions/${session.id}`}>

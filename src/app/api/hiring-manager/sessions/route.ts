@@ -1,27 +1,29 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { randomBytes } from "node:crypto";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
 import {
-  createHiringManagerAssessmentSession,
-  getHiringManagerCampaignDetail,
-  getHiringManagerSessions,
-} from "@/services/hiring-manager-campaigns.service";
+  requireFirebaseRecruitmentSession,
+  toHiringManagerSession,
+} from "@/lib/firebase-recruitment-bff";
+import { sessionJoinUrl } from "@/lib/public-app-urls";
 
-import { requireHmSession, handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
-import {
-  canCreateSessionForCampaign,
-  getSessionCreationApprovalError,
-} from "@/lib/hiring-manager/campaign-session-approval";
 import {
   containsHtmlMarkup,
   sanitisePlainText,
 } from "@/lib/security/input-sanitization";
 export async function GET(request: NextRequest) {
   try {
-    await requireHmSession();
+    const { context, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
+    if (!context.organizationId) {
+      return NextResponse.json({ error: "Organization membership is required" }, { status: 403 });
+    }
 
     const session = await getServerSession(authOptions);
     const limiter = await applyRateLimit({
@@ -42,13 +44,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const result = await getHiringManagerSessions();
-
-    if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
-    }
-
-    return NextResponse.json({ data: result.sessions });
+    const [sessionResult, campaignResult] = await Promise.all([
+      recruitment.listSessions(context.organizationId),
+      recruitment.listCampaigns(context.organizationId),
+    ]);
+    const campaignNames = new Map(
+      campaignResult.items.map((campaign) => [campaign.id, campaign.title]),
+    );
+    return NextResponse.json({
+      data: sessionResult.items.map((item) =>
+        toHiringManagerSession(
+          item,
+          campaignNames.get(item.campaignId) ?? "Campaign",
+        ),
+      ),
+    });
   } catch (error) {
     return handleBffRouteError(error, "Sessions could not be loaded");
   }
@@ -56,7 +66,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireHmSession();
+    const { context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
@@ -135,37 +146,54 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "startsAt must be a valid date" }, { status: 400 });
       }
 
-      const campaignResult = await getHiringManagerCampaignDetail(campaignDocumentId);
-      if (campaignResult.error || !campaignResult.campaign) {
+      const campaignWorkspace = await recruitment.getCampaign(campaignDocumentId);
+      if (!["approved", "active"].includes(campaignWorkspace.campaign.status)) {
         return NextResponse.json(
-          { error: campaignResult.error || "Campaign could not be found." },
-          { status: 404 }
-        );
-      }
-      if (!canCreateSessionForCampaign(campaignResult.campaign.approvalStatus)) {
-        return NextResponse.json(
-          {
-            error: getSessionCreationApprovalError(
-              campaignResult.campaign.approvalStatus
-            ),
-          },
+          { error: "Campaign must be approved before sessions can be created." },
           { status: 409 }
         );
       }
 
-      const created = await createHiringManagerAssessmentSession({
-        campaignDocumentId,
+      const operationPayload = {
         name,
-        candidateLimit,
-        startsAt: typeof startsAt === "string" ? startsAt : null,
+        capacity: candidateLimit,
+        startsAt:
+          typeof startsAt === "string"
+            ? new Date(startsAt).toISOString()
+            : new Date().toISOString(),
         location: location || null,
         mode:
           requestedMode === "in_person" || requestedMode === "remote"
             ? requestedMode
-            : null,
+            : campaignWorkspace.campaign.assessmentMode,
+      };
+      const operationKey = recruitmentIdempotencyKey(
+        "session:create",
+        actor.userId,
+        { campaignDocumentId, ...operationPayload },
+      );
+      const accessCode = randomBytes(8).toString("base64url");
+      const created = await recruitment.createSession(campaignDocumentId, {
+        ...operationPayload,
+        accessCode,
+        idempotencyKey: operationKey,
       });
-
-      return NextResponse.json({ data: created }, { status: 201 });
+      const createdSession = await recruitment.getSession(created.sessionId);
+      const dto = toHiringManagerSession(
+        createdSession,
+        campaignWorkspace.campaign.title,
+      );
+      const joinUrl = sessionJoinUrl(request, created.accessCode);
+      return NextResponse.json(
+        {
+          data: {
+            ...dto,
+            accessValue: created.accessCode,
+            joinUrl,
+          },
+        },
+        { status: created.alreadyCreated ? 200 : 201 },
+      );
     } catch (error) {
       return NextResponse.json(
         {

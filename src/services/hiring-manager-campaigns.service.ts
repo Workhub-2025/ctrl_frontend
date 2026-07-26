@@ -1,11 +1,6 @@
 import "server-only";
 
-import { getServerStrapiJwt } from "@/lib/auth/strapi-jwt";
-import {
-  getStrapiApiBaseUrl,
-  joinStrapiApiPath,
-  stripLeadingSlashes,
-} from "@/lib/strapi-server";
+import { cmsRequest, CmsRequestError, getCmsErrorStatus } from "@/legacy-cms/request";
 import {
   formatAssessmentResultScore,
   isAbandonedAssessmentResult,
@@ -48,54 +43,7 @@ export type {
   HiringManagerSessionListItem,
 } from "@/types/hiring-manager.types";
 
-async function getJwt() {
-  return getServerStrapiJwt();
-}
-
-class StrapiRequestError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "StrapiRequestError";
-    this.status = status;
-  }
-}
-
-export { StrapiRequestError };
-
-export async function strapiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const jwt = await getJwt();
-  if (!jwt) {
-    throw new Error("Authentication required");
-  }
-
-  const response = await fetch(
-    joinStrapiApiPath(getStrapiApiBaseUrl(), path),
-    {
-      cache: "no-store",
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${jwt}`,
-        ...init?.headers,
-      },
-    }
-  );
-
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message =
-      body?.error?.message || body?.error || `Strapi responded ${response.status}`;
-    throw new StrapiRequestError(message, response.status);
-  }
-
-  return body as T;
-}
-
-export function getStrapiErrorStatus(error: unknown) {
-  return error instanceof StrapiRequestError ? error.status : null;
-}
+export { cmsRequest, CmsRequestError, getCmsErrorStatus };
 
 type StrapiListResponse<T> = {
   data?: T[];
@@ -539,7 +487,7 @@ export async function getHiringManagerCampaigns(): Promise<{
   error: string | null;
 }> {
   try {
-    const response = await strapiRequest<StrapiListResponse<RawCampaign>>(
+    const response = await cmsRequest<StrapiListResponse<RawCampaign>>(
       "/hiring-manager/campaigns"
     );
 
@@ -566,7 +514,7 @@ export async function getHiringManagerCampaignDetail(
   error: string | null;
 }> {
   try {
-    const response = await strapiRequest<StrapiSingleResponse<RawCampaign>>(
+    const response = await cmsRequest<StrapiSingleResponse<RawCampaign>>(
       `/hiring-manager/campaigns/${campaignDocumentId}`
     );
 
@@ -591,7 +539,7 @@ export async function getHiringManagerSessions(): Promise<{
   error: string | null;
 }> {
   try {
-    const response = await strapiRequest<StrapiListResponse<RawAssessmentSession>>(
+    const response = await cmsRequest<StrapiListResponse<RawAssessmentSession>>(
       "/hiring-manager/assessment-sessions"
     );
     const sessions = (response.data ?? []).map(normalizeAssessmentSession);
@@ -615,7 +563,7 @@ async function loadHiringManagerOverview(): Promise<{
   sessions: HiringManagerSessionListItem[];
   error: null;
 }> {
-  const response = await strapiRequest<{
+  const response = await cmsRequest<{
     data?: {
       campaigns?: RawCampaign[];
       campaignDetails?: RawCampaign[];
@@ -665,7 +613,7 @@ export async function getHiringManagerOverview(): Promise<{
 export async function createHiringManagerCampaign(
   input: HiringManagerCampaignCreateInput
 ): Promise<HiringManagerCampaignCreateResult> {
-  const response = await strapiRequest<StrapiSingleResponse<RawCampaign>>(
+  const response = await cmsRequest<StrapiSingleResponse<RawCampaign>>(
     "/hiring-manager/campaigns",
     {
       method: "POST",
@@ -684,7 +632,7 @@ export async function createHiringManagerCampaign(
 export async function createHiringManagerAssessmentSession(
   input: HiringManagerAssessmentSessionCreateInput
 ): Promise<HiringManagerSessionListItem> {
-  const response = await strapiRequest<StrapiSingleResponse<RawAssessmentSession>>(
+  const response = await cmsRequest<StrapiSingleResponse<RawAssessmentSession>>(
     `/campaigns/${input.campaignDocumentId}/assessment-sessions`,
     {
       method: "POST",
@@ -708,7 +656,7 @@ export async function removeCandidateFromAssessmentSession(
   candidateSessionDocumentId: string,
   reason: string
 ): Promise<void> {
-  await strapiRequest<StrapiSingleResponse<unknown>>(
+  await cmsRequest<StrapiSingleResponse<unknown>>(
     `/assessment-sessions/${assessmentSessionDocumentId}/candidates/${candidateSessionDocumentId}/remove`,
     {
       method: "POST",
@@ -721,7 +669,7 @@ export async function removeCandidateFromAssessmentSession(
 export async function deleteHiringManagerAssessmentSession(
   assessmentSessionDocumentId: string
 ): Promise<void> {
-  await strapiRequest<StrapiSingleResponse<unknown>>(
+  await cmsRequest<StrapiSingleResponse<unknown>>(
     `/hiring-manager/assessment-sessions/${assessmentSessionDocumentId}`,
     {
       method: "DELETE",
@@ -731,7 +679,7 @@ export async function deleteHiringManagerAssessmentSession(
 }
 
 export async function deleteHiringManagerCampaign(campaignDocumentId: string): Promise<void> {
-  await strapiRequest<StrapiSingleResponse<unknown>>(
+  await cmsRequest<StrapiSingleResponse<unknown>>(
     `/hiring-manager/campaigns/${campaignDocumentId}`,
     {
       method: "DELETE",
@@ -748,7 +696,7 @@ export async function updateHiringManagerCampaignAssessmentStack(
     assessmentMode?: "in_person" | "remote" | "hybrid";
   }
 ): Promise<void> {
-  await strapiRequest<StrapiSingleResponse<unknown>>(
+  await cmsRequest<StrapiSingleResponse<unknown>>(
     `/hiring-manager/campaigns/${campaignDocumentId}/assessment-stack`,
     {
       method: "PUT",
@@ -842,7 +790,7 @@ async function loadHiringManagerCandidateReport(
   error: string | null;
 }> {
   try {
-    const response = await strapiRequest<StrapiSingleResponse<RawHmCandidateReport>>(
+    const response = await cmsRequest<StrapiSingleResponse<RawHmCandidateReport>>(
       `/hiring-manager/candidate-sessions/${candidateSessionDocumentId}/report`
     );
 
@@ -874,7 +822,7 @@ export async function inviteCandidatesToSession(
   failed: string[];
   sessions: Array<Record<string, unknown>>;
 }> {
-  const response = await strapiRequest<{
+  const response = await cmsRequest<{
     data?: {
       sent?: string[];
       failed?: string[];
@@ -898,7 +846,7 @@ export async function generateOfflineCodesForSession(
   assessmentSessionDocumentId: string,
   count: number
 ): Promise<Array<Record<string, unknown>>> {
-  const response = await strapiRequest<{
+  const response = await cmsRequest<{
     data?: Array<Record<string, unknown>>;
   }>(`/assessment-sessions/${assessmentSessionDocumentId}/generate-offline-codes`, {
     method: "POST",
