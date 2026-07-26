@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   ArrowDown,
   ArrowRight,
-  CheckCircle2,
   KeyRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -102,16 +101,9 @@ export function LandingHero({
             <motion.div variants={rise} className="mb-8">
               <BrandLogo
                 layout="stacked"
-                className="h-20 w-[9rem] sm:h-24 sm:w-[10.75rem] lg:h-28 lg:w-[12.5rem]"
+                className="h-16 w-[20rem] sm:h-[4.5rem] sm:w-[22rem] lg:h-20 lg:w-[26rem]"
               />
             </motion.div>
-
-            <motion.p
-              variants={rise}
-              className="mb-5 font-mono text-xs font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-400/90"
-            >
-              Assessment platform for organisations
-            </motion.p>
 
             <motion.h1
               variants={rise}
@@ -128,9 +120,8 @@ export function LandingHero({
               className="mt-6 max-w-[38rem] text-lg leading-8 text-stone-600 sm:text-xl dark:text-stone-300"
             >
               CTRL reveals how candidates think, respond and perform under
-              pressure, providing the behavioural insight needed to recruit
-              with confidence, reduce risk and build stronger operational
-              teams.
+              pressure, so you can recruit with confidence and build stronger
+              operational teams.
             </motion.p>
 
             <motion.div
@@ -159,23 +150,6 @@ export function LandingHero({
                 />
               </Button>
             </motion.div>
-
-            <motion.ul
-              variants={rise}
-              className="mt-10 flex flex-wrap gap-x-7 gap-y-3 border-t border-stone-200/80 pt-6 text-xs font-medium text-stone-500 dark:border-white/10 dark:text-stone-400"
-            >
-              {["Invitation-only access", "24-hour session codes", "Human-led review"].map(
-                (item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <CheckCircle2
-                      className="h-4 w-4 text-amber-700 dark:text-amber-400"
-                      aria-hidden="true"
-                    />
-                    {item}
-                  </li>
-                )
-              )}
-            </motion.ul>
           </div>
 
           <motion.aside

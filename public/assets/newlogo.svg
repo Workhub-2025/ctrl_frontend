@@ -1,14 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 576" role="img" aria-label="CTRL">
-  <!-- Clean wordmark. Black artwork so logo-adaptive-filter can invert it for dark themes. -->
-  <text
-    x="512"
-    y="288"
-    text-anchor="middle"
-    dominant-baseline="central"
-    fill="#000000"
-    font-family="Outfit, 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
-    font-weight="600"
-    font-size="300"
-    letter-spacing="6"
-  >CTRL</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-label="CTRL">
+  <!--
+    CTRL wordmark lockup — black artwork for logo-adaptive-filter dark-theme inversion.
+    Left: precision reticle. Right: geometric CTRL letterforms (paths, not system fonts).
+  -->
+  <g fill="#000000">
+    <!-- Reticle mark -->
+    <g transform="translate(8, 20)">
+      <rect x="4" y="4" width="112" height="112" rx="10" fill="none" stroke="#000000" stroke-width="10"/>
+      <path d="M4 36V14h22" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
+      <path d="M116 36V14H94" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
+      <path d="M4 84v22h22" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
+      <path d="M116 84v22H94" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
+      <line x1="60" y1="28" x2="60" y2="52" stroke="#000000" stroke-width="8" stroke-linecap="square"/>
+      <line x1="60" y1="68" x2="60" y2="92" stroke="#000000" stroke-width="8" stroke-linecap="square"/>
+      <line x1="28" y1="60" x2="52" y2="60" stroke="#000000" stroke-width="8" stroke-linecap="square"/>
+      <line x1="68" y1="60" x2="92" y2="60" stroke="#000000" stroke-width="8" stroke-linecap="square"/>
+      <circle cx="60" cy="60" r="7"/>
+    </g>
+
+    <!-- C -->
+    <path d="M214 42c-28 0-50 22-50 50s22 50 50 50c16 0 30-7 39-18l-14-12c-6 7-15 12-25 12-17 0-30-14-30-32s13-32 30-32c10 0 19 5 25 12l14-12c-9-12-23-18-39-18z"/>
+    <!-- T -->
+    <path d="M268 44h88v18h-35v70h-18V62h-35V44z"/>
+    <!-- R -->
+    <path d="M372 44h48c22 0 38 14 38 34 0 16-9 28-24 32l28 34h-22l-26-32h-24v32h-18V44zm18 18v30h28c12 0 20-7 20-15s-8-15-20-15h-28z"/>
+    <!-- L -->
+    <path d="M478 44h18v88h72v18h-90V44z"/>
+  </g>
 </svg>

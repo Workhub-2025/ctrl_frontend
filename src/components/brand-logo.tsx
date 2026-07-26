@@ -20,7 +20,7 @@ export function BrandMark({
   return (
     <div className={cn("inline-flex items-center justify-center", className)}>
       <img
-        src="/assets/newlogo.svg"
+        src="/assets/ctrl-mark.svg"
         alt={title}
         className="ctrl-brand-logo-image logo-adaptive-filter pointer-events-none block h-full w-full object-contain object-center"
       />
@@ -43,7 +43,7 @@ export function BrandLogo({
     <div 
       className={cn(
         "ctrl-brand-logo inline-flex shrink-0 select-none items-center justify-center",
-        layout === "stacked" ? "h-14 w-[6.25rem]" : "h-10 w-[4.5rem]",
+        layout === "stacked" ? "h-14 w-[14rem]" : "h-10 w-[10rem]",
         className
       )} 
       aria-label={title}
@@ -51,7 +51,7 @@ export function BrandLogo({
       <img
         src="/assets/newlogo.svg"
         alt={title}
-        className="ctrl-brand-logo-image logo-adaptive-filter pointer-events-none block h-full w-full object-contain object-center"
+        className="ctrl-brand-logo-image logo-adaptive-filter pointer-events-none block h-full w-full object-contain object-left"
       />
     </div>
   );

@@ -426,7 +426,7 @@ export default function Home() {
             aria-label="CTRL — back to top"
             className="flex items-center group relative z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
           >
-            <BrandLogo className="h-10 w-[4.5rem] sm:h-12 sm:w-[5.35rem] transition-transform duration-300 group-hover:scale-[1.04] group-hover:opacity-90" />
+            <BrandLogo className="h-10 w-[10rem] sm:h-11 sm:w-[11rem] transition-transform duration-300 group-hover:scale-[1.04] group-hover:opacity-90" />
           </Link>
 
           {/* Links (Desktop) */}
@@ -615,9 +615,6 @@ export default function Home() {
             className="relative border-y border-slate-200/70 bg-slate-50 dark:border-white/5 dark:bg-[#0b0b0b]"
           >
             <div className="mx-auto max-w-[1440px] px-6 py-8 md:py-10">
-              <Reveal variant="fade" className="mb-6 text-center text-xs font-mono uppercase tracking-[0.25em] text-slate-500 dark:text-slate-500">
-                A consistent foundation for structured assessment
-              </Reveal>
               <RevealGroup
                 stagger={0.1}
                 className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-stretch"
@@ -1047,12 +1044,6 @@ export default function Home() {
             <div className="relative z-10 mx-auto w-full max-w-3xl px-6 py-28 md:py-40 text-center">
               <Reveal variant="zoom">
                 {/* Crosshair kicker — echoes the logo motif */}
-                <div className="mb-7 flex items-center justify-center gap-3 font-mono text-xs uppercase tracking-[0.24em] text-sky-600 dark:text-sky-400">
-                  <span className="h-px w-8 bg-gradient-to-r from-transparent to-sky-500/60" />
-                  Get Started
-                  <span className="h-px w-8 bg-gradient-to-l from-transparent to-sky-500/60" />
-                </div>
-
                 <h2 className="mx-auto max-w-3xl text-balance font-display text-5xl font-medium leading-[1.04] tracking-tight text-slate-900 dark:text-white md:text-7xl">
                   Ready to transform your{" "}
                   <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent dark:from-sky-300 dark:to-blue-400">
@@ -1077,14 +1068,6 @@ export default function Home() {
                     View contracts
                   </Button>
                 </div>
-
-                <div className="mx-auto mt-12 flex max-w-xl flex-wrap items-center justify-center gap-x-7 gap-y-2 border-t border-slate-200/70 pt-7 text-xs font-mono uppercase tracking-[0.15em] text-slate-500 dark:border-white/5 dark:text-slate-400">
-                  <span>Secure onboarding</span>
-                  <span className="hidden h-3 w-px bg-slate-300 dark:bg-white/10 sm:inline-block" />
-                  <span>Clear account access</span>
-                  <span className="hidden h-3 w-px bg-slate-300 dark:bg-white/10 sm:inline-block" />
-                  <span>Human-reviewed evidence</span>
-                </div>
               </Reveal>
             </div>
           </section>
@@ -1097,14 +1080,10 @@ export default function Home() {
               <div className="mx-auto max-w-[1440px] px-6">
                 <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5 lg:gap-8 mb-12">
                   <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
-                    <BrandLogo layout="stacked" className="h-14 w-[6.25rem] self-start" />
+                    <BrandLogo layout="stacked" className="h-12 w-[15rem] self-start" />
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light">
-                      Structured assessment experiences and reviewable evidence for organisations making important hiring decisions.
+                      Structured assessments and reviewable evidence for organisations making important hiring decisions.
                     </p>
-                    <span className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/60 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-slate-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-sky-500" aria-hidden="true" />
-                      Assessment platform for organisations
-                    </span>
                   </div>
 
                   <div className="flex flex-col gap-4">
@@ -1162,22 +1141,6 @@ export default function Home() {
                       </Link>
                     ))}
                   </div>
-                </div>
-
-                {/* Platform principles strip */}
-                <div className="mb-10 flex flex-wrap items-center gap-2 border-t border-slate-200/70 dark:border-white/5 pt-8">
-                  <span className="mr-1 font-mono text-[10px] uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
-                    Platform
-                  </span>
-                  {platformPillars.map((d) => (
-                    <span
-                      key={d.label}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-white/60 dark:bg-white/[0.03] px-2.5 py-1 text-[11px] text-slate-600 dark:text-slate-300"
-                    >
-                      <d.icon className="h-3 w-3 text-slate-400 dark:text-slate-500" aria-hidden="true" />
-                      {d.label}
-                    </span>
-                  ))}
                 </div>
 
                 <div className="flex flex-col gap-4 border-t border-slate-200 dark:border-white/10 pt-8 md:flex-row md:items-center md:justify-between">

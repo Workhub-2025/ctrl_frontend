@@ -252,7 +252,7 @@ export function SecureAssessmentShell({
 
         <div className="hidden flex-1 justify-center md:flex">
           <img
-            src="/assets/newlogo.svg"
+            src="/assets/ctrl-mark.svg"
             alt="CTRL Logo"
             className="pointer-events-none h-8 w-8 scale-125 object-contain logo-adaptive-filter"
           />

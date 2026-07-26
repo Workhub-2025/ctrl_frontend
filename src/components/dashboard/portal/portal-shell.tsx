@@ -103,7 +103,7 @@ function PortalHeaderBar({
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <img
-            src="/assets/newlogo.svg"
+            src="/assets/ctrl-mark.svg"
             width={32}
             height={32}
             className="logo-adaptive-filter h-8 w-8 object-contain"
@@ -350,7 +350,7 @@ export function PortalShell({
                     className="flex min-h-11 items-center gap-3 rounded-md px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                   >
                     <img
-                      src="/assets/newlogo.svg"
+                      src="/assets/ctrl-mark.svg"
                       width={36}
                       height={36}
                       className="logo-adaptive-filter h-9 w-9 object-contain object-center"
