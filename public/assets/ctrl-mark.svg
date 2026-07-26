@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="CTRL">
-  <!-- Listening / signal C — call simulation + focused assessment. Black for theme inversion. -->
-  <g fill="none" stroke="#000000" stroke-linecap="round">
-    <path d="M102 30A52 52 0 1 0 102 98" stroke-width="16"/>
-    <path d="M88 42A34 34 0 1 0 88 86" stroke-width="12"/>
-  </g>
-  <circle cx="58" cy="64" r="11" fill="#000000"/>
-</svg>

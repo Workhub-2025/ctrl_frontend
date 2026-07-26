@@ -52,7 +52,7 @@ function PortalMinimalHeader({
         aria-label="CTRL home"
       >
         <img
-          src="/assets/ctrl-mark.svg"
+          src="/assets/ctrl-mark.png"
           width={32}
           height={32}
           className="logo-adaptive-filter h-8 w-8 scale-125 object-contain object-center"

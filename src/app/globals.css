@@ -1257,6 +1257,8 @@ button[aria-label="Toggle theme"] {
 }
 
 /* Optimizar rendering de imágenes del logo */
+img[src*="newlogo.png"],
+img[src*="ctrl-mark.png"],
 img[src*="newlogo.svg"],
 img[src*="ctrl-mark.svg"] {
   content-visibility: auto;

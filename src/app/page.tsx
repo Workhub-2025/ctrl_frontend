@@ -426,7 +426,7 @@ export default function Home() {
             aria-label="CTRL — back to top"
             className="flex items-center group relative z-10 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
           >
-            <BrandLogo className="h-10 w-[10rem] sm:h-11 sm:w-[11rem] transition-transform duration-300 group-hover:scale-[1.04] group-hover:opacity-90" />
+            <BrandLogo className="h-9 w-[10.5rem] sm:h-10 sm:w-[11.5rem] transition-transform duration-300 group-hover:scale-[1.04] group-hover:opacity-90" />
           </Link>
 
           {/* Links (Desktop) */}
@@ -1080,7 +1080,7 @@ export default function Home() {
               <div className="mx-auto max-w-[1440px] px-6">
                 <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-5 lg:gap-8 mb-12">
                   <div className="lg:col-span-2 flex flex-col gap-6 max-w-sm">
-                    <BrandLogo layout="stacked" className="h-12 w-[15rem] self-start" />
+                    <BrandLogo layout="stacked" className="h-11 w-[15.5rem] self-start" />
                     <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed font-light">
                       Structured assessments and reviewable evidence for organisations making important hiring decisions.
                     </p>
