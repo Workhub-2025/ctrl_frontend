@@ -274,13 +274,7 @@ export function HiringManagerSessionDetailView({
         <PortalErrorState title="Action failed" description={actionError} />
       ) : null}
 
-      <PortalWorkQueue
-        title="Session focus"
-        description="Invite, unlock, or monitor — the actions that clear the path today."
-        items={attentionItems}
-        emptyTitle="Session roster is clear"
-        emptyDescription="No locked or incomplete candidates need attention right now."
-      />
+
 
       <div id="session-candidates">
         <HiringManagerSessionDetailsDialog
