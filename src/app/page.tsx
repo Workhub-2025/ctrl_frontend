@@ -79,30 +79,30 @@ const hiringWorkflowSteps: {
 }[] = [
   {
     step: "01",
-    title: "Prepare the Assessment",
-    text: "Set up the campaign, confirm delivery details and bring everything together in one place.",
+    title: "Define What Good Looks Like",
+    text: "Start by identifying the skills, behaviours and operational standards that matter most to your organisation. CTRL then evaluates candidates against these criteria, creating a consistent and evidence-based recruitment process.",
     icon: ListChecks,
     visual: "campaign",
   },
   {
     step: "02",
-    title: "Invite Participants",
-    text: "Manage invitations, scheduling and delivery details from a single workspace.",
-    icon: CalendarClock,
+    title: "Simulate the Environment",
+    text: "CTRL recreates realistic operational environments where candidates must manage information, prioritise competing demands and make decisions in real time, giving deeper insight into who is most likely to succeed in role.",
+    icon: Activity,
     visual: "sessions",
   },
   {
     step: "03",
-    title: "Deliver Consistently",
-    text: "Give every participant a clear, guided experience while your team retains oversight of delivery.",
-    icon: Activity,
+    title: "Hire with Confidence",
+    text: "Review assessment results, compare candidate performance and identify those best suited to the demands of the role. CTRL provides a structured and objective foundation for more informed recruitment decisions.",
+    icon: Trophy,
     visual: "tracking",
   },
   {
     step: "04",
-    title: "Review the Evidence",
-    text: "Bring assessment outcomes into one reviewable view to support a considered, human-led decision.",
-    icon: Trophy,
+    title: "Train with Purpose",
+    text: "CTRL helps organisations identify candidates with the skills, judgement and potential to succeed in demanding operational environments, enabling more informed recruitment decisions before investment in training begins.",
+    icon: CalendarClock,
     visual: "ranking",
   },
 ];
@@ -116,29 +116,29 @@ const candidateWorkflowSteps: {
 }[] = [
   {
     step: "01",
-    title: "Receive Your Invitation",
-    text: "Use your secure invitation to access the correct organisation and assessment.",
+    title: "Enter the Assessment Experience",
+    text: "Complete a series of carefully designed assessments that measure the skills and behaviours required for success in high-pressure operational roles.",
     icon: KeyRound,
     visual: "access",
   },
   {
     step: "02",
-    title: "Check the Details",
-    text: "Review the timing, delivery information and requirements before your assessment begins.",
+    title: "Take on Realistic Scenarios",
+    text: "Navigate interactive call simulations and decision-making exercises that reflect the challenges faced by operational teams every day.",
     icon: CalendarClock,
     visual: "schedule",
   },
   {
     step: "03",
-    title: "Complete the Assessment",
-    text: "Follow a focused, guided experience with clear instructions at each stage.",
+    title: "Demonstrate Performance Under Pressure",
+    text: "Show how you communicate, prioritise information and make decisions when faced with realistic demands and competing priorities.",
     icon: ListChecks,
     visual: "modules",
   },
   {
     step: "04",
-    title: "Await the Outcome",
-    text: "Your assessment is shared securely with the organisation, who will contact you about next steps.",
+    title: "Unlock New Opportunities",
+    text: "Help organisations gain a clearer understanding of your strengths, potential and suitability for roles where performance matters most.",
     icon: CheckCircle2,
     visual: "outcome",
   },
@@ -653,15 +653,15 @@ export default function Home() {
                 <SectionHeading
                   eyebrow="The platform"
                   accent="cyan"
-                  title={<>One platform. A more <GradientText accent="cyan">consistent assessment process.</GradientText></>}
-                  body="CTRL connects preparation, delivery and review without exposing teams or candidates to unnecessary complexity."
+                  title={<>Assess skills. <GradientText accent="cyan">Simulate reality.</GradientText></>}
+                  body="CTRL combines proven recruitment assessments with immersive call simulation technology, providing a more complete picture of candidate suitability. Beyond measuring individual skills, CTRL reveals how candidates apply them in realistic operational scenarios where pressure, judgement and decision-making matter most."
                   centered
                 />
               </div>
 
-              <RevealGroup stagger={0.14} amount={0.1} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <RevealGroup stagger={0.14} amount={0.1} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
                 {/* Primary platform overview */}
-                <RevealItem variant="zoom" className="md:col-span-3">
+                <RevealItem variant="zoom" className="md:col-span-2">
                   <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 md:p-12 group transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-cyan-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     {/* reticle tick */}
@@ -672,14 +672,14 @@ export default function Home() {
                           <div className="h-11 w-11 rounded-full border border-cyan-500/20 bg-cyan-500/10 flex items-center justify-center">
                             <ListChecks className="h-5 w-5 text-cyan-500 dark:text-cyan-400" aria-hidden="true" />
                           </div>
-                          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">01 // Setup</span>
+                          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-cyan-600 dark:text-cyan-400">01 // Call simulation</span>
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-4 text-balance font-display">A clear starting point.</h3>
+                        <h3 className="text-2xl md:text-3xl font-medium text-slate-900 dark:text-white mb-4 text-balance font-display">See beyond the candidate. See the future employee.</h3>
                         <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed">
-                          Bring campaign details, participants and delivery information into one focused assessment experience.
+                          CTRL&apos;s Call Simulation Assessment recreates realistic operational scenarios that require candidates to think, prioritise and respond in real time. The result is deeper behavioural insight and greater confidence in every recruitment decision.
                         </p>
                         <div className="mt-6 flex flex-wrap gap-2">
-                          {["Campaign-based", "Managed", "Consistent"].map((chip) => (
+                          {["Realistic scenarios", "Real-time decisions", "Behavioural insight"].map((chip) => (
                             <span key={chip} className="rounded-full border border-cyan-500/20 bg-cyan-500/[0.06] px-3 py-1 text-xs font-medium text-cyan-700 dark:text-cyan-300">
                               {chip}
                             </span>
@@ -754,11 +754,11 @@ export default function Home() {
                       <div className="h-11 w-11 rounded-full border border-blue-500/20 bg-blue-500/10 flex items-center justify-center">
                         <ListChecks className="h-5 w-5 text-blue-500 dark:text-blue-400" aria-hidden="true" />
                       </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">02 // Delivery</span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">02 // Insight</span>
                     </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Managed from one place</h3>
+                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Understanding performance beyond the interview</h3>
                     <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      Keep invitations, readiness and assessment delivery connected through one clear process.
+                      CTRL assesses how candidates process information, adapt to changing circumstances and make decisions under pressure, delivering behavioural insight that traditional recruitment methods often fail to uncover.
                     </p>
                     <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4 space-y-2">
                       {[
@@ -790,17 +790,17 @@ export default function Home() {
                       <div className="h-11 w-11 rounded-full border border-violet-500/20 bg-violet-500/10 flex items-center justify-center">
                         <Scale className="h-5 w-5 text-violet-500 dark:text-violet-400" aria-hidden="true" />
                       </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-violet-600 dark:text-violet-400">03 // Experience</span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-violet-600 dark:text-violet-400">03 // Evidence</span>
                     </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Clear at every stage</h3>
+                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Recruit with evidence. Decide with confidence.</h3>
                     <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      Give participants focused instructions and a consistent journey from readiness to completion.
+                      CTRL combines objective assessment data with realistic performance insight, helping organisations make fairer, more informed recruitment decisions while reducing risk and increasing confidence in candidate selection.
                     </p>
                     <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4 space-y-2">
                       {[
-                        { label: "Requirements", tag: "Ready", tone: "good" },
-                        { label: "Guided assessment", tag: "", tone: "" },
-                        { label: "Completion", tag: "Next", tone: "next" },
+                        { label: "Objective data", tag: "Ready", tone: "good" },
+                        { label: "Performance insight", tag: "", tone: "" },
+                        { label: "Informed decision", tag: "Next", tone: "next" },
                       ].map((row) => (
                         <div key={row.label} className={cn(
                           "flex items-center gap-3 rounded-lg border px-3 py-2",
@@ -822,42 +822,6 @@ export default function Home() {
                   </div>
                 </RevealItem>
 
-                {/* Card 4: Review */}
-                <RevealItem variant="zoom">
-                  <div className="relative h-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 group flex flex-col transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-500/30 dark:border-white/10 dark:bg-[#0a0a0a] dark:hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/[0.07] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    <span aria-hidden className="pointer-events-none absolute right-5 top-5 h-4 w-4 border-r border-t border-slate-200 dark:border-white/10" />
-                    <div className="mb-6 flex items-center gap-3 relative z-10">
-                      <div className="h-11 w-11 rounded-full border border-emerald-500/20 bg-emerald-500/10 flex items-center justify-center">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" aria-hidden="true" />
-                      </div>
-                      <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400">04 // Review</span>
-                    </div>
-                    <h3 className="text-xl font-medium text-slate-900 dark:text-white mb-3 relative z-10 text-balance font-display">Evidence brought together</h3>
-                    <p className="text-slate-600 dark:text-slate-400 font-light leading-relaxed mb-8 flex-1 relative z-10">
-                      Review outcomes and relevant context in one place while decisions remain with your team.
-                    </p>
-                    <div className="w-full rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-[#050505] overflow-hidden relative p-4">
-                      <div className="mb-3 grid grid-cols-2 gap-2">
-                        <div className="rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3 py-2">
-                          <div className="font-mono text-[9px] uppercase tracking-wider text-slate-500">Record</div>
-                          <div className="font-display text-xl font-medium text-slate-900 dark:text-white">Ready</div>
-                        </div>
-                        <div className="rounded-lg border border-slate-100 dark:border-white/5 bg-white/60 dark:bg-black/40 px-3 py-2">
-                          <div className="font-mono text-[9px] uppercase tracking-wider text-slate-500">Context</div>
-                          <div className="font-display text-xl font-medium text-emerald-600 dark:text-emerald-400">Included</div>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {["Prepared", "Delivered", "Reviewed"].map((lvl) => (
-                          <span key={lvl} className="rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                            {lvl}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </RevealItem>
               </RevealGroup>
             </section>
 
@@ -866,8 +830,8 @@ export default function Home() {
                 <SectionHeading
                   eyebrow="One connected workflow"
                   accent="blue"
-                  title={<>Clear for the team. <GradientText accent="blue">Calm for the candidate.</GradientText></>}
-                  body="Follow the same controlled assessment process from either side. Switch views to see only the steps that matter."
+                  title={<>Build stronger talent pipelines <GradientText accent="blue">with confidence.</GradientText></>}
+                  body="CTRL helps organisations identify high-potential candidates earlier in the recruitment process, using behavioural insight and realistic performance data to support smarter, more informed hiring decisions."
                   centered
                 />
               </div>
@@ -927,8 +891,18 @@ export default function Home() {
                     animate={reduceMotion ? {} : { opacity: 1, y: 0 }}
                     exit={reduceMotion ? {} : { opacity: 0, y: -8 }}
                     transition={{ duration: reduceMotion ? 0 : 0.24 }}
-                    className="grid gap-4 lg:grid-cols-2"
                   >
+                    {workflowAudience === "candidate" && (
+                      <div className="mx-auto mb-10 max-w-2xl text-center">
+                        <h3 className="font-display text-2xl md:text-3xl font-medium tracking-tight text-slate-900 dark:text-white text-balance">
+                          Where capability speaks for itself
+                        </h3>
+                        <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400 font-light">
+                          Show how you think, respond and perform when faced with realistic operational challenges, helping organisations see your potential with greater clarity and confidence.
+                        </p>
+                      </div>
+                    )}
+                    <div className="grid gap-4 lg:grid-cols-2">
                     {(workflowAudience === "hiring" ? hiringWorkflowSteps : candidateWorkflowSteps).map((step) => (
                       <article
                         key={step.title}
@@ -955,6 +929,7 @@ export default function Home() {
                         </div>
                       </article>
                     ))}
+                    </div>
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -1079,15 +1054,16 @@ export default function Home() {
                 </div>
 
                 <h2 className="mx-auto max-w-3xl text-balance font-display text-5xl font-medium leading-[1.04] tracking-tight text-slate-900 dark:text-white md:text-7xl">
-                  Build an assessment process your team can{" "}
+                  Ready to transform your{" "}
                   <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent dark:from-sky-300 dark:to-blue-400">
-                    defend.
+                    recruitment process?
                   </span>
                 </h2>
 
                 <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">
-                  Configure delivery, protect assessment integrity and review structured
-                  evidence—without turning hiring into an automated decision.
+                  Discover how CTRL helps organisations identify high-potential candidates,
+                  reduce recruitment risk and make more confident hiring decisions through
+                  realistic assessments and immersive simulation.
                 </p>
 
                 <div className="mt-11 flex flex-col items-center justify-center gap-4 sm:flex-row">

@@ -117,9 +117,9 @@ export function LandingHero({
               variants={rise}
               className="text-balance font-display text-[2.75rem] font-medium leading-[1.02] tracking-[-0.04em] text-stone-950 sm:text-5xl lg:text-[4.25rem] dark:text-white"
             >
-              Structured evidence
+              Hiring the right people
               <span className="block text-stone-500 dark:text-stone-400">
-                for decisions that matter.
+                starts with the right intelligence.
               </span>
             </motion.h1>
 
@@ -127,8 +127,10 @@ export function LandingHero({
               variants={rise}
               className="mt-6 max-w-[38rem] text-lg leading-8 text-stone-600 sm:text-xl dark:text-stone-300"
             >
-              CTRL helps hiring teams run consistent assessments and review
-              clear outcomes — without turning selection into guesswork.
+              CTRL reveals how candidates think, respond and perform under
+              pressure, providing the behavioural insight needed to recruit
+              with confidence, reduce risk and build stronger operational
+              teams.
             </motion.p>
 
             <motion.div
