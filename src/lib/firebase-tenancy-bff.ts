@@ -90,7 +90,7 @@ export function toClientAccessCodes(
       (seat) =>
         ({
           documentId: seat.id,
-          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
           status: "available",
           targetRole: "hiring_manager",
           invitedEmail: null,
@@ -171,5 +171,5 @@ export function toClientOverview(
 }
 
 export function defaultInvitationExpiry(): string {
-  return new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  return new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 }

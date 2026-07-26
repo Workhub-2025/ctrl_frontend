@@ -8,81 +8,71 @@ import { cn } from "@/lib/utils";
 
 type AuthBrandingPaneProps = {
   isLightTheme?: boolean;
+  variant?: "login" | "join";
 };
 
 /** Static left pane — isolated from form state so typing does not re-render this tree. */
 export const AuthBrandingPane = memo(function AuthBrandingPane({
   isLightTheme = false,
+  variant = "login",
 }: AuthBrandingPaneProps) {
+  const isJoin = variant === "join";
+
   return (
     <div
       className={cn(
         "relative hidden w-1/2 flex-col justify-between overflow-hidden border-r p-12 lg:flex xl:p-16",
         isLightTheme
-          ? "border-slate-200 bg-white/55 text-slate-950 shadow-sm"
-          : "border-white/10 bg-[#050505] text-white"
+          ? "border-slate-200 bg-[#f7f4ef] text-slate-950"
+          : "border-white/10 bg-[#07060a] text-white"
       )}
     >
       <div className="pointer-events-none absolute inset-0 z-0">
         <div
           aria-hidden
-          className={cn("absolute inset-0", isLightTheme ? "opacity-[0.28]" : "opacity-[0.18]")}
+          className="absolute inset-0 opacity-[0.35]"
           style={{
-            backgroundImage:
-              isLightTheme
-                ? "linear-gradient(to right, rgba(15,23,42,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(15,23,42,0.08) 1px, transparent 1px)"
-                : "linear-gradient(to right, rgba(148,163,184,0.4) 1px, transparent 1px), linear-gradient(to bottom, rgba(148,163,184,0.4) 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
+            backgroundImage: isLightTheme
+              ? "radial-gradient(circle at 1px 1px, rgba(28,25,23,0.14) 1px, transparent 0)"
+              : "radial-gradient(circle at 1px 1px, rgba(251,191,36,0.16) 1px, transparent 0)",
+            backgroundSize: "28px 28px",
             maskImage:
-              "radial-gradient(ellipse 80% 70% at 30% 40%, black 20%, transparent 80%)",
+              "radial-gradient(ellipse 75% 65% at 35% 40%, black 15%, transparent 75%)",
             WebkitMaskImage:
-              "radial-gradient(ellipse 80% 70% at 30% 40%, black 20%, transparent 80%)",
+              "radial-gradient(ellipse 75% 65% at 35% 40%, black 15%, transparent 75%)",
           }}
         />
-        {!isLightTheme && (
-          <>
-            <div
-              aria-hidden
-              className="absolute left-[12%] top-[34%] h-[28rem] w-[28rem] rounded-full blur-3xl"
-              style={{
-                background:
-                  "radial-gradient(circle, rgba(56,189,248,0.18), rgba(37,99,235,0.06) 45%, transparent 70%)",
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 mix-blend-multiply" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/80 mix-blend-multiply" />
-          </>
-        )}
-        {isLightTheme && (
-          <div className="absolute inset-0 bg-gradient-to-br from-white/75 via-sky-50/50 to-slate-100/70" />
-        )}
+        <div
+          aria-hidden
+          className="absolute -left-24 top-24 h-[28rem] w-[28rem] rounded-full blur-3xl"
+          style={{
+            background: isLightTheme
+              ? "radial-gradient(circle, rgba(180,83,9,0.18), transparent 70%)"
+              : "radial-gradient(circle, rgba(245,158,11,0.22), transparent 68%)",
+          }}
+        />
+        <div
+          aria-hidden
+          className="absolute bottom-0 right-0 h-[22rem] w-[22rem] rounded-full blur-3xl"
+          style={{
+            background: isLightTheme
+              ? "radial-gradient(circle, rgba(15,23,42,0.08), transparent 70%)"
+              : "radial-gradient(circle, rgba(14,165,233,0.12), transparent 70%)",
+          }}
+        />
       </div>
 
-      <span
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute left-8 top-8 z-10 h-6 w-6 border-l-2 border-t-2",
-          isLightTheme ? "border-slate-300" : "border-white/15"
-        )}
-      />
-      <span
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute bottom-8 right-8 z-10 h-6 w-6 border-b-2 border-r-2",
-          isLightTheme ? "border-slate-300" : "border-white/15"
-        )}
-      />
-
       <div className="relative z-10 flex items-center justify-between">
-        <Link href="/" className="inline-block transition-transform hover:scale-105">
+        <Link href="/" className="inline-block transition-transform hover:scale-[1.03]">
           <BrandLogo layout="horizontal" className="h-10 w-[4.5rem]" />
         </Link>
-        <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-slate-500">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          </span>
-          Secure access
+        <span
+          className={cn(
+            "font-mono text-[11px] uppercase tracking-[0.22em]",
+            isLightTheme ? "text-stone-500" : "text-stone-400"
+          )}
+        >
+          {isJoin ? "Session entry" : "Secure access"}
         </span>
       </div>
 
@@ -90,43 +80,72 @@ export const AuthBrandingPane = memo(function AuthBrandingPane({
         <p
           className={cn(
             "mb-5 font-mono text-[11px] uppercase tracking-[0.28em]",
-            isLightTheme ? "text-sky-700" : "text-cyan-400/80"
+            isLightTheme ? "text-amber-800" : "text-amber-400/90"
           )}
         >
-          Dispatch Intelligence Platform
+          {isJoin ? "Assessment session" : "CTRL Assessment"}
         </p>
         <h2
           className={cn(
-            "text-4xl font-medium leading-[1.1] tracking-tight xl:text-5xl",
-            isLightTheme ? "text-slate-950" : "text-white"
+            "font-display text-4xl font-medium leading-[1.08] tracking-tight xl:text-5xl",
+            isLightTheme ? "text-stone-950" : "text-white"
           )}
         >
-          Recruit for the moments that{" "}
-          <span
-            className={cn(
-              "bg-gradient-to-r bg-clip-text text-transparent",
-              isLightTheme ? "from-sky-700 to-blue-700" : "from-sky-300 to-blue-400"
-            )}
-          >
-            actually matter
-          </span>
-          .
+          {isJoin ? (
+            <>
+              One code.{" "}
+              <span
+                className={cn(
+                  "bg-gradient-to-r bg-clip-text text-transparent",
+                  isLightTheme
+                    ? "from-amber-800 to-orange-700"
+                    : "from-amber-300 to-orange-300"
+                )}
+              >
+                Your session.
+              </span>
+            </>
+          ) : (
+            <>
+              Evidence under{" "}
+              <span
+                className={cn(
+                  "bg-gradient-to-r bg-clip-text text-transparent",
+                  isLightTheme
+                    ? "from-amber-800 to-orange-700"
+                    : "from-amber-300 to-orange-300"
+                )}
+              >
+                real pressure.
+              </span>
+            </>
+          )}
         </h2>
         <ul className="mt-8 space-y-3.5">
-          {[
-            "Behavioural scoring under real pressure",
-            "Pressure-tested operational scenarios",
-            "Three role-built portals, one platform",
-          ].map((item) => (
+          {(isJoin
+            ? [
+                "Codes expire 24 hours after issue",
+                "Sign in once, then join your session",
+                "Ask your hiring manager if you need a resend",
+              ]
+            : [
+                "Role-built portals for every stakeholder",
+                "Structured delivery with reviewable evidence",
+                "Invitation-only account creation",
+              ]
+          ).map((item) => (
             <li
               key={item}
               className={cn(
                 "flex items-center gap-3 text-[15px]",
-                isLightTheme ? "text-slate-700" : "text-slate-300"
+                isLightTheme ? "text-stone-700" : "text-stone-300"
               )}
             >
               <CheckCircle
-                className={cn("h-4 w-4 shrink-0", isLightTheme ? "text-sky-700" : "text-cyan-400")}
+                className={cn(
+                  "h-4 w-4 shrink-0",
+                  isLightTheme ? "text-amber-800" : "text-amber-400"
+                )}
               />
               {item}
             </li>
@@ -138,26 +157,29 @@ export const AuthBrandingPane = memo(function AuthBrandingPane({
         <blockquote
           className={cn(
             "space-y-4 border-l-2 pl-5",
-            isLightTheme ? "border-sky-700/30" : "border-cyan-400/40"
+            isLightTheme ? "border-amber-800/35" : "border-amber-400/40"
           )}
         >
           <p
             className={cn(
               "text-xl font-medium leading-snug tracking-tight",
-              isLightTheme ? "text-slate-800" : "text-white/90"
+              isLightTheme ? "text-stone-800" : "text-white/90"
             )}
           >
-            &ldquo;We stopped guessing based on interviews. Now we evaluate candidates under actual
-            control room pressure.&rdquo;
+            {isJoin
+              ? "Have your code ready. You’ll confirm your account next, then open the assessment session linked to it."
+              : "We stopped guessing from interviews alone. Now we evaluate candidates with structured, pressure-tested evidence."}
           </p>
           <footer
             className={cn(
               "flex items-center gap-3 text-xs font-semibold uppercase tracking-widest",
-              isLightTheme ? "text-sky-700" : "text-cyan-400"
+              isLightTheme ? "text-amber-800" : "text-amber-400"
             )}
           >
-            <span className={cn("h-px w-8", isLightTheme ? "bg-sky-700" : "bg-cyan-400")} />
-            Mission Critical Assessment
+            <span
+              className={cn("h-px w-8", isLightTheme ? "bg-amber-800" : "bg-amber-400")}
+            />
+            {isJoin ? "Candidate pathway" : "Organisational hiring"}
           </footer>
         </blockquote>
       </div>

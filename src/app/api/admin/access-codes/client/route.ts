@@ -10,7 +10,7 @@ import {
 } from "@/services/admin-platform.service";
 import { invitationAcceptUrl } from "@/lib/public-app-urls";
 
-const INVITE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const INVITE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export async function POST(request: NextRequest) {
   try {

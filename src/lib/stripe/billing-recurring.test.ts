@@ -2,14 +2,31 @@ import { describe, expect, it } from "vitest";
 import { payloadUsesSubscriptionCheckout } from "@/lib/stripe/billing-recurring";
 
 describe("payloadUsesSubscriptionCheckout", () => {
-  it("uses subscription checkout for seat increases and add-on assessments", () => {
+  it("uses subscription checkout only for contract activation/extension", () => {
+    expect(
+      payloadUsesSubscriptionCheckout({
+        type: "contract_activation",
+        seatCount: 2,
+        notes: "activate",
+      } as never)
+    ).toBe(true);
+
+    expect(
+      payloadUsesSubscriptionCheckout({
+        type: "contract_extension",
+        newEndDate: "2027-07-26",
+      } as never)
+    ).toBe(true);
+  });
+
+  it("uses one-off payment checkout for seats, assessments, and delivery", () => {
     expect(
       payloadUsesSubscriptionCheckout({
         type: "seat_increase",
         currentSeats: 2,
         requestedSeats: 4,
       })
-    ).toBe(true);
+    ).toBe(false);
 
     expect(
       payloadUsesSubscriptionCheckout({
@@ -17,10 +34,15 @@ describe("payloadUsesSubscriptionCheckout", () => {
         assessmentSlug: "short-term-memory",
         assessmentLabel: "Short-Term Memory",
       })
-    ).toBe(true);
-  });
+    ).toBe(false);
 
-  it("uses subscription checkout when a bundle includes recurring items", () => {
+    expect(
+      payloadUsesSubscriptionCheckout({
+        type: "delivery_feature",
+        featureKey: "deliveryRemote",
+      })
+    ).toBe(false);
+
     expect(
       payloadUsesSubscriptionCheckout({
         type: "upgrade_bundle",
@@ -32,15 +54,6 @@ describe("payloadUsesSubscriptionCheckout", () => {
             assessmentLabel: "Short-Term Memory",
           },
         ],
-      })
-    ).toBe(true);
-  });
-
-  it("keeps one-off delivery features on payment checkout", () => {
-    expect(
-      payloadUsesSubscriptionCheckout({
-        type: "delivery_feature",
-        featureKey: "deliveryRemote",
       })
     ).toBe(false);
   });

@@ -15,6 +15,14 @@ import {
 
 const useFirebaseAuthentication = isFirebaseAuthProvider();
 
+/** Same-origin relative path only — blocks open redirects via callbackUrl. */
+function safeCallbackPathFromLocation(): string | null {
+    if (typeof window === 'undefined') return null;
+    const raw = new URLSearchParams(window.location.search).get('callbackUrl');
+    if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null;
+    return raw;
+}
+
 export function useAuth() {
     const [session, setSession] = useState<ClientAuthSession>(null);
     const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading');
@@ -135,7 +143,7 @@ export function useAuth() {
                 primeClientSession(nextSession);
                 setSession(nextSession);
                 setStatus('authenticated');
-                router.push(result.session.redirectPath);
+                router.push(safeCallbackPathFromLocation() ?? result.session.redirectPath);
                 return { success: true };
             }
 
@@ -192,11 +200,14 @@ export function useAuth() {
                 setSession(nextSession);
                 setStatus('authenticated');
                 setUserProfile(userData as IUser);
-                const destination = redirectPath || routeForRole(userData.role);
+                const destination =
+                    safeCallbackPathFromLocation() ||
+                    redirectPath ||
+                    routeForRole(userData.role);
                 // Hard navigation ensures middleware sees the new session cookie.
                 window.location.assign(destination);
             } else if (redirectPath) {
-                window.location.assign(redirectPath);
+                window.location.assign(safeCallbackPathFromLocation() || redirectPath);
             } else {
                 const freshSession = await getClientSession({ force: true });
                 if (freshSession?.user) {
@@ -268,7 +279,7 @@ export function useAuth() {
                 primeClientSession(nextSession);
                 setSession(nextSession);
                 setStatus('authenticated');
-                router.push(result.session.redirectPath);
+                router.push(safeCallbackPathFromLocation() ?? result.session.redirectPath);
                 return { success: true };
             }
 
@@ -303,10 +314,13 @@ export function useAuth() {
                 setSession(nextSession);
                 setStatus('authenticated');
                 setUserProfile(userData as IUser);
-                const destination = redirectPath || routeForRole(userData.role);
+                const destination =
+                    safeCallbackPathFromLocation() ||
+                    redirectPath ||
+                    routeForRole(userData.role);
                 window.location.assign(destination);
             } else if (redirectPath) {
-                window.location.assign(redirectPath);
+                window.location.assign(safeCallbackPathFromLocation() || redirectPath);
             } else {
                 throw new Error('Verification succeeded but the session could not be established');
             }

@@ -130,7 +130,7 @@ export function computeLineItems(
             label: `${additional} additional HM seat${additional === 1 ? "" : "s"}`,
             quantity: additional,
             unitAmountPence,
-            billingInterval: "month",
+            billingInterval: "once",
             ctrlLineKind: "hm_seats",
           });
         }
@@ -161,7 +161,7 @@ export function computeLineItems(
           label: `Add-on assessment: ${item.assessmentLabel}`,
           quantity: 1,
           unitAmountPence,
-          billingInterval: "month",
+          billingInterval: "once",
           ctrlLineKind: "assessment_addon",
           assessmentSlug: item.assessmentSlug,
         });

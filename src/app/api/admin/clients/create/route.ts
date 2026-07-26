@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
       if (validation.data.primaryContactEmail) {
         const expiresAt = new Date(
-          Date.now() + 14 * 24 * 60 * 60 * 1000,
+          Date.now() + 24 * 60 * 60 * 1000,
         ).toISOString();
         await auth.domainApi.request({
           path: "/v1/invitations",

@@ -45,6 +45,16 @@ export async function GET() {
       }>,
     }));
 
+    const commerciallyOperational = billing.commercial?.operational === true;
+    const contractActive = commerciallyOperational;
+    const lockState = billing.lockState ?? {
+      operational: !commerciallyOperational,
+      reason: billing.commercial?.reason ?? null,
+      userMessage: commerciallyOperational
+        ? ""
+        : "Your organisation contract is not active. Renew to restore access.",
+    };
+
     return NextResponse.json({
       data: {
         client: {
@@ -52,16 +62,21 @@ export async function GET() {
           billingStatus: billing.client.billingStatus,
           autoRenew: billing.client.autoRenew,
         },
-        contractActive: billing.client.billingStatus === "active",
+        contractActive,
         contract: {
-          documentId: seats?.id ?? context.organizationId,
+          documentId:
+            billing.commercial?.activeContractId ??
+            seats?.id ??
+            context.organizationId,
           seatCount,
           startDate: seats?.validFrom,
-          endDate: seats?.validUntil ?? undefined,
-          status:
-            billing.client.billingStatus === "active"
-              ? "active"
-              : seats?.status ?? "draft",
+          endDate:
+            billing.commercial?.contractEndDate ??
+            seats?.validUntil ??
+            undefined,
+          status: commerciallyOperational
+            ? "active"
+            : seats?.status ?? "draft",
           paymentStatus: billing.client.billingStatus,
           paidAt: null,
           daysUntilExpiry: null,
@@ -94,12 +109,8 @@ export async function GET() {
         })),
         additionalAssessments,
         requestableAssessments: [],
-        canRequestUpgrades: true,
-        lockState: {
-          operational: false,
-          reason: null,
-          userMessage: "",
-        },
+        canRequestUpgrades: commerciallyOperational,
+        lockState,
       },
     });
   } catch (error) {

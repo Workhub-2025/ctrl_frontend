@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (isFirebaseAdminAuth(auth)) {
       const expiresAt = new Date(
-        Date.now() + 14 * 24 * 60 * 60 * 1000,
+        Date.now() + 24 * 60 * 60 * 1000,
       ).toISOString();
       const result = await auth.domainApi.request<{
         invitationId: string;

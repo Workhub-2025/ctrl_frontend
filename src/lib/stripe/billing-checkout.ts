@@ -6,7 +6,6 @@ import type {
   ClientUpgradeRequestPayload,
 } from "@/lib/client/entitlements";
 import {
-  isRecurringUpgradeItemType,
   monthlyAssessmentAddonPence,
   monthlySeatPricePence,
   payloadUsesSubscriptionCheckout,
@@ -304,4 +303,4 @@ export async function createBillingCheckoutSession(
   return { checkoutSession, amountPence, currency, requestDocumentId };
 }
 
-export { isRecurringUpgradeItemType, payloadUsesSubscriptionCheckout };
+export { payloadUsesSubscriptionCheckout };

@@ -491,12 +491,12 @@ export default function AdminBillingPage() {
               <AdminSectionHeader
                 className="flex-1 sm:items-start"
                 title="Standard upgrade pricing"
-                description="Global standard charges for platform seat increases and new assessments."
+                description="Global one-off charges for platform seat increases and new assessments. Contract licence remains annual, paid monthly."
               />
             </div>
             <div className="grid gap-5 md:grid-cols-2">
               <PoundField
-                label="Extra HM seat (monthly recurring cost)"
+                label="Extra HM seat (one-off unlock)"
                 pence={pricing.seatOneOffPence}
                 onChangePence={(value) =>
                   setPricing((current) => ({ ...current, seatOneOffPence: value }))
@@ -504,7 +504,7 @@ export default function AdminBillingPage() {
                 icon={Users}
               />
               <PoundField
-                label="Add-on assessment (monthly recurring cost)"
+                label="Add-on assessment (one-off unlock)"
                 pence={pricing.assessmentAddonPence}
                 onChangePence={(value) =>
                   setPricing((current) => ({ ...current, assessmentAddonPence: value }))

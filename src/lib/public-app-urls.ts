@@ -31,14 +31,22 @@ export function invitationAcceptUrl(
   return url.toString();
 }
 
-/** Deep-link candidates into the portal join form with the session code prefilled. */
+/** Candidate portal path with a session access code ready to redeem. */
+export function candidateDashboardPathWithAccessCode(accessCode: string): string {
+  const path = new URL("/candidate-dashboard", "https://ctrl.local");
+  path.searchParams.set("accessCode", accessCode);
+  return `${path.pathname}${path.search}`;
+}
+
+/**
+ * Deep-link candidates to the public join page with the session code
+ * prefilled. They sign in (or continue) from there.
+ */
 export function sessionJoinUrl(
   request: Request | NextRequest,
   accessCode: string,
 ): string {
-  const callback = new URL("/candidate-dashboard", publicAppBaseUrl(request));
-  callback.searchParams.set("accessCode", accessCode);
-  const login = new URL("/auth/login", publicAppBaseUrl(request));
-  login.searchParams.set("callbackUrl", `${callback.pathname}${callback.search}`);
-  return login.toString();
+  const join = new URL("/join", publicAppBaseUrl(request));
+  join.searchParams.set("accessCode", accessCode);
+  return join.toString();
 }

@@ -36,6 +36,19 @@ export type FirebaseBillingEntitlements = Readonly<{
   };
   seatCount: number;
   tier: string | null;
+  commercial?: {
+    operational: boolean;
+    reason: string | null;
+    activeContractId: string | null;
+    contractEndDate: string | null;
+    organizationStatus: string | null;
+    paymentState: string | null;
+  };
+  lockState?: {
+    operational: boolean;
+    reason: string | null;
+    userMessage: string;
+  };
 }>;
 
 export async function tryRequireFirebaseBillingSession() {
@@ -71,6 +84,7 @@ export type FirebasePriceRow = Readonly<{
   priceVersion: string;
   amountPence: number;
   currency: string;
+  oneOff?: boolean;
   billingInterval: string;
   metadata: Record<string, string | number | boolean>;
 }>;

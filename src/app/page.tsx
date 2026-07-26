@@ -39,6 +39,7 @@ const navItems = [
   { label: "Platform", href: "#capabilities" },
   { label: "How it works", href: "#workflow" },
   { label: "Contracts", href: "#contracts" },
+  { label: "Join", href: "/join" },
 ];
 
 const platformPillars: { label: string; icon: typeof Activity; tint: DisciplineTint }[] = [
@@ -431,7 +432,19 @@ export default function Home() {
           {/* Links (Desktop) */}
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
             {navItems.map((item) => {
-              const isActive = activeSection === item.href.slice(1);
+              const isHash = item.href.startsWith("#");
+              const isActive = isHash && activeSection === item.href.slice(1);
+              if (!isHash) {
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="relative rounded px-1.5 py-0.5 text-slate-600 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:text-slate-400 dark:hover:text-white dark:focus-visible:ring-white/20"
+                  >
+                    {item.label}
+                  </Link>
+                );
+              }
               return (
                 <a
                   key={item.href}
@@ -467,10 +480,10 @@ export default function Home() {
               Log in
               <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-[opacity,margin] duration-300" aria-hidden="true" />
             </Link>
-            <Button asChild className="group rounded-full bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
-              <Link href="/pricing" className="flex items-center gap-1.5">
-                Get Started
-                <ArrowRight className="w-3.5 h-3.5 opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-[opacity,margin] duration-300" aria-hidden="true" />
+            <Button asChild className="group rounded-full bg-slate-900 dark:bg-amber-400 text-white dark:text-stone-950 hover:bg-slate-800 dark:hover:bg-amber-300 h-9 px-5 font-medium transition-colors text-sm focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-amber-300/50">
+              <Link href="/join" className="flex items-center gap-1.5">
+                Enter code
+                <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
               </Link>
             </Button>
           </div>
@@ -515,7 +528,24 @@ export default function Home() {
                 </p>
                 <div className="flex flex-col gap-0.5">
                   {navItems.map((item) => {
-                    const isActive = activeSection === item.href.slice(1);
+                    const isHash = item.href.startsWith("#");
+                    const isActive = isHash && activeSection === item.href.slice(1);
+                    if (!isHash) {
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="w-full flex items-center gap-3 text-left text-base font-medium px-3 py-3 min-h-[44px] rounded-2xl transition-colors text-slate-600 dark:text-slate-300 hover:bg-slate-900/[0.04] dark:hover:bg-white/[0.05] hover:text-slate-900 dark:hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/20"
+                        >
+                          <span
+                            className="h-4 w-[2px] shrink-0 rounded-full bg-slate-300/80 dark:bg-white/20"
+                            aria-hidden="true"
+                          />
+                          {item.label}
+                        </Link>
+                      );
+                    }
                     return (
                       <a
                         key={item.href}
@@ -561,10 +591,10 @@ export default function Home() {
                     Log in
                     <ArrowRight className="w-4 h-4 opacity-60 group-hover:opacity-100 transition-opacity duration-200" aria-hidden="true" />
                   </Link>
-                  <Button asChild className="rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-200 w-full h-11 text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-white/50">
-                    <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
-                      Get Started
-                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                  <Button asChild className="rounded-2xl bg-slate-900 dark:bg-amber-400 text-white dark:text-stone-950 hover:bg-slate-800 dark:hover:bg-amber-300 w-full h-11 text-base font-medium focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-amber-300/50">
+                    <Link href="/join" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2">
+                      Enter session code
+                      <KeyRound className="w-4 h-4" aria-hidden="true" />
                     </Link>
                   </Button>
                 </div>
