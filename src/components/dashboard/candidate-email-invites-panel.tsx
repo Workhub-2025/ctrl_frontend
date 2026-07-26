@@ -607,59 +607,7 @@ export function CandidateEmailInvitesPanel({
         </>
       )}
 
-      {pendingInvites.length > 0 ? (
-        <div className={portalTableShellClass}>
-          <table className="w-full border-collapse text-left text-xs text-foreground">
-            <thead className={portalTableHeaderClass}>
-              <tr className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="p-3">Email</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pendingInvites.map((invite) => {
-                const isResending = resendingInviteId === invite.id;
-                const isLocked = Boolean(lockedResendInviteIds[invite.id]);
 
-                return (
-                  <tr key={invite.id} className={portalTableRowClass}>
-                    <td className="p-3">{invite.email || "—"}</td>
-                    <td className="p-3 capitalize">{invite.inviteStatus}</td>
-                    <td className="p-3 text-right">
-                      {invite.email ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-8 min-w-[8rem] rounded-lg border-border bg-muted/20 px-2.5 text-xs text-foreground hover:bg-muted/50 hover:text-foreground"
-                          onClick={() => void resendCandidateInvite(invite)}
-                          disabled={
-                            disabled
-                            || Boolean(resendingInviteId)
-                            || isLocked
-                          }
-                        >
-                          <RefreshCw
-                            className={cn(
-                              "h-3.5 w-3.5",
-                              isResending ? "motion-safe:animate-spin" : ""
-                            )}
-                            aria-hidden="true"
-                          />
-                          {isResending ? "Resending" : "Resend"}
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
     </div>
   );
 }
