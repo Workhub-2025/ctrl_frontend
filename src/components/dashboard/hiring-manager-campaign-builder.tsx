@@ -25,6 +25,7 @@ import {
   Timer,
 } from "lucide-react";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
+import { preferredAssessmentReleaseVersion } from "@/lib/assessment-platform-registry";
 import { isPremiumCatalogueTier } from "@/lib/client/entitlements";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import {
@@ -132,8 +133,6 @@ const DELIVERY_MODES: readonly {
   },
 ];
 
-const DEFAULT_ASSESSMENT_VERSION = "1.0.1";
-
 const CANDIDATE_VOLUME_PRESETS = [25, 50, 100, 250];
 
 /**
@@ -153,10 +152,11 @@ function getVersionOptions(assessment: HiringManagerAssessment) {
   if (assessment.availableVersions.length > 0) {
     return assessment.availableVersions;
   }
+  const preferred = preferredAssessmentReleaseVersion(assessment.slug);
   return [
     {
-      version: DEFAULT_ASSESSMENT_VERSION,
-      title: `v${DEFAULT_ASSESSMENT_VERSION}`,
+      version: preferred,
+      title: `v${preferred}`,
       description: null as string | null,
     },
   ];
@@ -164,11 +164,10 @@ function getVersionOptions(assessment: HiringManagerAssessment) {
 
 function defaultVersionFor(assessment: HiringManagerAssessment): string {
   const options = getVersionOptions(assessment);
-  if (assessment.slug === "call-simulation") {
-    const dual = options.find((option) => option.version === "1.1.0");
-    if (dual) return dual.version;
-  }
-  return options[0]?.version ?? DEFAULT_ASSESSMENT_VERSION;
+  const preferred = preferredAssessmentReleaseVersion(assessment.slug);
+  const match = options.find((option) => option.version === preferred);
+  if (match) return match.version;
+  return options[0]?.version ?? preferred;
 }
 
 function getSelectedVersionOption(assessment: HiringManagerAssessment, selectedVersion: string) {
@@ -446,7 +445,7 @@ export function HiringManagerCampaignBuilder({
               ...current.assessmentVersions,
               [slug]: assessment
                 ? defaultVersionFor(assessment)
-                : DEFAULT_ASSESSMENT_VERSION,
+                : preferredAssessmentReleaseVersion(slug),
             },
         assessmentThresholds: exists
           ? removeRecordKey(current.assessmentThresholds, slug)

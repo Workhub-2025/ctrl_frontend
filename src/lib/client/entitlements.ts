@@ -1,3 +1,11 @@
+import {
+  CORE_PLATFORM_ASSESSMENTS,
+  CORE_PLATFORM_ASSESSMENT_SLUGS,
+  PREMIUM_PLATFORM_ASSESSMENTS as PREMIUM_REGISTRY_ENTRIES,
+  assessmentEntitlementTier,
+  getAssessmentPlatformEntry,
+} from "@/lib/assessment-platform-registry";
+
 export const CLIENT_DELIVERY_FEATURES = [
   { key: "deliveryRemote", label: "Remote delivery", group: "Delivery" },
   { key: "deliveryHybrid", label: "Hybrid delivery", group: "Delivery" },
@@ -8,69 +16,45 @@ export const CLIENT_PLATFORM_FEATURES = [
   { key: "assessmentRecovery", label: "Assessment recovery audit", group: "Recovery" },
 ] as const;
 
-export const DEFAULT_PLATFORM_ASSESSMENT_SLUGS = [
-  "situational-judgement",
-  "typing",
-  "prioritisation",
-  "call-simulation",
-] as const;
+/** Derived from `assessment-platform-registry` (core tier). */
+export const DEFAULT_PLATFORM_ASSESSMENT_SLUGS = CORE_PLATFORM_ASSESSMENT_SLUGS;
 
-export type DefaultPlatformAssessmentSlug = (typeof DEFAULT_PLATFORM_ASSESSMENT_SLUGS)[number];
+export type DefaultPlatformAssessmentSlug =
+  (typeof CORE_PLATFORM_ASSESSMENTS)[number]["slug"];
 
-/** Core assessments included on every client platform by default. */
-export const DEFAULT_PLATFORM_ASSESSMENTS = [
-  {
-    key: "situational-judgement",
-    label: "SJA",
-    title: "Situational judgement",
-    description: "Situational judgement assessment content",
-  },
-  {
-    key: "typing",
-    label: "TA",
-    title: "Typing assessment",
-    description: "Typing assessment content",
-  },
-  {
-    key: "prioritisation",
-    label: "PJA",
-    title: "Prioritisation",
-    description: "Prioritisation assessment content",
-  },
-  {
-    key: "call-simulation",
-    label: "SCA",
-    title: "Simulated call",
-    description: "Simulated call assessment content",
-  },
-] as const;
-
-/** Premium catalogue assessments that require a paid unlock. */
-export const PREMIUM_PLATFORM_ASSESSMENTS = [
-  {
-    key: "short-term-memory",
-    label: "STM",
-    title: "Short-term memory",
-    description: "Short-term memory assessment content",
-  },
-] as const;
-
-export function resolveAssessmentCatalogueTitle(slug: string): string {
-  const core = DEFAULT_PLATFORM_ASSESSMENTS.find((row) => row.key === slug);
-  if (core) return core.title;
-  const premium = PREMIUM_PLATFORM_ASSESSMENTS.find((row) => row.key === slug);
-  if (premium) return premium.title;
-  return slug;
+function toEntitlementRow(entry: {
+  slug: string;
+  shortLabel: string;
+  title: string;
+  description: string;
+}) {
+  return {
+    key: entry.slug,
+    label: entry.shortLabel,
+    title: entry.title,
+    description: entry.description,
+  };
 }
 
-export const DEFAULT_PLATFORM_ASSESSMENT_VERSION_ENTITLEMENTS = DEFAULT_PLATFORM_ASSESSMENTS.map(
-  (assessment) => ({
+/** Core assessments included on every client platform by default. */
+export const DEFAULT_PLATFORM_ASSESSMENTS =
+  CORE_PLATFORM_ASSESSMENTS.map(toEntitlementRow);
+
+/** Premium catalogue assessments that require a paid unlock. */
+export const PREMIUM_PLATFORM_ASSESSMENTS =
+  PREMIUM_REGISTRY_ENTRIES.map(toEntitlementRow);
+
+export function resolveAssessmentCatalogueTitle(slug: string): string {
+  return getAssessmentPlatformEntry(slug)?.title ?? slug;
+}
+
+export const DEFAULT_PLATFORM_ASSESSMENT_VERSION_ENTITLEMENTS =
+  DEFAULT_PLATFORM_ASSESSMENTS.map((assessment) => ({
     key: assessment.key,
     label: assessment.label,
     title: assessment.title,
     description: assessment.description,
-  })
-);
+  }));
 
 export type ClientAssessmentSlug = DefaultPlatformAssessmentSlug;
 
@@ -81,7 +65,7 @@ export type ClientCatalogueAssessment = {
 };
 
 export function isDefaultPlatformAssessment(slug: string) {
-  return DEFAULT_PLATFORM_ASSESSMENT_SLUGS.includes(slug as DefaultPlatformAssessmentSlug);
+  return assessmentEntitlementTier(slug) === "core";
 }
 
 export function getClientAdditionalAssessmentSlugs(features?: Record<string, unknown> | null) {

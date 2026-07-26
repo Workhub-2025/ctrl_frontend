@@ -6,6 +6,7 @@ import {
   ASSESSMENT_CATALOGUE_DEFAULTS,
   formatEstimatedCompletion,
 } from "@/lib/assessment-catalog-defaults";
+import { assessmentEntitlementTier } from "@/lib/assessment-platform-registry";
 import { isKnownAssessmentSlug } from "@/lib/assessment-slug";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 import { createFirebaseRecruitmentApi } from "@/lib/firebase-recruitment-api";
@@ -91,6 +92,7 @@ function mapCatalogueItem(
     releaseVersion?: string | null;
     slug: string;
     title: string;
+    entitlementTier?: "core" | "premium" | string | null;
     availableReleases?: ReadonlyArray<{
       releaseId: string;
       releaseVersion: string;
@@ -139,7 +141,10 @@ function mapCatalogueItem(
     isActive: true,
     passingScore: defaults?.passingScore ?? null,
     maxAttempts: null,
-    entitlementTier: "core",
+    entitlementTier:
+      item.entitlementTier === "core" || item.entitlementTier === "premium"
+        ? item.entitlementTier
+        : assessmentEntitlementTier(item.slug),
     availableVersions,
     activeReleaseId: item.releaseId,
   };

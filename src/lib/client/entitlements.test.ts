@@ -8,6 +8,7 @@ describe("isAssessmentEntitledForClient", () => {
       "typing",
       "prioritisation",
       "call-simulation",
+      "short-term-memory",
     ]) {
       expect(isAssessmentEntitledForClient({ slug, entitlementTier: "core" }, {})).toBe(true);
       expect(isAssessmentEntitledForClient({ slug }, {})).toBe(true);
@@ -17,7 +18,7 @@ describe("isAssessmentEntitledForClient", () => {
   it("grants catalogue core tier regardless of slug list", () => {
     expect(
       isAssessmentEntitledForClient(
-        { slug: "short-term-memory", entitlementTier: "core" },
+        { slug: "future-premium-module", entitlementTier: "core" },
         {},
       ),
     ).toBe(true);
@@ -26,8 +27,8 @@ describe("isAssessmentEntitledForClient", () => {
   it("grants premium slug when listed in additionalAssessmentSlugs", () => {
     expect(
       isAssessmentEntitledForClient(
-        { slug: "short-term-memory", entitlementTier: "premium" },
-        { additionalAssessmentSlugs: ["short-term-memory"] },
+        { slug: "future-premium-module", entitlementTier: "premium" },
+        { additionalAssessmentSlugs: ["future-premium-module"] },
       ),
     ).toBe(true);
   });
@@ -35,13 +36,13 @@ describe("isAssessmentEntitledForClient", () => {
   it("denies premium slug when not in additionalAssessmentSlugs", () => {
     expect(
       isAssessmentEntitledForClient(
-        { slug: "short-term-memory", entitlementTier: "premium" },
+        { slug: "future-premium-module", entitlementTier: "premium" },
         {},
       ),
     ).toBe(false);
     expect(
       isAssessmentEntitledForClient(
-        { slug: "short-term-memory", entitlementTier: "premium" },
+        { slug: "future-premium-module", entitlementTier: "premium" },
         { additionalAssessmentSlugs: ["other-assessment"] },
       ),
     ).toBe(false);
@@ -55,8 +56,8 @@ describe("isAssessmentEntitledForClient", () => {
   it("ignores malformed additionalAssessmentSlugs entries", () => {
     expect(
       isAssessmentEntitledForClient(
-        { slug: "short-term-memory", entitlementTier: "premium" },
-        { additionalAssessmentSlugs: [null, "", 42, "short-term-memory"] },
+        { slug: "future-premium-module", entitlementTier: "premium" },
+        { additionalAssessmentSlugs: [null, "", 42, "future-premium-module"] },
       ),
     ).toBe(true);
   });

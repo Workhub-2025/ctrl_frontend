@@ -109,6 +109,7 @@ type FirebaseAssessmentCatalogueItem = Readonly<{
   releaseVersion?: string | null;
   slug: string;
   title: string;
+  entitlementTier?: "core" | "premium" | string | null;
   availableReleases?: ReadonlyArray<{
     releaseId: string;
     releaseVersion: string;

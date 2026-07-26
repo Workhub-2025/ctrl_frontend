@@ -1,20 +1,13 @@
 import { completionLabels } from "@/assessments/plugins/candidate-catalog";
+import {
+  PLATFORM_ASSESSMENT_SLUGS,
+  TIMED_ASSESSMENT_SLUGS,
+  isPlatformAssessmentSlug,
+  type PlatformAssessmentSlug,
+} from "@/lib/assessment-platform-registry";
 
-export type PlatformAssessmentSlug =
-  | "typing"
-  | "situational-judgement"
-  | "prioritisation"
-  | "call-simulation"
-  | "short-term-memory";
-
-/** Registered platform catalogue slugs — keep aligned with BackEnd `PLATFORM_ASSESSMENT_SLUGS`. */
-export const PLATFORM_ASSESSMENT_SLUGS: readonly PlatformAssessmentSlug[] = [
-  "typing",
-  "situational-judgement",
-  "prioritisation",
-  "call-simulation",
-  "short-term-memory",
-] as const;
+export type { PlatformAssessmentSlug };
+export { PLATFORM_ASSESSMENT_SLUGS, TIMED_ASSESSMENT_SLUGS };
 
 export function normalizeAssessmentSlugInput(value?: string | null): string {
   return (value ?? "")
@@ -63,14 +56,10 @@ export function normalizeSlug(value?: string | null): string {
   return resolveAssessmentSlug(value) ?? normalizeAssessmentSlugInput(value);
 }
 
-export function isKnownAssessmentSlug(value: string): value is PlatformAssessmentSlug {
-  return (
-    value === "typing"
-    || value === "situational-judgement"
-    || value === "prioritisation"
-    || value === "call-simulation"
-    || value === "short-term-memory"
-  );
+export function isKnownAssessmentSlug(
+  value: string,
+): value is PlatformAssessmentSlug {
+  return isPlatformAssessmentSlug(value);
 }
 
 export function formatAssessmentSlugLabel(slug: string): string {
@@ -82,11 +71,3 @@ export function formatAssessmentSlugLabel(slug: string): string {
       .join(" ")
   );
 }
-
-export const TIMED_ASSESSMENT_SLUGS: ReadonlySet<string> = new Set([
-  "typing",
-  "situational-judgement",
-  "prioritisation",
-  "call-simulation",
-  "short-term-memory",
-]);

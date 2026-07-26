@@ -6,6 +6,10 @@ import {
   requireAdminDualAccess,
 } from "@/lib/auth/admin-dual-access";
 import {
+  PLATFORM_ASSESSMENT_SLUGS,
+  isPlatformAssessmentSlug,
+} from "@/lib/assessment-platform-registry";
+import {
   groupAssessmentReleases,
   type FirebaseAssessmentRelease,
 } from "@/lib/firebase-admin-tenancy-bff";
@@ -14,20 +18,12 @@ import {
   getCmsErrorStatus,
 } from "@/services/admin-platform.service";
 
-const ASSESSMENT_SLUGS = [
-  "call-simulation",
-  "prioritisation",
-  "situational-judgement",
-  "short-term-memory",
-  "typing",
-];
-
 function resolveRequestedSlugs(request: NextRequest) {
   const slug = request.nextUrl.searchParams.get("slug")?.trim();
-  if (slug && ASSESSMENT_SLUGS.includes(slug)) {
+  if (slug && isPlatformAssessmentSlug(slug)) {
     return [slug];
   }
-  return ASSESSMENT_SLUGS;
+  return [...PLATFORM_ASSESSMENT_SLUGS];
 }
 
 export async function GET(request: NextRequest) {
@@ -42,7 +38,7 @@ export async function GET(request: NextRequest) {
       });
       const versions = groupAssessmentReleases(releases);
       const slug = request.nextUrl.searchParams.get("slug")?.trim();
-      if (slug && ASSESSMENT_SLUGS.includes(slug)) {
+      if (slug && isPlatformAssessmentSlug(slug)) {
         return NextResponse.json({ data: versions[slug] ?? [] });
       }
       return NextResponse.json({ data: versions });
@@ -51,7 +47,7 @@ export async function GET(request: NextRequest) {
     const slugs = resolveRequestedSlugs(request);
     const versions = await getAdminAssessmentVersions(slugs, auth.cmsJwt);
     const slug = request.nextUrl.searchParams.get("slug")?.trim();
-    if (slug && ASSESSMENT_SLUGS.includes(slug)) {
+    if (slug && isPlatformAssessmentSlug(slug)) {
       return NextResponse.json({ data: versions[slug] ?? [] });
     }
     return NextResponse.json({ data: versions });

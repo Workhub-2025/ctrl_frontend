@@ -49,8 +49,8 @@ describe("firebase assessment catalogue helpers", () => {
     );
 
     expect(catalog.typing).toEqual([
-      { version: "1.0.1", title: "v1.0.1", description: null },
-      { version: "1.0.0", title: "v1.0.0", description: "Retired" },
+      { version: "1.0.1", releaseId: "b", title: "v1.0.1", description: null },
+      { version: "1.0.0", releaseId: "a", title: "v1.0.0", description: "Retired" },
     ]);
   });
 });

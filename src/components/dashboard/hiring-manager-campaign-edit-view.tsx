@@ -13,9 +13,8 @@ import {
   HiringManagerPortalClientService,
   type HiringManagerCampaignDetail,
 } from "@/services/hiring-manager-portal-client.service";
+import { preferredAssessmentReleaseVersion } from "@/lib/assessment-platform-registry";
 import { ArrowLeft, Pencil } from "lucide-react";
-
-const DEFAULT_ASSESSMENT_VERSION = "1.0.1";
 
 function deliveryModeFromCampaign(
   mode: HiringManagerCampaignDetail["deliveryMode"]
@@ -44,12 +43,11 @@ function buildInitialStackDraft(campaign: HiringManagerCampaignDetail) {
 
   const assessmentVersions = assessmentSlugs.reduce<Record<string, string>>((acc, slug) => {
     const config = settings[slug];
+    const preferred = preferredAssessmentReleaseVersion(slug);
     const version =
       config && typeof config === "object" && "version" in config
-        ? String((config as { version?: unknown }).version ?? DEFAULT_ASSESSMENT_VERSION)
-        : slug === "call-simulation"
-          ? "1.1.0"
-          : DEFAULT_ASSESSMENT_VERSION;
+        ? String((config as { version?: unknown }).version ?? preferred)
+        : preferred;
     acc[slug] = version;
     return acc;
   }, {});

@@ -1,16 +1,15 @@
 import "server-only";
 
 import type { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import {
+  PLATFORM_ASSESSMENT_SLUGS,
+  isPlatformAssessmentSlug,
+  type PlatformAssessmentSlug,
+} from "@/lib/assessment-platform-registry";
 
-export const FIREBASE_ASSESSMENT_SLUGS = [
-  "call-simulation",
-  "prioritisation",
-  "situational-judgement",
-  "short-term-memory",
-  "typing",
-] as const;
+export const FIREBASE_ASSESSMENT_SLUGS = PLATFORM_ASSESSMENT_SLUGS;
 
-export type FirebaseAssessmentSlug = (typeof FIREBASE_ASSESSMENT_SLUGS)[number];
+export type FirebaseAssessmentSlug = PlatformAssessmentSlug;
 
 export type FirebaseAssessmentRelease = Readonly<{
   id: string;
@@ -39,7 +38,7 @@ type DomainApi = ReturnType<typeof createFirebaseDomainApi>;
 export function isFirebaseAssessmentSlug(
   value: string,
 ): value is FirebaseAssessmentSlug {
-  return (FIREBASE_ASSESSMENT_SLUGS as readonly string[]).includes(value);
+  return isPlatformAssessmentSlug(value);
 }
 
 export function resolveRequestedAssessmentSlugs(
