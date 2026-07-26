@@ -1258,9 +1258,7 @@ button[aria-label="Toggle theme"] {
 
 /* Optimizar rendering de imágenes del logo */
 img[src*="newlogo.png"],
-img[src*="ctrl-mark.png"],
-img[src*="newlogo.svg"],
-img[src*="ctrl-mark.svg"] {
+img[src*="ctrl-mark.png"] {
   content-visibility: auto;
   contain-intrinsic-size: 3rem 3rem;
   image-rendering: -webkit-optimize-contrast;
