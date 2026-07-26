@@ -760,7 +760,7 @@ export function HiringManagerCampaignDetailView({
                                 size="sm"
                                 className="h-8 text-xs text-primary"
                               >
-                                <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}`}>
+                                <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?campaignId=${campaign.id}&from=campaign`}>
                                   View report
                                 </Link>
                               </Button>

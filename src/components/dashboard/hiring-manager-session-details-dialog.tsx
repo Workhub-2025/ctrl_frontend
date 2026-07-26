@@ -157,6 +157,7 @@ export function HiringManagerSessionDetailsDialog({
       session={session}
       layout={layout}
       campaignName={campaignName}
+      campaignId={campaignId}
       expectedAssessmentCount={expectedAssessmentCount}
       removingCandidateId={removingCandidateId}
       onKickCandidate={onKickCandidate}
@@ -210,6 +211,7 @@ type HiringManagerSessionWorkspaceProps = {
   session: HiringManagerSessionListItem;
   layout: "dialog" | "page";
   campaignName?: string;
+  campaignId?: string;
   expectedAssessmentCount?: number;
   removingCandidateId?: string | null;
   onKickCandidate?: (sessionId: string, candidateId: string) => void;
@@ -234,6 +236,7 @@ function HiringManagerSessionWorkspace({
   session,
   layout,
   campaignName,
+  campaignId,
   expectedAssessmentCount,
   removingCandidateId,
   onKickCandidate,
@@ -660,7 +663,7 @@ function HiringManagerSessionWorkspace({
                                 size="sm"
                                 className="h-9 rounded-lg px-4 text-xs font-semibold"
                               >
-                                <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}`}>
+                                <Link href={`/hiring-manager-dashboard/candidates/${candidate.id}/?sessionId=${session.id}&campaignId=${campaignId ?? ""}&from=session`}>
                                   <Eye className="mr-1.5 h-3.5 w-3.5" />
                                   {progress.completed >= progress.total ? "View results" : "View progress"}
                                 </Link>

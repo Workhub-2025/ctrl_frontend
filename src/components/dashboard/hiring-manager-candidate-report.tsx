@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -165,6 +166,55 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
   const [openBreakdownKey, setOpenBreakdownKey] = useState<string | null>(null);
   const [reloadTick, setReloadTick] = useState(0);
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const fromParam = searchParams.get("from");
+  const campaignIdParam = searchParams.get("campaignId");
+  const sessionIdParam = searchParams.get("sessionId");
+  const returnUrlParam = searchParams.get("returnUrl");
+
+  const backDestination = useMemo(() => {
+    if (returnUrlParam) {
+      return { href: returnUrlParam, label: "Back" };
+    }
+    if (fromParam === "campaign" && campaignIdParam) {
+      return {
+        href: `/hiring-manager-dashboard/campaigns/${encodeURIComponent(campaignIdParam)}`,
+        label: "Back to campaign",
+      };
+    }
+    if (fromParam === "session" && sessionIdParam) {
+      return {
+        href: `/hiring-manager-dashboard/sessions/${encodeURIComponent(sessionIdParam)}`,
+        label: "Back to session",
+      };
+    }
+    if (campaignIdParam) {
+      return {
+        href: `/hiring-manager-dashboard/campaigns/${encodeURIComponent(campaignIdParam)}`,
+        label: "Back to campaign",
+      };
+    }
+    if (sessionIdParam) {
+      return {
+        href: `/hiring-manager-dashboard/sessions/${encodeURIComponent(sessionIdParam)}`,
+        label: "Back to session",
+      };
+    }
+    return {
+      href: "/hiring-manager-dashboard/candidates",
+      label: "Back to candidates",
+    };
+  }, [fromParam, campaignIdParam, sessionIdParam, returnUrlParam]);
+
+  const handleBack = (e: React.MouseEvent) => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      e.preventDefault();
+      router.back();
+    }
+  };
+
   const resolvedSessionId = candidateSessionId ?? candidateId;
   usePortalBreadcrumbDetail(embedded ? null : reportData?.candidate.name);
 
@@ -311,9 +361,9 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
       <div className="max-w-5xl space-y-4">
         {!embedded && (
           <Button variant="outline" size="sm" className="h-9 rounded-lg" asChild>
-            <Link href="/hiring-manager-dashboard/candidates/">
+            <Link href={backDestination.href} onClick={handleBack}>
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-              Back to candidates
+              {backDestination.label}
             </Link>
           </Button>
         )}
@@ -344,9 +394,9 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
       {!embedded && (
         <>
           <Button variant="outline" size="sm" className="h-9 w-fit rounded-lg" asChild>
-            <Link href="/hiring-manager-dashboard/candidates/">
+            <Link href={backDestination.href} onClick={handleBack}>
               <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-              Back to candidates
+              {backDestination.label}
             </Link>
           </Button>
 
