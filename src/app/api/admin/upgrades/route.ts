@@ -31,21 +31,66 @@ export async function GET() {
 
   try {
     if (isFirebaseAdminAuth(auth)) {
-      const organizations = await auth.domainApi.request<FirebaseOrganization[]>({
-        path: "/v1/organizations",
+      const response = await auth.domainApi.request<{
+        data: {
+          organizations: Array<{
+            id: string;
+            legalName: string;
+            activeSeats: number;
+            pendingUpgradesCount: number;
+            contractSummary: {
+              status: string;
+              seatCount: number;
+              startDate: string;
+              endDate: string | null;
+            } | null;
+          }>;
+        };
+      }>({
+        path: "/v1/screens/admin-overview",
         firebaseSessionCookie: auth.firebaseSessionCookie,
       });
-      const workspaces = await Promise.all(
-        organizations.map((organization) =>
-          auth.domainApi.request<FirebaseClientTeamWorkspace>({
-            path: `/v1/organizations/${encodeURIComponent(organization.id)}/workspace`,
-            firebaseSessionCookie: auth.firebaseSessionCookie,
-          }),
-        ),
-      );
-      return NextResponse.json({
-        data: workspaces.map((workspace) => toAdminClientEntitlementRow(workspace)),
-      });
+
+      const rows = response.data.organizations.map((org) => ({
+        id: org.id,
+        name: org.legalName,
+        status: "Active" as const,
+        plan: "Firebase tenancy",
+        seatsUsed: org.activeSeats,
+        seatsAllowed: org.contractSummary?.seatCount ?? org.activeSeats,
+        enabledAssessments: [],
+        billingStatus: org.contractSummary
+          ? org.contractSummary.status === "active"
+            ? ("Active" as const)
+            : org.contractSummary.status === "paused"
+              ? ("Paused" as const)
+              : org.contractSummary.status === "expired"
+                ? ("Expired" as const)
+                : ("Not configured" as const)
+          : ("Not configured" as const),
+        primaryContact: "Organization contact",
+        lastActivity: new Date().toISOString(),
+        pendingCampaignApprovals: org.pendingUpgradesCount,
+        hasClientContact: true,
+        clientInviteStatus: "none" as const,
+        clientInviteExpiresAt: null,
+        canGenerateClientCode: false,
+        activeContract: org.contractSummary
+          ? {
+              documentId: org.id,
+              status: org.contractSummary.status,
+              startDate: org.contractSummary.startDate,
+              endDate: org.contractSummary.endDate,
+              seatCount: org.contractSummary.seatCount,
+              tier: "professional",
+              notes: null,
+              paymentStatus: "not_required",
+            }
+          : null,
+        features: null,
+      }));
+
+      return NextResponse.json({ data: rows });
     }
 
     const clients = await getAdminClientEntitlements(auth.cmsJwt);
