@@ -28,17 +28,30 @@ export async function GET(_request: NextRequest) {
         const anyInProgress = assessments.some(
           (assessment) => assessment.status === "in_progress",
         );
+        const anyLocked = assessments.some(
+          (assessment) => assessment.status === "locked",
+        );
+        const sessionStartsAt = session?.startsAt
+          ? new Date(session.startsAt).getTime()
+          : NaN;
+        const hasFutureStart =
+          Number.isFinite(sessionStartsAt) && sessionStartsAt > Date.now();
+        const portalStatus =
+          assignment.status === "completed" || allSubmitted
+            ? "completed"
+            : assignment.status === "locked" && hasFutureStart
+              ? "awaiting_assessment"
+              : assignment.status === "locked" || anyLocked
+                ? "soft_locked"
+                : anyInProgress
+                  ? "in_progress"
+                  : "awaiting_assessment";
         return {
           documentId: assignment.id,
           mode: session?.mode ?? campaign.assessmentMode,
           sessionStatus: session?.status ?? assignment.status,
           sessionStartsAt: session?.startsAt ?? null,
-          portalStatus:
-            assignment.status === "completed" || allSubmitted
-              ? "completed"
-              : anyInProgress
-                ? "in_progress"
-                : "awaiting_assessment",
+          portalStatus,
           usedAt: assignment.updatedAt,
           completedAt:
             assignment.status === "completed" || allSubmitted
@@ -66,13 +79,14 @@ export async function GET(_request: NextRequest) {
             : null,
           assessments: assessments.map((assessment) => {
             const submitted = isCandidateAssessmentSubmitted(assessment.status);
+            const locked =
+              assessment.status === "locked" || assessment.status === "not_open";
             return {
               documentId: assessment.campaignAssessmentId,
               slug: assessment.slug,
               name: assessment.title,
-              // Preserve submitted vs completed so the UI can show scoring vs done.
               status: assessment.status,
-              isAvailable: !submitted,
+              isAvailable: !submitted && !locked && assessment.status === "available",
               completedAt: submitted ? assignment.updatedAt : null,
             };
           }),

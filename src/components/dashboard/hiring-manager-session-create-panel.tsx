@@ -212,7 +212,7 @@ export function HiringManagerSessionCreatePanel({
       title={createdSession ? "Session created" : "Create session"}
       description={
         createdSession
-          ? "Share the access code with candidates when the session starts."
+          ? "Share the access code or join link — candidates use /join even without an invite email."
           : `Schedule a delivery session for ${campaign.name}.`
       }
       icon={KeyRound}
@@ -280,8 +280,10 @@ export function HiringManagerSessionCreatePanel({
               {createdSession.accessValue}
             </p>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Shown once here. Afterwards, copy it again from the session in the campaign
-              workspace.
+              Candidates enter this on{" "}
+              <span className="font-medium text-foreground">/join</span> to
+              create their account — including remote candidates who never got
+              an invite email. You can reveal it again from the session anytime.
             </p>
             <Button
               type="button"

@@ -46,7 +46,7 @@ export type FirebaseAssignment = Readonly<{
   sessionId: string | null;
   candidateUserId: string | null;
   inviteEmail: string;
-  status: "pending" | "invited" | "active" | "completed" | "withdrawn" | "closed";
+  status: "pending" | "invited" | "locked" | "active" | "completed" | "withdrawn" | "closed";
   invitationDeliveryStatus:
     | "pending"
     | "dispatched"
@@ -99,7 +99,7 @@ export type FirebaseCandidateWorkspaceItem = Readonly<{
     slug: string;
     title: string;
     position: number;
-    status: "available" | "in_progress" | "submitted" | "completed";
+    status: "available" | "in_progress" | "submitted" | "completed" | "locked" | "not_open";
   }>;
 }>;
 
@@ -275,6 +275,15 @@ export function createFirebaseRecruitmentApi(
       return request<{ version: number; alreadyApplied: boolean }>(
         `/v1/assignments/${encodeURIComponent(assignmentId)}`,
         { method: "PATCH", body },
+      );
+    },
+    unlockAssignment(
+      assignmentId: string,
+      body: { idempotencyKey: string },
+    ) {
+      return request<{ version: number; alreadyUnlocked: boolean }>(
+        `/v1/assignments/${encodeURIComponent(assignmentId)}/unlock`,
+        { method: "POST", body },
       );
     },
     resendAssignmentInvitation(

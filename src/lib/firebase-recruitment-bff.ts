@@ -174,11 +174,14 @@ export function toHiringManagerSession(
           email: assignment.inviteEmail,
           status: assignment.status,
           inviteStatus:
-            assignment.invitationDeliveryStatus === "accepted"
+            assignment.invitationDeliveryStatus === "accepted" ||
+            assignment.invitationDeliveryStatus === "not_required"
               ? ("registered" as const)
               : ("started" as const),
           hasStartedAssessment:
-            assignment.status !== "invited" || results.length > 0,
+            assignment.status === "active" ||
+            assignment.status === "completed" ||
+            results.length > 0,
           results,
         };
       }),

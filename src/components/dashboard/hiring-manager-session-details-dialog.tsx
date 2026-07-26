@@ -9,8 +9,6 @@ import {
   CalendarClock,
   Globe,
   Building,
-  Check,
-  Copy,
   Users,
   ChevronDown,
   ChevronUp,
@@ -43,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { getHmAssessmentItemStatus, isAbandonedAssessmentResult } from "@/lib/assessment-result-status";
 import { isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
 import { CandidateEmailInvitesPanel } from "@/components/dashboard/candidate-email-invites-panel";
+import { SessionAccessShare } from "@/components/dashboard/session-access-share";
 import { HiringManagerCandidateReport } from "@/components/dashboard/hiring-manager-candidate-report";
 import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
 import {
@@ -54,10 +53,6 @@ import {
   isCandidateJoined,
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
-import {
-  copySessionJoinLink,
-  isSecureAccessCodePlaceholder,
-} from "@/lib/copy-share-links";
 import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
 import type { HiringManagerResolvedStackSummary } from "@/types/hiring-manager.types";
 
@@ -120,17 +115,16 @@ export function HiringManagerSessionDetailsDialog({
   deletingSessionId,
   onInvitesSent,
 }: HiringManagerSessionDetailsDialogProps) {
-  const [copiedCode, setCopiedCode] = useState(false);
   const [expandedCandidateId, setExpandedCandidateId] = useState<string | null>(null);
   const [resultsDialog, setResultsDialog] = useState<ResultsDialogState | null>(null);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && layout !== "page") return;
     setCurrentTime(Date.now());
     const interval = window.setInterval(() => setCurrentTime(Date.now()), 30_000);
     return () => window.clearInterval(interval);
-  }, [open]);
+  }, [open, layout]);
 
   const toggleCandidateExpand = (candidateId: string) => {
     setExpandedCandidateId((current) => (current === candidateId ? null : candidateId));
@@ -139,7 +133,6 @@ export function HiringManagerSessionDetailsDialog({
   const handleClose = () => {
     onOpenChange(false);
     setExpandedCandidateId(null);
-    setCopiedCode(false);
   };
 
   const handleOpenResults = (candidate: SessionCandidate) => {
@@ -178,8 +171,6 @@ export function HiringManagerSessionDetailsDialog({
       onInvitesSent={onInvitesSent}
       onClose={handleClose}
       onOpenResults={handleOpenResults}
-      copiedCode={copiedCode}
-      setCopiedCode={setCopiedCode}
       expandedCandidateId={expandedCandidateId}
       toggleCandidateExpand={toggleCandidateExpand}
       currentTime={currentTime}
@@ -233,8 +224,6 @@ type HiringManagerSessionWorkspaceProps = {
   onInvitesSent?: () => void | Promise<void>;
   onClose: () => void;
   onOpenResults: (candidate: SessionCandidate) => void;
-  copiedCode: boolean;
-  setCopiedCode: (value: boolean) => void;
   expandedCandidateId: string | null;
   toggleCandidateExpand: (candidateId: string) => void;
   currentTime: number;
@@ -259,17 +248,11 @@ function HiringManagerSessionWorkspace({
   onInvitesSent,
   onClose,
   onOpenResults,
-  copiedCode,
-  setCopiedCode,
   expandedCandidateId,
   toggleCandidateExpand,
   currentTime,
 }: HiringManagerSessionWorkspaceProps) {
-  const isInPerson = !(
-    session.location.toLowerCase().includes("zoom") ||
-    session.location.toLowerCase().includes("remote") ||
-    session.location.toLowerCase().includes("http")
-  );
+  const isInPerson = session.type === "In-person";
 
   const sessionDisplayName = getHmSessionDisplayName(session);
 
@@ -430,53 +413,14 @@ function HiringManagerSessionWorkspace({
       )}
 
               <div className={cn("relative z-10 space-y-6", layout === "dialog" && "flex-1 overflow-y-auto px-6 pb-6")}>
-              {/* Metric Cards */}
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className={portalStatTileClass}>
-                  <div className="flex items-start justify-between gap-3">
-                    <p className={portalLabelClass}>Session code</p>
-                    <span className={portalIconWrapClass} aria-hidden="true">
-                      <Copy className="h-4 w-4" />
-                    </span>
-                  </div>
-                  <div className={cn(portalPanelNestedClass, "mt-2 flex items-center gap-2 px-2.5 py-1.5")}>
-                    <span className="flex-1 truncate font-mono text-sm font-semibold tracking-widest text-foreground">
-                      {session.accessValue}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void (async () => {
-                          try {
-                            if (isSecureAccessCodePlaceholder(session.accessValue)) {
-                              await copySessionJoinLink(session.id);
-                            } else {
-                              await navigator.clipboard?.writeText(session.accessValue);
-                            }
-                            setCopiedCode(true);
-                            setTimeout(() => setCopiedCode(false), 2000);
-                          } catch {
-                            /* ignore */
-                          }
-                        })();
-                      }}
-                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      aria-label={
-                        isSecureAccessCodePlaceholder(session.accessValue)
-                          ? "Copy join link"
-                          : "Copy session code"
-                      }
-                    >
-                      {copiedCode ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
-                    </button>
-                  </div>
-                  {isSecureAccessCodePlaceholder(session.accessValue) ? (
-                    <p className="mt-2 text-[11px] text-muted-foreground">
-                      Plaintext code is only shown at creation. Use Copy to share the join link.
-                    </p>
-                  ) : null}
-                </div>
+              <SessionAccessShare
+                sessionId={session.id}
+                accessValue={session.accessValue}
+                layout="panel"
+              />
 
+              {/* Metric Cards */}
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className={portalStatTileClass}>
                   <div className="flex items-start justify-between gap-3">
                     <p className={portalLabelClass}>Occupancy</p>
@@ -585,7 +529,9 @@ function HiringManagerSessionWorkspace({
                       const stackForWeights = assessmentStack || finalDisplayList.map((i) => i.name);
                       const inviteLabel = formatInviteStatusLabel(candidate.inviteStatus);
                       const hasJoined = isCandidateJoined(candidate.inviteStatus);
-                      const sessionStartsAtTime = session.startsAt ? new Date(session.startsAt).getTime() : 0;
+                      const sessionStartsAtTime = session.startsAt
+                        ? new Date(session.startsAt).getTime()
+                        : 0;
                       const isUnlockWindowOpen =
                         !sessionStartsAtTime ||
                         Number.isNaN(sessionStartsAtTime) ||
@@ -675,7 +621,7 @@ function HiringManagerSessionWorkspace({
                                   disabled={!isUnlockWindowOpen || unlockingCandidateId === candidate.id}
                                   title={
                                     isUnlockWindowOpen
-                                      ? "Unlock candidate"
+                                      ? "Unlock assessments for this candidate"
                                       : "Unlock is available when the session starts"
                                   }
                                   className="h-9 w-[112px] shrink-0 rounded-lg px-3 text-xs font-semibold"

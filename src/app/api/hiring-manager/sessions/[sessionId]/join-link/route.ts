@@ -8,6 +8,11 @@ import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 
+/**
+ * Reveal the session access code for an authenticated hiring manager.
+ * List DTOs never include plaintext (codes are stored write-once encrypted);
+ * this is the intentional share surface for both the code and the /join deep link.
+ */
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ sessionId: string }> },
@@ -36,14 +41,11 @@ export async function GET(
     const joinUrl = sessionJoinUrl(request, material.accessCode);
     return NextResponse.json({
       data: {
+        accessCode: material.accessCode,
         joinUrl,
-        /** Plaintext is intentionally omitted after first create; join URL is the share surface. */
-        accessCodeShownOnce: true,
-        message:
-          "The access code is only shown when the session is created. Copy the join link to share access.",
       },
     });
   } catch (error) {
-    return handleBffRouteError(error, "Session join link could not be loaded");
+    return handleBffRouteError(error, "Session join material could not be loaded");
   }
 }

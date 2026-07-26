@@ -20,25 +20,47 @@ export function isSecureAccessCodePlaceholder(accessValue: string | null | undef
   return !accessValue || /configured securely/i.test(accessValue);
 }
 
-export async function fetchSessionJoinLink(sessionId: string): Promise<string> {
+export type SessionAccessMaterial = {
+  accessCode: string;
+  joinUrl: string;
+};
+
+export async function fetchSessionAccessMaterial(
+  sessionId: string,
+): Promise<SessionAccessMaterial> {
   const response = await fetch(
     `/api/hiring-manager/sessions/${encodeURIComponent(sessionId)}/join-link`,
     { cache: "no-store" },
   );
   const body = (await response.json().catch(() => ({}))) as {
-    data?: { joinUrl?: string };
+    data?: { accessCode?: string; joinUrl?: string };
     error?: string;
   };
-  if (!response.ok || !body.data?.joinUrl) {
-    throw new Error(body.error || "Join link could not be loaded");
+  if (!response.ok || !body.data?.accessCode || !body.data?.joinUrl) {
+    throw new Error(body.error || "Session access details could not be loaded");
   }
-  return body.data.joinUrl;
+  return {
+    accessCode: body.data.accessCode,
+    joinUrl: body.data.joinUrl,
+  };
+}
+
+/** @deprecated Prefer fetchSessionAccessMaterial — join URL alone hid the shareable code. */
+export async function fetchSessionJoinLink(sessionId: string): Promise<string> {
+  const material = await fetchSessionAccessMaterial(sessionId);
+  return material.joinUrl;
 }
 
 export async function copySessionJoinLink(sessionId: string): Promise<string> {
-  const joinUrl = await fetchSessionJoinLink(sessionId);
-  await copyText(joinUrl);
-  return joinUrl;
+  const material = await fetchSessionAccessMaterial(sessionId);
+  await copyText(material.joinUrl);
+  return material.joinUrl;
+}
+
+export async function copySessionAccessCode(sessionId: string): Promise<string> {
+  const material = await fetchSessionAccessMaterial(sessionId);
+  await copyText(material.accessCode);
+  return material.accessCode;
 }
 
 export async function fetchInvitationAcceptLink(invitationId: string): Promise<string> {

@@ -5,15 +5,18 @@ import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 
 import { handleBffRouteError } from "@/lib/auth/bff-session";
+import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { invalidateHmReportServerCache } from "@/lib/portal-cache-invalidation";
+
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ candidateSessionId: string }> }
 ) {
   try {
-    await requireFirebaseRecruitmentSession("hiring_manager");
+    const { context: actor, recruitment } =
+      await requireFirebaseRecruitmentSession("hiring_manager");
 
     const crossOriginResponse = rejectMutatingCrossOrigin(request);
     if (crossOriginResponse) return crossOriginResponse;
@@ -42,14 +45,33 @@ export async function POST(
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
+    const current = await recruitment.getAssignment(candidateSessionId);
+    if (current.assignment.status !== "locked" && current.assignment.status !== "active") {
+      return NextResponse.json(
+        { error: "Only locked candidates can be unlocked for attendance." },
+        { status: 409 },
+      );
+    }
+
+    const result = await recruitment.unlockAssignment(candidateSessionId, {
+      idempotencyKey: recruitmentIdempotencyKey(
+        "candidate-assignment:unlock",
+        actor.userId,
+        {
+          candidateSessionId,
+          version: current.assignment.version,
+        },
+      ),
+    });
+
     void invalidateHmReportServerCache(session.user.id, candidateSessionId);
-    return NextResponse.json(
-      {
-        error:
-          "Legacy candidate-session unlock has been retired. Assessment recovery now requires an administrator to recover the specific Firebase attempt.",
+    return NextResponse.json({
+      data: {
+        unlocked: true,
+        alreadyUnlocked: result.alreadyUnlocked,
+        version: result.version,
       },
-      { status: 409 },
-    );
+    });
   } catch (error) {
     return handleBffRouteError(error, "Candidate could not be unlocked");
   }

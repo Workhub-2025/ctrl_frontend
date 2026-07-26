@@ -6,9 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Calendar,
-  Check,
   ClipboardList,
-  Copy,
   Eye,
   MapPin,
   Pencil,
@@ -56,6 +54,7 @@ import {
   PortalDetailTabs,
 } from "@/components/dashboard/portal/portal-navigation-ui";
 import { HiringManagerSessionCreatePanel } from "@/components/dashboard/hiring-manager-session-create-panel";
+import { SessionAccessShare } from "@/components/dashboard/session-access-share";
 import {
   CandidateResultsDialog,
   type ResultsDialogState,
@@ -83,10 +82,6 @@ import {
   isCandidateJoined,
 } from "@/lib/hiring-manager/resolve-candidate-display-name";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
-import {
-  copySessionJoinLink,
-  isSecureAccessCodePlaceholder,
-} from "@/lib/copy-share-links";
 import { cn } from "@/lib/utils";
 import { usePortalBreadcrumbDetail } from "@/components/dashboard/portal/portal-shell";
 import {
@@ -139,7 +134,6 @@ export function HiringManagerCampaignDetailView({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
-  const [copiedSessionId, setCopiedSessionId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
   usePortalBreadcrumbDetail(campaign?.name);
 
@@ -659,44 +653,10 @@ export function HiringManagerCampaignDetailView({
                           Open session
                         </Link>
                       </Button>
-                      <div className="flex min-h-9 items-center gap-2 rounded-md border border-border bg-muted/30 px-3">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Code
-                        </span>
-                        <span className="font-mono text-xs font-bold tracking-wider text-foreground">
-                          {session.accessValue}
-                        </span>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          void (async () => {
-                            try {
-                              if (isSecureAccessCodePlaceholder(session.accessValue)) {
-                                await copySessionJoinLink(session.id);
-                              } else {
-                                await navigator.clipboard?.writeText(session.accessValue);
-                              }
-                              setCopiedSessionId(session.id);
-                            } catch {
-                              /* ignore clipboard failures */
-                            }
-                          })();
-                        }}
-                        className="h-9 px-3 text-xs"
-                      >
-                        {copiedSessionId === session.id ? (
-                          <Check className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                        ) : (
-                          <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                        )}
-                        {copiedSessionId === session.id
-                          ? "Copied"
-                          : isSecureAccessCodePlaceholder(session.accessValue)
-                            ? "Copy join link"
-                            : "Copy code"}
-                      </Button>
+                      <SessionAccessShare
+                        sessionId={session.id}
+                        accessValue={session.accessValue}
+                      />
                     </div>
                   </div>
                 </PortalPanel>

@@ -72,10 +72,8 @@ import {
 
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
-import {
-  copySessionJoinLink,
-  isSecureAccessCodePlaceholder,
-} from "@/lib/copy-share-links";
+import { copySessionJoinLink } from "@/lib/copy-share-links";
+import { SessionAccessShare } from "@/components/dashboard/session-access-share";
 
 export function HiringManagerSessionsList() {
   const {
@@ -444,7 +442,7 @@ export function HiringManagerSessionsList() {
                   {createdSession.accessValue}
                 </p>
                 <p className="mt-2 text-[11px] text-muted-foreground">
-                  This code is shown once. After you close this panel, copy the join link instead.
+                  Candidates can enter this code on /join if they did not receive an invite email. You can reveal it again later from the session list.
                 </p>
 
                 <div className="mt-4 grid gap-2">
@@ -915,49 +913,12 @@ export function HiringManagerSessionsList() {
 
                   {/* Access code and Action Buttons inline */}
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
-                    <div className="flex items-center gap-2 rounded-lg border border-border/55 bg-background/60 px-3 py-1.5 dark:border-white/10 dark:bg-black/30">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">CODE</span>
-                      <span className="rounded border border-border/50 bg-muted/70 px-2 py-0.5 font-mono text-xs font-bold tracking-widest text-foreground dark:border-white/5 dark:bg-black/45 dark:text-white">
-                        {session.accessValue}
-                      </span>
-                    </div>
+                    <SessionAccessShare
+                      sessionId={session.id}
+                      accessValue={session.accessValue}
+                    />
 
                     <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => {
-                          void (async () => {
-                            try {
-                              if (isSecureAccessCodePlaceholder(session.accessValue)) {
-                                await copySessionJoinLink(session.id);
-                              } else {
-                                await navigator.clipboard?.writeText(session.accessValue);
-                              }
-                              setCopiedSessionId(session.id);
-                              setTimeout(() => setCopiedSessionId(null), 2000);
-                            } catch {
-                              setCreateError("Join link could not be copied");
-                            }
-                          })();
-                        }}
-                        className="h-8 rounded-lg border border-border bg-background/70 px-3 text-xs font-semibold text-foreground transition-colors hover:bg-muted dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-                      >
-                        {copiedSessionId === session.id ? (
-                          <>
-                            <Check className="mr-1.5 h-3.5 w-3.5" />
-                            <span>Copied!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="mr-1.5 h-3.5 w-3.5" />
-                            {isSecureAccessCodePlaceholder(session.accessValue)
-                              ? "Copy join link"
-                              : "Copy code"}
-                          </>
-                        )}
-                      </Button>
-
                       <Button
                         variant="outline"
                         size="sm"

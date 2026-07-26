@@ -11,6 +11,7 @@ import {
   HiringManagerSessionDetailsDialog,
   type ResultsDialogState,
 } from "@/components/dashboard/hiring-manager-session-details-dialog";
+import { SessionAccessShare } from "@/components/dashboard/session-access-share";
 import { HiringManagerPortalClientService } from "@/services/hiring-manager-portal-client.service";
 import {
   PortalEntityHeader,
@@ -266,8 +267,14 @@ export function HiringManagerSessionDetailView({
             label: "Joined",
             value: `${session.candidateCount} / ${session.candidateLimit}`,
           },
-          { label: "Code", value: session.accessValue },
+          { label: "Delivery", value: session.type },
         ]}
+      />
+
+      <SessionAccessShare
+        sessionId={session.id}
+        accessValue={session.accessValue}
+        layout="panel"
       />
 
       {actionError ? (
