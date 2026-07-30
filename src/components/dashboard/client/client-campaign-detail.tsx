@@ -196,7 +196,7 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
     return (
       <div className="space-y-4">
         <Button variant="outline" className="min-h-11 rounded-xl" asChild>
-          <Link href="/client-dashboard/campaigns/">
+          <Link href="/client-dashboard/campaigns">
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             Back to campaigns
           </Link>
@@ -209,7 +209,7 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <Button variant="outline" className="min-h-11 w-fit rounded-xl" asChild>
-        <Link href="/client-dashboard/campaigns/">
+        <Link href="/client-dashboard/campaigns">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
           Back to campaigns
         </Link>

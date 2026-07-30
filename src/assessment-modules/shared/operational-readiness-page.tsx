@@ -219,6 +219,35 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
 
   if (launch) return renderAssessment(launch);
   if (loadingError) {
+    if (/locked|interrupted/i.test(loadingError)) {
+      return (
+        <main className="mx-auto max-w-3xl p-6">
+          <div role="alert" className="border border-destructive/40 bg-destructive/10 p-6 rounded-lg text-foreground space-y-4">
+            <h1 className="text-xl font-semibold text-foreground">Attempt Interrupted and Locked</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Your attempt has been locked because of an integrity interruption or time limit. Candidates cannot continue or restart this attempt. Please contact CTRL support or your hiring manager using Support tickets in your candidate portal.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button
+                type="button"
+                className="min-h-11 px-5 rounded-md"
+                onClick={() => { window.location.href = "/candidate-dashboard"; }}
+              >
+                Exit
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 px-5 rounded-md"
+                onClick={() => { window.location.href = "/candidate-dashboard/help-support"; }}
+              >
+                Open support
+              </Button>
+            </div>
+          </div>
+        </main>
+      );
+    }
     return (
       <main className="mx-auto max-w-3xl p-6">
         <div role="alert" className="border border-destructive/40 bg-destructive/10 p-5 text-foreground">
@@ -422,7 +451,7 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
           </section>
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-5 lg:self-start" aria-label="Readiness status">
+        <aside className="space-y-4 lg:sticky lg:top-5 lg:self-start lg:max-h-[calc(100vh-2.5rem)] lg:overflow-y-auto" aria-label="Readiness status">
           <section className="border border-border bg-card">
             <div className="border-b border-border px-4 py-3">
               <h2 className="text-sm font-semibold">Technical readiness</h2>
@@ -471,18 +500,38 @@ export function OperationalReadinessPage<TPractice, TPracticeState, TContent>({
               </p>
             ) : null}
             {launchError ? (
-              <div className="mt-4 space-y-2" role="alert">
+              <div className="mt-4 space-y-3" role="alert">
                 <p className="text-sm text-destructive">{launchError}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-h-10 w-full rounded-sm"
-                  onClick={() => void begin()}
-                  disabled={!readyToBegin || launching}
-                >
-                  Retry launch
-                </Button>
+                {/locked|interrupted/i.test(launchError) ? (
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      className="min-h-10 px-4 rounded-sm text-xs"
+                      onClick={() => { window.location.href = "/candidate-dashboard"; }}
+                    >
+                      Exit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="min-h-10 px-4 rounded-sm text-xs"
+                      onClick={() => { window.location.href = "/candidate-dashboard/help-support"; }}
+                    >
+                      Open support
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-10 w-full rounded-sm"
+                    onClick={() => void begin()}
+                    disabled={!readyToBegin || launching}
+                  >
+                    Retry launch
+                  </Button>
+                )}
               </div>
             ) : null}
             <Button

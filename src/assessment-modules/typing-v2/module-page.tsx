@@ -183,7 +183,7 @@ function TimedTypingWorkspace({
           <textarea
             ref={textareaRef}
             id={`${passage.id}-entry`}
-            className="absolute inset-0 z-10 h-full w-full cursor-text resize-none bg-transparent p-5 font-mono text-base leading-8 text-transparent caret-transparent outline-none selection:bg-transparent sm:p-6 sm:text-lg sm:leading-9"
+            className="absolute inset-0 z-10 h-full w-full cursor-text resize-none bg-transparent p-5 font-mono text-base leading-8 text-transparent caret-transparent outline-none selection:bg-transparent break-words whitespace-pre-wrap sm:p-6 sm:text-lg sm:leading-9"
             value={state.typedText}
             disabled={state.complete}
             spellCheck={false}
@@ -213,10 +213,14 @@ function TimedTypingWorkspace({
 }
 
 function CountdownBreak({ seconds, nextLabel, onComplete }: { seconds: number; nextLabel: string; onComplete: () => void }) {
+  const targetTime = useRef(Date.now() + seconds * 1_000);
   const [remaining, setRemaining] = useState(seconds);
   const completed = useRef(false);
   useEffect(() => {
-    const timer = window.setInterval(() => setRemaining((value) => Math.max(0, value - 1)), 1_000);
+    const timer = window.setInterval(() => {
+      const diff = Math.max(0, Math.ceil((targetTime.current - Date.now()) / 1_000));
+      setRemaining(diff);
+    }, 250);
     return () => window.clearInterval(timer);
   }, []);
   useEffect(() => {

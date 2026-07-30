@@ -136,7 +136,7 @@ export function useAuth() {
         }
 
         console.log('👤 Candidate user, redirecting to dashboard');
-        router.push('/candidate-dashboard/');
+        router.push('/candidate-dashboard');
     };
 
     const login = async (email: string, password: string) => {

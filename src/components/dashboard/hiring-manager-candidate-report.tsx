@@ -122,6 +122,13 @@ function getRatingLabel(overallScore: number) {
   return "Review carefully";
 }
 
+function getRatingBadgeToneClass(overallScore: number) {
+  if (overallScore >= 75) return "border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400";
+  if (overallScore >= 55) return "border-primary/40 bg-primary/10 text-primary";
+  if (overallScore >= 35) return "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400";
+  return "border-destructive/40 bg-destructive/10 text-destructive";
+}
+
 function formatPercent(value: number) {
   return Number.isInteger(value) ? `${value}%` : `${value.toFixed(1)}%`;
 }
@@ -495,8 +502,8 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                   </span>
                   <Badge
                     className={cn(
-                      "pointer-events-none rounded-md border-none px-2 py-0.5 text-[10px] font-semibold",
-                      portalBadgeClass
+                      "pointer-events-none rounded-md border px-2.5 py-0.5 text-xs font-semibold shadow-xs transition-colors",
+                      getRatingBadgeToneClass(overallScore)
                     )}
                   >
                     {displayedRatingLabel}

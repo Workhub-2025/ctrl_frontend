@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
-import { preferredAssessmentReleaseVersion } from "@/lib/assessment-platform-registry";
+import { getAssessmentPlatformEntry, preferredAssessmentReleaseVersion } from "@/lib/assessment-platform-registry";
 import { isPremiumCatalogueTier } from "@/lib/client/entitlements";
 import type { HiringManagerAssessment } from "@/services/hiring-manager-assessments.service";
 import {
@@ -869,9 +869,27 @@ export function HiringManagerCampaignBuilder({
                       </span>
                     </span>
                     <span className="flex flex-wrap gap-1.5 sm:justify-end">
-                      <span className={cn(portalBadgeClass, "px-2 py-0.5")}>
-                        {assessment.duration}
-                      </span>
+                      {(() => {
+                        const mode = getAssessmentPlatformEntry(assessment.slug)?.timerMode ?? "enforced";
+                        return (
+                          <>
+                            <span className={cn(portalBadgeClass, "px-2 py-0.5")}>
+                              {mode === "stage_owned"
+                                ? "Self-paced (stage timed)"
+                                : mode === "display_only"
+                                  ? `About ${assessment.duration}`
+                                  : assessment.duration}
+                            </span>
+                            <span className={cn(portalBadgeClass, "px-2 py-0.5 border-primary/30 text-primary font-medium")}>
+                              {mode === "stage_owned"
+                                ? "Stage-Owned"
+                                : mode === "display_only"
+                                  ? "Display Only"
+                                  : "Enforced Timer"}
+                            </span>
+                          </>
+                        );
+                      })()}
                       {assessment.passingScore !== null ? (
                         <span className={cn(portalBadgeClass, "px-2 py-0.5")}>
                           Pass {assessment.passingScore}%

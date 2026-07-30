@@ -30,7 +30,11 @@ export type AssessmentReadiness<TPractice = unknown> = {
   support: { label: string; email: string };
   practice: TPractice;
   media: Record<string, MediaReference>;
-  delivery: { deliveryVariant: string; extraTimeMinutes: number };
+  delivery: {
+    deliveryVariant: string;
+    extraTimeMinutes: number;
+    timerMode: "enforced" | "display_only" | "stage_owned";
+  };
   monitoringActive: false;
   /** Resume this attempt and skip readiness/practice when present. */
   activeAttemptId: string | null;
@@ -66,6 +70,7 @@ export type LaunchEnvelope<TContent = unknown> = {
   };
   deliveryVariant: string;
   extraTimeMinutes: number;
+  timerMode: "enforced" | "display_only" | "stage_owned";
   progressRevision: number;
   /** Candidate-owned, module-validated state from the latest saved revision. */
   progressData: unknown | null;

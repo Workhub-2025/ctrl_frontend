@@ -35,7 +35,7 @@ export default async function CreateHiringManagerCampaignPage() {
         }
         action={
           <Button variant="outline" asChild>
-            <Link href="/hiring-manager-dashboard/campaigns/">
+            <Link href="/hiring-manager-dashboard/campaigns">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to campaigns
             </Link>

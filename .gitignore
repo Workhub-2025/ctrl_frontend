@@ -217,3 +217,10 @@ public/assessment-content/CTRL_Master_Assessment_Specification_MVP_v2.0.docx
 .vercel
 .env*
 preview.env
+
+# -------------------------------
+# AI agent workspace settings
+# -------------------------------
+.agents/
+skills-lock.json
+

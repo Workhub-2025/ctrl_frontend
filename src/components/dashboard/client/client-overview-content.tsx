@@ -63,13 +63,13 @@ export function ClientOverviewContent() {
     () => [
       {
         count: summary?.campaignsPendingApproval ?? pendingCampaigns.length,
-        href: "/client-dashboard/campaigns/",
+        href: "/client-dashboard/campaigns",
         label: "Campaigns awaiting approval",
         description: "Review campaign scope before hiring managers begin delivery.",
       },
       {
         count: summary?.candidatesPendingReview ?? pendingSharedCandidates.length,
-        href: "/client-dashboard/client-approved-candidates/",
+        href: "/client-dashboard/candidates",
         label: "Candidates awaiting a decision",
         description: "Review shared candidate evidence and record an outcome.",
       },
@@ -152,7 +152,7 @@ export function ClientOverviewContent() {
                     "Your organisation contract is inactive or payment is pending. Complete billing to restore full access."}
                 </p>
                 <Button asChild size="sm" className="shrink-0 border-amber-600/40 bg-amber-600 text-white hover:bg-amber-700">
-                  <Link href="/client-dashboard/billing/">Pay now</Link>
+                  <Link href="/client-dashboard/billing">Pay now</Link>
                 </Button>
               </div>
             </ClientErrorBanner>

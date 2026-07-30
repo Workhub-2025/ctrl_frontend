@@ -13,8 +13,8 @@ const IntlTelInput = dynamic(() => import("intl-tel-input/reactWithUtils"), {
   loading: () => (
     <div className="flex h-10 w-full rounded-md border border-input bg-background px-12 py-2 text-base">
       <input 
-        className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
-        placeholder="Loading..."
+        className="w-full bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-primary placeholder:text-muted-foreground"
+        placeholder="Loading…"
         disabled
       />
     </div>

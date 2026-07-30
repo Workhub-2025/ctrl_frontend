@@ -550,7 +550,7 @@ export default function EqualityMonitoringForm({
             </p>
             <Textarea
               id="additional-info"
-              placeholder="Any additional information you'd like to share..."
+              placeholder="Any additional information you'd like to share…"
               value={formData.additional_information || ""}
               onChange={(e) =>
                 handleInputChange("additional_information", e.target.value)

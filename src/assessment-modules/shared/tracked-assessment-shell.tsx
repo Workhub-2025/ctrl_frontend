@@ -12,8 +12,10 @@ import {
   CheckCircle2,
   Clock3,
   FileCheck2,
+  HelpCircle,
   Loader2,
   LockKeyhole,
+  LogOut,
   Maximize2,
   RadioTower,
 } from "lucide-react";
@@ -71,6 +73,9 @@ function IntegrityAlert({
   actionIcon,
   actionDisabled,
   onAction,
+  secondaryActionLabel,
+  secondaryActionIcon,
+  onSecondaryAction,
 }: {
   open: boolean;
   tone: "warning" | "destructive";
@@ -80,6 +85,9 @@ function IntegrityAlert({
   actionIcon: ReactNode;
   actionDisabled?: boolean;
   onAction: () => void;
+  secondaryActionLabel?: string;
+  secondaryActionIcon?: ReactNode;
+  onSecondaryAction?: () => void;
 }) {
   const actionRef = useRef<HTMLButtonElement>(null);
   const previousFocus = useRef<HTMLElement | null>(null);
@@ -118,15 +126,27 @@ function IntegrityAlert({
         <AlertDialogDescription className="leading-7">
           {description}
         </AlertDialogDescription>
-        <AlertDialogAction
-          ref={actionRef}
-          className="mt-2 rounded-sm"
-          disabled={actionDisabled}
-          onClick={onAction}
-        >
-          {actionIcon}
-          {actionLabel}
-        </AlertDialogAction>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          {secondaryActionLabel && onSecondaryAction && (
+            <Button
+              variant="outline"
+              className="rounded-sm"
+              onClick={onSecondaryAction}
+            >
+              {secondaryActionIcon}
+              {secondaryActionLabel}
+            </Button>
+          )}
+          <AlertDialogAction
+            ref={actionRef}
+            className="rounded-sm"
+            disabled={actionDisabled}
+            onClick={onAction}
+          >
+            {actionIcon}
+            {actionLabel}
+          </AlertDialogAction>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );
@@ -213,7 +233,10 @@ export function TrackedAssessmentShell<TContent, TState>(
     [launch.attemptId, launch.stageGraph.nodes, stageIndex],
   );
 
+  const timerMode = launch.timerMode ?? (launch.module as { timerMode?: string })?.timerMode ?? "enforced";
+
   useEffect(() => {
+    if (timerMode !== "enforced") return;
     const timer = window.setInterval(
       () =>
         setRemaining(
@@ -227,16 +250,16 @@ export function TrackedAssessmentShell<TContent, TState>(
       1_000,
     );
     return () => window.clearInterval(timer);
-  }, [launch.deadlineAt]);
+  }, [launch.deadlineAt, timerMode]);
 
   useEffect(() => {
-    if (remaining > 0 || receipt || timeExpired) return;
+    if (timerMode !== "enforced" || remaining > 0 || receipt || timeExpired) return;
     setTimeExpired(true);
     setLocked(true);
     setPauseReason(
       "The assessment time limit has ended. Progress is locked and submission is closed for this attempt.",
     );
-  }, [remaining, receipt, timeExpired]);
+  }, [timerMode, remaining, receipt, timeExpired]);
 
   useEffect(() => {
     const announcement = assessmentTimerAnnouncement(
@@ -290,7 +313,7 @@ export function TrackedAssessmentShell<TContent, TState>(
   useEffect(() => {
     if (receipt || locked) return;
     const endLoss = (
-      type: "tab_hidden" | "fullscreen_exit",
+      type: "tab_hidden" | "focus_lost" | "fullscreen_exit",
     ) => {
       const loss = activeLoss.current;
       if (!loss || loss.type !== type) return;
@@ -327,6 +350,12 @@ export function TrackedAssessmentShell<TContent, TState>(
             "The assessment paused because this tab was hidden.",
           )
         : endLoss("tab_hidden");
+    const blur = () =>
+      beginLoss(
+        "focus_lost",
+        "The assessment paused because focus left the window.",
+      );
+    const focus = () => endLoss("focus_lost");
     const fullscreen = () =>
       document.fullscreenElement
         ? endLoss("fullscreen_exit")
@@ -342,8 +371,11 @@ export function TrackedAssessmentShell<TContent, TState>(
       event.preventDefault();
       void recordEvent("context_menu");
     };
-    if (launch.integrity.pauseOnHidden)
+    if (launch.integrity.pauseOnHidden) {
       document.addEventListener("visibilitychange", visibility);
+      window.addEventListener("blur", blur);
+      window.addEventListener("focus", focus);
+    }
     if (launch.integrity.pauseOnFullscreenExit)
       document.addEventListener("fullscreenchange", fullscreen);
     if (launch.integrity.blockClipboard) {
@@ -357,6 +389,8 @@ export function TrackedAssessmentShell<TContent, TState>(
       if (activeLoss.current?.timer)
         window.clearTimeout(activeLoss.current.timer);
       document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("blur", blur);
+      window.removeEventListener("focus", focus);
       document.removeEventListener("fullscreenchange", fullscreen);
       document.removeEventListener("copy", blockClipboard);
       document.removeEventListener("cut", blockClipboard);
@@ -512,13 +546,20 @@ export function TrackedAssessmentShell<TContent, TState>(
             <span className="hidden items-center gap-2 text-muted-foreground sm:flex">
               <RadioTower className="h-4 w-4 text-primary" aria-hidden="true" /> Monitored
             </span>
-            <span
-              className="flex min-w-24 items-center justify-end gap-2 font-mono text-base font-semibold tabular-nums"
-              aria-label={`${remaining} seconds remaining`}
-            >
-              <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-              {formatRemaining(remaining)}
-            </span>
+            {timerMode === "stage_owned" ? null : timerMode === "display_only" ? (
+              <span className="flex items-center justify-end gap-2 text-sm font-medium text-muted-foreground">
+                <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                About {(launch.module as { durationMinutes?: { minimum: number; maximum: number } })?.durationMinutes?.minimum ?? 5}–{(launch.module as { durationMinutes?: { minimum: number; maximum: number } })?.durationMinutes?.maximum ?? 10} min
+              </span>
+            ) : (
+              <span
+                className="flex min-w-24 items-center justify-end gap-2 font-mono text-base font-semibold tabular-nums"
+                aria-label={`${remaining} seconds remaining`}
+              >
+                <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                {formatRemaining(remaining)}
+              </span>
+            )}
             <AccessibilityDropdown
               settings={accessibilitySettings}
               updateSettings={updateAccessibilitySettings}
@@ -664,25 +705,23 @@ export function TrackedAssessmentShell<TContent, TState>(
         open={locked}
         tone="destructive"
         title="Attempt interrupted and locked"
-        description={
-          <>
-            Restarting voids this exposed attempt and selects fresh{" "}
-            {restartNoun}.
-          </>
-        }
-        actionLabel="Restart assessment"
-        actionIcon={
-          restarting ? (
-            <Loader2
-              className="h-4 w-4 animate-spin motion-reduce:animate-none"
-              aria-hidden="true"
-            />
-          ) : (
-            <Maximize2 className="h-4 w-4" aria-hidden="true" />
-          )
-        }
-        actionDisabled={restarting}
-        onAction={() => void restart()}
+        description="Your attempt has been locked because of an integrity interruption or time limit. You cannot continue or restart this attempt yourself. Please contact CTRL support or your hiring manager using Support tickets in your candidate portal."
+        actionLabel="Exit"
+        actionIcon={<LogOut className="h-4 w-4" aria-hidden="true" />}
+        onAction={async () => {
+          if (document.fullscreenElement) {
+            await document.exitFullscreen().catch(() => undefined);
+          }
+          window.location.href = "/candidate-dashboard";
+        }}
+        secondaryActionLabel="Open support"
+        secondaryActionIcon={<HelpCircle className="h-4 w-4" aria-hidden="true" />}
+        onSecondaryAction={async () => {
+          if (document.fullscreenElement) {
+            await document.exitFullscreen().catch(() => undefined);
+          }
+          window.location.href = "/candidate-dashboard/help-support";
+        }}
       />
     </main>
   );

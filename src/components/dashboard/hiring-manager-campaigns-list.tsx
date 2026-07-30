@@ -81,7 +81,7 @@ export function HiringManagerCampaignsList() {
               Refresh
             </Button>
             <Button type="button" asChild className={cn(portalPrimaryButtonClass, "h-9")}>
-              <Link href="/hiring-manager-dashboard/campaigns/create/">
+              <Link href="/hiring-manager-dashboard/campaigns/create">
                 <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                 Create campaign
               </Link>
@@ -100,7 +100,7 @@ export function HiringManagerCampaignsList() {
             description="Create a campaign to attach assessments and generate candidate access codes."
             action={
               <Button asChild className={cn(portalPrimaryButtonClass, "h-9")}>
-                <Link href="/hiring-manager-dashboard/campaigns/create/">
+                <Link href="/hiring-manager-dashboard/campaigns/create">
                   <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                   Create campaign
                 </Link>
@@ -209,7 +209,7 @@ export function HiringManagerCampaignsList() {
                   className="group h-9 rounded-md border-border bg-background/50 px-3.5 text-xs font-medium text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:border-white/10 dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
                   asChild
                 >
-                  <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}/`}>
+                  <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}`}>
                     View more
                     <ArrowRight
                       className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"

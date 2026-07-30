@@ -10,6 +10,8 @@ export const ASSESSMENT_ENTITLEMENT_TIERS = ["core", "premium"] as const;
 export type AssessmentEntitlementTier =
   (typeof ASSESSMENT_ENTITLEMENT_TIERS)[number];
 
+export type TimerMode = "enforced" | "display_only" | "stage_owned";
+
 export type AssessmentPlatformEntry = Readonly<{
   slug: string;
   /** Short label for billing/entitlement UIs (e.g. SJA). */
@@ -19,6 +21,7 @@ export type AssessmentPlatformEntry = Readonly<{
   entitlementTier: AssessmentEntitlementTier;
   /** Preferred HM campaign version when multiple releases exist. */
   preferredReleaseVersion: string;
+  timerMode: TimerMode;
   timed: boolean;
 }>;
 
@@ -35,6 +38,7 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
       "Choose the most and least effective response to workplace situations under time pressure.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
+    timerMode: "enforced",
     timed: true,
   },
   {
@@ -45,7 +49,8 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
       "Measure typing speed, accuracy and stability across timed operational passages.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
-    timed: true,
+    timerMode: "stage_owned",
+    timed: false,
   },
   {
     slug: "prioritisation",
@@ -55,6 +60,7 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
       "Rank competing incidents by urgency, seriousness, vulnerability, immediacy and potential risk.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
+    timerMode: "enforced",
     timed: true,
   },
   {
@@ -65,7 +71,8 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
       "Practice plus two assessed calls — capture caller, system, intelligence and incident information.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.1.0",
-    timed: true,
+    timerMode: "stage_owned",
+    timed: false,
   },
   {
     slug: "short-term-memory",
@@ -75,7 +82,8 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
       "Retain an operational briefing through interruption, then reconstruct key facts.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.0.1",
-    timed: true,
+    timerMode: "stage_owned",
+    timed: false,
   },
 ] as const satisfies readonly AssessmentPlatformEntry[];
 

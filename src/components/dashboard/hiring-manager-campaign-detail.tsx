@@ -36,6 +36,10 @@ import {
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { AssessmentOverallScoreCell } from "@/components/dashboard/assessment-overall-score-cell";
 import { HmErrorBanner } from "@/components/dashboard/hiring-manager-portal-ui";
+import type { HiringManagerSessionListItem } from "@/services/hiring-manager-portal-client.service";
+import {
+  HiringManagerSessionDetailsDialog,
+} from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   PortalEmptyState,
   PortalInlineLoading,
@@ -174,9 +178,17 @@ export function HiringManagerCampaignDetailView({
     void loadCampaign();
   }, [loadCampaign]);
 
+  const [activeSession, setActiveSession] = useState<HiringManagerSessionListItem | null>(null);
+
   useEffect(() => {
     const requestedTab = searchParams.get("tab");
     setActiveTab(isCampaignWorkspaceTab(requestedTab) ? requestedTab : "overview");
+
+    const requestedSessionId = searchParams.get("session");
+    if (requestedSessionId && campaign) {
+      const matched = campaign.assessmentSessions.find((s) => s.id === requestedSessionId);
+      if (matched) setActiveSession(matched);
+    }
 
     if (
       searchParams.get("create") === "1" &&
@@ -314,7 +326,7 @@ export function HiringManagerCampaignDetailView({
     return (
       <div className="space-y-4">
         <Button variant="outline" className={hmBackButtonClass} asChild>
-          <Link href="/hiring-manager-dashboard/campaigns/">
+          <Link href="/hiring-manager-dashboard/campaigns">
             <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
             Back to campaigns
           </Link>
@@ -338,7 +350,7 @@ export function HiringManagerCampaignDetailView({
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       <Button variant="outline" className={hmBackButtonClass} asChild>
-        <Link href="/hiring-manager-dashboard/campaigns/">
+        <Link href="/hiring-manager-dashboard/campaigns">
           <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
           Back to campaigns
         </Link>
@@ -644,14 +656,10 @@ export function HiringManagerCampaignDetailView({
                     <div className="flex flex-wrap items-center gap-2">
                       <Button
                         className={cn(portalPrimaryButtonClass, "h-9 px-3 text-xs")}
-                        asChild
+                        onClick={() => setActiveSession(session)}
                       >
-                        <Link
-                          href={`/hiring-manager-dashboard/sessions/${session.id}`}
-                        >
-                          <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-                          Open session
-                        </Link>
+                        <Eye className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                        View session
                       </Button>
                       <SessionAccessShare
                         sessionId={session.id}
@@ -862,6 +870,18 @@ export function HiringManagerCampaignDetailView({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <HiringManagerSessionDetailsDialog
+        session={activeSession}
+        open={Boolean(activeSession)}
+        onOpenChange={(open) => {
+          if (!open) setActiveSession(null);
+        }}
+        campaignName={campaign?.name}
+        campaignRole={campaign?.role}
+        campaignId={campaign?.id}
+        resolvedStackSummary={campaign?.resolvedStackSummary}
+      />
     </div>
   );
 }

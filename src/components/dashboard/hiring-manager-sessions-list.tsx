@@ -925,9 +925,9 @@ export function HiringManagerSessionsList() {
                         className="h-8 rounded-lg px-3 text-xs font-semibold"
                         asChild
                       >
-                        <Link href={`/hiring-manager-dashboard/sessions/${session.id}/`}>
+                        <Link href={`/hiring-manager-dashboard/campaigns?tab=sessions&session=${session.id}`}>
                           <Eye className="mr-1.5 h-3.5 w-3.5" />
-                          View
+                          View session
                         </Link>
                       </Button>
 

@@ -228,7 +228,7 @@ export function HiringManagerSessionDetailView({
     return (
       <div className="space-y-4">
         <Button variant="outline" className="h-10 rounded-xl" asChild>
-          <Link href="/hiring-manager-dashboard/campaigns/">
+          <Link href="/hiring-manager-dashboard/campaigns">
             <ArrowLeft className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
             Back to campaigns
           </Link>

@@ -32,6 +32,7 @@ import {
   portalProgressBarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { HmErrorBanner } from "@/components/dashboard/hiring-manager-portal-ui";
+import { HiringManagerCommandWorkspace } from "@/components/dashboard/hiring-manager-command-workspace";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
@@ -198,7 +199,7 @@ export function HiringManagerOverview() {
                         {session.accessValue}
                       </span>
                       <Link
-                        href={`/hiring-manager-dashboard/sessions/${session.id}`}
+                        href={`/hiring-manager-dashboard/campaigns?tab=sessions&session=${session.id}`}
                         className="ml-auto inline-flex min-h-8 items-center gap-1 rounded-sm text-[10px] font-semibold text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         View details
@@ -225,7 +226,7 @@ export function HiringManagerOverview() {
             id: campaign.id,
             title: campaign.name,
             detail: `${campaign.role} · ${campaign.candidateCount} candidates · ${campaign.approvalStatus || campaign.status}`,
-            href: `/hiring-manager-dashboard/campaigns/${campaign.id}/`,
+            href: `/hiring-manager-dashboard/campaigns/${campaign.id}`,
             meta: campaign.nextMilestone,
             actionLabel: "Open",
           }))}

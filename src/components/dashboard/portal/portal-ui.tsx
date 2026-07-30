@@ -253,7 +253,7 @@ export function PortalStatTile({
       {isValueLoading ? (
         <div className="mt-2.5 h-7 w-20 animate-pulse rounded-md bg-muted/60" />
       ) : (
-        <p className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground">
+        <p className="mt-2 font-display text-2xl font-bold tracking-tight text-foreground tabular-nums">
           {value}
         </p>
       )}
