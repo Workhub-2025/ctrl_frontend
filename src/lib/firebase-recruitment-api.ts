@@ -99,7 +99,14 @@ export type FirebaseCandidateWorkspaceItem = Readonly<{
     slug: string;
     title: string;
     position: number;
-    status: "available" | "in_progress" | "submitted" | "completed" | "locked" | "not_open";
+    status:
+      | "available"
+      | "in_progress"
+      | "submitted"
+      | "completed"
+      | "locked"
+      | "not_open"
+      | "unavailable";
   }>;
 }>;
 
