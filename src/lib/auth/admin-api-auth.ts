@@ -34,7 +34,7 @@ export type AdminApiAuthSuccess =
 type AdminApiAuthResult = AdminApiAuthSuccess | { error: NextResponse };
 
 /**
- * Admin BFF gate. On NEXT_PUBLIC_AUTH_PROVIDER=firebase, verifies the Firebase
+ * Admin BFF gate. Verifies the Firebase
  * session cookie and never requires a legacy CMS JWT (no Preview 503).
  * Production dual-path still accepts a legacy CMS JWT when Firebase is off.
  */

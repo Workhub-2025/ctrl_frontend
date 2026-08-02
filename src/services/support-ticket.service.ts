@@ -7,10 +7,7 @@ async function readJson<T>(response: Response): Promise<T> {
 
 function supportApiPath(path: string): string {
   const normalized = path.replace(/^\/+/, "");
-  if (process.env.NEXT_PUBLIC_AUTH_PROVIDER === "firebase") {
-    return `/api/${normalized}`;
-  }
-  return `/${normalized}`;
+  return `/api/${normalized}`;
 }
 
 export type SupportTicketStatus =

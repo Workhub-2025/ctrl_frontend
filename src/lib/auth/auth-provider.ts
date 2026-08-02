@@ -1,8 +1,4 @@
-/**
- * Dual-path auth switch. Preview and Firebase-first environments set
- * NEXT_PUBLIC_AUTH_PROVIDER=firebase. Production may still use strapi until
- * cutover; prefer Firebase when the flag says so.
- */
+/** Firebase is the sole supported identity provider. */
 export function isFirebaseAuthProvider(): boolean {
   return true;
 }

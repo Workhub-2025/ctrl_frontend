@@ -1,21 +1,3 @@
-import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
-import { getCmsApiBaseUrl } from "@/legacy-cms/server-url";
-
-function getOriginFromUrl(raw: string): string | null {
-  try {
-    return new URL(raw).origin;
-  } catch {
-    return null;
-  }
-}
-
-function getLegacyCmsOrigin(): string | null {
-  if (isFirebaseAuthProvider()) {
-    return null;
-  }
-  return getOriginFromUrl(getCmsApiBaseUrl());
-}
-
 /** Vercel Preview injects the live feedback toolbar iframe from vercel.live. */
 export function isVercelPreviewDeployment(): boolean {
   return process.env.VERCEL_ENV === "preview";
@@ -46,9 +28,7 @@ const FIREBASE_AUTH_IMG_SRC = ["https://www.gstatic.com"] as const;
 
 /** Builds a production Content-Security-Policy header value. */
 export function buildContentSecurityPolicy(nonce: string): string {
-  const legacyCmsOrigin = getLegacyCmsOrigin();
   const allowVercelLiveFeedback = isVercelPreviewDeployment();
-  const allowFirebaseAuth = isFirebaseAuthProvider();
 
   const directives: Record<string, string[]> = {
     "default-src": ["'self'"],
@@ -63,11 +43,10 @@ export function buildContentSecurityPolicy(nonce: string): string {
       "data:",
       "blob:",
       "https://placehold.co",
-      ...(legacyCmsOrigin ? [legacyCmsOrigin] : []),
-      ...(allowFirebaseAuth ? [...FIREBASE_AUTH_IMG_SRC] : []),
+      ...FIREBASE_AUTH_IMG_SRC,
       ...(allowVercelLiveFeedback ? ["https://vercel.live"] : []),
     ],
-    "media-src": ["'self'", "blob:", ...(legacyCmsOrigin ? [legacyCmsOrigin] : [])],
+    "media-src": ["'self'", "blob:"],
     "font-src": ["'self'", "data:"],
     "style-src": ["'self'", "'unsafe-inline'"],
     "script-src": [
@@ -75,14 +54,13 @@ export function buildContentSecurityPolicy(nonce: string): string {
       `'nonce-${nonce}'`,
       "'strict-dynamic'",
       "https://js.stripe.com",
-      ...(allowFirebaseAuth ? [...FIREBASE_AUTH_SCRIPT_SRC] : []),
+      ...FIREBASE_AUTH_SCRIPT_SRC,
       ...(allowVercelLiveFeedback ? ["https://vercel.live"] : []),
     ],
     "connect-src": [
       "'self'",
       "https://api.stripe.com",
-      ...(legacyCmsOrigin ? [legacyCmsOrigin] : []),
-      ...(allowFirebaseAuth ? [...FIREBASE_AUTH_CONNECT_SRC] : []),
+      ...FIREBASE_AUTH_CONNECT_SRC,
       ...(allowVercelLiveFeedback
         ? ["https://vercel.live", "wss://vercel.live"]
         : []),
@@ -91,7 +69,7 @@ export function buildContentSecurityPolicy(nonce: string): string {
       "'self'",
       "https://js.stripe.com",
       "https://checkout.stripe.com",
-      ...(allowFirebaseAuth ? [...FIREBASE_AUTH_FRAME_SRC] : []),
+      ...FIREBASE_AUTH_FRAME_SRC,
       ...(allowVercelLiveFeedback ? ["https://vercel.live"] : []),
     ],
     "upgrade-insecure-requests": [],

@@ -19,7 +19,15 @@ beforeEach(() => {
   vi.stubEnv("NEXTAUTH_SECRET", "test-secret");
   vi.stubEnv("ALLOW_IN_MEMORY_SECURITY", "");
   vi.stubEnv("ALLOW_INCOMPLETE_UK_COMPLIANCE", "");
-  vi.stubEnv("NEXT_PUBLIC_AUTH_PROVIDER", "strapi");
+  vi.stubEnv("NEXT_PUBLIC_FIREBASE_API_KEY", "test-api-key");
+  vi.stubEnv("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", "test.firebaseapp.com");
+  vi.stubEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID", "test-project");
+  vi.stubEnv("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", "test.appspot.com");
+  vi.stubEnv("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID", "123456789");
+  vi.stubEnv("NEXT_PUBLIC_FIREBASE_APP_ID", "test-app-id");
+  vi.stubEnv("FIREBASE_DOMAIN_API_URL", "https://example.test");
+  vi.stubEnv("GOOGLE_WORKLOAD_IDENTITY_PROVIDER", "test-provider");
+  vi.stubEnv("GOOGLE_SERVICE_ACCOUNT_EMAIL", "test@example.test");
   mocks.isUpstashConfigured.mockReturnValue(true);
   mocks.getUkComplianceConfigurationIssues.mockReturnValue([]);
 });
@@ -60,7 +68,6 @@ describe("production environment fail-closed checks", () => {
   });
 
   it("rejects an incomplete Firebase production cutover", async () => {
-    vi.stubEnv("NEXT_PUBLIC_AUTH_PROVIDER", "firebase");
     vi.stubEnv("FIREBASE_DOMAIN_API_URL", "");
 
     await expect(runCheck()).rejects.toThrow("FIREBASE_DOMAIN_API_URL");

@@ -1,54 +1,20 @@
 import { getClientSession } from "@/lib/auth/client-session";
-import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
-import { getCmsApiBaseUrl } from "@/legacy-cms/server-url";
-
-const stripLeadingSlashes = (value: string) => value.replace(/^\/+/, '');
-
-/**
- * Base URL for relative fetchClient calls.
- * Firebase Preview: same-origin only (callers pass `/api/...` BFF paths).
- * Legacy production: browser uses quarantined CMS proxy; server uses CMS base URL.
- */
-const getBaseUrl = () => {
-    if (isFirebaseAuthProvider()) {
-        return '';
-    }
-
-    if (typeof window === 'undefined') {
-        return getCmsApiBaseUrl();
-    }
-
-    return '/api/legacy-cms-proxy';
-};
-
-const joinUrl = (baseUrl: string, url: string) => {
-    if (url.startsWith('http')) {
-        return url;
-    }
-    if (!baseUrl) {
-        return url.startsWith('/') ? url : `/${stripLeadingSlashes(url)}`;
-    }
-
-    return `${baseUrl}/${stripLeadingSlashes(url)}`;
-};
 
 const TIMEOUT = 10000; // 10 seconds
 
 interface SessionContext {
-    jwt: string | null;
     tenant: string | null;
 }
 
 // Browser-only session context. Server callers must pass tenant via headers or use API routes.
 const getSessionContext = async (): Promise<SessionContext> => {
     if (typeof window === 'undefined') {
-        return { jwt: null, tenant: null };
+        return { tenant: null };
     }
 
     const session = await getClientSession();
 
     return {
-        jwt: null,
         tenant: typeof session?.user?.organization === 'string' ? session.user.organization : null,
     };
 };
@@ -59,15 +25,12 @@ export const fetchClient = async (
     options: RequestInit = {}
 ): Promise<Response> => {
     try {
-        // Get the appropriate base URL for the current environment
-        const baseUrl = getBaseUrl();
         const environment = typeof window === 'undefined' ? 'SERVER' : 'CLIENT';
-
-        // Prepare URL (add base URL if relative)
-        const isBrowserBffRoute =
-            typeof window !== 'undefined' &&
-            (url.startsWith('/api/') || url.startsWith('http'));
-        const fullUrl = isBrowserBffRoute ? url : joinUrl(baseUrl, url);
+        const fullUrl = url.startsWith('http')
+            ? url
+            : url.startsWith('/')
+                ? url
+                : `/${url.replace(/^\/+/, '')}`;
         // Prepare headers
 
         const headers: HeadersInit = {
@@ -85,27 +48,15 @@ export const fetchClient = async (
         const hasAuthorizationHeader =
             typeof headerRecord.Authorization === 'string' ||
             typeof headerRecord.authorization === 'string';
-        const isAuthEndpoint =
-            url.includes('/auth/local') ||
-            url.includes('/access-code/register') ||
-            url.includes('/users-permissions/') ||
-            url.includes('/users/me');
-
-        // Auth / JWT-bootstrap calls must not await getServerSession — it can hang inside route handlers.
-        const skipSessionContext = isAuthEndpoint || hasAuthorizationHeader;
-        let authToken: string | null = null;
+        // Explicitly authorised requests already contain all required identity context.
+        const skipSessionContext = hasAuthorizationHeader;
         let tenant: string | null = null;
         if (!skipSessionContext) {
             const sessionContext = await getSessionContext();
-            authToken = sessionContext.jwt;
             tenant = sessionContext.tenant;
         }
 
-        if (authToken && !isAuthEndpoint && !hasAuthorizationHeader) {
-            headerRecord['Authorization'] = `Bearer ${authToken}`;
-        }
-
-        if (tenant && !isAuthEndpoint) {
+        if (tenant) {
             headerRecord['x-ctrl-tenant'] = tenant;
         }
 
@@ -161,7 +112,7 @@ export const fetchClient = async (
                 console.error(`🚫 [${environment}] Forbidden request - insufficient permissions`);
                 console.error(`🚫 [${environment}] URL: ${fullUrl}`);
                 console.error(`🚫 [${environment}] Method: ${fetchOptions.method}`);
-                console.error(`🚫 [${environment}] Has Auth Token: ${!!authToken}`);
+                console.error(`🚫 [${environment}] Has Authorization Header: ${hasAuthorizationHeader}`);
             }
 
             throw new Error(errorMessage);

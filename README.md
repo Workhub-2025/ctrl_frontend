@@ -40,24 +40,23 @@ src/
 
 ## Authentication
 
-The cutover supports two explicitly selected authentication paths:
+Firebase is the only supported authentication and application-data path:
 
-- `NEXT_PUBLIC_AUTH_PROVIDER=firebase` signs in with the Firebase browser SDK,
+- The Firebase browser SDK signs users in,
   exchanges the short-lived ID token through
   `POST /api/auth/firebase/session`, and writes an opaque Firebase session plus
   a UI-only NextAuth projection as `httpOnly` cookies.
 - The Vercel BFF invokes the private Firebase Function through Vercel OIDC →
   Google Workload Identity Federation. It stores no Google service-account key.
-- Newly ported handlers use `requireFirebaseSession()` and never require a
-  Strapi JWT. Unported handlers retain the legacy `/api/auth/login` path until
-  their domain operation exists in Firebase.
+- Active handlers use `requireFirebaseSession()` and never require a CMS JWT.
 - Pre-provisioned identities receive only the opaque Firebase cookie. They
   complete `/auth/bootstrap` or `/auth/accept-invitation`; the UI session
   projection is created only after `/v1/me` becomes authoritative.
 - Firebase TOTP enrollment forces a fresh MFA sign-in before administrator
   bootstrap so the session contains a genuine second-factor claim.
-- The generic Strapi proxy remains only because legacy frontend services still
-  call it; it must be removed when that dependency count reaches zero.
+- The retired CMS has no public health route, proxy route, image host, or debug
+  login surface. Remaining `legacy-cms` imports are compile-time compatibility
+  debt tracked by the migration ratchet; they are not supported infrastructure.
 - Default session lifetime is 12 hours absolute and 30 minutes idle.
 - Middleware guards role portals and BFF namespaces, rejects cross-origin mutations, applies a payload ceiling/rate limit and adds the production CSP nonce.
 
@@ -90,17 +89,16 @@ The old `/api/assessment/[slug]/submit` and `/api/assessment/attempt/progress` h
 Copy `.env.example` to `.env.local`. Key server-only variables include:
 
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
-- Firebase public web identifiers plus `NEXT_PUBLIC_AUTH_PROVIDER`
+- Firebase public web identifiers
 - `FIREBASE_DOMAIN_API_URL`, `GOOGLE_WORKLOAD_IDENTITY_PROVIDER`,
   `GOOGLE_SERVICE_ACCOUNT_EMAIL`
-- `STRAPI_API_URL`, `STRAPI_API_FULL_ACCESS_TOKEN`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `BILLING_INTERNAL_SECRET`
 - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` in production
 
-Do not expose Strapi tokens, Google credentials or Firebase session-cookie
-values through `NEXT_PUBLIC_*`. Firebase web-app identifiers are intentionally
-public and are not authorization secrets.
+Do not expose Google credentials or Firebase session-cookie values through
+`NEXT_PUBLIC_*`. Firebase web-app identifiers are intentionally public and are
+not authorization secrets. Retired CMS variables must not be configured.
 
 The current application requires a server-capable Next.js deployment. Setting `CLOUDFLARE_PAGES=true` forces static export and is incompatible with the BFF/NextAuth route-handler architecture.
 
@@ -112,9 +110,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
-With `NEXT_PUBLIC_AUTH_PROVIDER=firebase`, the private Function and its Vercel
-WIF trust must be deployed. Legacy screens still require Strapi until their BFF
-handlers have been ported.
+The private Function and its Vercel WIF trust must be deployed. Local browser
+traffic uses same-origin `/api/*` BFF routes; the retired CMS is not required.
 
 ## Verification
 
@@ -129,9 +126,10 @@ npm run build
 npm run test:e2e
 ```
 
-`check:migration-gate` is a no-regression ratchet against the current 372
-line/rule findings. `check:migration-gate:strict` requires zero and is the
-cutover/destruction gate.
+`check:migration-gate` is a no-regression ratchet against the 92 source-level
+compatibility findings recorded on 2026-08-02. Unlike the previous gate, it
+includes `src/legacy-cms` and fails if any retired proxy route or backend host
+is reintroduced. `check:migration-gate:strict` requires zero.
 
 Verified result on 2026-07-23:
 

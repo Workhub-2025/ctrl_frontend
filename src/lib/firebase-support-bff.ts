@@ -17,7 +17,3 @@ export async function requireFirebaseSupportSession(
     support: createFirebaseSupportApi(auth.domainApi, auth.firebaseSessionCookie),
   };
 }
-
-export function isFirebaseAuthProvider(): boolean {
-  return process.env.NEXT_PUBLIC_AUTH_PROVIDER === "firebase";
-}

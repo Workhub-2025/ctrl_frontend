@@ -3,12 +3,12 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("firebase support ticket contract", () => {
-  it("routes browser support calls through Firebase BFF on the firebase auth path", () => {
+  it("routes every browser support call through the Firebase BFF", () => {
     const service = readFileSync(
       join(process.cwd(), "src/services/support-ticket.service.ts"),
       "utf8"
     );
-    expect(service).toContain('NEXT_PUBLIC_AUTH_PROVIDER === "firebase"');
+    expect(service).not.toContain("NEXT_PUBLIC_AUTH_PROVIDER");
     expect(service).toContain("/api/");
     expect(service).toContain("support-tickets");
   });

@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const strict = process.argv.includes("--strict");
 const report = process.argv.includes("--report");
-const baseline = 372;
+// Truthful post-decommission baseline (2026-08-02). Ratchet this down with
+// each retired compatibility path; strict mode remains the zero-reference gate.
+const baseline = 92;
 const roots = [
   "src",
   "package.json",
@@ -21,8 +23,6 @@ const ignoredDirectories = new Set([
   ".next",
   "dist",
   "node_modules",
-  // Production dual-path Strapi helpers quarantined until Wave 8 destruction.
-  "legacy-cms",
 ]);
 const textExtensions = new Set([
   ".cjs", ".css", ".env", ".example", ".html", ".js", ".json", ".jsx",
@@ -33,6 +33,9 @@ const rules = [
   { id: "runtime-strapi-token", pattern: /\bSTRAPI_API_(?:FULL_ACCESS|READONLY)_TOKEN\b/g },
   { id: "strapi-client-package", pattern: /["']@strapi\/client["']/g },
   { id: "strapi-proxy-route", pattern: /\/api\/strapi-proxy\b/g },
+  { id: "legacy-cms-proxy-route", pattern: /\/api\/legacy-cms-proxy\b/g },
+  { id: "legacy-cms-host", pattern: /\bbe\.ctrl-assess\.co\.uk\b/g },
+  { id: "legacy-cms-import", pattern: /(?:from|import\s*\()\s*["'][^"']*legacy-cms[^"']*["']/g },
   { id: "strapi-jwt-reference", pattern: /\bstrapiJwt\b/g },
   {
     id: "strapi-client-helper",

@@ -8,7 +8,6 @@
 import { revalidateTag, revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import UsersService from '@/services/users-simple.service';
-import { isFirebaseAuthProvider } from '@/lib/auth/auth-provider';
 import {
     FindUsersParams,
     CreateUserData,
@@ -18,7 +17,6 @@ import {
     UserStats,
     IProgresStatus
 } from '@/types';
-import { debugAuthToken, debugEnvironment } from "@/legacy-cms/debug-auth";
 import {
     applyTenantScope,
     enforceTenantWrite,
@@ -36,40 +34,6 @@ type ActionResult<T> = {
 };
 
 /**
- * Get current user server action
- * Firebase Preview: prefer GET /api/user/profile (domainApi) instead.
- */
-export const getCurrentUserAction = async (): Promise<ActionResult<IPublicUser>> => {
-    try {
-        if (isFirebaseAuthProvider()) {
-            return {
-                success: false,
-                error: 'Use /api/user/profile on the Firebase auth path',
-            };
-        }
-        const user = await UsersService.getCurrentUser();
-
-        if (!user) {
-            return {
-                success: false,
-                error: 'User not found or not authenticated'
-            };
-        }
-
-        return {
-            success: true,
-            data: user
-        };
-    } catch (error: any) {
-        console.error('[getCurrentUserAction] Error:', error);
-        return {
-            success: false,
-            error: error.message || 'Failed to fetch current user'
-        };
-    }
-}
-
-/**
  * Get users with pagination and filters
  */
 export const getUsersAction = async (params: FindUsersParams = {}): Promise<ActionResult<PaginatedResponse<IPublicUser>>> => {
@@ -77,12 +41,6 @@ export const getUsersAction = async (params: FindUsersParams = {}): Promise<Acti
         const authContext = await requireAdminActionContext('getUsersAction');
         if (process.env.NODE_ENV === 'development') {
             console.log('[getUsersAction] Called with params:', JSON.stringify(params, null, 2));
-        }
-
-        // Debug authentication only if we get forbidden errors and only in development
-        if (process.env.NODE_ENV === 'development') {
-            await debugAuthToken();
-            debugEnvironment();
         }
 
         const scopedParams = applyTenantScope(params, authContext);

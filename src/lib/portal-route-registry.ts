@@ -51,7 +51,6 @@ export const PORTAL_ROUTES = [
   { id: "legal.terms", path: "/terms-conditions", classification: "canonical", audience: "public", owner: "governance", implementation: "live" },
   { id: "shared.profile", path: "/profile", classification: "canonical", audience: "shared", owner: "identity", implementation: "live" },
   { id: "shared.dashboard-router", path: "/dashboard", classification: "canonical", audience: "shared", owner: "identity", implementation: "live" },
-  { id: "development.auth", path: "/debug-auth", classification: "development", audience: "admin", owner: "engineering" },
   { id: "candidate.dashboard", path: "/candidate-dashboard", classification: "canonical", audience: "candidate", owner: "candidate-readiness", implementation: "live" },
   { id: "candidate.support", path: "/candidate-dashboard/support", classification: "canonical", audience: "candidate", owner: "support", implementation: "adapter" },
   { id: "candidate.assessment", path: "/assessment/[slug]", classification: "canonical", audience: "candidate", owner: "assessment-execution", implementation: "live" },
