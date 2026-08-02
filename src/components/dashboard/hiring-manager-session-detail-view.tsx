@@ -28,6 +28,10 @@ type HiringManagerSessionDetailViewProps = {
   sessionId: string;
 };
 
+function isLockedCandidate(status?: string | null) {
+  return status === "locked" || status === "soft_locked";
+}
+
 function findCampaignForSession(
   session: HiringManagerSessionListItem,
   campaignDetails: ReturnType<typeof useHiringManagerPortal>["campaignDetails"]
@@ -80,11 +84,11 @@ export function HiringManagerSessionDetailView({
   const attentionItems = useMemo((): PortalWorkQueueItem[] => {
     if (!session) return [];
     const items: PortalWorkQueueItem[] = [];
-    const locked = session.candidates.filter((c) => c.status === "locked");
+    const locked = session.candidates.filter((c) => isLockedCandidate(c.status));
     const incomplete = session.candidates.filter((c) => {
       const expected = campaign?.assessmentStack.length ?? 1;
       const done = c.results?.length ?? 0;
-      return done < expected && c.status !== "locked";
+      return done < expected && !isLockedCandidate(c.status);
     });
 
     if (session.candidateCount === 0) {

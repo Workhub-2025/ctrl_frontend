@@ -26,7 +26,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getStatusTone } from "@/components/dashboard/hiring-manager-dashboard-data";
-import { areAllSessionCandidatesComplete } from "@/lib/hiring-manager/session-completion";
+import {
+  areAllSessionCandidatesComplete,
+  getCandidateAssessmentProgress,
+} from "@/lib/hiring-manager/session-completion";
 import {
   portalBadgeClass,
   portalIconWrapClass,
@@ -192,7 +195,7 @@ export function HiringManagerSessionDetailsDialog({
         }}
         title={session ? getHmSessionDisplayName(session) : "Session workspace"}
         header={null}
-        width="lg"
+        width="xl"
         contentClassName="[&>button]:hidden"
         bodyClassName="flex flex-col overflow-hidden p-0"
       >
@@ -541,7 +544,7 @@ function HiringManagerSessionWorkspace({
                         Number.isNaN(sessionStartsAtTime) ||
                         currentTime >= sessionStartsAtTime;
                       const showUnlockControl =
-                        candidate.status === "locked" &&
+                        isCandidateSoftLocked(candidate.status) &&
                         isInPerson &&
                         Boolean(onUnlockCandidate);
 
@@ -560,10 +563,7 @@ function HiringManagerSessionWorkspace({
                           {/* Row header */}
                           <div
                             className={cn(
-                              "grid gap-4 p-4 sm:items-center",
-                              showUnlockControl
-                                ? "sm:grid-cols-[minmax(0,1fr)_140px_auto]"
-                                : "sm:grid-cols-[minmax(0,1fr)_auto]"
+                              "grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
                             )}
                           >
                             <div className="flex min-w-0 items-center gap-3">
@@ -597,7 +597,7 @@ function HiringManagerSessionWorkspace({
                                       portalBadgeClass
                                     )}
                                   >
-                                    {candidate.status === "locked"
+                                    {isCandidateSoftLocked(candidate.status)
                                       ? "Locked"
                                       : progress.completed >= progress.total
                                         ? "Completed"
@@ -612,50 +612,21 @@ function HiringManagerSessionWorkspace({
                               </div>
                             </div>
 
-                            {showUnlockControl ? (
-                              <div className="flex min-h-10 items-center justify-center sm:justify-self-center">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    onUnlockCandidate?.(candidate.id);
-                                  }}
-                                  disabled={!isUnlockWindowOpen || unlockingCandidateId === candidate.id}
-                                  title={
-                                    isUnlockWindowOpen
-                                      ? "Unlock assessments for this candidate"
-                                      : "Unlock is available when the session starts"
-                                  }
-                                  className="h-9 w-[112px] shrink-0 rounded-lg px-3 text-xs font-semibold"
-                                >
-                                  {unlockingCandidateId === candidate.id ? (
-                                    <><RefreshCw className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Unlocking</>
-                                  ) : (
-                                    <><LockOpen className="mr-1.5 h-3.5 w-3.5" /> Unlock</>
-                                  )}
-                                </Button>
-                              </div>
-                            ) : null}
-
                             {/* Right: stats + actions */}
-                            <div className="flex items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
-                              {!showUnlockControl ? (
-                                <div className={cn("min-w-[130px] border-r pr-4", portalPanelBorderClass)}>
-                                  <div className="text-right">
-                                    <p className={portalLabelClass}>Assessment status</p>
-                                    <div className="mt-1 flex justify-end">
-                                      <AssessmentOverallScoreCell
-                                        assessmentStack={stackForWeights}
-                                        results={candidate.results ?? []}
-                                        assessmentSettings={assessmentSettings}
-                                        resolvedStackSummary={resolvedStackSummary}
-                                      />
-                                    </div>
+                            <div className="flex flex-wrap items-center justify-end gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              <div className={cn("min-w-[130px] border-r pr-4", portalPanelBorderClass)}>
+                                <div className="text-right">
+                                  <p className={portalLabelClass}>Assessment status</p>
+                                  <div className="mt-1 flex justify-end">
+                                    <AssessmentOverallScoreCell
+                                      assessmentStack={stackForWeights}
+                                      results={candidate.results ?? []}
+                                      assessmentSettings={assessmentSettings}
+                                      resolvedStackSummary={resolvedStackSummary}
+                                    />
                                   </div>
                                 </div>
-                              ) : null}
+                              </div>
 
                               <Button
                                 asChild
@@ -708,6 +679,46 @@ function HiringManagerSessionWorkspace({
                               </button>
                             </div>
                           </div>
+
+                          {showUnlockControl ? (
+                            <div
+                              className="flex flex-col gap-4 border-t border-amber-500/25 bg-amber-500/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between"
+                              role="status"
+                            >
+                              <div className="flex min-w-0 items-start gap-3">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300" aria-hidden="true">
+                                  <LockOpen className="h-4 w-4" />
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-foreground">
+                                    In-person release required
+                                  </p>
+                                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                    {isUnlockWindowOpen
+                                      ? "The candidate is waiting at the assessment gate. Confirm they are present, then unlock their assessments."
+                                      : "The candidate is ready, but the release control becomes available when the session starts."}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onUnlockCandidate?.(candidate.id);
+                                }}
+                                disabled={!isUnlockWindowOpen || unlockingCandidateId === candidate.id}
+                                aria-label={`Unlock assessments for ${candidate.name}`}
+                                className="h-11 w-full shrink-0 rounded-lg px-5 text-sm font-semibold sm:w-auto"
+                              >
+                                {unlockingCandidateId === candidate.id ? (
+                                  <><RefreshCw className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" /> Unlocking candidate…</>
+                                ) : (
+                                  <><LockOpen className="mr-2 h-4 w-4" aria-hidden="true" /> Unlock candidate</>
+                                )}
+                              </Button>
+                            </div>
+                          ) : null}
 
                           {/* Accordion body — segment bars */}
                           {isExpanded ? (
@@ -841,15 +852,14 @@ export function CandidateResultsDialog({
   );
 }
 
+function isCandidateSoftLocked(status?: string | null) {
+  return status === "locked" || status === "soft_locked";
+}
+
 function getCandidateProgress(candidate: SessionCandidate, expectedAssessmentCount?: number) {
-  const completed = new Set(
-    candidate.results
-      .filter((result) => {
-        const status = getHmAssessmentItemStatus(result);
-        return status === "completed" || status === "submitted";
-      })
-      .map((r) => r.id || r.assessment)
-  ).size;
-  const total = Math.max(expectedAssessmentCount || 0, candidate.results.length, completed, 1);
+  const { completed, total } = getCandidateAssessmentProgress(
+    candidate,
+    expectedAssessmentCount
+  );
   return { completed, total, percent: Math.round((completed / total) * 100) };
 }

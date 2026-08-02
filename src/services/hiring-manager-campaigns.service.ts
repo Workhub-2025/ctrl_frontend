@@ -81,7 +81,7 @@ type RawCandidateSession = {
   candidateCode?: string;
   sessionCode?: string;
   mode?: "in_person" | "remote";
-  sessionStatus?: "pending" | "active" | "completed" | "locked" | "expired";
+  sessionStatus?: "pending" | "active" | "completed" | "locked" | "soft_locked" | "expired";
   expiresAt?: string | null;
   usedAt?: string | null;
   completedAt?: string | null;
@@ -395,7 +395,8 @@ function normalizeAssessmentSession(session: RawAssessmentSession): HiringManage
         hasStartedAssessment:
           results.length > 0 ||
           candidateSession.sessionStatus === "completed" ||
-          candidateSession.sessionStatus === "locked",
+          candidateSession.sessionStatus === "locked" ||
+          candidateSession.sessionStatus === "soft_locked",
         results,
       };
     }),

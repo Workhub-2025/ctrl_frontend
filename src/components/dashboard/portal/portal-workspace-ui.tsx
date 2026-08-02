@@ -18,12 +18,13 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
-type PortalSidePanelWidth = "sm" | "md" | "lg";
+type PortalSidePanelWidth = "sm" | "md" | "lg" | "xl";
 
 const sidePanelWidth: Record<PortalSidePanelWidth, string> = {
   sm: "sm:max-w-md",
   md: "sm:max-w-xl",
   lg: "sm:max-w-2xl",
+  xl: "sm:max-w-[min(92vw,72rem)]",
 };
 
 export function PortalSidePanel({

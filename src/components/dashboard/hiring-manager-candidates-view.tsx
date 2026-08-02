@@ -53,6 +53,7 @@ import {
 } from "@/lib/hiring-manager/campaign-stack-score";
 import { computeWeightedCompositeScore } from "@/lib/hiring-manager/composite-score";
 import { findAssessmentResultForStackEntry, getAssessmentKey } from "@/lib/hiring-manager/assessment-matching";
+import { getCandidateAssessmentProgress } from "@/lib/hiring-manager/session-completion";
 
 type CandidateRow = {
   id: string;
@@ -87,12 +88,10 @@ function buildCandidateRows(campaigns: HiringManagerCampaignDetail[]): Candidate
         results.length,
         1
       );
-      const completedAssessments = new Set(
-        results
-          .filter((result) => result.completedAt || result.numericScore !== null)
-          .map((result) => result.id || result.assessment)
-      ).size;
-      const totalAssessments = Math.max(assessmentCount, results.length, 1);
+      const {
+        completed: completedAssessments,
+        total: totalAssessments,
+      } = getCandidateAssessmentProgress({ results }, assessmentCount);
       const completion = Math.round((completedAssessments / totalAssessments) * 100);
       const progress =
         completedAssessments >= totalAssessments

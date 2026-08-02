@@ -138,6 +138,7 @@ export function HiringManagerCampaignDetailView({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
+  const [unlockingCandidateId, setUnlockingCandidateId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<ResultsDialogState | null>(null);
   usePortalBreadcrumbDetail(campaign?.name);
 
@@ -181,6 +182,15 @@ export function HiringManagerCampaignDetailView({
   const [activeSession, setActiveSession] = useState<HiringManagerSessionListItem | null>(null);
 
   useEffect(() => {
+    if (!campaign) return;
+    setActiveSession((current) =>
+      current
+        ? campaign.assessmentSessions.find((session) => session.id === current.id) ?? null
+        : null
+    );
+  }, [campaign]);
+
+  useEffect(() => {
     const requestedTab = searchParams.get("tab");
     setActiveTab(isCampaignWorkspaceTab(requestedTab) ? requestedTab : "overview");
 
@@ -214,8 +224,11 @@ export function HiringManagerCampaignDetailView({
     [campaign]
   );
 
-  const tabHref = (tab: CampaignWorkspaceTab) =>
-    `/hiring-manager-dashboard/campaigns/${encodeURIComponent(campaignId)}?tab=${tab}`;
+  const tabHref = useCallback(
+    (tab: CampaignWorkspaceTab) =>
+      `/hiring-manager-dashboard/campaigns/${encodeURIComponent(campaignId)}?tab=${tab}`,
+    [campaignId]
+  );
 
   const workItems = useMemo((): PortalWorkQueueItem[] => {
     if (!campaign) return [];
@@ -267,7 +280,7 @@ export function HiringManagerCampaignDetailView({
     }
 
     return items;
-  }, [campaign, campaignId]);
+  }, [campaign, tabHref]);
 
   const selectTab = (tab: CampaignWorkspaceTab) => {
     setActiveTab(tab);
@@ -315,6 +328,23 @@ export function HiringManagerCampaignDetailView({
     } finally {
       setIsDeleting(false);
       setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const unlockCandidate = async (candidateSessionId: string) => {
+    setUnlockingCandidateId(candidateSessionId);
+    setError(null);
+    try {
+      await HiringManagerPortalClientService.unlockCandidate(candidateSessionId);
+      await loadCampaign(true);
+    } catch (unlockError) {
+      setError(
+        unlockError instanceof Error
+          ? unlockError.message
+          : "Candidate session could not be unlocked."
+      );
+    } finally {
+      setUnlockingCandidateId(null);
     }
   };
 
@@ -880,7 +910,12 @@ export function HiringManagerCampaignDetailView({
         campaignName={campaign?.name}
         campaignRole={campaign?.role}
         campaignId={campaign?.id}
+        expectedAssessmentCount={campaign?.assessmentStack.length}
+        assessmentStack={campaign?.assessmentStack}
+        assessmentSettings={campaign?.assessmentSettings}
         resolvedStackSummary={campaign?.resolvedStackSummary}
+        onUnlockCandidate={unlockCandidate}
+        unlockingCandidateId={unlockingCandidateId}
       />
     </div>
   );

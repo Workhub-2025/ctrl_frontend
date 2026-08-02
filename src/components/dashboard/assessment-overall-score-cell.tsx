@@ -15,6 +15,7 @@ import { getHmAssessmentItemStatus } from "@/lib/assessment-result-status";
 import { findAssessmentResultForStackEntry } from "@/lib/hiring-manager/assessment-matching";
 import { buildCompositeStackEntries } from "@/lib/hiring-manager/campaign-stack-score";
 import { computeDecisionReadyCompositeScore } from "@/lib/hiring-manager/composite-score";
+import { getCandidateAssessmentProgress } from "@/lib/hiring-manager/session-completion";
 import type { HiringManagerAssessmentResult } from "@/services/hiring-manager-portal-client.service";
 import type { HiringManagerResolvedStackSummary } from "@/types/hiring-manager.types";
 
@@ -93,11 +94,15 @@ export function AssessmentOverallScoreCell({
       score,
     };
   });
-  const completedCount = breakdown.filter((entry) => entry.status === "completed").length;
+  const submittedCount = Math.min(
+    breakdown.length,
+    getCandidateAssessmentProgress({ results }, breakdown.length).completed
+  );
   const overallScore = computeDecisionReadyCompositeScore(stackEntries, results);
 
   const statusLabel = (status: string) => {
     if (status === "completed") return "Completed";
+    if (status === "submitted") return "Submitted";
     if (status === "abandoned") return "Abandoned";
     return "Pending";
   };
@@ -106,7 +111,7 @@ export function AssessmentOverallScoreCell({
       <ScoreRingSmall value={overallScore} />
     ) : breakdown.length > 0 ? (
       <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-        {completedCount}/{breakdown.length}
+        {submittedCount}/{breakdown.length}
       </span>
     ) : (
       <span className="text-xs font-semibold tabular-nums text-muted-foreground">—</span>
@@ -126,7 +131,7 @@ export function AssessmentOverallScoreCell({
             aria-label={
               overallScore !== null
                 ? `Overall score ${overallScore}% — view assessment breakdown`
-                : `Assessment progress ${completedCount} of ${breakdown.length} completed — view assessment breakdown`
+                : `Assessment progress ${submittedCount} of ${breakdown.length} submitted — view assessment breakdown`
             }
           >
             {cell}

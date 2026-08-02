@@ -22,7 +22,10 @@ export function getCandidateAssessmentProgress(
         if (status === "submitted" || status === "scoring" || status === "completed") {
           return true;
         }
-        return Boolean(result.completedAt || result.numericScore !== null);
+        return Boolean(
+          result.completedAt ||
+          (typeof result.numericScore === "number" && Number.isFinite(result.numericScore))
+        );
       })
       .map((result) => result.id || result.assessment)
   ).size;
