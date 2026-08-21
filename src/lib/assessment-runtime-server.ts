@@ -6,8 +6,7 @@ import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 
 /**
  * Forwards the browser-safe assessment contract to the private domain API.
- * Firebase authenticates the session; the domain API owns persistence and can
- * switch from Firestore to PostgreSQL without exposing database access here.
+ * Firebase authenticates the session; product data stays behind the domain API.
  */
 export async function forwardAssessmentRuntime(
   _request: NextRequest,

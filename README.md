@@ -40,22 +40,23 @@ src/
 
 ## Authentication
 
-Firebase is the only supported authentication and application-data path:
+Firebase is the only supported authentication path. Product data is Cloud SQL
+behind the private domain API:
 
 - The Firebase browser SDK signs users in,
   exchanges the short-lived ID token through
   `POST /api/auth/firebase/session`, and writes an opaque Firebase session plus
   a UI-only NextAuth projection as `httpOnly` cookies.
-- The Vercel BFF invokes the private Firebase Function through Vercel OIDC →
+- The Vercel BFF invokes the private domain API through Vercel OIDC →
   Google Workload Identity Federation. It stores no Google service-account key.
-- Active handlers use `requireFirebaseSession()` and never require a CMS JWT.
+- Active handlers use `requireFirebaseSession()`.
 - Pre-provisioned identities receive only the opaque Firebase cookie. They
   complete `/auth/bootstrap` or `/auth/accept-invitation`; the UI session
   projection is created only after `/v1/me` becomes authoritative.
 - Firebase TOTP enrollment forces a fresh MFA sign-in before administrator
   bootstrap so the session contains a genuine second-factor claim.
-- The retired CMS has no public health route, proxy route, image host, or debug
-  login surface. The migration gate fails if those paths are reintroduced.
+- There is no CMS proxy, health, or debug login route. The migration gate
+  fails if those paths are reintroduced.
 - Default session lifetime is 12 hours absolute and 30 minutes idle.
 - Middleware guards role portals and BFF namespaces, rejects cross-origin mutations, applies a payload ceiling/rate limit and adds the production CSP nonce.
 

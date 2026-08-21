@@ -1,11 +1,9 @@
 import "server-only";
 
 /**
- * Persistence-neutral entry point for the private application API.
+ * Entry point for the private application API.
  *
- * Firebase remains the identity provider, but callers must not depend on the
- * database used by the private API. The compatibility adapter can therefore
- * move from Firestore to PostgreSQL without changing browser or BFF routes.
+ * Firebase authenticates the session. Product data stays behind the domain API.
  */
 export {
   createFirebaseDomainApi as createDomainApi,

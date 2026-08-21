@@ -6,7 +6,7 @@ export function isVercelPreviewDeployment(): boolean {
 /**
  * Browser Firebase Auth hosts used by the client SDK (email/password sign-in,
  * auth iframe, token refresh, optional reCAPTCHA/MFA challenges).
- * Keep this list tight: Firestore/Storage/Functions stay server-side via BFF.
+ * Keep this list tight: Storage and Functions stay server-side via the BFF.
  */
 const FIREBASE_AUTH_CONNECT_SRC = [
   "https://identitytoolkit.googleapis.com",
