@@ -445,7 +445,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="organization" className="text-sm font-semibold">Organization</Label>
+                  <Label htmlFor="organization" className="text-sm font-semibold">Organisation</Label>
                   <div className="relative flex items-center">
                     <Building className="absolute left-3.5 h-[18px] w-[18px] text-muted-foreground/80 pointer-events-none" />
                     <Input
@@ -454,12 +454,12 @@ export default function ProfilePage() {
                       readOnly
                       disabled
                       aria-describedby="organization-authority"
-                      placeholder="No organization membership"
+                      placeholder="No organisation membership"
                       className="pl-10 rounded-xl bg-muted/35 text-muted-foreground"
                     />
                   </div>
                   <p id="organization-authority" className="text-xs text-muted-foreground">
-                    Organization is assigned from your account membership and cannot be changed here.
+                    Organisation is assigned from your account membership and cannot be changed here.
                   </p>
                 </div>
 

@@ -1,3 +1,5 @@
+import { isUpstashConfigured, upstashPipeline } from "@/lib/security/upstash-rest";
+
 interface RateLimitState {
   count: number;
   resetAt: number;
@@ -15,8 +17,6 @@ const buckets = new Map<string, RateLimitState>();
 const MAX_MEMORY_BUCKETS = 10_000;
 
 const toSeconds = (ms: number) => Math.max(1, Math.ceil(ms / 1000));
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
 /** Keep Preview rehearsal buckets from colliding with production counters. */
 function rateLimitEnvPrefix(): string {
@@ -118,72 +118,46 @@ const applyUpstashRateLimit = async ({
   limit: number;
   windowMs: number;
 }): Promise<RateLimitResult> => {
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) {
+  if (!isUpstashConfigured()) {
     return applyMemoryRateLimit({ key, limit, windowMs });
   }
 
   const redisKey = `rate:${key}`;
-  const baseHeaders = {
-    Authorization: `Bearer ${UPSTASH_TOKEN}`,
-    "Content-Type": "application/json",
-  };
+  const results = await upstashPipeline([
+    ["INCR", redisKey],
+    ["PEXPIRE", redisKey, windowMs, "NX"],
+    ["PTTL", redisKey],
+  ]);
 
-  try {
-    const incrResponse = await fetch(`${UPSTASH_URL}/incr/${encodeURIComponent(redisKey)}`, {
-      method: "POST",
-      headers: baseHeaders,
-      signal: AbortSignal.timeout(3_000),
-    });
-    const incrJson = (await incrResponse.json()) as { result?: number };
-    const count = Number(incrJson.result ?? 0);
+  if (!results) {
+    return applyMemoryRateLimit({ key, limit, windowMs });
+  }
 
-    if (!Number.isFinite(count) || count <= 0) {
-      throw new Error("Invalid INCR response");
-    }
+  const count = Number(results[0] ?? 0);
+  if (!Number.isFinite(count) || count <= 0) {
+    return applyMemoryRateLimit({ key, limit, windowMs });
+  }
 
-    if (count === 1) {
-      await fetch(
-        `${UPSTASH_URL}/pexpire/${encodeURIComponent(redisKey)}/${windowMs}`,
-        {
-          method: "POST",
-          headers: baseHeaders,
-          signal: AbortSignal.timeout(3_000),
-        }
-      );
-    }
+  const ttlMs =
+    typeof results[2] === "number" && results[2] > 0 ? results[2] : windowMs;
 
-    const ttlResponse = await fetch(`${UPSTASH_URL}/pttl/${encodeURIComponent(redisKey)}`, {
-      method: "POST",
-      headers: baseHeaders,
-      signal: AbortSignal.timeout(3_000),
-    });
-    const ttlJson = (await ttlResponse.json()) as { result?: number };
-    const ttlMs =
-      typeof ttlJson.result === "number" && ttlJson.result > 0
-        ? ttlJson.result
-        : windowMs;
-
-    if (count > limit) {
-      return {
-        allowed: false,
-        limit,
-        remaining: 0,
-        retryAfterSeconds: toSeconds(ttlMs),
-        backend: "upstash",
-      };
-    }
-
+  if (count > limit) {
     return {
-      allowed: true,
+      allowed: false,
       limit,
-      remaining: Math.max(0, limit - count),
+      remaining: 0,
       retryAfterSeconds: toSeconds(ttlMs),
       backend: "upstash",
     };
-  } catch {
-    // Resilient fallback for local/dev or transient Redis issues.
-    return applyMemoryRateLimit({ key, limit, windowMs });
   }
+
+  return {
+    allowed: true,
+    limit,
+    remaining: Math.max(0, limit - count),
+    retryAfterSeconds: toSeconds(ttlMs),
+    backend: "upstash",
+  };
 };
 
 export const applyRateLimit = async ({

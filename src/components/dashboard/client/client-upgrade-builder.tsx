@@ -288,8 +288,8 @@ export function ClientUpgradeBuilder({
           <p className="text-xs text-muted-foreground">
             Current allocation: {currentSeats} seat{currentSeats === 1 ? "" : "s"}
             {draft.requestedSeats <= currentSeats
-              ? " · no seat change staged"
-              : ` · staging +${draft.requestedSeats - currentSeats}`}
+              ? " · no seat change"
+              : ` · +${draft.requestedSeats - currentSeats} queued`}
           </p>
         </section>
 

@@ -533,7 +533,7 @@ export default function CreateClientPage() {
         <AdminPanel className="h-fit space-y-4">
           <AdminSectionHeader
             title="Review"
-            description="Create the client and pending contract in Strapi."
+            description="Create the client and pending contract."
           />
           <div className="space-y-4 text-sm">
             <div className="flex items-center gap-3 font-medium text-foreground">

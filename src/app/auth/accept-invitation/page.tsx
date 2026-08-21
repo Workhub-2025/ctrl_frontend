@@ -267,7 +267,7 @@ function InvitationAcceptanceContent() {
               ? "Sign in with the existing password for this email, then we will attach the invitation."
               : isCandidateInvitation
                 ? "Create the Firebase account for the invited email, then activate your candidate assignment."
-                : "Create the Firebase account for the invited email, then activate its organization membership."}
+                : "Create the Firebase account for the invited email, then activate its organisation membership."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

@@ -6,8 +6,8 @@ import {
 } from "@/lib/auth/auth-provider";
 
 /**
- * Short-circuits legacy Strapi credential/TOTP BFF routes when the deploy is
- * on Firebase Auth. Returns null so Strapi dual-path handlers can continue.
+ * Returns 410 for retired credential/TOTP BFF routes. Browser auth uses
+ * Firebase Auth (session cookie exchange, password recovery, authenticator enrolment).
  */
 export function firebaseAuthRouteGoneResponse(): NextResponse | null {
   if (!isFirebaseAuthProvider()) {

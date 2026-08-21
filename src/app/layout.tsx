@@ -55,7 +55,7 @@ export default async function RootLayout({
 
   return (
     <html
-      lang="en"
+      lang="en-GB"
       className={cn(
         "dark",
         plusJakartaSans.variable,

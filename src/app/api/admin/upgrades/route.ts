@@ -45,7 +45,7 @@ export async function GET() {
                 ? ("Expired" as const)
                 : ("Not configured" as const)
           : ("Not configured" as const),
-        primaryContact: "Organization contact",
+        primaryContact: "Organisation contact",
         lastActivity: new Date().toISOString(),
         pendingCampaignApprovals: org.pendingUpgradesCount,
         hasClientContact: true,

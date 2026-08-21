@@ -197,8 +197,7 @@ export function AdminClientDetailContent() {
       const response = await fetch("/api/admin/access-codes/client", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // email is used by the Firebase invitation flow and ignored on the
-        // legacy Strapi access-code path.
+        // email is used by the invitation flow.
         body: JSON.stringify({
           clientDocumentId: clientId,
           ...(inviteEmail.trim() ? { email: inviteEmail.trim().toLowerCase() } : {}),
@@ -610,7 +609,7 @@ export function AdminClientDetailContent() {
           <AdminPanel>
             <AdminSectionHeader
               title="Client details"
-              description="Live organisation, contact, and workflow data from Strapi."
+              description="Live organisation, contact, and workflow data."
             />
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <Detail label="Legal name" value={client.legalName} />

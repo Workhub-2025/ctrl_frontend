@@ -1,9 +1,9 @@
+/**
+ * Retired per-slug submit plugin. Live submit is
+ * `/api/assessment-runtime` → domain API attempt submit.
+ */
 import { NextResponse } from "next/server";
 
-/**
- * Legacy Strapi per-slug submit plugin. Firebase Preview uses
- * `/api/assessment-runtime` → domainApi attempt submit exclusively.
- */
 export async function handleAssessmentSubmit(slug: string, _request: Request) {
   return NextResponse.json(
     {

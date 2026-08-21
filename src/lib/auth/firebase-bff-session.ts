@@ -14,9 +14,8 @@ import {
 } from "@/lib/auth/role-model";
 
 /**
- * Authentication helper for newly ported Firebase routes. Unlike the legacy
- * BFF helpers, it never reads or requires a Strapi JWT. The domain Function
- * remains authoritative and re-verifies this opaque Firebase session.
+ * Authentication helper for BFF routes. The domain Function re-verifies
+ * this opaque Firebase session cookie.
  */
 export async function requireFirebaseSession(
   ...roles: (AppRole | AdminPortalRoleType)[]
@@ -50,7 +49,7 @@ export async function requireFirebaseSession(
     session,
     firebaseSessionCookie,
     domainApi: createDomainApi(),
-    firebaseUid: session.user.firebaseUid ?? session.user.id,
+    firebaseUid: String(session.user.firebaseUid ?? session.user.id),
   };
 }
 

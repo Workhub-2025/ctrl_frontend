@@ -34,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import type {
   ClientCampaignWorkspace,
   ClientSharedCandidate,
-} from "@/services/client-portal.service";
+} from "@/types/client-portal";
 import { cn } from "@/lib/utils";
 import {
   portalLabelClass,

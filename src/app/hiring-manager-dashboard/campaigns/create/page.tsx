@@ -14,8 +14,6 @@ export default async function CreateHiringManagerCampaignPage() {
     includeVersions: true,
   });
 
-  // Delivery-mode entitlements move with billing (Chunk C). Firebase Preview
-  // keeps remote/hybrid selectable so campaign create is not Strapi-blocked.
   const allowRemoteDelivery = true;
   const allowHybridDelivery = true;
 

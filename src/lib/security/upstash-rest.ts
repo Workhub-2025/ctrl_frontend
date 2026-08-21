@@ -1,12 +1,18 @@
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const UPSTASH_TIMEOUT_MS = 3_000;
 
+function upstashUrl() {
+  return process.env.UPSTASH_REDIS_REST_URL;
+}
+
+function upstashToken() {
+  return process.env.UPSTASH_REDIS_REST_TOKEN;
+}
+
 export const isUpstashConfigured = () =>
-  Boolean(UPSTASH_URL && UPSTASH_TOKEN);
+  Boolean(upstashUrl() && upstashToken());
 
 const baseHeaders = () => ({
-  Authorization: `Bearer ${UPSTASH_TOKEN}`,
+  Authorization: `Bearer ${upstashToken()}`,
   "Content-Type": "application/json",
 });
 
@@ -17,150 +23,130 @@ async function upstashFetch(url: string, init?: RequestInit): Promise<Response> 
   });
 }
 
-export async function upstashGet(key: string): Promise<string | null> {
+type RedisArg = string | number;
+
+/**
+ * Execute a Redis command via the REST body, not the URL path. Portal payloads
+ * are too large for `/set/{key}/{value}` and those writes fail silently.
+ */
+export async function upstashCommand(
+  command: RedisArg[],
+): Promise<unknown> {
   if (!isUpstashConfigured()) {
+    return null;
+  }
+  const url = upstashUrl();
+  if (!url) {
     return null;
   }
 
   try {
-    const response = await upstashFetch(
-      `${UPSTASH_URL}/get/${encodeURIComponent(key)}`,
-      { method: "POST", headers: baseHeaders() }
-    );
-    const json = (await response.json()) as { result?: string | null };
-    return typeof json.result === "string" ? json.result : null;
+    const response = await upstashFetch(url, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(command),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const json = (await response.json()) as { result?: unknown };
+    return json.result ?? null;
   } catch {
     return null;
   }
+}
+
+export async function upstashPipeline(
+  commands: RedisArg[][],
+): Promise<unknown[] | null> {
+  if (!isUpstashConfigured()) {
+    return null;
+  }
+  const url = upstashUrl();
+  if (!url) {
+    return null;
+  }
+
+  try {
+    const response = await upstashFetch(`${url}/pipeline`, {
+      method: "POST",
+      headers: baseHeaders(),
+      body: JSON.stringify(commands),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const json = (await response.json()) as Array<{ result?: unknown }> | {
+      result?: unknown;
+    };
+    if (!Array.isArray(json)) {
+      return null;
+    }
+    return json.map((item) => item.result ?? null);
+  } catch {
+    return null;
+  }
+}
+
+export async function upstashGet(key: string): Promise<string | null> {
+  const result = await upstashCommand(["GET", key]);
+  return typeof result === "string" ? result : null;
 }
 
 export async function upstashSet(
   key: string,
   value: string,
-  ttlMs?: number
+  ttlMs?: number,
 ): Promise<boolean> {
-  if (!isUpstashConfigured()) {
-    return false;
-  }
-
-  try {
-    const url =
-      ttlMs && ttlMs > 0
-        ? `${UPSTASH_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}/px/${ttlMs}`
-        : `${UPSTASH_URL}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}`;
-
-    const response = await upstashFetch(url, { method: "POST", headers: baseHeaders() });
-    const json = (await response.json()) as { result?: string };
-    return json.result === "OK";
-  } catch {
-    return false;
-  }
+  const command: RedisArg[] =
+    ttlMs && ttlMs > 0
+      ? ["SET", key, value, "PX", ttlMs]
+      : ["SET", key, value];
+  const result = await upstashCommand(command);
+  return result === "OK";
 }
 
 export async function upstashDel(key: string): Promise<boolean> {
-  if (!isUpstashConfigured()) {
-    return false;
-  }
-
-  try {
-    const response = await upstashFetch(
-      `${UPSTASH_URL}/del/${encodeURIComponent(key)}`,
-      { method: "POST", headers: baseHeaders() }
-    );
-    const json = (await response.json()) as { result?: number };
-    return typeof json.result === "number" && json.result >= 0;
-  } catch {
-    return false;
-  }
+  const result = await upstashCommand(["DEL", key]);
+  return typeof result === "number" && result >= 0;
 }
 
 export async function upstashLpush(key: string, value: string): Promise<boolean> {
-  if (!isUpstashConfigured()) {
-    return false;
-  }
-
-  try {
-    const response = await upstashFetch(
-      `${UPSTASH_URL}/lpush/${encodeURIComponent(key)}/${encodeURIComponent(value)}`,
-      { method: "POST", headers: baseHeaders() }
-    );
-    const json = (await response.json()) as { result?: number };
-    return typeof json.result === "number" && json.result > 0;
-  } catch {
-    return false;
-  }
+  const result = await upstashCommand(["LPUSH", key, value]);
+  return typeof result === "number" && result > 0;
 }
 
 export async function upstashLlen(key: string): Promise<number> {
-  if (!isUpstashConfigured()) {
-    return 0;
-  }
-
-  try {
-    const response = await upstashFetch(
-      `${UPSTASH_URL}/llen/${encodeURIComponent(key)}`,
-      { method: "POST", headers: baseHeaders() }
-    );
-    const json = (await response.json()) as { result?: number };
-    return typeof json.result === "number" && json.result >= 0 ? json.result : 0;
-  } catch {
-    return 0;
-  }
+  const result = await upstashCommand(["LLEN", key]);
+  return typeof result === "number" && result >= 0 ? result : 0;
 }
 
 export async function upstashLtrim(
   key: string,
   start: number,
-  stop: number
+  stop: number,
 ): Promise<boolean> {
-  if (!isUpstashConfigured()) {
-    return false;
-  }
-
-  try {
-    const response = await upstashFetch(
-      `${UPSTASH_URL}/ltrim/${encodeURIComponent(key)}/${start}/${stop}`,
-      { method: "POST", headers: baseHeaders() }
-    );
-    const json = (await response.json()) as { result?: string };
-    return json.result === "OK";
-  } catch {
-    return false;
-  }
+  const result = await upstashCommand(["LTRIM", key, start, stop]);
+  return result === "OK";
 }
 
-export async function upstashLrange(key: string, start: number, stop: number): Promise<string[]> {
-  if (!isUpstashConfigured()) {
-    return [];
-  }
-
-  try {
-    const response = await upstashFetch(
-      `${UPSTASH_URL}/lrange/${encodeURIComponent(key)}/${start}/${stop}`,
-      { method: "POST", headers: baseHeaders() }
-    );
-    const json = (await response.json()) as { result?: string[] | null };
-    return Array.isArray(json.result) ? json.result : [];
-  } catch {
-    return [];
-  }
+export async function upstashLrange(
+  key: string,
+  start: number,
+  stop: number,
+): Promise<string[]> {
+  const result = await upstashCommand(["LRANGE", key, start, stop]);
+  return Array.isArray(result)
+    ? result.filter((item): item is string => typeof item === "string")
+    : [];
 }
 
 export async function upstashPexpire(key: string, ttlMs: number): Promise<boolean> {
-  if (!isUpstashConfigured() || ttlMs <= 0) {
+  if (ttlMs <= 0) {
     return false;
   }
-
-  try {
-    const response = await upstashFetch(
-      `${UPSTASH_URL}/pexpire/${encodeURIComponent(key)}/${ttlMs}`,
-      { method: "POST", headers: baseHeaders() }
-    );
-    const json = (await response.json()) as { result?: number };
-    return json.result === 1;
-  } catch {
-    return false;
-  }
+  const result = await upstashCommand(["PEXPIRE", key, ttlMs]);
+  return result === 1;
 }
 
 export async function upstashGetJson<T>(key: string): Promise<T | null> {
@@ -179,7 +165,7 @@ export async function upstashGetJson<T>(key: string): Promise<T | null> {
 export async function upstashSetJson(
   key: string,
   value: unknown,
-  ttlMs?: number
+  ttlMs?: number,
 ): Promise<boolean> {
   return upstashSet(key, JSON.stringify(value), ttlMs);
 }

@@ -6,7 +6,7 @@ import type {
   FirebasePriceRow,
 } from "@/lib/firebase-billing-api";
 import { platformPricingFromFirebasePrices } from "@/lib/firebase-billing-api";
-import type { AdminRevenueAnalytics } from "@/services/admin-platform.service";
+import type { AdminRevenueAnalytics } from "@/types/admin-platform";
 
 type FirebaseContractRow = Readonly<{
   documentId: string;

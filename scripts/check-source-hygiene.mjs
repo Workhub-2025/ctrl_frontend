@@ -27,3 +27,7 @@ if (duplicateSources.length > 0) {
 console.log(
   `Source hygiene passed (${trackedSourceFiles.length} tracked source files checked).`
 );
+
+execFileSync("node", ["scripts/check-en-gb-spelling.mjs"], {
+  stdio: "inherit",
+});

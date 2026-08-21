@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "check:source-hygiene": "node scripts/check-source-hygiene.mjs",
+    "check:en-gb": "node scripts/check-en-gb-spelling.mjs",
     "check:migration-gate": "node scripts/check-strapi-migration-gate.mjs",
     "check:migration-gate:strict": "node scripts/check-strapi-migration-gate.mjs --strict",
     "audit:security": "npm audit --audit-level=moderate",

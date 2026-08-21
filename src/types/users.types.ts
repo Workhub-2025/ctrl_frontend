@@ -39,8 +39,8 @@ export type EqualityMonitoringState = z.infer<typeof EqualityMonitoringStateSche
 
 // Zod schemas for runtime validation and type inference
 export const UserSchema = z.object({
-    id: z.union([z.number(), z.string()]), // Support both number and string IDs (Strapi v4/v5)
-    documentId: z.string().optional(), // Strapi v5 compatibility
+    id: z.union([z.number(), z.string()]),
+    documentId: z.string().optional(),
     username: z.string(),
     email: z.string().email('Invalid email format'),
     provider: z.string().optional(),
@@ -90,30 +90,6 @@ export const PublicUserSchema = UserSchema.omit({
     resetPasswordToken: true,
     confirmationToken: true,
     provider: true,
-});
-
-// Strapi auth user schema (what comes back from auth endpoints)
-export const StrapiAuthUserSchema = z.object({
-    id: z.union([z.number(), z.string()]),
-    documentId: z.string().optional(),
-    email: z.string().email(),
-    username: z.string(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-    organization: z.string().optional(),
-    phone: z.string().optional(),
-    role: z.union([RoleSchema, z.number(), z.null()]).optional(),
-    confirmed: z.boolean().optional(),
-    blocked: z.boolean().optional(),
-    progresStatus: ProgresStatusSchema.optional(),
-    overallScore: z.number().optional(),
-    createdAt: z.union([z.string(), z.date()]).optional(),
-    updatedAt: z.union([z.string(), z.date()]).optional(),
-});
-
-export const StrapiAuthResponseSchema = z.object({
-    jwt: z.string(),
-    user: UserSchema,
 });
 
 export const LoginUserDataSchema = z.object({
@@ -209,8 +185,6 @@ export const UserProfileSchema = z.object({
 // Type inference from Zod schemas
 export type IUser = z.infer<typeof UserSchema>;
 export type IPublicUser = z.infer<typeof PublicUserSchema>;
-export type StrapiAuthUser = z.infer<typeof StrapiAuthUserSchema>;
-export type StrapiAuthResponse = z.infer<typeof StrapiAuthResponseSchema>;
 export type LoginUserData = z.infer<typeof LoginUserDataSchema>;
 export type UserRegistrationData = z.infer<typeof UserRegistrationSchema>;
 export type UserUpdateData = z.infer<typeof UserUpdateSchema>;
@@ -336,14 +310,6 @@ export const safeValidatePublicUser = (data: unknown): { success: true; data: IP
     }
 };
 
-export const validateStrapiAuthUser = (data: unknown): StrapiAuthUser => {
-    return StrapiAuthUserSchema.parse(data);
-};
-
-export const validateStrapiAuthResponse = (data: unknown): StrapiAuthResponse => {
-    return StrapiAuthResponseSchema.parse(data);
-};
-
 export const validateLoginUserData = (data: unknown): LoginUserData => {
     return LoginUserDataSchema.parse(data);
 };
@@ -379,14 +345,6 @@ export const safeParseUser = (data: unknown) => {
 
 export const safeParsePublicUser = (data: unknown) => {
     return PublicUserSchema.safeParse(data);
-};
-
-export const safeParseStrapiAuthUser = (data: unknown) => {
-    return StrapiAuthUserSchema.safeParse(data);
-};
-
-export const safeParseStrapiAuthResponse = (data: unknown) => {
-    return StrapiAuthResponseSchema.safeParse(data);
 };
 
 export const safeParseLoginUserData = (data: unknown) => {

@@ -9,7 +9,7 @@ const strict = process.argv.includes("--strict");
 const report = process.argv.includes("--report");
 // Truthful post-decommission baseline (2026-08-02). Ratchet this down with
 // each retired compatibility path; strict mode remains the zero-reference gate.
-const baseline = 92;
+const baseline = 0;
 const roots = [
   "src",
   "package.json",

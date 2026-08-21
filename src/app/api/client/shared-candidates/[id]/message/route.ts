@@ -7,7 +7,7 @@ import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bf
 import { rejectCrossOriginRequest } from "@/lib/security/origin-guard";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
-import type { ClientOutreachTemplateKey } from "@/services/client-portal.service";
+import type { ClientOutreachTemplateKey } from "@/types/client-portal";
 
 export async function POST(
   request: NextRequest,

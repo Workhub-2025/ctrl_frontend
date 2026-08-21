@@ -51,7 +51,7 @@ export type FirebaseBillingEntitlements = Readonly<{
   };
 }>;
 
-/** Client/admin billing BFF gate. Firebase session only — no Strapi fallback. */
+/** Client/admin billing BFF gate. Firebase session only. */
 export async function requireFirebaseBillingSession() {
   return requireFirebaseSession("client", "admin");
 }

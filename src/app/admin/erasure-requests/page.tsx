@@ -92,7 +92,7 @@ export default function AdminErasureRequestsPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Data erasure queue"
-        description="Organisation-linked accounts that requested deletion. Advance stages after manual review — fulfillment requires verified orchestrator evidence."
+        description="Organisation-linked accounts that requested deletion. Advance stages after manual review — fulfilment requires verified orchestrator evidence."
         action={
           <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "motion-safe:animate-spin" : ""}`} />

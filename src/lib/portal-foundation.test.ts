@@ -65,14 +65,6 @@ describe("portal route registry", () => {
     expect(registration?.removalDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(source).toContain('"/auth/login"');
     expect(source).not.toContain("registerUser");
-    const registrationApi = fs.readFileSync(
-      path.resolve(process.cwd(), "src/legacy-cms/auth-server.ts"),
-      "utf8",
-    );
-    expect(registrationApi).toContain('"access-code/register"');
-    expect(registrationApi).not.toContain(
-      'postCmsAuth<StrapiAuthResponse>("auth/local/register"',
-    );
   });
 
   it("resolves dynamic canonical routes", () => {

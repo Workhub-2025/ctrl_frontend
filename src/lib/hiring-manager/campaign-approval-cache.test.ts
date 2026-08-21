@@ -2,15 +2,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-describe("client campaign review cache invalidation", () => {
-  it("clears each related hiring manager overview after a decision", () => {
+describe("client campaign review", () => {
+  it("reviews through the domain API recruitment session", () => {
     const source = fs.readFileSync(
-      path.join(process.cwd(), "src/services/client-portal.service.ts"),
-      "utf8"
+      path.join(
+        process.cwd(),
+        "src/app/api/client/campaign-approvals/[campaignId]/review/route.ts",
+      ),
+      "utf8",
     );
 
-    expect(source).toContain("campaign.users_permissions_users");
-    expect(source).toContain("invalidateHmOverviewServerCache(String(id))");
-    expect(source).toContain("await Promise.all");
+    expect(source).toContain("requireFirebaseRecruitmentSession");
+    expect(source).toContain("recruitment.reviewCampaign");
   });
 });

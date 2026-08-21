@@ -74,9 +74,7 @@ function mapIntegrityEventType(
 }
 
 /**
- * Legacy integrity ingest. Prefer AssessmentRuntimeClient.event on the
- * attempt path; this route only remains as an adapter that writes to the
- * Firebase attempt integrity subcollection (never Strapi).
+ * Integrity ingest adapter that writes to the attempt integrity stream.
  */
 export async function POST(request: Request) {
   const correlationId = resolveCorrelationId(

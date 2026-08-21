@@ -4,7 +4,7 @@ import { Clock3 } from "lucide-react";
 import { PortalPanel } from "@/components/dashboard/portal/portal-ui";
 import { portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { formatRetentionPeriod } from "@/lib/legal/retention-format";
-import type { BackendClientEntitlements } from "@/services/client-upgrade.service";
+import type { BackendClientEntitlements } from "@/types/client-portal";
 import { cn } from "@/lib/utils";
 
 export function ClientDataRetentionNotice({

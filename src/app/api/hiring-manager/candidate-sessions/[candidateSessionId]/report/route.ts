@@ -7,7 +7,7 @@ import { mapFirebaseReportToHmResult } from "@/lib/hm-assessment-progress";
 import type { FirebaseAssignmentAssessmentReport } from "@/lib/hm-assessment-progress";
 import { buildCompositeStackEntries } from "@/lib/hiring-manager/campaign-stack-score";
 import { computeDecisionReadyCompositeScore } from "@/lib/hiring-manager/composite-score";
-import { readHmOverviewOrgGeneration } from "@/lib/portal-cache-invalidation";
+import { resolvePortalOrgGenerationFromDomain } from "@/lib/portal-cache-invalidation";
 import {
   PORTAL_USER_SCOPED_TTL_MS,
   portalHmReportCacheKeyWithGeneration,
@@ -37,18 +37,11 @@ export async function GET(
       if (rateLimited) return rateLimited;
     }
 
-    const portalCache = actorContext.organizationId
-      ? await domainApi
-          .request<{ generation: string }>({
-            path: `/v1/organizations/${encodeURIComponent(actorContext.organizationId)}/portal-cache-generation`,
-            firebaseSessionCookie,
-          })
-          .catch(() => ({ generation: "0" }))
-      : { generation: "0" };
-
     const generation = actorContext.organizationId
-      ? await readHmOverviewOrgGeneration(actorContext.organizationId, {
-          persistenceGeneration: portalCache.generation,
+      ? await resolvePortalOrgGenerationFromDomain({
+          organizationId: actorContext.organizationId,
+          domainApi,
+          firebaseSessionCookie,
         })
       : "0";
 

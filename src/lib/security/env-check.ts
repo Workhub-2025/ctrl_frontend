@@ -19,7 +19,7 @@ export function warnIfProductionSecurityGaps() {
       console.warn(`${message} ALLOW_IN_MEMORY_SECURITY=true — not recommended for production.`);
     } else {
       throw new Error(
-        `${message} Set Upstash credentials or ALLOW_IN_MEMORY_SECURITY=true for non-HA staging only.`
+        `${message} Set Upstash credentials or ALLOW_IN_MEMORY_SECURITY=true for local/dev only.`
       );
     }
   }

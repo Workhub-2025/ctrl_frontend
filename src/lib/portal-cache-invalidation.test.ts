@@ -14,6 +14,10 @@ vi.mock("@/lib/portal-server-auth", () => ({
 vi.mock("@/lib/portal-server-cache", () => ({
   portalServerCacheDel: vi.fn().mockResolvedValue(undefined),
   portalServerCacheDelMany: vi.fn().mockResolvedValue(undefined),
+  portalServerCacheGetOrSet: vi.fn(
+    async (_key: string, _ttl: number, factory: () => Promise<unknown>) =>
+      factory(),
+  ),
 }));
 
 vi.mock("@/lib/security/upstash-rest", () => ({

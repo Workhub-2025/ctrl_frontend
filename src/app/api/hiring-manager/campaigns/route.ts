@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
     const { context, recruitment } =
       await requireFirebaseRecruitmentSession("hiring_manager");
     if (!context.organizationId) {
-      return NextResponse.json({ error: "Organization membership is required" }, { status: 403 });
+      return NextResponse.json({ error: "Organisation membership is required" }, { status: 403 });
     }
 
     const limited = await enforceRateLimit(request, "get");
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       await requireFirebaseRecruitmentSession("hiring_manager");
     if (!context.organizationId || !context.seatId) {
       return NextResponse.json(
-        { error: "An active organization seat is required" },
+        { error: "An active organisation seat is required" },
         { status: 403 },
       );
     }

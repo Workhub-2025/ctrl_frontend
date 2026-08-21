@@ -33,7 +33,7 @@ import {
 import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
 import type { SeatSlot } from "@/hooks/use-client-portal";
 import { useClientPortal } from "@/context/client-portal-provider";
-import type { ClientHiringManagerSeat } from "@/services/client-portal.service";
+import type { ClientHiringManagerSeat } from "@/types/client-portal";
 import { cn } from "@/lib/utils";
 
 export function ClientHiringManagersContent() {

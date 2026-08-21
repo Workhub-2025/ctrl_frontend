@@ -3,14 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import { createFirebaseScreenApi } from "@/lib/firebase-screen-api";
-import { readHmOverviewOrgGeneration } from "@/lib/portal-cache-invalidation";
+import { resolvePortalOrgGenerationFromDomain } from "@/lib/portal-cache-invalidation";
 import {
   PORTAL_USER_SCOPED_TTL_MS,
   portalClientSharedCandidatesCacheKeyWithGeneration,
 } from "@/lib/portal-cache-keys";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
-import type { ClientSharedCandidate } from "@/services/client-portal.service";
+import type { ClientSharedCandidate } from "@/types/client-portal";
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       await requireFirebaseRecruitmentSession("client");
     if (!context.organizationId) {
       return NextResponse.json(
-        { error: "Organization membership is required" },
+        { error: "Organisation membership is required" },
         { status: 403 },
       );
     }
@@ -33,16 +33,11 @@ export async function GET(request: NextRequest) {
     const requestedStatus =
       request.nextUrl.searchParams.get("reviewStatus") ?? undefined;
 
-    const portalCache = await domainApi
-      .request<{ generation: string }>({
-        path: `/v1/organizations/${encodeURIComponent(context.organizationId)}/portal-cache-generation`,
-        firebaseSessionCookie,
-      })
-      .catch(() => ({ generation: "0" }));
-    const generation = await readHmOverviewOrgGeneration(
-      context.organizationId,
-      { persistenceGeneration: portalCache.generation },
-    );
+    const generation = await resolvePortalOrgGenerationFromDomain({
+      organizationId: context.organizationId,
+      domainApi,
+      firebaseSessionCookie,
+    });
 
     const data = await portalServerCacheGetOrSet(
       portalClientSharedCandidatesCacheKeyWithGeneration(

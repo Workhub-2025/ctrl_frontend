@@ -15,8 +15,8 @@ import type {
   ClientOverviewData,
   ClientOutreachTemplateKey,
   ClientOutreachTemplates,
-} from "@/services/client-portal.service";
-import type { ClientAuditLog } from "@/services/client-logs.service";
+} from "@/types/client-portal";
+import type { ClientAuditLog } from "@/types/client-portal";
 
 export type FirebaseOrganization = Readonly<{
   id: string;

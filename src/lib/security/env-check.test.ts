@@ -49,7 +49,7 @@ describe("production environment fail-closed checks", () => {
     await expect(runCheck()).rejects.toThrow("UPSTASH_REDIS_REST_URL/TOKEN");
   });
 
-  it("continues validating secrets when the staging memory override is set", async () => {
+  it("continues validating secrets when the in-memory override is set", async () => {
     mocks.isUpstashConfigured.mockReturnValue(false);
     vi.stubEnv("ALLOW_IN_MEMORY_SECURITY", "true");
     vi.stubEnv("NEXTAUTH_SECRET", "");

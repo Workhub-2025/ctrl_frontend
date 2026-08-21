@@ -32,7 +32,6 @@ async function readResponse(response: Response) {
   return body.data ?? {};
 }
 
-/** Legacy Strapi TOTP UI retained only for unported sessions. */
 export function TotpSecurityPanel({
   continueHref,
 }: {

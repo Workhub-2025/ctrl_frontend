@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const { context, recruitment } =
       await requireFirebaseRecruitmentSession("client");
     if (!context.organizationId) {
-      return NextResponse.json({ error: "Organization membership is required" }, { status: 403 });
+      return NextResponse.json({ error: "Organisation membership is required" }, { status: 403 });
     }
     const status = request.nextUrl.searchParams.get("status");
     if (status && !["pending", "approved", "rejected"].includes(status)) {

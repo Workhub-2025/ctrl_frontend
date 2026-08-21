@@ -31,7 +31,7 @@ import {
 import { useClientPortal } from "@/context/client-portal-provider";
 import { ClientCandidateOutreachDialog } from "@/components/dashboard/client/client-candidate-outreach-dialog";
 import { SharedCandidateNotesPanel } from "@/components/dashboard/shared-candidate-notes-panel";
-import type { ClientSharedCandidate } from "@/services/client-portal.service";
+import type { ClientSharedCandidate } from "@/types/client-portal";
 import { cn } from "@/lib/utils";
 
 const REVIEW_STATUS_LABELS: Record<ClientSharedCandidate["reviewStatus"], string> = {

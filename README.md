@@ -55,8 +55,7 @@ Firebase is the only supported authentication and application-data path:
 - Firebase TOTP enrollment forces a fresh MFA sign-in before administrator
   bootstrap so the session contains a genuine second-factor claim.
 - The retired CMS has no public health route, proxy route, image host, or debug
-  login surface. Remaining `legacy-cms` imports are compile-time compatibility
-  debt tracked by the migration ratchet; they are not supported infrastructure.
+  login surface. The migration gate fails if those paths are reintroduced.
 - Default session lifetime is 12 hours absolute and 30 minutes idle.
 - Middleware guards role portals and BFF namespaces, rejects cross-origin mutations, applies a payload ceiling/rate limit and adds the production CSP nonce.
 
@@ -126,10 +125,8 @@ npm run build
 npm run test:e2e
 ```
 
-`check:migration-gate` is a no-regression ratchet against the 92 source-level
-compatibility findings recorded on 2026-08-02. Unlike the previous gate, it
-includes `src/legacy-cms` and fails if any retired proxy route or backend host
-is reintroduced. `check:migration-gate:strict` requires zero.
+`check:migration-gate` fails if any retired CMS proxy route, host, or import
+is reintroduced. `check:migration-gate:strict` is the same zero-reference gate.
 
 Verified result on 2026-07-23:
 

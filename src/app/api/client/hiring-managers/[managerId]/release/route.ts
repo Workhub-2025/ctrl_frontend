@@ -17,7 +17,7 @@ export async function POST(
       await requireFirebaseTenancySession("client");
     if (!authContext.organizationId) {
       return NextResponse.json(
-        { error: "Organization membership is required" },
+        { error: "Organisation membership is required" },
         { status: 403 },
       );
     }

@@ -21,11 +21,8 @@ export interface AssessmentUiPlugin {
   shellTitle?: string;
   /** Server-side session init before render (typing). */
   requiresServerInit?: boolean;
-  /** Strapi POST path for session init, e.g. `/assessment/typing/session`. */
-  strapiSessionPath?: string;
   /** Fallback when network/parse fails (typing). */
   initSessionFallback?: unknown;
-  /** Slug-specific normalisation of Strapi session init JSON (typing). */
   parseInitSessionResponse?: (body: unknown) => unknown;
   /** Optional HM report performance breakdown panel. */
   reportBreakdown?: ComponentType<AssessmentReportBreakdownProps>;

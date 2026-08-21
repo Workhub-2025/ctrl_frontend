@@ -16,7 +16,7 @@ describe("handleBffRouteError", () => {
     expect(unauthorized.status).toBe(401);
   });
 
-  it("passes through upstream Strapi error status codes", async () => {
+  it("passes through upstream error status codes", async () => {
     const notFound = Object.assign(new Error("Shared Candidate not found"), { status: 404 });
     const response = handleBffRouteError(notFound);
     expect(response.status).toBe(404);

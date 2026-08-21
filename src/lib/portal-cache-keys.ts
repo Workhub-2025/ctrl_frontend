@@ -86,12 +86,22 @@ export function portalCandidateWorkspaceCacheKey(sub: string) {
   return `candidate:workspace:user:${sub}`;
 }
 
+export function portalOrgGenerationProbeCacheKey(organizationId: string) {
+  return `org-gen-probe:${organizationId}`;
+}
+
 export const PORTAL_CATALOGUE_TTL_MS = 300_000;
 export const PORTAL_USER_SCOPED_TTL_MS = 90_000;
-/** Admin overview/analytics — balance freshness vs Strapi load (audit: 60–120s). */
+/** Admin overview/analytics TTL (audit: 60–120s). */
 export const PORTAL_ADMIN_PLATFORM_TTL_MS = 90_000;
 /** Candidate workspace aggregate (audit: 60–90s). */
 export const PORTAL_CANDIDATE_WORKSPACE_TTL_MS = 75_000;
+/**
+ * Persistence generation is only needed to notice scoring/outbox writes that
+ * never hit this BFF. Mutations already bump the local org generation, so a
+ * short probe cache avoids a London domainApi hop on every screen read.
+ */
+export const PORTAL_ORG_GENERATION_PROBE_TTL_MS = 8_000;
 
 /** Bust FE portal catalogue + per-slug version caches after platform sync. */
 export async function invalidateAssessmentCatalogueCache(): Promise<void> {

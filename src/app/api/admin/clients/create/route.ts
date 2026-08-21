@@ -7,7 +7,7 @@ import {
   toAdminClientCreateResult,
   type FirebaseClientTeamWorkspace,
 } from "@/lib/firebase-admin-tenancy-bff";
-import type { AdminClientCreateInput } from "@/services/admin-platform.service";
+import type { AdminClientCreateInput } from "@/types/admin-platform";
 
 function validatePayload(body: unknown):
   | { valid: true; data: AdminClientCreateInput }

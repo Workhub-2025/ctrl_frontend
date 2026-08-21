@@ -16,7 +16,7 @@ describe("Firebase browser configuration", () => {
     vi.unstubAllEnvs();
   });
 
-  it("loads the staging web application configuration from public environment values", () => {
+  it("loads the production web application configuration from public environment values", () => {
     for (const [name, value] of Object.entries(FIREBASE_ENV)) {
       vi.stubEnv(name, value);
     }

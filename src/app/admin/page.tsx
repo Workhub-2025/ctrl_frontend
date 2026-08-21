@@ -70,7 +70,7 @@ export default function AdminOverview() {
           label="Active clients"
           value={overview.activeClients}
           loading={loading}
-          detail="Organizations with active platforms"
+          detail="Organisations with active platforms"
           icon={Building2}
         />
         <AdminStatTile

@@ -17,7 +17,7 @@ import type {
   ClientOutreachTemplateKey,
   ClientOutreachTemplates,
   ClientSharedCandidate,
-} from "@/services/client-portal.service";
+} from "@/types/client-portal";
 import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-ui";
 
 const TEMPLATE_OPTIONS: Array<{ key: ClientOutreachTemplateKey; label: string }> = [

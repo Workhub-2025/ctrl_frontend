@@ -4,6 +4,7 @@ import { getServerAuthSub } from "@/lib/portal-server-auth";
 import {
   PORTAL_ADMIN_ANALYTICS_CACHE_KEY,
   PORTAL_ADMIN_OVERVIEW_CACHE_KEY,
+  PORTAL_ORG_GENERATION_PROBE_TTL_MS,
   portalCandidateWorkspaceCacheKey,
   portalClientDashboardCacheKey,
   portalClientEntitlementsCacheKey,
@@ -12,8 +13,13 @@ import {
   portalHmOverviewCacheKey,
   portalHmOverviewOrgGenerationKey,
   portalHmReportCacheKey,
+  portalOrgGenerationProbeCacheKey,
 } from "@/lib/portal-cache-keys";
-import { portalServerCacheDel, portalServerCacheDelMany } from "@/lib/portal-server-cache";
+import {
+  portalServerCacheDel,
+  portalServerCacheDelMany,
+  portalServerCacheGetOrSet,
+} from "@/lib/portal-server-cache";
 import {
   isUpstashConfigured,
   upstashGet,
@@ -36,13 +42,54 @@ export async function readHmOverviewOrgGeneration(
   options?: { persistenceGeneration?: string | null },
 ): Promise<string> {
   const key = portalHmOverviewOrgGenerationKey(organizationId);
-  let local = "0";
-  if (isUpstashConfigured()) {
+  let local = memoryOrgGeneration.get(key) ?? "0";
+  if (local === "0" && isUpstashConfigured()) {
     local = (await upstashGet(`portal:${key}`)) ?? "0";
-  } else {
-    local = memoryOrgGeneration.get(key) ?? "0";
+    if (local !== "0") {
+      memoryOrgGeneration.set(key, local);
+    }
   }
   return maxPortalCacheGeneration(local, options?.persistenceGeneration ?? "0");
+}
+
+type PortalGenerationDomainApi = {
+  request<ResponseBody>(input: {
+    path: `/${string}`;
+    firebaseSessionCookie: string;
+  }): Promise<ResponseBody>;
+};
+
+export async function resolvePortalOrgGeneration(input: {
+  organizationId: string;
+  loadPersistenceGeneration: () => Promise<string>;
+}): Promise<string> {
+  const persistenceGeneration = await portalServerCacheGetOrSet(
+    portalOrgGenerationProbeCacheKey(input.organizationId),
+    PORTAL_ORG_GENERATION_PROBE_TTL_MS,
+    input.loadPersistenceGeneration,
+  );
+  return readHmOverviewOrgGeneration(input.organizationId, {
+    persistenceGeneration,
+  });
+}
+
+export async function resolvePortalOrgGenerationFromDomain(input: {
+  organizationId: string;
+  domainApi: PortalGenerationDomainApi;
+  firebaseSessionCookie: string;
+}): Promise<string> {
+  return resolvePortalOrgGeneration({
+    organizationId: input.organizationId,
+    loadPersistenceGeneration: async () => {
+      const portalCache = await input.domainApi
+        .request<{ generation: string }>({
+          path: `/v1/organizations/${encodeURIComponent(input.organizationId)}/portal-cache-generation`,
+          firebaseSessionCookie: input.firebaseSessionCookie,
+        })
+        .catch(() => ({ generation: "0" }));
+      return portalCache.generation ?? "0";
+    },
+  });
 }
 
 /**
@@ -162,7 +209,7 @@ export async function invalidateHmReportServerCache(
   await portalServerCacheDel(portalHmReportCacheKey(sub, candidateSessionId));
 }
 
-/** Bust candidate workspace aggregate after join or enrollment changes. */
+/** Bust candidate workspace aggregate after join or enrolment changes. */
 export async function invalidateCandidateWorkspaceServerCache(
   userSub?: string | null,
 ): Promise<void> {

@@ -19,7 +19,7 @@ export type AdminApiAuthSuccess = {
 type AdminApiAuthResult = AdminApiAuthSuccess | { error: NextResponse };
 
 /**
- * Admin BFF gate. Firebase session cookie only — no Strapi JWT fallback.
+ * Admin BFF gate. Firebase session cookie only.
  */
 export async function requireAdminApiAccess(
   permission?: AdminPermission,

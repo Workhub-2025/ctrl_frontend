@@ -9,7 +9,7 @@ import type {
   AdminOverview,
   AdminUserRow,
   AdminUsersSummary,
-} from "@/services/admin-platform.service";
+} from "@/types/admin-platform";
 import {
   mapPlatformRolesToAdminPortalRole,
   type AdminPortalRoleType,
@@ -362,7 +362,7 @@ export function toAdminOverviewFromOrganizations(
       {
         id: "firebase-tenancy-ready",
         title: "Firebase tenancy connected",
-        detail: `${organizations.length} organization${organizations.length === 1 ? "" : "s"} visible from the platform database.`,
+        detail: `${organizations.length} organisation${organizations.length === 1 ? "" : "s"} visible from the platform database.`,
       },
     ],
     attentionRequired:
@@ -370,9 +370,9 @@ export function toAdminOverviewFromOrganizations(
         ? [
             {
               id: "firebase-no-organizations",
-              title: "No organizations yet",
+              title: "No organisations yet",
               detail:
-                "Create a client from the organizations page. Billing and campaign aggregates remain pending until Wave 5.",
+                "Create a client from the organisations page. Billing and campaign aggregates remain pending until Wave 5.",
             },
           ]
         : [
@@ -422,7 +422,7 @@ export function toAdminOverviewFromScreen(
             ? "Expired"
             : "Not configured"
       : "Not configured",
-    primaryContact: "Organization contact",
+    primaryContact: "Organisation contact",
     lastActivity: new Date().toISOString(),
     pendingCampaignApprovals: org.pendingUpgradesCount,
     hasClientContact: true,
@@ -447,7 +447,7 @@ export function toAdminOverviewFromScreen(
       {
         id: "firebase-tenancy-ready",
         title: "Firebase tenancy connected",
-        detail: `${totalOrganizations} organization${totalOrganizations === 1 ? "" : "s"} visible from the platform database.`,
+        detail: `${totalOrganizations} organisation${totalOrganizations === 1 ? "" : "s"} visible from the platform database.`,
       },
     ],
     attentionRequired:
@@ -455,8 +455,8 @@ export function toAdminOverviewFromScreen(
         ? [
             {
               id: "firebase-no-organizations",
-              title: "No organizations yet",
-              detail: "Create a client from the organizations page.",
+              title: "No organisations yet",
+              detail: "Create a client from the organisations page.",
             },
           ]
         : [],

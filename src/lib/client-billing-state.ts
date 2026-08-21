@@ -7,7 +7,7 @@ import {
   resolveAssessmentCatalogueTitle,
 } from "@/lib/client/entitlements";
 import type { requireFirebaseTenancySession } from "@/lib/firebase-tenancy-bff";
-import type { BackendClientEntitlements } from "@/services/client-upgrade.service";
+import type { BackendClientEntitlements } from "@/types/client-portal";
 
 export type LoadClientBillingStateInput = {
   organizationId: string;

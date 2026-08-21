@@ -41,7 +41,7 @@ export const UK_LEGAL = {
 
 /**
  * Deployment-agnostic processor categories. Replace vendor names on /sub-processors
- * when hosting changes (e.g. Vercel → AWS, self-hosted Strapi → Strapi Cloud).
+ * when hosting changes (e.g. Vercel → AWS).
  */
 export type SubProcessorEntry = {
   category: string;
@@ -67,7 +67,7 @@ export const UK_SUB_PROCESSOR_CATEGORIES: SubProcessorEntry[] = [
   },
   {
     category: "API & database (BackEnd)",
-    purpose: "Strapi application server and PostgreSQL",
+    purpose: "Cloud Run domain API and Cloud SQL",
     currentVendor: process.env.NEXT_PUBLIC_CTRL_BACKEND_HOST?.trim() || "Not configured",
     location: process.env.NEXT_PUBLIC_CTRL_BACKEND_HOST_LOCATION?.trim() || "Not configured",
     safeguard: "Provider DPA; encryption at rest and in transit",

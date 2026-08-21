@@ -11,7 +11,7 @@ import {
   createFirebaseScreenApi,
   toReportsByAssignmentId,
 } from "@/lib/firebase-screen-api";
-import { readHmOverviewOrgGeneration } from "@/lib/portal-cache-invalidation";
+import { resolvePortalOrgGenerationFromDomain } from "@/lib/portal-cache-invalidation";
 import {
   PORTAL_USER_SCOPED_TTL_MS,
   portalHmOverviewCacheKeyWithGeneration,
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       await requireFirebaseRecruitmentSession("hiring_manager");
     if (!context.organizationId) {
       return NextResponse.json(
-        { error: "Organization membership is required" },
+        { error: "Organisation membership is required" },
         { status: 403 },
       );
     }
@@ -68,16 +68,11 @@ export async function GET(request: Request) {
     // The generation suffix is rotated by every tenant mutation and by
     // assessment submit / scoring completion in the persistence service, so a
     // stale entry is never served after a change.
-    const portalCache = await domainApi
-      .request<{ generation: string }>({
-        path: `/v1/organizations/${encodeURIComponent(context.organizationId)}/portal-cache-generation`,
-        firebaseSessionCookie,
-      })
-      .catch(() => ({ generation: "0" }));
-    const generation = await readHmOverviewOrgGeneration(
-      context.organizationId,
-      { persistenceGeneration: portalCache.generation },
-    );
+    const generation = await resolvePortalOrgGenerationFromDomain({
+      organizationId: context.organizationId,
+      domainApi,
+      firebaseSessionCookie,
+    });
     const data = await portalServerCacheGetOrSet(
       portalHmOverviewCacheKeyWithGeneration(context.firebaseUid, generation),
       PORTAL_USER_SCOPED_TTL_MS,

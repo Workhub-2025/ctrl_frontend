@@ -8,6 +8,7 @@ import {
   type FirebaseCampaignWorkspace,
   type FirebaseSession,
 } from "@/lib/firebase-recruitment-api";
+import { getCachedDomainUserContext } from "@/lib/firebase-user-context-cache";
 import {
   mapFirebaseReportToHmResult,
   type FirebaseAssignmentAssessmentReport,
@@ -20,13 +21,16 @@ import type {
 import type {
   ClientCampaignApprovalItem,
   ClientCampaignWorkspace,
-} from "@/services/client-portal.service";
+} from "@/types/client-portal";
 
 export async function requireFirebaseRecruitmentSession(
   ...roles: Array<"candidate" | "hiring_manager" | "client" | "admin">
 ) {
   const auth = await requireFirebaseSession(...roles);
-  const context = await auth.domainApi.getUserContext(auth.firebaseSessionCookie);
+  const context = await getCachedDomainUserContext({
+    firebaseUid: auth.firebaseUid,
+    load: () => auth.domainApi.getUserContext(auth.firebaseSessionCookie),
+  });
   if (context.accountStatus !== "active") {
     throw new Error("Account is not active");
   }

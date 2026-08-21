@@ -21,7 +21,7 @@ export type FirebaseAdminAuth = {
 export type AdminDualAuthResult = FirebaseAdminAuth | { error: NextResponse };
 
 /**
- * Admin BFF gate. Firebase session cookie only — no Strapi JWT fallback.
+ * Admin BFF gate. Firebase session cookie only.
  */
 export async function requireAdminDualAccess(
   permission?: AdminPermission,

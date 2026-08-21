@@ -1,11 +1,8 @@
 /**
- * Front-end mirror of the BackEnd assessment catalogue seed values.
+ * Front-end mirror of the assessment catalogue seed values.
  *
- * Single source of truth for fallback config used when Strapi is unavailable
- * or session init fails. Keep aligned with:
- *   BackEnd/ctrl_backend/src/api/assessment/plugins/register-all.ts (buildCatalogueSeed)
- *   BackEnd/ctrl_backend/src/components/assessment-config/*.json (runtime settings)
- *   BackEnd/ctrl_backend/src/api/assessment/services/typing-scoring.ts (thresholds)
+ * Used when session init fails. Keep aligned with the domain catalogue
+ * and assessment plugin runtime settings.
  *
  * Operators: see CTRL/05-Operations/Assessment-Content-Guide.md
  */
@@ -93,7 +90,7 @@ export function getAssessmentCardDuration(slug: PlatformAssessmentSlug): string 
   return `${estimatedCompletionTime} min`;
 }
 
-/** HM report fallback when Strapi omits typing `passed`. */
+/** HM report fallback when typing `passed` is omitted. */
 export function inferTypingPass(wpm: number, accuracy: number): boolean {
   return wpm >= TYPING_WPM_THRESHOLD && accuracy >= TYPING_ACCURACY_THRESHOLD;
 }

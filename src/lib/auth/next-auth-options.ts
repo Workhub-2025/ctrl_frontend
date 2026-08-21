@@ -1,145 +1,18 @@
-import CredentialsProvider from 'next-auth/providers/credentials';
-import type { User } from 'next-auth';
-import { isFirebaseAuthProvider } from '@/lib/auth/auth-provider';
-import { logAuthAuditEvent } from '@/lib/security/audit-log';
-import {
-    authenticateCredentials,
-    CredentialAuthError,
-} from '@/lib/auth/credential-auth';
+import type { AuthOptions } from 'next-auth';
 import { SESSION_IDLE_MAX_AGE } from '@/lib/auth/session-config';
-import { roleSupportsTotp } from '@/lib/auth/role-model';
 
-interface ExtendedUser extends User {
-    role: string;
-    jwt: string;
-    firstName?: string;
-    lastName?: string;
-    organization?: string;
-    phone?: string;
-    equalityMonitoring?: any;
-    agreeToMarketing?: boolean;
-    agreeToTerms?: boolean;
-    agreeToDataPrivacyPolicy?: boolean;
-    totpEnabled?: boolean;
-}
-
-const getHeaderValue = (headers: unknown, name: string): string | undefined => {
-    if (!headers || typeof headers !== 'object') return undefined;
-
-    const normalizedName = name.toLowerCase();
-
-    if ('get' in headers && typeof (headers as { get?: unknown }).get === 'function') {
-        const value = (headers as Headers).get(normalizedName) ?? (headers as Headers).get(name);
-        return value ?? undefined;
-    }
-
-    const record = headers as Record<string, string | string[] | undefined>;
-    const candidate = record[name] ?? record[normalizedName];
-
-    if (Array.isArray(candidate)) {
-        return candidate[0];
-    }
-
-    return candidate;
-};
-
-const extractRequestContext = (requestLike: unknown) => {
-    const headers = (requestLike as { headers?: unknown } | undefined)?.headers;
-    const forwardedFor = getHeaderValue(headers, 'x-forwarded-for');
-    const realIp = getHeaderValue(headers, 'x-real-ip');
-    const userAgent = getHeaderValue(headers, 'user-agent') ?? 'unknown';
-    const ipAddress = forwardedFor?.split(',')[0]?.trim() || realIp || 'unknown';
-
-    return { ipAddress, userAgent };
-};
-
-const legacyCredentialsProvider = CredentialsProvider({
-    name: 'credentials',
-    credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
-    },
-    async authorize(credentials, req): Promise<ExtendedUser | null> {
-        if (!credentials?.email || !credentials?.password) {
-            return null;
-        }
-
-        const normalizedEmail = credentials.email.trim().toLowerCase();
-        const context = extractRequestContext(req);
-
-        try {
-            const { authResponse, role } = await authenticateCredentials({
-                email: normalizedEmail,
-                password: credentials.password,
-                context,
-            });
-
-            const user = authResponse.user!;
-            if (
-                roleSupportsTotp(role)
-                && (user as { totpEnabled?: boolean }).totpEnabled === true
-            ) {
-                // The direct Credentials callback cannot safely complete
-                // the pending-cookie MFA flow. Reject it so callers must
-                // use POST /api/auth/login followed by TOTP verification.
-                return null;
-            }
-
-            return {
-                id: user.id.toString(),
-                email: user.email,
-                name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-                role,
-                jwt: authResponse.jwt!,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                organization: typeof user.organization === 'string' ? user.organization : undefined,
-                phone: typeof user.phone === 'string' ? user.phone : undefined,
-                equalityMonitoring: user.equalityMonitoring,
-                agreeToMarketing: user.agreeToMarketing ?? undefined,
-                agreeToTerms: user.agreeToTerms ?? undefined,
-                agreeToDataPrivacyPolicy: user.agreeToDataPrivacyPolicy ?? undefined,
-                totpEnabled: (user as { totpEnabled?: boolean }).totpEnabled === true,
-            };
-        } catch (error) {
-            if (error instanceof CredentialAuthError) {
-                if (error.code === 'LOCKED') {
-                    throw new Error('LOCKED_OUT');
-                }
-                if (error.code === 'INVALID') {
-                    return null;
-                }
-                if (error.code === 'RATE_LIMITED') {
-                    throw new Error('LOCKED_OUT');
-                }
-            }
-
-            logAuthAuditEvent('login_failure', {
-                email: normalizedEmail,
-                ipAddress: context.ipAddress,
-                userAgent: context.userAgent,
-                reason: 'Auth service unavailable',
-            });
-            throw new Error('AUTH_SERVICE_UNAVAILABLE');
-        }
-    }
-});
-
-export const authOptions = {
-    // Firebase mode must not register the Strapi Credentials provider even when
-    // legacy CMS secrets remain in the environment.
-    providers: isFirebaseAuthProvider() ? [] : [legacyCredentialsProvider],
+export const authOptions: AuthOptions = {
+    providers: [],
     session: {
-        strategy: 'jwt' as const,
+        strategy: 'jwt',
     },
     callbacks: {
-        async jwt({ token, user }: any) {
+        async jwt({ token, user }) {
             const now = Math.floor(Date.now() / 1000);
 
             if (user) {
                 token.role = user.role;
-                token.jwt = user.jwt;
-                token.authProvider = user.authProvider ?? 'strapi';
+                token.authProvider = 'firebase';
                 token.firebaseUid = user.firebaseUid;
                 token.firstName = user.firstName;
                 token.lastName = user.lastName;
@@ -162,12 +35,12 @@ export const authOptions = {
             token.lastActivity = now;
             return token;
         },
-        async session({ session, token }: any) {
+        async session({ session, token }) {
             if (token?.expired) {
                 return { ...session, user: undefined, expires: new Date(0).toISOString() };
             }
 
-            if (token) {
+            if (token && session.user) {
                 session.user.id = token.sub || '';
                 session.user.email = token.email ?? session.user.email;
                 session.user.name =
@@ -176,7 +49,7 @@ export const authOptions = {
                     : `${token.firstName || ''} ${token.lastName || ''}`.trim() ||
                       session.user.name;
                 session.user.role = token.role;
-                session.user.authProvider = token.authProvider;
+                session.user.authProvider = 'firebase';
                 session.user.firebaseUid = token.firebaseUid;
                 session.user.firstName = token.firstName;
                 session.user.lastName = token.lastName;

@@ -204,7 +204,7 @@ export function resolveCompositeAdminRole(
 
 /**
  * Map Firebase platform role assignments onto the admin portal role matrix.
- * Inverse of the invite-time Strapi/composite → platform role mapping.
+ * Inverse of the invite-time composite → platform role mapping.
  */
 export function mapPlatformRolesToAdminPortalRole(
   roles: ReadonlyArray<

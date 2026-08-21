@@ -116,7 +116,6 @@ export function useAuth() {
     const routeAfterLogin = (userData?: any) => {
         console.log('🔄 Routing user after login:', userData);
 
-        // Get role name - handle both Strapi direct response and NextAuth session formats
         const userRole = normalizeRole(userData?.role || 'candidate');
 
         console.log('🎯 Determined user role:', userRole);

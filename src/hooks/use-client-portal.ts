@@ -8,12 +8,12 @@ import type {
   ClientDashboardSummary,
   ClientHiringManagerSeat,
   ClientSharedCandidate,
-} from "@/services/client-portal.service";
+} from "@/types/client-portal";
 import type {
   ClientUpgradeRequestPayload,
   ClientUpgradeRequestRecord,
 } from "@/lib/client/entitlements";
-import type { BackendClientEntitlements } from "@/services/client-upgrade.service";
+import type { BackendClientEntitlements } from "@/types/client-portal";
 import {
   fetchPortalJson,
   invalidatePortalCache,

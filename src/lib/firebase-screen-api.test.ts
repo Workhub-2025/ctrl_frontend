@@ -172,7 +172,7 @@ describe("Portal screen BFF routes", () => {
       route("../app/api/client/dashboard/route.ts"),
     ]) {
       expect(source).toContain("portalServerCacheGetOrSet");
-      expect(source).toContain("readHmOverviewOrgGeneration");
+      expect(source).toContain("resolvePortalOrgGenerationFromDomain");
       expect(source).toContain("CacheKeyWithGeneration");
       expect(source).toContain("context.firebaseUid");
     }

@@ -70,9 +70,7 @@ type SessionUserFields = {
   firstName?: string;
   lastName?: string;
   role: string;
-  /** Present only while a legacy Strapi-backed route still needs it. */
-  jwt?: string;
-  authProvider?: "firebase" | "strapi";
+  authProvider?: "firebase";
   firebaseUid?: string;
   organization?: string;
   phone?: string;
@@ -99,8 +97,7 @@ export async function encodeSessionToken(user: SessionUserFields) {
       email: user.email,
       name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
       role: user.role,
-      ...(user.jwt ? { jwt: user.jwt } : {}),
-      authProvider: user.authProvider ?? (user.jwt ? "strapi" : "firebase"),
+      authProvider: "firebase",
       firebaseUid: user.firebaseUid,
       firstName: user.firstName,
       lastName: user.lastName,

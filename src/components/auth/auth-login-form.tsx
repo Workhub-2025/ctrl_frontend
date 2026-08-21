@@ -111,7 +111,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
         <Input
           id="login-email"
           type="email"
-          placeholder="john.smith@organization.com"
+          placeholder="jane.smith@company.co.uk"
           value={email}
           onChange={(e) => {
             setEmail(e.target.value);

@@ -35,7 +35,7 @@ export type HiringManagerAssessmentResult = {
 export type HiringManagerSessionListItem = {
   id: string;
   documentId?: string;
-  /** HM-defined assessment session name from Strapi `assessment-session.name`. */
+  /** HM-defined assessment session name. */
   name: string;
   campaign: string;
   type: "In-person" | "Remote";

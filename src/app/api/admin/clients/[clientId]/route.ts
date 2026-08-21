@@ -66,7 +66,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       confirmName.toLowerCase()
     ) {
       return NextResponse.json(
-        { error: "Organization name confirmation did not match" },
+        { error: "Organisation name confirmation did not match" },
         { status: 400 },
       );
     }

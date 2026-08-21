@@ -6,8 +6,7 @@ declare module 'next-auth' {
         user: {
             id: string | number;
             role?: string;
-            jwt?: string; // server-only in NextAuth JWT cookie; not exposed via /api/auth/session
-            authProvider?: 'firebase' | 'strapi';
+            authProvider?: 'firebase';
             firebaseUid?: string;
             firstName?: string;
             lastName?: string;
@@ -25,8 +24,7 @@ declare module 'next-auth' {
 
     interface User extends DefaultUser {
         role?: string;
-        jwt?: string;
-        authProvider?: 'firebase' | 'strapi';
+        authProvider?: 'firebase';
         firebaseUid?: string;
         firstName?: string;
         lastName?: string;
@@ -45,8 +43,7 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
     interface JWT extends DefaultJWT {
         role?: string;
-        jwt?: string;
-        authProvider?: 'firebase' | 'strapi';
+        authProvider?: 'firebase';
         firebaseUid?: string;
         firstName?: string;
         lastName?: string;

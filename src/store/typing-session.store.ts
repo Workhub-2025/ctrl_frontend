@@ -59,7 +59,7 @@ interface TypingSessionState {
     assessmentId: string | null;
     /** Textos seleccionados aleatoriamente para esta sesión */
     runs: TypingRun[];
-    /** Parámetros de configuración del assessment (desde Strapi) */
+    /** Assessment configuration for this session */
     config: TypingConfig;
     alreadyCompleted: boolean;
     /** Estado del envío de resultados — permite bloquear el exit durante submission */
