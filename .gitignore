@@ -27,8 +27,23 @@ next-env.d.ts
 *.d.ts.map
 
 # -------------------------------
-# Testing
+# Non-Vercel deploy manifests
 # -------------------------------
+Dockerfile
+.dockerignore
+apphosting.yaml
+
+# -------------------------------
+# Testing / CI (not deployed on Vercel)
+# -------------------------------
+.github/
+scripts/
+vitest.config.ts
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+src/test/
 coverage/
 .nyc_output/
 *.lcov

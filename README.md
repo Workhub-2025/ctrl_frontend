@@ -115,25 +115,14 @@ traffic uses same-origin `/api/*` BFF routes; the retired CMS is not required.
 
 ## Verification
 
+GitHub tracks the Vercel deploy tree. Vitest, Playwright, hygiene scripts, and
+GitHub Actions are not on the remote.
+
 ```bash
-npm run audit:security
-npm run check:source-hygiene
-npm run check:migration-gate
 npm run typecheck
-npm test
 npm run lint
 npm run build
 ```
-
-`check:migration-gate` fails if any retired CMS proxy route, host, or import
-is reintroduced. `check:migration-gate:strict` is the same zero-reference gate.
-
-Verified result on 2026-07-23:
-
-- Vitest passes: 36 files / 130 tests.
-- Typecheck, lint and the production build pass.
-- The full production-and-tooling dependency audit reports zero vulnerabilities.
-- ESLint 9 runs through the flat-config CLI.
 
 ## Documentation
 

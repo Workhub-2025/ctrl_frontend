@@ -9,6 +9,10 @@ docs
 e2e
 node_modules
 playwright-report
+scripts
 test-results
+vitest.config.ts
 *.log
 *.tsbuildinfo
+**/*.test.ts
+**/*.test.tsx
