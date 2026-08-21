@@ -106,7 +106,8 @@ export const roleSupportsTotp = (role: unknown) => {
   return (
     isAdminPortalRole(role) ||
     resolved === "client" ||
-    resolved === "hiring_manager"
+    resolved === "hiring_manager" ||
+    resolved === "candidate"
   );
 };
 

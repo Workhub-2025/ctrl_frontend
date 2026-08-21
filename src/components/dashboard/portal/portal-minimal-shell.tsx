@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PortalClock } from "@/components/dashboard/portal/portal-clock";
+import { PortalMfaNudge } from "@/components/dashboard/portal/portal-mfa-nudge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
@@ -151,7 +152,10 @@ function PortalMinimalFrame({
         resetAccessibilitySettings={resetAccessibilitySettings}
       />
       <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6 md:px-8 focus:outline-none">
-        <div className={cn("mx-auto w-full", maxWidthClass)}>{children}</div>
+        <div className={cn("mx-auto w-full", maxWidthClass)}>
+          <PortalMfaNudge />
+          {children}
+        </div>
       </main>
     </div>
   );

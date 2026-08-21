@@ -8,6 +8,7 @@ import {
   inMemoryPersistence,
   sendEmailVerification,
   setPersistence,
+  signInWithCustomToken,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -19,6 +20,7 @@ import {
 import { getFirebaseBrowserAuth } from "@/lib/firebase-client";
 import {
   clearPendingSessionJoin,
+  readPendingSessionJoin,
   storePendingSessionJoin,
 } from "@/lib/pending-session-join";
 import type {
@@ -113,6 +115,86 @@ async function establishSession(
   return { requiresTotp: false, session };
 }
 
+async function signInWithInPersonMfaBypass(input: {
+  email: string;
+  password: string;
+  accessCode?: string;
+}): Promise<UserCredential | null> {
+  const csrfResponse = await fetch("/api/auth/firebase/csrf", {
+    method: "GET",
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  const csrfBody = await readJson<FirebaseSessionCsrfResponse & { error?: string }>(
+    csrfResponse,
+  );
+  if (!csrfResponse.ok || !csrfBody.csrfToken) {
+    return null;
+  }
+
+  const bypassResponse = await fetch("/api/auth/firebase/in-person-mfa-bypass", {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+    },
+    credentials: "same-origin",
+    cache: "no-store",
+    body: JSON.stringify({
+      email: input.email.trim().toLowerCase(),
+      password: input.password,
+      csrfToken: csrfBody.csrfToken,
+      ...(input.accessCode ? { accessCode: input.accessCode } : {}),
+    }),
+  });
+  const bypassBody = await readJson<{
+    data?: { customToken?: string };
+  }>(bypassResponse);
+  if (!bypassResponse.ok || !bypassBody.data?.customToken) {
+    return null;
+  }
+
+  const auth = getFirebaseBrowserAuth();
+  await setPersistence(auth, inMemoryPersistence);
+  return signInWithCustomToken(auth, bypassBody.data.customToken);
+}
+
+function pendingJoinAccessCode(): string | undefined {
+  return readPendingSessionJoin()?.accessCode;
+}
+
+async function signInPasswordOrInPersonBypass(input: {
+  email: string;
+  password: string;
+  accessCode?: string;
+}): Promise<UserCredential> {
+  const auth = getFirebaseBrowserAuth();
+  await setPersistence(auth, inMemoryPersistence);
+  try {
+    return await signInWithEmailAndPassword(
+      auth,
+      input.email.trim().toLowerCase(),
+      input.password,
+    );
+  } catch (error) {
+    if (
+      !(error instanceof FirebaseError) ||
+      error.code !== "auth/multi-factor-auth-required"
+    ) {
+      throw error;
+    }
+    const bypassCredential = await signInWithInPersonMfaBypass({
+      email: input.email.trim().toLowerCase(),
+      password: input.password,
+      accessCode: input.accessCode ?? pendingJoinAccessCode(),
+    });
+    if (!bypassCredential) {
+      throw error;
+    }
+    return bypassCredential;
+  }
+}
+
 export async function loginWithFirebase(
   email: string,
   password: string,
@@ -127,11 +209,11 @@ export async function loginWithFirebase(
   pendingProvisioningIntent = options?.provisioningIntent;
 
   try {
-    const credential = await signInWithEmailAndPassword(
-      auth,
-      email.trim().toLowerCase(),
+    const credential = await signInPasswordOrInPersonBypass({
+      email,
       password,
-    );
+      accessCode: pendingJoinAccessCode(),
+    });
     return establishSession(credential, options?.provisioningIntent);
   } catch (error) {
     if (
@@ -193,7 +275,11 @@ export async function registerCandidateSessionJoin(input: {
       throw error;
     }
     // Returning candidate — same durable credentials work for the rest of the day.
-    credential = await signInWithEmailAndPassword(auth, email, input.password);
+    credential = await signInPasswordOrInPersonBypass({
+      email,
+      password: input.password,
+      accessCode: input.accessCode,
+    });
   }
 
   await credential.user.reload();
@@ -245,11 +331,11 @@ export async function claimCandidateSessionJoin(input: {
 
   let user = auth.currentUser;
   if (!user && input.email && input.password) {
-    const credential = await signInWithEmailAndPassword(
-      auth,
-      input.email.trim().toLowerCase(),
-      input.password,
-    );
+    const credential = await signInPasswordOrInPersonBypass({
+      email: input.email,
+      password: input.password,
+      accessCode: input.accessCode,
+    });
     user = credential.user;
   }
   if (!user) {

@@ -9,6 +9,7 @@ import { AuthProvider } from "@/components/auth/auth-provider";
 import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
 import { PortalBreadcrumbs, type PortalBreadcrumb } from "@/components/dashboard/portal/portal-ui";
 import { PortalEqualityNudge } from "@/components/dashboard/portal/portal-equality-nudge";
+import { PortalMfaNudge } from "@/components/dashboard/portal/portal-mfa-nudge";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -401,6 +402,7 @@ export function PortalShell({
               tabIndex={-1}
               className={cn("mx-auto w-full px-4 py-5 sm:px-6 sm:py-6 lg:px-8", maxWidthClass)}
             >
+              <PortalMfaNudge />
               {showEqualityNudge ? <PortalEqualityNudge /> : null}
               {children}
             </main>

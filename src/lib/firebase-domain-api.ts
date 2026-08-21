@@ -43,6 +43,10 @@ export type FirebaseDomainSessionExchange = Readonly<{
   secondFactorSatisfied: boolean;
 }>;
 
+export type FirebaseInPersonCandidateCustomToken = Readonly<{
+  customToken: string;
+}>;
+
 type FirebaseDomainEnvironment = Readonly<{
   baseUrl: string;
   workloadIdentityProvider: string;
@@ -202,6 +206,17 @@ export function createFirebaseDomainApi(
         path: "/v1/auth/session-exchange",
         method: "POST",
         body: { idToken },
+      });
+    },
+
+    issueInPersonCandidateCustomToken(body: {
+      email: string;
+      accessCode?: string;
+    }): Promise<FirebaseInPersonCandidateCustomToken> {
+      return transport.request({
+        path: "/v1/auth/in-person-candidate-custom-token",
+        method: "POST",
+        body,
       });
     },
 
