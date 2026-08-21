@@ -56,6 +56,9 @@ describe("account and profile consolidation", () => {
     expect(profile).toContain("canUseEqualityMonitoring");
     expect(equalityLayout).toContain("canAccessEqualityMonitoring");
     expect(profileApi).toContain("forbiddenEqualityMonitoring");
+    expect(read("src/lib/firebase-profile-api.ts")).toContain(
+      "/v1/privacy/me/equality-monitoring",
+    );
   });
 
   it("removes overview shortcut and metric duplication", () => {
