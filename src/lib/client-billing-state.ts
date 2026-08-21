@@ -20,7 +20,7 @@ export async function loadClientBillingState(input: LoadClientBillingStateInput)
   const { organizationId, tenancy, domainApi, firebaseSessionCookie } = input;
 
   const [seatEntitlements, billing] = await Promise.all([
-    tenancy.listEntitlements(organizationId),
+    tenancy.listEntitlements(organizationId).catch(() => []),
     createFirebaseBillingApi(domainApi, firebaseSessionCookie).getEntitlements(
       organizationId,
     ),
