@@ -35,12 +35,10 @@ type BroadcastSendResponse = {
   };
 };
 
-type FirebaseBroadcastSendResponse = {
-  data?: {
-    recipientCount: number;
-    outboxEventId: string | null;
-    queued: boolean;
-  };
+type FirebaseBroadcastSendResult = {
+  recipientCount: number;
+  outboxEventId: string | null;
+  queued: boolean;
 };
 
 export async function POST(request: Request) {
@@ -89,22 +87,19 @@ export async function POST(request: Request) {
 
   try {
     if (isFirebaseAdminAuth(auth)) {
-      const response = await auth.domainApi.request<FirebaseBroadcastSendResponse>({
+      const response = await auth.domainApi.request<FirebaseBroadcastSendResult>({
         path: "/v1/admin/comms/send",
         method: "POST",
         firebaseSessionCookie: auth.firebaseSessionCookie,
         body,
       });
-      const recipientCount = response.data?.recipientCount ?? 0;
-      // Firebase delivery is asynchronous via the email outbox dispatcher.
-      // The broadcast is accepted for all recipients; SMTP rotation gates the
-      // actual send. Report the queued count so the operator UI stays honest.
+      const recipientCount = response.recipientCount ?? 0;
       return NextResponse.json({
         data: {
           recipientCount,
           sentCount: recipientCount,
           failedCount: 0,
-          queued: response.data?.queued ?? true,
+          queued: response.queued ?? true,
         },
       });
     }

@@ -6,15 +6,15 @@ const route = (path: string) =>
 
 describe("Firebase admin tenancy BFF", () => {
   it("dual-paths clients list and create through Firebase organizations", () => {
-    for (const source of [
-      route("../app/api/admin/clients/route.ts"),
-      route("../app/api/admin/clients/create/route.ts"),
-    ]) {
+    const list = route("../app/api/admin/clients/route.ts");
+    const create = route("../app/api/admin/clients/create/route.ts");
+    for (const source of [list, create]) {
       expect(source).toContain("requireAdminDualAccess");
       expect(source).toContain("isFirebaseAdminAuth");
-      expect(source).toContain("/v1/organizations");
       expect(source).not.toMatch(/still requires the legacy Strapi API/);
     }
+    expect(list).toContain("getAdminOverview");
+    expect(create).toContain("/v1/organizations");
   });
 
   it("uses Firebase directory and platform-administrator APIs for users/team", () => {

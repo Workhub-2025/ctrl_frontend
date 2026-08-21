@@ -68,13 +68,13 @@ export async function POST(request: Request) {
 
   try {
     if (isFirebaseAdminAuth(auth)) {
-      const response = await auth.domainApi.request<BroadcastPreviewResponse>({
+      const response = await auth.domainApi.request<BroadcastPreviewData>({
         path: "/v1/admin/comms/preview",
         method: "POST",
         firebaseSessionCookie: auth.firebaseSessionCookie,
         body,
       });
-      return NextResponse.json({ data: response.data ?? null });
+      return NextResponse.json({ data: response });
     }
 
     const response = await cmsRequest<BroadcastPreviewResponse>("/admin/comms/preview", {

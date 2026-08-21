@@ -80,6 +80,12 @@ export default function AdminCommsPage() {
   const [exceedsBatchLimit, setExceedsBatchLimit] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  const [audienceCounts, setAudienceCounts] = useState<
+    Partial<Record<AdminBroadcastAudienceMode, number>>
+  >({});
+  const [tierCounts, setTierCounts] = useState<
+    Partial<Record<AdminBroadcastContractTier, number>>
+  >({});
   const [personalizedPreview, setPersonalizedPreview] = useState(false);
   const [samplePreview, setSamplePreview] = useState<{
     clientName: string;
@@ -93,6 +99,82 @@ export default function AdminCommsPage() {
     "/api/admin/clients",
     []
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const countFor = async (
+      payload: ReturnType<typeof resolveBroadcastRequestBody>,
+    ): Promise<number | null> => {
+      const response = await fetch("/api/admin/comms/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) return null;
+      return typeof result.data?.recipientCount === "number"
+        ? result.data.recipientCount
+        : 0;
+    };
+
+    const loadOptionCounts = async () => {
+      const modes: AdminBroadcastAudienceMode[] = [
+        "staff",
+        "all",
+        "candidate",
+        "hiring_manager",
+        "clients",
+      ];
+      const next: Partial<Record<AdminBroadcastAudienceMode, number>> = {};
+      await Promise.all(
+        modes.map(async (mode) => {
+          const count = await countFor(
+            resolveBroadcastRequestBody({
+              audienceMode: mode,
+              role: "client",
+              clientDocumentId: "",
+              email: "",
+              subject: "count",
+              body: "count",
+              templateKey: "custom",
+              contractTiers: ["essential", "professional", "founder"],
+            }),
+          );
+          if (count !== null) next[mode] = count;
+        }),
+      );
+
+      const nextTiers: Partial<Record<AdminBroadcastContractTier, number>> = {};
+      await Promise.all(
+        ADMIN_BROADCAST_CONTRACT_TIER_OPTIONS.map(async (option) => {
+          const count = await countFor(
+            resolveBroadcastRequestBody({
+              audienceMode: "clients",
+              role: "client",
+              clientDocumentId: "",
+              email: "",
+              subject: "count",
+              body: "count",
+              templateKey: "custom",
+              contractTiers: [option.value],
+            }),
+          );
+          if (count !== null) nextTiers[option.value] = count;
+        }),
+      );
+
+      if (!cancelled) {
+        setAudienceCounts(next);
+        setTierCounts(nextTiers);
+      }
+    };
+
+    void loadOptionCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const audienceHint = useMemo(
     () => ADMIN_BROADCAST_AUDIENCE_OPTIONS.find((option) => option.value === audienceMode)?.description ?? "",
@@ -294,11 +376,21 @@ export default function AdminCommsPage() {
                   <SelectValue placeholder="Select audience" />
                 </SelectTrigger>
                 <SelectContent>
-                  {ADMIN_BROADCAST_AUDIENCE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
+                  {ADMIN_BROADCAST_AUDIENCE_OPTIONS.map((option) => {
+                    const count = audienceCounts[option.value];
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex w-full items-center justify-between gap-6">
+                          <span>{option.label}</span>
+                          {typeof count === "number" ? (
+                            <span className="tabular-nums text-muted-foreground">
+                              {count}
+                            </span>
+                          ) : null}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
               {audienceHint ? <p className="text-xs text-muted-foreground">{audienceHint}</p> : null}
@@ -319,7 +411,14 @@ export default function AdminCommsPage() {
                           toggleContractTier(option.value, checked === true)
                         }
                       />
-                      <span>{option.label}</span>
+                      <span>
+                        {option.label}
+                        {typeof tierCounts[option.value] === "number" ? (
+                          <span className="ml-2 tabular-nums text-muted-foreground">
+                            {tierCounts[option.value]}
+                          </span>
+                        ) : null}
+                      </span>
                     </label>
                   ))}
                 </div>
