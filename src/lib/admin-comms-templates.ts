@@ -121,7 +121,7 @@ export const ADMIN_BROADCAST_AUDIENCE_OPTIONS: Array<{
   {
     value: "clients",
     label: "Client contacts by tier",
-    description: "Client contact users on active contracts — filter by contract tier.",
+    description: "Client contacts on current contracts in the selected tiers (includes unpaid drafts).",
   },
   {
     value: "client",

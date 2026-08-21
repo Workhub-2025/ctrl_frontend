@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
-import { cmsRequest } from "@/legacy-cms/request";
 
 export type AdminUpgradeRequestRow = {
   documentId?: string;
@@ -32,40 +28,12 @@ export async function GET() {
   }
 
   try {
-    if (isFirebaseAdminAuth(auth)) {
-      const billing = createFirebaseBillingApi(
-        auth.domainApi,
-        auth.firebaseSessionCookie,
-      );
-      const rows = await billing.listAdminBillingRequests();
-      const data = (rows ?? [])
-        .filter((row) => row.requestKind === "client_upgrade")
-        .map((row) => ({
-          id: String(row.documentId ?? row.id ?? ""),
-          requestNumber: row.requestNumber ?? "",
-          clientDocumentId: row.clientDocumentId ?? "",
-          clientName: row.clientName ?? "Unknown client",
-          subject: row.subject ?? "",
-          upgradeType: row.upgradeType ?? "",
-          billingStatus: row.billingStatus ?? "requested",
-          amountDuePence: row.amountDuePence ?? null,
-          currency: row.currency ?? "gbp",
-          createdAt:
-            typeof row.createdAt === "string"
-              ? row.createdAt
-              : row.createdAt
-                ? new Date(row.createdAt as unknown as string).toISOString()
-                : "",
-          payload: row.payload ?? null,
-        }));
-      return NextResponse.json({ data });
-    }
-
-    const response = await cmsRequest<{ data?: AdminUpgradeRequestRow[] }>(
-      "/admin/billing/upgrade-requests",
+    const billing = createFirebaseBillingApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
     );
-
-    const data = (response.data ?? [])
+    const rows = await billing.listAdminBillingRequests();
+    const data = (rows ?? [])
       .filter((row) => row.requestKind === "client_upgrade")
       .map((row) => ({
         id: String(row.documentId ?? row.id ?? ""),
@@ -77,10 +45,14 @@ export async function GET() {
         billingStatus: row.billingStatus ?? "requested",
         amountDuePence: row.amountDuePence ?? null,
         currency: row.currency ?? "gbp",
-        createdAt: row.createdAt ?? "",
+        createdAt:
+          typeof row.createdAt === "string"
+            ? row.createdAt
+            : row.createdAt
+              ? new Date(row.createdAt as unknown as string).toISOString()
+              : "",
         payload: row.payload ?? null,
       }));
-
     return NextResponse.json({ data });
   } catch (error) {
     return NextResponse.json(

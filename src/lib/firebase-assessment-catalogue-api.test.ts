@@ -62,8 +62,8 @@ describe("Chunk H Firebase assessment BFF contracts", () => {
   it("lists assessment versions from Firebase releases without Strapi", () => {
     const admin = route("../app/api/admin/assessment-versions/route.ts");
     expect(admin).toContain("requireAdminDualAccess");
-    expect(admin).toContain("isFirebaseAdminAuth");
     expect(admin).toContain("/v1/assessment-releases");
+    expect(admin).not.toContain("isFirebaseAdminAuth");
 
     for (const source of [
       route("../app/api/assessment/versions/route.ts"),
@@ -78,9 +78,9 @@ describe("Chunk H Firebase assessment BFF contracts", () => {
   it("refreshes platform catalogue from Firebase releases", () => {
     const source = route("../app/api/admin/assessment/platform-sync/route.ts");
     expect(source).toContain("requireAdminDualAccess");
-    expect(source).toContain("isFirebaseAdminAuth");
     expect(source).toContain("/v1/assessment-releases");
-    expect(source).toContain('mode: "firebase-releases"');
+    expect(source).toContain('mode: "sql-releases"');
+    expect(source).not.toContain("isFirebaseAdminAuth");
   });
 
   it("persists integrity events through the Firebase attempt runtime", () => {

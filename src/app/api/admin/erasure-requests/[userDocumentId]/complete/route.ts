@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
@@ -20,12 +17,6 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     const auth = await requireAdminDualAccess("privacy.write");
     if ("error" in auth) return auth.error;
-    if (!isFirebaseAdminAuth(auth)) {
-      return NextResponse.json(
-        { error: "Erasure completion requires the Firebase admin path" },
-        { status: 501 },
-      );
-    }
 
     const { userDocumentId: requestId } = await context.params;
     if (!requestId || requestId.length > 128) {

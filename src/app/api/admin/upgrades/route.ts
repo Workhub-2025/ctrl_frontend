@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import {
   toAdminClientDetails,
   type FirebaseClientTeamWorkspace,
 } from "@/lib/firebase-admin-tenancy-bff";
 import { createFirebaseScreenApi } from "@/lib/firebase-screen-api";
 import { invalidateClientEntitlementCachesByClientId } from "@/lib/portal-cache-keys";
-import {
-  getAdminClientEntitlements,
-  getCmsErrorStatus,
-  updateAdminClient,
-} from "@/services/admin-platform.service";
 
 const CONTRACT_STATUSES = ["active", "soft_locked", "pending_deletion"] as const;
 type ContractStatus = (typeof CONTRACT_STATUSES)[number];
@@ -29,14 +22,13 @@ export async function GET() {
   if ("error" in auth) return auth.error;
 
   try {
-    if (isFirebaseAdminAuth(auth)) {
-      const screens = createFirebaseScreenApi(
-        auth.domainApi,
-        auth.firebaseSessionCookie,
-      );
-      const screen = await screens.getAdminOverview();
+    const screens = createFirebaseScreenApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
+    );
+    const screen = await screens.getAdminOverview();
 
-      const rows = screen.organizations.map((org) => ({
+    const rows = screen.organizations.map((org) => ({
         id: org.id,
         name: org.legalName,
         status: "Active" as const,
@@ -75,22 +67,9 @@ export async function GET() {
         features: null,
       }));
 
-      return NextResponse.json({ data: rows });
-    }
-
-    const clients = await getAdminClientEntitlements(auth.cmsJwt);
-    return NextResponse.json({ data: clients });
+    return NextResponse.json({ data: rows });
   } catch (error) {
-    const upstreamStatus = getCmsErrorStatus(error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Entitlements could not be loaded",
-      },
-      { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 },
-    );
+    return handleBffRouteError(error, "Entitlements could not be loaded");
   }
 }
 
@@ -137,8 +116,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (isFirebaseAdminAuth(auth)) {
-      if (seatCount !== undefined) {
+    if (seatCount !== undefined) {
         await auth.domainApi.request({
           path: `/v1/organizations/${encodeURIComponent(clientDocumentId)}/entitlements/hiring-manager-seats`,
           method: "PUT",
@@ -181,44 +159,9 @@ export async function PATCH(request: NextRequest) {
         path: `/v1/organizations/${encodeURIComponent(clientDocumentId)}/workspace`,
         firebaseSessionCookie: auth.firebaseSessionCookie,
       });
-      void invalidateClientEntitlementCachesByClientId(clientDocumentId);
-      return NextResponse.json({ data: toAdminClientDetails(workspace) });
-    }
-
-    const updated = await updateAdminClient(
-      clientDocumentId,
-      {
-        features:
-          body?.features && typeof body.features === "object"
-            ? body.features
-            : undefined,
-        contract:
-          seatCount !== undefined || status !== undefined
-            ? {
-                seatCount,
-                notes:
-                  typeof body?.contract?.notes === "string"
-                    ? body.contract.notes
-                    : undefined,
-                status,
-              }
-            : undefined,
-      },
-      auth.cmsJwt,
-    );
-
     void invalidateClientEntitlementCachesByClientId(clientDocumentId);
-    return NextResponse.json({ data: updated });
+    return NextResponse.json({ data: toAdminClientDetails(workspace) });
   } catch (error) {
-    const upstreamStatus = getCmsErrorStatus(error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Entitlements could not be updated",
-      },
-      { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 },
-    );
+    return handleBffRouteError(error, "Entitlements could not be updated");
   }
 }

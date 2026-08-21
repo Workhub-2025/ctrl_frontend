@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
-import {
-  getCmsErrorStatus,
-  sendAdminClientInvite,
-} from "@/services/admin-platform.service";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 
 type RouteContext = {
   params: Promise<{ clientId: string }>;
@@ -31,61 +25,34 @@ export async function POST(request: NextRequest, context: RouteContext) {
       );
     }
 
-    if (isFirebaseAdminAuth(auth)) {
-      const expiresAt = new Date(
-        Date.now() + 24 * 60 * 60 * 1000,
-      ).toISOString();
-      const result = await auth.domainApi.request<{
-        invitationId: string;
-        token: string;
-        seatId: string | null;
-      }>({
-        path: "/v1/invitations",
-        method: "POST",
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-        body: {
-          organizationId: clientId,
-          email,
-          role: "client_owner",
-          expiresAt,
-        },
-      });
-      return NextResponse.json(
-        {
-          data: {
-            invitationId: result.invitationId,
-            email,
-            expiresAt,
-            status: "pending",
-          },
-        },
-        { status: 201 },
-      );
-    }
-
-    const result = await sendAdminClientInvite(
-      clientId,
-      {
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    const result = await auth.domainApi.request<{
+      invitationId: string;
+      token: string;
+      seatId: string | null;
+    }>({
+      path: "/v1/invitations",
+      method: "POST",
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+      body: {
+        organizationId: clientId,
         email,
-        accessCodeDocumentId:
-          typeof body?.accessCodeDocumentId === "string"
-            ? body.accessCodeDocumentId
-            : undefined,
+        role: "client_owner",
+        expiresAt,
       },
-      auth.cmsJwt,
-    );
-
-    return NextResponse.json({ data: result }, { status: 201 });
-  } catch (error) {
-    const upstreamStatus = getCmsErrorStatus(error);
+    });
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Client invite could not be sent",
+        data: {
+          invitationId: result.invitationId,
+          email,
+          expiresAt,
+          status: "pending",
+        },
       },
-      { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 },
+      { status: 201 },
     );
+  } catch (error) {
+    return handleBffRouteError(error, "Client invite could not be sent");
   }
 }

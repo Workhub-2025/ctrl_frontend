@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import type {
   AdminBroadcastAudience,
   AdminBroadcastContractTier,
   AdminBroadcastTemplateKey,
 } from "@/lib/admin-comms-templates";
-import { cmsRequest } from "@/legacy-cms/request";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 import { sanitisePlainText } from "@/lib/security/input-sanitization";
@@ -34,10 +30,6 @@ type BroadcastPreviewData = {
     renewalPrice: string;
     recipientEmail: string;
   } | null;
-};
-
-type BroadcastPreviewResponse = {
-  data?: BroadcastPreviewData;
 };
 
 export async function POST(request: Request) {
@@ -67,22 +59,13 @@ export async function POST(request: Request) {
   };
 
   try {
-    if (isFirebaseAdminAuth(auth)) {
-      const response = await auth.domainApi.request<BroadcastPreviewData>({
-        path: "/v1/admin/comms/preview",
-        method: "POST",
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-        body,
-      });
-      return NextResponse.json({ data: response });
-    }
-
-    const response = await cmsRequest<BroadcastPreviewResponse>("/admin/comms/preview", {
+    const response = await auth.domainApi.request<BroadcastPreviewData>({
+      path: "/v1/admin/comms/preview",
       method: "POST",
-      body: JSON.stringify(body),
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+      body,
     });
-
-    return NextResponse.json({ data: response.data ?? null });
+    return NextResponse.json({ data: response });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Recipient preview could not be resolved" },

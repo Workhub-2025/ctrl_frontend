@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
 import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
-import { cmsRequest } from "@/legacy-cms/request";
 
 export async function POST(
   _request: Request,
@@ -20,24 +16,13 @@ export async function POST(
   const { requestId } = await params;
 
   try {
-    if (isFirebaseAdminAuth(auth)) {
-      const billing = createFirebaseBillingApi(
-        auth.domainApi,
-        auth.firebaseSessionCookie,
-      );
-      const data = await billing.processSeatDecrease(requestId);
-      void invalidateAdminPlatformServerCache();
-      return NextResponse.json({ data });
-    }
-
-    const response = await cmsRequest<{ data?: Record<string, unknown> }>(
-      `/admin/billing/requests/${encodeURIComponent(requestId)}/process-seat-decrease`,
-      { method: "POST" },
+    const billing = createFirebaseBillingApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
     );
-
+    const data = await billing.processSeatDecrease(requestId);
     void invalidateAdminPlatformServerCache();
-
-    return NextResponse.json({ data: response.data ?? null });
+    return NextResponse.json({ data });
   } catch (error) {
     return NextResponse.json(
       {

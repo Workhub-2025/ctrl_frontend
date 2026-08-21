@@ -1,7 +1,6 @@
 import "server-only";
 
 import { createDomainApi } from "@/lib/domain-api";
-import { BffAuthError } from "@/lib/auth/bff-route-errors";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 
 export type FirebaseBillingCheckoutResult = Readonly<{
@@ -52,15 +51,9 @@ export type FirebaseBillingEntitlements = Readonly<{
   };
 }>;
 
-export async function tryRequireFirebaseBillingSession() {
-  try {
-    return await requireFirebaseSession("client", "admin");
-  } catch (error) {
-    if (error instanceof BffAuthError && error.status === 401) {
-      return null;
-    }
-    throw error;
-  }
+/** Client/admin billing BFF gate. Firebase session only — no Strapi fallback. */
+export async function requireFirebaseBillingSession() {
+  return requireFirebaseSession("client", "admin");
 }
 
 export type FirebaseAdminBillingRequestRow = Readonly<{

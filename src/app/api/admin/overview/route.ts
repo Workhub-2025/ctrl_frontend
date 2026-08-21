@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import {
-  isFirebaseAdminAuth,
   requireAdminDualAccess,
   type AdminDualAuthResult,
 } from "@/lib/auth/admin-dual-access";
@@ -15,7 +14,6 @@ import {
 } from "@/lib/portal-cache-keys";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
-import { getAdminOverview } from "@/services/admin-platform.service";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +22,8 @@ function adminActorId(auth: Exclude<AdminDualAuthResult, { error: NextResponse }
   return session.user.firebaseUid ?? session.user.id;
 }
 
-async function loadFirebaseAdminOverview(
-  auth: Extract<
-    Exclude<AdminDualAuthResult, { error: NextResponse }>,
-    { domainApi: unknown }
-  >,
+async function loadAdminOverview(
+  auth: Exclude<AdminDualAuthResult, { error: NextResponse }>,
 ) {
   const screens = createFirebaseScreenApi(auth.domainApi, auth.firebaseSessionCookie);
   const screen = await screens.getAdminOverview();
@@ -46,17 +41,12 @@ export async function GET(request: Request) {
     });
     if (rateLimited) return rateLimited;
 
-    if (isFirebaseAdminAuth(auth)) {
-      const data = await portalServerCacheGetOrSet(
-        PORTAL_ADMIN_OVERVIEW_CACHE_KEY,
-        PORTAL_ADMIN_PLATFORM_TTL_MS,
-        () => loadFirebaseAdminOverview(auth),
-      );
-      return NextResponse.json({ data });
-    }
-
-    const overview = await getAdminOverview(auth.cmsJwt);
-    return NextResponse.json({ data: overview });
+    const data = await portalServerCacheGetOrSet(
+      PORTAL_ADMIN_OVERVIEW_CACHE_KEY,
+      PORTAL_ADMIN_PLATFORM_TTL_MS,
+      () => loadAdminOverview(auth),
+    );
+    return NextResponse.json({ data });
   } catch (error) {
     return NextResponse.json(
       {

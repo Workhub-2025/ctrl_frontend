@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
 import { invalidateAdminPlatformServerCache } from "@/lib/portal-cache-invalidation";
-import { isStripeCheckoutConfigured } from "@/lib/stripe/server";
-import { cmsRequest } from "@/legacy-cms/request";
 
 export async function POST(
   _request: Request,
@@ -21,36 +16,13 @@ export async function POST(
   const { billingRequestId } = await params;
 
   try {
-    if (isFirebaseAdminAuth(auth)) {
-      const billing = createFirebaseBillingApi(
-        auth.domainApi,
-        auth.firebaseSessionCookie,
-      );
-      const data = await billing.resendAdminCheckout(billingRequestId);
-      void invalidateAdminPlatformServerCache();
-      return NextResponse.json({ data });
-    }
-
-    if (!isStripeCheckoutConfigured()) {
-      return NextResponse.json(
-        {
-          error:
-            "Stripe checkout is not configured. Set STRIPE_SECRET_KEY in FrontEnd/.env.local and restart the dev server.",
-        },
-        { status: 503 },
-      );
-    }
-
-    const response = await cmsRequest<{ data?: Record<string, unknown> }>(
-      `/admin/billing/requests/${encodeURIComponent(billingRequestId)}/resend-checkout`,
-      { method: "POST" },
+    const billing = createFirebaseBillingApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
     );
-
+    const data = await billing.resendAdminCheckout(billingRequestId);
     void invalidateAdminPlatformServerCache();
-
-    return NextResponse.json({
-      data: response.data,
-    });
+    return NextResponse.json({ data });
   } catch (error) {
     return NextResponse.json(
       {

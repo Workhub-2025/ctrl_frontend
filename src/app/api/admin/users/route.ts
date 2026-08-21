@@ -1,30 +1,21 @@
 import { NextResponse } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import {
   toAdminUsersSummary,
   type FirebaseDirectoryUser,
 } from "@/lib/firebase-admin-tenancy-bff";
-import { getAdminUsers } from "@/services/admin-platform.service";
 
 export async function GET() {
   try {
     const auth = await requireAdminDualAccess("users.read");
     if ("error" in auth) return auth.error;
 
-    if (isFirebaseAdminAuth(auth)) {
-      const users = await auth.domainApi.request<FirebaseDirectoryUser[]>({
-        path: "/v1/directory/users",
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-      });
-      return NextResponse.json({ data: toAdminUsersSummary(users) });
-    }
-
-    const users = await getAdminUsers(auth.cmsJwt);
-    return NextResponse.json({ data: users });
+    const users = await auth.domainApi.request<FirebaseDirectoryUser[]>({
+      path: "/v1/directory/users",
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+    });
+    return NextResponse.json({ data: toAdminUsersSummary(users) });
   } catch (error) {
     return NextResponse.json(
       {

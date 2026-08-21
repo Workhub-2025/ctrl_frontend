@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { handleBffRouteError } from "@/lib/auth/bff-session";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import type { ClientUpgradeRequestPayload } from "@/lib/client/entitlements";
 import {
   createFirebaseBillingApi,
-  tryRequireFirebaseBillingSession,
+  requireFirebaseBillingSession,
 } from "@/lib/firebase-billing-api";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
-import {
-  createClientUpgradeRequest,
-  listClientUpgradeRequests,
-} from "@/services/client-upgrade.service";
 
 function mapFirebaseRequest(row: {
   documentId?: string;
@@ -91,28 +87,23 @@ function sanitizeUpgradePayload(
 
 export async function GET() {
   try {
-    const firebaseAuth = await tryRequireFirebaseBillingSession();
-    if (firebaseAuth) {
-      const billing = createFirebaseBillingApi(
-        firebaseAuth.domainApi,
-        firebaseAuth.firebaseSessionCookie,
-      );
-      const rows = await billing.listClientBillingRequests();
-      return NextResponse.json({
-        data: rows
-          .map((row) => {
-            try {
-              return mapFirebaseRequest(row);
-            } catch {
-              return null;
-            }
-          })
-          .filter(Boolean),
-      });
-    }
-
-    const data = await listClientUpgradeRequests();
-    return NextResponse.json({ data });
+    const firebaseAuth = await requireFirebaseBillingSession();
+    const billing = createFirebaseBillingApi(
+      firebaseAuth.domainApi,
+      firebaseAuth.firebaseSessionCookie,
+    );
+    const rows = await billing.listClientBillingRequests();
+    return NextResponse.json({
+      data: rows
+        .map((row) => {
+          try {
+            return mapFirebaseRequest(row);
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean),
+    });
   } catch (error) {
     return handleBffRouteError(error, "Upgrade requests could not be loaded");
   }
@@ -132,26 +123,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "payload is required" }, { status: 400 });
     }
 
-    const firebaseAuth = await tryRequireFirebaseBillingSession();
-    if (firebaseAuth) {
-      const billing = createFirebaseBillingApi(
-        firebaseAuth.domainApi,
-        firebaseAuth.firebaseSessionCookie,
-      );
-      const created = await billing.createClientBillingRequest(
-        sanitizeUpgradePayload(body.payload) as unknown as Record<string, unknown>,
-      );
-      return NextResponse.json(
-        { data: mapFirebaseRequest(created) },
-        { status: 201 },
-      );
-    }
-
-    const data = await createClientUpgradeRequest({
-      payload: body.payload,
-      priority: body.priority,
-    });
-    return NextResponse.json({ data }, { status: 201 });
+    const firebaseAuth = await requireFirebaseBillingSession();
+    const billing = createFirebaseBillingApi(
+      firebaseAuth.domainApi,
+      firebaseAuth.firebaseSessionCookie,
+    );
+    const created = await billing.createClientBillingRequest(
+      sanitizeUpgradePayload(body.payload) as unknown as Record<string, unknown>,
+    );
+    return NextResponse.json(
+      { data: mapFirebaseRequest(created) },
+      { status: 201 },
+    );
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Upgrade request could not be submitted";

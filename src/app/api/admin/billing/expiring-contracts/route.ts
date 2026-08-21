@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
-import { cmsRequest } from "@/legacy-cms/request";
 
 export async function GET(request: Request) {
   const auth = await requireAdminDualAccess("billing.read");
@@ -17,19 +13,12 @@ export async function GET(request: Request) {
   const withinDays = Number(searchParams.get("withinDays") ?? 90);
 
   try {
-    if (isFirebaseAdminAuth(auth)) {
-      const billing = createFirebaseBillingApi(
-        auth.domainApi,
-        auth.firebaseSessionCookie,
-      );
-      const data = await billing.listExpiringContracts(withinDays);
-      return NextResponse.json({ data: data ?? [] });
-    }
-
-    const response = await cmsRequest<{ data?: unknown[] }>(
-      `/admin/billing/expiring-contracts?withinDays=${encodeURIComponent(String(withinDays))}`,
+    const billing = createFirebaseBillingApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
     );
-    return NextResponse.json({ data: response.data ?? [] });
+    const data = await billing.listExpiringContracts(withinDays);
+    return NextResponse.json({ data: data ?? [] });
   } catch (error) {
     return NextResponse.json(
       {

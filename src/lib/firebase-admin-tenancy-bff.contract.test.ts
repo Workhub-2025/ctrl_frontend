@@ -4,14 +4,21 @@ import { describe, expect, it } from "vitest";
 const route = (path: string) =>
   readFileSync(new URL(path, import.meta.url), "utf8");
 
+function expectSqlOnlyAdminRoute(source: string) {
+  expect(source).toContain("requireAdminDualAccess");
+  expect(source).not.toContain("isFirebaseAdminAuth");
+  expect(source).not.toContain("cmsRequest");
+  expect(source).not.toContain("getServerCmsJwt");
+  expect(source).not.toContain("cmsJwt");
+  expect(source).not.toMatch(/still requires the legacy Strapi API/);
+}
+
 describe("Firebase admin tenancy BFF", () => {
-  it("dual-paths clients list and create through Firebase organizations", () => {
+  it("loads clients list and create through SQL domainApi only", () => {
     const list = route("../app/api/admin/clients/route.ts");
     const create = route("../app/api/admin/clients/create/route.ts");
     for (const source of [list, create]) {
-      expect(source).toContain("requireAdminDualAccess");
-      expect(source).toContain("isFirebaseAdminAuth");
-      expect(source).not.toMatch(/still requires the legacy Strapi API/);
+      expectSqlOnlyAdminRoute(source);
     }
     expect(list).toContain("getAdminOverview");
     expect(create).toContain("/v1/organizations");
@@ -22,6 +29,7 @@ describe("Firebase admin tenancy BFF", () => {
     expect(source).toContain("getAdminOverview");
     expect(source).toContain("createFirebaseScreenApi");
     expect(source).not.toContain("response.data.organizations");
+    expect(source).not.toContain("cmsJwt");
   });
 
   it("uses Firebase directory and platform-administrator APIs for users/team", () => {
@@ -45,23 +53,21 @@ describe("Firebase admin tenancy BFF", () => {
     ).toContain("/v1/assessment-releases");
   });
 
-  it("builds Firebase analytics in the admin page shape", () => {
+  it("builds admin analytics in the page shape without a CMS fallback", () => {
     const source = route("../app/api/admin/analytics/route.ts");
-    expect(source).toContain("requireAdminDualAccess");
+    expectSqlOnlyAdminRoute(source);
     expect(source).toContain("buildFirebaseAdminRevenueAnalytics");
-    expect(source).toContain("isFirebaseAdminAuth");
     expect(source).not.toContain("FIREBASE_PENDING_ANALYTICS");
   });
 
-  it("dual-paths seat slots, export, and downgrade helpers", () => {
+  it("loads seat slots, export, and downgrade through domainApi only", () => {
     for (const source of [
       route("../app/api/admin/clients/[clientId]/seat-slots/route.ts"),
       route("../app/api/admin/clients/[clientId]/export-seats/route.ts"),
       route("../app/api/admin/clients/[clientId]/downgrade-seats/route.ts"),
       route("../app/api/admin/clients/[clientId]/downgrade-seat/route.ts"),
     ]) {
-      expect(source).toContain("requireAdminDualAccess");
-      expect(source).toContain("isFirebaseAdminAuth");
+      expectSqlOnlyAdminRoute(source);
       expect(source).not.toContain("requireLegacyCmsJwt");
       expect(source).not.toMatch(/status:\s*501/);
     }

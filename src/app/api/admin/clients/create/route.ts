@@ -1,19 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
+import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import {
   toAdminClientCreateResult,
   type FirebaseClientTeamWorkspace,
 } from "@/lib/firebase-admin-tenancy-bff";
-import {
-  createAdminClient,
-  getCmsErrorStatus,
-  type AdminClientCreateInput,
-} from "@/services/admin-platform.service";
+import type { AdminClientCreateInput } from "@/services/admin-platform.service";
 
 function validatePayload(body: unknown):
   | { valid: true; data: AdminClientCreateInput }
@@ -95,62 +89,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    if (isFirebaseAdminAuth(auth)) {
-      const created = await auth.domainApi.request<{
-        organizationId: string;
-        seatIds: string[];
-      }>({
-        path: "/v1/organizations",
+    const created = await auth.domainApi.request<{
+      organizationId: string;
+      seatIds: string[];
+    }>({
+      path: "/v1/organizations",
+      method: "POST",
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+      body: {
+        legalName: validation.data.legalName || validation.data.name,
+        seatCount: validation.data.contract.seatCount,
+        campaignApprovalMode: validation.data.campaignApprovalMode,
+        tier: validation.data.contract.tier,
+      },
+    });
+
+    if (validation.data.primaryContactEmail) {
+      const expiresAt = new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString();
+      await auth.domainApi.request({
+        path: "/v1/invitations",
         method: "POST",
         firebaseSessionCookie: auth.firebaseSessionCookie,
         body: {
-          legalName: validation.data.legalName || validation.data.name,
-          seatCount: validation.data.contract.seatCount,
-          campaignApprovalMode: validation.data.campaignApprovalMode,
-          tier: validation.data.contract.tier,
+          organizationId: created.organizationId,
+          email: validation.data.primaryContactEmail,
+          role: "client_owner",
+          expiresAt,
         },
       });
-
-      if (validation.data.primaryContactEmail) {
-        const expiresAt = new Date(
-          Date.now() + 24 * 60 * 60 * 1000,
-        ).toISOString();
-        await auth.domainApi.request({
-          path: "/v1/invitations",
-          method: "POST",
-          firebaseSessionCookie: auth.firebaseSessionCookie,
-          body: {
-            organizationId: created.organizationId,
-            email: validation.data.primaryContactEmail,
-            role: "client_owner",
-            expiresAt,
-          },
-        });
-      }
-
-      const workspace = await auth.domainApi.request<FirebaseClientTeamWorkspace>({
-        path: `/v1/organizations/${encodeURIComponent(created.organizationId)}/workspace`,
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-      });
-
-      return NextResponse.json(
-        {
-          data: toAdminClientCreateResult(created.organizationId, workspace),
-        },
-        { status: 201 },
-      );
     }
 
-    const created = await createAdminClient(validation.data, auth.cmsJwt);
-    return NextResponse.json({ data: created }, { status: 201 });
-  } catch (error) {
-    const upstreamStatus = getCmsErrorStatus(error);
+    const workspace = await auth.domainApi.request<FirebaseClientTeamWorkspace>({
+      path: `/v1/organizations/${encodeURIComponent(created.organizationId)}/workspace`,
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+    });
+
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Client could not be created",
+        data: toAdminClientCreateResult(created.organizationId, workspace),
       },
-      { status: upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 500 },
+      { status: 201 },
     );
+  } catch (error) {
+    return handleBffRouteError(error, "Client could not be created");
   }
 }

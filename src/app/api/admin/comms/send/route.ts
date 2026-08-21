@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import type { Session } from "next-auth";
-import {
-  isFirebaseAdminAuth,
-  requireAdminDualAccess,
-} from "@/lib/auth/admin-dual-access";
+import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { applyRateLimit } from "@/lib/security/api-rate-limit";
 import type {
   AdminBroadcastAudience,
   AdminBroadcastContractTier,
   AdminBroadcastTemplateKey,
 } from "@/lib/admin-comms-templates";
-import { cmsRequest } from "@/legacy-cms/request";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 import { containsHtmlMarkup, sanitisePlainText } from "@/lib/security/input-sanitization";
 
@@ -24,15 +20,6 @@ type BroadcastSendBody = {
   subject?: string;
   body?: string;
   templateKey?: AdminBroadcastTemplateKey;
-};
-
-type BroadcastSendResponse = {
-  data?: {
-    recipientCount: number;
-    sentCount: number;
-    failedCount: number;
-    failed?: string[];
-  };
 };
 
 type FirebaseBroadcastSendResult = {
@@ -86,30 +73,21 @@ export async function POST(request: Request) {
   };
 
   try {
-    if (isFirebaseAdminAuth(auth)) {
-      const response = await auth.domainApi.request<FirebaseBroadcastSendResult>({
-        path: "/v1/admin/comms/send",
-        method: "POST",
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-        body,
-      });
-      const recipientCount = response.recipientCount ?? 0;
-      return NextResponse.json({
-        data: {
-          recipientCount,
-          sentCount: recipientCount,
-          failedCount: 0,
-          queued: response.queued ?? true,
-        },
-      });
-    }
-
-    const response = await cmsRequest<BroadcastSendResponse>("/admin/comms/send", {
+    const response = await auth.domainApi.request<FirebaseBroadcastSendResult>({
+      path: "/v1/admin/comms/send",
       method: "POST",
-      body: JSON.stringify(body),
+      firebaseSessionCookie: auth.firebaseSessionCookie,
+      body,
     });
-
-    return NextResponse.json({ data: response.data ?? null });
+    const recipientCount = response.recipientCount ?? 0;
+    return NextResponse.json({
+      data: {
+        recipientCount,
+        sentCount: recipientCount,
+        failedCount: 0,
+        queued: response.queued ?? true,
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Broadcast could not be sent" },

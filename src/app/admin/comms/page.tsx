@@ -423,7 +423,7 @@ export default function AdminCommsPage() {
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Targets client contact users on active contracts in the selected tiers.
+                  Targets client contact users on current contracts in the selected tiers (includes unpaid drafts).
                 </p>
               </div>
             ) : null}
