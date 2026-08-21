@@ -1,12 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, Check, Clock3, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { assessmentTimerAnnouncement } from "@/lib/assessment-accessibility";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
-import { useDeferredAdvance } from "../shared/use-deferred-advance";
 import type { LaunchEnvelope } from "../types";
 
 type Incident = {
@@ -41,68 +39,32 @@ function RankingWorkspace({
   question,
   response,
   onChange,
-  questionSeconds,
-  onTimeout,
   practice = false,
   questionTotal,
 }: {
   question: Question;
   response: RankingResponse;
   onChange: (response: RankingResponse) => void;
-  questionSeconds?: number;
-  onTimeout?: (response: RankingResponse) => void;
   practice?: boolean;
   questionTotal?: number;
 }) {
   const [startedAt] = useState(() => response.timerStartedAt ?? Date.now());
-  const [now, setNow] = useState(Date.now());
-  const [timerAnnouncement, setTimerAnnouncement] = useState("");
-  const previousRemaining = useRef<number | null>(null);
-  const timedOut = useRef(false);
   const incidentById = new Map(question.incidents.map((incident) => [incident.id, incident]));
-  const elapsedSeconds = Math.max(0, Math.floor((now - startedAt) / 1_000));
-  const remainingSeconds = questionSeconds === undefined ? null : Math.max(0, questionSeconds - elapsedSeconds);
+  const elapsedSeconds = () => Math.max(0, Math.floor((Date.now() - startedAt) / 1_000));
 
   useEffect(() => {
     if (response.timerStartedAt) return;
     onChange({ ...response, timerStartedAt: startedAt });
-    // Persist timer start once for resume honesty.
+    // Persist dwell start once so resume reports honest timeTakenSeconds.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (questionSeconds === undefined || response.confirmed) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 250);
-    return () => window.clearInterval(timer);
-  }, [questionSeconds, response.confirmed]);
-
-  useEffect(() => {
-    if (remainingSeconds !== 0 || response.confirmed || timedOut.current || !onTimeout) return;
-    timedOut.current = true;
-    onTimeout({
-      ...response,
-      confirmed: true,
-      timeTakenSeconds: questionSeconds ?? elapsedSeconds,
-      timerStartedAt: startedAt,
-    });
-  }, [elapsedSeconds, onTimeout, questionSeconds, remainingSeconds, response, startedAt]);
-
-  useEffect(() => {
-    if (remainingSeconds === null) return;
-    const announcement = assessmentTimerAnnouncement(
-      previousRemaining.current,
-      remainingSeconds,
-    );
-    previousRemaining.current = remainingSeconds;
-    if (announcement) setTimerAnnouncement(announcement);
-  }, [remainingSeconds]);
 
   const move = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
     if (nextIndex < 0 || nextIndex >= response.order.length) return;
     const order = [...response.order];
     [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
-    onChange({ order, confirmed: false, timeTakenSeconds: elapsedSeconds, timerStartedAt: startedAt });
+    onChange({ order, confirmed: false, timeTakenSeconds: elapsedSeconds(), timerStartedAt: startedAt });
   };
 
   return (
@@ -120,17 +82,6 @@ function RankingWorkspace({
         </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">1 = highest priority · 6 = lowest priority</p>
-          {remainingSeconds !== null ? (
-            <p
-              className="mt-1 font-mono text-sm font-semibold tabular-nums"
-              aria-label={`${remainingSeconds} seconds remaining for this question`}
-            >
-              {String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:{String(remainingSeconds % 60).padStart(2, "0")} remaining
-            </p>
-          ) : null}
-          <p className="sr-only" aria-live="polite" aria-atomic="true">
-            {timerAnnouncement}
-          </p>
         </div>
       </div>
 
@@ -196,7 +147,7 @@ function RankingWorkspace({
             onChange({
               ...response,
               confirmed: true,
-              timeTakenSeconds: elapsedSeconds,
+              timeTakenSeconds: elapsedSeconds(),
               timerStartedAt: startedAt,
             })
           }
@@ -247,29 +198,22 @@ function PrioritisationStages({
   stageIndex,
   state,
   setState,
-  advance,
-  isSaving,
   content,
-  questionSeconds,
   questionCount,
 }: {
   stageIndex: number;
   state: State;
   setState: (state: State) => void;
-  advance: (nextState?: State) => Promise<void>;
-  isSaving: boolean;
   content: Content;
-  questionSeconds: number;
   questionCount: number;
 }) {
-  const deferAdvance = useDeferredAdvance(isSaving, advance);
   if (stageIndex === 0) {
     return (
       <section className="border border-border bg-card p-6 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Monitoring active</p>
         <h1 className="mt-2 text-2xl font-semibold">{questionCount} ranking decisions</h1>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground">
-          Each question contains six incidents. Put every incident into a unique position from 1 to 6, then confirm the order. You have up to three minutes per question within the overall assessment time.
+          Each question contains six incidents. Put every incident into a unique position from 1 to 6, then confirm the order. Work through all questions within the overall assessment time.
         </p>
       </section>
     );
@@ -281,14 +225,8 @@ function PrioritisationStages({
         key={question.id}
         question={question}
         questionTotal={questionCount}
-        questionSeconds={questionSeconds}
         response={state.responses[question.id]}
         onChange={(next) => setState({ ...state, responses: { ...state.responses, [question.id]: next } })}
-        onTimeout={(next) => {
-          const nextState = { ...state, responses: { ...state.responses, [question.id]: next } };
-          setState(nextState);
-          deferAdvance(nextState);
-        }}
       />
     );
   }
@@ -310,7 +248,6 @@ function PrioritisationStages({
 
 function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
   const questionCount = launch.content.questions.length;
-  const questionSeconds = Math.round(180 + (launch.extraTimeMinutes * 60) / Math.max(questionCount, 1));
   return (
     <TrackedAssessmentShell<Content, State>
       launch={launch}
@@ -338,15 +275,12 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
             ? "Save and open next question"
             : "Review responses"
       }
-      renderStage={({ stageIndex, state, setState, advance, isSaving }, content) => (
+      renderStage={({ stageIndex, state, setState }, content) => (
         <PrioritisationStages
           stageIndex={stageIndex}
           state={state}
           setState={setState}
-          advance={advance}
-          isSaving={isSaving}
           content={content}
-          questionSeconds={questionSeconds}
           questionCount={questionCount}
         />
       )}
