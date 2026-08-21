@@ -489,6 +489,7 @@ export function TrackedAssessmentShell<TContent, TState>(
   }, [
     buildSubmission,
     launch.attemptId,
+    launch.module.slug,
     launch.stageGraph.nodes.length,
     locked,
     stageIndex,

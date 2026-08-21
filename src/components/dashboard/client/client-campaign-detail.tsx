@@ -112,8 +112,11 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
     ? (searchParams.get("tab") as CampaignTab)
     : "overview";
 
-  const tabHref = (tab: CampaignTab) =>
-    `/client-dashboard/campaigns/${encodeURIComponent(campaignId)}?tab=${tab}`;
+  const tabHref = useCallback(
+    (tab: CampaignTab) =>
+      `/client-dashboard/campaigns/${encodeURIComponent(campaignId)}?tab=${tab}`,
+    [campaignId]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -186,7 +189,7 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
     }
 
     return items;
-  }, [campaign, pendingReviews.length, campaignId]);
+  }, [campaign, pendingReviews, tabHref]);
 
   if (loading && !campaign) {
     return <PortalInlineLoading message="Loading campaign…" />;
