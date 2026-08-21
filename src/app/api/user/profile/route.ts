@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/next-auth-options';
 import { requireFirebaseSession } from '@/lib/auth/firebase-bff-session';
 import { handleBffRouteError } from '@/lib/auth/bff-route-errors';
-import { getServerCmsJwt } from "@/legacy-cms/jwt";
 import {
     getFirebaseUserProfile,
     updateFirebaseUserProfile,
@@ -84,37 +83,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(toProfileResponse(profile), {
             headers: { 'x-correlation-id': correlationId },
         });
-
-        const cmsJwt = await getServerCmsJwt(request);
-        if (!cmsJwt) {
-            trace.failure(new Error('Unauthorized'));
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
-        }
-
-        // Fetch complete user profile from Strapi (legacy dual-path).
-        const { getCmsClient } = await import("@/legacy-cms/client");
-        const strapiClient = getCmsClient(cmsJwt);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userData: any = await strapiClient.fetch('/users/me?populate=*');
-
-        trace.success({ userId: session.user.id });
-        return NextResponse.json({
-            id: userData.id,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            email: userData.email,
-            organization: userData.client?.name ?? null,
-            phone: userData.phone,
-            role: userData.role?.name || session.user.role || 'Candidate',
-            createdAt: userData.createdAt ?? null,
-            emailVerified: typeof userData.confirmed === 'boolean' ? userData.confirmed : null,
-            agreeToMarketing: userData.agreeToMarketing,
-            privacyConsent: userData.privacyConsent,
-            equalityMonitoring: userData.equalityMonitoring,
-            hasCompletedEqualityMonitoring:
-                userData.equalityMonitoring?.completed === true,
-            equalityPromptDismissedAt: null,
-        }, { headers: { 'x-correlation-id': correlationId } });
     } catch (error: unknown) {
         const bffError = handleBffRouteError(error, 'Failed to fetch profile');
         if (bffError.status !== 500) {
@@ -183,41 +151,6 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json(toProfileResponse(profile), {
             headers: { 'x-correlation-id': correlationId },
         });
-
-        const cmsJwt = await getServerCmsJwt(request);
-        if (!cmsJwt) {
-            trace.failure(new Error('Unauthorized'));
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: { 'x-correlation-id': correlationId } });
-        }
-
-        // Update the signed-in user's own profile without requiring broad user.update permissions.
-        const { getCmsClient } = await import("@/legacy-cms/client");
-        const strapiClient = getCmsClient(cmsJwt);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const updatedUser: any = await strapiClient.fetch('/users/me', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updateData),
-        });
-
-        trace.success({ userId: session.user.id });
-        return NextResponse.json({
-            id: updatedUser.id,
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            email: updatedUser.email,
-            organization: updatedUser.client?.name ?? null,
-            phone: updatedUser.phone,
-            role: updatedUser.role?.name || session.user.role || 'Candidate',
-            createdAt: updatedUser.createdAt ?? null,
-            emailVerified: typeof updatedUser.confirmed === 'boolean' ? updatedUser.confirmed : null,
-            agreeToMarketing: updatedUser.agreeToMarketing,
-            privacyConsent: updatedUser.privacyConsent,
-            equalityMonitoring: updatedUser.equalityMonitoring,
-            hasCompletedEqualityMonitoring:
-                updatedUser.equalityMonitoring?.completed === true,
-            equalityPromptDismissedAt: null,
-        }, { headers: { 'x-correlation-id': correlationId } });
     } catch (error: unknown) {
         const bffError = handleBffRouteError(error, 'Failed to update profile');
         if (bffError.status !== 500) {

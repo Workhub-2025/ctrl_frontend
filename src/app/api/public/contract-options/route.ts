@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { getCmsClient } from "@/legacy-cms/client";
-import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
 import { createDomainApi } from "@/lib/domain-api";
 import {
   platformPricingFromFirebasePrices,
@@ -24,12 +22,6 @@ type PublicContractOption = {
   discountPercent?: number;
 };
 
-/**
- * Public-safe projection. Emits only labels, seat counts, delivery modes and
- * the founder discount/offer window — never raw pence amounts — so the shape is
- * identical whether pricing comes from Strapi `/platform-pricing` or the
- * Firebase price feed.
- */
 function buildContractOptionsResponse(pricing: Record<string, unknown>) {
   const defaultFounderDiscountPercent = Number(
     pricing.defaultFounderDiscountPercent ?? 33,
@@ -101,24 +93,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Firebase path: the landing page is unauthenticated, so pull published
-    // prices over WIF (no user session) from the internal price feed and map
-    // them into the same pricing shape the Strapi branch produces.
-    if (isFirebaseAuthProvider()) {
-      const domainApi = createDomainApi();
-      const body = await domainApi.request<{ prices?: FirebasePriceRow[] }>({
-        path: "/v1/internal/billing/prices",
-      });
-      const pricing = platformPricingFromFirebasePrices(body?.prices ?? []);
-      return NextResponse.json({ data: buildContractOptionsResponse(pricing) });
-    }
-
-    const client = getCmsClient();
-    const body = await client.fetch<{ data?: Record<string, unknown> }>(
-      "/platform-pricing",
-    );
-    const pricing = (body?.data || {}) as Record<string, unknown>;
-
+    const domainApi = createDomainApi();
+    const body = await domainApi.request<{ prices?: FirebasePriceRow[] }>({
+      path: "/v1/internal/billing/prices",
+    });
+    const pricing = platformPricingFromFirebasePrices(body?.prices ?? []);
     return NextResponse.json({ data: buildContractOptionsResponse(pricing) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Contract options could not be loaded";

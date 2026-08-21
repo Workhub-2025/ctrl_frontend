@@ -61,12 +61,12 @@ describe("Strapi-retirement Firebase-path holes", () => {
     expect(contract).not.toContain("getClientContract");
   });
 
-  it("Gap 3: public contract-options route has a Firebase price branch and keeps the CMS branch", () => {
+  it("Gap 3: public contract-options route loads prices from domainApi only", () => {
     const source = read("../app/api/public/contract-options/route.ts");
-    expect(source).toContain("isFirebaseAuthProvider");
     expect(source).toContain("platformPricingFromFirebasePrices");
     expect(source).toContain("/v1/internal/billing/prices");
-    expect(source).toContain("getCmsClient");
-    expect(source).toContain("/platform-pricing");
+    expect(source).not.toContain("isFirebaseAuthProvider");
+    expect(source).not.toContain("getCmsClient");
+    expect(source).not.toContain("/platform-pricing");
   });
 });
