@@ -388,7 +388,7 @@ export function toAdminOverviewFromOrganizations(
 
 export function toAdminOverviewFromScreen(
   screen: {
-    organizations: ReadonlyArray<{
+    organizations?: ReadonlyArray<{
       id: string;
       legalName: string;
       activeSeats: number;
@@ -400,10 +400,12 @@ export function toAdminOverviewFromScreen(
         endDate: string | null;
       } | null;
     }>;
-    totalOrganizations: number;
-  },
+    totalOrganizations?: number;
+  } | null | undefined,
 ): AdminOverview {
-  const rows: AdminClientRow[] = screen.organizations.map((org) => ({
+  const organizations = screen?.organizations ?? [];
+  const totalOrganizations = screen?.totalOrganizations ?? organizations.length;
+  const rows: AdminClientRow[] = organizations.map((org) => ({
     id: org.id,
     name: org.legalName,
     status: "Active",
@@ -434,7 +436,7 @@ export function toAdminOverviewFromScreen(
   return {
     activeClients,
     awaitingClientSignups: 0,
-    pendingCampaignApprovals: screen.organizations.reduce(
+    pendingCampaignApprovals: organizations.reduce(
       (sum, o) => sum + o.pendingUpgradesCount,
       0,
     ),
@@ -445,11 +447,11 @@ export function toAdminOverviewFromScreen(
       {
         id: "firebase-tenancy-ready",
         title: "Firebase tenancy connected",
-        detail: `${screen.totalOrganizations} organization${screen.totalOrganizations === 1 ? "" : "s"} visible from the platform database.`,
+        detail: `${totalOrganizations} organization${totalOrganizations === 1 ? "" : "s"} visible from the platform database.`,
       },
     ],
     attentionRequired:
-      screen.totalOrganizations === 0
+      totalOrganizations === 0
         ? [
             {
               id: "firebase-no-organizations",

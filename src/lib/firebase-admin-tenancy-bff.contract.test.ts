@@ -17,6 +17,13 @@ describe("Firebase admin tenancy BFF", () => {
     expect(create).toContain("/v1/organizations");
   });
 
+  it("loads upgrade entitlements from the unwrapped admin overview screen", () => {
+    const source = route("../app/api/admin/upgrades/route.ts");
+    expect(source).toContain("getAdminOverview");
+    expect(source).toContain("createFirebaseScreenApi");
+    expect(source).not.toContain("response.data.organizations");
+  });
+
   it("uses Firebase directory and platform-administrator APIs for users/team", () => {
     expect(route("../app/api/admin/users/route.ts")).toContain(
       "/v1/directory/users",

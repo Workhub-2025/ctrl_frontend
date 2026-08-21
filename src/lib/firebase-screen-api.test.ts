@@ -84,6 +84,45 @@ describe("Firebase screen aggregates", () => {
     expect(reports.get("missing")).toBeUndefined();
     expect([...reports.keys()]).toEqual(["assignment-1", "assignment-2"]);
   });
+
+  it("normalizes admin overview whether the BFF already unwrapped data", async () => {
+    const card = {
+      id: "org-1",
+      legalName: "Acme",
+      activeSeats: 1,
+      pendingUpgradesCount: 0,
+      contractSummary: null,
+    };
+
+    const unwrapped = recordingDomainApi({
+      organizations: [card],
+      totalOrganizations: 1,
+    });
+    await expect(
+      createFirebaseScreenApi(unwrapped.domainApi, "opaque-session").getAdminOverview(),
+    ).resolves.toEqual({
+      organizations: [card],
+      totalOrganizations: 1,
+    });
+
+    const wrapped = recordingDomainApi({
+      data: { organizations: [card], totalOrganizations: 1 },
+    });
+    await expect(
+      createFirebaseScreenApi(wrapped.domainApi, "opaque-session").getAdminOverview(),
+    ).resolves.toEqual({
+      organizations: [card],
+      totalOrganizations: 1,
+    });
+
+    const empty = recordingDomainApi(undefined);
+    await expect(
+      createFirebaseScreenApi(empty.domainApi, "opaque-session").getAdminOverview(),
+    ).resolves.toEqual({
+      organizations: [],
+      totalOrganizations: 0,
+    });
+  });
 });
 
 describe("Portal screen BFF routes", () => {

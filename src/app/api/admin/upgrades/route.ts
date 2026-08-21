@@ -6,11 +6,10 @@ import {
   requireAdminDualAccess,
 } from "@/lib/auth/admin-dual-access";
 import {
-  toAdminClientEntitlementRow,
   toAdminClientDetails,
   type FirebaseClientTeamWorkspace,
-  type FirebaseOrganization,
 } from "@/lib/firebase-admin-tenancy-bff";
+import { createFirebaseScreenApi } from "@/lib/firebase-screen-api";
 import { invalidateClientEntitlementCachesByClientId } from "@/lib/portal-cache-keys";
 import {
   getAdminClientEntitlements,
@@ -31,27 +30,13 @@ export async function GET() {
 
   try {
     if (isFirebaseAdminAuth(auth)) {
-      const response = await auth.domainApi.request<{
-        data: {
-          organizations: Array<{
-            id: string;
-            legalName: string;
-            activeSeats: number;
-            pendingUpgradesCount: number;
-            contractSummary: {
-              status: string;
-              seatCount: number;
-              startDate: string;
-              endDate: string | null;
-            } | null;
-          }>;
-        };
-      }>({
-        path: "/v1/screens/admin-overview",
-        firebaseSessionCookie: auth.firebaseSessionCookie,
-      });
+      const screens = createFirebaseScreenApi(
+        auth.domainApi,
+        auth.firebaseSessionCookie,
+      );
+      const screen = await screens.getAdminOverview();
 
-      const rows = response.data.organizations.map((org) => ({
+      const rows = screen.organizations.map((org) => ({
         id: org.id,
         name: org.legalName,
         status: "Active" as const,

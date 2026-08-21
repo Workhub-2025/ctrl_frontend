@@ -73,6 +73,36 @@ export type FirebaseAdminOverviewScreen = Readonly<{
   totalOrganizations: number;
 }>;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Domain returns `{ data: { organizations, totalOrganizations } }`. The Cloud
+ * Run BFF client already unwraps `data`, but a few callers still type the
+ * envelope. Accept either shape so `.organizations` is never read off undefined.
+ */
+export function normalizeAdminOverviewScreen(
+  payload: unknown,
+): FirebaseAdminOverviewScreen {
+  const record = isRecord(payload) ? payload : {};
+  const inner = Array.isArray(record.organizations)
+    ? record
+    : isRecord(record.data)
+      ? record.data
+      : {};
+  const organizations = Array.isArray(inner.organizations)
+    ? (inner.organizations as FirebaseAdminOverviewOrganizationCard[])
+    : [];
+  return {
+    organizations,
+    totalOrganizations:
+      typeof inner.totalOrganizations === "number"
+        ? inner.totalOrganizations
+        : organizations.length,
+  };
+}
+
 export type FirebaseAdminAuditEvent = Readonly<{
   id: string;
   actorUserId: string | null;
@@ -114,11 +144,12 @@ export function createFirebaseScreenApi(
         firebaseSessionCookie,
       });
     },
-    getAdminOverview() {
-      return domainApi.request<FirebaseAdminOverviewScreen>({
+    async getAdminOverview() {
+      const payload = await domainApi.request<unknown>({
         path: "/v1/screens/admin-overview",
         firebaseSessionCookie,
       });
+      return normalizeAdminOverviewScreen(payload);
     },
     getAdminAuditEvents(params?: { limit?: number; cursor?: string }) {
       const search = new URLSearchParams();
