@@ -81,6 +81,7 @@ function InvitationAcceptanceContent() {
   const linkedEmail = parseInvitationEmail(searchParams.get("email"));
   const token = parseInvitationToken(searchParams.get("token")) ?? "";
   const isCandidateInvitation = invitationType === "candidate";
+  const isAdminInvitation = invitationType === "admin";
   const [mode, setMode] = useState<AcceptMode>("create");
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState(linkedEmail ?? "");
@@ -93,7 +94,7 @@ function InvitationAcceptanceContent() {
   const resumeAttempted = useRef(false);
   const linkIsComplete =
     Boolean(invitationType && token) &&
-    (!isCandidateInvitation || Boolean(linkedEmail));
+    (invitationType === "organization" || Boolean(linkedEmail));
 
   const completeAfterSignIn = async (signedInEmail: string) => {
     const name =
@@ -267,7 +268,9 @@ function InvitationAcceptanceContent() {
               ? "Sign in with the existing password for this email, then we will attach the invitation."
               : isCandidateInvitation
                 ? "Create the Firebase account for the invited email, then activate your candidate assignment."
-                : "Create the Firebase account for the invited email, then activate its organisation membership."}
+                : isAdminInvitation
+                  ? "Create your password for the invited email, then activate CTRL Admin."
+                  : "Create the Firebase account for the invited email, then activate its organisation membership."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

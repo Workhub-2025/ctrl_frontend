@@ -95,7 +95,7 @@ export function invitationAcceptUrl(
   request: Request | NextRequest,
   token: string,
   email: string,
-  options?: { type?: "candidate" },
+  options?: { type?: "candidate" | "admin" },
 ): string {
   const url = new URL("/auth/accept-invitation", publicAppBaseUrl(request));
   if (options?.type) url.searchParams.set("type", options.type);

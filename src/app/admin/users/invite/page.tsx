@@ -106,7 +106,9 @@ export default function InviteAdminPage() {
       }
 
       setSuccess(
-        `Invite sent to ${payload.data?.email ?? form.email}. They'll receive an email to set their password.`,
+        payload.data?.alreadyQueued
+          ? `An invite is already on its way to ${payload.data?.email ?? form.email}.`
+          : `Invite sent to ${payload.data?.email ?? form.email}. They can accept it on CTRL — same as a client invitation.`,
       );
       setForm({
         firstName: "",
@@ -126,7 +128,7 @@ export default function InviteAdminPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Invite admin"
-        description="Send a set-password email and assign one or more scoped admin roles."
+        description="Send an Accept Invitation email and assign one or more scoped admin roles."
         action={
           <Button variant="outline" asChild>
             <Link href="/admin/users">
@@ -147,7 +149,7 @@ export default function InviteAdminPage() {
       <AdminPanel>
         <AdminSectionHeader
           title="New admin account"
-          description="Super admins can combine Support, Operations, and Billing. The invitee sets their own password via email."
+          description="Super admins can combine Support, Operations, and Billing. The invitee opens Accept invitation on ctrl-assess.co.uk and chooses a password."
         />
 
         <form onSubmit={handleSubmit} className="mt-6 grid gap-5 md:grid-cols-2">

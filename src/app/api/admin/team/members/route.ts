@@ -41,10 +41,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL?.replace(/\/$/, "");
-  const continueUrl = baseUrl ? `${baseUrl}/auth/login` : undefined;
   const result = await auth.domainApi.request<{
-    userId: string;
+    invitationId: string;
     email: string;
     roles: string[];
     alreadyRegistered: boolean;
@@ -58,7 +56,6 @@ export async function POST(request: Request) {
       email,
       displayName,
       roles,
-      ...(continueUrl ? { continueUrl } : {}),
     },
   });
 
@@ -66,7 +63,7 @@ export async function POST(request: Request) {
     {
       data: {
         email: result.email,
-        userId: result.userId,
+        invitationId: result.invitationId,
         roles: result.roles,
         deliveryQueued: result.deliveryQueued,
         alreadyQueued: result.alreadyQueued,

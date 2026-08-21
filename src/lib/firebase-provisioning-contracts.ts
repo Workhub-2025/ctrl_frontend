@@ -59,7 +59,7 @@ export type SessionAccessCodeClaimResponse = Readonly<{
   alreadyLinked: boolean;
 }>;
 
-export type InvitationLinkType = "organization" | "candidate";
+export type InvitationLinkType = "organization" | "candidate" | "admin";
 
 export function parseDisplayName(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -81,7 +81,9 @@ export function parseInvitationLinkType(value: unknown): InvitationLinkType | nu
   if (value === null || value === undefined || value === "") {
     return "organization";
   }
-  return value === "candidate" || value === "organization" ? value : null;
+  return value === "candidate" || value === "organization" || value === "admin"
+    ? value
+    : null;
 }
 
 export function parseInvitationEmail(value: unknown): string | null {
