@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Mail,
   RotateCcw,
-  ShieldCheck,
   ShieldOff,
   Ticket,
   TrendingUp,
@@ -121,13 +120,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: RotateCcw,
         permission: "recovery.read",
         isActive: (pathname) => pathname.startsWith("/admin/assessment-recovery"),
-      },
-      {
-        href: "/admin/settings",
-        label: "Security",
-        icon: ShieldCheck,
-        permission: "security.manage",
-        isActive: (pathname) => pathname.startsWith("/admin/settings"),
       },
       {
         href: "/admin/audit-logs",
