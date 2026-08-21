@@ -350,7 +350,7 @@ export default function AdminCommsPage() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Operational email"
-        description="Send platform announcements to selected users. Staff roles are selected by default — candidates are excluded unless you choose them explicitly."
+        description="Send platform announcements to selected users. The account sending is never included in list audiences. Use Single email to message a specific address."
         action={
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Mail className="h-4 w-4" />
@@ -541,7 +541,13 @@ export default function AdminCommsPage() {
             <div className="flex justify-end">
               <Button
                 onClick={() => void handleSend()}
-                disabled={sending || previewLoading || exceedsBatchLimit}
+                disabled={
+                  sending ||
+                  previewLoading ||
+                  exceedsBatchLimit ||
+                  recipientCount === null ||
+                  recipientCount === 0
+                }
               >
                 {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                 Send broadcast

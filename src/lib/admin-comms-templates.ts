@@ -100,23 +100,23 @@ export const ADMIN_BROADCAST_AUDIENCE_OPTIONS: Array<{
 }> = [
   {
     value: "staff",
-    label: "Staff roles (default)",
-    description: "Client contacts, hiring managers, and CTRL admins — excludes candidates.",
+    label: "CTRL staff (default)",
+    description: "CTRL admin accounts, excluding you.",
   },
   {
     value: "all",
     label: "All users",
-    description: "Every active account including candidates.",
+    description: "Every other active account, including candidates. You are not included.",
   },
   {
     value: "candidate",
     label: "Candidates",
-    description: "All active candidate accounts.",
+    description: "All active candidate accounts, excluding you.",
   },
   {
     value: "hiring_manager",
     label: "Hiring managers",
-    description: "All active hiring manager accounts.",
+    description: "All active hiring manager accounts, excluding you.",
   },
   {
     value: "clients",
