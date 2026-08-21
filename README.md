@@ -90,7 +90,7 @@ Copy `.env.example` to `.env.local`. Key server-only variables include:
 
 - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
 - Firebase public web identifiers
-- `FIREBASE_DOMAIN_API_URL`, `GOOGLE_WORKLOAD_IDENTITY_PROVIDER`,
+- `DOMAIN_API_URL` (with `FIREBASE_DOMAIN_API_URL` accepted during cutover), `GOOGLE_WORKLOAD_IDENTITY_PROVIDER`,
   `GOOGLE_SERVICE_ACCOUNT_EMAIL`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 - `BILLING_INTERNAL_SECRET`

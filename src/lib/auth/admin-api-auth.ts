@@ -10,7 +10,7 @@ import { BffAuthError } from "@/lib/auth/bff-route-errors";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { isElevatedAdminPortalRole } from "@/lib/auth/role-model";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import { getServerCmsJwt } from "@/legacy-cms/jwt";
 
 type FirebaseAdminApiAuthSuccess = {
@@ -18,7 +18,7 @@ type FirebaseAdminApiAuthSuccess = {
   session: NonNullable<Awaited<ReturnType<typeof getServerSession>>>;
   cmsJwt: null;
   firebaseSessionCookie: string;
-  domainApi: ReturnType<typeof createFirebaseDomainApi>;
+  domainApi: ReturnType<typeof createDomainApi>;
 };
 
 type LegacyAdminApiAuthSuccess = {

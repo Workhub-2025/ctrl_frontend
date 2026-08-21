@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import {
   parseDisplayName,
   parseInvitationToken,
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const data = await createFirebaseDomainApi().provisionFirebaseAccount({
+    const data = await createDomainApi().provisionFirebaseAccount({
       token,
       email,
       password,
@@ -74,4 +74,3 @@ export async function POST(request: Request) {
     return handleBffRouteError(error, "Account activation failed");
   }
 }
-

@@ -16,9 +16,10 @@ const SUBSCRIPTION_EVENTS = new Set([
   "customer.subscription.deleted",
 ]);
 
-function firebaseBillingConfigured() {
+function privateBillingApiConfigured() {
   return Boolean(
-    process.env.FIREBASE_DOMAIN_API_URL?.trim() &&
+    (process.env.DOMAIN_API_URL?.trim() ||
+      process.env.FIREBASE_DOMAIN_API_URL?.trim()) &&
       process.env.GOOGLE_WORKLOAD_IDENTITY_PROVIDER?.trim() &&
       process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim(),
   );
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
   // Firebase path: verify here, fulfil inside the private Function boundary via WIF
   // (no BILLING_INTERNAL_SECRET). Prefer the dedicated stripeWebhook Function URL
   // once STRIPE_WEBHOOK_SECRET exists in Secret Manager.
-  if (firebaseBillingConfigured()) {
+  if (privateBillingApiConfigured()) {
     try {
       const result = await ingestStripeEventViaFirebase(event);
       void invalidateAdminPlatformServerCache();

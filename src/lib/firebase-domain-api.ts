@@ -52,16 +52,21 @@ type FirebaseDomainEnvironment = Readonly<{
 function requiredServerEnvironment(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {
-    throw new Error(`Missing required Firebase domain API configuration: ${name}`);
+    throw new Error(`Missing required domain API configuration: ${name}`);
   }
   return value;
 }
 
 export function getFirebaseDomainEnvironment(): FirebaseDomainEnvironment {
-  const baseUrl = requiredServerEnvironment("FIREBASE_DOMAIN_API_URL").replace(
-    /\/$/,
-    "",
-  );
+  const configuredBaseUrl =
+    process.env.DOMAIN_API_URL?.trim() ||
+    process.env.FIREBASE_DOMAIN_API_URL?.trim();
+  if (!configuredBaseUrl) {
+    throw new Error(
+      "Missing required domain API configuration: DOMAIN_API_URL",
+    );
+  }
+  const baseUrl = configuredBaseUrl.replace(/\/$/, "");
   const workloadIdentityProvider = requiredServerEnvironment(
     "GOOGLE_WORKLOAD_IDENTITY_PROVIDER",
   );
@@ -70,7 +75,7 @@ export function getFirebaseDomainEnvironment(): FirebaseDomainEnvironment {
   );
 
   if (!baseUrl.startsWith("https://") && !baseUrl.startsWith("http://localhost")) {
-    throw new Error("FIREBASE_DOMAIN_API_URL must use HTTPS");
+    throw new Error("DOMAIN_API_URL must use HTTPS");
   }
   if (
     !workloadIdentityProvider.startsWith(
@@ -160,7 +165,7 @@ function createGoogleIdentityTokenProvider(
 }
 
 /**
- * `createFirebaseDomainApi()` runs per request, so both the Google clients and
+ * The domain API factory runs per request, so both the Google clients and
  * the token cache are held at module scope and keyed by the identity they were
  * built from. Nothing user-scoped is cached here.
  */

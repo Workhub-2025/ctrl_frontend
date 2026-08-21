@@ -7,7 +7,7 @@ const root = process.cwd();
 describe("assessment runtime BFF boundary", () => {
   it("authenticates the generic runtime proxy with the Firebase candidate session", () => {
     const source = readFileSync(
-      join(root, "src/lib/firebase-assessment-runtime-server.ts"),
+      join(root, "src/lib/assessment-runtime-server.ts"),
       "utf8",
     );
     expect(source).toContain('requireFirebaseSession("candidate")');

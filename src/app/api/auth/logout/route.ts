@@ -8,7 +8,7 @@ import {
   clearFirebaseSessionCookie,
   getFirebaseSessionCookie,
 } from "@/lib/firebase-session-server";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import { rejectRateLimitedMutation } from "@/lib/security/api-rate-limit";
 
 const wantsJsonResponse = (request: Request) =>
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   let upstreamRevoked = false;
   if (firebaseSessionCookie) {
     try {
-      await createFirebaseDomainApi().logout(firebaseSessionCookie);
+      await createDomainApi().logout(firebaseSessionCookie);
       upstreamRevoked = true;
     } catch (error) {
       // Local session material must still be cleared if the revocation service

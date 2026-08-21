@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import type { createDomainApi } from "@/lib/domain-api";
 import {
   PLATFORM_ASSESSMENT_SLUGS,
   isPlatformAssessmentSlug,
@@ -33,7 +33,7 @@ export type AssessmentVersionOption = Readonly<{
   description: string | null;
 }>;
 
-type DomainApi = ReturnType<typeof createFirebaseDomainApi>;
+type DomainApi = ReturnType<typeof createDomainApi>;
 
 export function isFirebaseAssessmentSlug(
   value: string,

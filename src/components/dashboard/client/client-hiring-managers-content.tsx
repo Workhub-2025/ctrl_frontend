@@ -34,7 +34,6 @@ import { PortalSidePanel } from "@/components/dashboard/portal/portal-workspace-
 import type { SeatSlot } from "@/hooks/use-client-portal";
 import { useClientPortal } from "@/context/client-portal-provider";
 import type { ClientHiringManagerSeat } from "@/services/client-portal.service";
-import { fetchInvitationAcceptLink } from "@/lib/copy-share-links";
 import { cn } from "@/lib/utils";
 
 export function ClientHiringManagersContent() {
@@ -59,16 +58,6 @@ export function ClientHiringManagersContent() {
     setInviteEmail(seat.accessCode?.invitedEmail ?? "");
     setSelectedSeat(seat);
     setLastInviteAcceptUrl(null);
-    if (seat.accessCode?.status === "reserved" && seat.accessCode.documentId) {
-      const invitationId = seat.accessCode.documentId;
-      void (async () => {
-        try {
-          setLastInviteAcceptUrl(await fetchInvitationAcceptLink(invitationId));
-        } catch {
-          setLastInviteAcceptUrl(null);
-        }
-      })();
-    }
   };
 
   const handleRelease = async (manager: ClientHiringManagerSeat) => {
@@ -265,7 +254,8 @@ export function ClientHiringManagersContent() {
                       </Button>
                       <p className="text-[11px] text-muted-foreground">
                         Share this link if the invitation email is delayed. It opens the accept
-                        page with the invite token and email prefilled.
+                        page with the invite token and email prefilled. Tokens are one-shot —
+                        copy the link now; it cannot be revealed later.
                       </p>
                     </div>
                   ) : null}

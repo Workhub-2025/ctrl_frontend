@@ -23,6 +23,14 @@ vi.mock("@/lib/security/upstash-rest", () => ({
 }));
 
 describe("portal cache invalidation F26 fixes", () => {
+  it("uses the persistence service generation when it is newer than the local cache", async () => {
+    await expect(
+      readHmOverviewOrgGeneration("org-persistence-generation-test", {
+        persistenceGeneration: "200",
+      }),
+    ).resolves.toBe("200");
+  });
+
   it("invalidateHmOverviewServerCache bumps org generation when organizationId is provided", async () => {
     const orgId = "org-hm-overview-test";
     const initialGen = await readHmOverviewOrgGeneration(orgId);

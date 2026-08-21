@@ -304,19 +304,6 @@ export async function POST(
       },
     });
 
-    await cmsRequest(
-      `/admin/billing/requests/${encodeURIComponent(String(billingRequestDocumentId))}/invoice-sent`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          stripeCheckoutSessionId: checkoutSession.id,
-          amountDuePence: amountPence,
-          currency,
-          checkoutUrl: checkoutSession.url,
-        }),
-      }
-    );
-
     void invalidateAdminPlatformServerCache();
 
     return NextResponse.json({

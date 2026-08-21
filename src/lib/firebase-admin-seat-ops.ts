@@ -77,9 +77,9 @@ export function seatSlotsFromWorkspace(
 }
 
 /**
- * Workflow token for Preview seat export → deactivate. Encodes org + seats +
- * issue time so downgrade can verify without a separate CMS export store.
- * Admin auth is the real gate; this only enforces the UI two-step flow.
+ * Workflow token shape check for Preview seat export → deactivate.
+ * Durable HMAC-signed refs (v2) are issued by domainApi; v1 remains for
+ * local unit tests of the two-step UI flow.
  */
 export function createSeatExportReference(
   organizationId: string,
@@ -99,7 +99,7 @@ export function assertSeatExportReference(
   exportReferenceId: string,
   seatNumbers: readonly number[],
 ): void {
-  let parsed: { v?: number; o?: string; s?: number[]; t?: number };
+  let parsed: { v?: number; o?: string; s?: number[]; t?: number; sig?: string };
   try {
     parsed = JSON.parse(
       Buffer.from(exportReferenceId, "base64url").toString("utf8"),
@@ -107,8 +107,11 @@ export function assertSeatExportReference(
   } catch {
     throw new Error("Export reference is invalid");
   }
-  if (parsed.v !== 1 || parsed.o !== organizationId) {
+  if ((parsed.v !== 1 && parsed.v !== 2) || parsed.o !== organizationId) {
     throw new Error("Export reference does not match this client");
+  }
+  if (parsed.v === 2 && typeof parsed.sig !== "string") {
+    throw new Error("Export reference is invalid");
   }
   const expected = [...seatNumbers].sort((a, b) => a - b).join(",");
   const actual = [...(parsed.s ?? [])].sort((a, b) => a - b).join(",");
@@ -140,6 +143,7 @@ export async function exportAdminSeats(input: {
   organizationId: string;
   seatNumbers: number[];
   adminEmail: string | null | undefined;
+  billingRequestId?: string;
 }) {
   if (input.seatNumbers.length === 0) {
     throw new Error("seatNumbers must include at least one valid seat");
@@ -156,20 +160,34 @@ export async function exportAdminSeats(input: {
     }
     return slot;
   });
-  const exportReferenceId = createSeatExportReference(
-    input.organizationId,
-    input.seatNumbers,
-  );
-  const emailedAt = new Date().toISOString();
+  const issued = await input.domainApi.request<{
+    exportReferenceId: string;
+    organizationId: string;
+    seatNumbers: number[];
+    issuedAt: string;
+    expiresAt: string;
+    deliveryQueued: boolean;
+  }>({
+    path: `/v1/admin/organizations/${encodeURIComponent(input.organizationId)}/seat-export-references`,
+    method: "POST",
+    firebaseSessionCookie: input.firebaseSessionCookie,
+    body: {
+      seatNumbers: selected.map((slot) => slot.seatNumber),
+      ...(input.billingRequestId
+        ? { billingRequestId: input.billingRequestId }
+        : {}),
+    },
+  });
   return {
-    exportReferenceId,
+    exportReferenceId: issued.exportReferenceId,
     clientDocumentId: input.organizationId,
-    seatNumbers: selected.map((slot) => slot.seatNumber),
+    seatNumbers: issued.seatNumbers,
     clientEmails: [] as string[],
     adminEmail: input.adminEmail ?? null,
-    emailedAt,
-    notice:
-      "Seat export recorded for Firebase Preview. Email delivery still depends on SMTP rotation.",
+    emailedAt: issued.issuedAt,
+    notice: issued.deliveryQueued
+      ? "Seat export queued for Resend delivery (requires RESEND_API_KEY). Use EXPORT_REFERENCE before deactivate."
+      : "Seat export recorded. Use EXPORT_REFERENCE before deactivate.",
   };
 }
 

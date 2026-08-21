@@ -33,7 +33,7 @@ function maxPortalCacheGeneration(left: string, right: string): string {
 
 export async function readHmOverviewOrgGeneration(
   organizationId: string,
-  options?: { firestoreGeneration?: string | null },
+  options?: { persistenceGeneration?: string | null },
 ): Promise<string> {
   const key = portalHmOverviewOrgGenerationKey(organizationId);
   let local = "0";
@@ -42,7 +42,7 @@ export async function readHmOverviewOrgGeneration(
   } else {
     local = memoryOrgGeneration.get(key) ?? "0";
   }
-  return maxPortalCacheGeneration(local, options?.firestoreGeneration ?? "0");
+  return maxPortalCacheGeneration(local, options?.persistenceGeneration ?? "0");
 }
 
 /**
@@ -64,9 +64,9 @@ export async function bumpHmOverviewOrgGeneration(
 }
 
 /**
- * Firebase-path invalidation entry point for tenant mutations. The legacy
- * Strapi path keys caches on the NextAuth `sub`, which does not exist on a
- * Firebase session, so BFF routes bump the org generation instead.
+ * Invalidation entry point for tenant mutations authenticated by Firebase.
+ * These routes key caches on the Firebase user ID, so BFF routes also bump the
+ * organization generation held by the private persistence service.
  */
 export async function invalidateOrganizationScreenCaches(
   organizationId?: string | null,
@@ -110,7 +110,7 @@ export async function invalidateClientEntitlementsServerCache(userSub?: string |
 }
 
 /**
- * Firebase-path client portal bust: entitlements/dashboard keys use
+ * Firebase-authenticated client portal bust: entitlements/dashboard keys use
  * `firebaseUid`, not NextAuth `sub` (domain userId).
  */
 export async function invalidateFirebaseClientPortalCaches(input: {

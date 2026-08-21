@@ -64,18 +64,10 @@ export async function copySessionAccessCode(sessionId: string): Promise<string> 
 }
 
 export async function fetchInvitationAcceptLink(invitationId: string): Promise<string> {
-  const response = await fetch(
-    `/api/client/invitations/${encodeURIComponent(invitationId)}/accept-link`,
-    { cache: "no-store" },
+  void invitationId;
+  throw new Error(
+    "Invitation tokens are one-shot. Copy the accept link shown after you send or resend the invite.",
   );
-  const body = (await response.json().catch(() => ({}))) as {
-    data?: { inviteAcceptUrl?: string };
-    error?: string;
-  };
-  if (!response.ok || !body.data?.inviteAcceptUrl) {
-    throw new Error(body.error || "Invite accept link could not be loaded");
-  }
-  return body.data.inviteAcceptUrl;
 }
 
 export async function copyInvitationAcceptLink(invitationId: string): Promise<string> {

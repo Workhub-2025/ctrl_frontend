@@ -362,7 +362,7 @@ export function toAdminOverviewFromOrganizations(
       {
         id: "firebase-tenancy-ready",
         title: "Firebase tenancy connected",
-        detail: `${organizations.length} organization${organizations.length === 1 ? "" : "s"} visible from Cloud Firestore.`,
+        detail: `${organizations.length} organization${organizations.length === 1 ? "" : "s"} visible from the platform database.`,
       },
     ],
     attentionRequired:
@@ -445,7 +445,7 @@ export function toAdminOverviewFromScreen(
       {
         id: "firebase-tenancy-ready",
         title: "Firebase tenancy connected",
-        detail: `${screen.totalOrganizations} organization${screen.totalOrganizations === 1 ? "" : "s"} visible from Cloud Firestore.`,
+        detail: `${screen.totalOrganizations} organization${screen.totalOrganizations === 1 ? "" : "s"} visible from the platform database.`,
       },
     ],
     attentionRequired:
@@ -522,7 +522,7 @@ function formatAuditTimestamp(value: string): string {
 }
 
 /**
- * Maps Firestore per-organization audit events into the admin audit-log row
+ * Maps per-organization persistence audit events into the admin audit-log row
  * shape the portal already renders. Events are sorted newest-first; platform
  * (org-less) events fall back to a "Platform-wide" client label.
  */

@@ -6,7 +6,7 @@ import {
 } from "@/lib/firebase-domain-api";
 
 const VALID_ENVIRONMENT = {
-  FIREBASE_DOMAIN_API_URL:
+  DOMAIN_API_URL:
     "https://europe-west2-ctrl-assess.cloudfunctions.net/domainApi",
   GOOGLE_WORKLOAD_IDENTITY_PROVIDER:
     "//iam.googleapis.com/projects/765430607081/locations/global/workloadIdentityPools/ctrl-staging-vercel/providers/vercel",
@@ -18,14 +18,14 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe("Firebase domain API environment", () => {
+describe("domain API environment", () => {
   it("accepts only the keyless WIF configuration", () => {
     for (const [name, value] of Object.entries(VALID_ENVIRONMENT)) {
       vi.stubEnv(name, value);
     }
 
     expect(getFirebaseDomainEnvironment()).toEqual({
-      baseUrl: VALID_ENVIRONMENT.FIREBASE_DOMAIN_API_URL,
+      baseUrl: VALID_ENVIRONMENT.DOMAIN_API_URL,
       workloadIdentityProvider:
         VALID_ENVIRONMENT.GOOGLE_WORKLOAD_IDENTITY_PROVIDER,
       invokerServiceAccount: VALID_ENVIRONMENT.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -36,9 +36,29 @@ describe("Firebase domain API environment", () => {
     for (const [name, value] of Object.entries(VALID_ENVIRONMENT)) {
       vi.stubEnv(name, value);
     }
-    vi.stubEnv("FIREBASE_DOMAIN_API_URL", "http://domain-api.example.test");
+    vi.stubEnv("DOMAIN_API_URL", "http://domain-api.example.test");
 
     expect(() => getFirebaseDomainEnvironment()).toThrow("must use HTTPS");
+  });
+
+  it("accepts the legacy Firebase URL during a zero-downtime environment cutover", () => {
+    vi.stubEnv("DOMAIN_API_URL", "");
+    vi.stubEnv(
+      "FIREBASE_DOMAIN_API_URL",
+      "https://europe-west2-ctrl-assess.cloudfunctions.net/domainApi",
+    );
+    vi.stubEnv(
+      "GOOGLE_WORKLOAD_IDENTITY_PROVIDER",
+      VALID_ENVIRONMENT.GOOGLE_WORKLOAD_IDENTITY_PROVIDER,
+    );
+    vi.stubEnv(
+      "GOOGLE_SERVICE_ACCOUNT_EMAIL",
+      VALID_ENVIRONMENT.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    );
+
+    expect(getFirebaseDomainEnvironment().baseUrl).toBe(
+      "https://europe-west2-ctrl-assess.cloudfunctions.net/domainApi",
+    );
   });
 });
 
@@ -119,4 +139,3 @@ describe("Google identity token cache", () => {
     expect(mint).toHaveBeenCalledTimes(2);
   });
 });
-

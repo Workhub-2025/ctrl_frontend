@@ -48,7 +48,7 @@ export async function GET(
 
     const generation = actorContext.organizationId
       ? await readHmOverviewOrgGeneration(actorContext.organizationId, {
-          firestoreGeneration: portalCache.generation,
+          persistenceGeneration: portalCache.generation,
         })
       : "0";
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import { BffAuthError } from "@/lib/auth/bff-route-errors";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 
@@ -218,7 +218,7 @@ export function platformPricingFromFirebasePrices(
 }
 
 export function createFirebaseBillingApi(
-  domainApi = createFirebaseDomainApi(),
+  domainApi = createDomainApi(),
   firebaseSessionCookie: string,
 ) {
   return {
@@ -559,7 +559,7 @@ export async function ingestStripeEventViaFirebase(event: unknown): Promise<{
   deduplicated?: boolean;
   status?: string;
 }> {
-  const domainApi = createFirebaseDomainApi();
+  const domainApi = createDomainApi();
   return domainApi.request({
     path: "/v1/internal/billing/stripe-events",
     method: "POST",

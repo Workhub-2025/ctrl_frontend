@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { attachFirebaseSessionProjection, resolveFirebaseSessionRole } from "@/lib/auth/firebase-session-projection";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import { CloudRunDomainError } from "@/lib/cloud-run-bff-client";
 import {
   FIREBASE_SESSION_CSRF_COOKIE_NAME,
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const domainApi = createFirebaseDomainApi();
+    const domainApi = createDomainApi();
     const exchanged = await domainApi.exchangeSession(payload.idToken);
     const maxAge = Math.min(
       FIREBASE_SESSION_MAX_AGE_SECONDS,

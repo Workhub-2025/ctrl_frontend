@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       .catch(() => ({ generation: "0" }));
     const generation = await readHmOverviewOrgGeneration(
       context.organizationId,
-      { firestoreGeneration: portalCache.generation },
+      { persistenceGeneration: portalCache.generation },
     );
 
     const data = await portalServerCacheGetOrSet(

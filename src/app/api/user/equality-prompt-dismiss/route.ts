@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 export async function POST(request: NextRequest) {
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     if (rejected) return rejected;
 
     const auth = await requireFirebaseSession();
-    const domainApi = createFirebaseDomainApi();
+    const domainApi = createDomainApi();
     const data = await domainApi.request({
       path: "/v1/profile/equality-prompt-dismiss",
       method: "POST",

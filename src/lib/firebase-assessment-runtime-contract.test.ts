@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const adapter = readFileSync(
-  new URL("./firebase-assessment-runtime-server.ts", import.meta.url),
+  new URL("./assessment-runtime-server.ts", import.meta.url),
   "utf8",
 );
 const runtimeRoute = readFileSync(
@@ -24,12 +24,12 @@ const hiringManagerReportRoute = readFileSync(
   "utf8",
 );
 
-describe("Firebase assessment runtime BFF", () => {
-  it("uses the named Firebase domain adapter without a Strapi credential", () => {
+describe("assessment runtime BFF", () => {
+  it("uses the persistence-neutral domain adapter without a Strapi credential", () => {
     expect(adapter).toContain('requireFirebaseSession("candidate")');
     expect(adapter).toContain("auth.domainApi.request");
     expect(adapter).not.toMatch(/strapi|jwt/i);
-    expect(runtimeRoute).toContain("forwardFirebaseAssessmentRuntime");
+    expect(runtimeRoute).toContain("forwardAssessmentRuntime");
     expect(runtimeRoute).not.toMatch(/strapi|jwt/i);
   });
 

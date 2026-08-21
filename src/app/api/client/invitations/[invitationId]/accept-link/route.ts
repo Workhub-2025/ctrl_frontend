@@ -5,7 +5,6 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { requireFirebaseTenancySession } from "@/lib/firebase-tenancy-bff";
-import { invitationAcceptUrl } from "@/lib/public-app-urls";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 
 export async function GET(
@@ -13,7 +12,7 @@ export async function GET(
   context: { params: Promise<{ invitationId: string }> },
 ) {
   try {
-    const { session, context: actor, tenancy } =
+    const { session, context: actor } =
       await requireFirebaseTenancySession("client");
     if (!actor.organizationId) {
       return NextResponse.json(
@@ -38,18 +37,14 @@ export async function GET(
       );
     }
 
-    const { invitationId } = await context.params;
-    const material = await tenancy.revealInvitationAcceptMaterial(invitationId);
-    return NextResponse.json({
-      data: {
-        inviteAcceptUrl: invitationAcceptUrl(
-          request,
-          material.token,
-          material.email,
-        ),
-        email: material.email,
+    void context;
+    return NextResponse.json(
+      {
+        error:
+          "Invitation tokens are one-shot. Copy the accept link from the create or resend response — it cannot be revealed again.",
       },
-    });
+      { status: 410 },
+    );
   } catch (error) {
     return handleBffRouteError(error, "Invite accept link could not be loaded");
   }

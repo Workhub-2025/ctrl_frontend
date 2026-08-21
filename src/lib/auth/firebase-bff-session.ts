@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { BffAuthError } from "@/lib/auth/bff-route-errors";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import { getFirebaseSessionCookie } from "@/lib/firebase-session-server";
 import {
   isElevatedAdminPortalRole,
@@ -49,7 +49,7 @@ export async function requireFirebaseSession(
   return {
     session,
     firebaseSessionCookie,
-    domainApi: createFirebaseDomainApi(),
+    domainApi: createDomainApi(),
     firebaseUid: session.user.firebaseUid ?? session.user.id,
   };
 }
@@ -66,6 +66,6 @@ export async function requireFirebaseProvisioningSession() {
   }
   return {
     firebaseSessionCookie,
-    domainApi: createFirebaseDomainApi(),
+    domainApi: createDomainApi(),
   };
 }

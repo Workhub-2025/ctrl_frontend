@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { forwardFirebaseAssessmentRuntime } from "@/lib/firebase-assessment-runtime-server";
+import { forwardAssessmentRuntime } from "@/lib/assessment-runtime-server";
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import { isSupportedAssessmentDeviceRequest } from "@/lib/assessment-device-eligibility";
 import { invalidateAfterAssessmentSubmit } from "@/lib/portal-cache-invalidation";
@@ -54,7 +54,7 @@ async function handle(request: NextRequest, context: RouteContext) {
     }
     const query = request.nextUrl.search;
     const body = ["POST", "PATCH"].includes(request.method) ? await request.text() : undefined;
-    const result = await forwardFirebaseAssessmentRuntime(
+    const result = await forwardAssessmentRuntime(
       request,
       `/assessment-runtime/${segments.map(encodeURIComponent).join("/")}${query}`,
       { method: request.method, ...(body ? { body } : {}) }

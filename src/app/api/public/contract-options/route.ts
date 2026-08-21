@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
 import { getCmsClient } from "@/legacy-cms/client";
 import { isFirebaseAuthProvider } from "@/lib/auth/auth-provider";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import {
   platformPricingFromFirebasePrices,
   type FirebasePriceRow,
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
     // prices over WIF (no user session) from the internal price feed and map
     // them into the same pricing shape the Strapi branch produces.
     if (isFirebaseAuthProvider()) {
-      const domainApi = createFirebaseDomainApi();
+      const domainApi = createDomainApi();
       const body = await domainApi.request<{ prices?: FirebasePriceRow[] }>({
         path: "/v1/internal/billing/prices",
       });

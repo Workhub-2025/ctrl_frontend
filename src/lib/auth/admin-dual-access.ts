@@ -12,13 +12,13 @@ import { requireFirebaseSession } from "@/lib/auth/firebase-bff-session";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { isElevatedAdminPortalRole } from "@/lib/auth/role-model";
 import { getServerCmsJwt } from "@/legacy-cms/jwt";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 
 type FirebaseAdminAuth = {
   mode: "firebase";
   session: NonNullable<Awaited<ReturnType<typeof getServerSession>>>;
   firebaseSessionCookie: string;
-  domainApi: ReturnType<typeof createFirebaseDomainApi>;
+  domainApi: ReturnType<typeof createDomainApi>;
 };
 
 type StrapiAdminAuth = {

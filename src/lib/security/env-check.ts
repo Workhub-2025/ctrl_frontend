@@ -35,10 +35,16 @@ export function warnIfProductionSecurityGaps() {
     "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
     "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
     "NEXT_PUBLIC_FIREBASE_APP_ID",
-    "FIREBASE_DOMAIN_API_URL",
     "GOOGLE_WORKLOAD_IDENTITY_PROVIDER",
     "GOOGLE_SERVICE_ACCOUNT_EMAIL",
   ].filter((name) => !process.env[name]?.trim());
+
+  if (
+    !process.env.DOMAIN_API_URL?.trim() &&
+    !process.env.FIREBASE_DOMAIN_API_URL?.trim()
+  ) {
+    requiredFirebaseVariables.push("DOMAIN_API_URL");
+  }
 
   if (requiredFirebaseVariables.length > 0) {
     throw new Error(

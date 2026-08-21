@@ -5,7 +5,7 @@ import {
   parseInvitationEmail,
   parseInvitationToken,
 } from "@/lib/firebase-provisioning-contracts";
-import { createFirebaseDomainApi } from "@/lib/firebase-domain-api";
+import { createDomainApi } from "@/lib/domain-api";
 import {
   accountProvisioningRateLimit,
   rejectRateLimitedMutation,
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const data = await createFirebaseDomainApi().provisionCandidateAccount({
+    const data = await createDomainApi().provisionCandidateAccount({
       token,
       email,
       password,
