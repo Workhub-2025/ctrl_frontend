@@ -31,12 +31,19 @@ import {
   portalInputClass,
   portalPanelClass,
   portalPanelNestedClass,
+  portalToneBadge,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import { DEFAULT_PLATFORM_ASSESSMENTS } from "@/lib/client/entitlements";
+import {
+  contractPlanLabel,
+  isContractIncludedDeliveryFeature,
+} from "@/lib/client/contract-tier-inclusions";
 
 type EntitlementClient = {
   id: string;
   name: string;
   status: string;
+  plan?: string;
   seatsUsed: number;
   seatsAllowed: number;
   primaryContact: string;
@@ -47,6 +54,7 @@ type EntitlementClient = {
     startDate: string | null;
     endDate: string | null;
     seatCount: number;
+    tier?: string;
     notes: string;
   } | null;
 };
@@ -75,6 +83,20 @@ function normalizeContractStatus(status?: string | null): ContractStatus {
     return status as ContractStatus;
   }
   return "active";
+}
+
+function clientTier(client: EntitlementClient) {
+  return client.activeContract?.tier ?? null;
+}
+
+function clientFeatures(client: EntitlementClient) {
+  return Object.fromEntries(
+    FEATURES.map((feature) => [
+      feature.key,
+      client.features?.[feature.key] === true ||
+        isContractIncludedDeliveryFeature(clientTier(client), feature.key),
+    ]),
+  ) as Record<string, boolean>;
 }
 
 function initialSeatCount(client: EntitlementClient) {
@@ -123,12 +145,7 @@ export default function UpgradeRequestsPage() {
           client.id,
           {
             seatCount: initialSeatCount(client),
-            features: {
-              ...(client.features ?? {}),
-              ...Object.fromEntries(
-                FEATURES.map((feature) => [feature.key, client.features?.[feature.key] === true])
-              ),
-            },
+            features: clientFeatures(client),
             notes: client.activeContract?.notes ?? "",
             status: normalizeContractStatus(client.activeContract?.status),
           },
@@ -151,15 +168,39 @@ export default function UpgradeRequestsPage() {
   );
 
   const selectedDraft = selectedClient ? drafts[selectedClient.id] : null;
+  const selectedTier = selectedClient ? clientTier(selectedClient) : null;
+  const selectedPlan = selectedClient
+    ? contractPlanLabel(selectedTier) !== "No contract"
+      ? contractPlanLabel(selectedTier)
+      : selectedClient.plan ?? "No contract"
+    : "No contract";
+
+  const includedFeatures = useMemo(
+    () =>
+      FEATURES.filter((feature) =>
+        isContractIncludedDeliveryFeature(selectedTier, feature.key),
+      ),
+    [selectedTier],
+  );
 
   const activeFeatures = useMemo(
-    () => FEATURES.filter((feature) => selectedDraft?.features?.[feature.key] === true),
-    [selectedDraft]
+    () =>
+      FEATURES.filter(
+        (feature) =>
+          selectedDraft?.features?.[feature.key] === true &&
+          !isContractIncludedDeliveryFeature(selectedTier, feature.key),
+      ),
+    [selectedDraft, selectedTier],
   );
 
   const availableFeatures = useMemo(
-    () => FEATURES.filter((feature) => selectedDraft?.features?.[feature.key] !== true),
-    [selectedDraft]
+    () =>
+      FEATURES.filter(
+        (feature) =>
+          selectedDraft?.features?.[feature.key] !== true &&
+          !isContractIncludedDeliveryFeature(selectedTier, feature.key),
+      ),
+    [selectedDraft, selectedTier],
   );
 
   const pendingChanges = useMemo(() => {
@@ -176,7 +217,10 @@ export default function UpgradeRequestsPage() {
     }
 
     for (const feature of FEATURES) {
-      const before = selectedClient.features?.[feature.key] === true;
+      if (isContractIncludedDeliveryFeature(clientTier(selectedClient), feature.key)) {
+        continue;
+      }
+      const before = clientFeatures(selectedClient)[feature.key] === true;
       const after = selectedDraft.features?.[feature.key] === true;
       if (before !== after) {
         changes.push(`${after ? "Activate" : "Deactivate"} ${feature.label}`);
@@ -380,13 +424,21 @@ export default function UpgradeRequestsPage() {
                     <h2 className="text-lg font-bold font-display text-foreground">{selectedClient.name}</h2>
                     <p className="text-xs text-muted-foreground">{selectedClient.primaryContact}</p>
                   </div>
-                  <Badge variant="outline" className={cn("rounded-lg px-2 py-0.5 font-semibold", portalBadgeClass)}>{selectedClient.status}</Badge>
+                  <Badge variant="outline" className={cn("rounded-lg px-2 py-0.5 font-semibold", portalToneBadge(selectedClient.status))}>{selectedClient.status}</Badge>
                 </div>
                 <div className="grid gap-3 grid-cols-3 pt-1">
                   <MiniStat label="Current HM seats" value={seatSummary(selectedClient)} />
-                  <MiniStat label="Active features" value={activeFeatures.length} />
-                  <MiniStat label="Contract" value={selectedClient.activeContract?.status ?? "None"} />
+                  <MiniStat
+                    label="Active features"
+                    value={includedFeatures.length + activeFeatures.length}
+                  />
+                  <MiniStat label="Contract" value={selectedPlan} />
                 </div>
+                {selectedTier === "founder" ? (
+                  <p className="pt-1 text-xs text-muted-foreground/90">
+                    Founder loyalty: 33% off paid seats, delivery add-ons, and premium assessments, including later upgrades.
+                  </p>
+                ) : null}
                 {!selectedClient.activeContract && (
                   <div className={cn(portalAlertInfoClass, "mt-2 p-4 text-xs")}>
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -460,24 +512,36 @@ export default function UpgradeRequestsPage() {
                 </div>
 
                 <div className="grid gap-5 lg:grid-cols-2 pt-2">
-                  <FeatureList
-                    title="Available Features"
-                    description="Not currently active for this client."
-                    empty="All features are active."
-                    features={availableFeatures}
-                    actionLabel="Activate"
-                    actionIcon="plus"
-                    onAction={(featureKey) => setFeatureState(selectedClient.id, featureKey, true)}
-                  />
-                  <FeatureList
-                    title="Active Features"
-                    description="Enabled for this client."
-                    empty="No optional features are active."
-                    features={activeFeatures}
-                    actionLabel="Remove"
-                    actionIcon="minus"
-                    onAction={(featureKey) => setFeatureState(selectedClient.id, featureKey, false)}
-                  />
+                  <div className="space-y-5">
+                    <FeatureList
+                      title="Included with contract"
+                      description={`${selectedPlan} includes these delivery modes. Core assessments follow the live catalogue automatically.`}
+                      empty="This contract does not include optional delivery modes."
+                      features={includedFeatures}
+                      locked
+                    />
+                    <CoreAssessmentList />
+                  </div>
+                  <div className="space-y-5">
+                    <FeatureList
+                      title="Available add-ons"
+                      description="Paid upgrades that are not part of this contract."
+                      empty="No optional add-ons left to activate."
+                      features={availableFeatures}
+                      actionLabel="Activate"
+                      actionIcon="plus"
+                      onAction={(featureKey) => setFeatureState(selectedClient.id, featureKey, true)}
+                    />
+                    <FeatureList
+                      title="Purchased add-ons"
+                      description="Optional features unlocked for this client."
+                      empty="No optional add-ons are active."
+                      features={activeFeatures}
+                      actionLabel="Remove"
+                      actionIcon="minus"
+                      onAction={(featureKey) => setFeatureState(selectedClient.id, featureKey, false)}
+                    />
+                  </div>
                 </div>
               </div>
             </AdminPanel>
@@ -534,14 +598,16 @@ function FeatureList({
   actionLabel,
   actionIcon,
   onAction,
+  locked = false,
 }: {
   title: string;
   description: string;
   empty: string;
   features: Array<(typeof FEATURES)[number]>;
-  actionLabel: string;
-  actionIcon: "plus" | "minus";
-  onAction: (featureKey: string) => void;
+  actionLabel?: string;
+  actionIcon?: "plus" | "minus";
+  onAction?: (featureKey: string) => void;
+  locked?: boolean;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/10">
@@ -559,13 +625,45 @@ function FeatureList({
                 <p className="text-sm font-semibold text-foreground">{feature.label}</p>
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">{feature.group}</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => onAction(feature.key)} className="rounded-lg h-8 gap-1.5 text-xs font-semibold">
-                {actionIcon === "plus" ? <Plus className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
-                {actionLabel}
-              </Button>
+              {locked ? (
+                <Badge variant="outline" className={cn("rounded-lg px-2 py-0.5 text-[10px] font-semibold", portalToneBadge("active"))}>
+                  Included
+                </Badge>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => onAction?.(feature.key)} className="rounded-lg h-8 gap-1.5 text-xs font-semibold">
+                  {actionIcon === "plus" ? <Plus className="h-3.5 w-3.5" /> : <Minus className="h-3.5 w-3.5" />}
+                  {actionLabel}
+                </Button>
+              )}
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+function CoreAssessmentList() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/10">
+      <div className="border-b border-border/40 bg-muted/20 p-4">
+        <h2 className="text-sm font-bold text-foreground">Core assessments</h2>
+        <p className="mt-1 text-xs text-muted-foreground/80">
+          Every live contract receives every core assessment as it is released. Premium add-ons stay paid.
+        </p>
+      </div>
+      <div className="space-y-2 p-4">
+        {DEFAULT_PLATFORM_ASSESSMENTS.map((assessment) => (
+          <div key={assessment.key} className={cn(portalPanelNestedClass, "flex items-center justify-between gap-3 p-3.5")}>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{assessment.title}</p>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">{assessment.label}</p>
+            </div>
+            <Badge variant="outline" className={cn("rounded-lg px-2 py-0.5 text-[10px] font-semibold", portalToneBadge("active"))}>
+              Core
+            </Badge>
+          </div>
+        ))}
       </div>
     </div>
   );

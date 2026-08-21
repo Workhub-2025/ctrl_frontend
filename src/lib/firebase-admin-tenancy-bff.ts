@@ -10,6 +10,8 @@ import type {
   AdminUserRow,
   AdminUsersSummary,
 } from "@/types/admin-platform";
+import type { FirebaseAdminOverviewOrganizationCard } from "@/lib/firebase-screen-api";
+import { contractTierInclusions } from "@/lib/client/contract-tier-inclusions";
 import {
   mapPlatformRolesToAdminPortalRole,
   type AdminPortalRoleType,
@@ -91,6 +93,7 @@ export type FirebaseDirectoryUser = Readonly<{
   >;
   createdAt: string;
   updatedAt: string;
+  lastSignInAt?: string | null;
 }>;
 
 export type FirebaseAssessmentRelease = Readonly<{
@@ -100,21 +103,6 @@ export type FirebaseAssessmentRelease = Readonly<{
   status: string;
   publishedAt: string;
 }>;
-
-function clientStatus(
-  organization: FirebaseOrganization,
-  workspace?: FirebaseClientTeamWorkspace,
-): AdminClientRow["status"] {
-  if (organization.status === "suspended") return "Paused";
-  if (organization.status === "closed") return "Expired";
-  const hasClientContact = (workspace?.memberships ?? []).some(
-    (membership) =>
-      membership.status === "active" &&
-      (membership.role === "client_owner" || membership.role === "client_admin"),
-  );
-  if (!hasClientContact) return "Awaiting signup";
-  return "Active";
-}
 
 function primaryContact(workspace?: FirebaseClientTeamWorkspace): string {
   const contact = (workspace?.memberships ?? []).find(
@@ -150,12 +138,180 @@ function inviteStatus(
   return "none";
 }
 
+const TIER_LABELS: Record<string, string> = {
+  essential: "Essential",
+  professional: "Professional",
+  founder: "Founder",
+};
+
+type ContractHint = {
+  id?: string;
+  documentId?: string;
+  tier?: string;
+  status: string;
+  seatCount?: number;
+  startDate?: string | null;
+  endDate?: string | null;
+  paymentStatus?: string;
+} | null;
+
+export function formatAdminTimestamp(value: string | null | undefined): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+export function contractPlanLabel(tier?: string | null): string {
+  if (!tier) return "No contract";
+  return (
+    TIER_LABELS[tier] ??
+    tier.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+  );
+}
+
+export function mapContractBillingStatus(
+  status?: string | null,
+): AdminClientRow["billingStatus"] {
+  const value = (status ?? "").toLowerCase();
+  if (value === "active") return "Active";
+  if (value === "expired" || value === "canceled" || value === "cancelled") {
+    return "Expired";
+  }
+  if (value === "paused" || value === "suspended" || value === "soft_locked") {
+    return "Paused";
+  }
+  return "Not configured";
+}
+
+function mapOnboardingStatus(
+  organizationStatus: string | undefined,
+  hasClientContact: boolean,
+  contractStatus: string | null | undefined,
+): AdminClientRow["status"] {
+  if (organizationStatus === "suspended") return "Paused";
+  if (organizationStatus === "closed") return "Expired";
+  if (!hasClientContact) return "Awaiting signup";
+  if (!contractStatus) return "Needs contract";
+  if (contractStatus === "draft" || contractStatus === "pending_payment") {
+    return "Awaiting payment";
+  }
+  if (contractStatus === "expired") return "Expired";
+  return "Active";
+}
+
+function mapInviteStatus(
+  value?: string | null,
+): AdminClientRow["clientInviteStatus"] {
+  if (value === "pending") return "available";
+  if (value === "accepted") return "used";
+  if (value === "expired") return "expired";
+  if (value === "revoked") return "revoked";
+  if (value === "available" || value === "used" || value === "none") return value;
+  return "none";
+}
+
+export function preferredContract<T extends { status: string; endDate?: string | null }>(
+  contracts: readonly T[],
+): T | null {
+  const rank = (status: string) => {
+    if (status === "active") return 0;
+    if (status === "pending_payment") return 1;
+    if (status === "draft") return 2;
+    if (status === "expired") return 3;
+    return 4;
+  };
+  const sorted = [...contracts].sort((left, right) => {
+    const byRank = rank(left.status) - rank(right.status);
+    if (byRank !== 0) return byRank;
+    return (right.endDate ?? "").localeCompare(left.endDate ?? "");
+  });
+  return sorted[0] ?? null;
+}
+
+export function toAdminClientRowFromOverviewCard(
+  org: FirebaseAdminOverviewOrganizationCard,
+): AdminClientRow {
+  const hasClientContact = org.hasClientContact ?? true;
+  const invite = mapInviteStatus(org.clientInviteStatus);
+  const status = mapOnboardingStatus(
+    org.status,
+    hasClientContact,
+    org.contractSummary?.status,
+  );
+  return {
+    id: org.id,
+    name: org.legalName,
+    status,
+    plan: contractPlanLabel(org.contractSummary?.tier),
+    seatsUsed: org.activeSeats,
+    seatsAllowed: org.contractSummary?.seatCount ?? org.activeSeats,
+    enabledAssessments: [],
+    billingStatus: mapContractBillingStatus(org.contractSummary?.status),
+    primaryContact:
+      org.primaryContactName ||
+      org.primaryContactEmail ||
+      (hasClientContact ? "Client contact" : "No primary contact"),
+    lastActivity: formatAdminTimestamp(org.updatedAt),
+    pendingCampaignApprovals: org.pendingUpgradesCount,
+    hasClientContact,
+    clientInviteStatus: invite,
+    clientInviteExpiresAt: org.clientInviteExpiresAt ?? null,
+    canGenerateClientCode:
+      !hasClientContact && invite === "none" && status !== "Paused",
+  };
+}
+
+export function toAdminEntitlementRowsFromScreen(
+  screen:
+    | { organizations?: readonly FirebaseAdminOverviewOrganizationCard[] }
+    | null
+    | undefined,
+): AdminClientEntitlementRow[] {
+  return (screen?.organizations ?? []).map((org) => {
+    const row = toAdminClientRowFromOverviewCard(org);
+    const inclusions = contractTierInclusions(org.contractSummary?.tier);
+    return {
+      ...row,
+      activeContract: org.contractSummary
+        ? {
+            documentId: org.contractSummary.id ?? org.id,
+            status: org.contractSummary.status,
+            startDate: org.contractSummary.startDate,
+            endDate: org.contractSummary.endDate,
+            seatCount: org.contractSummary.seatCount,
+            tier: org.contractSummary.tier ?? "professional",
+            notes: "",
+            paymentStatus: org.contractSummary.paymentStatus ?? "not_required",
+          }
+        : null,
+      features: {
+        deliveryRemote:
+          org.features?.deliveryRemote === true || inclusions.deliveryRemote,
+        deliveryHybrid:
+          org.features?.deliveryHybrid === true || inclusions.deliveryHybrid,
+        assessmentRecovery: org.features?.assessmentRecovery === true,
+        additionalAssessmentSlugs: [
+          ...(org.features?.additionalAssessmentSlugs ?? []),
+        ],
+      },
+    };
+  });
+}
+
 export function toAdminClientRow(
   organization: FirebaseOrganization,
   workspace?: FirebaseClientTeamWorkspace,
+  contract?: ContractHint,
 ): AdminClientRow {
-  const status = clientStatus(organization, workspace);
-  const seatsAllowed = workspace?.seatSummary.limit ?? 0;
+  const seatsAllowed =
+    contract?.seatCount ?? workspace?.seatSummary.limit ?? 0;
   const seatsUsed = workspace?.seatSummary.used ?? 0;
   const hasClientContact = (workspace?.memberships ?? []).some(
     (membership) =>
@@ -163,17 +319,22 @@ export function toAdminClientRow(
       (membership.role === "client_owner" || membership.role === "client_admin"),
   );
   const clientInvite = inviteStatus(workspace);
+  const status = mapOnboardingStatus(
+    organization.status,
+    hasClientContact,
+    contract?.status,
+  );
   return {
     id: organization.id,
     name: organization.legalName,
     status,
-    plan: "Firebase tenancy",
+    plan: contractPlanLabel(contract?.tier),
     seatsUsed,
     seatsAllowed,
     enabledAssessments: [],
-    billingStatus: "Not configured",
+    billingStatus: mapContractBillingStatus(contract?.status),
     primaryContact: primaryContact(workspace),
-    lastActivity: organization.updatedAt,
+    lastActivity: formatAdminTimestamp(organization.updatedAt),
     pendingCampaignApprovals: 0,
     hasClientContact,
     clientInviteStatus: clientInvite,
@@ -191,8 +352,9 @@ export function toAdminClientRow(
 
 export function toAdminClientDetails(
   workspace: FirebaseClientTeamWorkspace,
+  contract?: ContractHint,
 ): AdminClientDetails {
-  const row = toAdminClientRow(workspace.organization, workspace);
+  const row = toAdminClientRow(workspace.organization, workspace, contract);
   const seatEntitlement = workspace.entitlements.find(
     (entitlement) =>
       entitlement.entitlementKey === "hiring_manager_seats" &&
@@ -228,20 +390,33 @@ export function toAdminClientDetails(
     ),
     createdAt: workspace.organization.createdAt,
     updatedAt: workspace.organization.updatedAt,
-    activeContract: seatEntitlement
+    activeContract: contract
       ? {
-          documentId: seatEntitlement.id,
-          status: workspace.organization.status,
-          startDate: seatEntitlement.validFrom,
-          endDate: seatEntitlement.validUntil,
-          seatCount: seatEntitlement.quantity,
-          tier: "professional",
-          notes: `Source: ${seatEntitlement.source}`,
-          paymentStatus: "not_required",
+          documentId: contract.documentId ?? contract.id ?? workspace.organization.id,
+          status: contract.status,
+          startDate: contract.startDate ?? null,
+          endDate: contract.endDate ?? null,
+          seatCount: contract.seatCount ?? seatEntitlement?.quantity ?? 0,
+          tier: contract.tier ?? "professional",
+          notes: "",
+          paymentStatus: contract.paymentStatus ?? "not_required",
           assessmentDataRetentionMonths: null,
           effectiveAssessmentDataRetentionMonths: 36,
         }
-      : null,
+      : seatEntitlement
+        ? {
+            documentId: seatEntitlement.id,
+            status: workspace.organization.status,
+            startDate: seatEntitlement.validFrom,
+            endDate: seatEntitlement.validUntil,
+            seatCount: seatEntitlement.quantity,
+            tier: "professional",
+            notes: `Source: ${seatEntitlement.source}`,
+            paymentStatus: "not_required",
+            assessmentDataRetentionMonths: null,
+            effectiveAssessmentDataRetentionMonths: 36,
+          }
+        : null,
     users: workspace.memberships
       .filter((membership) => membership.status === "active")
       .map((membership) => toAdminUserFromMembership(membership, workspace)),
@@ -270,7 +445,7 @@ function toAdminUserFromMembership(
       membership.role === "hiring_manager" ? "Hiring Manager" : "Client Contact",
     client: workspace.organization.legalName,
     status: membership.status === "active" ? "Active" : "Disabled",
-    lastLogin: membership.createdAt,
+    lastLogin: formatAdminTimestamp(membership.createdAt),
   };
 }
 
@@ -296,6 +471,19 @@ export function toAdminClientEntitlementRow(
   };
 }
 
+function directoryUserStatus(
+  user: FirebaseDirectoryUser,
+): AdminUserRow["status"] {
+  if (user.accountStatus === "suspended" || user.accountStatus === "closed") {
+    return "Disabled";
+  }
+  if (user.lastSignInAt === undefined) {
+    return user.accountStatus === "active" ? "Active" : "Disabled";
+  }
+  if (!user.lastSignInAt) return "Invited";
+  return "Active";
+}
+
 export function toAdminUsersSummary(
   users: readonly FirebaseDirectoryUser[],
 ): AdminUsersSummary {
@@ -312,13 +500,13 @@ export function toAdminUsersSummary(
             ? "Hiring Manager"
             : "Candidate",
     client: user.organizationName ?? (user.portalRole === "admin" ? "CTRL Internal" : "Unassigned"),
-    status:
-      user.accountStatus === "active"
-        ? "Active"
-        : user.accountStatus === "suspended"
-          ? "Disabled"
-          : "Disabled",
-    lastLogin: user.updatedAt,
+    status: directoryUserStatus(user),
+    lastLogin:
+      user.lastSignInAt === undefined
+        ? formatAdminTimestamp(user.updatedAt)
+        : user.lastSignInAt
+          ? formatAdminTimestamp(user.lastSignInAt)
+          : "Never",
   }));
 
   return {
@@ -358,108 +546,92 @@ export function toAdminOverviewFromOrganizations(
     availableClientCodes: rows.filter((row) => row.canGenerateClientCode).length,
     contractsExpiringSoon: 0,
     seatUsage: rows,
-    recentActivity: [
-      {
-        id: "firebase-tenancy-ready",
-        title: "Firebase tenancy connected",
-        detail: `${organizations.length} organisation${organizations.length === 1 ? "" : "s"} visible from the platform database.`,
-      },
-    ],
+    recentActivity: rows.slice(0, 5).map((row) => ({
+      id: row.id,
+      title: row.name,
+      detail: `${row.plan} · ${row.billingStatus}`,
+    })),
     attentionRequired:
       organizations.length === 0
         ? [
             {
-              id: "firebase-no-organizations",
+              id: "no-organizations",
               title: "No organisations yet",
-              detail:
-                "Create a client from the organisations page. Billing and campaign aggregates remain pending until Wave 5.",
+              detail: "Create a client from the organisations page.",
             },
           ]
-        : [
-            {
-              id: "firebase-billing-pending",
-              title: "Commercial analytics pending",
-              detail:
-                "Contracts, invoices and revenue analytics still use the Wave 5 billing path and are not shown here.",
-            },
-          ],
+        : rows
+            .filter(
+              (row) =>
+                row.status === "Awaiting signup" ||
+                row.status === "Needs contract" ||
+                row.status === "Awaiting payment",
+            )
+            .slice(0, 5)
+            .map((row) => ({
+              id: `${row.id}-attention`,
+              title: row.name,
+              detail: row.status,
+            })),
   };
 }
 
 export function toAdminOverviewFromScreen(
   screen: {
-    organizations?: ReadonlyArray<{
-      id: string;
-      legalName: string;
-      activeSeats: number;
-      pendingUpgradesCount: number;
-      contractSummary: {
-        status: string;
-        seatCount: number;
-        startDate: string;
-        endDate: string | null;
-      } | null;
-    }>;
+    organizations?: readonly FirebaseAdminOverviewOrganizationCard[];
     totalOrganizations?: number;
   } | null | undefined,
 ): AdminOverview {
   const organizations = screen?.organizations ?? [];
   const totalOrganizations = screen?.totalOrganizations ?? organizations.length;
-  const rows: AdminClientRow[] = organizations.map((org) => ({
-    id: org.id,
-    name: org.legalName,
-    status: "Active",
-    plan: "Firebase tenancy",
-    seatsUsed: org.activeSeats,
-    seatsAllowed: org.contractSummary?.seatCount ?? org.activeSeats,
-    enabledAssessments: [],
-    billingStatus: org.contractSummary
-      ? org.contractSummary.status === "active"
-        ? "Active"
-        : org.contractSummary.status === "paused"
-          ? "Paused"
-          : org.contractSummary.status === "expired"
-            ? "Expired"
-            : "Not configured"
-      : "Not configured",
-    primaryContact: "Organisation contact",
-    lastActivity: new Date().toISOString(),
-    pendingCampaignApprovals: org.pendingUpgradesCount,
-    hasClientContact: true,
-    clientInviteStatus: "none" as const,
-    clientInviteExpiresAt: null,
-    canGenerateClientCode: false,
-  }));
-
-  const activeClients = rows.length;
+  const rows = organizations.map(toAdminClientRowFromOverviewCard);
+  const now = Date.now();
+  const sixtyDays = 60 * 24 * 60 * 60 * 1000;
 
   return {
-    activeClients,
-    awaitingClientSignups: 0,
+    activeClients: rows.filter((row) => row.status === "Active").length,
+    awaitingClientSignups: rows.filter((row) => row.status === "Awaiting signup")
+      .length,
     pendingCampaignApprovals: organizations.reduce(
-      (sum, o) => sum + o.pendingUpgradesCount,
+      (sum, org) => sum + org.pendingUpgradesCount,
       0,
     ),
-    availableClientCodes: 0,
-    contractsExpiringSoon: 0,
+    availableClientCodes: rows.filter((row) => row.canGenerateClientCode).length,
+    contractsExpiringSoon: organizations.filter((org) => {
+      if (org.contractSummary?.status !== "active" || !org.contractSummary.endDate) {
+        return false;
+      }
+      const end = Date.parse(org.contractSummary.endDate);
+      return !Number.isNaN(end) && end >= now && end <= now + sixtyDays;
+    }).length,
     seatUsage: rows,
-    recentActivity: [
-      {
-        id: "firebase-tenancy-ready",
-        title: "Firebase tenancy connected",
-        detail: `${totalOrganizations} organisation${totalOrganizations === 1 ? "" : "s"} visible from the platform database.`,
-      },
-    ],
+    recentActivity: rows.slice(0, 5).map((row) => ({
+      id: row.id,
+      title: row.name,
+      detail: `${row.plan} · ${row.billingStatus}`,
+    })),
     attentionRequired:
       totalOrganizations === 0
         ? [
             {
-              id: "firebase-no-organizations",
+              id: "no-organizations",
               title: "No organisations yet",
               detail: "Create a client from the organisations page.",
             },
           ]
-        : [],
+        : rows
+            .filter(
+              (row) =>
+                row.status === "Awaiting signup" ||
+                row.status === "Needs contract" ||
+                row.status === "Awaiting payment",
+            )
+            .slice(0, 5)
+            .map((row) => ({
+              id: `${row.id}-attention`,
+              title: row.name,
+              detail: row.status,
+            })),
   };
 }
 

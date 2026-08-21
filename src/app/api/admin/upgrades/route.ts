@@ -5,6 +5,7 @@ import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import {
   toAdminClientDetails,
+  toAdminEntitlementRowsFromScreen,
   type FirebaseClientTeamWorkspace,
 } from "@/lib/firebase-admin-tenancy-bff";
 import { createFirebaseScreenApi } from "@/lib/firebase-screen-api";
@@ -27,47 +28,9 @@ export async function GET() {
       auth.firebaseSessionCookie,
     );
     const screen = await screens.getAdminOverview();
-
-    const rows = screen.organizations.map((org) => ({
-        id: org.id,
-        name: org.legalName,
-        status: "Active" as const,
-        plan: "Firebase tenancy",
-        seatsUsed: org.activeSeats,
-        seatsAllowed: org.contractSummary?.seatCount ?? org.activeSeats,
-        enabledAssessments: [],
-        billingStatus: org.contractSummary
-          ? org.contractSummary.status === "active"
-            ? ("Active" as const)
-            : org.contractSummary.status === "paused"
-              ? ("Paused" as const)
-              : org.contractSummary.status === "expired"
-                ? ("Expired" as const)
-                : ("Not configured" as const)
-          : ("Not configured" as const),
-        primaryContact: "Organisation contact",
-        lastActivity: new Date().toISOString(),
-        pendingCampaignApprovals: org.pendingUpgradesCount,
-        hasClientContact: true,
-        clientInviteStatus: "none" as const,
-        clientInviteExpiresAt: null,
-        canGenerateClientCode: false,
-        activeContract: org.contractSummary
-          ? {
-              documentId: org.id,
-              status: org.contractSummary.status,
-              startDate: org.contractSummary.startDate,
-              endDate: org.contractSummary.endDate,
-              seatCount: org.contractSummary.seatCount,
-              tier: "professional",
-              notes: null,
-              paymentStatus: "not_required",
-            }
-          : null,
-        features: null,
-      }));
-
-    return NextResponse.json({ data: rows });
+    return NextResponse.json({
+      data: toAdminEntitlementRowsFromScreen(screen),
+    });
   } catch (error) {
     return handleBffRouteError(error, "Entitlements could not be loaded");
   }

@@ -36,6 +36,7 @@ export type FirebaseBillingEntitlements = Readonly<{
   };
   seatCount: number;
   tier: string | null;
+  founderDiscountPercent?: number | null;
   commercial?: {
     operational: boolean;
     reason: string | null;

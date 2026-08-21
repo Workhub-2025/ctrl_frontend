@@ -58,13 +58,29 @@ export type FirebaseClientSharedCandidates = Readonly<{
 export type FirebaseAdminOverviewOrganizationCard = Readonly<{
   id: string;
   legalName: string;
+  status?: string;
+  updatedAt?: string;
   activeSeats: number;
   pendingUpgradesCount: number;
   contractSummary: {
+    id?: string;
+    tier?: string;
     status: string;
     seatCount: number;
-    startDate: string;
+    startDate: string | null;
     endDate: string | null;
+    paymentStatus?: string;
+  } | null;
+  primaryContactName?: string | null;
+  primaryContactEmail?: string | null;
+  hasClientContact?: boolean;
+  clientInviteStatus?: string;
+  clientInviteExpiresAt?: string | null;
+  features?: {
+    deliveryRemote?: boolean;
+    deliveryHybrid?: boolean;
+    assessmentRecovery?: boolean;
+    additionalAssessmentSlugs?: readonly string[];
   } | null;
 }>;
 

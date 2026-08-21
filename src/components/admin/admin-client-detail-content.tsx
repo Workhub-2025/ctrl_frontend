@@ -50,6 +50,7 @@ import {
   portalAlertErrorClass,
   portalAlertInfoClass,
   portalInputClass,
+  portalToneBadge,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
@@ -102,8 +103,8 @@ function formatDate(value?: string | null) {
   });
 }
 
-function statusClass(_status: string) {
-  return portalBadgeClass;
+function statusClass(status: string) {
+  return portalToneBadge(status);
 }
 
 export function AdminClientDetailContent() {

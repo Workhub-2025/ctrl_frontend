@@ -8,6 +8,7 @@ import {
 } from "@/lib/client/entitlements";
 import type { requireFirebaseTenancySession } from "@/lib/firebase-tenancy-bff";
 import type { BackendClientEntitlements } from "@/types/client-portal";
+import { contractTierInclusions } from "@/lib/client/contract-tier-inclusions";
 
 export type LoadClientBillingStateInput = {
   organizationId: string;
@@ -66,6 +67,8 @@ export async function loadClientBillingState(input: LoadClientBillingStateInput)
       : "Your organisation contract is not active. Renew to restore access.",
   };
 
+  const inclusions = contractTierInclusions(billing.tier);
+
   const contract = {
     documentId:
       billing.commercial?.activeContractId ??
@@ -85,7 +88,8 @@ export async function loadClientBillingState(input: LoadClientBillingStateInput)
     daysUntilExpiry: undefined,
     tier: billing.tier ?? seats?.source ?? undefined,
     minimumContractedSeats: seats?.quantity ?? seatCount,
-    founderDiscountPercent: undefined,
+    founderDiscountPercent:
+      billing.founderDiscountPercent ?? inclusions.founderDiscountPercent,
     assessmentDataRetentionMonths: undefined,
     effectiveAssessmentDataRetentionMonths: 12,
     autoRenew: billing.client.autoRenew,
@@ -98,8 +102,10 @@ export async function loadClientBillingState(input: LoadClientBillingStateInput)
   };
 
   const platformFeatures = {
-    deliveryRemote: billing.features.deliveryRemote,
-    deliveryHybrid: billing.features.deliveryHybrid,
+    deliveryRemote:
+      billing.features.deliveryRemote || inclusions.deliveryRemote,
+    deliveryHybrid:
+      billing.features.deliveryHybrid || inclusions.deliveryHybrid,
     assessmentRecovery: billing.features.assessmentRecovery,
   };
 

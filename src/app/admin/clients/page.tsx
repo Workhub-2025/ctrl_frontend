@@ -40,13 +40,13 @@ import {
   AdminStatTile,
   AdminTableShell,
 } from "@/components/admin/admin-portal-ui";
-import { portalBadgeClass, portalInputClass, portalStatusBadge } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalInputClass, portalToneBadge } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 
 type AdminClientRow = {
   id: string;
   name: string;
-  status: "Active" | "Awaiting signup" | "Paused" | "Expired" | "Needs contract";
+  status: "Active" | "Awaiting signup" | "Awaiting payment" | "Paused" | "Expired" | "Needs contract";
   plan: string;
   seatsUsed: number;
   seatsAllowed: number;
@@ -106,7 +106,7 @@ export default function ClientsListPage() {
     return { activeClients, awaitingSignup, openSeats, pendingInvites };
   }, [clients]);
 
-  const statusBadgeClass = portalStatusBadge;
+  const statusBadgeClass = portalToneBadge;
 
   const generateClientCode = async (client: AdminClientRow) => {
     setGeneratingClientId(client.id);
@@ -272,7 +272,9 @@ export default function ClientsListPage() {
                       <div className="font-semibold text-foreground">{client.name}</div>
                     </div>
                     <div className="text-xs text-muted-foreground/80 mt-1 pl-7">{client.primaryContact}</div>
+                    {client.lastActivity ? (
                     <div className="text-[10px] text-muted-foreground/60 mt-0.5 pl-7">Updated {client.lastActivity}</div>
+                    ) : null}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={statusBadgeClass(client.status)}>
@@ -281,7 +283,7 @@ export default function ClientsListPage() {
                   </TableCell>
                   <TableCell>
                     <div className="text-sm font-semibold text-foreground">{client.plan}</div>
-                    <Badge variant="outline" className={cn("mt-1", portalBadgeClass)}>
+                    <Badge variant="outline" className={cn("mt-1", portalToneBadge(client.billingStatus))}>
                       {client.billingStatus}
                     </Badge>
                   </TableCell>
@@ -295,7 +297,7 @@ export default function ClientsListPage() {
                   </TableCell>
                   <TableCell>
                     {client.pendingCampaignApprovals > 0 ? (
-                      <Badge variant="outline" className={portalBadgeClass}>
+                      <Badge variant="outline" className={portalToneBadge("pending")}>
                         {client.pendingCampaignApprovals} pending
                       </Badge>
                     ) : (
@@ -356,7 +358,7 @@ export default function ClientsListPage() {
 function ClientInviteState({ client }: { client: AdminClientRow }) {
   if (client.hasClientContact) {
     return (
-      <Badge variant="outline" className={portalBadgeClass}>
+      <Badge variant="outline" className={portalToneBadge("used")}>
         <CheckCircle2 className="mr-1 h-3 w-3" />
         Used
       </Badge>
@@ -366,7 +368,7 @@ function ClientInviteState({ client }: { client: AdminClientRow }) {
   if (client.clientInviteStatus === "available") {
     return (
       <div className="space-y-1">
-        <Badge variant="outline" className={portalBadgeClass}>
+        <Badge variant="outline" className={portalToneBadge("pending")}>
           <Clock3 className="mr-1 h-3 w-3" />
           Pending
         </Badge>

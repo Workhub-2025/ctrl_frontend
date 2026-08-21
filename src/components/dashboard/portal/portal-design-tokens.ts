@@ -159,9 +159,57 @@ export const portalFilterChipActiveClass =
 export const portalFilterChipClass =
   "inline-flex min-h-9 items-center rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground";
 
-/** One badge style for all statuses — colour is not used for categorisation. */
 export const portalBadgeClass =
   "rounded-sm border border-border bg-muted/40 px-2 py-0.5 text-xs font-medium text-foreground";
+
+/** Status colour for admin tables — Active should read as live, not muted. */
+export function portalToneBadge(status?: string) {
+  const value = (status ?? "").trim().toLowerCase();
+  const base =
+    "rounded-sm px-2 py-0.5 text-xs font-medium";
+  if (
+    ["active", "used", "paid", "complete", "hired", "approved"].some((token) =>
+      value.includes(token),
+    )
+  ) {
+    return cn(
+      base,
+      "border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
+    );
+  }
+  if (
+    [
+      "awaiting",
+      "pending",
+      "available",
+      "draft",
+      "needs contract",
+      "invited",
+    ].some((token) => value.includes(token))
+  ) {
+    return cn(
+      base,
+      "border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200",
+    );
+  }
+  if (
+    [
+      "paused",
+      "expired",
+      "disabled",
+      "revoked",
+      "rejected",
+      "not configured",
+      "closed",
+    ].some((token) => value.includes(token))
+  ) {
+    return cn(
+      base,
+      "border border-rose-500/35 bg-rose-500/10 text-rose-800 dark:text-rose-200",
+    );
+  }
+  return portalBadgeClass;
+}
 
 export const portalAlertErrorClass =
   "rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive";

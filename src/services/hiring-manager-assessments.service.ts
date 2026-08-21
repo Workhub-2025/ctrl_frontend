@@ -7,6 +7,8 @@ import {
   formatEstimatedCompletion,
 } from "@/lib/assessment-catalog-defaults";
 import { getAssessmentLibraryPreview } from "@/lib/assessment-library-previews";
+import { isAssessmentEntitledForClient } from "@/lib/client/entitlements";
+import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
 import {
   assessmentEntitlementTier,
   getAssessmentPlatformEntry,
@@ -237,9 +239,28 @@ const loadHiringManagerAssessmentsWithVersions = cache(
         auth.firebaseSessionCookie,
       );
       const catalogue = await recruitment.listAssessmentCatalogue();
-      const assessments = catalogue.map((item) =>
-        mapCatalogueItem(item, includeVersions),
-      );
+      const organizationId =
+        typeof auth.session.user.organization === "string"
+          ? auth.session.user.organization
+          : null;
+      const entitlements = organizationId
+        ? await createFirebaseBillingApi(
+            auth.domainApi,
+            auth.firebaseSessionCookie,
+          )
+            .getEntitlements(organizationId)
+            .catch(() => null)
+        : null;
+      const entitledFeatures = {
+        additionalAssessmentSlugs: [
+          ...(entitlements?.features.additionalAssessmentSlugs ?? []),
+        ],
+      };
+      const assessments = catalogue
+        .map((item) => mapCatalogueItem(item, includeVersions))
+        .filter((item) =>
+          isAssessmentEntitledForClient(item, entitledFeatures),
+        );
 
       if (assessments.length > 0) {
         return { assessments, error: null };

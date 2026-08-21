@@ -141,7 +141,7 @@ function tierLabel(tier: string): string {
 }
 
 /**
- * Builds the admin Analytics page model from Firebase tenancy + billing reads.
+ * Builds the admin Analytics page model from organisation + billing reads.
  * Empty collections produce zeros / empty lists — never a shape the UI cannot render.
  */
 export function buildFirebaseAdminRevenueAnalytics(input: {

@@ -4,9 +4,11 @@ import type { NextRequest } from "next/server";
 import { requireAdminDualAccess } from "@/lib/auth/admin-dual-access";
 import { handleBffRouteError } from "@/lib/auth/bff-route-errors";
 import {
+  preferredContract,
   toAdminClientDetails,
   type FirebaseClientTeamWorkspace,
 } from "@/lib/firebase-admin-tenancy-bff";
+import { createFirebaseBillingApi } from "@/lib/firebase-billing-api";
 import { invalidateClientEntitlementCachesByClientId } from "@/lib/portal-cache-keys";
 
 type RouteContext = {
@@ -24,11 +26,20 @@ export async function GET(_request: NextRequest, context: RouteContext) {
 
   try {
     const clientId = await getClientId(context);
-    const workspace = await auth.domainApi.request<FirebaseClientTeamWorkspace>({
-      path: `/v1/organizations/${encodeURIComponent(clientId)}/workspace`,
-      firebaseSessionCookie: auth.firebaseSessionCookie,
+    const billing = createFirebaseBillingApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
+    );
+    const [workspace, contracts] = await Promise.all([
+      auth.domainApi.request<FirebaseClientTeamWorkspace>({
+        path: `/v1/organizations/${encodeURIComponent(clientId)}/workspace`,
+        firebaseSessionCookie: auth.firebaseSessionCookie,
+      }),
+      billing.listOrganizationContracts(clientId).catch(() => []),
+    ]);
+    return NextResponse.json({
+      data: toAdminClientDetails(workspace, preferredContract(contracts)),
     });
-    return NextResponse.json({ data: toAdminClientDetails(workspace) });
   } catch (error) {
     const status =
       error && typeof error === "object" && "status" in error
@@ -182,8 +193,17 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       path: `/v1/organizations/${encodeURIComponent(clientId)}/workspace`,
       firebaseSessionCookie: auth.firebaseSessionCookie,
     });
+    const billing = createFirebaseBillingApi(
+      auth.domainApi,
+      auth.firebaseSessionCookie,
+    );
+    const contracts = await billing
+      .listOrganizationContracts(clientId)
+      .catch(() => []);
     void invalidateClientEntitlementCachesByClientId(clientId);
-    return NextResponse.json({ data: toAdminClientDetails(workspace) });
+    return NextResponse.json({
+      data: toAdminClientDetails(workspace, preferredContract(contracts)),
+    });
   } catch (error) {
     return handleBffRouteError(error, "Client could not be updated");
   }

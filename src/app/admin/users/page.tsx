@@ -24,7 +24,7 @@ import {
   AdminStatTile,
   AdminTableShell,
 } from "@/components/admin/admin-portal-ui";
-import { portalBadgeClass, portalInputClass, portalStatusBadge } from "@/components/dashboard/portal/portal-design-tokens";
+import { portalInputClass, portalToneBadge } from "@/components/dashboard/portal/portal-design-tokens";
 import { hasAdminPermission } from "@/lib/auth/admin-portal-permissions";
 
 type UserRole = "CTRL Admin" | "Client Contact" | "Hiring Manager" | "Candidate";
@@ -54,7 +54,7 @@ type AdminUsersPayload = {
   };
 };
 
-const statusBadgeClass = portalStatusBadge;
+const statusBadgeClass = portalToneBadge;
 
 export default function AdminUsersPage() {
   const { data: session } = useSession();

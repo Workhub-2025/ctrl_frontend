@@ -37,6 +37,7 @@ export {
   portalStatTileClass,
   portalBadgeClass,
   portalStatusBadge,
+  portalToneBadge,
   portalInputClass,
   portalTableShellClass,
 } from "@/components/dashboard/portal/portal-design-tokens";

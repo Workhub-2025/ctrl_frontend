@@ -47,7 +47,7 @@ export async function GET() {
           tier: contract.tier ?? null,
           paidAt: null,
           daysUntilExpiry: null,
-          founderDiscountPercent: null,
+          founderDiscountPercent: contract.founderDiscountPercent ?? null,
           assessmentDataRetentionMonths: null,
         },
         client: {

@@ -31,6 +31,7 @@ import {
 import {
   portalIconWrapLgClass,
   portalLabelClass,
+  portalToneBadge,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { CLIENT_PLATFORM_FEATURES } from "@/lib/client/entitlements";
 import {
@@ -673,7 +674,7 @@ function PoundField({
 
 function BillingBadge({ status }: { status: string }) {
   return (
-    <Badge variant="outline" className={cn(portalBadgeClass, "rounded-full capitalize")}>
+    <Badge variant="outline" className={cn(portalToneBadge(status), "rounded-full capitalize")}>
       {status.replace(/_/g, " ")}
     </Badge>
   );
