@@ -15,6 +15,9 @@ describe("Firebase admin billing BFF", () => {
       expect(source).toContain("isFirebaseAdminAuth");
       expect(source).not.toMatch(/still requires the legacy Strapi API/);
     }
+    const pricing = route("../app/api/admin/billing/pricing/route.ts");
+    expect(pricing).toContain("SQL seeder");
+    expect(pricing).not.toContain("savePlatformPricing");
   });
 
   it("sends and resends invoices through Firebase admin checkout", () => {

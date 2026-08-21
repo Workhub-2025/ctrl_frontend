@@ -51,18 +51,17 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const body = await request.json();
     if (isFirebaseAdminAuth(auth)) {
-      const billing = createFirebaseBillingApi(
-        auth.domainApi,
-        auth.firebaseSessionCookie,
+      return NextResponse.json(
+        {
+          error:
+            "Catalogue prices are published by the SQL seeder, not this page. Active contracts keep their locked rate.",
+        },
+        { status: 501 },
       );
-      const saved = await billing.savePlatformPricing(
-        body && typeof body === "object" ? (body as Record<string, unknown>) : {},
-      );
-      void invalidateAdminPlatformServerCache();
-      return NextResponse.json({ data: saved });
     }
+
+    const body = await request.json();
 
     const response = await cmsRequest<{ data?: Record<string, unknown> }>(
       "/admin/platform-pricing",

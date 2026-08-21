@@ -6,7 +6,6 @@ import {
   Loader2,
   RefreshCw,
   RotateCw,
-  Save,
   Send,
   Sparkles,
   TrendingUp,
@@ -151,7 +150,6 @@ export function AdminBillingContent() {
   });
   const [expiring, setExpiring] = useState<ExpiringContract[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [renewingId, setRenewingId] = useState<string | null>(null);
   const [resendingRenewalId, setResendingRenewalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -225,50 +223,6 @@ export function AdminBillingContent() {
     void load();
   }, []);
 
-  const savePricing = async () => {
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const response = await fetch("/api/admin/billing/pricing", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(pricing),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error ?? "Pricing could not be saved");
-      if (body.data && typeof body.data === "object") {
-        const saved = body.data as Partial<PricingForm>;
-        setPricing({
-          currency: String(saved.currency ?? "gbp"),
-          basePlatformYearlyPence: Number(saved.basePlatformYearlyPence ?? 0),
-          seatOneOffPence: Number(saved.seatOneOffPence ?? 0),
-          assessmentAddonPence: Number(saved.assessmentAddonPence ?? 0),
-          featurePrices:
-            saved.featurePrices && typeof saved.featurePrices === "object"
-              ? (saved.featurePrices as Record<string, number>)
-              : {},
-          founderOfferExpiresAt:
-            typeof saved.founderOfferExpiresAt === "string"
-              ? saved.founderOfferExpiresAt
-              : null,
-          defaultFounderDiscountPercent: Number(
-            saved.defaultFounderDiscountPercent ?? 33,
-          ),
-          contractTypePrices: normalizeContractTypePrices(saved.contractTypePrices),
-        });
-      }
-      setMessage(
-        "Catalogue pricing saved. Active contracts keep their locked annual rate until renewal or the founder lock expires.",
-      );
-      invalidatePortalCache("admin:billing:pricing");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Pricing could not be saved");
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const updateContractPrice = (
     tier: ContractTier,
     key: keyof ContractTierPricing,
@@ -340,7 +294,7 @@ export function AdminBillingContent() {
     <div className="space-y-8 pb-6">
       <AdminPageHeader
         title="Pricing & invoices"
-        description="Edit catalogue pricing for new deals. Active contracts keep the annual rate locked at activation/renewal. Send renewal invoices and manage upgrade checkout links via Stripe."
+        description="Published catalogue rates for new deals. Changes ship through the SQL seeder, not this page. Active contracts keep their locked annual rate. Send renewal invoices and manage upgrade checkout links via Stripe."
         notice={
           error ? (
             <AdminAlert>{error}</AdminAlert>
@@ -559,10 +513,9 @@ export function AdminBillingContent() {
             </div>
           </AdminPanel>
 
-          <Button onClick={() => void savePricing()} disabled={saving} className="rounded-xl gap-2">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save all pricing
-          </Button>
+          <p className="text-sm text-muted-foreground">
+            Catalogue is read-only here. To change a published rate, run the SQL price seeder.
+          </p>
         </TabsContent>
 
         <TabsContent value="renewals" className="space-y-4">
