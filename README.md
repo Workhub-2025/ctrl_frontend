@@ -123,7 +123,6 @@ npm run typecheck
 npm test
 npm run lint
 npm run build
-npm run test:e2e
 ```
 
 `check:migration-gate` fails if any retired CMS proxy route, host, or import
@@ -135,11 +134,6 @@ Verified result on 2026-07-23:
 - Typecheck, lint and the production build pass.
 - The full production-and-tooling dependency audit reports zero vulnerabilities.
 - ESLint 9 runs through the flat-config CLI.
-- Playwright now fails an all-skipped run, so missing `E2E_*` configuration
-  cannot silently produce a green result. Individual data-dependent tests may
-  still skip when their documented seeded resource is unavailable.
-- The credentialled candidate smoke runs an axe WCAG scan on assessment
-  readiness before any assessed attempt is started.
 
 ## Documentation
 

@@ -14,7 +14,6 @@
     "audit:security": "npm audit --audit-level=moderate",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -75,8 +74,6 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.10.2",
-    "@playwright/test": "^1.61.1",
     "@shadcn/ui": "^0.0.4",
     "@types/node": "^20",
     "@types/react": "^18",

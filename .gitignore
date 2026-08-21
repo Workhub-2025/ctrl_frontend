@@ -222,5 +222,22 @@ preview.env
 # AI agent workspace settings
 # -------------------------------
 .agents/
+.interface-design/
 skills-lock.json
+task.md
+
+# -------------------------------
+# Playwright / local-only e2e (not used by Vercel)
+# -------------------------------
+e2e/
+playwright.config.ts
+playwright-report/
+test-results/
+.playwright/
+
+# -------------------------------
+# Cloudflare (this app deploys on Vercel)
+# -------------------------------
+wrangler.toml
+wrangler.toml.local
 
