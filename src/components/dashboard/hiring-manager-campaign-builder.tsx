@@ -525,7 +525,6 @@ export function HiringManagerCampaignBuilder({
           jobRole: draft.roleTitle.trim(),
           campaignType: "external",
           startDate: toStartDateTime(draft.startDate),
-          isOngoing: false,
           vacancyCount: candidateVolume,
           location: includesOnSiteDelivery(draft.deliveryMode) ? draft.location.trim() : "",
           assessmentMode: draft.deliveryMode,

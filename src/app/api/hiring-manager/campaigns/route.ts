@@ -26,6 +26,18 @@ function validateCreatePayload(
   if (!data.name?.trim()) return { valid: false, error: "Campaign name is required" };
   if (!data.jobRole?.trim()) return { valid: false, error: "Role title is required" };
   if (!data.startDate) return { valid: false, error: "Start date is required" };
+  // End date is optional. When one is given it must be a real date after the
+  // start; otherwise the campaign runs until it is closed manually.
+  if (data.endDate) {
+    const start = new Date(data.startDate).getTime();
+    const end = new Date(data.endDate).getTime();
+    if (Number.isNaN(end)) {
+      return { valid: false, error: "End date is not a valid date" };
+    }
+    if (!Number.isNaN(start) && end <= start) {
+      return { valid: false, error: "End date must be after the start date" };
+    }
+  }
   if (!["in_person", "remote", "hybrid"].includes(data.assessmentMode ?? "")) {
     return { valid: false, error: "Delivery mode is invalid" };
   }
@@ -163,6 +175,10 @@ export async function POST(request: NextRequest) {
       context.userId,
       payload,
     );
+    const campaignEndDate =
+      payload.isOngoing || !payload.endDate
+        ? null
+        : new Date(payload.endDate).toISOString();
     const result = await recruitment.createCampaign({
       organizationId: context.organizationId,
       ownerSeatId: context.seatId,
@@ -172,11 +188,10 @@ export async function POST(request: NextRequest) {
       campaignType: payload.campaignType || "standard",
       assessmentMode: payload.assessmentMode,
       startDate: new Date(payload.startDate).toISOString(),
-      endDate:
-        payload.isOngoing || !payload.endDate
-          ? null
-          : new Date(payload.endDate).toISOString(),
-      isOngoing: Boolean(payload.isOngoing),
+      endDate: campaignEndDate,
+      // Optional by design: with no end date the campaign is ongoing and gets
+      // closed manually once every session under it has completed.
+      isOngoing: campaignEndDate === null,
       vacancyCount: payload.vacancyCount,
       location: payload.location?.trim() || null,
       idempotencyKey: operationKey,
