@@ -288,8 +288,26 @@ export function HiringManagerCampaignBuilder({
         met: hasValidCandidateVolume,
       },
       { id: "start", label: "Choose a planned start date", met: Boolean(draft.startDate.trim()) },
+      // On-site assessments must have a venue: ck_campaigns_in_person_location
+      // rejects a blank location for in_person and hybrid campaigns.
+      ...(includesOnSiteDelivery(draft.deliveryMode)
+        ? [
+            {
+              id: "location",
+              label: "Add the site or location",
+              met: Boolean(draft.location.trim()),
+            },
+          ]
+        : []),
     ],
-    [draft.campaignName, draft.roleTitle, draft.startDate, hasValidCandidateVolume]
+    [
+      draft.campaignName,
+      draft.deliveryMode,
+      draft.location,
+      draft.roleTitle,
+      draft.startDate,
+      hasValidCandidateVolume
+    ]
   );
 
   const stackRequirements = useMemo(
@@ -738,7 +756,8 @@ export function HiringManagerCampaignBuilder({
                 className={cn(portalInputClass, "h-10")}
               />
               <p className="text-xs leading-5 text-muted-foreground">
-                Optional. Pre-fills the room field when you create in-person sessions.
+                Required for on-site delivery. Pre-fills the room field when you
+                create in-person sessions.
               </p>
             </div>
           ) : null}

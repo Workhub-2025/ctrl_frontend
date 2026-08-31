@@ -41,6 +41,16 @@ function validateCreatePayload(
   if (!["in_person", "remote", "hybrid"].includes(data.assessmentMode ?? "")) {
     return { valid: false, error: "Delivery mode is invalid" };
   }
+  // ck_campaigns_in_person_location: on-site delivery needs a venue.
+  if (
+    (data.assessmentMode === "in_person" || data.assessmentMode === "hybrid") &&
+    !String(data.location ?? "").trim()
+  ) {
+    return {
+      valid: false,
+      error: "A site or location is required for in-person and hybrid campaigns",
+    };
+  }
   if (
     typeof data.vacancyCount !== "number" ||
     !Number.isInteger(data.vacancyCount) ||
