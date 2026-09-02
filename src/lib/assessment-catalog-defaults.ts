@@ -45,7 +45,7 @@ export const ASSESSMENT_CATALOGUE_DEFAULTS: Record<
   typing: {
     passingScore: 70,
     timeLimitSeconds: TYPING_TIME_LIMIT_SECONDS,
-    estimatedCompletionTime: "5-10",
+    estimatedCompletionTime: "10",
   },
   "situational-judgement": {
     passingScore: 70,

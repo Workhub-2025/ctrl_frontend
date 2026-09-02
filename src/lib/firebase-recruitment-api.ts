@@ -64,11 +64,16 @@ export type FirebaseCampaignWorkspace = Readonly<{
   assessmentStack: Array<{
     id: string;
     definitionId: string;
+    /** Canonical assessment key; results and portal matchers use this. */
+    slug: string;
+    title: string;
     releaseId: string;
     position: number;
     durationMinutes: number | null;
     maxAttempts: number;
     threshold: number | null;
+    /** Composite weighting; null when the campaign is unweighted. */
+    weight: number | null;
     status: "active" | "disabled";
   }>;
   reviews: Array<{

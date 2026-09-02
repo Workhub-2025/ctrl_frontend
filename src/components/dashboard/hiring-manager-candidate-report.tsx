@@ -722,10 +722,18 @@ export function HiringManagerCandidateReport({ candidateId, candidateSessionId, 
                     <p className="mt-2 text-sm font-semibold text-foreground">
                       {row.score !== null
                         ? "Submitted and verified"
-                        : getHmAssessmentItemStatus(row.result) === "submitted"
-                          ? "Submitted — scoring"
-                          : "Awaiting candidate"}
+                        : row.result?.metrics?.scoringStalled === true
+                          ? "Submitted — scoring delayed"
+                          : getHmAssessmentItemStatus(row.result) === "submitted"
+                            ? "Submitted — scoring"
+                            : "Awaiting candidate"}
                     </p>
+                    {row.result?.metrics?.scoringStalled === true ? (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Scoring is retrying. The result will appear once it
+                        completes; no response has been lost.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
 

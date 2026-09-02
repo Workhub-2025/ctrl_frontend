@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
+import { ClientCandidateAssessmentPanel } from "@/components/dashboard/client/client-candidate-assessment-panel";
 import { SharedCandidateNotesPanel } from "@/components/dashboard/shared-candidate-notes-panel";
 import {
   ClientErrorBanner,
@@ -432,6 +433,10 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
                     </Button>
                   </div>
                 ) : null}
+                <ClientCandidateAssessmentPanel
+                  sharedCandidateDocumentId={candidate.documentId}
+                  className="mt-4"
+                />
                 <SharedCandidateNotesPanel
                   sharedCandidateDocumentId={candidate.documentId}
                   portal="client"

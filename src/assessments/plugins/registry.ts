@@ -1,14 +1,15 @@
+import { CallSimulationReportBreakdown } from "./report/call-simulation-breakdown";
+import { PrioritisationReportBreakdown } from "./report/prioritisation-breakdown";
+import { ShortTermMemoryReportBreakdown } from "./report/short-term-memory-breakdown";
+import { SituationalJudgementReportBreakdown } from "./report/situational-judgement-breakdown";
+import { TypingReportBreakdown } from "./report/typing-breakdown";
 import {
-  CallSimulationReportBreakdown,
-} from "./report/call-simulation-breakdown";
-import {
-  PrioritisationReportBreakdown,
-  ShortTermMemoryReportBreakdown,
-  SituationalJudgementReportBreakdown,
-  TypingReportBreakdown,
-  hasGenericReportBreakdown,
-} from "./report/generic-breakdown";
-import { hasCallSimulationReportBreakdown } from "./report/shared";
+  hasCallSimulationReportBreakdown,
+  hasPrioritisationReportBreakdown,
+  hasShortTermMemoryReportBreakdown,
+  hasSituationalJudgementReportBreakdown,
+  hasTypingReportBreakdown,
+} from "./report/shared";
 import { CANDIDATE_ASSESSMENT_CATALOG } from "./candidate-catalog";
 import type { AssessmentReportBreakdownProps } from "./report/types";
 import type { LucideIcon } from "lucide-react";
@@ -39,22 +40,22 @@ const plugins: AssessmentUiPlugin[] = [
   {
     ...requireCatalog("typing"),
     reportBreakdown: TypingReportBreakdown,
-    hasReportBreakdown: hasGenericReportBreakdown,
+    hasReportBreakdown: hasTypingReportBreakdown,
   },
   {
     ...requireCatalog("situational-judgement"),
     reportBreakdown: SituationalJudgementReportBreakdown,
-    hasReportBreakdown: hasGenericReportBreakdown,
+    hasReportBreakdown: hasSituationalJudgementReportBreakdown,
   },
   {
     ...requireCatalog("prioritisation"),
     reportBreakdown: PrioritisationReportBreakdown,
-    hasReportBreakdown: hasGenericReportBreakdown,
+    hasReportBreakdown: hasPrioritisationReportBreakdown,
   },
   {
     ...requireCatalog("short-term-memory"),
     reportBreakdown: ShortTermMemoryReportBreakdown,
-    hasReportBreakdown: hasGenericReportBreakdown,
+    hasReportBreakdown: hasShortTermMemoryReportBreakdown,
   },
   {
     ...requireCatalog("call-simulation"),

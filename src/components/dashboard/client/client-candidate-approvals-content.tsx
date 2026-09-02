@@ -30,6 +30,7 @@ import {
 } from "@/components/dashboard/portal/portal-ui";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { ClientCandidateOutreachDialog } from "@/components/dashboard/client/client-candidate-outreach-dialog";
+import { ClientCandidateAssessmentPanel } from "@/components/dashboard/client/client-candidate-assessment-panel";
 import { SharedCandidateNotesPanel } from "@/components/dashboard/shared-candidate-notes-panel";
 import type { ClientSharedCandidate } from "@/types/client-portal";
 import { cn } from "@/lib/utils";
@@ -212,6 +213,10 @@ export function ClientCandidateApprovalsContent() {
                       </ClientCandidateOutreachDialog>
                     </div>
                   </div>
+                  <ClientCandidateAssessmentPanel
+                    sharedCandidateDocumentId={candidate.documentId}
+                    className="mt-4"
+                  />
                   <SharedCandidateNotesPanel
                     sharedCandidateDocumentId={candidate.documentId}
                     portal="client"

@@ -94,18 +94,12 @@ export function HiringManagerCampaignsList() {
 
       <div className="space-y-3">
         {campaigns.length === 0 ? (
+          // The header already carries a Create campaign action; a second one
+          // here reads as two competing calls to action on an empty page.
           <PortalEmptyState
             icon={FolderKanban}
             title="No campaigns yet"
             description="Create a campaign to attach assessments and generate candidate access codes."
-            action={
-              <Button asChild className={cn(portalPrimaryButtonClass, "h-9")}>
-                <Link href="/hiring-manager-dashboard/campaigns/create">
-                  <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Create campaign
-                </Link>
-              </Button>
-            }
           />
         ) : (
           campaigns.map((campaign) => (

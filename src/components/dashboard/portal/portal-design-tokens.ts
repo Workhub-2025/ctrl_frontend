@@ -111,6 +111,41 @@ export const portalCssHoverTooltipClass = cn(
 export const portalProgressBarClass =
   "h-full rounded-full bg-primary transition-[width] duration-300";
 
+/**
+ * Result semantics for assessment reports.
+ *
+ * Every breakdown reads these rather than naming a colour, so the meaning of
+ * "pass" or "below floor" is defined once and stays coherent across the four
+ * themes. Values are the palette the reports used before the July refactor.
+ */
+export const portalResultPassClass = "text-emerald-600 dark:text-emerald-400";
+export const portalResultWarnClass = "text-amber-600 dark:text-amber-400";
+export const portalResultFailClass = "text-destructive";
+export const portalResultSecondaryClass = "text-sky-600 dark:text-sky-400";
+export const portalResultMutedClass = "text-muted-foreground";
+
+/** Matching bar fills for the same five result states. */
+export const portalResultBarPassClass = "bg-emerald-500";
+export const portalResultBarWarnClass = "bg-amber-500";
+export const portalResultBarFailClass = "bg-destructive";
+export const portalResultBarSecondaryClass = "bg-sky-500";
+export const portalResultBarMutedClass = "bg-muted-foreground/60";
+
+/** Decision band (SJT) and outcome band (prioritisation) colouring. */
+export function portalResultBandClass(band?: string | null): string {
+  const normalised = (band ?? "").toUpperCase();
+  if (normalised === "GREEN" || normalised === "EXCELLENT" || normalised === "STRONG PASS") {
+    return portalResultPassClass;
+  }
+  if (normalised === "AMBER" || normalised.startsWith("BORDERLINE")) {
+    return portalResultWarnClass;
+  }
+  if (normalised === "RED" || normalised === "FAIL" || normalised === "WEAK") {
+    return portalResultFailClass;
+  }
+  return "text-foreground";
+}
+
 /** Primary gradient action button shared across HM portal views. */
 export const portalPrimaryButtonClass =
   "rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary/90";

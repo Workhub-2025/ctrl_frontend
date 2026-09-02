@@ -2,9 +2,14 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { portalBadgeClass, portalProgressBarClass } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  portalBadgeClass,
+  portalProgressBarClass,
+  portalResultFailClass,
+  portalResultPassClass,
+  portalResultWarnClass,
+} from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
-import type { HiringManagerAssessmentResult } from "@/services/hiring-manager-portal-client.service";
 import {
   BreakdownMetricRow,
   BreakdownProgressTrack,
@@ -20,56 +25,54 @@ import {
   BreakdownTableRow,
   BreakdownTableShell,
 } from "./breakdown-ui";
+import {
+  CriticalGates,
+  StandardHeader,
+  asCompetencies,
+  asFlags,
+  numberOrNull,
+} from "./breakdown-common";
 import type { AssessmentReportBreakdownProps } from "./types";
 
-type CallSimulationRun = {
-  runIndex: number;
-  metrics?: Record<string, unknown>;
+const SECTION_LABELS: Record<string, string> = {
+  caller: "Caller information",
+  system: "System information",
+  intelligence: "Intelligence information",
+  incident: "Incident information",
 };
 
-type CriterionRow = {
-  key: string;
-  displayName: string;
-  critical?: boolean;
-  section: string;
-  score: number;
-  maxScore: number;
-};
+const SECTION_ORDER = ["caller", "system", "intelligence", "incident"];
 
-type V2Competency = { id: string; label: string; weight: number; score: number };
-type V2CriticalFlag = { id: string; scenarioId: string; label: string };
-type V2CriterionEvidence = {
+type CriterionEvidence = {
   criterionId: string;
+  label?: string;
+  section?: string;
+  critical?: boolean;
+  maxScore?: number;
   matched?: boolean;
   awarded?: number;
   timingBand?: "green" | "amber" | "red";
   delaySeconds?: number | null;
 };
 
-type V2ScenarioEvidence = {
+type ScenarioEvidence = {
   scenarioId: string;
-  title?: string;
   points?: number;
   maximum?: number;
-  capturedFields?: number;
-  expectedFields?: number;
-  classification?: string;
-  incidentType?: string;
-  resourceDecision?: string;
+  sections?: Record<string, { score: number; max: number }>;
+  criteria?: CriterionEvidence[];
   elapsedSeconds?: number | null;
-  criteria?: V2CriterionEvidence[];
 };
 
 function timingBandClass(band: string | undefined) {
-  if (band === "green") return "text-primary";
-  if (band === "amber") return "text-amber-600 dark:text-amber-400";
-  if (band === "red") return "text-destructive";
+  if (band === "green") return portalResultPassClass;
+  if (band === "amber") return portalResultWarnClass;
+  if (band === "red") return portalResultFailClass;
   return "text-muted-foreground";
 }
 
-function timingBandSummary(criteria: V2CriterionEvidence[] | undefined) {
-  if (!criteria?.length) return { green: 0, amber: 0, red: 0 };
-  return criteria.reduce(
+function timingBandSummary(criteria: CriterionEvidence[] | undefined) {
+  return (criteria ?? []).reduce(
     (totals, criterion) => {
       if (criterion.timingBand === "green") totals.green += 1;
       else if (criterion.timingBand === "amber") totals.amber += 1;
@@ -80,243 +83,119 @@ function timingBandSummary(criteria: V2CriterionEvidence[] | undefined) {
   );
 }
 
-function CallSimulationV2Report({ metrics }: { metrics: Record<string, unknown> }) {
-  const competencies = Array.isArray(metrics.competencyScores) ? metrics.competencyScores as V2Competency[] : [];
-  const criticalFlags = Array.isArray(metrics.criticalFlags) ? metrics.criticalFlags as V2CriticalFlag[] : [];
-  const scenarios = Array.isArray(metrics.scenarioEvidence) ? metrics.scenarioEvidence as V2ScenarioEvidence[] : [];
-  const integrity = metrics.integrity && typeof metrics.integrity === "object" ? metrics.integrity as { events?: unknown[] } : {};
-  const overallScore = Number(metrics.overallScore ?? 0);
-  const threshold = Number(metrics.configuredThreshold ?? 70);
-  const meetsStandard = metrics.meetsConfiguredStandard === true;
+export function CallSimulationReportBreakdown({
+  result,
+}: AssessmentReportBreakdownProps) {
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(null);
+
+  if (!result?.metrics) return null;
+  const metrics = result.metrics;
+
+  const scenarios = Array.isArray(metrics.scenarioEvidence)
+    ? (metrics.scenarioEvidence as ScenarioEvidence[])
+    : [];
+  const active =
+    scenarios.find((scenario) => scenario.scenarioId === selectedScenarioId) ??
+    scenarios[0] ??
+    null;
+  const bands = timingBandSummary(active?.criteria);
+  const passed = metrics.passed === true;
+  const criticalErrors = numberOrNull(metrics.criticalErrorsCount) ?? 0;
+
+  const orderedSections = SECTION_ORDER.filter(
+    (section) => active?.sections?.[section] !== undefined,
+  );
 
   return (
     <div className="space-y-5">
       <div className="border-l-4 border-primary bg-muted p-4 text-sm leading-6 text-foreground">
-        This report contains evidence from a high-fidelity operational simulation. It is not a validated psychometric instrument or an automated hiring decision.
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <BreakdownStatTile label="Overall score" value={Math.round(overallScore)} suffix="%" />
-        <BreakdownStatTile label="Configured standard" value={threshold} suffix="%" />
-        <BreakdownStatTile label="Assessment standard" value={meetsStandard ? "MET" : "NOT MET"} valueClassName={meetsStandard ? "text-primary" : "text-destructive"} />
+        This report contains evidence from a high-fidelity operational simulation.
+        It is not a validated psychometric instrument or an automated hiring decision.
       </div>
 
-      <BreakdownSection title="Weighted competencies">
-        <div className="space-y-4">
-          {competencies.map((competency) => (
-            <div key={competency.id}>
-              <BreakdownMetricRow label={`${competency.label} · ${competency.weight}% weight`} value={`${Math.round(competency.score)}%`} />
-              <BreakdownProgressTrack value={competency.score} className={portalProgressBarClass} />
-            </div>
-          ))}
-        </div>
-      </BreakdownSection>
+      <StandardHeader metrics={metrics} />
 
-      <BreakdownSection title="Critical gates">
-        {criticalFlags.length ? (
-          <ul className="space-y-2">
-            {criticalFlags.map((flag) => <li key={`${flag.scenarioId}-${flag.id}`} className="border-l-4 border-destructive bg-destructive/10 p-3 text-sm text-foreground"><strong>{flag.scenarioId}:</strong> {flag.label}</li>)}
-          </ul>
-        ) : <p className="text-sm text-muted-foreground">No fixed critical gate was triggered.</p>}
-      </BreakdownSection>
-
-      {scenarios.length ? (
-        <div className="space-y-2.5">
-          <BreakdownSectionTitle>Scenario evidence</BreakdownSectionTitle>
-          <BreakdownTableShell>
-            <BreakdownTable>
-              <BreakdownTableHead>
-                <BreakdownTableHeaderRow>
-                  <BreakdownTableHeaderCell>Scenario</BreakdownTableHeaderCell>
-                  <BreakdownTableHeaderCell>Score</BreakdownTableHeaderCell>
-                  <BreakdownTableHeaderCell>Timing bands</BreakdownTableHeaderCell>
-                  <BreakdownTableHeaderCell align="right">Elapsed</BreakdownTableHeaderCell>
-                </BreakdownTableHeaderRow>
-              </BreakdownTableHead>
-              <BreakdownTableBody>
-                {scenarios.map((scenario) => {
-                  const bands = timingBandSummary(scenario.criteria);
-                  return (
-                    <BreakdownTableRow key={scenario.scenarioId}>
-                      <BreakdownTableCell>
-                        <p className="font-semibold">
-                          {scenario.title ?? scenario.scenarioId}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {scenario.classification ?? scenario.resourceDecision ?? "—"}
-                        </p>
-                      </BreakdownTableCell>
-                      <BreakdownTableCell>
-                        {scenario.points != null && scenario.maximum != null
-                          ? `${Math.round(scenario.points * 10) / 10} / ${scenario.maximum}`
-                          : `${scenario.capturedFields ?? 0} / ${scenario.expectedFields ?? 0} fields`}
-                      </BreakdownTableCell>
-                      <BreakdownTableCell>
-                        <span className={timingBandClass("green")}>{bands.green} green</span>
-                        {" · "}
-                        <span className={timingBandClass("amber")}>{bands.amber} amber</span>
-                        {" · "}
-                        <span className={timingBandClass("red")}>{bands.red} red</span>
-                      </BreakdownTableCell>
-                      <BreakdownTableCell align="right">
-                        {scenario.elapsedSeconds
-                          ? `${Math.round(scenario.elapsedSeconds / 60)} min`
-                          : "—"}
-                      </BreakdownTableCell>
-                    </BreakdownTableRow>
-                  );
-                })}
-              </BreakdownTableBody>
-            </BreakdownTable>
-          </BreakdownTableShell>
-        </div>
-      ) : null}
-
-      <BreakdownSection title="Integrity events — separate from performance scoring">
-        <p className="text-sm text-muted-foreground">{Array.isArray(integrity.events) ? integrity.events.length : 0} monitored event(s) recorded. Integrity events are reviewed separately and do not alter the performance score.</p>
-      </BreakdownSection>
-      <p className="text-xs text-muted-foreground">Narrative evidence status: {String(metrics.scoringStatus ?? "pending").replaceAll("_", " ")}</p>
-    </div>
-  );
-}
-
-function getCallSimulationRuns(result?: HiringManagerAssessmentResult | null): CallSimulationRun[] {
-  const rawCalls = result?.rawData?.calls;
-  const rawSnapshots = result?.rawData?.snapshots;
-  const metricCalls = result?.metrics?.calls;
-  const runs = Array.isArray(metricCalls)
-    ? metricCalls
-    : Array.isArray(rawCalls)
-      ? rawCalls
-      : Array.isArray(rawSnapshots)
-        ? rawSnapshots
-        : [];
-
-  return runs as CallSimulationRun[];
-}
-
-const SECTION_LABELS: Record<string, string> = {
-  caller_information: "Caller Information",
-  system_information: "System Information",
-  intelligence_information: "Intelligence Information",
-  incident_information: "Incident Information",
-};
-
-const SECTION_KEYS = [
-  "caller_information",
-  "system_information",
-  "intelligence_information",
-  "incident_information",
-];
-
-function getRunScore(finalRuns: CallSimulationRun[], runIndex: number, criterionKey: string) {
-  const run = finalRuns.find((r) => r.runIndex === runIndex);
-  const criteria = run?.metrics?.criteria;
-  if (!Array.isArray(criteria)) return "—";
-  const crit = criteria.find((c) => (c as CriterionRow).key === criterionKey) as CriterionRow | undefined;
-  return crit ? `${crit.score} / ${crit.maxScore}` : "—";
-}
-
-export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakdownProps) {
-  const [selectedCallRunIndex, setSelectedCallRunIndex] = useState<number | null>(null);
-
-  if (!result?.metrics) return null;
-
-  if (result.metrics.evidenceLabel === "high-fidelity operational simulation") {
-    return <CallSimulationV2Report metrics={result.metrics} />;
-  }
-
-  const callsList = getCallSimulationRuns(result);
-  const finalRuns = callsList.filter((c) => c.metrics);
-
-  let activeMetrics = result.metrics as Record<string, unknown>;
-  let activeRunIndex = selectedCallRunIndex;
-
-  if (finalRuns.length > 0) {
-    if (activeRunIndex === null || !finalRuns.some((f) => f.runIndex === activeRunIndex)) {
-      activeRunIndex = finalRuns[0].runIndex;
-    }
-    const matchedRun = finalRuns.find((f) => f.runIndex === activeRunIndex);
-    if (matchedRun?.metrics) {
-      activeMetrics = matchedRun.metrics as Record<string, unknown>;
-    }
-  }
-
-  const criteriaList = (
-    (activeMetrics.criteria as CriterionRow[] | undefined) ??
-    (finalRuns[0]?.metrics?.criteria as CriterionRow[] | undefined) ??
-    []
-  );
-
-  return (
-    <div className="space-y-5">
-      {finalRuns.length > 1 && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-border/50 pb-3">
-          <span className="mr-2 text-xs font-semibold text-muted-foreground">Select call</span>
-          {finalRuns.map((run, idx) => {
-            const runMetrics = run.metrics as Record<string, unknown> | undefined;
-            const isSelected = activeRunIndex === run.runIndex;
+      {scenarios.length > 1 ? (
+        <div className="flex flex-wrap items-center gap-1.5 border-b border-border/50 pb-3 dark:border-white/10">
+          <span className="mr-2 text-xs font-semibold text-muted-foreground">
+            Select call
+          </span>
+          {scenarios.map((scenario, index) => {
+            const isSelected = active?.scenarioId === scenario.scenarioId;
+            const scenarioPassed =
+              (scenario.points ?? 0) >= (scenario.maximum ?? 0) * 0.7;
             return (
               <Button
-                key={run.runIndex}
+                key={scenario.scenarioId}
                 type="button"
                 variant={isSelected ? "default" : "outline"}
-                onClick={() => setSelectedCallRunIndex(run.runIndex)}
+                onClick={() => setSelectedScenarioId(scenario.scenarioId)}
                 className="h-7 rounded-lg px-3 text-[11px] font-semibold"
               >
-                Call {idx + 1} {runMetrics?.passed ? " (Pass)" : " (Review)"}
+                Call {index + 1} {scenarioPassed ? "(Pass)" : "(Review)"}
               </Button>
             );
           })}
         </div>
-      )}
+      ) : null}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <BreakdownStatTile
-          label="Scoring Outcome"
-          value={activeMetrics.passed ? "PASSED" : "FAILED"}
-          valueClassName={
-            activeMetrics.passed
-              ? "text-primary"
-              : "text-destructive"
-          }
+          label="Scoring outcome"
+          value={passed ? "PASSED" : "FAILED"}
+          valueClassName={cn(
+            "text-lg",
+            passed ? portalResultPassClass : portalResultFailClass,
+          )}
         />
         <BreakdownStatTile
-          label="Critical Errors"
-          value={(activeMetrics.criticalErrorsCount as number) ?? 0}
-          valueClassName={
-            ((activeMetrics.criticalErrorsCount as number) ?? 0) > 0
-              ? "text-destructive"
-              : undefined
-          }
+          label="Critical errors"
+          value={criticalErrors}
+          valueClassName={cn(
+            "text-lg",
+            criticalErrors > 0 ? portalResultFailClass : undefined,
+          )}
         />
         <BreakdownStatTile
-          label="Marks Awarded"
-          value={(activeMetrics.totalEarnedScore as string | number) ?? "0"}
-          suffix={`/ ${(activeMetrics.maxScore as string | number) ?? "5.0"}`}
+          label="Marks awarded"
+          value={numberOrNull(metrics.totalEarnedScore) ?? 0}
+          suffix={`/ ${numberOrNull(metrics.maxScore) ?? 0}`}
         />
       </div>
 
-      <BreakdownSection title="Section performance breakdown">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {SECTION_KEYS.map((secKey) => {
-            const sections = activeMetrics.sections as Record<string, { score: number; max: number }> | undefined;
-            const sec = sections?.[secKey] ?? { score: 0, max: 1.0 };
-            const pct = Math.round((sec.score / sec.max) * 100);
+      {orderedSections.length ? (
+        <BreakdownSection title="Section performance breakdown">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {orderedSections.map((section) => {
+              const entry = active!.sections![section]!;
+              const percent =
+                entry.max > 0 ? Math.round((entry.score / entry.max) * 100) : 0;
+              return (
+                <div key={section} className="space-y-1.5">
+                  <BreakdownMetricRow
+                    label={SECTION_LABELS[section] ?? section}
+                    value={`${entry.score} / ${entry.max} (${percent}%)`}
+                  />
+                  <BreakdownProgressTrack value={percent} className={portalProgressBarClass} />
+                </div>
+              );
+            })}
+          </div>
+        </BreakdownSection>
+      ) : null}
 
-            return (
-              <div key={secKey} className="space-y-1.5">
-                <BreakdownMetricRow
-                  label={SECTION_LABELS[secKey] || secKey}
-                  value={`${sec.score} / ${sec.max} (${pct}%)`}
-                />
-                <BreakdownProgressTrack value={pct} className={portalProgressBarClass} />
-              </div>
-            );
-          })}
-        </div>
+      <BreakdownSection title="Response timing">
+        <p className="text-sm text-muted-foreground">
+          <span className={timingBandClass("green")}>{bands.green} on time</span>
+          {" · "}
+          <span className={timingBandClass("amber")}>{bands.amber} delayed</span>
+          {" · "}
+          <span className={timingBandClass("red")}>{bands.red} late</span>
+          {" — captured against the point each detail was first spoken."}
+        </p>
       </BreakdownSection>
 
-      {criteriaList.length > 0 && (
+      {active?.criteria?.length ? (
         <div className="space-y-2.5">
           <BreakdownSectionTitle>Field scores</BreakdownSectionTitle>
           <BreakdownTableShell>
@@ -324,74 +203,74 @@ export function CallSimulationReportBreakdown({ result }: AssessmentReportBreakd
               <BreakdownTableHead>
                 <BreakdownTableHeaderRow>
                   <BreakdownTableHeaderCell>Field</BreakdownTableHeaderCell>
-                  {finalRuns.length > 1 ? (
-                    finalRuns.map((run, idx) => (
-                      <BreakdownTableHeaderCell key={run.runIndex} align="right">
-                        Call {idx + 1}
-                      </BreakdownTableHeaderCell>
-                    ))
-                  ) : (
-                    <BreakdownTableHeaderCell align="right">Score</BreakdownTableHeaderCell>
-                  )}
+                  <BreakdownTableHeaderCell align="right">Timing</BreakdownTableHeaderCell>
+                  <BreakdownTableHeaderCell align="right">Score</BreakdownTableHeaderCell>
                 </BreakdownTableHeaderRow>
               </BreakdownTableHead>
               <BreakdownTableBody>
-                {criteriaList.map((crit) => (
-                  <BreakdownTableRow key={crit.key}>
+                {active.criteria.map((criterion) => (
+                  <BreakdownTableRow key={criterion.criterionId}>
                     <BreakdownTableCell>
                       <div className="flex items-center gap-1.5 font-semibold">
-                        {crit.displayName}
-                        {crit.critical ? (
-                          <span className={cn(portalBadgeClass, "text-[9px] font-bold uppercase text-destructive")}>
+                        {criterion.label ?? criterion.criterionId}
+                        {criterion.critical ? (
+                          <span
+                            className={cn(
+                              portalBadgeClass,
+                              "text-[9px] font-bold uppercase",
+                              portalResultFailClass,
+                            )}
+                          >
                             Critical
                           </span>
                         ) : null}
                       </div>
                       <div className="mt-0.5 text-[10px] text-muted-foreground">
-                        {SECTION_LABELS[crit.section] || crit.section}
+                        {SECTION_LABELS[criterion.section ?? ""] ?? criterion.section}
                       </div>
                     </BreakdownTableCell>
-                    {finalRuns.length > 1 ? (
-                      finalRuns.map((run) => (
-                        <BreakdownTableCell key={run.runIndex} align="right" className="font-bold">
-                          {getRunScore(finalRuns, run.runIndex, crit.key)}
-                        </BreakdownTableCell>
-                      ))
-                    ) : (
-                      <BreakdownTableCell align="right" className="font-bold">
-                        {crit.score} / {crit.maxScore}
-                      </BreakdownTableCell>
-                    )}
+                    <BreakdownTableCell
+                      align="right"
+                      className={timingBandClass(criterion.timingBand)}
+                    >
+                      {criterion.timingBand ?? "—"}
+                    </BreakdownTableCell>
+                    <BreakdownTableCell align="right" className="font-bold">
+                      {criterion.awarded ?? 0} / {criterion.maxScore ?? 0}
+                    </BreakdownTableCell>
                   </BreakdownTableRow>
                 ))}
               </BreakdownTableBody>
             </BreakdownTable>
           </BreakdownTableShell>
         </div>
-      )}
-
-      {activeMetrics.feedback && typeof activeMetrics.feedback === "object" ? (
-        <div className="space-y-2.5">
-          <BreakdownSectionTitle>Qualitative feedback</BreakdownSectionTitle>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { label: "Information Capture", key: "information_capture" },
-              { label: "Timeliness & Dispatch", key: "timeliness" },
-              { label: "Operational Understanding", key: "incident_understanding" },
-            ].map(({ label, key }) => {
-              const feedback = activeMetrics.feedback as Record<string, string>;
-              return (
-                <BreakdownSection key={key} className="p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {label}
-                  </p>
-                  <p className="mt-1.5 text-xs leading-relaxed text-foreground">{feedback[key]}</p>
-                </BreakdownSection>
-              );
-            })}
-          </div>
-        </div>
       ) : null}
+
+      <BreakdownSection title="Weighted competencies">
+        <div className="space-y-4">
+          {asCompetencies(metrics.competencyScores).map((competency) => (
+            <div key={competency.id}>
+              <BreakdownMetricRow
+                label={`${competency.label} · ${competency.weight}% weight`}
+                value={`${Math.round(competency.score)}%`}
+              />
+              <BreakdownProgressTrack
+                value={competency.score}
+                className={portalProgressBarClass}
+              />
+            </div>
+          ))}
+        </div>
+      </BreakdownSection>
+
+      <CriticalGates flags={asFlags(metrics.criticalFlags)} />
+
+      <BreakdownSection title="Integrity events — separate from performance scoring">
+        <p className="text-sm text-muted-foreground">
+          {result.integrityEventCount ?? 0} monitored event(s) recorded. Integrity
+          events are reviewed separately and do not alter the performance score.
+        </p>
+      </BreakdownSection>
     </div>
   );
 }

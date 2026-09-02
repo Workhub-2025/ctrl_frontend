@@ -3,10 +3,8 @@ import type { NextRequest } from "next/server";
 
 import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
-import { mapFirebaseReportToHmResult } from "@/lib/hm-assessment-progress";
 import type { FirebaseAssignmentAssessmentReport } from "@/lib/hm-assessment-progress";
-import { buildCompositeStackEntries } from "@/lib/hiring-manager/campaign-stack-score";
-import { computeDecisionReadyCompositeScore } from "@/lib/hiring-manager/composite-score";
+import { buildAssignmentAssessmentReport } from "@/lib/hiring-manager/assignment-assessment-report";
 import { resolvePortalOrgGenerationFromDomain } from "@/lib/portal-cache-invalidation";
 import {
   PORTAL_USER_SCOPED_TTL_MS,
@@ -14,10 +12,7 @@ import {
 } from "@/lib/portal-cache-keys";
 import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
-import type {
-  HiringManagerAssessmentResult,
-  HiringManagerCandidateReport,
-} from "@/types/hiring-manager.types";
+import type { HiringManagerCandidateReport } from "@/types/hiring-manager.types";
 
 export async function GET(
   request: NextRequest,
@@ -54,37 +49,16 @@ export async function GET(
       PORTAL_USER_SCOPED_TTL_MS,
       async () => {
         const detail = await recruitment.getAssignment(candidateSessionId);
-        const [workspace, assessmentResults] = await Promise.all([
+        const [workspace, assessmentReports] = await Promise.all([
           recruitment.getCampaign(detail.assignment.campaignId),
           domainApi.request<FirebaseAssignmentAssessmentReport[]>({
             path: `/v1/assessment-runtime/assignments/${encodeURIComponent(candidateSessionId)}/report`,
             firebaseSessionCookie,
           }),
         ]);
-        const activeAssessmentStack = workspace.assessmentStack
-          .filter((assessment) => assessment.status === "active")
-          .sort((left, right) => left.position - right.position);
-        const stackOrder = new Map(
-          activeAssessmentStack.map((assessment, index) => [
-            assessment.definitionId,
-            index,
-          ]),
-        );
-        const results: HiringManagerAssessmentResult[] = assessmentResults
-          .map(mapFirebaseReportToHmResult)
-          .sort(
-            (left, right) =>
-              (stackOrder.get(left.assessment) ?? Number.MAX_SAFE_INTEGER) -
-                (stackOrder.get(right.assessment) ?? Number.MAX_SAFE_INTEGER) ||
-              left.assessment.localeCompare(right.assessment),
-          );
-        const assessmentStack = activeAssessmentStack.map(
-          (assessment) => assessment.definitionId,
-        );
-        const compositeScore = computeDecisionReadyCompositeScore(
-          buildCompositeStackEntries({ assessmentStack }),
-          results.filter((result) => result.assessmentStatus === "completed"),
-        );
+        const { results, compositeScore, assessmentStack, resolvedStackSummary } =
+          buildAssignmentAssessmentReport({ workspace, assessmentReports });
+
         const assessmentSession = detail.assignment.sessionId
           ? workspace.sessions.find(
               (session) => session.id === detail.assignment.sessionId,
@@ -109,7 +83,7 @@ export async function GET(
             name: workspace.campaign.title,
             role: workspace.campaign.jobRole,
             assessmentSettings: null,
-            resolvedStackSummary: null,
+            resolvedStackSummary,
             assessmentStack,
           },
           assessmentSession: assessmentSession

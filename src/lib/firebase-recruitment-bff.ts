@@ -9,6 +9,7 @@ import {
   type FirebaseSession,
 } from "@/lib/firebase-recruitment-api";
 import { getCachedDomainUserContext } from "@/lib/firebase-user-context-cache";
+import { normalizeResolvedStackSummary } from "@/lib/hiring-manager/campaign-stack-score";
 import {
   mapFirebaseReportToHmResult,
   type FirebaseAssignmentAssessmentReport,
@@ -93,11 +94,26 @@ export function toHiringManagerCampaign(
   workspace?: FirebaseCampaignWorkspace,
 ): HiringManagerCampaignListItem {
   const sessionCount = workspace?.sessions.length ?? 0;
-  const stack =
+  const activeStack =
     workspace?.assessmentStack
       .filter((item) => item.status === "active")
-      .sort((left, right) => left.position - right.position)
-      .map((item) => item.definitionId) ?? [];
+      .sort((left, right) => left.position - right.position) ?? [];
+  const stack = activeStack.map((item) => item.slug);
+  // Only a fully weighted stack is a weighted stack; a partial one falls back
+  // to an equal split rather than under-counting an unweighted module.
+  const resolvedStackSummary =
+    activeStack.length > 0 &&
+    activeStack.every((item) => typeof item.weight === "number")
+      ? normalizeResolvedStackSummary({
+          assessments: activeStack.map((item) => ({
+            documentId: item.id,
+            slug: item.slug,
+            displayName: item.title || item.slug,
+            weight: item.weight ?? 0,
+          })),
+          resolvedAt: campaign.updatedAt,
+        })
+      : null;
   return {
     id: campaign.id,
     documentId: campaign.id,
@@ -110,7 +126,7 @@ export function toHiringManagerCampaign(
     sessions: sessionCount,
     assessmentStack: stack,
     assessmentSettings: null,
-    resolvedStackSummary: null,
+    resolvedStackSummary,
     nextMilestone:
       campaign.status === "pending_review"
         ? "Awaiting client approval"
@@ -218,7 +234,7 @@ export function toHiringManagerCampaignDetail(
     location: workspace.campaign.location ?? "Location to confirm",
     linkedAssessmentSlugs: workspace.assessmentStack
       .filter((item) => item.status === "active")
-      .map((item) => item.definitionId),
+      .map((item) => item.slug),
     assessmentSessions: sessions,
     joinedCandidates: assignments
       .filter((assignment) => assignment.candidateUserId !== null)

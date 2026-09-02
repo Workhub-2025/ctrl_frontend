@@ -81,6 +81,14 @@ export function portalClientSharedCandidatesCacheKeyWithGeneration(
   return `client:shared-candidates:user:${sub}:g:${generation}`;
 }
 
+export function portalClientSharedCandidateReportCacheKeyWithGeneration(
+  sub: string,
+  assignmentId: string,
+  generation: string,
+) {
+  return `client:shared-candidate-report:user:${sub}:${assignmentId}:g:${generation}`;
+}
+
 
 export function portalCandidateWorkspaceCacheKey(sub: string) {
   return `candidate:workspace:user:${sub}`;

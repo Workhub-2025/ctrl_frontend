@@ -22,7 +22,6 @@ import {
   Save,
   Timer,
 } from "lucide-react";
-import Link from "next/link";
 import { getAssessmentCatalogueIcon } from "@/assessments/plugins/display";
 import { getAssessmentPlatformEntry, preferredAssessmentReleaseVersion } from "@/lib/assessment-platform-registry";
 import { isPremiumCatalogueTier } from "@/lib/client/entitlements";
@@ -892,19 +891,17 @@ export function HiringManagerCampaignBuilder({
                         return (
                           <>
                             <span className={cn(portalBadgeClass, "px-2 py-0.5")}>
-                              {mode === "stage_owned"
-                                ? "Self-paced (stage timed)"
-                                : mode === "display_only"
-                                  ? `About ${assessment.duration}`
-                                  : assessment.duration}
+                              {mode === "display_only"
+                                ? `About ${assessment.duration}`
+                                : assessment.duration}
                             </span>
-                            <span className={cn(portalBadgeClass, "px-2 py-0.5 border-primary/30 text-primary font-medium")}>
-                              {mode === "stage_owned"
-                                ? "Stage-Owned"
-                                : mode === "display_only"
-                                  ? "Display Only"
-                                  : "Enforced Timer"}
-                            </span>
+                            {/* Stage-timed assessments show the estimate alone —
+                                the internal timer mode is not useful to a hiring manager. */}
+                            {mode === "stage_owned" ? null : (
+                              <span className={cn(portalBadgeClass, "px-2 py-0.5 border-primary/30 text-primary font-medium")}>
+                                {mode === "display_only" ? "Display Only" : "Enforced Timer"}
+                              </span>
+                            )}
                           </>
                         );
                       })()}
@@ -936,9 +933,17 @@ export function HiringManagerCampaignBuilder({
                               max="100"
                               value={draft.assessmentWeights[assessment.slug] ?? 0}
                               disabled={isLocked}
-                              onChange={(event) =>
-                                updateAssessmentWeight(assessment.slug, event.target.value)
-                              }
+                              onChange={(event) => {
+                                // Typing into a field showing "0" leaves "010".
+                                // The parse gives the same number the field is
+                                // already bound to, so React sees no state change
+                                // and the stray zero stays in the DOM — strip it
+                                // from the element itself as it is typed.
+                                const raw = event.target.value;
+                                const trimmed = raw.replace(/^0+(?=\d)/, "");
+                                if (trimmed !== raw) event.target.value = trimmed;
+                                updateAssessmentWeight(assessment.slug, trimmed);
+                              }}
                               className={cn(portalInputClass, "h-10")}
                             />
                             <span className="text-xs font-bold text-muted-foreground">%</span>
@@ -974,7 +979,7 @@ export function HiringManagerCampaignBuilder({
                             htmlFor={`threshold-${assessment.slug}`}
                             className={portalLabelClass}
                           >
-                            Standard threshold
+                            Assessment pass rate
                           </Label>
                           <div className="flex items-center gap-2">
                             <Input
@@ -1003,14 +1008,10 @@ export function HiringManagerCampaignBuilder({
                             />
                             <span className="text-xs font-bold text-muted-foreground">%</span>
                           </div>
-                          <p className="text-xs leading-5 text-muted-foreground">
-                            Snapshotted when a candidate starts. Evidence for reviewers, not an
-                            automated hiring decision.
-                          </p>
                         </div>
 
                         <div className="space-y-2">
-                          <Label className={portalLabelClass}>Module release</Label>
+                          <Label className={portalLabelClass}>Select module</Label>
                           <Select
                             value={selectedVersion}
                             onValueChange={(value) =>
@@ -1034,16 +1035,6 @@ export function HiringManagerCampaignBuilder({
                               ))}
                             </SelectContent>
                           </Select>
-                          <p className="text-xs leading-5 text-muted-foreground">
-                            Browse release notes in the{" "}
-                            <Link
-                              href="/hiring-manager-dashboard/assessments"
-                              className="font-medium text-primary underline-offset-2 hover:underline"
-                            >
-                              Assessment library
-                            </Link>
-                            .
-                          </p>
                         </div>
 
                         {assessment.slug === "typing" ? (

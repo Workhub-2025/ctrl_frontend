@@ -19,6 +19,12 @@ export type FirebaseAssignmentAssessmentReport = Readonly<{
   criticalFlagCount: number | null;
   submittedAt: string | null;
   completedAt: string | null;
+  /** Threshold pinned on the attempt, not a portal-side default. */
+  configuredThreshold?: number;
+  integrityEventCount?: number;
+  integrityScore?: number | null;
+  /** Scoring keeps failing; surfaced so a stuck attempt is not invisible. */
+  scoringStalled?: boolean;
   competencyScores?: ReadonlyArray<{
     id: string;
     label: string;
@@ -29,6 +35,9 @@ export type FirebaseAssignmentAssessmentReport = Readonly<{
     id: string;
     scenarioId: string;
     label: string;
+    /** Present where the release defines a risk taxonomy (SJT). */
+    category?: string;
+    severity?: "minor" | "moderate" | "material";
   }>;
   scenarioEvidence?: readonly unknown[];
   reportMetrics?: Readonly<Record<string, unknown>>;
@@ -44,17 +53,28 @@ export function mapFirebaseReportToHmResult(
     result.status === "abandoned" || result.status === "failed";
 
   const reportMetrics = result.reportMetrics ?? {};
-    const metrics: Record<string, unknown> = {
+  const configuredThreshold =
+    typeof result.configuredThreshold === "number"
+      ? result.configuredThreshold
+      : typeof reportMetrics.configuredThreshold === "number"
+        ? reportMetrics.configuredThreshold
+        : null;
+
+  const metrics: Record<string, unknown> = {
+    ...reportMetrics,
     attemptId: result.attemptId,
     campaignAssessmentId: result.campaignAssessmentId,
     releaseVersion: result.releaseVersion,
     revision: result.revision,
     criticalFlagCount: result.criticalFlagCount,
     attemptStatus: result.status,
+    scoringStalled: result.scoringStalled === true,
     overallScore: result.overallScore,
     meetsConfiguredStandard: result.meetsConfiguredStandard,
     competencyScores: result.competencyScores ?? reportMetrics.competencyScores,
-    criticalFlags: result.criticalFlags ?? reportMetrics.criticalFlags,
+    // Prefer the derived flags: they carry severity and category, which the
+    // raw scorer array does not.
+    criticalFlags: reportMetrics.criticalFlags ?? result.criticalFlags,
     scenarioEvidence: result.scenarioEvidence ?? reportMetrics.scenarioEvidence,
     evidenceLabel: reportMetrics.evidenceLabel,
     wpm: reportMetrics.wpm,
@@ -68,7 +88,7 @@ export function mapFirebaseReportToHmResult(
     criticalFactAccuracy: reportMetrics.criticalFactAccuracy,
     materialRiskFlagCount: reportMetrics.materialRiskFlagCount,
     moderateRiskFlagCount: reportMetrics.moderateRiskFlagCount,
-    configuredThreshold: 70,
+    configuredThreshold,
   };
 
   return {
@@ -91,6 +111,12 @@ export function mapFirebaseReportToHmResult(
     wpm: typeof reportMetrics.wpm === "number" ? reportMetrics.wpm : null,
     accuracy:
       typeof reportMetrics.accuracy === "number" ? reportMetrics.accuracy : null,
+    integrityScore:
+      typeof result.integrityScore === "number" ? result.integrityScore : null,
+    integrityEventCount:
+      typeof result.integrityEventCount === "number"
+        ? result.integrityEventCount
+        : null,
     metrics,
     rawData: null,
   };
