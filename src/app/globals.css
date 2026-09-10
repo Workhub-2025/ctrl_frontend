@@ -518,9 +518,10 @@ html[data-ctrl-motion="reduced"] .ctrl-portal *::after {
   scrollbar-width: none;
 }
 
-*::-webkit-scrollbar,
-*::before::-webkit-scrollbar,
-*::after::-webkit-scrollbar {
+/* Chaining a second pseudo-element (*::before::-webkit-scrollbar) is invalid
+   CSS that no browser applies, and Turbopack refuses to parse it. The
+   universal selector below already covers every scrollbar. */
+*::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;

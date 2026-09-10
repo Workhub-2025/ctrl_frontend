@@ -20,12 +20,15 @@ import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
  */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ assignmentId: string }> },
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { context: actorContext, domainApi, firebaseSessionCookie, recruitment } =
       await requireFirebaseRecruitmentSession("client");
-    const { assignmentId } = await context.params;
+    // Named `id` to match the sibling routes under this segment: Next.js
+    // requires one slug name per dynamic path position, and five other routes
+    // here already use `[id]`.
+    const { id: assignmentId } = await context.params;
 
     if (!actorContext.organizationId) {
       return NextResponse.json(
