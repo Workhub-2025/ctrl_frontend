@@ -29,3 +29,11 @@ export interface AssessmentUiPlugin {
   /** Returns true when result has expandable HM breakdown content. */
   hasReportBreakdown?: (result: AssessmentReportBreakdownProps["result"]) => boolean;
 }
+
+export type AssessmentHeadlineMetric = { key: string; label: string; suffix?: string; maximumKey?: string };
+export type AssessmentReportUiPlugin = Pick<AssessmentUiPlugin, "slug" | "title" | "description" | "href" | "icon"> & {
+  duration?: string;
+  reportBreakdown: ComponentType<AssessmentReportBreakdownProps>;
+  hasReportBreakdown: (result: AssessmentReportBreakdownProps["result"]) => boolean;
+  headlineMetrics: readonly AssessmentHeadlineMetric[];
+};

@@ -1,4 +1,5 @@
 "use client";
+import { ScoringTable } from "./scoring-table";
 
 import {
   portalProgressBarClass,
@@ -19,6 +20,7 @@ import {
   asFlags,
   numberOrNull,
 } from "./breakdown-common";
+import { PerformanceInsights } from "./performance-insights";
 import type { AssessmentReportBreakdownProps } from "./types";
 
 /** Fallback floors, used only if the backend has not sent them. */
@@ -51,11 +53,13 @@ export function SituationalJudgementReportBreakdown({
   const rationale = Array.isArray(metrics.decisionRationale)
     ? (metrics.decisionRationale as string[])
     : [];
-  const materialFlags = numberOrNull(metrics.materialRiskFlagCount) ?? 0;
+  const materialFlags = numberOrNull(metrics.materialRiskFlagCount);
 
   return (
     <div className="space-y-5">
       <StandardHeader metrics={metrics} />
+
+      <PerformanceInsights insights={metrics.insights} />
 
       <div className="grid gap-3 sm:grid-cols-3">
         <BreakdownStatTile
@@ -65,12 +69,12 @@ export function SituationalJudgementReportBreakdown({
         />
         <BreakdownStatTile
           label="Material risk flags"
-          value={materialFlags}
-          valueClassName={cn("text-lg", materialFlags > 0 ? portalResultFailClass : undefined)}
+          value={materialFlags ?? "—"}
+          valueClassName={cn("text-lg", materialFlags !== null && materialFlags > 0 ? portalResultFailClass : undefined)}
         />
         <BreakdownStatTile
           label="Moderate risk flags"
-          value={numberOrNull(metrics.moderateRiskFlagCount) ?? 0}
+          value={numberOrNull(metrics.moderateRiskFlagCount) ?? "—"}
           valueClassName="text-lg"
         />
       </div>
@@ -144,6 +148,7 @@ export function SituationalJudgementReportBreakdown({
         </div>
       </div>
 
+      <ScoringTable title="Scenario scoring records" columns={["Scenario", "Score / 100", "Risk flags"]} rows={(Array.isArray(metrics.scenarioScores) ? metrics.scenarioScores : []).map((scenario: Record<string, unknown>) => [String(scenario.scenarioId ?? ""), numberOrNull(scenario.score), Array.isArray(scenario.riskFlagIds) ? scenario.riskFlagIds.length : null])} />
       <CriticalGates flags={asFlags(metrics.criticalFlags)} />
     </div>
   );

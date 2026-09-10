@@ -1,4 +1,6 @@
 "use client";
+import { PerformanceInsights } from "./performance-insights";
+import { ScoringTable } from "./scoring-table";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +47,7 @@ const SECTION_ORDER = ["caller", "system", "intelligence", "incident"];
 
 type CriterionEvidence = {
   criterionId: string;
+  explanation?: string;
   label?: string;
   section?: string;
   critical?: boolean;
@@ -99,8 +102,8 @@ export function CallSimulationReportBreakdown({
     scenarios[0] ??
     null;
   const bands = timingBandSummary(active?.criteria);
-  const passed = metrics.passed === true;
-  const criticalErrors = numberOrNull(metrics.criticalErrorsCount) ?? 0;
+  const passed = typeof metrics.passed === "boolean" ? metrics.passed : null;
+  const criticalErrors = numberOrNull(metrics.criticalErrorsCount);
 
   const orderedSections = SECTION_ORDER.filter(
     (section) => active?.sections?.[section] !== undefined,
@@ -114,6 +117,7 @@ export function CallSimulationReportBreakdown({
       </div>
 
       <StandardHeader metrics={metrics} />
+      <PerformanceInsights insights={metrics.insights} />
 
       {scenarios.length > 1 ? (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-border/50 pb-3 dark:border-white/10">
@@ -122,17 +126,15 @@ export function CallSimulationReportBreakdown({
           </span>
           {scenarios.map((scenario, index) => {
             const isSelected = active?.scenarioId === scenario.scenarioId;
-            const scenarioPassed =
-              (scenario.points ?? 0) >= (scenario.maximum ?? 0) * 0.7;
             return (
               <Button
                 key={scenario.scenarioId}
                 type="button"
                 variant={isSelected ? "default" : "outline"}
                 onClick={() => setSelectedScenarioId(scenario.scenarioId)}
-                className="h-7 rounded-lg px-3 text-[11px] font-semibold"
+                className="min-h-11 rounded-lg px-3 text-xs font-semibold"
               >
-                Call {index + 1} {scenarioPassed ? "(Pass)" : "(Review)"}
+                Call {index + 1}
               </Button>
             );
           })}
@@ -142,7 +144,7 @@ export function CallSimulationReportBreakdown({
       <div className="grid gap-3 sm:grid-cols-3">
         <BreakdownStatTile
           label="Scoring outcome"
-          value={passed ? "PASSED" : "FAILED"}
+          value={passed === null ? "Unavailable" : passed ? "STANDARD MET" : "STANDARD NOT MET"}
           valueClassName={cn(
             "text-lg",
             passed ? portalResultPassClass : portalResultFailClass,
@@ -150,19 +152,20 @@ export function CallSimulationReportBreakdown({
         />
         <BreakdownStatTile
           label="Critical errors"
-          value={criticalErrors}
+          value={criticalErrors ?? "—"}
           valueClassName={cn(
             "text-lg",
-            criticalErrors > 0 ? portalResultFailClass : undefined,
+            criticalErrors !== null && criticalErrors > 0 ? portalResultFailClass : undefined,
           )}
         />
         <BreakdownStatTile
           label="Marks awarded"
-          value={numberOrNull(metrics.totalEarnedScore) ?? 0}
-          suffix={`/ ${numberOrNull(metrics.maxScore) ?? 0}`}
+          value={numberOrNull(metrics.totalEarnedScore) ?? "—"}
+          suffix={`/ ${numberOrNull(metrics.maxScore) ?? "—"}`}
         />
       </div>
 
+      <ScoringTable title="All assessed calls" columns={["Call", "Marks", "Maximum"]} rows={scenarios.map((scenario,index) => [`Call ${index + 1}`, scenario.points, scenario.maximum])} />
       {orderedSections.length ? (
         <BreakdownSection title="Section performance breakdown">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -228,6 +231,7 @@ export function CallSimulationReportBreakdown({
                       <div className="mt-0.5 text-[10px] text-muted-foreground">
                         {SECTION_LABELS[criterion.section ?? ""] ?? criterion.section}
                       </div>
+                      {criterion.explanation && <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{criterion.explanation}</p>}
                     </BreakdownTableCell>
                     <BreakdownTableCell
                       align="right"
@@ -236,7 +240,7 @@ export function CallSimulationReportBreakdown({
                       {criterion.timingBand ?? "—"}
                     </BreakdownTableCell>
                     <BreakdownTableCell align="right" className="font-bold">
-                      {criterion.awarded ?? 0} / {criterion.maxScore ?? 0}
+                      {criterion.awarded ?? "—"} / {criterion.maxScore ?? "—"}
                     </BreakdownTableCell>
                   </BreakdownTableRow>
                 ))}
@@ -267,7 +271,7 @@ export function CallSimulationReportBreakdown({
 
       <BreakdownSection title="Integrity events — separate from performance scoring">
         <p className="text-sm text-muted-foreground">
-          {result.integrityEventCount ?? 0} monitored event(s) recorded. Integrity
+          {result.integrityEventCount ?? "Unavailable"} monitored event(s) recorded. Integrity
           events are reviewed separately and do not alter the performance score.
         </p>
       </BreakdownSection>

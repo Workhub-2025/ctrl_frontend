@@ -1,3 +1,4 @@
+import { validateCandidateReport } from "@/lib/hiring-manager/validate-report";
 import {
   getPortalCacheUpdatedAt,
   invalidatePortalCache,
@@ -127,7 +128,7 @@ export class HiringManagerPortalClientService {
     if (!body.data) {
       throw new Error("Candidate report could not be found.");
     }
-    return body.data;
+    return validateCandidateReport(body.data);
   }
 
   static invalidate() {

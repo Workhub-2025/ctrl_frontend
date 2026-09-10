@@ -11,22 +11,7 @@ import {
   hasTypingReportBreakdown,
 } from "./report/shared";
 import { CANDIDATE_ASSESSMENT_CATALOG } from "./candidate-catalog";
-import type { AssessmentReportBreakdownProps } from "./report/types";
-import type { LucideIcon } from "lucide-react";
-import type { ComponentType } from "react";
-
-type AssessmentUiPlugin = {
-  slug: string;
-  title: string;
-  description: string;
-  href: string;
-  duration: string;
-  icon: LucideIcon;
-  reportBreakdown: ComponentType<AssessmentReportBreakdownProps>;
-  hasReportBreakdown: (
-    result: AssessmentReportBreakdownProps["result"],
-  ) => boolean;
-};
+import type { AssessmentReportUiPlugin } from "./types";
 
 function requireCatalog(slug: string) {
   const catalog = CANDIDATE_ASSESSMENT_CATALOG.find((item) => item.slug === slug);
@@ -36,29 +21,34 @@ function requireCatalog(slug: string) {
   return catalog;
 }
 
-const plugins: AssessmentUiPlugin[] = [
+const plugins: AssessmentReportUiPlugin[] = [
   {
     ...requireCatalog("typing"),
+    headlineMetrics: [{key:"wpm",label:"Average speed",suffix:" WPM"}, {key:"accuracy",label:"Accuracy",suffix:"%"}, {key:"stabilityScore",label:"Stability",suffix:"/100"}],
     reportBreakdown: TypingReportBreakdown,
     hasReportBreakdown: hasTypingReportBreakdown,
   },
   {
     ...requireCatalog("situational-judgement"),
+    headlineMetrics: [{key:"decisionBand",label:"Decision band"}, {key:"competencyBelowFloorCount",label:"Below minimum"}, {key:"criticalFlagCount",label:"Risk flags"}],
     reportBreakdown: SituationalJudgementReportBreakdown,
     hasReportBreakdown: hasSituationalJudgementReportBreakdown,
   },
   {
     ...requireCatalog("prioritisation"),
+    headlineMetrics: [{key:"highPriorityAccuracy",label:"High-priority accuracy",suffix:"%"}, {key:"criticalMisprioritisationCount",label:"Critical misprioritisations"}, {key:"rawPoints",label:"Points",maximumKey:"maximumPoints"}],
     reportBreakdown: PrioritisationReportBreakdown,
     hasReportBreakdown: hasPrioritisationReportBreakdown,
   },
   {
     ...requireCatalog("short-term-memory"),
+    headlineMetrics: [{key:"factRecallAccuracy",label:"Recall accuracy",suffix:"%"}, {key:"criticalFactAccuracy",label:"Critical facts recalled",suffix:"%"}, {key:"sequenceScore",label:"Sequencing",suffix:"%"}],
     reportBreakdown: ShortTermMemoryReportBreakdown,
     hasReportBreakdown: hasShortTermMemoryReportBreakdown,
   },
   {
     ...requireCatalog("call-simulation"),
+    headlineMetrics: [{key:"totalEarnedScore",label:"Marks",maximumKey:"maxScore"}, {key:"criticalErrorsCount",label:"Critical errors"}, {key:"scoringStatus",label:"Marking"}],
     reportBreakdown: CallSimulationReportBreakdown,
     hasReportBreakdown: hasCallSimulationReportBreakdown,
   },

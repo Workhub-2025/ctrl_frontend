@@ -45,6 +45,7 @@ export type FirebaseAssignment = Readonly<{
   campaignId: string;
   sessionId: string | null;
   candidateUserId: string | null;
+  candidateDisplayName?: string | null;
   inviteEmail: string;
   status: "pending" | "invited" | "locked" | "active" | "completed" | "withdrawn" | "closed";
   invitationDeliveryStatus:

@@ -66,9 +66,9 @@ export function StandardHeader({
   metrics: Record<string, unknown>;
   bandLabel?: string | null;
 }) {
-  const overallScore = Number(metrics.overallScore ?? 0);
-  const threshold = Number(metrics.configuredThreshold ?? 70);
-  const meetsStandard = metrics.meetsConfiguredStandard === true;
+  const overallScore = numberOrNull(metrics.overallScore);
+  const threshold = numberOrNull(metrics.configuredThreshold);
+  const meetsStandard = typeof metrics.meetsConfiguredStandard === "boolean" ? metrics.meetsConfiguredStandard : null;
 
   return (
     <div
@@ -77,12 +77,12 @@ export function StandardHeader({
         bandLabel ? "lg:grid-cols-4" : undefined,
       )}
     >
-      <BreakdownStatTile label="Overall score" value={Math.round(overallScore)} suffix="%" />
-      <BreakdownStatTile label="Assessment pass rate" value={threshold} suffix="%" />
+      <BreakdownStatTile label="Overall score" value={overallScore === null ? "—" : Math.round(overallScore)} suffix="%" />
+      <BreakdownStatTile label="Configured score threshold" value={threshold ?? "—"} suffix="%" />
       <BreakdownStatTile
         label="Assessment standard"
-        value={meetsStandard ? "MET" : "NOT MET"}
-        valueClassName={meetsStandard ? portalResultPassClass : portalResultFailClass}
+        value={meetsStandard === null ? "Unavailable" : meetsStandard ? "MET" : "NOT MET"}
+        valueClassName={meetsStandard === null ? undefined : meetsStandard ? portalResultPassClass : portalResultFailClass}
       />
       {bandLabel ? (
         <BreakdownStatTile

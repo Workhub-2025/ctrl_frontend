@@ -1,4 +1,5 @@
 "use client";
+import { ScoringTable } from "./scoring-table";
 
 import { CartesianGrid, Line, LineChart, ReferenceLine, XAxis, YAxis } from "recharts";
 import {
@@ -31,6 +32,7 @@ import {
   formatDuration,
   numberOrNull,
 } from "./breakdown-common";
+import { PerformanceInsights } from "./performance-insights";
 import type { AssessmentReportBreakdownProps } from "./types";
 
 type QuestionScore = {
@@ -59,19 +61,19 @@ export function PrioritisationReportBreakdown({
   const bands = [
     {
       label: "High priority",
-      score: Number(bandAccuracy?.high ?? metrics.highPriorityAccuracy ?? 0),
+      score: numberOrNull(bandAccuracy?.high ?? metrics.highPriorityAccuracy),
       barClass: portalResultBarPassClass,
       valueClass: portalResultPassClass,
     },
     {
       label: "Medium priority",
-      score: Number(bandAccuracy?.medium ?? metrics.mediumPriorityAccuracy ?? 0),
+      score: numberOrNull(bandAccuracy?.medium ?? metrics.mediumPriorityAccuracy),
       barClass: portalResultBarSecondaryClass,
       valueClass: portalResultSecondaryClass,
     },
     {
       label: "Low priority",
-      score: Number(bandAccuracy?.low ?? metrics.lowPriorityAccuracy ?? 0),
+      score: numberOrNull(bandAccuracy?.low ?? metrics.lowPriorityAccuracy),
       barClass: portalResultBarMutedClass,
       valueClass: portalResultMutedClass,
     },
@@ -88,16 +90,18 @@ export function PrioritisationReportBreakdown({
         bandLabel={typeof metrics.outcomeBand === "string" ? metrics.outcomeBand : null}
       />
 
+      <PerformanceInsights insights={metrics.insights} />
+
       <BreakdownSection title="Priority band accuracy">
         <div className="space-y-3">
           {bands.map((band) => (
             <div key={band.label} className="space-y-1.5">
               <BreakdownMetricRow
                 label={band.label}
-                value={`${Math.round(band.score)}%`}
+                value={band.score === null ? "—" : `${Math.round(band.score)}%`}
                 valueClassName={band.valueClass}
               />
-              <BreakdownProgressTrack value={band.score} className={band.barClass} />
+              {band.score !== null && <BreakdownProgressTrack value={band.score} className={band.barClass} />}
             </div>
           ))}
         </div>
@@ -191,6 +195,11 @@ export function PrioritisationReportBreakdown({
         </div>
       ) : null}
 
+      <ScoringTable title="Question scoring records" columns={["Question", "Points", "Maximum"]} rows={questionScores.map(question => [question.questionId, question.displayedPoints, question.maximumPoints])} />
+      <BreakdownSection title="Direction of critical misprioritisations">
+        <BreakdownMetricRow label="High-priority incidents placed low" value={numberOrNull(metrics.highPlacedLowCount) ?? "—"} />
+        <BreakdownMetricRow label="Low-priority incidents placed high" value={numberOrNull(metrics.lowPlacedHighCount) ?? "—"} />
+      </BreakdownSection>
       {lowest.length ? (
         <BreakdownSection title="Lowest performing questions">
           <div className="space-y-2">

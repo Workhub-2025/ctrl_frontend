@@ -4,10 +4,8 @@ import { mapFirebaseReportToHmResult } from "@/lib/hm-assessment-progress";
 import type { FirebaseAssignmentAssessmentReport } from "@/lib/hm-assessment-progress";
 import type { FirebaseCampaignWorkspace } from "@/lib/firebase-recruitment-api";
 import {
-  buildCompositeStackEntries,
   normalizeResolvedStackSummary,
 } from "@/lib/hiring-manager/campaign-stack-score";
-import { computeDecisionReadyCompositeScore } from "@/lib/hiring-manager/composite-score";
 import type {
   HiringManagerAssessmentResult,
   HiringManagerResolvedStackSummary,
@@ -45,17 +43,18 @@ export function buildAssignmentAssessmentReport(input: {
     weight: assessment.weight,
   }));
 
-  const stackOrder = new Map(
-    resolvedStack.map((assessment, index) => [assessment.slug, index]),
-  );
-  const results = input.assessmentReports
-    .map(mapFirebaseReportToHmResult)
-    .sort(
-      (left, right) =>
-        (stackOrder.get(left.assessment) ?? Number.MAX_SAFE_INTEGER) -
-          (stackOrder.get(right.assessment) ?? Number.MAX_SAFE_INTEGER) ||
-        left.assessment.localeCompare(right.assessment),
-    );
+  const reportByAssignment = new Map(input.assessmentReports.map((report) => [report.campaignAssessmentId, report]));
+  const allWeighted = activeStack.length > 0 && activeStack.every((item) => typeof item.weight === "number");
+  const weightTotal = allWeighted ? activeStack.reduce((sum, item) => sum + (item.weight ?? 0), 0) : 0;
+  const results = activeStack.map((assessment): HiringManagerAssessmentResult => {
+    const report = reportByAssignment.get(assessment.id);
+    const weight = allWeighted && weightTotal > 0 ? (assessment.weight ?? 0) * 100 / weightTotal : 100 / activeStack.length;
+    const result = report ? mapFirebaseReportToHmResult(report) : {
+      id: assessment.id, assessment: assessment.slug, score: "—", numericScore: null,
+      assessmentStatus: "not-started", passed: null, metrics: { campaignAssessmentId: assessment.id, releaseId: assessment.releaseId, evidenceAvailability: "pending" }
+    };
+    return { ...result, campaignAssessmentId: assessment.id, title: assessment.title || assessment.slug, weight };
+  });
 
   // A campaign is weighted only when every active module carries a weight; a
   // partially weighted stack falls back to an equal split rather than silently
@@ -81,9 +80,7 @@ export function buildAssignmentAssessmentReport(input: {
     results,
     assessmentStack,
     resolvedStackSummary,
-    compositeScore: computeDecisionReadyCompositeScore(
-      buildCompositeStackEntries({ assessmentStack, resolvedStackSummary }),
-      results.filter((result) => result.assessmentStatus === "completed"),
-    ),
+    compositeScore: results.length > 0 && results.every(result => result.assessmentStatus === "completed" && typeof result.numericScore === "number" && Number.isFinite(result.numericScore))
+      ? Math.round(results.reduce((total, result) => total + result.numericScore! * (result.weight ?? 0) / 100, 0)) : null,
   };
 }

@@ -1,3 +1,4 @@
+import { assessmentReportRowSchema } from "@/lib/assessment-report-contract";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -5,12 +6,6 @@ import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 import type { FirebaseAssignmentAssessmentReport } from "@/lib/hm-assessment-progress";
 import { buildAssignmentAssessmentReport } from "@/lib/hiring-manager/assignment-assessment-report";
-import { resolvePortalOrgGenerationFromDomain } from "@/lib/portal-cache-invalidation";
-import {
-  PORTAL_USER_SCOPED_TTL_MS,
-  portalHmReportCacheKeyWithGeneration,
-} from "@/lib/portal-cache-keys";
-import { portalServerCacheGetOrSet } from "@/lib/portal-server-cache";
 import { rejectRateLimitedPortalRead } from "@/lib/security/api-rate-limit";
 import type { HiringManagerCandidateReport } from "@/types/hiring-manager.types";
 
@@ -32,22 +27,7 @@ export async function GET(
       if (rateLimited) return rateLimited;
     }
 
-    const generation = actorContext.organizationId
-      ? await resolvePortalOrgGenerationFromDomain({
-          organizationId: actorContext.organizationId,
-          domainApi,
-          firebaseSessionCookie,
-        })
-      : "0";
-
-    const report = await portalServerCacheGetOrSet(
-      portalHmReportCacheKeyWithGeneration(
-        actorContext.firebaseUid,
-        candidateSessionId,
-        generation,
-      ),
-      PORTAL_USER_SCOPED_TTL_MS,
-      async () => {
+    const report = await (async () => {
         const detail = await recruitment.getAssignment(candidateSessionId);
         const [workspace, assessmentReports] = await Promise.all([
           recruitment.getCampaign(detail.assignment.campaignId),
@@ -57,7 +37,7 @@ export async function GET(
           }),
         ]);
         const { results, compositeScore, assessmentStack, resolvedStackSummary } =
-          buildAssignmentAssessmentReport({ workspace, assessmentReports });
+          buildAssignmentAssessmentReport({ workspace, assessmentReports: assessmentReports.map(row => assessmentReportRowSchema.parse(row) as FirebaseAssignmentAssessmentReport) });
 
         const assessmentSession = detail.assignment.sessionId
           ? workspace.sessions.find(
@@ -75,7 +55,7 @@ export async function GET(
           sessionId: detail.assignment.id,
           candidate: {
             documentId: detail.assignment.candidateUserId,
-            name: detail.assignment.inviteEmail,
+            name: detail.assignment.candidateDisplayName?.trim() || detail.assignment.inviteEmail,
             email: detail.assignment.inviteEmail,
           },
           campaign: {
@@ -115,8 +95,7 @@ export async function GET(
               : null,
         };
         return candidateReport;
-      },
-    );
+      })();
 
     return NextResponse.json(
       { data: report },

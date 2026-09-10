@@ -1,4 +1,5 @@
 "use client";
+import { PerformanceInsights } from "./performance-insights";
 
 import {
   portalAlertErrorClass,
@@ -35,6 +36,7 @@ export function ShortTermMemoryReportBreakdown({
   return (
     <div className="space-y-5">
       <StandardHeader metrics={metrics} />
+      <PerformanceInsights insights={metrics.insights} />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <BreakdownStatTile

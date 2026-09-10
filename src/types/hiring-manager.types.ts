@@ -15,6 +15,9 @@ export type HiringManagerCampaignListItem = {
 };
 
 export type HiringManagerAssessmentResult = {
+  campaignAssessmentId?: string;
+  title?: string;
+  weight?: number;
   id: string;
   assessment: string;
   score: string;

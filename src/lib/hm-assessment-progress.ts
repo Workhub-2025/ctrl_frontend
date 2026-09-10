@@ -1,3 +1,4 @@
+import { parseReportMetrics, REPORT_VERSION } from "@/lib/assessment-report-contract";
 import type { HiringManagerAssessmentResult } from "@/types/hiring-manager.types";
 
 export type FirebaseAssignmentAssessmentReport = Readonly<{
@@ -5,6 +6,10 @@ export type FirebaseAssignmentAssessmentReport = Readonly<{
   campaignAssessmentId: string;
   assessmentSlug: string;
   releaseVersion: string;
+  releaseId?: string;
+  releaseHash?: string;
+  reportVersion?: string;
+  evidenceAvailability?: "available" | "unavailable" | "pending";
   status:
     | "in_progress"
     | "submitted"
@@ -49,10 +54,9 @@ export function mapFirebaseReportToHmResult(
   const isScored = result.status === "scored";
   const isSubmitted =
     result.status === "submitted" || result.status === "scoring";
-  const isAbandoned =
-    result.status === "abandoned" || result.status === "failed";
+  const isAbandoned = result.status === "abandoned";
 
-  const reportMetrics = result.reportMetrics ?? {};
+  const reportMetrics = parseReportMetrics(result.assessmentSlug, result.reportMetrics) ?? {};
   const configuredThreshold =
     typeof result.configuredThreshold === "number"
       ? result.configuredThreshold
@@ -65,6 +69,11 @@ export function mapFirebaseReportToHmResult(
     attemptId: result.attemptId,
     campaignAssessmentId: result.campaignAssessmentId,
     releaseVersion: result.releaseVersion,
+    releaseId: result.releaseId,
+    releaseHash: result.releaseHash,
+    resultId: result.resultId,
+    reportVersion: result.reportVersion ?? REPORT_VERSION,
+    evidenceAvailability: result.evidenceAvailability ?? "unavailable",
     revision: result.revision,
     criticalFlagCount: result.criticalFlagCount,
     attemptStatus: result.status,
@@ -93,16 +102,19 @@ export function mapFirebaseReportToHmResult(
 
   return {
     id: result.resultId ?? result.attemptId,
+    campaignAssessmentId: result.campaignAssessmentId,
     assessment: result.assessmentSlug,
     score:
       isScored && result.overallScore !== null ? `${result.overallScore}%` : "—",
     numericScore: isScored ? result.overallScore : null,
     assessmentStatus: isAbandoned
       ? "abandoned"
+      : result.status === "failed"
+        ? "marking-failed"
       : isScored
         ? "completed"
         : isSubmitted
-          ? "submitted"
+          ? result.status === "scoring" ? "marking" : "submitted"
           : result.status === "in_progress"
             ? "in-progress"
             : result.status,

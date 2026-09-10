@@ -1,4 +1,5 @@
 "use client";
+import { ScoringTable } from "./scoring-table";
 
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import {
@@ -30,6 +31,7 @@ import {
   numberOrNull,
   roundOrDash,
 } from "./breakdown-common";
+import { PerformanceInsights } from "./performance-insights";
 import type { AssessmentReportBreakdownProps } from "./types";
 
 type TypingWindow = {
@@ -137,6 +139,8 @@ export function TypingReportBreakdown({ result }: AssessmentReportBreakdownProps
         bandLabel={typeof metrics.ratingBand === "string" ? metrics.ratingBand : null}
       />
 
+      <PerformanceInsights insights={metrics.insights} />
+
       <div className="grid gap-3 sm:grid-cols-3">
         <BreakdownStatTile label="Average speed" value={roundOrDash(metrics.wpm)} suffix="WPM" />
         <BreakdownStatTile
@@ -151,6 +155,14 @@ export function TypingReportBreakdown({ result }: AssessmentReportBreakdownProps
           valueClassName={portalResultFailClass}
         />
       </div>
+
+      <ScoringTable title="Score contributions" columns={["Dimension", "Score / 100", "Weight", "Contribution"]} rows={[
+        ["Speed", numberOrNull(metrics.speedScore), "40%", numberOrNull(metrics.speedScore) === null ? null : Number((Number(metrics.speedScore) * 0.4).toFixed(1))],
+        ["Accuracy", numberOrNull(metrics.accuracyScore), "40%", numberOrNull(metrics.accuracyScore) === null ? null : Number((Number(metrics.accuracyScore) * 0.4).toFixed(1))],
+        ["Stability", numberOrNull(metrics.stabilityScore), "20%", numberOrNull(metrics.stabilityScore) === null ? null : Number((Number(metrics.stabilityScore) * 0.2).toFixed(1))]
+      ]} />
+      <ScoringTable title="Ten-second window records" columns={["Test", "Window", "WPM", "Error rate %", "Errors"]} rows={windowSeries.flatMap((series,index) => (series.windows ?? []).map((window, windowIndex) => [index + 1, `${windowIndex * 10}–${(windowIndex + 1) * 10}s`, window.wpm, window.errorRate, window.errors]))} />
+      <p className="text-sm text-muted-foreground">Uncorrected errors: {numberOrNull(metrics.totalErrors) === null || numberOrNull(metrics.correctedErrors) === null ? "—" : Math.max(0, Number(metrics.totalErrors) - Number(metrics.correctedErrors))}</p>
 
       <BreakdownSection title="Typing stability — behaviour under sustained demand">
         <div className="grid gap-3 sm:grid-cols-3">
@@ -213,13 +225,13 @@ export function TypingReportBreakdown({ result }: AssessmentReportBreakdownProps
                       align="right"
                       className={`font-bold ${portalResultFailClass}`}
                     >
-                      {run.mistakeCharacters ?? 0}
+                      {run.mistakeCharacters ?? "—"}
                     </BreakdownTableCell>
                     <BreakdownTableCell align="right">
                       {roundOrDash(run.stabilityScore, "%")}
                     </BreakdownTableCell>
                     <BreakdownTableCell align="right" className="text-muted-foreground">
-                      {run.correctCharacters ?? 0} / {run.typedCharacters ?? 0}
+                      {run.correctCharacters ?? "—"} / {run.typedCharacters ?? "—"}
                     </BreakdownTableCell>
                   </BreakdownTableRow>
                 ))}
