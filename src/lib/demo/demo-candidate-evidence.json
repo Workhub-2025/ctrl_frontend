@@ -1,0 +1,3752 @@
+{
+  "demo-session-strong-typing": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-strong-typing",
+    "attemptId": "demo-session-strong-typing-attempt",
+    "resultId": "demo-session-strong-typing-result",
+    "revision": 1,
+    "releaseId": "typing-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "21bb7f728e46940a7abf41c2d142065ed9a70c96c51130f0daea18f5419f6efd",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "ta-v2-base-assessment-2",
+        "title": "Test 1 — Easy passage 2",
+        "context": "A bus driver calls to report a passenger refusing to leave the vehicle at Hilltop Road. The passenger boarded without paying, shouted at the driver, and then sat near the front doors blocking other passengers from getting on. He is described as a male in his forties, wearing a green coat, black wool hat, and carrying two large shopping bags. The driver says the passenger smells strongly of alcohol and is slurring his speech. No one has been injured, but the driver does not feel safe continuing the route. The bus is stationary with hazard lights on. Traffic is moving around it slowly, and several passengers are waiting on the pavement.",
+        "rows": [
+          {
+            "id": "text",
+            "label": "Submitted text",
+            "response": "A bus driver calls to report a passenger refusing to leave the vehicle at Hilltop Road. The passenger boarded without paying, shouted at the driver, and then sat near the front doors blocking other passengers from getting on. He is described as a male in his forties, wearing a green coat, black wool hat, and carrying two large shopping bags. The driver says the passenger smells strongly of alcohol and is slurring his speech. No one has been injured, but the driver does not feel safe continuing the route. The bus is stationary with hazard lights on. Traffic is moving around it slowly, and several passengers are waiting on the pavement.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "accuracy",
+            "label": "Accuracy",
+            "response": "100%",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "ta-v2-intermediate-assessment-3",
+        "title": "Test 2 — Intermediate passage 3",
+        "context": "A caller reports a group of teenagers throwing stones at passing cars from a footbridge over the A417. The caller is parked safely at a nearby petrol station after a stone struck his windscreen and caused a crack across the passenger side. He says four teenagers are on the bridge, all wearing dark clothing, and one is carrying what looks like a sports bag. The caller saw another vehicle swerve after being hit, but it continued driving. He cannot confirm whether anyone is injured. Traffic is still moving quickly below the bridge. The caller believes the teenagers ran towards Oakfield Park when another driver sounded their horn.",
+        "rows": [
+          {
+            "id": "text",
+            "label": "Submitted text",
+            "response": "A caller reports a group of teenagers throwing stones at passing cars from a footbridge over the A417. The caller is parked safely at a nearby petrol station after a stone struck his windscreen and caused a crack across the passenger side. He says four teenagers are on the bridge, all wearing dark clothing, and one is carrying what looks like a sports bag. The caller saw another vehicle swerve after being hit, but it continued driving. He cannot confirm whether anyone is injured. Traffic is still moving quickly below the bridge. The caller believes the teenagers ran towards Oakfield Park when another driver sounded their horn.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "accuracy",
+            "label": "Accuracy",
+            "response": "100%",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "ta-v2-advanced-assessment-2",
+        "title": "Test 3 — Advanced passage 2",
+        "context": "A caller reports that her ex-partner has arrived outside her workplace on Granton Avenue despite bail conditions preventing contact. The caller, Sophie Ellis, says the male is Mark Vale, aged thirty-nine, and he is sitting in a dark grey BMW across from the staff entrance. She believes the registration is KP17 LME, but she is viewing it through rain on the office window. Mark has sent six messages in the last hour, including one saying, \"You will have to speak to me eventually.\" Sophie says he has previously followed her after work and knows she finishes at 17:30. She is inside a locked office with two colleagues. She is frightened he may wait by her car, which is parked behind the building.",
+        "rows": [
+          {
+            "id": "text",
+            "label": "Submitted text",
+            "response": "A caller reports that her ex-partner has arrived outside her workplace on Granton Avenue despite bail conditions preventing contact. The caller, Sophie Ellis, says the male is Mark Vale, aged thirty-nine, and he is sitting in a dark grey BMW across from the staff entrance. She believes the registration is KP17 LME, but she is viewing it through rain on the office window. Mark has sent six messages in the last hour, including one saying, \"You will have to speak to me eventually.\" Sophie says he has previously followed her after work and knows she finishes at 17:30. She is inside a locked office with two colleagues. She is frightened he may wait by her car, which is parked behind the building.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "accuracy",
+            "label": "Accuracy",
+            "response": "100%",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-strong-situational-judgement": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-strong-situational-judgement",
+    "attemptId": "demo-session-strong-situational-judgement-attempt",
+    "resultId": "demo-session-strong-situational-judgement-result",
+    "revision": 1,
+    "releaseId": "situational-judgement-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "5823a0ee599fd38f32eaadb42dc81faea850366f67d924110bb4e33fddd8da0b",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "S1-101",
+        "title": "Emotional overload: Added complexity",
+        "context": "You are speaking with someone who is very distressed. They talk quickly, repeat themselves, and jump between points. They sound tearful and occasionally raise their voice. You have limited time and you need to understand what they actually need, but you also want them to feel supported and not shut down. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Calmly acknowledge how they feel, slow the pace, and ask one clear question at a time to regain structure. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Interrupt firmly and tell them to calm down so you can understand them. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S2-101",
+        "title": "Incomplete information: Added complexity",
+        "context": "Someone asks you for help but gives vague or inconsistent details. When you ask clarifying questions, they become frustrated and say, “I’ve already explained this.” You suspect you’re missing something important and you need accuracy, but you don’t want to escalate their frustration. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Explain why clarity matters and ask focused follow-up questions to confirm the key details. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Stop asking questions and make assumptions so you can move forward. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S3-101",
+        "title": "Pressure to bypass process: Added complexity",
+        "context": "A person is stressed and insists you should bypass a standard process “just this once.” They say it’s urgent and they don’t have time for the normal steps. You understand their pressure, but you also know the process exists for a reason. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Explain calmly why the process exists and follow it while still offering support and urgency. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Delay the process without explaining why. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S4-101",
+        "title": "Identifying a potential issue: Added complexity",
+        "context": "During a non emergency call, something doesn’t quite add up. The caller hasn’t said anything directly concerning, but a detail conflicts with what they said earlier. You’re not sure whether it’s a misunderstanding or something important. Others nearby appear busy and you have to decide how to handle it. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Ask a clarifying question to check your understanding and resolve the inconsistency. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore it — it’s probably nothing. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S5-101",
+        "title": "Hostile communication: Added complexity",
+        "context": "A caller becomes angry and starts blaming you personally for not helping fast enough. They raise their voice and interrupt you. You can feel tension rising, but you still need to progress the conversation and keep it productive. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Acknowledge their frustration, stay calm, and refocus the conversation on what happens next. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Match their tone to assert control. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S6-101",
+        "title": "Compassion vs boundaries: Added complexity",
+        "context": "A victim shares something very personal and emotional. They ask you to promise that a specific outcome will happen because they need reassurance. You want to support them, but you can’t guarantee outcomes. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Show empathy, explain you can’t make promises, and focus on what you can do right now. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Promise the outcome to reassure them. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S7-101",
+        "title": "Decision-making under uncertainty: Added complexity",
+        "context": "You need to decide on next steps but you don’t have all the information. Waiting could reduce risk, but delaying could also make things worse. You must balance action with accuracy and responsibility. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Take a proportionate step while continuing to gather information. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Act immediately using the information available. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S8-101",
+        "title": "Correcting a mistake: Added complexity",
+        "context": "Partway through a conversation with a caller, you realise you misunderstood something earlier. You notice the misunderstanding could affect what you do next. You feel slightly embarrassed, and the caller is still talking. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Correct yourself calmly and clarify the accurate information. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore it to avoid drawing attention to the mistake. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S9-101",
+        "title": "Competing priorities: Added complexity",
+        "context": "On an emergency call, you’re dealing with one urgent situation when another equally urgent issue demands your attention at the same time. You feel pulled in two directions and need to prevent anything being dropped. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Manage both by setting expectations and prioritising based on risk, communicating clearly. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Avoid deciding and hope someone else takes responsibility for the second situation. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S10-101",
+        "title": "Emotional self-control: Added complexity",
+        "context": "During a difficult interaction you feel yourself becoming frustrated. You notice your patience slipping, and you’re aware your tone could change if you don’t regulate yourself. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Recognise your frustration internally, regulate your response, and maintain a calm, professional approach. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Let your frustration show so the caller understands how difficult this is. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S11-101",
+        "title": "Conflicting emotional signals: Added complexity",
+        "context": "You’re speaking to a victim who initially sounds calm and composed. As the conversation goes on, they pause for long periods, their answers become shorter, and there’s a brief laugh that sounds forced. They insist they’re fine, but you’re not convinced. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Gently acknowledge the shift you’ve noticed and ask if they’re coping okay. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Assume they’re fine unless they clearly state otherwise. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S12-101",
+        "title": "Pressure from authority: Added complexity",
+        "context": "Someone who presents themselves as senior/experienced becomes impatient. They insist you should trust their judgement and follow their suggestion immediately. You feel unsure because you don’t have complete clarity yet. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Acknowledge their perspective, but continue to clarify information and make your own informed decision. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Follow their instruction immediately because they have more experience. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S13-101",
+        "title": "Emotional manipulation: Added complexity",
+        "context": "A caller becomes very emotional and says that if you don’t help them immediately, it will be your fault if something bad happens. They say you’re the only person who can help. You feel pressure and urgency rising. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Stay calm, acknowledge their feelings, and continue following the correct process and next steps. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Prioritise helping them immediately to relieve the emotional pressure. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S14-101",
+        "title": "Ambiguous responsibility: Added complexity",
+        "context": "You notice a situation that appears to need attention, but it’s unclear whose responsibility it is. Nobody has assigned ownership and others look busy. You’re unsure whether stepping in is expected or whether you should wait. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Take initiative and begin addressing it appropriately. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore it because it hasn’t been formally assigned to you. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S15-101",
+        "title": "Information overload: Added complexity",
+        "context": "A caller provides a large amount of information very quickly. Some details are clearly important, others may be irrelevant. You’re concerned you’ll miss key points if you don’t structure the conversation. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Ask them to slow down and clarify the key details using structured questions. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Focus only on the parts that seem most important to you and ignore the rest. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S16-101",
+        "title": "Personal frustration: Added complexity",
+        "context": "A situation is progressing slowly. The caller you’re speaking with doesn’t seem to understand your questions and repeatedly gives unclear answers. You feel your frustration increasing and you’re aware it could affect your tone. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Remain calm and adjust your approach (simplify, rephrase, check understanding). Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Show your frustration so they understand the seriousness. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S17-101",
+        "title": "Uncertainty about next steps: Added complexity",
+        "context": "You reach a point where you’re unsure what the correct next step should be. Acting incorrectly could cause problems, but doing nothing could also have consequences. You have to choose a responsible way forward. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Take the safest reasonable step while continuing to assess and clarify. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Avoid acting to prevent making mistakes. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S18-101",
+        "title": "Emotional detachment vs compassion: Added complexity",
+        "context": "You notice that staying emotionally detached helps you think clearly, but the person you’re interacting with seems to need reassurance and calm support. You want to be effective without becoming over-involved. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Provide empathy while maintaining clear boundaries and professional judgement. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Focus entirely on emotional support to make them feel better. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S19-101",
+        "title": "Challenging communication style: Added complexity",
+        "context": "A caller communicates in a disorganised way. They jump between topics, go off on tangents, and struggle to answer direct questions. You need an accurate understanding, but you also want to avoid making them feel judged. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Guide the conversation using clear, structured questions and summarise back. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore confusing details and focus only on what seems clear. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S20-101",
+        "title": "Fatigue and cognitive load: Added complexity",
+        "context": "You’ve been dealing with demanding interactions for a long period on a busy shift. You notice your concentration dropping, but you still need to maintain accuracy and professionalism. You can’t simply stop, so you must manage your performance. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Become more deliberate: slow down slightly, double-check key details, and maintain accuracy. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Disengage mentally to reduce stress. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-strong-prioritisation": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-strong-prioritisation",
+    "attemptId": "demo-session-strong-prioritisation-attempt",
+    "resultId": "demo-session-strong-prioritisation-result",
+    "revision": 1,
+    "releaseId": "prioritisation-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "46a0b22a2b025a77c16c6be11a9cda5ba87feca221b4a1400d6f01e75d213765",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "PJA-V101-LIVE-001",
+        "title": "Question 1",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-001-A",
+            "label": "1. Assault outside takeaway",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports two males fighting outside a takeaway. One has been punched to the ground and is not getting up quickly. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-D",
+            "label": "2. Child alone near traffic",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a small child wandering near a busy road with no adult visible nearby. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-C",
+            "label": "3. Loud argument in shared hallway",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports two neighbours shouting in a communal hallway. No weapon has been seen and no one appears injured. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-F",
+            "label": "4. Shoplifting suspect cooperative",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Store staff have detained a suspected shoplifter who is calm, seated in the office, and not trying to leave. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-B",
+            "label": "5. Historic theft of parcel",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a parcel was stolen from outside their door earlier in the day. CCTV may show the suspect. Occurred 6 hours ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-E",
+            "label": "6. Lost driving licence",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller has lost a driving licence and wants advice about obtaining a police reference. Discovered today"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-002",
+        "title": "Question 2",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-002-A",
+            "label": "1. Missing elderly person",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an 86-year-old relative with dementia has left home alone without a coat. Last seen 20 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-D",
+            "label": "2. Burglary alarm and open window",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller can hear a neighbour’s alarm sounding and can see a ground-floor window open while the owners are away. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-C",
+            "label": "3. Drunk person asleep in doorway",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an intoxicated person asleep in a shop doorway. They are breathing but difficult to wake. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-F",
+            "label": "4. Suspicious male looking into cars",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male shining a torch into parked cars and trying some door handles. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-B",
+            "label": "5. Smashed wing mirror overnight",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports their car wing mirror was damaged overnight. No suspect is present. Occurred overnight"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-E",
+            "label": "6. Neighbour parking complaint",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says a neighbour has parked across their driveway and refuses to move the vehicle. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-003",
+        "title": "Question 3",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-003-A",
+            "label": "1. Road collision with trapped driver",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a two-car collision. One driver cannot open their door and is complaining of chest pain. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-D",
+            "label": "2. Domestic incident with threats",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller can hear a male threatening a female inside the neighbouring flat and objects being thrown. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-C",
+            "label": "3. Aggressive customer refusing to leave",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a customer shouting at staff and refusing to leave a pharmacy. No weapon has been seen. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-F",
+            "label": "4. Teenagers damaging bus shelter",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports teenagers kicking panels at a bus shelter and causing damage. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-B",
+            "label": "5. Bike stolen from garden",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a bicycle stolen from their rear garden earlier today. The suspect is unknown. Occurred 3 hours ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-E",
+            "label": "6. Noise from building work",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller complains about noisy building work starting early in the morning. Ongoing today"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-004",
+        "title": "Question 4",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-004-A",
+            "label": "1. Person on bridge edge",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a distressed person sitting on the edge of a road bridge above moving traffic. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-D",
+            "label": "2. Child left in hot car",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a toddler crying inside a locked parked car with no adult nearby. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-C",
+            "label": "3. Group causing disorder at station",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a group shouting at passengers and blocking a station entrance. No assaults reported. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-F",
+            "label": "4. Male seen checking house gates",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male entering driveways and checking side gates on several properties. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-B",
+            "label": "5. Online harassment without threats today",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports repeated unwanted messages over the past month but no threats have been sent today. Ongoing issue"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-E",
+            "label": "6. Old criminal damage report",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says a garden ornament was damaged two days ago and wants to report it. Occurred 2 days ago"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-005",
+        "title": "Question 5",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-005-A",
+            "label": "1. Knife mentioned during argument",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male arguing outside flats and shouting that he has a knife, though none has been seen. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-D",
+            "label": "2. Vulnerable adult missing",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a vulnerable adult with learning difficulties left a care home and may be near a river path. Last seen 15 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-C",
+            "label": "3. Shop staff threatened",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a customer has threatened to wait outside for staff after closing. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-F",
+            "label": "4. Vehicle blocking ambulance bay",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a vehicle parked across an ambulance bay and the driver is not present. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-B",
+            "label": "5. Historic fuel theft",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports fuel was stolen from their vehicle overnight at a service station. Occurred overnight"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-E",
+            "label": "6. Lost phone in taxi",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller left a phone in a taxi and wants police to help locate it. No theft alleged. Discovered today"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-006",
+        "title": "Question 6",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-006-A",
+            "label": "1. House fire concern with occupant inside",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller sees smoke from a neighbour’s kitchen window and believes an elderly occupant is inside. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-D",
+            "label": "2. Robbery just occurred",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a handbag snatched from an elderly woman who has fallen and appears injured. Just occurred"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-C",
+            "label": "3. Intoxicated male in road",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an intoxicated male walking in and out of traffic and shouting at drivers. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-F",
+            "label": "4. Security detaining aggressive suspect",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Store security are holding a suspect who is struggling and trying to leave. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-B",
+            "label": "5. Graffiti discovered at school",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports graffiti on a school wall discovered by staff this morning. Discovered this morning"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-E",
+            "label": "6. Civil dispute over payment",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says a tradesperson has not completed work after being paid. No threats reported. Ongoing dispute"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-007",
+        "title": "Question 7",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-007-A",
+            "label": "1. Domestic assault disclosed",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says her partner assaulted her and is still inside the address with a child present. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-D",
+            "label": "2. Railway track trespass",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a distressed male has climbed onto railway tracks at a station. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-B",
+            "label": "3. Theft from unlocked vehicle",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports sunglasses stolen from an unlocked car yesterday afternoon. Occurred yesterday"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-E",
+            "label": "4. Complaint about neighbour’s CCTV",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller is unhappy that a neighbour’s CCTV may point towards their driveway. Ongoing issue"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-C",
+            "label": "5. Large group blocking road",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a group arguing in the road and forcing vehicles to stop. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-F",
+            "label": "6. Possible drink driver parked outside pub",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a visibly drunk person has got into a car and is trying to start the engine. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-008",
+        "title": "Question 8",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-008-A",
+            "label": "1. Baby not breathing normally",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a baby is pale and not breathing normally while waiting for an ambulance. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-D",
+            "label": "2. Intruder inside home",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller is hiding upstairs and can hear someone moving inside their home downstairs. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-C",
+            "label": "3. Fight may restart outside venue",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports two groups separated by door staff but still shouting threats outside a venue. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-F",
+            "label": "4. Elderly driver confused at junction",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an elderly driver stopped across a junction and appearing confused. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-B",
+            "label": "5. Historic harassment report",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller wants to report repeated messages from a former friend over several weeks with no immediate threats. Ongoing for weeks"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-E",
+            "label": "6. Abandoned vehicle",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a car has not moved from outside their house for a month. Ongoing for one month"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-009",
+        "title": "Question 9",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-009-A",
+            "label": "1. Suspect armed with bottle",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male chasing another person while holding a broken bottle. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-D",
+            "label": "2. Suicidal message received",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller received a message from a friend saying goodbye and cannot reach them by phone. Received 10 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-C",
+            "label": "3. Missing child in shopping centre",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Security report a young child separated from family and unable to provide contact details. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-F",
+            "label": "4. Residential burglary discovered",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller returned home to find the back door forced open but no suspect is present. Discovered now"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-B",
+            "label": "5. Damaged phone after argument",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says a friend damaged their phone during an argument yesterday. No ongoing risk reported. Occurred yesterday"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-E",
+            "label": "6. Fly-tipping report",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports rubbish dumped near garages overnight. Discovered this morning"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-010",
+        "title": "Question 10",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-010-A",
+            "label": "1. Stabbing reported by caller",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male has been stabbed in a park and the suspect has run towards nearby flats. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-D",
+            "label": "2. High-risk domestic breach",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an ex-partner outside her address despite conditions not to contact her. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-C",
+            "label": "3. Threats at workplace",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a former employee outside reception threatening to return with friends. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-F",
+            "label": "4. Suspected drug dealing",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports people exchanging small packages from a car outside flats. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-B",
+            "label": "5. Lost medication bag",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller lost a bag containing routine medication on a bus and wants advice. Occurred today"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-E",
+            "label": "6. Neighbour noise diary request",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller asks how to keep records of repeated late-night noise. Ongoing issue"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-011",
+        "title": "Question 11",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-011-A",
+            "label": "1. Person trapped after collision",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a van has hit a cyclist and the cyclist is trapped partly under the vehicle. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-D",
+            "label": "2. Child safeguarding concern",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a child at an address where adults are fighting and smashing property. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-C",
+            "label": "3. Aggressive intoxicated passenger",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Bus driver reports an intoxicated passenger shouting threats and blocking the doors. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-F",
+            "label": "4. Suspicious vehicle near school",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a car slowly circling a school at closing time with occupants filming pupils. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-B",
+            "label": "5. Old shoplifting CCTV",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Shop manager has CCTV of a shoplifting offence from three days ago. Occurred 3 days ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-E",
+            "label": "6. Lost keys",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller lost house keys during a night out and wants a crime number. No theft alleged. Discovered today"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-012",
+        "title": "Question 12",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-012-A",
+            "label": "1. Serious assault in progress",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports three people kicking a male on the ground outside a block of flats. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-D",
+            "label": "2. Home invasion report",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says masked males forced entry into a house and occupants are screaming inside. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-B",
+            "label": "3. Historic damage to bicycle lock",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller found their bicycle lock damaged from earlier in the week, but the bike remains. Occurred earlier this week"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-E",
+            "label": "4. Complaint about parking ticket",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller wants police to cancel a parking ticket issued by the council. Discovered today"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-C",
+            "label": "5. Mental health concern in public place",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a distressed woman shouting and walking into traffic intermittently. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-F",
+            "label": "6. Attempted burglary just disturbed",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller disturbed a person trying to force a window who ran off moments ago. Just occurred"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-013",
+        "title": "Question 13",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-013-A",
+            "label": "1. Person threatening self-harm with weapon",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports their sibling is holding a kitchen knife and threatening to harm themselves. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-D",
+            "label": "2. Robbery suspect nearby",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a street robbery just occurred and the suspect is still visible nearby. Just occurred"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-C",
+            "label": "3. Youth disorder outside cinema",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports youths throwing drinks, threatening staff, and refusing to leave. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-F",
+            "label": "4. Vulnerable adult confused in shop",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Shop staff report an elderly customer confused, unable to give an address, and trying to leave. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-B",
+            "label": "5. Online marketplace dispute",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller paid for a games console online and has not received it. Seller no longer replies. Ongoing for days"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-E",
+            "label": "6. Dog fouling complaint",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports repeated dog fouling near their driveway. Ongoing issue"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-014",
+        "title": "Question 14",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-014-A",
+            "label": "1. Armed threat at address",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male outside the address shouting threats and holding what may be a firearm. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-D",
+            "label": "2. Missing child near water",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an eight-year-old child missing from a park close to a lake. Last seen 15 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-C",
+            "label": "3. Public order at taxi rank",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports several people pushing and shouting at a taxi rank after closing time. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-F",
+            "label": "4. Suspicious package in reception",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an unattended bag in a busy office reception with no owner nearby. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-B",
+            "label": "5. Historic theft of number plate",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a vehicle number plate was stolen sometime last night. Occurred overnight"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-E",
+            "label": "6. Civil landlord dispute",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says their landlord has not repaired a boiler and wants police involvement. Ongoing issue"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-015",
+        "title": "Question 15",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-015-A",
+            "label": "1. Multiple casualty collision",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a collision involving a bus and two cars. Several people are injured and traffic is blocked. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-D",
+            "label": "2. Hostage-type threat",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller whispers that a male inside the address is preventing others from leaving and threatening violence. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-C",
+            "label": "3. Domestic suspect left scene recently",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports being assaulted by a partner who left five minutes ago and may return. Just occurred"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-F",
+            "label": "4. Suspected burglary getaway vehicle",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a vehicle waiting with engine running near a house alarm and open door. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-B",
+            "label": "5. Historic fraud documents",
+            "response": "Ranked 5",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller has gathered documents about a suspected fraud from last month and wants to submit them. Occurred last month"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-E",
+            "label": "6. Repeat nuisance calls",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports nuisance calls from withheld numbers over several weeks with no threats. Ongoing for weeks"
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-strong-short-term-memory": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-strong-short-term-memory",
+    "attemptId": "demo-session-strong-short-term-memory-attempt",
+    "resultId": "demo-session-strong-short-term-memory-result",
+    "revision": 1,
+    "releaseId": "short-term-memory-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "6bc3911110884bc22474ce9d797d94e709fc26f0f6aee76b547a8f3c6c6fa306",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "station-briefing",
+        "title": "Central station briefing",
+        "rows": [
+          {
+            "id": "platform",
+            "label": "Platform number",
+            "response": "four",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "crew",
+            "label": "Ambulance crew",
+            "response": "echo two",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "passenger",
+            "label": "Passenger name",
+            "response": "peter walsh",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "companion",
+            "label": "Companion name",
+            "response": "lewis grant",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "clothing",
+            "label": "Passenger clothing",
+            "response": "green raincoat",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "sequence",
+            "label": "Submitted event order",
+            "response": "Station staff report unwell passenger → Ambulance entry route confirmed → Companion provides medical information → Lower escalator closed",
+            "score": 100,
+            "maximum": 100
+          },
+          {
+            "id": "correction-entry",
+            "label": "Crew entry",
+            "response": "East concourse",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "correction-condition",
+            "label": "Possible condition",
+            "response": "Diabetes",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "correction-route",
+            "label": "Responder route",
+            "response": "Main s",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "priority",
+            "label": "Which issue requires the clearest access route?",
+            "response": "An active medical response",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "phonetic",
+            "label": "Select the correct phonetic form of “E2”.",
+            "response": "Echo Two",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "time-order",
+            "label": "Which time is latest?",
+            "response": "07:52",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "time",
+            "label": "Recorded completion time",
+            "response": "1180 seconds",
+            "score": null,
+            "maximum": null
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-strong-call-simulation": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-strong-call-simulation",
+    "attemptId": "demo-session-strong-call-simulation-attempt",
+    "resultId": "demo-session-strong-call-simulation-result",
+    "revision": 1,
+    "releaseId": "call-simulation-1.2.0-release",
+    "releaseVersion": "1.2.0",
+    "releaseHash": "5d1ff16adbf17b1150a667ba32892d01bd7df9e2e07e7674c0c443b24ef0fed2",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "call-1-active-car-break-in",
+        "title": "Call 1 — active car break-in",
+        "context": "Capture operationally useful information while the call plays. Complete caller, system, intelligence and incident records before review.",
+        "rows": [
+          {
+            "id": "callerName",
+            "label": "Caller name",
+            "response": "Jessie Peres",
+            "score": 0.15,
+            "maximum": 0.2
+          },
+          {
+            "id": "telephoneNumber",
+            "label": "Telephone number",
+            "response": "07700938216",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "dateOfBirth",
+            "label": "Date of birth",
+            "response": "14 February 1991",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "callerDoorNumber",
+            "label": "Caller location — door number",
+            "response": "16",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerStreet",
+            "label": "Caller location — street",
+            "response": "Camden Grove",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerPostcode",
+            "label": "Caller location — postcode",
+            "response": "SE15 3XB",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentCategory",
+            "label": "Incident category",
+            "response": "Vehicle crime",
+            "score": 0.4,
+            "maximum": 0.4
+          },
+          {
+            "id": "callerType",
+            "label": "Caller type",
+            "response": "Witness",
+            "score": 0.15,
+            "maximum": 0.2
+          },
+          {
+            "id": "responseTime",
+            "label": "Response time",
+            "response": "Immediate",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "referenceNumber",
+            "label": "Reference number",
+            "response": "46195",
+            "score": 0.1,
+            "maximum": 0.1
+          },
+          {
+            "id": "gender",
+            "label": "Suspect gender",
+            "response": "Male",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "appearance",
+            "label": "Ethnicity / appearance",
+            "response": "white",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "ageRange",
+            "label": "Age range",
+            "response": "30–40",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "clothing",
+            "label": "Clothing",
+            "response": "black jacket and grey jogging bottoms",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "uniqueInformation",
+            "label": "Unique information",
+            "response": "hammer",
+            "score": 0.5,
+            "maximum": 0.5
+          },
+          {
+            "id": "incidentDoorNumber",
+            "label": "Incident location — door number",
+            "response": "18",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentStreet",
+            "label": "Incident location — street",
+            "response": "Camden Grove",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentPostcode",
+            "label": "Incident location — postcode",
+            "response": "SE15 3XB",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentSummary",
+            "label": "Incident summary",
+            "response": "car break-in",
+            "score": 1.9,
+            "maximum": 1.9
+          }
+        ]
+      },
+      {
+        "id": "call-2-burglary-residential",
+        "title": "Call 2 — residential burglary",
+        "context": "Capture operationally useful information while the call plays. Complete caller, system, intelligence and incident records before review.",
+        "rows": [
+          {
+            "id": "callerName",
+            "label": "Caller name",
+            "response": "Yasmin Gray",
+            "score": 0.15,
+            "maximum": 0.2
+          },
+          {
+            "id": "telephoneNumber",
+            "label": "Telephone number",
+            "response": "07852176493",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "dateOfBirth",
+            "label": "Date of birth",
+            "response": "18 March 1987",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "callerDoorNumber",
+            "label": "Caller location — door number",
+            "response": "42",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerStreet",
+            "label": "Caller location — street",
+            "response": "Maple Crescent",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerPostcode",
+            "label": "Caller location — postcode",
+            "response": "BR1 4TN",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentCategory",
+            "label": "Incident category",
+            "response": "Residential burglary",
+            "score": 0.4,
+            "maximum": 0.4
+          },
+          {
+            "id": "callerType",
+            "label": "Caller type",
+            "response": "Victim",
+            "score": 0.15,
+            "maximum": 0.2
+          },
+          {
+            "id": "responseTime",
+            "label": "Response time",
+            "response": "Priority — within 60 minutes",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "referenceNumber",
+            "label": "Reference number",
+            "response": "63918",
+            "score": 0.1,
+            "maximum": 0.1
+          },
+          {
+            "id": "gender",
+            "label": "Suspect gender",
+            "response": "Male",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "appearance",
+            "label": "Ethnicity / appearance",
+            "response": "Asian",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "ageRange",
+            "label": "Age range",
+            "response": "40–50",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "clothing",
+            "label": "Clothing",
+            "response": "green high-visibility jacket",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "uniqueInformation",
+            "label": "Unique information",
+            "response": "gold necklace stolen",
+            "score": 0.5,
+            "maximum": 0.5
+          },
+          {
+            "id": "incidentDoorNumber",
+            "label": "Incident location — door number",
+            "response": "42",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentStreet",
+            "label": "Incident location — street",
+            "response": "Maple Crescent",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentPostcode",
+            "label": "Incident location — postcode",
+            "response": "BR1 4TN",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentSummary",
+            "label": "Incident summary",
+            "response": "residential burglary",
+            "score": 1.9,
+            "maximum": 1.9
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-borderline-typing": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-borderline-typing",
+    "attemptId": "demo-session-borderline-typing-attempt",
+    "resultId": "demo-session-borderline-typing-result",
+    "revision": 1,
+    "releaseId": "typing-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "21bb7f728e46940a7abf41c2d142065ed9a70c96c51130f0daea18f5419f6efd",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "ta-v2-base-assessment-2",
+        "title": "Test 1 — Easy passage 2",
+        "context": "A bus driver calls to report a passenger refusing to leave the vehicle at Hilltop Road. The passenger boarded without paying, shouted at the driver, and then sat near the front doors blocking other passengers from getting on. He is described as a male in his forties, wearing a green coat, black wool hat, and carrying two large shopping bags. The driver says the passenger smells strongly of alcohol and is slurring his speech. No one has been injured, but the driver does not feel safe continuing the route. The bus is stationary with hazard lights on. Traffic is moving around it slowly, and several passengers are waiting on the pavement.",
+        "rows": [
+          {
+            "id": "text",
+            "label": "Submitted text",
+            "response": "A bus driver caxls to report axpassenger refuxing to leave txe vehicle at Hxlltop Road. Thx passenger boaxded without paxing, shouted ax the driver, axd then sat neax the front dooxs blocking othxr passengers fxom getting on.xHe is describex as a male in xis forties, wexring a green cxat, black woolxhat, and carryxng two large sxopping bags. Txe driver says xhe passenger sxells strongly xf alcohol and xs slurring hisxsp",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "accuracy",
+            "label": "Accuracy",
+            "response": "93.4%",
+            "score": 93.4,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "ta-v2-intermediate-assessment-3",
+        "title": "Test 2 — Intermediate passage 3",
+        "context": "A caller reports a group of teenagers throwing stones at passing cars from a footbridge over the A417. The caller is parked safely at a nearby petrol station after a stone struck his windscreen and caused a crack across the passenger side. He says four teenagers are on the bridge, all wearing dark clothing, and one is carrying what looks like a sports bag. The caller saw another vehicle swerve after being hit, but it continued driving. He cannot confirm whether anyone is injured. Traffic is still moving quickly below the bridge. The caller believes the teenagers ran towards Oakfield Park when another driver sounded their horn.",
+        "rows": [
+          {
+            "id": "text",
+            "label": "Submitted text",
+            "response": "A caller repoxts a group ox teenagers txrowing stonex at passing xars from a fxotbridge ovex the A417. Txe caller is xarked safelyxat a nearby xetrol statiox after a stoxe struck hisxwindscreen axd caused a cxack across txe passenger xide. He saysxfour teenagexs are on thexbridge, all xearing dark xlothing, andxone is carryxng what lookx like a sporxs bag. The cxller saw anoxher vehi",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "accuracy",
+            "label": "Accuracy",
+            "response": "92.5%",
+            "score": 92.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "ta-v2-advanced-assessment-3",
+        "title": "Test 3 — Advanced passage 3",
+        "context": "A caller from a sheltered housing complex reports concern for a resident named George Whitfield, aged eighty-one, in flat 7B at Rowan Lodge. The caller is the scheme coordinator and says George pressed his emergency pendant but did not speak when the call connected. Staff attended his door and heard a faint voice saying, \"I cannot get up,\" but the door is locked and the safety chain appears to be on. George has a heart condition, uses a walking frame, and lives alone. The coordinator has phoned his daughter, but she is forty minutes away. There is no smell of gas and no sound of disturbance. The caller is waiting outside the flat with a maintenance worker who may be able to force entry if authorised.",
+        "rows": [
+          {
+            "id": "text",
+            "label": "Submitted text",
+            "response": "A caller frxm a sheltexed housingxcomplex rexorts concexn for a rexident namex George Whxtfield, agxd eighty-oxe, in flatx7B at Rowax Lodge. Thx caller isxthe schemexcoordinatox and says xeorge presxed his emexgency pendxnt but didxnot speak xhen the caxl connectex. Staff atxended his xoor and hexrd a faintxvoice sayixg, \"I cannxt get up,\"xbut the doxr is lockex and the sxfety chainxappears tox",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "accuracy",
+            "label": "Accuracy",
+            "response": "90.9%",
+            "score": 90.9,
+            "maximum": 100
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-borderline-situational-judgement": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-borderline-situational-judgement",
+    "attemptId": "demo-session-borderline-situational-judgement-attempt",
+    "resultId": "demo-session-borderline-situational-judgement-result",
+    "revision": 1,
+    "releaseId": "situational-judgement-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "5823a0ee599fd38f32eaadb42dc81faea850366f67d924110bb4e33fddd8da0b",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "S1-101",
+        "title": "Emotional overload: Added complexity",
+        "context": "You are speaking with someone who is very distressed. They talk quickly, repeat themselves, and jump between points. They sound tearful and occasionally raise their voice. You have limited time and you need to understand what they actually need, but you also want them to feel supported and not shut down. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Let them continue uninterrupted so they feel heard, even if it takes time. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "End the conversation quickly and refer them elsewhere. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 75,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S2-101",
+        "title": "Incomplete information: Added complexity",
+        "context": "Someone asks you for help but gives vague or inconsistent details. When you ask clarifying questions, they become frustrated and say, “I’ve already explained this.” You suspect you’re missing something important and you need accuracy, but you don’t want to escalate their frustration. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Explain why clarity matters and ask focused follow-up questions to confirm the key details. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Accept the information as given to avoid upsetting them further. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S3-101",
+        "title": "Pressure to bypass process: Added complexity",
+        "context": "A person is stressed and insists you should bypass a standard process “just this once.” They say it’s urgent and they don’t have time for the normal steps. You understand their pressure, but you also know the process exists for a reason. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Delay the process without explaining why. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Agree to bypass the process to help them quickly. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 62.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S4-101",
+        "title": "Identifying a potential issue: Added complexity",
+        "context": "During a non emergency call, something doesn’t quite add up. The caller hasn’t said anything directly concerning, but a detail conflicts with what they said earlier. You’re not sure whether it’s a misunderstanding or something important. Others nearby appear busy and you have to decide how to handle it. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Assume the worst and escalate immediately. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore it — it’s probably nothing. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S5-101",
+        "title": "Hostile communication: Added complexity",
+        "context": "A caller becomes angry and starts blaming you personally for not helping fast enough. They raise their voice and interrupt you. You can feel tension rising, but you still need to progress the conversation and keep it productive. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Match their tone to assert control. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "End the interaction because they are being disrespectful. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 37.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S6-101",
+        "title": "Compassion vs boundaries: Added complexity",
+        "context": "A victim shares something very personal and emotional. They ask you to promise that a specific outcome will happen because they need reassurance. You want to support them, but you can’t guarantee outcomes. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Change the subject to avoid making things more emotional. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Avoid responding directly to their request and move on. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 25,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S7-101",
+        "title": "Decision-making under uncertainty: Added complexity",
+        "context": "You need to decide on next steps but you don’t have all the information. Waiting could reduce risk, but delaying could also make things worse. You must balance action with accuracy and responsibility. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Wait until you have complete certainty before doing anything. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Act immediately using the information available. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 75,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S8-101",
+        "title": "Correcting a mistake: Added complexity",
+        "context": "Partway through a conversation with a caller, you realise you misunderstood something earlier. You notice the misunderstanding could affect what you do next. You feel slightly embarrassed, and the caller is still talking. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Suggest the misunderstanding was caused by the caller being unclear. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "End the conversation and restart it later. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 25,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S9-101",
+        "title": "Competing priorities: Added complexity",
+        "context": "On an emergency call, you’re dealing with one urgent situation when another equally urgent issue demands your attention at the same time. You feel pulled in two directions and need to prevent anything being dropped. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Manage both by setting expectations and prioritising based on risk, communicating clearly. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Avoid deciding and hope someone else takes responsibility for the second situation. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S10-101",
+        "title": "Emotional self-control: Added complexity",
+        "context": "During a difficult interaction you feel yourself becoming frustrated. You notice your patience slipping, and you’re aware your tone could change if you don’t regulate yourself. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Suppress your emotions completely and continue without acknowledging them internally. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "End the interaction with the caller as soon as possible. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 75,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S11-101",
+        "title": "Conflicting emotional signals: Added complexity",
+        "context": "You’re speaking to a victim who initially sounds calm and composed. As the conversation goes on, they pause for long periods, their answers become shorter, and there’s a brief laugh that sounds forced. They insist they’re fine, but you’re not convinced. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Gently acknowledge the shift you’ve noticed and ask if they’re coping okay. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Assume they’re fine unless they clearly state otherwise. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S12-101",
+        "title": "Pressure from authority: Added complexity",
+        "context": "Someone who presents themselves as senior/experienced becomes impatient. They insist you should trust their judgement and follow their suggestion immediately. You feel unsure because you don’t have complete clarity yet. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Delay taking action until someone else becomes involved. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore their input completely and continue independently. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 25,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S13-101",
+        "title": "Emotional manipulation: Added complexity",
+        "context": "A caller becomes very emotional and says that if you don’t help them immediately, it will be your fault if something bad happens. They say you’re the only person who can help. You feel pressure and urgency rising. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Distance yourself emotionally and become very formal to avoid being affected. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Prioritise helping them immediately to relieve the emotional pressure. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 62.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S14-101",
+        "title": "Ambiguous responsibility: Added complexity",
+        "context": "You notice a situation that appears to need attention, but it’s unclear whose responsibility it is. Nobody has assigned ownership and others look busy. You’re unsure whether stepping in is expected or whether you should wait. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Take initiative and begin addressing it appropriately. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore it because it hasn’t been formally assigned to you. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 100,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S15-101",
+        "title": "Information overload: Added complexity",
+        "context": "A caller provides a large amount of information very quickly. Some details are clearly important, others may be irrelevant. You’re concerned you’ll miss key points if you don’t structure the conversation. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Let them continue speaking without interruption. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Focus only on the parts that seem most important to you and ignore the rest. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 75,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S16-101",
+        "title": "Personal frustration: Added complexity",
+        "context": "A situation is progressing slowly. The caller you’re speaking with doesn’t seem to understand your questions and repeatedly gives unclear answers. You feel your frustration increasing and you’re aware it could affect your tone. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Continue without changing your approach. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Show your frustration so they understand the seriousness. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S17-101",
+        "title": "Uncertainty about next steps: Added complexity",
+        "context": "You reach a point where you’re unsure what the correct next step should be. Acting incorrectly could cause problems, but doing nothing could also have consequences. You have to choose a responsible way forward. There is some time pressure, and one detail may need to be checked before you move on.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Wait until someone tells you exactly what to do. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Avoid acting to prevent making mistakes. This deals with the immediate pressure by ending, redirecting, or taking firm control of the exchange.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 62.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S18-101",
+        "title": "Emotional detachment vs compassion: Added complexity",
+        "context": "You notice that staying emotionally detached helps you think clearly, but the person you’re interacting with seems to need reassurance and calm support. You want to be effective without becoming over-involved. The person sounds frustrated, but you still need enough detail to act accurately.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Provide empathy while maintaining clear boundaries and professional judgement. Keep the response calm, structured, and focused on the next confirmed detail.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Limit interaction to essential information only. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 87.5,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S19-101",
+        "title": "Challenging communication style: Added complexity",
+        "context": "A caller communicates in a disorganised way. They jump between topics, go off on tangents, and struggle to answer direct questions. You need an accurate understanding, but you also want to avoid making them feel judged. A quick response may help, although missing a key fact could cause problems later.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Allow them to continue without interruption. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Ignore confusing details and focus only on what seems clear. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 75,
+            "maximum": 100
+          }
+        ]
+      },
+      {
+        "id": "S20-101",
+        "title": "Fatigue and cognitive load: Added complexity",
+        "context": "You’ve been dealing with demanding interactions for a long period on a busy shift. You notice your concentration dropping, but you still need to maintain accuracy and professionalism. You can’t simply stop, so you must manage your performance. You need to balance reassurance with keeping control of the conversation.",
+        "rows": [
+          {
+            "id": "best",
+            "label": "Best response",
+            "response": "Continue without adjusting your approach. This helps with one part of the exchange and keeps momentum, but it may not confirm every key point.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "worst",
+            "label": "Worst response",
+            "response": "Rush to complete the interaction more quickly. This moves things forward quickly by working from the details already available.",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "score",
+            "label": "Scenario score",
+            "response": "",
+            "score": 75,
+            "maximum": 100
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-borderline-prioritisation": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-borderline-prioritisation",
+    "attemptId": "demo-session-borderline-prioritisation-attempt",
+    "resultId": "demo-session-borderline-prioritisation-result",
+    "revision": 1,
+    "releaseId": "prioritisation-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "46a0b22a2b025a77c16c6be11a9cda5ba87feca221b4a1400d6f01e75d213765",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "PJA-V101-LIVE-001",
+        "title": "Question 1",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-001-A",
+            "label": "1. Assault outside takeaway",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports two males fighting outside a takeaway. One has been punched to the ground and is not getting up quickly. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-D",
+            "label": "2. Child alone near traffic",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a small child wandering near a busy road with no adult visible nearby. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-B",
+            "label": "3. Historic theft of parcel",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a parcel was stolen from outside their door earlier in the day. CCTV may show the suspect. Occurred 6 hours ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-E",
+            "label": "4. Lost driving licence",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller has lost a driving licence and wants advice about obtaining a police reference. Discovered today"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-C",
+            "label": "5. Loud argument in shared hallway",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports two neighbours shouting in a communal hallway. No weapon has been seen and no one appears injured. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-001-F",
+            "label": "6. Shoplifting suspect cooperative",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Store staff have detained a suspected shoplifter who is calm, seated in the office, and not trying to leave. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-002",
+        "title": "Question 2",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-002-A",
+            "label": "1. Missing elderly person",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an 86-year-old relative with dementia has left home alone without a coat. Last seen 20 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-D",
+            "label": "2. Burglary alarm and open window",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller can hear a neighbour’s alarm sounding and can see a ground-floor window open while the owners are away. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-B",
+            "label": "3. Smashed wing mirror overnight",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports their car wing mirror was damaged overnight. No suspect is present. Occurred overnight"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-E",
+            "label": "4. Neighbour parking complaint",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller says a neighbour has parked across their driveway and refuses to move the vehicle. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-C",
+            "label": "5. Drunk person asleep in doorway",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports an intoxicated person asleep in a shop doorway. They are breathing but difficult to wake. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-002-F",
+            "label": "6. Suspicious male looking into cars",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a male shining a torch into parked cars and trying some door handles. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-003",
+        "title": "Question 3",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-003-A",
+            "label": "1. Road collision with trapped driver",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a two-car collision. One driver cannot open their door and is complaining of chest pain. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-D",
+            "label": "2. Domestic incident with threats",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller can hear a male threatening a female inside the neighbouring flat and objects being thrown. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-B",
+            "label": "3. Bike stolen from garden",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a bicycle stolen from their rear garden earlier today. The suspect is unknown. Occurred 3 hours ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-E",
+            "label": "4. Noise from building work",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller complains about noisy building work starting early in the morning. Ongoing today"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-C",
+            "label": "5. Aggressive customer refusing to leave",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a customer shouting at staff and refusing to leave a pharmacy. No weapon has been seen. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-003-F",
+            "label": "6. Teenagers damaging bus shelter",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports teenagers kicking panels at a bus shelter and causing damage. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-004",
+        "title": "Question 4",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-004-B",
+            "label": "1. Online harassment without threats today",
+            "response": "Ranked 1",
+            "score": -1,
+            "maximum": 2,
+            "context": "Caller reports repeated unwanted messages over the past month but no threats have been sent today. Ongoing issue"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-D",
+            "label": "2. Child left in hot car",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a toddler crying inside a locked parked car with no adult nearby. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-C",
+            "label": "3. Group causing disorder at station",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a group shouting at passengers and blocking a station entrance. No assaults reported. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-F",
+            "label": "4. Male seen checking house gates",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male entering driveways and checking side gates on several properties. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-A",
+            "label": "5. Person on bridge edge",
+            "response": "Ranked 5",
+            "score": -1,
+            "maximum": 2,
+            "context": "Caller reports a distressed person sitting on the edge of a road bridge above moving traffic. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-004-E",
+            "label": "6. Old criminal damage report",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says a garden ornament was damaged two days ago and wants to report it. Occurred 2 days ago"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-005",
+        "title": "Question 5",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-005-A",
+            "label": "1. Knife mentioned during argument",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male arguing outside flats and shouting that he has a knife, though none has been seen. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-D",
+            "label": "2. Vulnerable adult missing",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a vulnerable adult with learning difficulties left a care home and may be near a river path. Last seen 15 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-B",
+            "label": "3. Historic fuel theft",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports fuel was stolen from their vehicle overnight at a service station. Occurred overnight"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-E",
+            "label": "4. Lost phone in taxi",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller left a phone in a taxi and wants police to help locate it. No theft alleged. Discovered today"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-C",
+            "label": "5. Shop staff threatened",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a customer has threatened to wait outside for staff after closing. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-005-F",
+            "label": "6. Vehicle blocking ambulance bay",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a vehicle parked across an ambulance bay and the driver is not present. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-006",
+        "title": "Question 6",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-006-A",
+            "label": "1. House fire concern with occupant inside",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller sees smoke from a neighbour’s kitchen window and believes an elderly occupant is inside. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-D",
+            "label": "2. Robbery just occurred",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a handbag snatched from an elderly woman who has fallen and appears injured. Just occurred"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-B",
+            "label": "3. Graffiti discovered at school",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports graffiti on a school wall discovered by staff this morning. Discovered this morning"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-E",
+            "label": "4. Civil dispute over payment",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller says a tradesperson has not completed work after being paid. No threats reported. Ongoing dispute"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-C",
+            "label": "5. Intoxicated male in road",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports an intoxicated male walking in and out of traffic and shouting at drivers. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-006-F",
+            "label": "6. Security detaining aggressive suspect",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Store security are holding a suspect who is struggling and trying to leave. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-007",
+        "title": "Question 7",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-007-A",
+            "label": "1. Domestic assault disclosed",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says her partner assaulted her and is still inside the address with a child present. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-D",
+            "label": "2. Railway track trespass",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a distressed male has climbed onto railway tracks at a station. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-B",
+            "label": "3. Theft from unlocked vehicle",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports sunglasses stolen from an unlocked car yesterday afternoon. Occurred yesterday"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-E",
+            "label": "4. Complaint about neighbour’s CCTV",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller is unhappy that a neighbour’s CCTV may point towards their driveway. Ongoing issue"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-C",
+            "label": "5. Large group blocking road",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a group arguing in the road and forcing vehicles to stop. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-007-F",
+            "label": "6. Possible drink driver parked outside pub",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a visibly drunk person has got into a car and is trying to start the engine. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-008",
+        "title": "Question 8",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-008-A",
+            "label": "1. Baby not breathing normally",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a baby is pale and not breathing normally while waiting for an ambulance. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-D",
+            "label": "2. Intruder inside home",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller is hiding upstairs and can hear someone moving inside their home downstairs. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-B",
+            "label": "3. Historic harassment report",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller wants to report repeated messages from a former friend over several weeks with no immediate threats. Ongoing for weeks"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-E",
+            "label": "4. Abandoned vehicle",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a car has not moved from outside their house for a month. Ongoing for one month"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-C",
+            "label": "5. Fight may restart outside venue",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports two groups separated by door staff but still shouting threats outside a venue. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-008-F",
+            "label": "6. Elderly driver confused at junction",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports an elderly driver stopped across a junction and appearing confused. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-009",
+        "title": "Question 9",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-009-A",
+            "label": "1. Suspect armed with bottle",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male chasing another person while holding a broken bottle. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-D",
+            "label": "2. Suicidal message received",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller received a message from a friend saying goodbye and cannot reach them by phone. Received 10 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-B",
+            "label": "3. Damaged phone after argument",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller says a friend damaged their phone during an argument yesterday. No ongoing risk reported. Occurred yesterday"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-E",
+            "label": "4. Fly-tipping report",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports rubbish dumped near garages overnight. Discovered this morning"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-C",
+            "label": "5. Missing child in shopping centre",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Security report a young child separated from family and unable to provide contact details. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-009-F",
+            "label": "6. Residential burglary discovered",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller returned home to find the back door forced open but no suspect is present. Discovered now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-010",
+        "title": "Question 10",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-010-B",
+            "label": "1. Lost medication bag",
+            "response": "Ranked 1",
+            "score": -1,
+            "maximum": 2,
+            "context": "Caller lost a bag containing routine medication on a bus and wants advice. Occurred today"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-D",
+            "label": "2. High-risk domestic breach",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an ex-partner outside her address despite conditions not to contact her. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-C",
+            "label": "3. Threats at workplace",
+            "response": "Ranked 3",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a former employee outside reception threatening to return with friends. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-F",
+            "label": "4. Suspected drug dealing",
+            "response": "Ranked 4",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports people exchanging small packages from a car outside flats. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-A",
+            "label": "5. Stabbing reported by caller",
+            "response": "Ranked 5",
+            "score": -1,
+            "maximum": 2,
+            "context": "Caller reports a male has been stabbed in a park and the suspect has run towards nearby flats. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-010-E",
+            "label": "6. Neighbour noise diary request",
+            "response": "Ranked 6",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller asks how to keep records of repeated late-night noise. Ongoing issue"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-011",
+        "title": "Question 11",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-011-A",
+            "label": "1. Person trapped after collision",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a van has hit a cyclist and the cyclist is trapped partly under the vehicle. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-D",
+            "label": "2. Child safeguarding concern",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a child at an address where adults are fighting and smashing property. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-B",
+            "label": "3. Old shoplifting CCTV",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Shop manager has CCTV of a shoplifting offence from three days ago. Occurred 3 days ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-E",
+            "label": "4. Lost keys",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller lost house keys during a night out and wants a crime number. No theft alleged. Discovered today"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-C",
+            "label": "5. Aggressive intoxicated passenger",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Bus driver reports an intoxicated passenger shouting threats and blocking the doors. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-011-F",
+            "label": "6. Suspicious vehicle near school",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a car slowly circling a school at closing time with occupants filming pupils. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-012",
+        "title": "Question 12",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-012-A",
+            "label": "1. Serious assault in progress",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports three people kicking a male on the ground outside a block of flats. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-D",
+            "label": "2. Home invasion report",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller says masked males forced entry into a house and occupants are screaming inside. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-B",
+            "label": "3. Historic damage to bicycle lock",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller found their bicycle lock damaged from earlier in the week, but the bike remains. Occurred earlier this week"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-E",
+            "label": "4. Complaint about parking ticket",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller wants police to cancel a parking ticket issued by the council. Discovered today"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-C",
+            "label": "5. Mental health concern in public place",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a distressed woman shouting and walking into traffic intermittently. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-012-F",
+            "label": "6. Attempted burglary just disturbed",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller disturbed a person trying to force a window who ran off moments ago. Just occurred"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-013",
+        "title": "Question 13",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-013-A",
+            "label": "1. Person threatening self-harm with weapon",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports their sibling is holding a kitchen knife and threatening to harm themselves. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-D",
+            "label": "2. Robbery suspect nearby",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a street robbery just occurred and the suspect is still visible nearby. Just occurred"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-B",
+            "label": "3. Online marketplace dispute",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller paid for a games console online and has not received it. Seller no longer replies. Ongoing for days"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-E",
+            "label": "4. Dog fouling complaint",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports repeated dog fouling near their driveway. Ongoing issue"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-C",
+            "label": "5. Youth disorder outside cinema",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports youths throwing drinks, threatening staff, and refusing to leave. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-013-F",
+            "label": "6. Vulnerable adult confused in shop",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Shop staff report an elderly customer confused, unable to give an address, and trying to leave. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-014",
+        "title": "Question 14",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-014-A",
+            "label": "1. Armed threat at address",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a male outside the address shouting threats and holding what may be a firearm. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-D",
+            "label": "2. Missing child near water",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports an eight-year-old child missing from a park close to a lake. Last seen 15 minutes ago"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-B",
+            "label": "3. Historic theft of number plate",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a vehicle number plate was stolen sometime last night. Occurred overnight"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-E",
+            "label": "4. Civil landlord dispute",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller says their landlord has not repaired a boiler and wants police involvement. Ongoing issue"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-C",
+            "label": "5. Public order at taxi rank",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports several people pushing and shouting at a taxi rank after closing time. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-014-F",
+            "label": "6. Suspicious package in reception",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports an unattended bag in a busy office reception with no owner nearby. Happening now"
+          }
+        ]
+      },
+      {
+        "id": "PJA-V101-LIVE-015",
+        "title": "Question 15",
+        "rows": [
+          {
+            "id": "PJA-V101-LIVE-015-A",
+            "label": "1. Multiple casualty collision",
+            "response": "Ranked 1",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller reports a collision involving a bus and two cars. Several people are injured and traffic is blocked. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-D",
+            "label": "2. Hostage-type threat",
+            "response": "Ranked 2",
+            "score": 2,
+            "maximum": 2,
+            "context": "Caller whispers that a male inside the address is preventing others from leaving and threatening violence. Happening now"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-B",
+            "label": "3. Historic fraud documents",
+            "response": "Ranked 3",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller has gathered documents about a suspected fraud from last month and wants to submit them. Occurred last month"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-E",
+            "label": "4. Repeat nuisance calls",
+            "response": "Ranked 4",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports nuisance calls from withheld numbers over several weeks with no threats. Ongoing for weeks"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-C",
+            "label": "5. Domestic suspect left scene recently",
+            "response": "Ranked 5",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports being assaulted by a partner who left five minutes ago and may return. Just occurred"
+          },
+          {
+            "id": "PJA-V101-LIVE-015-F",
+            "label": "6. Suspected burglary getaway vehicle",
+            "response": "Ranked 6",
+            "score": 1,
+            "maximum": 2,
+            "context": "Caller reports a vehicle waiting with engine running near a house alarm and open door. Happening now"
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-borderline-short-term-memory": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-borderline-short-term-memory",
+    "attemptId": "demo-session-borderline-short-term-memory-attempt",
+    "resultId": "demo-session-borderline-short-term-memory-result",
+    "revision": 1,
+    "releaseId": "short-term-memory-1.0.1-release",
+    "releaseVersion": "1.0.1",
+    "releaseHash": "6bc3911110884bc22474ce9d797d94e709fc26f0f6aee76b547a8f3c6c6fa306",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "station-briefing",
+        "title": "Central station briefing",
+        "rows": [
+          {
+            "id": "platform",
+            "label": "Platform number",
+            "response": "four",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "crew",
+            "label": "Ambulance crew",
+            "response": "echo two",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "passenger",
+            "label": "Passenger name",
+            "response": "not noted",
+            "score": 0,
+            "maximum": 1
+          },
+          {
+            "id": "companion",
+            "label": "Companion name",
+            "response": "not noted",
+            "score": 0,
+            "maximum": 1
+          },
+          {
+            "id": "clothing",
+            "label": "Passenger clothing",
+            "response": "green raincoat",
+            "score": 1,
+            "maximum": 1
+          },
+          {
+            "id": "sequence",
+            "label": "Submitted event order",
+            "response": "Station staff report unwell passenger → Companion provides medical information → Ambulance entry route confirmed → Lower escalator closed",
+            "score": 50,
+            "maximum": 100
+          },
+          {
+            "id": "correction-entry",
+            "label": "Crew entry",
+            "response": "East concourse",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "correction-condition",
+            "label": "Possible condition",
+            "response": "Diab",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "correction-route",
+            "label": "Responder route",
+            "response": "Main s",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "priority",
+            "label": "Which issue requires the clearest access route?",
+            "response": "deliberately-wrong",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "phonetic",
+            "label": "Select the correct phonetic form of “E2”.",
+            "response": "Echo Two",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "time-order",
+            "label": "Which time is latest?",
+            "response": "07:52",
+            "score": null,
+            "maximum": null
+          },
+          {
+            "id": "time",
+            "label": "Recorded completion time",
+            "response": "1720 seconds",
+            "score": null,
+            "maximum": null
+          }
+        ]
+      }
+    ]
+  },
+  "demo-session-borderline-call-simulation": {
+    "reportVersion": "2.0.0",
+    "campaignAssessmentId": "demo-session-borderline-call-simulation",
+    "attemptId": "demo-session-borderline-call-simulation-attempt",
+    "resultId": "demo-session-borderline-call-simulation-result",
+    "revision": 1,
+    "releaseId": "call-simulation-1.2.0-release",
+    "releaseVersion": "1.2.0",
+    "releaseHash": "5d1ff16adbf17b1150a667ba32892d01bd7df9e2e07e7674c0c443b24ef0fed2",
+    "availability": "available",
+    "sections": [
+      {
+        "id": "call-1-active-car-break-in",
+        "title": "Call 1 — active car break-in",
+        "context": "Capture operationally useful information while the call plays. Complete caller, system, intelligence and incident records before review.",
+        "rows": [
+          {
+            "id": "callerName",
+            "label": "Caller name",
+            "response": "Jessie Peres",
+            "score": 0.1,
+            "maximum": 0.2
+          },
+          {
+            "id": "telephoneNumber",
+            "label": "Telephone number",
+            "response": "07700938216",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "dateOfBirth",
+            "label": "Date of birth",
+            "response": "14 February 1991",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "callerDoorNumber",
+            "label": "Caller location — door number",
+            "response": "16",
+            "score": 0.075,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerStreet",
+            "label": "Caller location — street",
+            "response": "Camden Grove",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerPostcode",
+            "label": "Caller location — postcode",
+            "response": "SE15 3XB",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentCategory",
+            "label": "Incident category",
+            "response": "Vehicle crime",
+            "score": 0.2,
+            "maximum": 0.4
+          },
+          {
+            "id": "callerType",
+            "label": "Caller type",
+            "response": "Witness",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "responseTime",
+            "label": "Response time",
+            "response": "unclear on the call",
+            "score": 0,
+            "maximum": 0.2
+          },
+          {
+            "id": "referenceNumber",
+            "label": "Reference number",
+            "response": "46195",
+            "score": 0.05,
+            "maximum": 0.1
+          },
+          {
+            "id": "gender",
+            "label": "Suspect gender",
+            "response": "Male",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "appearance",
+            "label": "Ethnicity / appearance",
+            "response": "white",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "ageRange",
+            "label": "Age range",
+            "response": "30–40",
+            "score": 0.025,
+            "maximum": 0.05
+          },
+          {
+            "id": "clothing",
+            "label": "Clothing",
+            "response": "black jacket and grey jogging bottoms",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "uniqueInformation",
+            "label": "Unique information",
+            "response": "hammer",
+            "score": 0.5,
+            "maximum": 0.5
+          },
+          {
+            "id": "incidentDoorNumber",
+            "label": "Incident location — door number",
+            "response": "unclear on the call",
+            "score": 0,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentStreet",
+            "label": "Incident location — street",
+            "response": "Camden Grove",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentPostcode",
+            "label": "Incident location — postcode",
+            "response": "SE15 3XB",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentSummary",
+            "label": "Incident summary",
+            "response": "car break-in",
+            "score": 1.29,
+            "maximum": 1.9
+          }
+        ]
+      },
+      {
+        "id": "call-2-burglary-residential",
+        "title": "Call 2 — residential burglary",
+        "context": "Capture operationally useful information while the call plays. Complete caller, system, intelligence and incident records before review.",
+        "rows": [
+          {
+            "id": "callerName",
+            "label": "Caller name",
+            "response": "Yasmin Gray",
+            "score": 0.1,
+            "maximum": 0.2
+          },
+          {
+            "id": "telephoneNumber",
+            "label": "Telephone number",
+            "response": "07852176493",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "dateOfBirth",
+            "label": "Date of birth",
+            "response": "18 March 1987",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "callerDoorNumber",
+            "label": "Caller location — door number",
+            "response": "42",
+            "score": 0.075,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerStreet",
+            "label": "Caller location — street",
+            "response": "Maple Crescent",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "callerPostcode",
+            "label": "Caller location — postcode",
+            "response": "BR1 4TN",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentCategory",
+            "label": "Incident category",
+            "response": "Residential burglary",
+            "score": 0.2,
+            "maximum": 0.4
+          },
+          {
+            "id": "callerType",
+            "label": "Caller type",
+            "response": "Victim",
+            "score": 0.2,
+            "maximum": 0.2
+          },
+          {
+            "id": "responseTime",
+            "label": "Response time",
+            "response": "unclear on the call",
+            "score": 0,
+            "maximum": 0.2
+          },
+          {
+            "id": "referenceNumber",
+            "label": "Reference number",
+            "response": "63918",
+            "score": 0.05,
+            "maximum": 0.1
+          },
+          {
+            "id": "gender",
+            "label": "Suspect gender",
+            "response": "Male",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "appearance",
+            "label": "Ethnicity / appearance",
+            "response": "Asian",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "ageRange",
+            "label": "Age range",
+            "response": "40–50",
+            "score": 0.025,
+            "maximum": 0.05
+          },
+          {
+            "id": "clothing",
+            "label": "Clothing",
+            "response": "green high-visibility jacket",
+            "score": 0.05,
+            "maximum": 0.05
+          },
+          {
+            "id": "uniqueInformation",
+            "label": "Unique information",
+            "response": "gold necklace stolen",
+            "score": 0.5,
+            "maximum": 0.5
+          },
+          {
+            "id": "incidentDoorNumber",
+            "label": "Incident location — door number",
+            "response": "unclear on the call",
+            "score": 0,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentStreet",
+            "label": "Incident location — street",
+            "response": "Maple Crescent",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentPostcode",
+            "label": "Incident location — postcode",
+            "response": "BR1 4TN",
+            "score": 0.15,
+            "maximum": 0.15
+          },
+          {
+            "id": "incidentSummary",
+            "label": "Incident summary",
+            "response": "residential burglary",
+            "score": 1.29,
+            "maximum": 1.9
+          }
+        ]
+      }
+    ]
+  }
+}
