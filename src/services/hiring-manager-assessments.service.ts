@@ -209,18 +209,15 @@ function mapCatalogueItem(
 }
 
 function releaseLabel(slug: string, version: string): string {
-  if (slug === "call-simulation" && version === "1.1.0") {
-    return `v${version} — practice + two assessed calls`;
+  if (slug === "call-simulation" && version === "1.3.0") {
+    return `v${version} — practice + assessed call`;
   }
   return `v${version}`;
 }
 
 function releaseDescription(slug: string, version: string): string | null {
-  if (slug === "call-simulation" && version === "1.1.0") {
-    return "Includes one practice call and two assessed calls. Candidates capture caller, system, intelligence, and incident information under timed review.";
-  }
-  if (slug === "call-simulation" && version === "1.0.1") {
-    return "Historical single-call product line. Prefer 1.1.0 for new campaigns.";
+  if (slug === "call-simulation" && version === "1.3.0") {
+    return "Includes one practice call and one assessed call. Candidates capture caller, system, intelligence, and incident information, then have one minute to review the record.";
   }
   return null;
 }

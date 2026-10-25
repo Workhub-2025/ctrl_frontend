@@ -27,7 +27,7 @@ export type AssessmentPlatformEntry = Readonly<{
 
 /**
  * Product catalogue. Order is display-stable for version admin UIs.
- * Call simulation product line is dual-call 1.3.0 (not single-call 1.0.1).
+ * Call simulation product line is 1.3.0 (practice plus the handover call).
  */
 export const ASSESSMENT_PLATFORM_REGISTRY = [
   {
@@ -68,7 +68,7 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
     shortLabel: "SCA",
     title: "Simulated call",
     description:
-      "Practice plus two assessed calls — capture caller, system, intelligence and incident information.",
+      "Practice plus one assessed call — capture caller, system, intelligence and incident information.",
     entitlementTier: "core",
     preferredReleaseVersion: "1.3.0",
     timerMode: "stage_owned",
