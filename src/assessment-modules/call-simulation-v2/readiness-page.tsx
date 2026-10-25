@@ -12,6 +12,10 @@ type State = {
   responses: Record<string, CallResponse>;
   audioComplete: Record<string, boolean>;
   scenarioStartedAt: Record<string, number>;
+  /** 1.3.0+: epoch ms each call's review minute began. */
+  reviewStartedAt?: Record<string, number>;
+  /** 1.3.0+: calls whose record has closed. */
+  frozen?: Record<string, boolean>;
 };
 
 function responseFor(scenario: CallScenario): CallResponse {
@@ -70,7 +74,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
         if (stage === captureCount) return "Review call records";
         return "Continue";
       }}
-      renderStage={({ stageIndex, state, setState }) => {
+      renderStage={({ stageIndex, state, setState, advance }) => {
         if (stageIndex === 0) {
           return (
             <section className="border border-border bg-card p-6 sm:p-8">
@@ -104,6 +108,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
               media={launch.media}
               state={state}
               setState={setState}
+              advance={advance}
             />
           );
         }
@@ -156,11 +161,13 @@ function CallScenarioStage({
   media,
   state,
   setState,
+  advance,
 }: {
   scenario: CallScenario;
   media: LaunchEnvelope["media"];
   state: State;
   setState: (state: State) => void;
+  advance: (nextState?: State) => Promise<void>;
 }) {
   const started = useRef(false);
   useEffect(() => {
@@ -182,6 +189,17 @@ function CallScenarioStage({
       scenario={scenario}
       media={media}
       audioAlreadyComplete={audioAlreadyComplete}
+      reviewStartedAt={state.reviewStartedAt?.[scenario.id]}
+      frozen={Boolean(state.frozen?.[scenario.id])}
+      onReviewExpired={() => {
+        // The review minute is over: close the record and move on, saving it.
+        const closed: State = {
+          ...state,
+          frozen: { ...state.frozen, [scenario.id]: true },
+        };
+        setState(closed);
+        void advance(closed);
+      }}
       value={state.responses[scenario.id]!}
       onChange={(response) => {
         const startedAt = state.scenarioStartedAt[scenario.id] || Date.now();
@@ -217,6 +235,16 @@ function CallScenarioStage({
               state.scenarioStartedAt[scenario.id] ||
               (status === "live" ? Date.now() : 0),
           },
+          ...(status === "complete" &&
+          scenario.reviewSeconds !== undefined &&
+          !state.reviewStartedAt?.[scenario.id]
+            ? {
+                reviewStartedAt: {
+                  ...state.reviewStartedAt,
+                  [scenario.id]: Date.now(),
+                },
+              }
+            : {}),
         })
       }
     />

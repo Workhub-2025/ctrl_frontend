@@ -20,14 +20,48 @@ export type CallScenario = {
   mediaId: string;
   context: string;
   fields: CallField[];
+  /** 1.3.0+: recording length, used for the review clock. */
+  audioDurationSeconds?: number;
+  /** 1.3.0+: real-time review after the recording ends, then the record freezes. */
+  reviewSeconds?: number;
 };
+
+export type FieldEdit = { at: number; value: string };
 
 export type CallResponse = {
   scenarioId: string;
   fields: Record<string, string>;
   fieldTimings: Record<string, number>;
+  /** 1.3.0+: per-field edit history on the attempt clock, folded and capped. */
+  fieldEdits?: Record<string, FieldEdit[]>;
   elapsedSeconds?: number;
 };
+
+/** Keep the request well inside the API body limit. */
+const INPUT_EDIT_LIMIT = 12;
+
+/**
+ * Case, spacing and punctuation changes keep their earlier time, so they are
+ * folded into the previous entry. The server still decides what counts as
+ * substantive; this only stops cosmetic keystrokes growing the history.
+ */
+function foldKey(value: string): string {
+  return value.normalize("NFKC").trim().toLocaleLowerCase("en-GB").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+function formatClock(seconds: number): string {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+export function appendEdit(edits: readonly FieldEdit[], at: number, value: string, freeText: boolean): FieldEdit[] {
+  const last = edits[edits.length - 1];
+  if (last && foldKey(last.value) === foldKey(value)) {
+    return [...edits.slice(0, -1), { at: last.at, value }];
+  }
+  // Any rewording of free text resets its time, so only the latest matters.
+  if (freeText) return [{ at, value }];
+  return [...edits, { at, value }].slice(-INPUT_EDIT_LIMIT);
+}
 
 const sectionMeta = [
   { id: "caller", label: "Caller" },
@@ -44,6 +78,9 @@ export function IncidentWorkspace({
   onPlaybackChange,
   practice = false,
   audioAlreadyComplete = false,
+  reviewStartedAt,
+  frozen = false,
+  onReviewExpired,
 }: {
   scenario: CallScenario;
   media: Record<string, MediaReference>;
@@ -53,6 +90,11 @@ export function IncidentWorkspace({
   practice?: boolean;
   /** When true (e.g. resumed after save), skip single-play gate. */
   audioAlreadyComplete?: boolean;
+  /** Epoch ms the review minute began; set by the parent when the audio ends. */
+  reviewStartedAt?: number;
+  /** The record can no longer be edited. */
+  frozen?: boolean;
+  onReviewExpired?: () => void;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playback, setPlayback] = useState<"idle" | "live" | "complete">(
@@ -68,6 +110,38 @@ export function IncidentWorkspace({
   const [section, setSection] = useState<string>(availableSections[0]?.id ?? "caller");
   const completed = useMemo(() => scenario.fields.filter((field) => value.fields[field.id]?.trim()).length, [scenario.fields, value.fields]);
   const mediaItem = media[scenario.mediaId];
+  const reviewSeconds = practice ? undefined : scenario.reviewSeconds;
+  const [now, setNow] = useState(() => Date.now());
+  const reviewRemaining =
+    reviewSeconds !== undefined && reviewStartedAt
+      ? // `now` can predate the review start until the first tick; never count backwards.
+        Math.max(0, reviewSeconds - Math.max(0, (now - reviewStartedAt) / 1_000))
+      : null;
+  const locked = frozen || reviewRemaining === 0;
+
+  useEffect(() => {
+    if (reviewSeconds === undefined || !reviewStartedAt || frozen) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [frozen, reviewSeconds, reviewStartedAt]);
+
+  const expiredNotified = useRef(false);
+  useEffect(() => {
+    if (reviewRemaining === 0 && !frozen && !expiredNotified.current) {
+      expiredNotified.current = true;
+      onReviewExpired?.();
+    }
+  }, [frozen, onReviewExpired, reviewRemaining]);
+
+  /** Seconds on the attempt clock: audio position, then audio end + review time. */
+  const clockSeconds = () => {
+    if (playback === "live") return audioRef.current?.currentTime ?? 0;
+    if (reviewStartedAt) {
+      const duration = scenario.audioDurationSeconds ?? audioRef.current?.duration ?? 0;
+      return duration + Math.max(0, (Date.now() - reviewStartedAt) / 1_000);
+    }
+    return audioRef.current?.currentTime ?? 0;
+  };
   const startCall = async () => {
     if (!audioRef.current || playback !== "idle") return;
     try {
@@ -80,15 +154,26 @@ export function IncidentWorkspace({
   };
 
   const updateField = (field: CallField, nextValue: string) => {
+    if (locked) return;
+    const at = Math.round(clockSeconds() * 1_000) / 1_000;
     onChange({
       ...value,
       fields: { ...value.fields, [field.id]: nextValue },
       fieldTimings: {
         ...value.fieldTimings,
-        [field.id]: Math.round((audioRef.current?.currentTime ?? 0) * 100) / 100,
+        [field.id]: Math.round(at * 100) / 100,
       },
+      ...(reviewSeconds !== undefined
+        ? {
+            fieldEdits: {
+              ...value.fieldEdits,
+              [field.id]: appendEdit(value.fieldEdits?.[field.id] ?? [], at, nextValue, field.control === "textarea"),
+            },
+          }
+        : {}),
     });
   };
+  const fieldDisabled = (!practice && playback === "idle") || locked;
 
   return (
     <section className="grid min-h-[560px] border border-border bg-card lg:grid-cols-[320px_minmax(0,1fr)]" aria-labelledby={`${scenario.id}-title`}>
@@ -127,6 +212,30 @@ export function IncidentWorkspace({
             {practice
               ? "Use the controls freely while learning the workspace."
               : "The assessed call plays once without pause or replay. Field timing is recorded against the live playback position."}
+          </p>
+          {reviewRemaining !== null ? (
+            <div className="mt-3 border-t border-border pt-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Review time</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">
+                {formatClock(locked ? 0 : Math.ceil(reviewRemaining))}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {locked
+                  ? "Review complete. This record is now closed."
+                  : "Check and correct your record. It closes automatically when the minute ends."}
+              </p>
+            </div>
+          ) : null}
+          <p className="sr-only" aria-live="polite">
+            {locked
+              ? "Review complete. The record is closed."
+              : reviewRemaining !== null
+                ? Math.ceil(reviewRemaining) === 10
+                  ? "Ten seconds of review remaining."
+                  : "Call ended. One minute to review your record."
+                : playback === "live"
+                  ? "Call in progress."
+                  : ""}
           </p>
         </div>
 
@@ -169,7 +278,7 @@ export function IncidentWorkspace({
                         <select
                           className="mt-2 min-h-11 w-full rounded-sm border border-border bg-background px-3 font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           value={value.fields[field.id] ?? ""}
-                          disabled={!practice && playback === "idle"}
+                          disabled={fieldDisabled}
                           onChange={(event) => updateField(field, event.target.value)}
                         >
                           <option value="">Select an option</option>
@@ -179,7 +288,7 @@ export function IncidentWorkspace({
                         <textarea
                           className="mt-2 min-h-28 w-full rounded-sm border border-border bg-background p-3 font-normal leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           value={value.fields[field.id] ?? ""}
-                          disabled={!practice && playback === "idle"}
+                          disabled={fieldDisabled}
                           maxLength={2_000}
                           onChange={(event) => updateField(field, event.target.value)}
                         />
@@ -188,7 +297,7 @@ export function IncidentWorkspace({
                           className="mt-2 min-h-11 w-full rounded-sm border border-border bg-background px-3 font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           inputMode={field.inputMode}
                           value={value.fields[field.id] ?? ""}
-                          disabled={!practice && playback === "idle"}
+                          disabled={fieldDisabled}
                           maxLength={200}
                           onChange={(event) => updateField(field, event.target.value)}
                         />

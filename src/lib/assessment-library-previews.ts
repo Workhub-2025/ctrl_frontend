@@ -82,13 +82,17 @@ export const ASSESSMENT_LIBRARY_PREVIEWS: Readonly<
 export const ASSESSMENT_LIBRARY_PREVIEW_BY_VERSION: Readonly<
   Record<string, Partial<AssessmentLibraryPreview>>
 > = {
+  "call-simulation@1.3.0": {
+    overview:
+      "Practice call plus two assessed calls. Candidates capture caller, system, intelligence and incident information live, then have one minute to review each record before it closes.",
+  },
   "call-simulation@1.1.0": {
     overview:
       "Practice call plus two assessed calls. Candidates capture caller, system, intelligence and incident information under timed review.",
   },
   "call-simulation@1.0.1": {
     overview:
-      "Historical single-call product line. Prefer 1.1.0 for new campaigns.",
+      "Historical single-call product line. Prefer 1.3.0 for new campaigns.",
   },
 };
 

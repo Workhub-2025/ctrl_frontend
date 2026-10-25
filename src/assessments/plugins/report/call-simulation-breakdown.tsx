@@ -35,6 +35,7 @@ import {
   numberOrNull,
 } from "./breakdown-common";
 import type { AssessmentReportBreakdownProps } from "./types";
+import { CallSimulationSkillCard, asSkillFeedback } from "./call-simulation-skill-card";
 
 const SECTION_LABELS: Record<string, string> = {
   caller: "Caller information",
@@ -56,6 +57,8 @@ type CriterionEvidence = {
   awarded?: number;
   timingBand?: "green" | "amber" | "red";
   delaySeconds?: number | null;
+  /** 1.3.0+: accepted | not_accepted | pending. */
+  state?: string;
 };
 
 type ScenarioEvidence = {
@@ -104,6 +107,11 @@ export function CallSimulationReportBreakdown({
   const bands = timingBandSummary(active?.criteria);
   const passed = typeof metrics.passed === "boolean" ? metrics.passed : null;
   const criticalErrors = numberOrNull(metrics.criticalErrorsCount);
+  const skills = asSkillFeedback(metrics.skillFeedback);
+  // 1.3.0+ (evidence marking) has no critical gates; pending answers matter instead.
+  const evidenceMarked = skills.length > 0;
+  const pendingCount = numberOrNull(metrics.pendingCriteriaCount) ?? 0;
+  const awaitingReview = metrics.scoringStatus === "awaiting_review";
 
   const orderedSections = SECTION_ORDER.filter(
     (section) => active?.sections?.[section] !== undefined,
@@ -116,7 +124,9 @@ export function CallSimulationReportBreakdown({
         It is not a validated psychometric instrument or an automated hiring decision.
       </div>
 
-      <StandardHeader metrics={metrics} />
+      <CallSimulationSkillCard skills={skills} pendingCount={pendingCount} />
+
+      <StandardHeader metrics={metrics} pendingReview={awaitingReview} />
       <PerformanceInsights insights={metrics.insights} />
 
       {scenarios.length > 1 ? (
@@ -144,20 +154,36 @@ export function CallSimulationReportBreakdown({
       <div className="grid gap-3 sm:grid-cols-3">
         <BreakdownStatTile
           label="Scoring outcome"
-          value={passed === null ? "Unavailable" : passed ? "STANDARD MET" : "STANDARD NOT MET"}
+          value={
+            passed === null
+              ? "Unavailable"
+              : passed
+                ? "STANDARD MET"
+                : awaitingReview
+                  ? "AWAITING REVIEW"
+                  : "STANDARD NOT MET"
+          }
           valueClassName={cn(
             "text-lg",
-            passed ? portalResultPassClass : portalResultFailClass,
+            passed ? portalResultPassClass : awaitingReview ? portalResultWarnClass : portalResultFailClass,
           )}
         />
-        <BreakdownStatTile
-          label="Critical errors"
-          value={criticalErrors ?? "—"}
-          valueClassName={cn(
-            "text-lg",
-            criticalErrors !== null && criticalErrors > 0 ? portalResultFailClass : undefined,
-          )}
-        />
+        {evidenceMarked ? (
+          <BreakdownStatTile
+            label="Answers awaiting review"
+            value={pendingCount}
+            valueClassName={cn("text-lg", pendingCount > 0 ? portalResultWarnClass : undefined)}
+          />
+        ) : (
+          <BreakdownStatTile
+            label="Critical errors"
+            value={criticalErrors ?? "—"}
+            valueClassName={cn(
+              "text-lg",
+              criticalErrors !== null && criticalErrors > 0 ? portalResultFailClass : undefined,
+            )}
+          />
+        )}
         <BreakdownStatTile
           label="Marks awarded"
           value={numberOrNull(metrics.totalEarnedScore) ?? "—"}
@@ -194,7 +220,9 @@ export function CallSimulationReportBreakdown({
           <span className={timingBandClass("amber")}>{bands.amber} delayed</span>
           {" · "}
           <span className={timingBandClass("red")}>{bands.red} late</span>
-          {" — captured against the point each detail was first spoken."}
+          {evidenceMarked
+            ? " — 100%, 80% and 60% of the marks for entries within 4 s, 6 s and later than each detail was spoken, from the final substantive edit."
+            : " — captured against the point each detail was first spoken."}
         </p>
       </BreakdownSection>
 
@@ -225,6 +253,17 @@ export function CallSimulationReportBreakdown({
                             )}
                           >
                             Critical
+                          </span>
+                        ) : null}
+                        {criterion.state === "pending" ? (
+                          <span
+                            className={cn(
+                              portalBadgeClass,
+                              "text-[9px] font-bold uppercase",
+                              portalResultWarnClass,
+                            )}
+                          >
+                            Awaiting review
                           </span>
                         ) : null}
                       </div>

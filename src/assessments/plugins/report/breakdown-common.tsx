@@ -4,6 +4,7 @@ import {
   portalResultBandClass,
   portalResultFailClass,
   portalResultPassClass,
+  portalResultWarnClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { cn } from "@/lib/utils";
 import { BreakdownSection, BreakdownStatTile } from "./breakdown-ui";
@@ -62,9 +63,12 @@ export function formatDuration(seconds: unknown): string {
 export function StandardHeader({
   metrics,
   bandLabel,
+  pendingReview = false,
 }: {
   metrics: Record<string, unknown>;
   bandLabel?: string | null;
+  /** Answers awaiting staff review can still raise a score below threshold. */
+  pendingReview?: boolean;
 }) {
   const overallScore = numberOrNull(metrics.overallScore);
   const threshold = numberOrNull(metrics.configuredThreshold);
@@ -81,8 +85,24 @@ export function StandardHeader({
       <BreakdownStatTile label="Configured score threshold" value={threshold ?? "—"} suffix="%" />
       <BreakdownStatTile
         label="Assessment standard"
-        value={meetsStandard === null ? "Unavailable" : meetsStandard ? "MET" : "NOT MET"}
-        valueClassName={meetsStandard === null ? undefined : meetsStandard ? portalResultPassClass : portalResultFailClass}
+        value={
+          meetsStandard === null
+            ? "Unavailable"
+            : meetsStandard
+              ? "MET"
+              : pendingReview
+                ? "AWAITING REVIEW"
+                : "NOT MET"
+        }
+        valueClassName={
+          meetsStandard === null
+            ? undefined
+            : meetsStandard
+              ? portalResultPassClass
+              : pendingReview
+                ? portalResultWarnClass
+                : portalResultFailClass
+        }
       />
       {bandLabel ? (
         <BreakdownStatTile
