@@ -8,6 +8,13 @@ export const reportInsightSchema = z.object({
   id: z.string(), kind: z.enum(["strength", "explore"]), title: z.string(),
   evidence: z.string(), question: z.string().optional()
 });
+/** Provisional criterion-referenced six-skill card (call simulation 1.3.0+). */
+export const skillFeedbackSchema = z.object({
+  id: z.string(), title: z.string(),
+  label: z.enum(["Weak", "Below average", "Average", "Above average", "Strong", "Awaiting review", "Not yet rated"]),
+  level: z.number().int().min(0).max(4).nullable(), text: z.string(),
+  accepted: number, total: number, pending: number
+});
 const common = z.object({
   reportVersion: z.string(), overallScore: metric, configuredThreshold: metric,
   meetsConfiguredStandard: z.boolean().optional(), criticalFlagCount: metric,
@@ -35,7 +42,8 @@ export const reportMetricSchemas = {
     interruptionScore: metric, distractionAccuracy: metric, timelinessScore: metric, missedCriticalFacts: z.array(z.string()).optional() }),
   "call-simulation": common.extend({ timingBands: z.object({green: number, amber: number, red: number}).optional(),
     totalEarnedScore: metric, maxScore: metric, criticalErrorsCount: metric, passed: z.boolean().optional(),
-    scoringStatus: z.string().optional(), expectedRoundCount: metric, answeredRoundCount: metric })
+    scoringStatus: z.string().optional(), expectedRoundCount: metric, answeredRoundCount: metric,
+    pendingCriteriaCount: metric, skillFeedback: z.array(skillFeedbackSchema).optional() })
 };
 export type AssessmentReportMetrics = { [K in keyof typeof reportMetricSchemas]: z.infer<(typeof reportMetricSchemas)[K]> };
 export function parseReportMetrics(slug: string, value: unknown): Record<string, unknown> | null {
