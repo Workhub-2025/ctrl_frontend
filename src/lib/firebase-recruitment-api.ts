@@ -186,7 +186,12 @@ export function createFirebaseRecruitmentApi(
       );
     },
     createCampaign(body: Record<string, unknown>) {
-      return request<{ campaignId: string; alreadyCreated: boolean }>(
+      return request<{
+        campaignId: string;
+        status: "draft";
+        version: number;
+        alreadyCreated: boolean;
+      }>(
         "/v1/campaigns",
         { method: "POST", body },
       );

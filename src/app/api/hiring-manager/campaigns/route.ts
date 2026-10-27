@@ -10,6 +10,7 @@ import {
   requireFirebaseRecruitmentSession,
   toHiringManagerCampaign,
 } from "@/lib/firebase-recruitment-bff";
+import { readAssessmentWeight } from "@/lib/hiring-manager/campaign-assessment-settings";
 import {
   readAssessmentSettingVersion,
   resolveCatalogueReleaseId,
@@ -239,10 +240,21 @@ export async function POST(request: NextRequest) {
         releaseId,
         durationMinutes: null,
         maxAttempts: 1,
+        weight: readAssessmentWeight(
+          payload.assessmentSettings,
+          item.slug,
+          selectedId,
+        ),
       };
     });
+    // Create stores the campaign at version 1. The stack write is optimistic
+    // and rejects any other version, so a hardcoded 0 always conflicts.
+    const createdVersion =
+      typeof result.version === "number"
+        ? result.version
+        : (await recruitment.getCampaign(result.campaignId)).campaign.version;
     await recruitment.replaceAssessmentStack(result.campaignId, {
-      expectedVersion: 0,
+      expectedVersion: createdVersion,
       assessments,
       idempotencyKey: recruitmentIdempotencyKey(
         "campaign:assessment-stack",

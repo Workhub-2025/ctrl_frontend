@@ -1,3 +1,26 @@
+import { isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
+
+/**
+ * Weights are validated as totalling 100%. Resolve each one against the
+ * assessment it belongs to so the backend persists the campaign weighting
+ * rather than falling back to an equal split.
+ */
+export function readAssessmentWeight(
+  assessmentSettings: Record<string, unknown> | undefined,
+  slug: string,
+  selectedId: string,
+): number | null {
+  const weights = assessmentSettings?.weights;
+  if (!weights || typeof weights !== "object" || Array.isArray(weights)) {
+    return null;
+  }
+  const entry = Object.entries(weights as Record<string, unknown>).find(
+    ([key]) => key === selectedId || key === slug || isSameAssessment(slug, key),
+  );
+  const value = entry ? Number(entry[1]) : Number.NaN;
+  return Number.isFinite(value) ? Math.round(value) : null;
+}
+
 export function validateAssessmentStackPayload(input: {
   assessmentDocumentIds: string[];
   assessmentSettings?: Record<string, unknown> | null;

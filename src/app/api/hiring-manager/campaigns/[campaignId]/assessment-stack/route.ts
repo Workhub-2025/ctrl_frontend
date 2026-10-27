@@ -3,7 +3,10 @@ import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth/next-auth-options";
 import { applyRateLimit, extractClientIp } from "@/lib/security/api-rate-limit";
-import { validateAssessmentStackPayload } from "@/lib/hiring-manager/campaign-assessment-settings";
+import {
+  readAssessmentWeight,
+  validateAssessmentStackPayload,
+} from "@/lib/hiring-manager/campaign-assessment-settings";
 import { recruitmentIdempotencyKey } from "@/lib/firebase-recruitment-api";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
 
@@ -13,28 +16,6 @@ import {
   readAssessmentSettingVersion,
   resolveCatalogueReleaseId,
 } from "@/lib/hiring-manager/resolve-assessment-release";
-import { isSameAssessment } from "@/lib/hiring-manager/assessment-matching";
-
-/**
- * Weights are validated above as totalling 100%. Resolve each one against the
- * assessment it belongs to so the backend can persist the campaign weighting
- * rather than falling back to an equal split.
- */
-function readAssessmentWeight(
-  assessmentSettings: Record<string, unknown> | undefined,
-  slug: string,
-  selectedId: string,
-): number | null {
-  const weights = assessmentSettings?.weights;
-  if (!weights || typeof weights !== "object" || Array.isArray(weights)) {
-    return null;
-  }
-  const entry = Object.entries(weights as Record<string, unknown>).find(
-    ([key]) => key === selectedId || key === slug || isSameAssessment(slug, key),
-  );
-  const value = entry ? Number(entry[1]) : Number.NaN;
-  return Number.isFinite(value) ? Math.round(value) : null;
-}
 export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ campaignId: string }> }
