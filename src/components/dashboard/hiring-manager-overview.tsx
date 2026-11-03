@@ -34,6 +34,10 @@ import {
 import { HmErrorBanner } from "@/components/dashboard/hiring-manager-portal-ui";
 import { HiringManagerCommandWorkspace } from "@/components/dashboard/hiring-manager-command-workspace";
 import { isArchivedCampaign } from "@/lib/hiring-manager/campaign-session-approval";
+import {
+  PortalSkeletonRegion,
+  SessionQueueCardSkeleton,
+} from "@/components/dashboard/portal/portal-skeletons";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
@@ -52,6 +56,9 @@ export function HiringManagerOverview() {
     () => allCampaigns.filter((campaign) => !isArchivedCampaign(campaign)),
     [allCampaigns]
   );
+  // Placeholders only before the first response; refreshes keep the content.
+  const isFirstLoad =
+    isRefreshing && lastRefreshAt === null && allCampaigns.length === 0;
 
   const metrics = useMemo(() => {
     const liveSessions = sessions.filter((session) => session.status === "Live").length;
@@ -158,7 +165,12 @@ export function HiringManagerOverview() {
             />
           </div>
           <div className="space-y-3 p-5">
-            {upcomingSessions.length ? (
+            {isFirstLoad ? (
+              <PortalSkeletonRegion label="Loading sessions…" className="space-y-3">
+                <SessionQueueCardSkeleton />
+                <SessionQueueCardSkeleton />
+              </PortalSkeletonRegion>
+            ) : upcomingSessions.length ? (
               upcomingSessions.map((session) => {
                 const isRemote = session.location.toLowerCase().includes("zoom") || session.location.toLowerCase().includes("remote") || session.location.toLowerCase().includes("http");
                 const occupancyPercent = session.candidateLimit > 0 ? Math.min(100, Math.round((session.candidateCount / session.candidateLimit) * 100)) : 0;
@@ -235,6 +247,7 @@ export function HiringManagerOverview() {
             meta: campaign.nextMilestone,
             actionLabel: "Open",
           }))}
+          loading={isFirstLoad}
           emptyTitle="No campaigns created"
           emptyDescription="Create a campaign when the role and assessment requirements are ready."
         />

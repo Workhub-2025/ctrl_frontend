@@ -143,7 +143,9 @@ export function useClientPortalState(): ClientPortalContextValue {
   const [entitlements, setEntitlements] = useState<ClientEntitlements | null>(null);
   const [upgradeRequests, setUpgradeRequests] = useState<ClientUpgradeRequestRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sharedLoading, setSharedLoading] = useState(false);
+  // Only the Candidates page reads this and it loads on mount, so start in the
+  // loading state rather than flashing "No candidates yet" for a frame.
+  const [sharedLoading, setSharedLoading] = useState(true);
   const [entitlementsLoading, setEntitlementsLoading] = useState(false);
   const [upgradeRequestsLoading, setUpgradeRequestsLoading] = useState(false);
   const [reviewingId, setReviewingId] = useState<string | null>(null);

@@ -27,6 +27,10 @@ import {
   portalTableShellClass,
   portalTableToolbarClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
+import {
+  LedgerRowsSkeleton,
+  PortalSkeletonRegion,
+} from "@/components/dashboard/portal/portal-skeletons";
 
 export {
   portalPanelClass,
@@ -381,9 +385,9 @@ export function PortalDecisionLedger({
       <PortalSectionHeader title={title} titleId={headingId} description={description} />
       <div className={cn(portalPanelClass, "overflow-hidden border-l-2 border-l-primary/70")}>
         {loading ? (
-          <p className="p-5 text-sm text-muted-foreground" aria-live="polite">
-            Loading decisions…
-          </p>
+          <PortalSkeletonRegion label={`Loading ${title.toLowerCase()}…`}>
+            <LedgerRowsSkeleton />
+          </PortalSkeletonRegion>
         ) : items.length === 0 ? (
           <div className="flex min-h-24 items-start gap-3 p-5">
             <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />

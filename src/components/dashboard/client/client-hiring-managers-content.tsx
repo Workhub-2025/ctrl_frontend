@@ -25,6 +25,10 @@ import {
   PortalSectionHeader,
 } from "@/components/dashboard/portal/portal-ui";
 import {
+  PortalSkeletonRegion,
+  SeatCardSkeleton,
+} from "@/components/dashboard/portal/portal-skeletons";
+import {
   portalBadgeClass,
   portalCardClass,
   portalCardInteractiveClass,
@@ -49,6 +53,8 @@ export function ClientHiringManagersContent() {
     sendSeatInvite,
     releaseHiringManager,
   } = useClientPortal();
+  // Placeholders only before the first response; refreshes keep the seats.
+  const isFirstLoad = loading && !summary;
 
   const [selectedSeat, setSelectedSeat] = useState<SeatSlot | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -105,14 +111,18 @@ export function ClientHiringManagersContent() {
             description="Occupied seats show hiring-manager workspaces. Empty seats send an email invitation with a copyable accept link."
           />
 
-          {loading && (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <RefreshCw className="h-4 w-4 motion-safe:animate-spin text-primary" aria-hidden="true" />
-              Loading hiring-manager seats…
-            </p>
+          {isFirstLoad && (
+            <PortalSkeletonRegion
+              label="Loading hiring-manager seats…"
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            >
+              <SeatCardSkeleton />
+              <SeatCardSkeleton />
+              <SeatCardSkeleton />
+            </PortalSkeletonRegion>
           )}
 
-          {!loading && seatSlots.length === 0 && (
+          {!isFirstLoad && seatSlots.length === 0 && (
             <PortalEmptyState
               icon={Users}
               title="No seats configured"
@@ -120,7 +130,7 @@ export function ClientHiringManagersContent() {
             />
           )}
 
-          {!loading && seatSlots.length > 0 && (
+          {!isFirstLoad && seatSlots.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {seatSlots.map((seat) => (
                 <SeatCard
@@ -137,7 +147,7 @@ export function ClientHiringManagersContent() {
             </div>
           )}
 
-          {!loading && previousHiringManagers.length > 0 && (
+          {!isFirstLoad && previousHiringManagers.length > 0 && (
             <div className="border-t border-border/50 pt-6">
               <PortalSectionHeader
                 eyebrow="History"

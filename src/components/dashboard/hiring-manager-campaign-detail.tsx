@@ -42,11 +42,11 @@ import {
 } from "@/components/dashboard/hiring-manager-session-details-dialog";
 import {
   PortalEmptyState,
-  PortalInlineLoading,
   PortalPanel,
   PortalSectionHeader,
   PortalStatTile,
 } from "@/components/dashboard/portal/portal-ui";
+import { CampaignDetailSkeleton } from "@/components/dashboard/portal/portal-skeletons";
 import {
   PortalEntityHeader,
   PortalStatusBadge,
@@ -346,7 +346,7 @@ export function HiringManagerCampaignDetailView({
   };
 
   if (isLoading) {
-    return <PortalInlineLoading message="Loading campaign…" />;
+    return <CampaignDetailSkeleton label="Loading campaign…" />;
   }
 
   if (!campaign) {

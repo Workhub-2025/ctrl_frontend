@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertCircle, ArrowRight, CheckCircle2, FolderKanban, RefreshCw, XCircle } from "lucide-react";
+import { AlertCircle, ArrowRight, CheckCircle2, FolderKanban, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +18,10 @@ import {
   PortalSectionHeader,
   portalBadgeClass,
 } from "@/components/dashboard/portal/portal-ui";
+import {
+  ClientCampaignCardSkeleton,
+  PortalSkeletonRegion,
+} from "@/components/dashboard/portal/portal-skeletons";
 import { portalCardClass, portalPanelClass } from "@/components/dashboard/portal/portal-design-tokens";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { cn } from "@/lib/utils";
@@ -67,6 +71,8 @@ export function ClientCampaignApprovalsContent() {
     reviewCampaign,
     updateApprovalMode,
   } = useClientPortal();
+  // Placeholders only before the first response; refreshes keep the cards.
+  const isFirstLoad = loading && !summary;
 
   return (
     <div className="relative mx-auto max-w-7xl space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
@@ -94,14 +100,14 @@ export function ClientCampaignApprovalsContent() {
             }
           />
 
-          {loading && (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <RefreshCw className="h-4 w-4 motion-safe:animate-spin text-primary" aria-hidden="true" />
-              Loading campaign approvals…
-            </p>
+          {isFirstLoad && (
+            <PortalSkeletonRegion label="Loading campaigns…" className="space-y-6">
+              <ClientCampaignCardSkeleton />
+              <ClientCampaignCardSkeleton />
+            </PortalSkeletonRegion>
           )}
 
-          {!loading && campaigns.length === 0 && (
+          {!isFirstLoad && campaigns.length === 0 && (
             <PortalEmptyState
               icon={FolderKanban}
               title="No campaigns yet"
@@ -109,7 +115,7 @@ export function ClientCampaignApprovalsContent() {
             />
           )}
 
-          {!loading &&
+          {!isFirstLoad &&
             campaigns.map((campaign) => (
               <div
                 key={campaign.id}

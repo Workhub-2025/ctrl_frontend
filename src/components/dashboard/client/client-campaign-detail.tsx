@@ -19,10 +19,10 @@ import {
 } from "@/components/dashboard/client/client-portal-ui";
 import {
   PortalEmptyState,
-  PortalInlineLoading,
   PortalPanel,
   PortalSectionHeader,
 } from "@/components/dashboard/portal/portal-ui";
+import { CampaignDetailSkeleton } from "@/components/dashboard/portal/portal-skeletons";
 import {
   PortalEntityHeader,
   PortalStatusBadge,
@@ -193,7 +193,7 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
   }, [campaign, pendingReviews, tabHref]);
 
   if (loading && !campaign) {
-    return <PortalInlineLoading message="Loading campaign…" />;
+    return <CampaignDetailSkeleton label="Loading campaign…" />;
   }
 
   if (!campaign) {

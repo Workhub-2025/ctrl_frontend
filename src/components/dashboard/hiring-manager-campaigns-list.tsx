@@ -20,6 +20,10 @@ import {
   PortalSectionHeader,
 } from "@/components/dashboard/portal/portal-ui";
 import {
+  HmCampaignCardSkeleton,
+  PortalSkeletonRegion,
+} from "@/components/dashboard/portal/portal-skeletons";
+import {
   portalBadgeClass,
   portalPrimaryButtonClass,
 } from "@/components/dashboard/portal/portal-design-tokens";
@@ -62,6 +66,8 @@ export function HiringManagerCampaignsList() {
   };
 
   const isRefreshing = loading || isForceRefreshing;
+  // Placeholders only before the first response; refreshes keep the cards.
+  const isFirstLoad = loading && lastRefreshAt === null && allCampaigns.length === 0;
 
   const refreshLabel = useMemo(
     () => formatPortalLastRefresh(lastRefreshAt),
@@ -101,7 +107,13 @@ export function HiringManagerCampaignsList() {
       {error ? <HmErrorBanner>{error}</HmErrorBanner> : null}
 
       <div className="space-y-3">
-        {campaigns.length === 0 ? (
+        {isFirstLoad ? (
+          <PortalSkeletonRegion label="Loading campaigns…" className="space-y-3">
+            <HmCampaignCardSkeleton />
+            <HmCampaignCardSkeleton />
+            <HmCampaignCardSkeleton />
+          </PortalSkeletonRegion>
+        ) : campaigns.length === 0 ? (
           // The header already carries a Create campaign action; a second one
           // here reads as two competing calls to action on an empty page.
           <PortalEmptyState

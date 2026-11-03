@@ -36,6 +36,10 @@ import {
   PortalStatTile,
 } from "@/components/dashboard/portal/portal-ui";
 import {
+  HmCandidateCardSkeleton,
+  PortalSkeletonRegion,
+} from "@/components/dashboard/portal/portal-skeletons";
+import {
   portalBadgeClass,
   portalCssHoverTooltipClass,
   portalIconWrapLgClass,
@@ -387,7 +391,13 @@ export function HiringManagerCandidatesView() {
 
       {/* Candidate List Container */}
       <div className="grid gap-4">
-        {filteredCandidates.length === 0 ? (
+        {loading && lastRefreshAt === null && campaigns.length === 0 ? (
+          <PortalSkeletonRegion label="Loading candidates…" className="grid gap-4">
+            <HmCandidateCardSkeleton />
+            <HmCandidateCardSkeleton />
+            <HmCandidateCardSkeleton />
+          </PortalSkeletonRegion>
+        ) : filteredCandidates.length === 0 ? (
           <PortalEmptyState
             icon={Users}
             title={candidates.length === 0 ? "No candidates yet" : "No matches"}

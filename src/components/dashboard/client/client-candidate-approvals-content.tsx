@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BriefcaseBusiness, Mail, RefreshCw, RotateCcw, UserCheck } from "lucide-react";
+import { BriefcaseBusiness, Mail, RotateCcw, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +28,10 @@ import {
   portalBadgeClass,
   portalCardClass,
 } from "@/components/dashboard/portal/portal-ui";
+import {
+  ClientCandidateCardSkeleton,
+  PortalSkeletonRegion,
+} from "@/components/dashboard/portal/portal-skeletons";
 import { useClientPortal } from "@/context/client-portal-provider";
 import { ClientCandidateOutreachDialog } from "@/components/dashboard/client/client-candidate-outreach-dialog";
 import { ClientCandidateAssessmentPanel } from "@/components/dashboard/client/client-candidate-assessment-panel";
@@ -64,6 +68,8 @@ export function ClientCandidateApprovalsContent() {
   } = useClientPortal();
   const [reopenTarget, setReopenTarget] = useState<ClientSharedCandidate | null>(null);
   const [reopenReason, setReopenReason] = useState("");
+  // Placeholders only before the first response; refreshes keep the cards.
+  const isFirstLoad = sharedLoading && sharedCandidates.length === 0;
 
   useEffect(() => {
     void loadSharedCandidates();
@@ -104,11 +110,11 @@ export function ClientCandidateApprovalsContent() {
             description="Hiring managers share candidates here when they pass assessment review. Track status and contact candidates directly."
           />
 
-          {sharedLoading && (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <RefreshCw className="h-4 w-4 motion-safe:animate-spin text-primary" aria-hidden="true" />
-              Loading candidates…
-            </p>
+          {isFirstLoad && (
+            <PortalSkeletonRegion label="Loading candidates…" className="space-y-4">
+              <ClientCandidateCardSkeleton />
+              <ClientCandidateCardSkeleton />
+            </PortalSkeletonRegion>
           )}
 
           {!sharedLoading && sharedCandidates.length === 0 && (
@@ -119,7 +125,7 @@ export function ClientCandidateApprovalsContent() {
             />
           )}
 
-          {!sharedLoading && sharedCandidates.length > 0 && (
+          {!isFirstLoad && sharedCandidates.length > 0 && (
             <ul className="space-y-4">
               {sharedCandidates.map((candidate) => (
                 <li
