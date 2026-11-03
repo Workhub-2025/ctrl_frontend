@@ -53,6 +53,11 @@ junit.xml
 test-results/
 playwright-report/
 .playwright/
+playwright.config.*
+playwright/.cache/
+blob-report/
+e2e/
+tests/
 
 # -------------------------------
 # Logs & debug
@@ -256,3 +261,7 @@ test-results/
 wrangler.toml
 wrangler.toml.local
 
+# -------------------------------
+# Docs (kept locally; not part of the deployed platform)
+# -------------------------------
+docs/
