@@ -3,7 +3,6 @@
 import { FirebaseError } from "firebase/app";
 import {
   TotpMultiFactorGenerator,
-  createUserWithEmailAndPassword,
   getMultiFactorResolver,
   inMemoryPersistence,
   sendEmailVerification,
@@ -11,7 +10,6 @@ import {
   signInWithCustomToken,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile,
   type MultiFactorError,
   type MultiFactorResolver,
   type UserCredential,
@@ -253,34 +251,32 @@ export async function registerCandidateSessionJoin(input: {
     email,
   });
 
-  const auth = getFirebaseBrowserAuth();
-  await setPersistence(auth, inMemoryPersistence);
-
-  let credential: UserCredential;
-  try {
-    credential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      input.password,
-    );
-    if (displayName) {
-      await updateProfile(credential.user, { displayName }).catch(() => undefined);
-    }
-  } catch (error) {
-    if (
-      !(error instanceof FirebaseError) ||
-      error.code !== "auth/email-already-in-use"
-    ) {
-      clearPendingSessionJoin();
-      throw error;
-    }
-    // Returning candidate — same durable credentials work for the rest of the day.
-    credential = await signInPasswordOrInPersonBypass({
+  // Public sign-up is disabled on the Firebase project, so the account is
+  // created server-side against the session code. A returning candidate's
+  // existing account is left untouched and they sign in with its password.
+  const provisionResponse = await fetch("/api/onboarding/session-join-account", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    credentials: "same-origin",
+    cache: "no-store",
+    body: JSON.stringify({
+      accessCode: input.accessCode,
       email,
       password: input.password,
-      accessCode: input.accessCode,
-    });
+      displayName,
+    }),
+  });
+  if (!provisionResponse.ok) {
+    const body = await readJson<{ error?: string }>(provisionResponse);
+    clearPendingSessionJoin();
+    throw new Error(body.error ?? "Your account could not be created.");
   }
+
+  const credential = await signInPasswordOrInPersonBypass({
+    email,
+    password: input.password,
+    accessCode: input.accessCode,
+  });
 
   await credential.user.reload();
   if (!credential.user.emailVerified) {

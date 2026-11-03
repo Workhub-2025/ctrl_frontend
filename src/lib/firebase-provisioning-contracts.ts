@@ -35,6 +35,17 @@ export type FirebaseAccountProvisioningRequest = Readonly<{
   displayName: string;
 }>;
 
+export type SessionJoinAccountRequest = Readonly<{
+  accessCode: string;
+  email: string;
+  password: string;
+  displayName: string;
+}>;
+
+export type SessionJoinAccountResponse = Readonly<{
+  accountReady: boolean;
+}>;
+
 export type FirebaseAccountProvisioningResponse = Readonly<{
   alreadyProvisioned: boolean;
   requiresExistingSignIn: boolean;

@@ -19,6 +19,8 @@ import type {
   FirebaseAccountProvisioningResponse,
   SessionAccessCodeClaimRequest,
   SessionAccessCodeClaimResponse,
+  SessionJoinAccountRequest,
+  SessionJoinAccountResponse,
 } from "@/lib/firebase-provisioning-contracts";
 
 export type FirebaseDomainUserContext = Readonly<{
@@ -302,6 +304,16 @@ export function createFirebaseDomainApi(
     ): Promise<FirebaseAccountProvisioningResponse> {
       return transport.request({
         path: "/v1/onboarding/candidate-account",
+        method: "POST",
+        body,
+      });
+    },
+
+    provisionSessionJoinAccount(
+      body: SessionJoinAccountRequest,
+    ): Promise<SessionJoinAccountResponse> {
+      return transport.request({
+        path: "/v1/onboarding/session-join-account",
         method: "POST",
         body,
       });
