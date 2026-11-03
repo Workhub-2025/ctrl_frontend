@@ -27,11 +27,19 @@ import { cn } from "@/lib/utils";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
 import { useHiringManagerPortal } from "@/hooks/use-hiring-manager-portal";
 import { getAssessmentSettingsSummary } from "@/lib/hiring-manager/assessment-settings-display";
-import { canCreateSessionForCampaign } from "@/lib/hiring-manager/campaign-session-approval";
+import {
+  canCreateSessionForCampaign,
+  isArchivedCampaign,
+} from "@/lib/hiring-manager/campaign-session-approval";
 
 export function HiringManagerCampaignsList() {
-  const { campaigns, error, lastRefreshAt, loading, loadOverview } = useHiringManagerPortal();
+  const { campaigns: allCampaigns, error, lastRefreshAt, loading, loadOverview } =
+    useHiringManagerPortal();
   const [isForceRefreshing, setIsForceRefreshing] = useState(false);
+  const campaigns = useMemo(
+    () => allCampaigns.filter((campaign) => !isArchivedCampaign(campaign)),
+    [allCampaigns]
+  );
 
   const handleRefresh = async (force = false) => {
     if (!force) {

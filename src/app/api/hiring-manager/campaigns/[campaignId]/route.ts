@@ -8,6 +8,7 @@ import {
   requireFirebaseRecruitmentSession,
   toHiringManagerCampaignDetail,
 } from "@/lib/firebase-recruitment-bff";
+import { invalidateHmOverviewServerCache } from "@/lib/portal-cache-invalidation";
 
 async function enforceRateLimit(request: NextRequest, action: "get" | "delete") {
   const session = await getServerSession(authOptions);
@@ -73,6 +74,10 @@ export async function DELETE(
         { campaignId, version: workspace.campaign.version },
       ),
     });
+    await invalidateHmOverviewServerCache(
+      actor.firebaseUid,
+      actor.organizationId,
+    );
     return NextResponse.json({ data: { deleted: true } });
   } catch (error) {
     return handleBffRouteError(error, "Campaign could not be loaded");

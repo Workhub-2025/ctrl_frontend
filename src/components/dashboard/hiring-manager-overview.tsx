@@ -33,13 +33,14 @@ import {
 } from "@/components/dashboard/portal/portal-design-tokens";
 import { HmErrorBanner } from "@/components/dashboard/hiring-manager-portal-ui";
 import { HiringManagerCommandWorkspace } from "@/components/dashboard/hiring-manager-command-workspace";
+import { isArchivedCampaign } from "@/lib/hiring-manager/campaign-session-approval";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
 import { cn } from "@/lib/utils";
 import { formatPortalLastRefresh } from "@/lib/hiring-manager/format-portal-last-refresh";
 
 export function HiringManagerOverview() {
   const {
-    campaigns,
+    campaigns: allCampaigns,
     campaignDetails,
     sessions,
     loading: isRefreshing,
@@ -47,6 +48,10 @@ export function HiringManagerOverview() {
     lastRefreshAt,
     loadOverview,
   } = useHiringManagerPortal();
+  const campaigns = useMemo(
+    () => allCampaigns.filter((campaign) => !isArchivedCampaign(campaign)),
+    [allCampaigns]
+  );
 
   const metrics = useMemo(() => {
     const liveSessions = sessions.filter((session) => session.status === "Live").length;

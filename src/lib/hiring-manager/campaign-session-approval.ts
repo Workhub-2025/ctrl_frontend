@@ -2,6 +2,13 @@ import type { HiringManagerCampaignListItem } from "@/services/hiring-manager-po
 
 type CampaignApprovalStatus = HiringManagerCampaignListItem["approvalStatus"];
 
+/** Deleting a campaign archives it; its candidates and audit trail remain. */
+export function isArchivedCampaign(
+  campaign: Pick<HiringManagerCampaignListItem, "status">
+): boolean {
+  return campaign.status === "Archived";
+}
+
 export function canCreateSessionForCampaign(
   approvalStatus: CampaignApprovalStatus
 ): boolean {
