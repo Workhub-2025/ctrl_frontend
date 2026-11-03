@@ -232,6 +232,7 @@ export function toHiringManagerCampaignDetail(
   return {
     ...base,
     startDate: displayDate(workspace.campaign.startDate),
+    startsOn: workspace.campaign.startDate,
     endDate: displayDate(workspace.campaign.endDate),
     location: workspace.campaign.location ?? "Location to confirm",
     linkedAssessmentSlugs: workspace.assessmentStack

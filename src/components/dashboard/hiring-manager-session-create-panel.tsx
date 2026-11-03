@@ -112,28 +112,44 @@ export function HiringManagerSessionCreatePanel({
 
   const campaignId = campaign.documentId ?? campaign.id;
   const isHybrid = campaign.deliveryMode === "Hybrid";
-  const minDate = useMemo(() => toDateInputValue(new Date()), []);
+  // Sessions run from the campaign's start day; the backend enforces it too.
+  const campaignStartDate = campaign.startsOn
+    ? toDateInputValue(new Date(campaign.startsOn))
+    : null;
+  const today = toDateInputValue(new Date());
+  const minDate =
+    campaignStartDate && campaignStartDate > today ? campaignStartDate : today;
+  const startsLater = minDate !== today;
   const scheduleShortcuts = useMemo(
-    () => [
-      { id: "today", label: "Today", value: toDateInputValue(addDays(0)) },
-      { id: "tomorrow", label: "Tomorrow", value: toDateInputValue(addDays(1)) },
-      { id: "next-monday", label: "Next Monday", value: toDateInputValue(nextMonday()) },
-    ],
-    []
+    () =>
+      [
+        ...(startsLater
+          ? [{ id: "campaign-start", label: "Campaign start", value: minDate }]
+          : []),
+        { id: "today", label: "Today", value: toDateInputValue(addDays(0)) },
+        { id: "tomorrow", label: "Tomorrow", value: toDateInputValue(addDays(1)) },
+        { id: "next-monday", label: "Next Monday", value: toDateInputValue(nextMonday()) },
+      ].filter(
+        (shortcut, index, all) =>
+          shortcut.value >= minDate &&
+          all.findIndex((other) => other.value === shortcut.value) === index
+      ),
+    [minDate, startsLater]
   );
 
   const resetForm = useCallback(() => {
     const deliveryMode = defaultDeliveryMode(campaign);
     setName("");
     setCandidateLimit(String(Math.max(1, campaign.candidateCount || 12)));
-    setDate(toDateInputValue(addDays(1)));
+    const tomorrow = toDateInputValue(addDays(1));
+    setDate(tomorrow > minDate ? tomorrow : minDate);
     setTime(DEFAULT_START_TIME);
     setMode(deliveryMode);
     setLocation(deliveryMode === "in_person" ? campaign.location : "");
     setError(null);
     setCreatedSession(null);
     setCopiedField(null);
-  }, [campaign]);
+  }, [campaign, minDate]);
 
   useEffect(() => {
     if (!open) return;
@@ -168,6 +184,12 @@ export function HiringManagerSessionCreatePanel({
     }
     if (!date || !time) {
       setError("Choose the session start date and time.");
+      return;
+    }
+    if (startsLater && date < minDate) {
+      setError(
+        `Sessions can start from ${formatDateLabel(minDate)}, when the campaign starts.`
+      );
       return;
     }
     const startsAt = new Date(`${date}T${time}`);
@@ -383,6 +405,12 @@ export function HiringManagerSessionCreatePanel({
                 </Button>
               ))}
             </div>
+            {startsLater ? (
+              <p className="text-xs text-muted-foreground">
+                This campaign starts {formatDateLabel(minDate)}. Sessions can&apos;t be
+                scheduled before then.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">

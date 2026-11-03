@@ -71,7 +71,10 @@ export type HiringManagerSessionListItem = {
 };
 
 export type HiringManagerCampaignDetail = HiringManagerCampaignListItem & {
+  /** Display string ("05 Nov 2026, 09:00"); see startsOn for comparisons. */
   startDate: string;
+  /** Raw ISO campaign start; sessions cannot be scheduled before its day. */
+  startsOn?: string | null;
   endDate: string;
   location: string;
   linkedAssessmentSlugs: string[];
