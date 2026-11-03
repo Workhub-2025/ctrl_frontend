@@ -181,6 +181,13 @@ export function ClientUpgradeContent() {
     void loadUpgradeRequests(true);
   };
 
+  // Overview loads these too, but Billing is often opened directly (link,
+  // reload, Stripe return) and must not depend on visiting Overview first.
+  useEffect(() => {
+    void loadEntitlements(false);
+    void loadUpgradeRequests(false);
+  }, [loadEntitlements, loadUpgradeRequests]);
+
   useEffect(() => {
     const paid = searchParams.get("paid");
     const sessionId =

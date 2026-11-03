@@ -91,12 +91,14 @@ function displayDate(value: string | null): string {
 
 export function toHiringManagerCampaign(
   campaign: FirebaseCampaign,
-  workspace?: FirebaseCampaignWorkspace,
+  // Screens may send only part of the workspace (the client dashboard sends
+  // just the stack), so every field is read defensively.
+  workspace?: Partial<FirebaseCampaignWorkspace>,
 ): HiringManagerCampaignListItem {
-  const sessionCount = workspace?.sessions.length ?? 0;
+  const sessionCount = workspace?.sessions?.length ?? 0;
   const activeStack =
     workspace?.assessmentStack
-      .filter((item) => item.status === "active")
+      ?.filter((item) => item.status === "active")
       .sort((left, right) => left.position - right.position) ?? [];
   const stack = activeStack.map((item) => item.slug);
   // Only a fully weighted stack is a weighted stack; a partial one falls back
@@ -122,7 +124,7 @@ export function toHiringManagerCampaign(
     status: campaignStatus(campaign.status),
     approvalStatus: approvalStatus(campaign.status),
     deliveryMode: deliveryMode(campaign.assessmentMode),
-    candidateCount: workspace?.counts.assignments ?? campaign.vacancyCount,
+    candidateCount: workspace?.counts?.assignments ?? campaign.vacancyCount,
     sessions: sessionCount,
     assessmentStack: stack,
     assessmentSettings: null,
@@ -260,14 +262,15 @@ export function toHiringManagerCampaignDetail(
 
 export function toClientCampaign(
   campaign: FirebaseCampaign,
-  workspace?: FirebaseCampaignWorkspace,
+  workspace?: Partial<FirebaseCampaignWorkspace>,
+  createdBy = "Hiring manager",
 ): ClientCampaignApprovalItem {
   const base = toHiringManagerCampaign(campaign, workspace);
-  const latestReview = workspace?.reviews.at(-1);
+  const latestReview = workspace?.reviews?.at(-1);
   return {
     ...base,
     createdAt: campaign.createdAt,
-    createdBy: campaign.ownerSeatId,
+    createdBy,
     approvalNote: latestReview?.rationale ?? null,
   };
 }
@@ -275,9 +278,10 @@ export function toClientCampaign(
 export function toClientCampaignWorkspace(
   workspace: FirebaseCampaignWorkspace,
   assignments: readonly FirebaseAssignment[],
+  createdBy?: string,
 ): ClientCampaignWorkspace {
   return {
-    ...toClientCampaign(workspace.campaign, workspace),
+    ...toClientCampaign(workspace.campaign, workspace, createdBy),
     startDate: workspace.campaign.startDate,
     endDate: workspace.campaign.endDate,
     location: workspace.campaign.location,

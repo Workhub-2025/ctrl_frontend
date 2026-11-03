@@ -301,18 +301,43 @@ function toHiringManagers(
     });
 }
 
+/** Name of the hiring manager holding the seat that owns a campaign. */
+export function campaignOwnerName(
+  workspace: Pick<FirebaseClientTeamWorkspace, "memberships">,
+  ownerSeatId: string,
+): string {
+  const owners = workspace.memberships.filter(
+    (membership) => membership.seatId === ownerSeatId,
+  );
+  const owner =
+    owners.find((membership) => membership.status === "active") ?? owners[0];
+  return owner?.displayName || owner?.email || "Hiring manager";
+}
+
 export function toClientOverviewFromScreen(
   dashboard: FirebaseClientDashboard,
 ): ClientOverviewData {
+  // Deleting a campaign archives it (status "closed"); clients see live work only.
+  const campaigns = dashboard.campaigns.filter(
+    (campaign) => campaign.status !== "closed",
+  );
   return {
     summary: toClientDashboardSummary(
       dashboard.workspace,
-      dashboard.campaigns,
+      campaigns,
       dashboard.releasedAssignmentCount,
     ),
-    campaigns: dashboard.campaigns.map((campaign) => toClientCampaign(campaign)),
+    campaigns: campaigns.map((campaign) =>
+      toClientCampaign(
+        campaign,
+        dashboard.assessmentStacks
+          ? { assessmentStack: dashboard.assessmentStacks[campaign.id] ?? [] }
+          : undefined,
+        campaignOwnerName(dashboard.workspace, campaign.ownerSeatId),
+      ),
+    ),
     accessCodes: toAccessCodes(dashboard.workspace),
-    hiringManagers: toHiringManagers(dashboard.workspace, dashboard.campaigns),
+    hiringManagers: toHiringManagers(dashboard.workspace, campaigns),
   };
 }
 

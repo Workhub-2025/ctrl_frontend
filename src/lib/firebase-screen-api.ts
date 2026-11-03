@@ -31,6 +31,10 @@ export type FirebaseHiringManagerOverview = Readonly<{
 export type FirebaseClientDashboard = Readonly<{
   workspace: FirebaseClientTeamWorkspace;
   campaigns: FirebaseCampaign[];
+  /** Keyed by campaign id; absent for archived campaigns and older APIs. */
+  assessmentStacks?: Readonly<
+    Record<string, FirebaseCampaignWorkspace["assessmentStack"]>
+  >;
   releasedAssignmentCount: number;
 }>;
 
