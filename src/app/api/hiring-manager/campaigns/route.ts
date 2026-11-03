@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
           candidate.slug === selectedId,
       );
       if (!item) {
-        throw new Error(`Assessment "${selectedId}" is not an active Firebase release`);
+        throw new Error(`Assessment "${selectedId}" is not an active assessment release`);
       }
       const selectedVersion = readAssessmentSettingVersion(
         payload.assessmentSettings as Record<string, unknown> | undefined,

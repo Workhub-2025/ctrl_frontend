@@ -319,6 +319,25 @@ export function createFirebaseDomainApi(
       });
     },
 
+    requestPasswordReset(body: { email: string }): Promise<{ accepted: boolean }> {
+      return transport.request({
+        path: "/v1/auth/password-reset",
+        method: "POST",
+        body,
+      });
+    },
+
+    verifySessionJoinEmail(body: {
+      idToken: string;
+      accessCode: string;
+    }): Promise<{ emailVerified: boolean }> {
+      return transport.request({
+        path: "/v1/onboarding/session-join-verify",
+        method: "POST",
+        body,
+      });
+    },
+
     logout(firebaseSessionCookie: string): Promise<void> {
       return transport.request({
         path: "/v1/auth/logout",

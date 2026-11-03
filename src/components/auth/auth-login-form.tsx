@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { friendlyAuthError } from "@/lib/auth-error-message";
 import { cn } from "@/lib/utils";
 
 type AuthLoginFormProps = {
@@ -94,7 +95,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
         setSubmitStatus("idle");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Credentials not verified.");
+      setError(friendlyAuthError(err, "Credentials not verified."));
       setSubmitStatus("error");
     }
   };

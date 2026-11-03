@@ -5,13 +5,13 @@ import {
   TotpMultiFactorGenerator,
   getMultiFactorResolver,
   inMemoryPersistence,
-  sendEmailVerification,
   setPersistence,
   signInWithCustomToken,
   signInWithEmailAndPassword,
   signOut,
   type MultiFactorError,
   type MultiFactorResolver,
+  type User,
   type UserCredential,
 } from "firebase/auth";
 
@@ -45,9 +45,10 @@ export type FirebaseProvisioningIntent =
   | "invitation_acceptance"
   | "session_access_code_claim";
 
-export type CandidateSessionJoinRegistration =
-  | Readonly<{ status: "verification_required"; email: string }>
-  | Readonly<{ status: "ready_to_claim"; email: string }>;
+export type CandidateSessionJoinRegistration = Readonly<{
+  status: "ready_to_claim";
+  email: string;
+}>;
 
 let pendingTotpResolver: MultiFactorResolver | null = null;
 let pendingProvisioningIntent: FirebaseProvisioningIntent | undefined;
@@ -233,9 +234,34 @@ export async function loginWithFirebase(
 }
 
 /**
- * Creates (or reuses) a durable Firebase email/password account for a
- * candidate joining via session access code. Email must be verified before
- * the BFF will exchange a session cookie.
+ * The session code stands in for email verification on joins, so no
+ * verification email is sent. An account created before that rule (still
+ * unverified) is confirmed server-side once its owner has signed in.
+ */
+async function ensureJoinAccountVerified(
+  user: User,
+  accessCode: string,
+): Promise<void> {
+  if (user.emailVerified) return;
+  const response = await fetch("/api/onboarding/session-join-verify", {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    credentials: "same-origin",
+    cache: "no-store",
+    body: JSON.stringify({ idToken: await user.getIdToken(), accessCode }),
+  });
+  if (!response.ok) {
+    const body = await readJson<{ error?: string }>(response);
+    throw new Error(body.error ?? "We couldn't confirm your account.");
+  }
+  // Refresh so the next ID token carries the verified email.
+  await user.reload();
+  await user.getIdToken(true);
+}
+
+/**
+ * Creates (or reuses) a durable email/password account for a candidate
+ * joining via session access code, ready to claim the code.
  */
 export async function registerCandidateSessionJoin(input: {
   accessCode: string;
@@ -279,42 +305,13 @@ export async function registerCandidateSessionJoin(input: {
   });
 
   await credential.user.reload();
-  if (!credential.user.emailVerified) {
-    const continueUrl = new URL("/join", window.location.origin);
-    continueUrl.searchParams.set("accessCode", input.accessCode.trim());
-    continueUrl.searchParams.set("verified", "1");
-    await sendEmailVerification(credential.user, {
-      url: continueUrl.toString(),
-      handleCodeInApp: false,
-    });
-    return { status: "verification_required", email };
-  }
-
+  await ensureJoinAccountVerified(credential.user, input.accessCode);
   return { status: "ready_to_claim", email };
 }
 
-export async function resendCandidateJoinVerification(
-  accessCode: string,
-): Promise<void> {
-  const auth = getFirebaseBrowserAuth();
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error("Sign in again to resend the verification email.");
-  }
-  await user.reload();
-  if (user.emailVerified) return;
-  const continueUrl = new URL("/join", window.location.origin);
-  continueUrl.searchParams.set("accessCode", accessCode.trim());
-  continueUrl.searchParams.set("verified", "1");
-  await sendEmailVerification(user, {
-    url: continueUrl.toString(),
-    handleCodeInApp: false,
-  });
-}
-
 /**
- * After email verification: exchange a provisioning session cookie, claim the
- * access code, and return the candidate dashboard path.
+ * Exchanges a provisioning session cookie, claims the access code, and
+ * returns the candidate dashboard path.
  */
 export async function claimCandidateSessionJoin(input: {
   accessCode: string;
@@ -339,11 +336,7 @@ export async function claimCandidateSessionJoin(input: {
   }
 
   await user.reload();
-  if (!user.emailVerified) {
-    throw new Error(
-      "Verify your email first — open the link we sent, then continue here.",
-    );
-  }
+  await ensureJoinAccountVerified(user, input.accessCode);
 
   const idToken = await user.getIdToken(true);
   await exchangeFirebaseIdTokenForSession(

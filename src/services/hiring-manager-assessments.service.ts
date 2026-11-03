@@ -119,7 +119,7 @@ const catalogueMeta: Record<
 const fallbackMeta = {
   iconKey: "default" as const,
   skills: ["Evidence", "Role fit", "Decision support"],
-  fallbackSummary: "Configured assessment module from the Firebase catalogue.",
+  fallbackSummary: "Configured assessment module from the CTRL catalogue.",
   whyItMatters:
     "Adds structured evidence to the campaign so hiring teams can compare candidates consistently.",
   videoLabel: "Assessment information",
@@ -266,7 +266,7 @@ const loadHiringManagerAssessmentsWithVersions = cache(
       return {
         assessments: [],
         error:
-          "No active assessment module release is available. Publish a reviewed Firebase release before configuring a campaign.",
+          "No active assessment module release is available. Publish a reviewed release before configuring a campaign.",
       };
     } catch (error) {
       console.error(
@@ -276,7 +276,7 @@ const loadHiringManagerAssessmentsWithVersions = cache(
       return {
         assessments: [],
         error:
-          "Assessment library could not be loaded from Firebase. Confirm your session and that catalogue releases are published.",
+          "Assessment library could not be loaded. Refresh the page or sign in again.",
       };
     }
   },

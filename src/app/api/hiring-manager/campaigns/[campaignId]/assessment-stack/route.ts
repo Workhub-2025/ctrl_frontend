@@ -81,7 +81,7 @@ export async function PUT(
             candidate.slug === selectedId,
         );
         if (!item) {
-          throw new Error(`Assessment "${selectedId}" is not an active Firebase release`);
+          throw new Error(`Assessment "${selectedId}" is not an active assessment release`);
         }
         const selectedVersion = readAssessmentSettingVersion(
           assessmentSettings as Record<string, unknown> | undefined,

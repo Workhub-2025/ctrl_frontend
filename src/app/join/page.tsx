@@ -57,8 +57,8 @@ function JoinContent() {
               role="note"
               className="rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm leading-6 text-muted-foreground"
             >
-              You will need to verify your email with Firebase before the assessment unlocks. Check
-              your inbox after you create your account.
+              Keep your email and password safe — you&apos;ll use them to sign back in if you get
+              signed out during the assessment.
             </p>
           </div>
 

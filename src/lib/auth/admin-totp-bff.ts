@@ -6,7 +6,7 @@ function gone(): NextResponse {
   return NextResponse.json(
     {
       error: FIREBASE_AUTH_ROUTE_GONE_MESSAGE,
-      hint: "Use the Firebase authenticator panel on /profile?tab=security.",
+      hint: "Use the authenticator panel on /profile?tab=security.",
     },
     { status: 410 },
   );

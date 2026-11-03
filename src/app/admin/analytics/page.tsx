@@ -444,7 +444,7 @@ export default function AdminAnalyticsPage() {
           icon={CalendarClock}
           label="Last refreshed"
           value={data.generatedAt ? formatDate(data.generatedAt) : "Not loaded"}
-          detail="Live from Firebase billing and tenancy"
+          detail="Live from billing and tenancy records"
         />
       </div>
     </div>

@@ -3,11 +3,12 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { FirebaseError } from "firebase/app";
-import { Eye, EyeOff, KeyRound, Mail } from "lucide-react";
+import { Eye, EyeOff, KeyRound } from "lucide-react";
 import {
   claimCandidateSessionJoin,
   registerCandidateSessionJoin,
 } from "@/lib/firebase-auth-browser";
+import { friendlyAuthError } from "@/lib/auth-error-message";
 import { readPendingSessionJoin } from "@/lib/pending-session-join";
 import { getPasswordPolicyIssue } from "@/lib/security/password-policy";
 import { sanitiseAccessCode } from "@/lib/security/input-sanitization";
@@ -36,25 +37,15 @@ type SessionJoinFormProps = {
 };
 
 function joinErrorMessage(error: unknown): string {
-  if (error instanceof FirebaseError) {
-    if (
-      error.code === "auth/invalid-credential" ||
-      error.code === "auth/wrong-password" ||
-      error.code === "auth/user-not-found"
-    ) {
-      return "Email or password is incorrect. Use the details you created for this assessment.";
-    }
-    if (error.code === "auth/weak-password") {
-      return "Choose a stronger password (at least 12 characters).";
-    }
-    if (error.code === "auth/too-many-requests") {
-      return "Too many attempts. Wait a moment and try again.";
-    }
-    if (error.code === "auth/network-request-failed") {
-      return "Could not reach authentication. Check your connection and try again.";
-    }
+  if (
+    error instanceof FirebaseError &&
+    ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found"].includes(
+      error.code,
+    )
+  ) {
+    return "Email or password is incorrect. Use the details you created for this assessment.";
   }
-  return error instanceof Error ? error.message : "Could not join with those details.";
+  return friendlyAuthError(error, "We couldn't join you to this session. Try again in a moment.");
 }
 
 export function SessionJoinForm({
@@ -78,7 +69,6 @@ export function SessionJoinForm({
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [statusMessage, setStatusMessage] = useState("");
   const [submitStatus, setSubmitStatus] = useState<ButtonState>("idle");
   const fieldClass = FIELD_INPUT;
   const codeClass = CODE_INPUT;
@@ -126,24 +116,15 @@ export function SessionJoinForm({
       }
 
       setError("");
-      setStatusMessage("");
       try {
         setSubmitStatus("loading");
-        const result = await registerCandidateSessionJoin({
+        await registerCandidateSessionJoin({
           accessCode: nextCode,
           displayName,
           email,
           password,
         });
         setCode(nextCode);
-        if (result.status === "verification_required") {
-          setStep("verify");
-          setSubmitStatus("idle");
-          setStatusMessage(
-            `We sent a verification link to ${result.email}. Open it, then continue here.`,
-          );
-          return;
-        }
         await finishClaim();
         setSubmitStatus("success");
       } catch (err) {
@@ -179,33 +160,6 @@ export function SessionJoinForm({
     [disabled, finishClaim],
   );
 
-  const handleResend = useCallback(async () => {
-    setError("");
-    setStatusMessage("");
-    try {
-      if (!password) {
-        throw new Error(
-          "Enter your password above, then resend the verification email.",
-        );
-      }
-      const result = await registerCandidateSessionJoin({
-        accessCode: code,
-        displayName: displayName.trim() || email.split("@")[0] || "Candidate",
-        email,
-        password,
-      });
-      if (result.status === "ready_to_claim") {
-        setStatusMessage(
-          "Your email is already verified. Continue to join the session.",
-        );
-        return;
-      }
-      setStatusMessage(`Verification email sent again to ${email}.`);
-    } catch (err) {
-      setError(joinErrorMessage(err));
-    }
-  }, [code, displayName, email, password]);
-
   if (step === "verify") {
     return (
       <form onSubmit={handleVerifyContinue} className="space-y-5" noValidate>
@@ -216,10 +170,10 @@ export function SessionJoinForm({
           )}
         >
           <p className="flex items-start gap-2">
-            <Mail className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <KeyRound className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
             <span>
-              {statusMessage ||
-                `We sent a Firebase verification email to ${email || "your inbox"}. Open the link, then return here and continue. The same email and password work later via Sign in if you get signed out.`}
+              Sign in with the email and password you created for this session to continue
+              to your assessment. The same details work later if you get signed out.
             </span>
           </p>
         </div>
@@ -252,9 +206,6 @@ export function SessionJoinForm({
             disabled={disabled || submitStatus === "loading"}
             className={fieldClass}
           />
-          <p className={cn("text-xs leading-5", muted)}>
-            Needed if you opened the verification link in another browser.
-          </p>
         </div>
 
         {error ? (
@@ -266,7 +217,7 @@ export function SessionJoinForm({
         <AnimatedSubmitButton
           type="submit"
           status={submitStatus}
-          idleText="I've verified — continue"
+          idleText="Continue to assessment"
           errorMessage={
             submitStatus === "error" || submitStatus === "invalid" ? error : undefined
           }
@@ -276,18 +227,6 @@ export function SessionJoinForm({
         />
 
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            className={cn(
-              "h-auto px-0 text-sm",
-              "text-muted-foreground",
-            )}
-            onClick={() => void handleResend()}
-            disabled={disabled || submitStatus === "loading"}
-          >
-            Resend verification email
-          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -443,7 +382,7 @@ export function SessionJoinForm({
       />
 
       <p className={cn("text-center text-sm", muted)}>
-        Already verified?{" "}
+        Already created your login?{" "}
         <button
           type="button"
           className={cn(
@@ -452,7 +391,7 @@ export function SessionJoinForm({
           )}
           onClick={() => setStep("verify")}
         >
-          Continue after verification
+          Continue to your assessment
         </button>
         {" · "}
         <Link

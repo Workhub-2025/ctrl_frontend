@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     payload.idToken.length > 16_384
   ) {
     const response = NextResponse.json(
-      { error: "Invalid Firebase ID token" },
+      { error: "Sign-in could not be verified. Please sign in again." },
       { status: 400 },
     );
     clearFirebaseCsrfCookie(response);
@@ -186,7 +186,7 @@ export async function POST(request: Request) {
               : 401
         : 503;
     const response = NextResponse.json(
-      { error: "Firebase session could not be established" },
+      { error: "Your session could not be started. Please sign in again." },
       {
         status: upstreamStatus,
         headers: { "cache-control": "no-store" },

@@ -6,7 +6,6 @@ import {
   getMultiFactorResolver,
   inMemoryPersistence,
   multiFactor,
-  sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
@@ -210,20 +209,6 @@ export async function disableFirebaseTotp(): Promise<void> {
   const factor = currentTotpFactor(user);
   if (!factor) return;
   await multiFactor(user).unenroll(factor);
-}
-
-/**
- * Password recovery does not bypass MFA. A user who has lost the
- * enrolled factor still requires administrator-assisted recovery; this only
- * initiates password recovery.
- */
-export async function sendFirebasePasswordRecovery(
-  email: string,
-): Promise<void> {
-  await sendPasswordResetEmail(
-    getFirebaseBrowserAuth(),
-    email.trim().toLowerCase(),
-  );
 }
 
 export async function confirmFirebasePasswordRecovery(

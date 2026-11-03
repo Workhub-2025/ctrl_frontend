@@ -16,28 +16,22 @@ import {
   parseInvitationLinkType,
   parseInvitationToken,
 } from "@/lib/firebase-provisioning-contracts";
+import { friendlyAuthError } from "@/lib/auth-error-message";
 import { getPasswordPolicyIssue } from "@/lib/security/password-policy";
 import { cn } from "@/lib/utils";
 
 type AcceptMode = "create" | "existing";
 
 function invitationAcceptErrorMessage(error: unknown): string {
-  if (error instanceof FirebaseError) {
-    if (
-      error.code === "auth/invalid-credential" ||
-      error.code === "auth/wrong-password" ||
-      error.code === "auth/user-not-found"
-    ) {
-      return "Sign-in failed for this email. Use the invited email and its existing password.";
-    }
-    if (error.code === "auth/too-many-requests") {
-      return "Too many sign-in attempts. Wait a moment and try again.";
-    }
-    if (error.code === "auth/network-request-failed") {
-      return "Could not reach Firebase Authentication. Check your connection and try again.";
-    }
+  if (
+    error instanceof FirebaseError &&
+    ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found"].includes(
+      error.code,
+    )
+  ) {
+    return "Sign-in failed for this email. Use the invited email and its existing password.";
   }
-  return error instanceof Error ? error.message : "Invitation could not be accepted";
+  return friendlyAuthError(error, "Invitation could not be accepted");
 }
 
 function buildInvitationCallbackPath(searchParams: URLSearchParams): string {
@@ -267,10 +261,10 @@ function InvitationAcceptanceContent() {
             {mode === "existing"
               ? "Sign in with the existing password for this email, then we will attach the invitation."
               : isCandidateInvitation
-                ? "Create the Firebase account for the invited email, then activate your candidate assignment."
+                ? "Create your password for the invited email, then activate your candidate assignment."
                 : isAdminInvitation
                   ? "Create your password for the invited email, then activate CTRL Admin."
-                  : "Create the Firebase account for the invited email, then activate its organisation membership."}
+                  : "Create your password for the invited email, then join your organisation."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
