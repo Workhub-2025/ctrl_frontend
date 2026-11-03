@@ -53,10 +53,7 @@ import {
   PortalWorkQueue,
   type PortalWorkQueueItem,
 } from "@/components/dashboard/portal/portal-data-ui";
-import {
-  PortalActionMenu,
-  PortalDetailTabs,
-} from "@/components/dashboard/portal/portal-navigation-ui";
+import { PortalDetailTabs } from "@/components/dashboard/portal/portal-navigation-ui";
 import { HiringManagerSessionCreatePanel } from "@/components/dashboard/hiring-manager-session-create-panel";
 import { SessionAccessShare } from "@/components/dashboard/session-access-share";
 import {
@@ -420,7 +417,7 @@ export function HiringManagerCampaignDetailView({
         ]}
         action={
           <TooltipProvider>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:items-end">
               {canCreateSession ? (
                 <Button
                   type="button"
@@ -453,47 +450,64 @@ export function HiringManagerCampaignDetailView({
                 </Tooltip>
               )}
 
-              <PortalActionMenu
-                label="Campaign actions"
-                items={[
-                  {
-                    id: "edit",
-                    label: canEditAssessmentStack
-                      ? "Edit campaign"
-                      : "Edit campaign (locked)",
-                    icon: <Pencil className="h-4 w-4" aria-hidden="true" />,
-                    disabled: !canEditAssessmentStack,
-                    onSelect: () => {
-                      if (!canEditAssessmentStack) return;
-                      router.push(
-                        `/hiring-manager-dashboard/campaigns/${campaignId}/edit`
-                      );
-                    },
-                  },
-                  {
-                    id: "refresh",
-                    label: isRefreshing ? "Refreshing…" : "Refresh campaign",
-                    icon: (
-                      <RefreshCw
-                        className={cn("h-4 w-4", isRefreshing && "animate-spin")}
-                        aria-hidden="true"
-                      />
-                    ),
-                    disabled: isRefreshing,
-                    onSelect: () => {
-                      void loadCampaign(true);
-                    },
-                  },
-                  {
-                    id: "delete",
-                    label: "Delete campaign",
-                    icon: <Trash2 className="h-4 w-4" aria-hidden="true" />,
-                    tone: "destructive",
-                    separatorBefore: true,
-                    onSelect: () => setIsDeleteDialogOpen(true),
-                  },
-                ]}
-              />
+              <div
+                role="group"
+                aria-label="Campaign actions"
+                className="flex flex-wrap gap-2 sm:justify-end"
+              >
+                {canEditAssessmentStack ? (
+                  <Button asChild variant="outline" size="sm" className="h-9">
+                    <Link href={`/hiring-manager-dashboard/campaigns/${campaignId}/edit`}>
+                      <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Edit
+                    </Link>
+                  </Button>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex cursor-not-allowed">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          className="h-9 disabled:cursor-not-allowed"
+                        >
+                          <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                          Edit
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      Campaigns cannot be edited once a session exists.
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  disabled={isRefreshing}
+                  onClick={() => void loadCampaign(true)}
+                >
+                  <RefreshCw
+                    className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")}
+                    aria-hidden="true"
+                  />
+                  {isRefreshing ? "Refreshing…" : "Refresh"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Delete
+                </Button>
+              </div>
             </div>
           </TooltipProvider>
         }
