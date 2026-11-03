@@ -260,6 +260,35 @@ export function toHiringManagerCampaignDetail(
   };
 }
 
+/**
+ * The HM milestone is the hiring manager's own to-do ("Create a session"); a
+ * client cannot act on it, so the client gets the same state in its own words.
+ */
+function clientNextMilestone(
+  campaign: FirebaseCampaign,
+  workspace?: Partial<FirebaseCampaignWorkspace>,
+): string {
+  if (campaign.status === "pending_review") return "Needs your approval";
+  if (campaign.status === "rejected") return "You rejected this campaign";
+  if (campaign.status === "closed") return "Archived by the hiring manager";
+  // The dashboard sends no sessions, so only claim a count when one is known.
+  const sessionCount = workspace?.sessions?.length;
+  if (sessionCount === undefined) {
+    return "Approved · the hiring manager schedules sessions";
+  }
+  return sessionCount > 0
+    ? `${sessionCount} session${sessionCount === 1 ? "" : "s"} scheduled`
+    : "Waiting for the hiring manager to schedule sessions";
+}
+
+function clientStage(
+  campaign: FirebaseCampaign,
+): ClientCampaignApprovalItem["clientStage"] {
+  if (campaign.status === "closed") return "Archived";
+  if (campaign.status === "active") return "Running";
+  return "Not started";
+}
+
 export function toClientCampaign(
   campaign: FirebaseCampaign,
   workspace?: Partial<FirebaseCampaignWorkspace>,
@@ -269,6 +298,8 @@ export function toClientCampaign(
   const latestReview = workspace?.reviews?.at(-1);
   return {
     ...base,
+    nextMilestone: clientNextMilestone(campaign, workspace),
+    clientStage: clientStage(campaign),
     createdAt: campaign.createdAt,
     createdBy,
     approvalNote: latestReview?.rationale ?? null,

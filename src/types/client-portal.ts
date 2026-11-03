@@ -4,6 +4,8 @@ export type ClientCampaignApprovalItem = HiringManagerCampaignListItem & {
   createdAt?: string;
   createdBy: string;
   approvalNote?: string | null;
+  /** Delivery stage worded for the client; `status` keeps the HM workflow term. */
+  clientStage: "Not started" | "Running" | "Archived";
 };
 
 export type ClientContract = {

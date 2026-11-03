@@ -231,7 +231,7 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
               label={campaign.approvalStatus ?? "Unknown"}
               tone={approvalTone(campaign.approvalStatus ?? "")}
             />
-            <PortalStatusBadge label={campaign.status ?? "Unknown"} tone="neutral" />
+            <PortalStatusBadge label={campaign.clientStage} tone="neutral" />
             <PortalStatusBadge
               label={campaign.deliveryMode ?? "Delivery"}
               tone="active"
