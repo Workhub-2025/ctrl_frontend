@@ -193,7 +193,7 @@ export function ClientCampaignDetail({ campaignId }: { campaignId: string }) {
   }, [campaign, pendingReviews, tabHref]);
 
   if (loading && !campaign) {
-    return <CampaignDetailSkeleton label="Loading campaign…" />;
+    return <CampaignDetailSkeleton label="Loading campaign…" variant="client" />;
   }
 
   if (!campaign) {

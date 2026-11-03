@@ -18,7 +18,9 @@ export function Bone({ className }: { className?: string }) {
     <span
       aria-hidden="true"
       className={cn(
-        "block rounded-md bg-muted/60 motion-safe:animate-pulse",
+        // bg-muted sits too close to the dark card colour to read, so dark
+        // mode lifts the shape off the card instead.
+        "block rounded-md bg-muted motion-safe:animate-pulse dark:bg-white/[0.08]",
         className
       )}
     />
@@ -243,8 +245,17 @@ export function SessionQueueCardSkeleton() {
   );
 }
 
-/** Campaign detail page: entity header, tabs, next-step queue and stat tiles. */
-export function CampaignDetailSkeleton({ label }: { label: string }) {
+/**
+ * Campaign detail page: entity header, tabs and next-step queue, then the
+ * hiring manager's stat tiles or the client's delivery context panel.
+ */
+export function CampaignDetailSkeleton({
+  label,
+  variant = "hiring-manager",
+}: {
+  label: string;
+  variant?: "hiring-manager" | "client";
+}) {
   return (
     <PortalSkeletonRegion label={label} className="space-y-6">
       <Bone className="h-9 w-40" />
@@ -277,15 +288,28 @@ export function CampaignDetailSkeleton({ label }: { label: string }) {
         <Bone className="h-4 w-80 max-w-full" />
         <Bone className="mt-3 h-16 w-full" />
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {repeat(3, (index) => (
-          <div key={index} className={portalStatTileClass}>
-            <Bone className="h-3 w-24" />
-            <Bone className="mt-2.5 h-7 w-16" />
-            <Bone className="mt-2 h-3 w-28" />
+      {variant === "client" ? (
+        <div className={cn(portalPanelClass, "space-y-4 p-5")}>
+          <div className="space-y-2">
+            <Bone className="h-5 w-36" />
+            <Bone className="h-4 w-56" />
           </div>
-        ))}
-      </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Bone className="h-20" />
+            <Bone className="h-20" />
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-3">
+          {repeat(3, (index) => (
+            <div key={index} className={portalStatTileClass}>
+              <Bone className="h-3 w-24" />
+              <Bone className="mt-2.5 h-7 w-16" />
+              <Bone className="mt-2 h-3 w-28" />
+            </div>
+          ))}
+        </div>
+      )}
     </PortalSkeletonRegion>
   );
 }
