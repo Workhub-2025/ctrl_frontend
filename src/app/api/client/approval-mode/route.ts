@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { handleBffRouteError } from "@/lib/auth/bff-session";
 import { createFirebaseClientPortalApi } from "@/lib/firebase-client-portal-api";
 import { requireFirebaseRecruitmentSession } from "@/lib/firebase-recruitment-bff";
+import { invalidateFirebaseClientPortalCaches } from "@/lib/portal-cache-invalidation";
 import { rejectMutatingCrossOrigin } from "@/lib/security/bff-mutation-guard";
 
 type ApprovalMode = "auto_approve" | "require_approval";
@@ -51,6 +52,12 @@ export async function POST(request: Request) {
       context.organizationId,
       mode,
     );
+    // The portal reloads the dashboard straight after this; without the bust
+    // it is served the cached old mode and the switch flips back.
+    await invalidateFirebaseClientPortalCaches({
+      firebaseUid: context.firebaseUid,
+      organizationId: context.organizationId,
+    });
     return NextResponse.json({
       data: {
         documentId: organization.id,
