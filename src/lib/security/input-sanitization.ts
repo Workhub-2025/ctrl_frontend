@@ -17,12 +17,16 @@ export function sanitisePlainText(
   return singlePurposeText.replace(/ {2,}/g, " ").trim().slice(0, maxLength);
 }
 
+/**
+ * Session codes are base64url (letters of both cases, digits, "-" and "_").
+ * Matching is case-insensitive server-side, so case is kept as typed; "_" must
+ * survive or roughly one code in six could never be entered.
+ */
 export function sanitiseAccessCode(input: unknown) {
   if (typeof input !== "string") return "";
   return input
     .normalize("NFKC")
-    .toUpperCase()
-    .replace(/[^A-Z0-9-]/g, "")
+    .replace(/[^A-Za-z0-9_-]/g, "")
     .slice(0, 32);
 }
 

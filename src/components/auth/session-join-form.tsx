@@ -24,7 +24,7 @@ import { Label } from "@/components/ui/label";
 const FIELD_INPUT =
   "h-12 rounded-xl border-border bg-background text-foreground placeholder:text-muted-foreground shadow-sm transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring";
 const CODE_INPUT =
-  "h-12 rounded-xl border-border bg-background font-mono text-base tracking-[0.18em] text-foreground placeholder:tracking-normal placeholder:text-muted-foreground uppercase shadow-sm transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring";
+  "h-12 rounded-xl border-border bg-background font-mono text-base tracking-[0.18em] text-foreground placeholder:tracking-normal placeholder:text-muted-foreground shadow-sm transition-[border-color,box-shadow] focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring";
 
 type SessionJoinFormProps = {
   initialCode?: string;
@@ -325,7 +325,9 @@ export function SessionJoinForm({
           inputMode="text"
           autoComplete="one-time-code"
           spellCheck={false}
-          placeholder="ENTER CODE"
+          placeholder="Enter code"
+          autoCapitalize="off"
+          autoCorrect="off"
           value={code}
           onChange={(event) => {
             setCode(sanitiseAccessCode(event.target.value));

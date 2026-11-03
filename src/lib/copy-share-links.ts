@@ -1,19 +1,45 @@
 "use client";
 
-async function copyText(value: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
+export const COPY_FAILED_MESSAGE =
+  "Couldn't copy automatically. Select the code or link and copy it manually.";
+
+function copyWithSelection(value: string): boolean {
   const textarea = document.createElement("textarea");
   textarea.value = value;
   textarea.setAttribute("readonly", "");
   textarea.style.position = "fixed";
   textarea.style.left = "-9999px";
-  document.body.appendChild(textarea);
+  // Inside a modal the focus trap would steal focus from a body-level node.
+  const host =
+    document.activeElement?.closest('[role="dialog"]') ?? document.body;
+  host.appendChild(textarea);
   textarea.select();
-  document.execCommand("copy");
-  document.body.removeChild(textarea);
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    host.removeChild(textarea);
+  }
+}
+
+/**
+ * Copies text, falling back to a selection copy when the Clipboard API is
+ * missing or refuses (Safari after an await, embedded browsers, unfocused
+ * documents). Throws COPY_FAILED_MESSAGE when neither path worked.
+ */
+export async function copyText(value: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return;
+    } catch {
+      /* fall through to the selection copy */
+    }
+  }
+  if (!copyWithSelection(value)) {
+    throw new Error(COPY_FAILED_MESSAGE);
+  }
 }
 
 export function isSecureAccessCodePlaceholder(accessValue: string | null | undefined) {

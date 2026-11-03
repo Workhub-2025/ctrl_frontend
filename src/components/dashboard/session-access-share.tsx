@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Eye, EyeOff, Link2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  copyText,
   fetchSessionAccessMaterial,
   isSecureAccessCodePlaceholder,
 } from "@/lib/copy-share-links";
@@ -16,14 +17,6 @@ import { cn } from "@/lib/utils";
 type CopiedField = "code" | "link" | null;
 
 const REVEAL_MS = 10_000;
-
-async function writeClipboard(value: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-  throw new Error("Clipboard is unavailable in this browser.");
-}
 
 /**
  * Session access code + /join deep link.
@@ -122,31 +115,42 @@ export function SessionAccessShare({
     setCopied(null);
   };
 
-  const copyCode = () => {
+  // Loading the code before the click keeps the copy inside the user's
+  // gesture; browsers refuse clipboard writes that follow a network await.
+  const prefetch = () => {
+    if (cachedCode && joinUrl) return;
+    void ensureMaterial().catch(() => undefined);
+  };
+
+  const copyMaterial = (field: "code" | "link") => {
     void (async () => {
+      let material: { accessCode: string; joinUrl: string };
       try {
-        const material = await ensureMaterial();
+        material = await ensureMaterial();
+      } catch {
+        return; // ensureMaterial already set the error
+      }
+      if (field === "code") {
         setIsVisible(true);
         scheduleHide();
-        await writeClipboard(material.accessCode);
-        markCopied("code");
-      } catch {
-        /* error state already set */
+      }
+      try {
+        setError(null);
+        await copyText(field === "code" ? material.accessCode : material.joinUrl);
+        markCopied(field);
+      } catch (copyError) {
+        // Leave the code on screen so it can be selected by hand.
+        setIsVisible(true);
+        scheduleHide();
+        setError(
+          copyError instanceof Error ? copyError.message : String(copyError)
+        );
       }
     })();
   };
 
-  const copyLink = () => {
-    void (async () => {
-      try {
-        const material = await ensureMaterial();
-        await writeClipboard(material.joinUrl);
-        markCopied("link");
-      } catch {
-        /* error state already set */
-      }
-    })();
-  };
+  const copyCode = () => copyMaterial("code");
+  const copyLink = () => copyMaterial("link");
 
   const displayCode = isVisible && cachedCode ? cachedCode : null;
 
@@ -183,6 +187,8 @@ export function SessionAccessShare({
             type="button"
             variant="outline"
             onClick={copyCode}
+            onPointerEnter={prefetch}
+            onFocus={prefetch}
             disabled={isLoading}
             className={layout === "panel" ? "h-9" : "h-9 px-3 text-xs"}
           >
@@ -221,6 +227,8 @@ export function SessionAccessShare({
         type="button"
         variant="outline"
         onClick={copyLink}
+        onPointerEnter={prefetch}
+        onFocus={prefetch}
         disabled={isLoading}
         className={layout === "panel" ? "h-9" : "h-9 px-3 text-xs"}
       >

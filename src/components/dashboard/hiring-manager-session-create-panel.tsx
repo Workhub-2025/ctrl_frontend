@@ -33,6 +33,7 @@ import {
   type HiringManagerSessionListItem,
 } from "@/services/hiring-manager-portal-client.service";
 import { getHmSessionDisplayName } from "@/lib/hiring-manager/session-display";
+import { copyText } from "@/lib/copy-share-links";
 
 type SessionDeliveryMode = "remote" | "in_person";
 
@@ -170,8 +171,17 @@ export function HiringManagerSessionCreatePanel({
   };
 
   const copyValue = (value: string, field: "code" | "link") => {
-    void navigator.clipboard?.writeText(value);
-    setCopiedField(field);
+    void copyText(value)
+      .then(() => {
+        setError(null);
+        setCopiedField(field);
+      })
+      .catch((copyError: unknown) => {
+        setCopiedField(null);
+        setError(
+          copyError instanceof Error ? copyError.message : String(copyError)
+        );
+      });
   };
 
   const createSession = async () => {
@@ -298,7 +308,7 @@ export function HiringManagerSessionCreatePanel({
 
           <div className={cn(portalPanelNestedClass, "p-5 text-center")}>
             <p className={portalLabelClass}>Candidate access code</p>
-            <p className="mt-2 break-all font-mono text-2xl font-bold tracking-[0.18em] text-foreground">
+            <p className="mt-2 select-all break-all font-mono text-2xl font-bold tracking-[0.18em] text-foreground">
               {createdSession.accessValue}
             </p>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
@@ -334,6 +344,19 @@ export function HiringManagerSessionCreatePanel({
                 )}
                 {copiedField === "link" ? "Join link copied" : "Copy join link"}
               </Button>
+            ) : null}
+            {error ? (
+              <p
+                className={cn(portalAlertErrorClass, "mt-3 text-left text-sm leading-5")}
+                aria-live="polite"
+              >
+                {error}
+                {createdSession.joinUrl ? (
+                  <span className="mt-1 block select-all break-all font-mono text-xs">
+                    {createdSession.joinUrl}
+                  </span>
+                ) : null}
+              </p>
             ) : null}
           </div>
         </div>
