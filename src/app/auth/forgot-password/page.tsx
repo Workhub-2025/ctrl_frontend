@@ -48,7 +48,7 @@ function ForgotPasswordForm() {
   return (
     <div
       className={cn(
-        "ctrl-landing-page flex min-h-screen bg-background text-foreground",
+        "ctrl-landing-page flex min-h-[100dvh] bg-background text-foreground",
         themeClassName,
       )}
     >
@@ -69,7 +69,7 @@ function ForgotPasswordForm() {
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            <p className="text-sm font-semibold text-primary">
               Account recovery
             </p>
             <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
@@ -83,7 +83,7 @@ function ForgotPasswordForm() {
           </div>
 
           {sent ? (
-            <div className="space-y-6 rounded-2xl border border-success/30 bg-success/10 p-6">
+            <div className="space-y-6 rounded-lg border border-success/30 bg-success/10 p-6">
               <div className="flex items-start gap-3">
                 <Mail className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" />
                 <div className="space-y-1 text-sm text-muted-foreground">
@@ -126,9 +126,6 @@ function ForgotPasswordForm() {
                 type="submit"
                 status={submitStatus}
                 idleText="Send reset link"
-                errorMessage={
-                  submitStatus === "error" || submitStatus === "invalid" ? error : undefined
-                }
                 className="w-full rounded-xl"
                 disabled={submitStatus === "loading" || !email.trim()}
               />
@@ -149,7 +146,7 @@ function ForgotPasswordForm() {
 
 export default function ForgotPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
       <ForgotPasswordForm />
     </Suspense>
   );

@@ -93,7 +93,7 @@ export default function EqualityMonitoringForm({
             aria-current={i + 1 === currentStep ? "step" : undefined}
             className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-[background-color,color,border-color,box-shadow,transform] duration-300 ${
               i + 1 < currentStep
-                ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+                ? "bg-success text-success-foreground"
                 : i + 1 === currentStep
                 ? "bg-primary text-primary-foreground ring-4 ring-primary/20 shadow-md shadow-primary/20"
                 : "bg-muted text-muted-foreground border border-border/60"
@@ -107,7 +107,7 @@ export default function EqualityMonitoringForm({
           {i < totalSteps - 1 && (
             <div
               className={`h-[2px] flex-1 mx-2 rounded-full transition-[background-color,transform] duration-500 ${
-                i + 1 < currentStep ? "bg-emerald-500" : "bg-muted"
+                i + 1 < currentStep ? "bg-success" : "bg-muted"
               }`}
             />
           )}
@@ -128,7 +128,7 @@ export default function EqualityMonitoringForm({
               value={formData.age_range || ""}
               onValueChange={(value) => handleInputChange("age_range", value)}
             >
-              <SelectTrigger id="age-range" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="age-range" className="rounded-md border border-input bg-background focus:ring-primary">
                 <SelectValue placeholder="Select your age range (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -184,7 +184,7 @@ export default function EqualityMonitoringForm({
                   id="gender-other-detail"
                   value={formData.gender_other || ""}
                   onChange={(e) => handleInputChange("gender_other", e.target.value)}
-                  className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
+                  className="rounded-md border border-input bg-background focus-visible:ring-primary"
                 />
               </div>
             )}
@@ -240,7 +240,7 @@ export default function EqualityMonitoringForm({
                   id="sexual-orientation-other-detail"
                   value={formData.sexual_orientation_other || ""}
                   onChange={(e) => handleInputChange("sexual_orientation_other", e.target.value)}
-                  className="rounded-xl border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary"
+                  className="rounded-md border border-input bg-background focus-visible:ring-primary"
                 />
               </div>
             )}
@@ -262,7 +262,7 @@ export default function EqualityMonitoringForm({
               value={formData.ethnicity || ""}
               onValueChange={(value) => handleInputChange("ethnicity", value)}
             >
-              <SelectTrigger id="ethnicity" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="ethnicity" className="rounded-md border border-input bg-background focus:ring-primary">
                 <SelectValue placeholder="Select your ethnic group (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -307,7 +307,7 @@ export default function EqualityMonitoringForm({
               value={formData.religion || ""}
               onValueChange={(value) => handleInputChange("religion", value)}
             >
-              <SelectTrigger id="religion" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="religion" className="rounded-md border border-input bg-background focus:ring-primary">
                 <SelectValue placeholder="Select your religion or belief (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -334,7 +334,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("marital_status", value)
               }
             >
-              <SelectTrigger id="marital-status" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="marital-status" className="rounded-md border border-input bg-background focus:ring-primary">
                 <SelectValue placeholder="Select your marital status (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -454,7 +454,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("education_level", value)
               }
             >
-              <SelectTrigger id="education" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="education" className="rounded-md border border-input bg-background focus:ring-primary">
                 <SelectValue placeholder="Select your highest qualification (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -490,7 +490,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("employment_status", value)
               }
             >
-              <SelectTrigger id="employment" className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus:ring-primary">
+              <SelectTrigger id="employment" className="rounded-md border border-input bg-background focus:ring-primary">
                 <SelectValue placeholder="Select your employment status (optional)" />
               </SelectTrigger>
               <SelectContent>
@@ -556,7 +556,7 @@ export default function EqualityMonitoringForm({
                 handleInputChange("additional_information", e.target.value)
               }
               rows={3}
-              className="rounded-xl border border-border/70 dark:border-white/10 bg-background/50 dark:bg-black/20 focus-visible:ring-primary resize-none"
+              className="rounded-md border border-input bg-background focus-visible:ring-primary resize-none"
             />
           </div>
         </div>
@@ -689,9 +689,9 @@ export default function EqualityMonitoringForm({
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <Card className="w-full max-w-2xl overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
+      <Card className="w-full max-w-2xl overflow-hidden rounded-lg border border-border/80 bg-card shadow-sm">
         {/* Form Header & Description */}
-        <CardHeader className="pt-8 pb-6 border-b border-border/40 dark:border-white/5 bg-slate-50/50 dark:bg-black/20">
+        <CardHeader className="pt-8 pb-6 border-b border-border bg-muted/40">
           <FormPageHeader
             icon={Heart}
             color="green"

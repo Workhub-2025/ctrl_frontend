@@ -50,7 +50,7 @@ export default function AdministratorBootstrapPage() {
   }, [router]);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-6 px-6 py-12">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col justify-center gap-6 px-6 py-12">
       <Card>
         <CardHeader>
           <CardTitle>Administrator setup</CardTitle>

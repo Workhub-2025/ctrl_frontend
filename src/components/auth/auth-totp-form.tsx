@@ -74,7 +74,7 @@ export const AuthTotpForm = memo(function AuthTotpForm({
       <div className="space-y-2">
         <Label
           htmlFor="login-totp-code"
-          className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          className="block text-sm font-medium text-foreground"
         >
           Authentication code
         </Label>

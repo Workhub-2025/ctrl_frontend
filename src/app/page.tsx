@@ -12,18 +12,10 @@ import {
   Target,
   X,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
 import { AccessibilityDropdown } from "@/components/accessibility/accessibility-dropdown";
 import { useAccessibilitySettings } from "@/hooks/use-accessibility-settings";
-import {
-  MotionPrefs,
-  Reveal,
-  RevealGroup,
-  RevealItem,
-} from "@/components/landing/scroll-effects";
 import { UK_LEGAL_FOOTER_LINKS } from "@/lib/legal/uk-compliance";
 
 const navItems = [
@@ -40,7 +32,7 @@ const hiringPoints = [
   },
   {
     title: "See performance, not polish",
-    text: "Structured exercises surface how people think and decide under pressure — beyond interview confidence.",
+    text: "Structured exercises surface how people think and decide under pressure, beyond interview confidence.",
     icon: Target,
   },
   {
@@ -116,19 +108,11 @@ const contractDetails: Record<
 };
 
 export default function Home() {
-  const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [navHeight, setNavHeight] = useState(96);
   const [contractData, setContractData] = useState<ContractOptionsData>(fallbackContractOptions);
   const navRef = useRef<HTMLElement>(null);
   const { settings, updateSettings, resetSettings, reduceMotion } = useAccessibilitySettings();
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -157,16 +141,10 @@ export default function Home() {
   }, []);
 
   return (
-    <MotionPrefs reduce={reduceMotion}>
-      <div className={cn("ctrl-landing-page relative min-h-screen bg-background text-foreground")}>
+    <div className="ctrl-landing-page relative min-h-[100dvh] bg-background text-foreground">
         <nav
           ref={navRef}
-          className={cn(
-            "fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300",
-            scrolled
-              ? "border-border bg-background/95 backdrop-blur-md"
-              : "border-transparent bg-transparent",
-          )}
+          className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background"
         >
           <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-6 lg:h-[4.5rem] lg:px-10">
             <Link href="/" className="shrink-0" aria-label="CTRL home">
@@ -213,14 +191,8 @@ export default function Home() {
             </div>
           </div>
 
-          <AnimatePresence>
-            {mobileMenuOpen ? (
-              <motion.div
-                initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={reduceMotion ? undefined : { height: 0, opacity: 0 }}
-                className="overflow-hidden border-t border-border bg-background md:hidden"
-              >
+          {mobileMenuOpen ? (
+              <div className="border-t border-border bg-background md:hidden">
                 <div className="flex flex-col gap-1 px-6 py-4">
                   {navItems.map((item) => (
                     <Link
@@ -238,9 +210,8 @@ export default function Home() {
                     </Link>
                   </Button>
                 </div>
-              </motion.div>
+              </div>
             ) : null}
-          </AnimatePresence>
         </nav>
 
         <main>
@@ -248,58 +219,43 @@ export default function Home() {
 
           <section id="how" className="border-t border-border bg-background">
             <div className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10 lg:py-28">
-              <Reveal variant="fade-up" className="mx-auto max-w-2xl text-center">
-                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
-                  How hiring gets easier
-                </p>
-                <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+              <div className="max-w-2xl">
+                <h2 className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
                   A clearer path from role to decision
                 </h2>
                 <p className="mt-4 text-base leading-7 text-muted-foreground">
-                  CTRL keeps assessment delivery simple for hiring teams — one shared process,
+                  CTRL keeps assessment delivery simple for hiring teams: one shared process,
                   structured evidence, and less noise in the room.
                 </p>
-              </Reveal>
+              </div>
 
-              <RevealGroup stagger={0.1} className="mt-14 grid gap-4 md:grid-cols-3">
-                {hiringPoints.map((point, index) => (
-                  <RevealItem key={point.title} variant="fade-up">
-                    <article className="flex h-full flex-col rounded-lg border border-border bg-card p-6 shadow-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted text-primary">
-                          <point.icon className="h-5 w-5" aria-hidden="true" />
-                        </span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                      </div>
-                      <h3 className="mt-6 font-display text-xl font-medium text-foreground">
-                        {point.title}
-                      </h3>
-                      <p className="mt-3 text-sm leading-6 text-muted-foreground">{point.text}</p>
-                    </article>
-                  </RevealItem>
+              <div className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
+                {hiringPoints.map((point) => (
+                  <article key={point.title} className="border-t border-border pt-6">
+                    <point.icon className="h-5 w-5 text-primary" aria-hidden="true" />
+                    <h3 className="mt-4 font-display text-xl font-medium text-foreground">
+                      {point.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">{point.text}</p>
+                  </article>
                 ))}
-              </RevealGroup>
+              </div>
             </div>
           </section>
 
           <section id="contracts" className="border-t border-border bg-muted/30">
             <div className="mx-auto max-w-[1440px] px-6 py-20 lg:px-10 lg:py-28">
-              <Reveal variant="fade-up" className="mx-auto mb-14 max-w-2xl text-center">
-                <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
-                  Contracts
-                </p>
-                <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+              <div className="mx-auto mb-14 max-w-2xl text-center">
+                <h2 className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
                   Options for hiring teams
                 </h2>
                 <p className="mt-4 text-base leading-7 text-muted-foreground">
                   Choose the seats and delivery modes your organisation needs. Every option includes
                   CTRL&apos;s core released assessments.
                 </p>
-              </Reveal>
+              </div>
 
-              <RevealGroup stagger={0.1} className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 {contractData.options.map((option) => {
                   const details = contractDetails[option.tier];
                   const features = [
@@ -314,19 +270,11 @@ export default function Home() {
                   ].filter((feature): feature is string => Boolean(feature));
 
                   return (
-                    <RevealItem key={option.tier} variant="fade-up" className="h-full">
-                      <article className="flex h-full flex-col rounded-lg border border-border bg-card p-6 shadow-sm">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
-                              {details.badge}
-                            </span>
-                            <h3 className="mt-3 font-display text-2xl font-medium tracking-tight text-foreground">
-                              {option.label}
-                            </h3>
-                          </div>
-                          <span className="mt-1 h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
-                        </div>
+                      <article key={option.tier} className="flex h-full flex-col rounded-lg border border-border bg-card p-6">
+                        <p className="text-sm font-medium text-primary">{details.badge}</p>
+                        <h3 className="mt-2 font-display text-2xl font-medium tracking-tight text-foreground">
+                          {option.label}
+                        </h3>
                         <p className="mt-4 text-sm leading-6 text-muted-foreground">{details.summary}</p>
                         <ul className="mt-6 space-y-3">
                           {features.map((feature) => (
@@ -342,17 +290,15 @@ export default function Home() {
                             </li>
                           ))}
                         </ul>
-                        <p className="mt-auto pt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                        <p className="mt-auto pt-6 text-xs text-muted-foreground">
                           {details.footnote}
                         </p>
                       </article>
-                    </RevealItem>
                   );
                 })}
-              </RevealGroup>
+              </div>
 
               {contractData.founderOfferExpiresAt ? (
-                <Reveal variant="fade-up">
                   <p className="mx-auto mt-8 max-w-3xl text-center text-sm leading-6 text-muted-foreground">
                     Founder availability is currently listed until{" "}
                     {new Date(contractData.founderOfferExpiresAt).toLocaleDateString("en-GB", {
@@ -362,14 +308,13 @@ export default function Home() {
                     })}
                     .
                   </p>
-                </Reveal>
               ) : null}
             </div>
           </section>
 
           <section id="contact" className="border-t border-border bg-background">
             <div className="mx-auto max-w-3xl px-6 py-24 text-center lg:py-32">
-              <Reveal variant="fade-up">
+              <div>
                 <h2 className="font-display text-4xl font-medium tracking-tight text-foreground sm:text-5xl">
                   Ready when your team is
                 </h2>
@@ -388,7 +333,7 @@ export default function Home() {
                     <Link href="/auth/login">Login</Link>
                   </Button>
                 </div>
-              </Reveal>
+              </div>
             </div>
           </section>
         </main>
@@ -457,6 +402,5 @@ export default function Home() {
           </div>
         </footer>
       </div>
-    </MotionPrefs>
   );
 }

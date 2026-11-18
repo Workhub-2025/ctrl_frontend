@@ -101,9 +101,9 @@ function EqualityMonitoringContent() {
   // Show loading while checking authentication
   if (authLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-[100dvh] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -123,9 +123,9 @@ function EqualityMonitoringContent() {
 // Loading fallback component
 function EqualityMonitoringLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-[100dvh] flex items-center justify-center p-4">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+        <div className="motion-safe:animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
         <p className="text-muted-foreground">Loading form...</p>
       </div>
     </div>

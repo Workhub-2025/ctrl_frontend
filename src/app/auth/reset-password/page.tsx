@@ -71,7 +71,7 @@ function ResetPasswordForm() {
   const shell = (children: React.ReactNode) => (
     <div
       className={cn(
-        "ctrl-landing-page flex min-h-screen bg-background text-foreground",
+        "ctrl-landing-page flex min-h-[100dvh] bg-background text-foreground",
         themeClassName,
       )}
     >
@@ -91,7 +91,7 @@ function ResetPasswordForm() {
 
   if (!code) {
     return shell(
-      <div className="mx-auto w-full max-w-md space-y-6 rounded-2xl border border-destructive/30 bg-destructive/10 p-6">
+      <div className="mx-auto w-full max-w-md space-y-6 rounded-lg border border-destructive/30 bg-destructive/10 p-6">
         <h1 className="font-display text-2xl font-bold text-foreground">Invalid reset link</h1>
         <p className="text-sm text-muted-foreground">
           Open the link from your email or request a new password reset.
@@ -110,7 +110,7 @@ function ResetPasswordForm() {
       </div>
 
       <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+        <p className="text-sm font-semibold text-primary">
           Account recovery
         </p>
         <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
@@ -174,9 +174,6 @@ function ResetPasswordForm() {
           type="submit"
           status={submitStatus}
           idleText="Update password"
-          errorMessage={
-            submitStatus === "error" || submitStatus === "invalid" ? error : undefined
-          }
           className="w-full rounded-xl"
           disabled={
             submitStatus === "loading" ||
@@ -204,7 +201,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
       <ResetPasswordForm />
     </Suspense>
   );

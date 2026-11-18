@@ -243,7 +243,7 @@ function InvitationAcceptanceContent() {
   return (
     <main
       className={cn(
-        "relative mx-auto flex min-h-screen w-full max-w-xl items-center bg-background px-6 py-12 text-foreground",
+        "relative mx-auto flex min-h-[100dvh] w-full max-w-xl items-center bg-background px-6 py-12 text-foreground",
         themeClassName,
       )}
     >
@@ -362,7 +362,7 @@ export default function AcceptInvitationPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto flex min-h-screen w-full max-w-xl items-center px-6 py-12">
+        <main className="mx-auto flex min-h-[100dvh] w-full max-w-xl items-center px-6 py-12">
           <p className="text-sm text-muted-foreground">Loading invitation…</p>
         </main>
       }

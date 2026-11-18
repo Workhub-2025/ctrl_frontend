@@ -20,7 +20,7 @@ function EmailConfirmedContent() {
   return (
     <div
       className={cn(
-        "ctrl-landing-page flex min-h-screen bg-background text-foreground",
+        "ctrl-landing-page flex min-h-[100dvh] bg-background text-foreground",
         themeClassName,
       )}
     >
@@ -43,8 +43,8 @@ function EmailConfirmedContent() {
           <div
             className={
               hasError
-                ? "space-y-6 rounded-2xl border border-destructive/30 bg-destructive/10 p-8"
-                : "space-y-6 rounded-2xl border border-success/30 bg-success/10 p-8"
+                ? "space-y-6 rounded-lg border border-destructive/30 bg-destructive/10 p-8"
+                : "space-y-6 rounded-lg border border-success/30 bg-success/10 p-8"
             }
           >
             <div className="flex items-start gap-4">
@@ -83,7 +83,7 @@ function EmailConfirmedContent() {
 
 export default function EmailConfirmedPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+    <Suspense fallback={<div className="min-h-[100dvh] bg-background" />}>
       <EmailConfirmedContent />
     </Suspense>
   );

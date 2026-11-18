@@ -74,7 +74,7 @@ export function SessionJoinForm({
   const codeClass = CODE_INPUT;
   const muted = "text-muted-foreground";
   const labelClass = cn(
-    "text-xs font-semibold uppercase tracking-wider",
+    "text-sm font-medium",
     "text-muted-foreground",
   );
 
@@ -218,9 +218,6 @@ export function SessionJoinForm({
           type="submit"
           status={submitStatus}
           idleText="Continue to assessment"
-          errorMessage={
-            submitStatus === "error" || submitStatus === "invalid" ? error : undefined
-          }
           disabled={disabled || submitStatus === "loading"}
           panelVariant={panelVariant}
           className="w-full"
@@ -343,7 +340,7 @@ export function SessionJoinForm({
           </button>
         </div>
         <p className={cn("text-xs leading-5", muted)}>
-          At least 12 characters. Remember it — you will need it again if you get
+          At least 12 characters. Remember it: you will need it again if you get
           signed out during the assessment.
         </p>
       </div>
@@ -373,9 +370,6 @@ export function SessionJoinForm({
         type="submit"
         status={submitStatus}
         idleText="Create account and join"
-        errorMessage={
-          submitStatus === "error" || submitStatus === "invalid" ? error : undefined
-        }
         disabled={disabled || submitStatus === "loading" || code.length < 4}
         panelVariant={panelVariant}
         className="w-full"

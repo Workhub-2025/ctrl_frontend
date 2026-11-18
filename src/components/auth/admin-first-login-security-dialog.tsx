@@ -172,7 +172,7 @@ export function AdminFirstLoginSecurityDialog({
       <DialogContent
         className={cn(
           portalDialogShellClass,
-          "max-h-[90dvh] w-[min(92vw,34rem)] max-w-lg gap-0 overflow-y-auto p-0 sm:rounded-2xl [&>button]:hidden",
+          "max-h-[90dvh] w-[min(92vw,34rem)] max-w-lg gap-0 overflow-y-auto p-0 sm:rounded-lg [&>button]:hidden",
         )}
         onPointerDownOutside={(event) => event.preventDefault()}
         onEscapeKeyDown={(event) => event.preventDefault()}

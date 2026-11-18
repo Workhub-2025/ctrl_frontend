@@ -43,7 +43,7 @@ function JoinContent() {
           </div>
 
           <div className="mb-8 space-y-2">
-            <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+            <p className="text-sm font-semibold text-primary">
               Candidate entry
             </p>
             <h1 className="text-balance font-display text-3xl font-semibold tracking-tight text-foreground">
@@ -51,13 +51,13 @@ function JoinContent() {
             </h1>
             <p className="text-pretty text-sm leading-6 text-muted-foreground">
               Enter the session code from your hiring team. The same code works for remote and
-              in-person sessions — then create a login you can reuse if you get signed out.
+              in-person sessions, then create a login you can reuse if you get signed out.
             </p>
             <p
               role="note"
               className="rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm leading-6 text-muted-foreground"
             >
-              Keep your email and password safe — you&apos;ll use them to sign back in if you get
+              Keep your email and password safe: you&apos;ll use them to sign back in if you get
               signed out during the assessment.
             </p>
           </div>

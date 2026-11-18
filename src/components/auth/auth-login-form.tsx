@@ -105,7 +105,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
       <div className="space-y-2">
         <Label
           htmlFor="login-email"
-          className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+          className="block text-sm font-medium text-foreground"
         >
           Email Address
         </Label>
@@ -131,7 +131,7 @@ export const AuthLoginForm = memo(function AuthLoginForm({
         <div className="flex items-center justify-between">
           <Label
             htmlFor="login-password"
-            className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+            className="block text-sm font-medium text-foreground"
           >
             Password
           </Label>
