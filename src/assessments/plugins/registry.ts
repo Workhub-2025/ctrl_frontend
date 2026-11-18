@@ -1,8 +1,10 @@
-import { CallSimulationReportBreakdown } from "./report/call-simulation-breakdown";
-import { PrioritisationReportBreakdown } from "./report/prioritisation-breakdown";
-import { ShortTermMemoryReportBreakdown } from "./report/short-term-memory-breakdown";
-import { SituationalJudgementReportBreakdown } from "./report/situational-judgement-breakdown";
-import { TypingReportBreakdown } from "./report/typing-breakdown";
+import {
+  CallSimulationReportBreakdown,
+  PrioritisationReportBreakdown,
+  ShortTermMemoryReportBreakdown,
+  SituationalJudgementReportBreakdown,
+  TypingReportBreakdown,
+} from "./report/lazy-breakdowns";
 import {
   hasCallSimulationReportBreakdown,
   hasPrioritisationReportBreakdown,
