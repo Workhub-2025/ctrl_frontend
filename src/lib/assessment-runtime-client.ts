@@ -4,6 +4,38 @@ import type {
 } from "@/assessment-modules/types";
 import { assessmentDeviceRequestHeaders } from "@/lib/assessment-device-eligibility";
 
+export type PageVisibility = {
+  hidden: boolean;
+  focused: boolean;
+  fullscreen: boolean;
+};
+
+export type HeartbeatState = {
+  status: "in_progress";
+  serverTime: string;
+  deadlineAt: string | null;
+  /** Past the deadline but inside the server's grace: submit now. */
+  deadlinePassed?: boolean;
+  networkResumesLeft?: number;
+  resumedAfterDrop?: boolean;
+};
+
+/** The server's reason when it has ended an attempt, read from its error. */
+export function closedAttemptReason(
+  error: unknown,
+): "deadline_auto_submit" | "deadline_expired" | "network_limit" | "focus_violation" | "locked" | null {
+  const message = error instanceof Error ? error.message : "";
+  for (const reason of [
+    "deadline_auto_submit",
+    "deadline_expired",
+    "network_limit",
+    "focus_violation",
+  ] as const) {
+    if (message.includes(reason)) return reason;
+  }
+  return /locked|abandoned|interrupted/i.test(message) ? "locked" : null;
+}
+
 async function readJson<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => ({}))) as T & {
     error?: string | { message?: string };
@@ -87,22 +119,44 @@ export const AssessmentRuntimeClient = {
     );
     return body.data;
   },
-  async heartbeat(attemptId: string) {
-    return readJson(
+  /**
+   * Proof of life, with the page's own visibility. The server enforces the
+   * deadline and connection rules and answers with the attempt's state.
+   */
+  async heartbeat(attemptId: string, visibility: PageVisibility) {
+    const body = await readJson<{ data: HeartbeatState }>(
       await fetch(
         `/api/assessment-runtime/attempts/${encodeURIComponent(attemptId)}/heartbeat`,
-        { method: "POST" },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visibility }),
+        },
       ),
     );
+    return body.data;
   },
-  async progress(attemptId: string, revision: number, progress: unknown) {
+  /**
+   * Saves stage progress. `draftSubmission` is what the page would submit
+   * right now; the server submits it if the deadline passes first.
+   */
+  async progress(
+    attemptId: string,
+    revision: number,
+    progress: unknown,
+    draftSubmission?: unknown,
+  ) {
     const body = await readJson<{ data: { progressRevision: number } }>(
       await fetch(
         `/api/assessment-runtime/attempts/${encodeURIComponent(attemptId)}/progress`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ revision, progress }),
+          body: JSON.stringify({
+            revision,
+            progress,
+            ...(draftSubmission !== undefined ? { draftSubmission } : {}),
+          }),
         },
       ),
     );

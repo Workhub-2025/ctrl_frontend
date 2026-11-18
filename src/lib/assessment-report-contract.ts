@@ -70,5 +70,9 @@ export const assessmentReportRowSchema = z.object({
   meetsConfiguredStandard: z.boolean().nullable(), criticalFlagCount: number.nullable(), configuredThreshold: number,
   submittedAt: z.string().nullable(), completedAt: z.string().nullable(), competencyScores: records, criticalFlags: records,
   scenarioEvidence: records, reportMetrics: z.record(z.string(), z.unknown()).optional(),
-  integrityEventCount: number, integrityScore: number.nullable(), scoringStalled: z.boolean()
+  integrityEventCount: number, integrityScore: number.nullable(), scoringStalled: z.boolean(),
+  integritySignals: z.object({
+    focusViolations: number, networkDrops: number, telemetryMissingMinutes: number,
+    pageHiddenMinutes: number, flags: z.array(z.string())
+  }).optional()
 });

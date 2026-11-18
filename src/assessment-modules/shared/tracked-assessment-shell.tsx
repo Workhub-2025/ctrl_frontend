@@ -34,11 +34,38 @@ import {
   restoreAssessmentProgress,
 } from "@/lib/assessment-accessibility";
 import { notifyAssessmentCompleted } from "@/lib/assessment-completion";
-import { AssessmentRuntimeClient } from "@/lib/assessment-runtime-client";
+import {
+  AssessmentRuntimeClient,
+  closedAttemptReason,
+  type PageVisibility,
+} from "@/lib/assessment-runtime-client";
 import { CandidateSessionService } from "@/services/candidate-session.service";
 import type { LaunchEnvelope } from "../types";
 
 type Receipt = { receiptId: string; status: "received"; submittedAt: string };
+type LockReason = NonNullable<ReturnType<typeof closedAttemptReason>>;
+
+/** How often the page saves a ready-to-submit draft for the server. */
+const DRAFT_AUTOSAVE_MS = 20_000;
+
+const LOCK_DESCRIPTIONS: Record<Exclude<LockReason, "deadline_auto_submit">, string> = {
+  deadline_expired:
+    "The time limit ended before any answers were saved, so this attempt is closed.",
+  network_limit:
+    "Your connection dropped more than twice, so this attempt has been locked.",
+  focus_violation:
+    "This attempt was locked because the assessment window lost focus too often or for too long.",
+  locked:
+    "Your attempt has been locked because of an integrity interruption or the time limit.",
+};
+
+function pageVisibility(): PageVisibility {
+  return {
+    hidden: document.hidden,
+    focused: document.hasFocus(),
+    fullscreen: Boolean(document.fullscreenElement),
+  };
+}
 type StageContext<TState> = {
   stageIndex: number;
   state: TState;
@@ -182,13 +209,14 @@ export function TrackedAssessmentShell<TContent, TState>(
       Math.floor((new Date(launch.deadlineAt).getTime() - Date.now()) / 1_000),
     ),
   );
-  const [timeExpired, setTimeExpired] = useState(
-    () => new Date(launch.deadlineAt).getTime() <= Date.now(),
-  );
+  // A page opened after the deadline auto-submits at once; the server decides
+  // whether it is still inside its grace window.
+  const [timeExpired, setTimeExpired] = useState(false);
   const [pauseReason, setPauseReason] = useState<string | null>(null);
-  const [locked, setLocked] = useState(
-    () => new Date(launch.deadlineAt).getTime() <= Date.now(),
-  );
+  const [locked, setLockedState] = useState(false);
+  const [lockReason, setLockReason] = useState<LockReason>("locked");
+  const [autoSubmitted, setAutoSubmitted] = useState(false);
+  const [connectionNotice, setConnectionNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -198,6 +226,47 @@ export function TrackedAssessmentShell<TContent, TState>(
     useState<LaunchEnvelope<TContent> | null>(null);
   const [timerAnnouncement, setTimerAnnouncement] = useState("");
   const startedAt = useRef(Date.now());
+  const revisionRef = useRef(launch.progressRevision);
+  const stateRef = useRef<TState>(restoredProgress.state);
+  const stageIndexRef = useRef<number>(restoredProgress.stageIndex);
+  const lastDraft = useRef<string | null>(null);
+  const busy = useRef(false);
+  const submitRef = useRef<(auto?: boolean) => Promise<void>>(async () => undefined);
+  stateRef.current = state;
+  stageIndexRef.current = stageIndex;
+
+  /** Applies a lock or auto-submit the server reported. */
+  const closeFromServer = useCallback((reason: LockReason) => {
+    if (reason === "deadline_auto_submit") {
+      setAutoSubmitted(true);
+      return;
+    }
+    setLockReason(reason);
+    setLockedState(true);
+  }, []);
+  const setLocked = useCallback(
+    (value: boolean) => {
+      if (value) closeFromServer("locked");
+      else setLockedState(false);
+    },
+    [closeFromServer],
+  );
+
+  const draftFor = useCallback(
+    (candidateState: TState) => {
+      try {
+        const elapsedSeconds = Math.max(
+          1,
+          Math.round((Date.now() - startedAt.current) / 1_000),
+        );
+        return buildSubmission(candidateState, elapsedSeconds);
+      } catch {
+        // An incomplete state may not build yet; the last good draft stands.
+        return undefined;
+      }
+    },
+    [buildSubmission],
+  );
   const lastHeartbeat = useRef(Date.now());
   const previousRemaining = useRef<number | null>(null);
   const activeLoss = useRef<{
@@ -220,17 +289,19 @@ export function TrackedAssessmentShell<TContent, TState>(
           occurredAt: new Date().toISOString(),
           stageId: launch.stageGraph.nodes[stageIndex]?.id,
         });
-        if (result.status === "interrupted_locked") setLocked(true);
+        if (result.status === "interrupted_locked") {
+          closeFromServer(
+            ["tab_hidden", "focus_lost", "fullscreen_exit"].includes(type)
+              ? "focus_violation"
+              : "locked",
+          );
+        }
       } catch (eventError) {
-        if (
-          /locked|interrupted/i.test(
-            eventError instanceof Error ? eventError.message : "",
-          )
-        )
-          setLocked(true);
+        const reason = closedAttemptReason(eventError);
+        if (reason) closeFromServer(reason);
       }
     },
-    [launch.attemptId, launch.stageGraph.nodes, stageIndex],
+    [closeFromServer, launch.attemptId, launch.stageGraph.nodes, stageIndex],
   );
 
   const timerMode = launch.timerMode ?? (launch.module as { timerMode?: string })?.timerMode ?? "enforced";
@@ -252,13 +323,12 @@ export function TrackedAssessmentShell<TContent, TState>(
     return () => window.clearInterval(timer);
   }, [launch.deadlineAt, timerMode]);
 
+  // Time is up: submit what the candidate has. The server accepts it inside
+  // its grace window and otherwise submits the last saved draft itself.
   useEffect(() => {
     if (timerMode !== "enforced" || remaining > 0 || receipt || timeExpired) return;
     setTimeExpired(true);
-    setLocked(true);
-    setPauseReason(
-      "The assessment time limit has ended. Progress is locked and submission is closed for this attempt.",
-    );
+    void submitRef.current(true);
   }, [timerMode, remaining, receipt, timeExpired]);
 
   useEffect(() => {
@@ -271,26 +341,46 @@ export function TrackedAssessmentShell<TContent, TState>(
   }, [remaining]);
 
   useEffect(() => {
-    if (receipt || locked) return;
+    if (receipt || locked || autoSubmitted) return;
     const heartbeat = async () => {
       try {
-        await AssessmentRuntimeClient.heartbeat(launch.attemptId);
+        const beat = await AssessmentRuntimeClient.heartbeat(
+          launch.attemptId,
+          pageVisibility(),
+        );
         lastHeartbeat.current = Date.now();
-      } catch {
+        if (beat.resumedAfterDrop) {
+          const left = beat.networkResumesLeft ?? 0;
+          setConnectionNotice(
+            left > 0
+              ? `Connection restored. Your timer kept running. If the connection drops ${left === 1 ? "once more" : `${left} more times`} for over a minute, the attempt will lock.`
+              : "Connection restored. Your timer kept running. Another drop of over a minute will lock the attempt.",
+          );
+        } else {
+          setConnectionNotice((notice) =>
+            notice?.startsWith("Connection lost") ? null : notice,
+          );
+        }
+        // The server's clock decides the deadline, for every timer mode.
+        if (beat.deadlinePassed && !timeExpired) {
+          setTimeExpired(true);
+          void submitRef.current(true);
+        }
+      } catch (heartbeatError) {
+        const reason = closedAttemptReason(heartbeatError);
+        if (reason) {
+          closeFromServer(reason);
+          return;
+        }
         if (
           Date.now() - lastHeartbeat.current >=
           launch.integrity.heartbeatLockSeconds * 1_000
         ) {
-          setLocked(true);
-          setPauseReason(
-            `The connection heartbeat was unavailable for ${launch.integrity.heartbeatLockSeconds} seconds.`,
-          );
-          void recordEvent(
-            "heartbeat_timeout",
-            Date.now() - lastHeartbeat.current,
+          // Paused, not locked: the server decides when the candidate is back.
+          setConnectionNotice(
+            "Connection lost. Reconnecting… Your timer keeps running, and work can't be saved until the connection returns.",
           );
         }
-        // Transient heartbeat failures are retried; avoid noisy banners.
       }
     };
     void heartbeat();
@@ -302,13 +392,49 @@ export function TrackedAssessmentShell<TContent, TState>(
       window.clearInterval(timer);
     };
   }, [
+    autoSubmitted,
+    closeFromServer,
     launch.attemptId,
     launch.integrity.heartbeatIntervalSeconds,
     launch.integrity.heartbeatLockSeconds,
     locked,
     receipt,
-    recordEvent,
+    timeExpired,
   ]);
+
+  // Keeps a ready-to-submit draft on the server, so a closed tab or a
+  // blocked connection still ends in a submission at the deadline.
+  useEffect(() => {
+    if (receipt || locked || autoSubmitted) return;
+    const autosave = async () => {
+      if (busy.current) return;
+      const draft = draftFor(stateRef.current);
+      if (draft === undefined) return;
+      const serialised = JSON.stringify(draft);
+      if (serialised === lastDraft.current) return;
+      busy.current = true;
+      try {
+        const saved = await AssessmentRuntimeClient.progress(
+          launch.attemptId,
+          revisionRef.current,
+          { stageIndex: stageIndexRef.current, state: stateRef.current },
+          draft,
+        );
+        revisionRef.current = saved.progressRevision;
+        setRevision(saved.progressRevision);
+        lastDraft.current = serialised;
+      } catch (saveError) {
+        const reason = closedAttemptReason(saveError);
+        if (reason) closeFromServer(reason);
+        // Other failures (a revision race, a dropped connection) retry on the
+        // next tick; the stage save path reconciles revisions.
+      } finally {
+        busy.current = false;
+      }
+    };
+    const timer = window.setInterval(() => void autosave(), DRAFT_AUTOSAVE_MS);
+    return () => window.clearInterval(timer);
+  }, [autoSubmitted, closeFromServer, draftFor, launch.attemptId, locked, receipt]);
 
   useEffect(() => {
     if (receipt || locked) return;
@@ -408,16 +534,26 @@ export function TrackedAssessmentShell<TContent, TState>(
     }
     const nextIndex = stageIndex + 1;
     setSaving(true);
+    busy.current = true;
     try {
+      const draft = draftFor(stateToSave);
       const saved = await AssessmentRuntimeClient.progress(
         launch.attemptId,
-        revision,
+        revisionRef.current,
         { stageIndex: nextIndex, state: stateToSave },
+        draft,
       );
+      revisionRef.current = saved.progressRevision;
+      if (draft !== undefined) lastDraft.current = JSON.stringify(draft);
       setRevision(saved.progressRevision);
       setStageIndex(nextIndex);
       setError(null);
     } catch (saveError) {
+      const closed = closedAttemptReason(saveError);
+      if (closed) {
+        closeFromServer(closed);
+        return;
+      }
       const message =
         saveError instanceof Error
           ? saveError.message
@@ -428,6 +564,7 @@ export function TrackedAssessmentShell<TContent, TState>(
           const resumedProgress = resumed.progressData as
             | { stageIndex?: number; state?: TState }
             | null;
+          revisionRef.current = resumed.progressRevision;
           setRevision(resumed.progressRevision);
           if (typeof resumedProgress?.stageIndex === "number") {
             setStageIndex(resumedProgress.stageIndex);
@@ -445,21 +582,23 @@ export function TrackedAssessmentShell<TContent, TState>(
         setError(message);
       }
     } finally {
+      busy.current = false;
       setSaving(false);
     }
-  }, [launch.attemptId, revision, stageIndex, state, validateStage]);
+  }, [closeFromServer, draftFor, launch.attemptId, stageIndex, state, validateStage]);
 
-  const submit = useCallback(async () => {
-    if (timeExpired || locked) {
-      setError("This attempt is locked and can no longer be submitted.");
-      return;
-    }
-    const validationError = validateStage(stageIndex, state);
-    if (validationError) {
-      setError(validationError);
-      return;
+  const submit = useCallback(async (auto = false) => {
+    if (locked || autoSubmitted || receipt) return;
+    if (!auto) {
+      if (timeExpired) return;
+      const validationError = validateStage(stageIndex, state);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
     }
     setSubmitting(true);
+    busy.current = true;
     try {
       const elapsedSeconds = Math.max(
         1,
@@ -478,16 +617,25 @@ export function TrackedAssessmentShell<TContent, TState>(
       if (document.fullscreenElement)
         await document.exitFullscreen().catch(() => undefined);
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Submission was not accepted",
-      );
+      const closed = closedAttemptReason(submitError);
+      if (closed) {
+        closeFromServer(closed);
+      } else {
+        setError(
+          submitError instanceof Error
+            ? submitError.message
+            : "Submission was not accepted",
+        );
+      }
     } finally {
+      busy.current = false;
       setSubmitting(false);
     }
   }, [
+    autoSubmitted,
     buildSubmission,
+    closeFromServer,
+    receipt,
     launch.attemptId,
     launch.module.slug,
     launch.stageGraph.nodes.length,
@@ -498,6 +646,8 @@ export function TrackedAssessmentShell<TContent, TState>(
     title,
     validateStage,
   ]);
+
+  submitRef.current = submit;
 
   const resume = useCallback(async () => {
     if (document.fullscreenEnabled && !document.fullscreenElement) {
@@ -607,7 +757,41 @@ export function TrackedAssessmentShell<TContent, TState>(
                 {error}
               </div>
             ) : null}
-            {receipt ? (
+            {connectionNotice && !receipt && !autoSubmitted ? (
+              <div
+                role="status"
+                className="mb-5 flex gap-3 border border-border bg-card p-4 text-sm text-foreground"
+              >
+                <RadioTower className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                {connectionNotice}
+              </div>
+            ) : null}
+            {autoSubmitted && !receipt ? (
+              <section
+                className="border border-border bg-card p-8 text-center"
+                aria-labelledby="auto-submit-title"
+              >
+                <CheckCircle2
+                  className="mx-auto h-10 w-10 text-primary"
+                  aria-hidden="true"
+                />
+                <h1 id="auto-submit-title" className="mt-4 text-2xl font-semibold">
+                  Time is up: your answers were submitted
+                </h1>
+                <p className="mx-auto mt-3 max-w-xl leading-7 text-muted-foreground">
+                  The time limit ended, so your last saved answers were submitted
+                  for scoring and review automatically. No result is shown here.
+                </p>
+                <Button
+                  className="mt-7 rounded-sm"
+                  onClick={() => {
+                    window.location.href = "/candidate-dashboard";
+                  }}
+                >
+                  Return to candidate portal
+                </Button>
+              </section>
+            ) : receipt ? (
               <section
                 className="border border-border bg-card p-8 text-center"
                 aria-labelledby="receipt-title"
@@ -668,7 +852,7 @@ export function TrackedAssessmentShell<TContent, TState>(
                   ) : stageIndex === reviewIndex ? (
                     <Button
                       className="ml-auto min-h-12 rounded-sm px-7"
-                      onClick={submit}
+                      onClick={() => void submit()}
                       disabled={submitting || locked || timeExpired}
                     >
                       {submitting ? (
@@ -688,7 +872,7 @@ export function TrackedAssessmentShell<TContent, TState>(
         </div>
       </div>
       <IntegrityAlert
-        open={Boolean(pauseReason) && !locked}
+        open={Boolean(pauseReason) && !locked && !autoSubmitted && !receipt}
         tone="warning"
         title="Assessment paused"
         description={
@@ -706,7 +890,7 @@ export function TrackedAssessmentShell<TContent, TState>(
         open={locked}
         tone="destructive"
         title="Attempt interrupted and locked"
-        description="Your attempt has been locked because of an integrity interruption or time limit. You cannot continue or restart this attempt yourself. Please contact CTRL support or your hiring manager using Support tickets in your candidate portal."
+        description={`${LOCK_DESCRIPTIONS[lockReason === "deadline_auto_submit" ? "locked" : lockReason]} You can't continue or restart this attempt yourself: your hiring manager must approve a new attempt. Contact them, or CTRL support using Support tickets in your candidate portal.`}
         actionLabel="Exit"
         actionIcon={<LogOut className="h-4 w-4" aria-hidden="true" />}
         onAction={async () => {
