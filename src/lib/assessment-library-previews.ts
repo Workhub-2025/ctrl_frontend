@@ -86,6 +86,10 @@ export const ASSESSMENT_LIBRARY_PREVIEW_BY_VERSION: Readonly<
     overview:
       "Practice call plus one assessed call. Candidates capture caller, system, intelligence and incident information live, then have one minute to review the record before it closes.",
   },
+  "call-simulation@1.4.0": {
+    overview:
+      "Practice call plus one assessed call. Candidates capture caller, system and intelligence information live and write one incident summary, then have one minute to review the record before it closes.",
+  },
 };
 
 export function getAssessmentLibraryPreview(

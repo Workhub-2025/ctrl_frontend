@@ -70,7 +70,7 @@ export const ASSESSMENT_PLATFORM_REGISTRY = [
     description:
       "Practice plus one assessed call — capture caller, system, intelligence and incident information.",
     entitlementTier: "core",
-    preferredReleaseVersion: "1.3.0",
+    preferredReleaseVersion: "1.4.0",
     timerMode: "stage_owned",
     timed: false,
   },
