@@ -20,8 +20,5 @@ export function portalMfaEnrollmentRequired(input: {
 }
 
 export function isPortalMfaEnrollmentPath(pathname: string) {
-  return (
-    pathname === "/profile" ||
-    pathname.startsWith("/api/account/totp/")
-  );
+  return pathname === "/profile";
 }
