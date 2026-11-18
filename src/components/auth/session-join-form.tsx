@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { FirebaseError } from "firebase/app";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
@@ -56,15 +56,24 @@ export function SessionJoinForm({
   panelVariant = "dark-panel",
   inputVariant = "dark",
 }: SessionJoinFormProps) {
-  const pending = typeof window !== "undefined" ? readPendingSessionJoin() : null;
   const [step, setStep] = useState<"register" | "verify">(
-    startOnVerify || pending ? "verify" : "register",
+    startOnVerify ? "verify" : "register",
   );
-  const [code, setCode] = useState(
-    sanitiseAccessCode(pending?.accessCode ?? initialCode),
-  );
-  const [displayName, setDisplayName] = useState(pending?.displayName ?? "");
-  const [email, setEmail] = useState(pending?.email ?? initialEmail);
+  const [code, setCode] = useState(sanitiseAccessCode(initialCode));
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState(initialEmail);
+
+  // A join left half-way is restored after mount: browser storage doesn't
+  // exist on the server, and reading it during render would make the first
+  // client render disagree with the server's.
+  useEffect(() => {
+    const pending = readPendingSessionJoin();
+    if (!pending) return;
+    setStep("verify");
+    if (pending.accessCode) setCode(sanitiseAccessCode(pending.accessCode));
+    if (pending.displayName) setDisplayName(pending.displayName);
+    if (pending.email) setEmail(pending.email);
+  }, []);
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);

@@ -4,7 +4,6 @@ import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { StoreHydration } from "@/components/providers/store-hydration";
 import { PortalQueryProvider } from "@/components/providers/portal-query-provider";
 import { CookieBannerMount } from "@/components/legal/cookie-banner-mount";
 import { headers } from "next/headers";
@@ -78,7 +77,7 @@ export default async function RootLayout({
       >
         <ThemeProvider nonce={nonce}>
           <PortalQueryProvider>
-            <StoreHydration>{children}</StoreHydration>
+            {children}
           </PortalQueryProvider>
           <CookieBannerMount />
           <Toaster />
