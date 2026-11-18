@@ -197,7 +197,7 @@ export function AdminSeatDowngradePanel({
       />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {notice ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{notice}</p> : null}
+      {notice ? <p className="text-sm text-success">{notice}</p> : null}
 
       <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
         <div className="space-y-2">
@@ -312,7 +312,7 @@ export function AdminSeatDowngradePanel({
                 cleaned up: hiring manager access codes removed, manager login details anonymised,
                 and campaigns, sessions, and results attached to those seats deleted.
               </p>
-              <p className="font-medium text-amber-600 dark:text-amber-400">
+              <p className="font-medium text-warning">
                 Candidate user accounts are not deleted. The export workbook was emailed before this
                 step.
               </p>

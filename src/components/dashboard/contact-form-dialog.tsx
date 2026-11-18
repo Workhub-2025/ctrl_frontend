@@ -233,7 +233,7 @@ export function ContactFormDialog({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Brief summary of your query"
-                className="h-10 rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
+                className="h-10 rounded-lg border-border bg-background focus-visible:ring-primary"
               />
             </div>
 
@@ -254,7 +254,7 @@ export function ContactFormDialog({
                 rows={5}
                 required
                 minLength={10}
-                className="resize-none rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
+                className="resize-none rounded-lg border-border bg-background focus-visible:ring-primary"
               />
               <div className="flex justify-end">
                 <p
@@ -278,7 +278,7 @@ export function ContactFormDialog({
                 Priority
               </label>
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary dark:border-white/10 dark:bg-white/[0.02]">
+                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

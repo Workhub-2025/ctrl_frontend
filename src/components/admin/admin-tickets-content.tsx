@@ -421,7 +421,7 @@ function TicketDetailDialog({
                     key={message.documentId || message.id}
                     className={`rounded-lg border p-3 text-sm ${
                       message.isInternal
-                        ? "border-amber-500/20 bg-amber-500/5"
+                        ? "border-warning/20 bg-warning/5"
                         : "border-border bg-muted/20"
                     }`}
                   >
@@ -429,7 +429,7 @@ function TicketDetailDialog({
                       <span className="font-medium text-foreground">
                         {messageAuthorLabel(message)}
                         {message.isInternal ? (
-                          <span className="ml-2 text-amber-400">Internal</span>
+                          <span className="ml-2 text-warning">Internal</span>
                         ) : null}
                       </span>
                       <time>{formatDateTime(message.createdAt)}</time>
@@ -851,7 +851,7 @@ export function AdminTicketsContent({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border/40 dark:divide-white/5">
+          <div className="divide-y divide-border/40">
             {filteredTickets.map((ticket) => (
               <button
                 key={ticket.id}

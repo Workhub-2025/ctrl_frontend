@@ -177,7 +177,7 @@ export function ClientCandidateOutreachDialog({
     >
         {success ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <CheckCircle className="h-10 w-10 text-emerald-500" aria-hidden="true" />
+              <CheckCircle className="h-10 w-10 text-success" aria-hidden="true" />
               <p className="text-sm text-muted-foreground">
                 The candidate can reply directly to your email address.
               </p>
@@ -242,7 +242,7 @@ export function ClientCandidateOutreachDialog({
               ) : null}
 
               {error ? (
-                <p className="text-sm text-red-500" role="alert">
+                <p className="text-sm text-destructive" role="alert">
                   {error}
                 </p>
               ) : null}

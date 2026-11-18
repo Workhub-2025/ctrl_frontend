@@ -439,7 +439,7 @@ export function HiringManagerCandidatesView() {
 
                   <div className="flex items-center justify-between gap-5 sm:justify-end shrink-0">
                     {/* Completion stats */}
-                    <div className="text-right border-r border-border/60 pr-4 dark:border-white/5">
+                    <div className="text-right border-r border-border/60 pr-4">
                       <p className={cn(portalLabelClass, "text-[10px]")}>Completed</p>
                       <p className="text-sm font-extrabold text-foreground tabular-nums">
                         {candidate.completedAssessments}/{candidate.totalAssessments} Done
@@ -450,7 +450,7 @@ export function HiringManagerCandidatesView() {
                       variant="outline"
                       className={cn(
                         portalInputClass,
-                        "group h-9 rounded-xl bg-background/50 px-4 text-xs font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+                        "group h-9 rounded-xl bg-background/50 px-4 text-xs font-semibold text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30"
                       )}
                       asChild
                     >
@@ -484,11 +484,11 @@ export function HiringManagerCandidatesView() {
                     <div className="relative group space-y-2">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span className="font-medium text-foreground">Overall weighted score</span>
-                        <span className="font-extrabold text-indigo-400 tabular-nums">
+                        <span className="font-extrabold text-primary tabular-nums">
                           {candidate.overallScore}%
                         </span>
                       </div>
-                      <div className="h-3 w-full overflow-hidden rounded-full border border-border/60 bg-muted dark:border-white/5 dark:bg-white/5">
+                      <div className="h-3 w-full overflow-hidden rounded-full border border-border/60 bg-muted">
                         <div
                           className={portalProgressBarClass}
                           style={{ width: `${candidate.overallScore}%` }}
@@ -555,7 +555,7 @@ export function HiringManagerCandidatesView() {
                           const scoreValue = matchedResult?.numericScore ?? 0;
                           const key = getAssessmentKey(stackName, matchedResult);
 
-                          const colorClass = isAbandoned ? "bg-orange-500" : "bg-primary";
+                          const colorClass = isAbandoned ? "bg-warning" : "bg-primary";
 
                           // Tooltip metrics content
                           let metricsContent = null;
@@ -613,7 +613,7 @@ export function HiringManagerCandidatesView() {
                             <div
                               key={`${stackName}-${idx}`}
                               className={cn(
-                                "relative group flex-1 h-full overflow-visible rounded-full border bg-muted/30 dark:bg-white/[0.04]",
+                                "relative group flex-1 h-full overflow-visible rounded-full border bg-muted/30",
                                 portalPanelBorderClass
                               )}
                             >
@@ -626,7 +626,7 @@ export function HiringManagerCandidatesView() {
                               <div className={cn(portalCssHoverTooltipClass, "w-56")}>
                                 <p className="mb-1 text-sm font-semibold text-foreground">{stackName}</p>
                                 {isAbandoned ? (
-                                  <p className="text-xs italic text-amber-600 dark:text-amber-400">
+                                  <p className="text-xs italic text-warning">
                                     Abandoned — contact the candidate to find out what happened.
                                   </p>
                                 ) : isCompleted && matchedResult ? (
@@ -642,7 +642,7 @@ export function HiringManagerCandidatesView() {
                                     )}
                                   </div>
                                 ) : (
-                                  <p className="text-xs italic text-amber-600 dark:text-amber-400">Awaiting completion (Pending)</p>
+                                  <p className="text-xs italic text-warning">Awaiting completion (Pending)</p>
                                 )}
                               </div>
                             </div>

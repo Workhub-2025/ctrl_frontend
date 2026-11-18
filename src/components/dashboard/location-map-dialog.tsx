@@ -73,9 +73,9 @@ export function LocationMapDialog({
         {hasAddress ? (
           <div className="space-y-4 pt-1">
             {/* Map block */}
-            <div className="overflow-hidden rounded-xl border border-border bg-card dark:border-white/10">
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
               {/* Address chip header */}
-              <div className="flex items-start gap-2.5 border-b border-border bg-muted/40 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex items-start gap-2.5 border-b border-border bg-muted/40 px-4 py-3">
                 <MapPin
                   className="mt-0.5 h-4 w-4 shrink-0 text-primary"
                   aria-hidden="true"
@@ -94,7 +94,7 @@ export function LocationMapDialog({
               <iframe
                 title={`Map showing ${address}`}
                 src={mapEmbedUrl}
-                className="block w-full bg-muted/10 dark:bg-white/[0.02]"
+                className="block w-full bg-muted/10"
                 style={{ height: 360, border: "none" }}
                 loading="lazy"
                 referrerPolicy="no-referrer"
@@ -106,7 +106,7 @@ export function LocationMapDialog({
                 type="button"
                 variant="outline"
                 onClick={() => void handleCopyAddress()}
-                className="h-10 flex-1 gap-2 rounded-lg border-border font-semibold transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:hover:bg-white/[0.06]"
+                className="h-10 flex-1 gap-2 rounded-lg border-border font-semibold transition-colors hover:bg-muted hover:text-foreground"
               >
                 {copied ? (
                   <>
@@ -122,7 +122,7 @@ export function LocationMapDialog({
               </Button>
               <Button
                 variant="outline"
-                className="h-10 flex-1 gap-2 rounded-lg border-border font-semibold transition-colors hover:bg-muted hover:text-foreground dark:border-white/10 dark:hover:bg-white/[0.06]"
+                className="h-10 flex-1 gap-2 rounded-lg border-border font-semibold transition-colors hover:bg-muted hover:text-foreground"
                 asChild
               >
                 <a href={directionsUrl} target="_blank" rel="noopener noreferrer">

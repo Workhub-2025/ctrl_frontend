@@ -234,7 +234,7 @@ function AssessmentListItem({
           {!isLast ? (
             <span
               className={`mt-1 min-h-6 w-px flex-1 ${
-                isCompleted ? "bg-primary/40" : "bg-border dark:bg-white/10"
+                isCompleted ? "bg-primary/40" : "bg-border dark:bg-muted/50"
               }`}
               aria-hidden="true"
             />
@@ -258,7 +258,7 @@ function AssessmentListItem({
                     </Badge>
                   ) : null}
                   {isAbandoned ? (
-                    <Badge variant="outline" className="border-orange-500/30 bg-orange-500/10 text-[10px] font-bold uppercase tracking-wider text-orange-700 dark:text-orange-300">
+                    <Badge variant="outline" className="border-warning/30 bg-warning/10 text-[10px] font-bold uppercase tracking-wider text-foreground">
                       Interrupted
                     </Badge>
                   ) : null}
@@ -298,7 +298,7 @@ function AssessmentListItem({
                   Contact your hiring team before starting
                 </div>
               ) : isAbandoned ? (
-                <div className="inline-flex items-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/5 px-3 py-2 text-xs font-semibold text-orange-800 dark:text-orange-200">
+                <div className="inline-flex items-center gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs font-semibold text-foreground">
                   <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
                   Waiting for unlock — contact your hiring team
                 </div>
@@ -350,7 +350,7 @@ function SessionModeMetaChip({ application }: { application: CandidateApplicatio
         <button
           type="button"
           onClick={() => setLocationDialogOpen(true)}
-          className="flex min-w-0 flex-col gap-0.5 rounded-xl border border-border/70 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/5 dark:bg-white/[0.02] dark:hover:border-primary/30"
+          className="flex min-w-0 flex-col gap-0.5 rounded-xl border border-border/70 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
             <MapPin className="h-3 w-3 shrink-0 text-primary" aria-hidden="true" />

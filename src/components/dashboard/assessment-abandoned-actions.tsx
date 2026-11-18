@@ -74,13 +74,13 @@ export function AssessmentAbandonedActions({
   const summary = formatAbandonSnapshotSummary(assessmentSlug, snapshot, contentVersion);
 
   return (
-    <div className={compact ? "space-y-2" : "mt-3 space-y-3 rounded-xl border border-orange-500/20 bg-orange-500/5 p-3"}>
+    <div className={compact ? "space-y-2" : "mt-3 space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-3"}>
       {!compact ? (
-        <p className="text-xs text-orange-200/80">{summary}</p>
+        <p className="text-xs text-warning/80">{summary}</p>
       ) : null}
       <div className="flex flex-wrap gap-2">
         {canRecover ? (
-          <span className="inline-flex min-h-9 items-center gap-2 rounded-md border border-orange-500/30 bg-orange-500/10 px-3 text-xs font-semibold text-orange-800 dark:text-orange-200">
+          <span className="inline-flex min-h-9 items-center gap-2 rounded-md border border-warning/30 bg-warning/10 px-3 text-xs font-semibold text-foreground">
             <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" /> Candidate can restart with fresh incidents
           </span>
         ) : null}

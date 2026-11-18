@@ -81,7 +81,7 @@ export const portalDialogShellClass =
 
 /** Radix Sheet built-in close control — readable in light and dark themes. */
 export const portalSheetCloseButtonClass =
-  "[&>button]:text-muted-foreground [&>button]:opacity-100 [&>button]:transition-colors [&>button]:hover:text-foreground dark:[&>button]:hover:text-white";
+  "[&>button]:text-muted-foreground [&>button]:opacity-100 [&>button]:transition-colors [&>button]:hover:text-foreground";
 
 /** Layout helper for full-width HM detail dialogs. */
 export const portalDialogContentLayoutClass =
@@ -118,17 +118,17 @@ export const portalProgressBarClass =
  * "pass" or "below floor" is defined once and stays coherent across the four
  * themes. Values are the palette the reports used before the July refactor.
  */
-export const portalResultPassClass = "text-emerald-600 dark:text-emerald-400";
-export const portalResultWarnClass = "text-amber-600 dark:text-amber-400";
+export const portalResultPassClass = "text-success";
+export const portalResultWarnClass = "text-warning";
 export const portalResultFailClass = "text-destructive";
-export const portalResultSecondaryClass = "text-sky-600 dark:text-sky-400";
+export const portalResultSecondaryClass = "text-info";
 export const portalResultMutedClass = "text-muted-foreground";
 
 /** Matching bar fills for the same five result states. */
-export const portalResultBarPassClass = "bg-emerald-500";
-export const portalResultBarWarnClass = "bg-amber-500";
+export const portalResultBarPassClass = "bg-success";
+export const portalResultBarWarnClass = "bg-warning";
 export const portalResultBarFailClass = "bg-destructive";
-export const portalResultBarSecondaryClass = "bg-sky-500";
+export const portalResultBarSecondaryClass = "bg-info";
 export const portalResultBarMutedClass = "bg-muted-foreground/60";
 
 /** Decision band (SJT) and outcome band (prioritisation) colouring. */
@@ -146,7 +146,7 @@ export function portalResultBandClass(band?: string | null): string {
   return "text-foreground";
 }
 
-/** Primary gradient action button shared across HM portal views. */
+/** Primary action button shared across HM portal views. */
 export const portalPrimaryButtonClass =
   "rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary/90";
 
@@ -164,7 +164,7 @@ export const portalScoreMeterClass =
 
 /** Positive action button (approve, confirm) in HM reports. */
 export const portalSuccessButtonClass =
-  "rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white transition-colors hover:bg-emerald-500";
+  "rounded-lg bg-success px-4 text-xs font-semibold text-success-foreground transition-colors hover:bg-success/90";
 
 export const portalStatTileClass = cn(portalPanelClass, "p-4 sm:p-5");
 
@@ -209,7 +209,7 @@ export function portalToneBadge(status?: string) {
   ) {
     return cn(
       base,
-      "border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
+      "border border-success/40 bg-success/15 text-foreground",
     );
   }
   if (
@@ -224,7 +224,7 @@ export function portalToneBadge(status?: string) {
   ) {
     return cn(
       base,
-      "border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200",
+      "border border-warning/40 bg-warning/15 text-foreground",
     );
   }
   if (
@@ -240,7 +240,7 @@ export function portalToneBadge(status?: string) {
   ) {
     return cn(
       base,
-      "border border-rose-500/35 bg-rose-500/10 text-rose-800 dark:text-rose-200",
+      "border border-destructive/35 bg-destructive/10 text-foreground",
     );
   }
   return portalBadgeClass;
@@ -250,7 +250,7 @@ export const portalAlertErrorClass =
   "rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive";
 
 export const portalAlertWarningClass =
-  "rounded-md border border-amber-500/45 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-50";
+  "rounded-md border border-warning/45 bg-warning/10 px-4 py-3 text-sm text-foreground";
 
 export const portalAlertInfoClass =
   "rounded-md border border-primary/35 bg-primary/5 px-4 py-3 text-sm text-foreground";
@@ -278,7 +278,7 @@ export const portalAssessmentShellClass = cn(
 
 /** Assessment shell header strip. */
 export const portalAssessmentShellHeaderClass =
-  "flex flex-col gap-3 border-b border-border/60 bg-muted/25 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-white/[0.025]";
+  "flex flex-col gap-3 border-b border-border/60 bg-muted/25 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6";
 
 /** Assessment shell body — quiet solid surface for task focus. */
 export const portalAssessmentShellBodyClass =

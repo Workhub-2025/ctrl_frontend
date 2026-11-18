@@ -462,7 +462,7 @@ export function ClientUpgradeBuilder({
           {lineItems.length > 0 ? (
             <div className="space-y-2 border-t border-border/50 pt-4">
               {discountPercent ? (
-                <div className="mb-3 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-500 dark:bg-emerald-500/20">
+                <div className="mb-3 rounded-lg bg-success/10 px-3 py-2 text-xs font-medium text-success">
                   Founder loyalty benefit: {discountPercent}% discount applied to all
                   upgrades.
                 </div>

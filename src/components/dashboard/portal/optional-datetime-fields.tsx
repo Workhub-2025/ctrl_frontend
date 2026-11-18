@@ -90,7 +90,7 @@ export function OptionalDateField({
           className={cn(
             fieldTriggerClass,
             "pointer-events-none absolute inset-0",
-            error && "border-red-500/50"
+            error && "border-destructive/50"
           )}
           aria-hidden="true"
         >
@@ -119,7 +119,7 @@ export function OptionalDateField({
           )}
         />
       </div>
-      {error ? <p className="text-[10px] font-medium text-red-400">{error}</p> : null}
+      {error ? <p className="text-[10px] font-medium text-destructive">{error}</p> : null}
     </div>
   );
 }
@@ -155,7 +155,7 @@ function NativeTimeField({
         className={cn(
           fieldTriggerClass,
           "pointer-events-none absolute inset-0",
-          error && "border-red-500/50"
+          error && "border-destructive/50"
         )}
         aria-hidden="true"
       >
@@ -221,7 +221,7 @@ function SelectTimeField({
       className={cn(
         fieldTriggerClass,
         "px-2.5",
-        error && "border-red-500/50",
+        error && "border-destructive/50",
         disabled && "cursor-not-allowed opacity-50"
       )}
     >
@@ -314,7 +314,7 @@ export function OptionalTimeField({
           step={step}
         />
       )}
-      {error ? <p className="text-[10px] font-medium text-red-400">{error}</p> : null}
+      {error ? <p className="text-[10px] font-medium text-destructive">{error}</p> : null}
     </div>
   );
 }

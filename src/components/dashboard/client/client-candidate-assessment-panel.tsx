@@ -140,7 +140,7 @@ export function ClientCandidateAssessmentPanel({
           {composite !== null ? (
             <div>
               <p className={portalLabelClass}>Weighted score</p>
-              <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted/40 dark:bg-white/10">
+              <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-muted/40">
                 <div
                   className={portalScoreMeterClass}
                   style={{ width: `${Math.max(0, Math.min(100, composite))}%` }}
@@ -196,7 +196,7 @@ export function ClientCandidateAssessmentPanel({
                 </div>
 
                 {result.numericScore !== null ? (
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted/40 dark:bg-white/10">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted/40">
                     <div
                       className={portalProgressBarClass}
                       style={{ width: `${result.numericScore}%` }}

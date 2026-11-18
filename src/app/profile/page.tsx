@@ -74,7 +74,7 @@ const profileTabListClass =
   "flex h-auto min-h-10 w-full flex-nowrap items-stretch justify-start gap-1 overflow-x-auto rounded-xl border border-border bg-muted/50 p-1 no-scrollbar md:grid md:overflow-visible";
 
 const profileTabTriggerClass =
-  "shrink-0 min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-medium leading-tight whitespace-nowrap transition-[background-color,color,box-shadow] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-white/10 sm:px-3 sm:text-xs md:w-full md:px-2 md:py-2.5 md:text-sm";
+  "shrink-0 min-w-0 rounded-lg px-2 py-2 text-center text-[11px] font-medium leading-tight whitespace-nowrap transition-[background-color,color,box-shadow] data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm dark:data-[state=active]:bg-muted/50 sm:px-3 sm:text-xs md:w-full md:px-2 md:py-2.5 md:text-sm";
 
 export default function ProfilePage() {
   const {
@@ -334,7 +334,7 @@ export default function ProfilePage() {
   if (authLoading || isProfileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -389,8 +389,8 @@ export default function ProfilePage() {
 
           {/* Profile Information Tab */}
           <TabsContent value="profile" className="focus-visible:outline-none">
-            <Card className="rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
-              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10 rounded-t-2xl">
+            <Card className="rounded-2xl border border-border/80 bg-card shadow-sm">
+              <CardHeader className="border-b border-border/40 bg-muted/20 rounded-t-2xl">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
                   <User className="h-5 w-5 text-primary" />
                   Personal Information
@@ -411,7 +411,7 @@ export default function ProfilePage() {
                         handleInputChange("firstName", e.target.value)
                       }
                       placeholder="Enter your first name"
-                      className="rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+                      className="rounded-xl border-border/70 focus-visible:ring-primary"
                     />
                   </div>
 
@@ -424,7 +424,7 @@ export default function ProfilePage() {
                         handleInputChange("lastName", e.target.value)
                       }
                       placeholder="Enter your last name"
-                      className="rounded-xl border-border/70 dark:border-white/10 focus-visible:ring-primary"
+                      className="rounded-xl border-border/70 focus-visible:ring-primary"
                     />
                   </div>
                 </div>
@@ -437,7 +437,7 @@ export default function ProfilePage() {
                     value={profileData.email}
                     disabled // Email changes require special handling
                     placeholder="your.email@example.com"
-                    className="rounded-xl bg-slate-100/50 dark:bg-black/20 border-border/70 dark:border-white/5 text-muted-foreground"
+                    className="rounded-xl bg-muted/50 border-border/70 text-muted-foreground"
                   />
                   <p className="text-xs text-muted-foreground/85">
                     Contact support to change your email address
@@ -482,8 +482,8 @@ export default function ProfilePage() {
 
                 <Separator className="my-6" />
 
-                <div className="space-y-4 rounded-xl border border-border/60 dark:border-white/5 bg-slate-100/30 dark:bg-black/10 p-5">
-                  <div className="flex items-center justify-between border-b border-border/40 dark:border-white/5 pb-3">
+                <div className="space-y-4 rounded-xl border border-border/60 bg-muted/30 p-5">
+                  <div className="flex items-center justify-between border-b border-border/40 pb-3">
                     <div>
                       <h3 className="font-bold text-foreground">Account Status</h3>
                       <p className="text-xs text-muted-foreground">
@@ -567,8 +567,8 @@ export default function ProfilePage() {
           {/* Equality Monitoring Tab */}
           {canUseEqualityMonitoring ? (
             <TabsContent value="equality" className="focus-visible:outline-none">
-            <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
-              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
+            <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+              <CardHeader className="border-b border-border/40 bg-muted/20">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
                   <Heart className="h-5 w-5 text-primary" />
                   Equality and Diversity Monitoring
@@ -592,8 +592,8 @@ export default function ProfilePage() {
 
           {/* Privacy Settings Tab */}
           <TabsContent value="privacy" className="focus-visible:outline-none">
-            <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm dark:border-white/10">
-              <CardHeader className="border-b border-border/40 dark:border-white/5 bg-slate-100/20 dark:bg-black/10">
+            <Card className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+              <CardHeader className="border-b border-border/40 bg-muted/20">
                 <CardTitle className="flex items-center gap-2.5 text-xl font-bold font-display">
                   <Shield className="h-5 w-5 text-primary" />
                   Privacy Settings
@@ -603,13 +603,13 @@ export default function ProfilePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6 p-6 sm:p-8">
-                <div className="rounded-xl border border-border/60 dark:border-white/5 bg-slate-100/30 dark:bg-black/10 p-5">
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
                   <h3 className="font-bold text-foreground mb-3">
                     Current Privacy Preferences
                   </h3>
                   <div className="space-y-2.5 text-sm text-muted-foreground">
                     <p className="flex items-center gap-2">
-                      <span aria-hidden="true" className="font-bold text-emerald-500">
+                      <span aria-hidden="true" className="font-bold text-success">
                         ✓
                       </span>{" "}
                       Privacy notice{" "}
@@ -636,7 +636,7 @@ export default function ProfilePage() {
                 <div className="space-y-4">
                   <h3 className="font-bold text-base">Data Management</h3>
                   <div className="space-y-3.5">
-                    <div className="flex items-center justify-between p-4 border border-border/60 dark:border-white/5 rounded-xl bg-slate-100/10 dark:bg-black/5 hover:bg-slate-100/20 dark:hover:bg-white/5 transition-colors">
+                    <div className="flex items-center justify-between p-4 border border-border/60 rounded-xl bg-muted/10 hover:bg-muted/20 transition-colors">
                       <div className="mr-4">
                         <p className="font-semibold text-sm">Download My Data</p>
                         <p className="text-xs text-muted-foreground">
@@ -655,9 +655,9 @@ export default function ProfilePage() {
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 border border-border/60 dark:border-white/5 rounded-xl bg-red-500/5 hover:bg-red-500/10 dark:bg-red-950/5 dark:hover:bg-red-950/10 transition-colors border-red-500/20 dark:border-red-500/10">
+                    <div className="flex items-center justify-between p-4 border border-border/60 rounded-xl bg-destructive/5 hover:bg-destructive/10 transition-colors border-destructive/20">
                       <div className="mr-4">
-                        <p className="font-semibold text-sm text-red-600 dark:text-red-400">Delete My Account</p>
+                        <p className="font-semibold text-sm text-destructive">Delete My Account</p>
                         <p className="text-xs text-muted-foreground">
                           Ask us and your recruiting organisation to erase eligible personal data
                         </p>
@@ -667,7 +667,7 @@ export default function ProfilePage() {
                           <Button
                             variant="destructive"
                             size="sm"
-                            className="rounded-lg bg-red-600 hover:bg-red-700 shrink-0"
+                            className="rounded-lg bg-destructive hover:bg-destructive/90 shrink-0"
                             disabled={isErasing}
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
@@ -687,7 +687,7 @@ export default function ProfilePage() {
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
-                              className="bg-red-600 hover:bg-red-700"
+                              className="bg-destructive hover:bg-destructive/90"
                               onClick={() => void handleErasureRequest()}
                             >
                               Confirm deletion request
@@ -699,7 +699,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/60 dark:border-white/5 bg-slate-100/30 dark:bg-black/10 p-5">
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
                   <h4 className="font-bold text-sm text-foreground mb-3">
                     Important Information
                   </h4>

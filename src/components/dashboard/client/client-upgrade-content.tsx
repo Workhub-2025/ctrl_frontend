@@ -331,7 +331,7 @@ export function ClientUpgradeContent() {
                 </p>
                 <Button
                   size="sm"
-                  className="shrink-0 border-amber-600/40 bg-amber-600 text-white hover:bg-amber-700"
+                  className="shrink-0 border-warning/40 bg-warning text-warning-foreground hover:bg-warning/90"
                   disabled={payingRequestId === activationInvoice.id}
                   onClick={() =>
                     setPendingPayment(

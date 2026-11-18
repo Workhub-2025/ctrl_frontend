@@ -62,7 +62,7 @@ export function AssessmentCard({
       </CardContent>
       <CardFooter>
           {isCompleted ? (
-            <Button variant="secondary" className="h-11 w-full rounded-xl text-green-600 dark:text-green-500 bg-green-500/10 hover:bg-green-500/20" disabled>
+            <Button variant="secondary" className="h-11 w-full rounded-xl text-success bg-success/10 hover:bg-success/20" disabled>
               <CheckCircle2 className="mr-2 h-4 w-4" /> Submitted
             </Button>
           ) : !isAvailable ? (

@@ -114,7 +114,7 @@ export function HiringManagerCommandWorkspace({
                   className={cn(
                     portalPanelClass,
                     "group relative flex items-center justify-between p-4 transition-all hover:border-primary/40",
-                    stat.highlight && "border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10"
+                    stat.highlight && "border-warning/40 bg-warning/5"
                   )}
                 >
                   <div className="space-y-1 min-w-0">

@@ -490,7 +490,7 @@ export function PortalQuickLinkRow({
 }) {
   return (
     <PortalPanel padding={false} className="overflow-hidden">
-      <div className="grid divide-y divide-border/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-white/8">
+      <div className="grid divide-y divide-border/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {links.map((link) => (
           <Link
             key={link.href}

@@ -196,7 +196,7 @@ export function HiringManagerOverview() {
                     </div>
                     {/* Occupancy bar */}
                     <div className="flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-muted dark:bg-white/5 overflow-hidden">
+                      <div className="h-1 flex-1 rounded-full bg-muted overflow-hidden">
                         <div className={portalProgressBarClass} style={{ width: `${occupancyPercent}%` }} />
                       </div>
                       <span className="text-[10px] font-semibold text-muted-foreground tabular-nums">{session.candidateCount}/{session.candidateLimit}</span>
