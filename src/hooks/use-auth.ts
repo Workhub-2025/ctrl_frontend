@@ -285,8 +285,6 @@ export function useAuth() {
     };
 
     const verifyTotpLogin = async (code: string) => {
-        const VERIFY_TIMEOUT_MS = 30_000;
-
         try {
             setStatus('loading');
             if (useFirebaseAuthentication) {
@@ -334,49 +332,7 @@ export function useAuth() {
                 return { success: true };
             }
 
-            const response = await fetch('/api/auth/totp/verify', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json',
-                },
-                body: JSON.stringify({ code }),
-                credentials: 'same-origin',
-                signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
-            });
-
-            const body = await response.json().catch(() => ({}));
-            if (!response.ok) {
-                if (response.status === 429) {
-                    throw new Error(body.error ?? 'Too many verification attempts. Please try again later.');
-                }
-                throw new Error(body.error ?? 'Invalid verification code');
-            }
-
-            const userData = body.data?.user;
-            const redirectPath = body.data?.redirectPath as string | undefined;
-
-            if (userData) {
-                const nextSession: ClientAuthSession = {
-                    user: userData,
-                    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                };
-                primeClientSession(nextSession);
-                setSession(nextSession);
-                setStatus('authenticated');
-                setUserProfile(userData as IUser);
-                const destination =
-                    safeCallbackPathFromLocation() ||
-                    redirectPath ||
-                    routeForRole(userData.role);
-                window.location.assign(destination);
-            } else if (redirectPath) {
-                window.location.assign(safeCallbackPathFromLocation() || redirectPath);
-            } else {
-                throw new Error('Verification succeeded but the session could not be established');
-            }
-
-            return { success: true };
+            throw new Error('Authenticator verification is only available through Firebase sign-in');
         } catch (error) {
             setStatus('unauthenticated');
             throw error;
