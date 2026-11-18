@@ -295,19 +295,19 @@ function HiringManagerSessionWorkspace({
           metadata={
             <p className="max-w-2xl text-xs font-medium leading-5 text-muted-foreground">
               <span>{session.campaign}</span>
-              <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+              <span className="mx-1.5 text-border/80">·</span>
               <span>{session.date}</span>
               {session.startsAt &&
               new Date(session.startsAt).getTime() > Date.now() &&
               session.status === "Upcoming" ? (
                 <>
-                  <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+                  <span className="mx-1.5 text-border/80">·</span>
                   <span className={cn(portalBadgeClass, "inline-flex px-1.5 py-0 text-[10px] font-semibold normal-case tracking-normal")}>
                     Scheduled
                   </span>
                 </>
               ) : null}
-              <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+              <span className="mx-1.5 text-border/80">·</span>
               <span className="break-words">{session.location}</span>
             </p>
           }
@@ -322,7 +322,7 @@ function HiringManagerSessionWorkspace({
                   variant="outline"
                   disabled={deletingSessionId === session.id}
                   onClick={() => onDeleteSession(session.id)}
-                  className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:opacity-50"
+                  className="h-9 rounded-lg border-destructive/20 bg-destructive/10 px-3.5 text-xs font-semibold text-destructive hover:bg-destructive/20 hover:text-destructive disabled:opacity-50"
                 >
                   <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                   {deletingSessionId === session.id ? "Deleting…" : "Delete session"}
@@ -350,7 +350,7 @@ function HiringManagerSessionWorkspace({
                         variant="outline"
                         disabled={isClosing}
                         onClick={() => onUpdateSessionStatus(session.id, "closed")}
-                        className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 hover:bg-red-500/20 hover:text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-9 rounded-lg border-destructive/20 bg-destructive/10 px-3.5 text-xs font-semibold text-destructive hover:bg-destructive/20 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isClosing ? "Closing…" : "Close session"}
                       </Button>
@@ -367,7 +367,7 @@ function HiringManagerSessionWorkspace({
                         variant="outline"
                         disabled
                         aria-describedby={closeRequirementId}
-                        className="h-9 rounded-lg border-red-500/20 bg-red-500/10 px-3.5 text-xs font-semibold text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-9 rounded-lg border-destructive/20 bg-destructive/10 px-3.5 text-xs font-semibold text-destructive disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Close session
                       </Button>
@@ -439,7 +439,7 @@ function HiringManagerSessionWorkspace({
                     <span className="font-display text-2xl font-bold text-foreground tabular-nums">{session.candidateCount}</span>
                     <span className="text-xs font-medium text-muted-foreground">/ {session.candidateLimit} seats</span>
                   </div>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/40 dark:bg-white/10">
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
                     <div
                       className={portalProgressBarClass}
                       style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
@@ -570,7 +570,7 @@ function HiringManagerSessionWorkspace({
                               <span className={cn(portalIconWrapLgClass, "relative text-xs font-semibold uppercase")}>
                                 {hasJoined ? (
                                   <span
-                                    className="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.55)] ring-2 ring-emerald-400/25"
+                                    className="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-success ring-2 ring-success/25"
                                     aria-hidden="true"
                                   />
                                 ) : null}
@@ -682,11 +682,11 @@ function HiringManagerSessionWorkspace({
 
                           {showUnlockControl ? (
                             <div
-                              className="flex flex-col gap-4 border-t border-amber-500/25 bg-amber-500/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between"
+                              className="flex flex-col gap-4 border-t border-warning/25 bg-warning/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between"
                               role="status"
                             >
                               <div className="flex min-w-0 items-start gap-3">
-                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300" aria-hidden="true">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-warning" aria-hidden="true">
                                   <LockOpen className="h-4 w-4" />
                                 </span>
                                 <div className="min-w-0">
@@ -737,7 +737,7 @@ function HiringManagerSessionWorkspace({
                                     <div
                                       key={`${item.name}-${idx}`}
                                       className={cn(
-                                        "relative h-full flex-1 overflow-hidden rounded-full border bg-muted/20 dark:bg-white/[0.04]",
+                                        "relative h-full flex-1 overflow-hidden rounded-full border bg-muted/20",
                                         portalPanelBorderClass
                                       )}
                                       title={`${item.name}: ${isAbandoned ? "Abandoned" : isCompleted ? `${scoreVal}%` : isSubmitted ? "Submitted" : "Pending"}`}
@@ -830,7 +830,7 @@ export function CandidateResultsDialog({
                   {metadataParts.map((part, index) => (
                     <span key={part}>
                       {index > 0 ? (
-                        <span className="mx-1.5 text-border/80 dark:text-white/20">·</span>
+                        <span className="mx-1.5 text-border/80">·</span>
                       ) : null}
                       {part}
                     </span>

@@ -328,7 +328,7 @@ export function ClientHiringManagersContent() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full rounded-md border-orange-500/20 text-orange-500 hover:!border-orange-500/50 hover:!bg-orange-500/10 hover:!text-orange-500"
+                    className="w-full rounded-md border-warning/20 text-warning hover:!border-warning/50 hover:!bg-warning/10 hover:!text-warning"
                     onClick={() => void handleRelease(selectedSeat.manager)}
                     disabled={releasingManagerId === selectedSeat.manager.documentId}
                   >

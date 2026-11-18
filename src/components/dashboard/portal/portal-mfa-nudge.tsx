@@ -93,7 +93,7 @@ export function PortalMfaNudge() {
         <Shield className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
         <span>Enable two-factor authentication to secure your account.</span>
       </p>
-      <Button asChild size="sm" variant="outline" className="shrink-0 border-amber-600/50">
+      <Button asChild size="sm" variant="outline" className="shrink-0 border-warning/50">
         <Link href="/profile?tab=security&enroll=1">Set up now</Link>
       </Button>
     </div>

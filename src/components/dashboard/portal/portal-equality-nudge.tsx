@@ -96,7 +96,7 @@ export function PortalEqualityNudge() {
         Optional equality monitoring helps us check fairness. You can complete it
         now or skip — skipping does not count as survey completion.
       </p>
-      <Button asChild size="sm" variant="outline" className="shrink-0 border-amber-600/50">
+      <Button asChild size="sm" variant="outline" className="shrink-0 border-warning/50">
         <Link href="/auth/equality-monitoring?optional=true">Complete survey</Link>
       </Button>
     </div>

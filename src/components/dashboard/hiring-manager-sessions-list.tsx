@@ -360,7 +360,7 @@ export function HiringManagerSessionsList() {
   return (
     <div className="space-y-5">
       {/* Active Sessions Toolbar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4 dark:border-white/5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-bold text-foreground">Active Sessions</h2>
@@ -376,7 +376,7 @@ export function HiringManagerSessionsList() {
             variant="outline"
             onClick={() => loadSessions(true)}
             disabled={isRefreshing}
-            className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground dark:border-white/10 dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+            className="h-10 border-border bg-transparent text-foreground transition-colors hover:!bg-muted hover:!text-foreground"
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
@@ -405,7 +405,7 @@ export function HiringManagerSessionsList() {
       {/* Slide-over Drawer for Creating Session */}
       <Sheet open={isCreateOpen} onOpenChange={handleOpenChange}>
         <SheetContent className={cn(portalDialogShellClass, portalSheetCloseButtonClass, "flex w-full flex-col gap-6 border-l p-6 sm:max-w-md")}>
-          <SheetHeader className="border-b border-border/60 pb-4 dark:border-white/5">
+          <SheetHeader className="border-b border-border/60 pb-4">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-inner">
                 <KeyRound className="h-4 w-4" />
@@ -438,7 +438,7 @@ export function HiringManagerSessionsList() {
                 <p className={portalLabelClass}>
                   Access Code
                 </p>
-                <p className="mt-2 break-all rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 font-mono text-2xl font-bold tracking-widest text-foreground dark:border-white/10 dark:bg-black/30">
+                <p className="mt-2 break-all rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 font-mono text-2xl font-bold tracking-widest text-foreground">
                   {createdSession.accessValue}
                 </p>
                 <p className="mt-2 text-[11px] text-muted-foreground">
@@ -454,7 +454,7 @@ export function HiringManagerSessionsList() {
                       setCopiedSessionId(`${createdSession.id}:code`);
                       setTimeout(() => setCopiedSessionId(null), 2000);
                     }}
-                    className="h-9 w-full rounded-lg border-border bg-background/70 text-xs font-semibold text-foreground transition-colors hover:bg-muted dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/15"
+                    className="h-9 w-full rounded-lg border-border bg-background/70 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
                   >
                     {copiedSessionId === `${createdSession.id}:code` ? (
                       <>
@@ -506,16 +506,16 @@ export function HiringManagerSessionsList() {
               </div>
 
               <div className={cn(portalPanelNestedClass, "space-y-2.5 p-4 text-xs")}>
-                <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
+                <div className="flex justify-between border-b border-border/60 py-1">
                   <span className="font-medium text-muted-foreground">Session Name</span>
                   <span className="max-w-[200px] truncate font-bold text-foreground">{createdSession.campaign}</span>
                 </div>
-                <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
+                <div className="flex justify-between border-b border-border/60 py-1">
                   <span className="font-medium text-muted-foreground">Candidate Limit</span>
                   <span className="font-bold text-foreground">{createdSession.candidateLimit}</span>
                 </div>
                 {createdSession.date && (
-                  <div className="flex justify-between border-b border-border/60 py-1 dark:border-white/5">
+                  <div className="flex justify-between border-b border-border/60 py-1">
                     <span className="font-medium text-muted-foreground">Starts At</span>
                     <span className="font-bold text-foreground">{createdSession.date}</span>
                   </div>
@@ -568,8 +568,7 @@ export function HiringManagerSessionsList() {
 
                 {/* Campaign Preview Card */}
                 {selectedCampaign && (
-                  <div className={cn(portalPanelNestedClass, "relative overflow-hidden p-4 shadow-inner")}>
-                    <div className="pointer-events-none absolute right-0 top-0 h-20 w-20 translate-x-1/4 -translate-y-1/4 rounded-full bg-primary/10 blur-xl" />
+                  <div className={cn(portalPanelNestedClass, "relative overflow-hidden p-4")}>
                     <div className="relative z-10 space-y-3">
                       <div>
                         <div className="flex items-center gap-1">
@@ -580,7 +579,7 @@ export function HiringManagerSessionsList() {
                         <p className="mt-0.5 text-[11px] text-muted-foreground">{selectedCampaign.role}</p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-2.5 dark:border-white/5">
+                      <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-2.5">
                         <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                           {selectedCampaign.deliveryMode === "Remote" ? (
                             <Globe className="h-3.5 w-3.5 text-muted-foreground" />
@@ -592,7 +591,7 @@ export function HiringManagerSessionsList() {
                           <span>{selectedCampaign.deliveryMode}</span>
                         </div>
 
-                        <div className="h-3 w-px bg-border/60 dark:bg-white/10" />
+                        <div className="h-3 w-px bg-border/60" />
                         
                         <div className="flex flex-wrap items-center gap-1">
                           {selectedCampaign.assessmentStack.map((as) => (
@@ -777,7 +776,7 @@ export function HiringManagerSessionsList() {
               </div>
 
               {/* Drawer Actions / Submit */}
-              <div className="space-y-3 border-t border-border/60 pt-6 dark:border-white/5">
+              <div className="space-y-3 border-t border-border/60 pt-6">
                 {createError && (
                   <p className={cn(portalAlertErrorClass, "flex animate-in items-center gap-2 text-xs leading-normal duration-200 fade-in")}>
                     <AlertCircle className="h-4 w-4 shrink-0" />
@@ -816,7 +815,7 @@ export function HiringManagerSessionsList() {
       )}
 
       <Tabs value={currentTab} onValueChange={(value) => setCurrentTab(value as any)} className="w-full">
-        <TabsList className="mb-4 h-10 rounded-xl border border-border bg-muted/40 p-1 dark:border-white/10 dark:bg-white/[0.02]">
+        <TabsList className="mb-4 h-10 rounded-xl border border-border bg-muted/40 p-1">
           <TabsTrigger value="all" className="rounded-lg text-xs font-semibold px-4 cursor-pointer">
             All
             <Badge variant="secondary" className={cn("ml-1.5 rounded-full border-none px-1.5 py-0", portalBadgeClass)}>
@@ -864,7 +863,7 @@ export function HiringManagerSessionsList() {
           filteredSessions.map((session) => (
             <PortalPanel key={session.id} className="space-y-4 pl-2">
                 {/* Header row: Badges on left, Candidates count with progress bar on right */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-3.5 dark:border-white/5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/60 pb-3.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge className={[
                       "rounded-md border-none text-[10px] font-semibold px-2 py-0.5",
@@ -885,7 +884,7 @@ export function HiringManagerSessionsList() {
                     </span>
                     {session.candidateLimit > 0 && (
                       <div className="flex items-center gap-2">
-                        <div className="h-1.5 w-16 overflow-hidden rounded-full border border-border/50 bg-muted dark:border-white/5 dark:bg-white/5">
+                        <div className="h-1.5 w-16 overflow-hidden rounded-full border border-border/50 bg-muted">
                           <div 
                             className={portalProgressBarClass}
                             style={{ width: `${Math.min(100, (session.candidateCount / session.candidateLimit) * 100)}%` }}
@@ -938,7 +937,7 @@ export function HiringManagerSessionsList() {
                           size="sm"
                           disabled={deletingSessionId === session.id}
                           onClick={() => deleteSession(session.id, getHmSessionDisplayName(session))}
-                          className="h-8 rounded-lg border-red-500/20 bg-transparent px-3 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300"
+                          className="h-8 rounded-lg border-destructive/20 bg-transparent px-3 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10 hover:text-destructive"
                         >
                           <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                           {deletingSessionId === session.id ? "Deleting…" : "Delete"}

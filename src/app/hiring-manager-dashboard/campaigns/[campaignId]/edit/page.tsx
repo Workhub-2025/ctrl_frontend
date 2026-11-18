@@ -23,7 +23,7 @@ export default async function HiringManagerCampaignEditPage({
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-400/20 bg-red-400/10 p-6 text-sm text-red-100">
+      <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-6 text-sm text-destructive">
         {error}
       </div>
     );

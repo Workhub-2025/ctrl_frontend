@@ -295,7 +295,7 @@ export function HiringManagerSessionCreatePanel({
       {createdSession ? (
         <div className="space-y-5" aria-live="polite">
           <div className={cn(portalPanelClass, "p-5 text-center")}>
-            <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+            <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success/10 text-success">
               <Check className="h-5 w-5" aria-hidden="true" />
             </span>
             <h3 className="mt-3 text-base font-semibold text-foreground">

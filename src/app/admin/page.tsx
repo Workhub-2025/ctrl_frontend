@@ -98,7 +98,7 @@ export default function AdminOverview() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <AdminPanel padding={false} className="overflow-hidden lg:col-span-4">
-          <div className="border-b border-border/40 px-5 py-4 dark:border-white/5">
+          <div className="border-b border-border/40 px-5 py-4">
             <AdminSectionHeader
               title="Hiring-manager seat capacity"
               description="Active hiring-manager occupants versus contracted reusable seats."
@@ -138,7 +138,7 @@ export default function AdminOverview() {
         </AdminPanel>
 
         <AdminPanel padding={false} className="overflow-hidden lg:col-span-3">
-          <div className="border-b border-border/40 px-5 py-4 dark:border-white/5">
+          <div className="border-b border-border/40 px-5 py-4">
             <AdminSectionHeader
               title="Recent client activity"
               description="Latest client records returned by the platform API."

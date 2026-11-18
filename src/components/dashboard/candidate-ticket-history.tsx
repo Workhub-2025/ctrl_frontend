@@ -270,7 +270,7 @@ export function CandidateTicketHistory({
         />
 
         <PortalPanel padding={false}>
-          <div className="flex items-center gap-3 border-b border-border/40 p-5 dark:border-white/5">
+          <div className="flex items-center gap-3 border-b border-border/40 p-5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
               <TicketCheck className="h-[18px] w-[18px]" aria-hidden="true" />
             </div>

@@ -768,7 +768,7 @@ export function HiringManagerCampaignDetailView({
                                 <span
                                   className={cn(
                                     "h-2 w-2 shrink-0 rounded-full",
-                                    hasJoined ? "bg-emerald-500" : "bg-muted-foreground/30"
+                                    hasJoined ? "bg-success" : "bg-muted-foreground/30"
                                   )}
                                   aria-hidden="true"
                                 />

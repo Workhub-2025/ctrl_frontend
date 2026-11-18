@@ -220,7 +220,7 @@ export function HiringManagerCampaignsList() {
                 ) : null}
                 <Button
                   variant="outline"
-                  className="group h-9 rounded-md border-border bg-background/50 px-3.5 text-xs font-medium text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30 dark:border-white/10 dark:bg-white/[0.02] dark:hover:!bg-white/[0.08] dark:hover:!text-white"
+                  className="group h-9 rounded-md border-border bg-background/50 px-3.5 text-xs font-medium text-foreground transition-colors hover:!bg-muted hover:!text-foreground hover:border-primary/30"
                   asChild
                 >
                   <Link href={`/hiring-manager-dashboard/campaigns/${campaign.id}`}>

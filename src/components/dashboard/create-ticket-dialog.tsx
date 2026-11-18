@@ -227,7 +227,7 @@ export function CreateTicketDialog({
                 Category <span className="text-destructive">*</span>
               </label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary dark:border-white/10 dark:bg-white/[0.02]">
+                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,7 +259,7 @@ export function CreateTicketDialog({
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Brief summary of the issue"
                 maxLength={200}
-                className="h-10 rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
+                className="h-10 rounded-lg border-border bg-background focus-visible:ring-primary"
               />
               <div className="flex items-center justify-between gap-3">
                 {fieldErrors.subject ? (
@@ -290,7 +290,7 @@ export function CreateTicketDialog({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Please describe the issue in detail (min. 20 characters)"
                 rows={5}
-                className="resize-none rounded-lg border-border bg-background focus-visible:ring-primary dark:border-white/10 dark:bg-white/[0.02]"
+                className="resize-none rounded-lg border-border bg-background focus-visible:ring-primary"
               />
               <div className="flex items-center justify-between gap-3">
                 {fieldErrors.description ? (
@@ -321,7 +321,7 @@ export function CreateTicketDialog({
                 Priority
               </label>
               <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary dark:border-white/10 dark:bg-white/[0.02]">
+                <SelectTrigger className="h-10 rounded-lg border-border bg-background focus:ring-primary">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -342,7 +342,7 @@ export function CreateTicketDialog({
               <div className="flex flex-wrap gap-2">
                 <Badge
                   variant="outline"
-                  className="pointer-events-none max-w-full truncate rounded-lg border-border bg-muted/50 px-3 py-1.5 font-mono text-xs text-muted-foreground dark:border-white/10 dark:bg-white/5"
+                  className="pointer-events-none max-w-full truncate rounded-lg border-border bg-muted/50 px-3 py-1.5 font-mono text-xs text-muted-foreground"
                 >
                   {pageContext || "/"}
                 </Badge>

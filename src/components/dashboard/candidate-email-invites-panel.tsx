@@ -371,7 +371,7 @@ export function CandidateEmailInvitesPanel({
   return (
     <div className={cn(portalPanelClass, "space-y-4 rounded-2xl p-4", className)}>
       {supportsOfflineSheets ? (
-        <div className="flex border-b border-white/5 pb-1 gap-2">
+        <div className="flex border-b border-border/40 pb-1 gap-2">
           <button
             type="button"
             onClick={() => {
@@ -456,13 +456,13 @@ export function CandidateEmailInvitesPanel({
                 }}
                 disabled={disabled || remainingSeats === 0}
                 aria-invalid={Boolean(inviteError)}
-                className="rounded-lg border-white/10 bg-white/[0.02] text-white"
+                className="rounded-lg border-border/60 bg-muted/20 text-foreground"
               />
             </div>
             <Button
               type="button"
               variant="outline"
-              className="relative z-10 w-full shrink-0 rounded-lg border-white/10 sm:w-auto"
+              className="relative z-10 w-full shrink-0 rounded-lg border-border/60 sm:w-auto"
               onClick={() => addInviteEmails(inviteEmailInput)}
               disabled={!canAddFromInput}
             >
@@ -514,10 +514,10 @@ export function CandidateEmailInvitesPanel({
               {isSendingInvites ? "Sending invites…" : "Send invites"}
             </Button>
             {inviteFeedback && activeTab === "email" ? (
-              <p className="text-xs text-emerald-400">{inviteFeedback}</p>
+              <p className="text-xs text-success">{inviteFeedback}</p>
             ) : null}
             {inviteError && activeTab === "email" ? (
-              <p className="text-xs text-red-400">{inviteError}</p>
+              <p className="text-xs text-destructive">{inviteError}</p>
             ) : null}
           </div>
         </>
@@ -551,7 +551,7 @@ export function CandidateEmailInvitesPanel({
                   )
                 }
                 disabled={disabled || isPreparingOffline}
-                className="rounded-lg border-white/10 bg-white/[0.02] text-white"
+                className="rounded-lg border-border/60 bg-muted/20 text-foreground"
               />
             </div>
             <Button
@@ -569,8 +569,8 @@ export function CandidateEmailInvitesPanel({
             </Button>
           </div>
 
-          {inviteFeedback ? <p className="text-xs text-emerald-400">{inviteFeedback}</p> : null}
-          {inviteError ? <p className="text-xs text-red-400">{inviteError}</p> : null}
+          {inviteFeedback ? <p className="text-xs text-success">{inviteFeedback}</p> : null}
+          {inviteError ? <p className="text-xs text-destructive">{inviteError}</p> : null}
 
           {offlineMaterial ? (
             <div className="space-y-4 rounded-xl border border-border bg-muted/10 p-4">

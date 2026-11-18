@@ -141,7 +141,7 @@ export default function InviteAdminPage() {
 
       {error ? <AdminAlert>{error}</AdminAlert> : null}
       {success ? (
-        <AdminAlert className="border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300">
+        <AdminAlert className="border-success/30 bg-success/5 text-foreground">
           {success}
         </AdminAlert>
       ) : null}

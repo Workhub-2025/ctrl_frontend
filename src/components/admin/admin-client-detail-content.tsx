@@ -449,7 +449,7 @@ export function AdminClientDetailContent() {
             />
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" className="h-9 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300">
+                <Button variant="outline" className="h-9 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete Client
                 </Button>
@@ -493,11 +493,11 @@ export function AdminClientDetailContent() {
                       Warning: all campaigns, candidate sessions, attempts, and results associated with this seat
                       (<strong className="text-foreground">{downgradeSeatInfo?.name}</strong>) will be deleted.
                     </p>
-                    <p className="font-semibold text-amber-500">
+                    <p className="font-semibold text-warning">
                       Export the affected candidates, campaigns, sessions, and scoring details before confirming.
                       This data will be permanently removed.
                     </p>
-                    <p className="font-semibold text-amber-500">
+                    <p className="font-semibold text-warning">
                       Important: Candidate user accounts themselves will NOT be deleted, as they may be registered in other campaigns.
                     </p>
                     <p>

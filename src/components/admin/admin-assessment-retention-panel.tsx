@@ -105,7 +105,7 @@ export function AdminAssessmentRetentionPanel({
       />
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      {notice ? <p className="text-sm text-emerald-600 dark:text-emerald-400">{notice}</p> : null}
+      {notice ? <p className="text-sm text-success">{notice}</p> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1">
@@ -126,7 +126,7 @@ export function AdminAssessmentRetentionPanel({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 p-4 dark:border-white/10">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 p-4">
         <div className="space-y-1">
           <Label htmlFor="use-platform-retention" className="text-sm font-semibold text-foreground">
             Use platform default

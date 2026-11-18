@@ -69,8 +69,8 @@ export function PortalEntityHeader({
 const statusStyles = {
   neutral: "border-border bg-muted/40 text-foreground",
   active: "border-primary/35 bg-primary/10 text-primary",
-  attention: "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200",
-  complete: "border-emerald-500/35 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200",
+  attention: "border-warning/40 bg-warning/10 text-foreground",
+  complete: "border-success/35 bg-success/10 text-foreground",
   critical: "border-destructive/40 bg-destructive/10 text-destructive",
 } as const;
 
@@ -135,7 +135,7 @@ export function PortalWorkQueue({
       <div className={cn(portalPanelClass, "overflow-hidden border-l-2 border-l-primary/70")}>
         {items.length === 0 ? (
           <div className="flex min-h-28 items-start gap-3 p-5" role="status">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" />
             <div>
               <h3 className="text-sm font-semibold text-foreground">{emptyTitle}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{emptyDescription}</p>

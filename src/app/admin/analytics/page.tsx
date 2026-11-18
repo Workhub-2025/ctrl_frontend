@@ -233,17 +233,17 @@ export default function AdminAnalyticsPage() {
                     {hasValue ? (
                       <div className="flex w-full flex-col justify-end">
                         <div
-                          className="w-full bg-emerald-500/80"
+                          className="w-full bg-success/80"
                           style={{ height: `${paidHeight}%` }}
                           title={`Paid ${money(month.paidPence)}`}
                         />
                         <div
-                          className="w-full bg-sky-500/70"
+                          className="w-full bg-info/70"
                           style={{ height: `${invoiceHeight}%` }}
                           title={`Invoice sent ${money(month.invoiceSentPence)}`}
                         />
                         <div
-                          className="w-full bg-amber-400/80"
+                          className="w-full bg-warning/80"
                           style={{ height: `${requestedHeight}%` }}
                           title={`Requested ${money(month.requestedPence)}`}
                         />
@@ -260,15 +260,15 @@ export default function AdminAnalyticsPage() {
 
           <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500/80" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-success/80" />
               Paid
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-sky-500/70" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-info/70" />
               Invoice sent
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-sm bg-amber-400/80" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-warning/80" />
               Requested
             </span>
           </div>
@@ -302,12 +302,12 @@ export default function AdminAnalyticsPage() {
                       className={cn(
                         "h-full rounded-full",
                         stage.status === "paid"
-                          ? "bg-emerald-500"
+                          ? "bg-success"
                           : stage.status === "invoice_sent"
-                            ? "bg-sky-500"
+                            ? "bg-info"
                             : stage.status === "requested"
-                              ? "bg-amber-400"
-                              : "bg-rose-500"
+                              ? "bg-warning"
+                              : "bg-destructive"
                       )}
                       style={{ width: `${percent}%` }}
                     />

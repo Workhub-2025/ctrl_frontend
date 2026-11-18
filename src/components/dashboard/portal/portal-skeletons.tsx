@@ -20,7 +20,7 @@ export function Bone({ className }: { className?: string }) {
       className={cn(
         // bg-muted sits too close to the dark card colour to read, so dark
         // mode lifts the shape off the card instead.
-        "block rounded-md bg-muted motion-safe:animate-pulse dark:bg-white/[0.08]",
+        "block rounded-md bg-muted motion-safe:animate-pulse",
         className
       )}
     />

@@ -65,7 +65,7 @@ export function PlatformCatalogueSyncPanel() {
       ) : null}
 
       {result ? (
-        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm text-foreground">
+        <div className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-foreground">
           <p className="font-medium">Catalogue synced successfully</p>
           {typeof result.synced === "number" ? (
             <p className="mt-1 text-muted-foreground">{result.synced} catalogue rows updated.</p>
