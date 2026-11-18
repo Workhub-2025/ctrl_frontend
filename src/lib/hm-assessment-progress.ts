@@ -28,6 +28,13 @@ export type FirebaseAssignmentAssessmentReport = Readonly<{
   configuredThreshold?: number;
   integrityEventCount?: number;
   integrityScore?: number | null;
+  integritySignals?: {
+    focusViolations: number;
+    networkDrops: number;
+    telemetryMissingMinutes: number;
+    pageHiddenMinutes: number;
+    flags: readonly string[];
+  };
   /** Scoring keeps failing; surfaced so a stuck attempt is not invisible. */
   scoringStalled?: boolean;
   competencyScores?: ReadonlyArray<{
@@ -129,6 +136,7 @@ export function mapFirebaseReportToHmResult(
       typeof result.integrityEventCount === "number"
         ? result.integrityEventCount
         : null,
+    integritySignals: result.integritySignals ?? null,
     metrics,
     rawData: null,
   };

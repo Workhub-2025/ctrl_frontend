@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
-import { ChevronDown } from "lucide-react";
+import { AlertTriangle, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAssessmentUiPlugin } from "@/assessments/plugins/registry";
 import { AssessmentReportBreakdown } from "@/assessments/plugins/report";
@@ -11,6 +11,29 @@ import { AssessmentAbandonedActions } from "@/components/dashboard/assessment-ab
 import type { HiringManagerCandidateReport } from "@/types/hiring-manager.types";
 
 const figure = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? new Intl.NumberFormat("en-GB", {maximumFractionDigits: 1}).format(value) : typeof value === "string" ? value : "—";
+type ReportResult = HiringManagerCandidateReport["results"][number];
+
+/**
+ * Lockdown signals for one assessment, kept apart from the score. Flags point
+ * at a page that sent no visibility report or reported itself hidden: possible
+ * signs of a modified page, so they are shown for review, never scored.
+ */
+function IntegritySummary({ result }: { result: ReportResult }) {
+  const signals = result.integritySignals;
+  if (result.integrityEventCount == null && !signals) return null;
+  const counts = [
+    result.integrityEventCount != null ? `${result.integrityEventCount} monitoring event${result.integrityEventCount === 1 ? "" : "s"}` : null,
+    signals ? `${signals.focusViolations} counted focus violation${signals.focusViolations === 1 ? "" : "s"}` : null,
+    signals ? `${signals.networkDrops} connection drop${signals.networkDrops === 1 ? "" : "s"}` : null,
+  ].filter(Boolean);
+  return <div className="space-y-2">
+    <p className="text-xs text-muted-foreground">Integrity: {counts.join(" · ")}. Reviewed separately from assessment performance.</p>
+    {signals && signals.flags.length > 0 && <ul aria-label="Integrity flags for review" className="space-y-1 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-foreground">
+      {signals.flags.map(flag => <li key={flag} className="flex gap-2"><AlertTriangle aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />{flag}</li>)}
+    </ul>}
+  </div>;
+}
+
 export function CandidateResultsView({report, onRefresh, actions, evidenceUrl}: {report: HiringManagerCandidateReport; onRefresh: () => void; actions?: ReactNode;
   /** Passed through to the responses panel; the public demo report supplies an unauthenticated endpoint. */
   evidenceUrl?: ComponentProps<typeof CandidateResponses>["evidenceUrl"]}) {
@@ -90,7 +113,7 @@ export function CandidateResultsView({report, onRefresh, actions, evidenceUrl}: 
           {open && <div id={`breakdown-${id}`} className="space-y-5 border-t border-border p-4 sm:p-5">
             {scored && supported ? <AssessmentReportBreakdown slug={result.assessment} result={result} /> : <p className="text-sm text-muted-foreground">{scored ? "Detailed evidence unavailable for this report version. The recorded score is shown above." : result.assessmentStatus === "marking-failed" ? "Marking could not be completed. This is a technical issue, not a failed assessment." : result.metrics?.scoringStalled ? "Marking is delayed and will retry. This report will refresh when the result is ready." : `Status: ${reportStatus(result)}. A scoring breakdown will appear when a result is available.`}</p>}
             <p className="text-xs text-muted-foreground">{typeof result.weight === "number" ? `Campaign weight: ${figure(result.weight)}%. ` : ""}{result.metrics?.releaseVersion ? `Assessment version ${result.metrics.releaseVersion}. ` : ""}{result.metrics?.revision ? `Result revision ${result.metrics.revision}.` : ""}</p>
-            {result.integrityEventCount != null && <p className="text-xs text-muted-foreground">Monitoring events: {result.integrityEventCount}. These are separate from assessment performance.</p>}
+            <IntegritySummary result={result} />
             {scored && result.campaignAssessmentId && <CandidateResponses assignmentId={report.sessionId} result={result} onResultChanged={onRefresh} {...(evidenceUrl ? {evidenceUrl} : {})} />}
             {result.assessmentStatus === "abandoned" && <AssessmentAbandonedActions candidateSessionDocumentId={report.sessionId} assessmentSlug={result.assessment} assessmentLabel={result.title ?? result.assessment} candidateName={report.candidate.name} candidateEmail={report.candidate.email} campaignName={report.campaign.name} snapshot={null} contentVersion={typeof result.metrics?.releaseVersion === "string" ? result.metrics.releaseVersion : null} onRecovered={onRefresh} />}
           </div>}

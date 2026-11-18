@@ -31,6 +31,14 @@ export type HiringManagerAssessmentResult = {
   durationSeconds?: number | null;
   integrityScore?: number | null;
   integrityEventCount?: number | null;
+  /** Server-enforced lockdown signals, reported apart from the score. */
+  integritySignals?: {
+    focusViolations: number;
+    networkDrops: number;
+    telemetryMissingMinutes: number;
+    pageHiddenMinutes: number;
+    flags: readonly string[];
+  } | null;
   metrics?: Record<string, unknown> | null;
   rawData?: Record<string, any> | null;
 };
