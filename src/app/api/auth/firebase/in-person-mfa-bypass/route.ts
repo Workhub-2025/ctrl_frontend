@@ -94,7 +94,8 @@ export async function POST(request: Request) {
     const domainApi = createDomainApi();
     const issued = await domainApi.issueInPersonCandidateCustomToken({
       email,
-      accessCode,
+      password,
+      ...(accessCode ? { accessCode } : {}),
     });
     const response = NextResponse.json(
       { data: { customToken: issued.customToken } },

@@ -211,8 +211,13 @@ export function createFirebaseDomainApi(
       });
     },
 
+    /**
+     * The domain API re-checks `password` itself before minting a token that
+     * skips the second factor; it never trusts this BFF's own check.
+     */
     issueInPersonCandidateCustomToken(body: {
       email: string;
+      password: string;
       accessCode?: string;
     }): Promise<FirebaseInPersonCandidateCustomToken> {
       return transport.request({

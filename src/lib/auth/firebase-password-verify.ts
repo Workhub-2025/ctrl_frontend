@@ -30,7 +30,6 @@ export async function firebasePasswordAccepted(input: {
   const body = (await response.json().catch(() => ({}))) as {
     idToken?: string;
     mfaPendingCredential?: string;
-    error?: { message?: string };
   };
 
   if (typeof body.mfaPendingCredential === "string" && body.mfaPendingCredential.length > 0) {
@@ -40,14 +39,7 @@ export async function firebasePasswordAccepted(input: {
     return true;
   }
 
-  const message = body.error?.message ?? "";
-  if (
-    message.includes("SECOND_FACTOR") ||
-    message.includes("MFA") ||
-    message.includes("MULTI_FACTOR")
-  ) {
-    return true;
-  }
-
+  // Only an explicit success (an ID token or a pending second factor) counts.
+  // An error is a rejection, whatever its message says.
   return false;
 }
