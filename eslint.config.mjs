@@ -14,6 +14,8 @@ const compat = new FlatCompat({
 const eslintConfig = [
   {
     ignores: [
+      // Local Claude sessions keep full git worktrees here.
+      ".claude/**",
       ".next/**",
       ".next-*/**",
       "coverage/**",
