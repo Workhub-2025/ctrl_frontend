@@ -56,7 +56,9 @@ playwright-report/
 playwright.config.*
 playwright/.cache/
 blob-report/
-e2e/
+# e2e/ stays local-only, except the committed smoke suite (run with npm run test:smoke).
+e2e/*
+!e2e/smoke/
 tests/
 
 # -------------------------------
@@ -249,7 +251,6 @@ task.md
 # -------------------------------
 # Playwright / local-only e2e (not used by Vercel)
 # -------------------------------
-e2e/
 playwright.config.ts
 playwright-report/
 test-results/
