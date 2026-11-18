@@ -7,6 +7,7 @@ import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
 import { useDeferredAdvance } from "../shared/use-deferred-advance";
 import type { LaunchEnvelope } from "../types";
+import { useStageTimer } from "../shared/stage-timer";
 
 type Passage = { id: string; level: "easy" | "intermediate" | "advanced"; number: number; title: string; sourceText: string; durationSeconds?: number };
 type TypingEvent = { elapsedMs: number; type: "insert" | "delete"; position: number; character?: string };
@@ -73,6 +74,12 @@ function TimedTypingWorkspace({
   const remaining = state.startedAt === null
     ? durationSeconds
     : Math.max(0, durationSeconds - Math.floor((now - state.startedAt) / 1_000));
+  // In the assessed section the clock sits in the shell header.
+  useStageTimer(
+    practice || state.complete
+      ? null
+      : { seconds: remaining, label: state.startedAt === null ? "Starts with first key" : "Passage time" },
+  );
   const incorrectCount = useMemo(() => [...state.typedText].filter((character, index) => character !== passage.sourceText[index]).length, [passage.sourceText, state.typedText]);
 
   useEffect(() => {
@@ -132,9 +139,10 @@ function TimedTypingWorkspace({
     <section className="border border-border bg-card" aria-labelledby={`${passage.id}-title`}>
       <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{practice ? "Unscored practice" : `${passage.level} passage`}</p>
-          <h1 id={`${passage.id}-title`} className="mt-1 text-lg font-semibold">{passage.title}</h1>
+          <h1 id={`${passage.id}-title`} className="text-lg font-semibold">{passage.title}</h1>
+          <p className="text-sm capitalize text-muted-foreground">{practice ? "Unscored practice" : `${passage.level} passage`}</p>
         </div>
+        {practice ? (
         <div className="text-right">
           <p className="text-xs text-muted-foreground">{state.startedAt === null ? "Starts with first key" : "Time remaining"}</p>
           <p className="mt-1 flex items-center justify-end gap-2 font-mono text-xl font-semibold tabular-nums">
@@ -142,14 +150,15 @@ function TimedTypingWorkspace({
             {String(Math.floor(remaining / 60)).padStart(2, "0")}:{String(remaining % 60).padStart(2, "0")}
           </p>
         </div>
+        ) : null}
       </div>
 
       <div className="p-5 sm:p-6">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <label htmlFor={`${passage.id}-entry`} className="text-sm font-semibold">Typing response</label>
-            <p id={`${passage.id}-instructions`} className="mt-1 text-xs leading-5 text-muted-foreground">
-              Type the target passage directly into this field. Keep a steady rhythm; you can use Backspace to correct your latest entry.
+            <label htmlFor={`${passage.id}-entry`} className="sr-only">Typing response</label>
+            <p id={`${passage.id}-instructions`} className="text-sm leading-6 text-muted-foreground">
+              Type over the passage. Backspace corrects your latest entry.
             </p>
           </div>
           <div className="flex gap-4 text-xs text-muted-foreground" aria-hidden="true">
@@ -160,7 +169,7 @@ function TimedTypingWorkspace({
 
         <p id={`${passage.id}-source`} className="sr-only">Target passage: {passage.sourceText}</p>
         <div
-          className="relative min-h-[360px] cursor-text overflow-hidden border border-border bg-background p-5 font-mono text-base leading-8 focus-within:border-ring focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background sm:p-6 sm:text-lg sm:leading-9"
+          className="relative min-h-[360px] cursor-text overflow-hidden border border-border bg-background p-5 font-mono text-base leading-8 focus-within:border-primary sm:p-6 sm:text-lg sm:leading-9"
           onClick={() => textareaRef.current?.focus()}
         >
           <p className="whitespace-pre-wrap break-words" aria-hidden="true">

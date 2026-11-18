@@ -266,3 +266,9 @@ wrangler.toml.local
 # Docs (kept locally; not part of the deployed platform)
 # -------------------------------
 docs/
+
+# -------------------------------
+# Assessment demo data (live item bank, candidate-safe form; never commit)
+# Rebuild: see scripts/build-assessment-demo-fixtures.mts
+# -------------------------------
+.demo-fixtures/

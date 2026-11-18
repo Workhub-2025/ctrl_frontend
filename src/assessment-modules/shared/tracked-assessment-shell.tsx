@@ -41,6 +41,7 @@ import {
 } from "@/lib/assessment-runtime-client";
 import { CandidateSessionService } from "@/services/candidate-session.service";
 import type { LaunchEnvelope } from "../types";
+import { StageTimerContext, formatClock, type StageTimer } from "./stage-timer";
 
 type Receipt = { receiptId: string; status: "received"; submittedAt: string };
 type LockReason = NonNullable<ReturnType<typeof closedAttemptReason>>;
@@ -84,12 +85,20 @@ type Props<TContent, TState> = {
   restartNoun: string;
   canManuallyAdvance?: (stageIndex: number) => boolean;
   continueLabel?: (stageIndex: number) => string;
+  /**
+   * Applied to the state when the candidate presses continue, before it is
+   * validated and saved: lets the continue button stand for a stage's own
+   * "confirm" step instead of a second button.
+   */
+  beforeAdvance?: (stageIndex: number, state: TState) => TState;
 };
 
-function formatRemaining(seconds: number) {
-  const safe = Math.max(0, seconds);
-  return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
-}
+/** Stages named in the header rather than counted ("Briefing", "Break"). */
+const UNCOUNTED_STAGE_KINDS = new Set([
+  "briefing",
+  "custom:timed-briefing",
+  "custom:countdown-break",
+]);
 
 function IntegrityAlert({
   open,
@@ -192,6 +201,7 @@ export function TrackedAssessmentShell<TContent, TState>(
     restartNoun,
     canManuallyAdvance = () => true,
     continueLabel = () => "Save and continue",
+    beforeAdvance,
   } = props;
   const [restoredProgress] = useState(() =>
     restoreAssessmentProgress(
@@ -225,6 +235,7 @@ export function TrackedAssessmentShell<TContent, TState>(
   const [replacementLaunch, setReplacementLaunch] =
     useState<LaunchEnvelope<TContent> | null>(null);
   const [timerAnnouncement, setTimerAnnouncement] = useState("");
+  const [stageTimer, setStageTimer] = useState<StageTimer | null>(null);
   const startedAt = useRef(Date.now());
   const revisionRef = useRef(launch.progressRevision);
   const stateRef = useRef<TState>(restoredProgress.state);
@@ -526,7 +537,9 @@ export function TrackedAssessmentShell<TContent, TState>(
   }, [launch.integrity, locked, receipt, recordEvent]);
 
   const next = useCallback(async (nextState?: TState) => {
-    const stateToSave = nextState ?? state;
+    const stateToSave = beforeAdvance
+      ? beforeAdvance(stageIndex, nextState ?? state)
+      : (nextState ?? state);
     const validationError = validateStage(stageIndex, stateToSave);
     if (validationError) {
       setError(validationError);
@@ -546,6 +559,7 @@ export function TrackedAssessmentShell<TContent, TState>(
       revisionRef.current = saved.progressRevision;
       if (draft !== undefined) lastDraft.current = JSON.stringify(draft);
       setRevision(saved.progressRevision);
+      if (stateToSave !== state) setState(stateToSave);
       setStageIndex(nextIndex);
       setError(null);
     } catch (saveError) {
@@ -585,7 +599,7 @@ export function TrackedAssessmentShell<TContent, TState>(
       busy.current = false;
       setSaving(false);
     }
-  }, [closeFromServer, draftFor, launch.attemptId, stageIndex, state, validateStage]);
+  }, [beforeAdvance, closeFromServer, draftFor, launch.attemptId, stageIndex, state, validateStage]);
 
   const submit = useCallback(async (auto = false) => {
     if (locked || autoSubmitted || receipt) return;
@@ -683,68 +697,102 @@ export function TrackedAssessmentShell<TContent, TState>(
 
   const reviewIndex = launch.stageGraph.nodes.length - 2;
   const currentNode = launch.stageGraph.nodes[stageIndex];
-  const visibleStageCount = reviewIndex + 1;
-  const stageProgress = Math.min(100, ((stageIndex + 1) / visibleStageCount) * 100);
+  // Count only the parts a candidate works through: briefings, breaks and
+  // the review page are named instead, so "3 of 20" matches the questions.
+  const workIndexes = launch.stageGraph.nodes
+    .slice(0, reviewIndex)
+    .flatMap((node, index) => (UNCOUNTED_STAGE_KINDS.has(node.kind) ? [] : [index]));
+  const workPosition = workIndexes.indexOf(stageIndex);
+  // Briefings, breaks and review are already named by the stage title.
+  const progressLabel = workPosition >= 0 ? `${workPosition + 1} of ${workIndexes.length}` : null;
+  const stageProgress = reviewIndex > 0 ? Math.min(100, (stageIndex / reviewIndex) * 100) : 0;
+  const durationMinutes = (launch.module as { durationMinutes?: { minimum: number; maximum: number } })
+    ?.durationMinutes;
+  const clock = stageTimer
+    ? { label: stageTimer.label, value: formatClock(stageTimer.seconds), tone: "text-foreground", seconds: stageTimer.seconds }
+    : timerMode === "enforced"
+      ? {
+          label: "Time left",
+          value: formatClock(remaining),
+          seconds: remaining,
+          tone:
+            remaining <= 60
+              ? "text-destructive"
+              : remaining <= 300
+                ? "text-warning"
+                : "text-foreground",
+        }
+      : timerMode === "display_only"
+        ? {
+            label: "Expected",
+            value: `${durationMinutes?.minimum ?? 5}–${durationMinutes?.maximum ?? 10} min`,
+            seconds: null,
+            tone: "text-foreground",
+          }
+        : null;
+  const advanceHeld = Boolean(stageTimer?.holdsAdvance && stageTimer.seconds > 0);
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border bg-card">
-        <div className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-muted-foreground">{title}</p>
-            <p className="truncate text-sm font-semibold">{currentNode?.title ?? "Assessment"}</p>
+    <main className="flex min-h-[100dvh] flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border bg-background">
+        <div className="mx-auto flex min-h-16 max-w-6xl items-center gap-4 px-4 sm:px-6">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs text-muted-foreground">{title}</p>
+            <p className="truncate text-sm font-semibold">
+              {currentNode?.title ?? "Assessment"}
+              {progressLabel ? (
+                <span className="ml-2 font-normal tabular-nums text-muted-foreground">
+                  {progressLabel}
+                </span>
+              ) : null}
+            </p>
           </div>
-          <div className="flex shrink-0 items-center gap-3 text-sm sm:gap-5">
-            <span className="hidden items-center gap-2 text-muted-foreground sm:flex">
-              <RadioTower className="h-4 w-4 text-primary" aria-hidden="true" /> Monitored
-            </span>
-            {timerMode === "stage_owned" ? null : timerMode === "display_only" ? (
-              <span className="flex items-center justify-end gap-2 text-sm font-medium text-muted-foreground">
-                <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                About {(launch.module as { durationMinutes?: { minimum: number; maximum: number } })?.durationMinutes?.minimum ?? 5}–{(launch.module as { durationMinutes?: { minimum: number; maximum: number } })?.durationMinutes?.maximum ?? 10} min
-              </span>
-            ) : (
+          <span
+            className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex"
+            title="This attempt is monitored"
+          >
+            <RadioTower className="h-3.5 w-3.5" aria-hidden="true" /> Monitored
+          </span>
+          {clock ? (
+            <div className="flex min-w-[6.5rem] flex-col items-end border-l border-border pl-4">
+              <span className="text-[11px] leading-4 text-muted-foreground">{clock.label}</span>
               <span
-                className="flex min-w-24 items-center justify-end gap-2 font-mono text-base font-semibold tabular-nums"
-                aria-label={`${remaining} seconds remaining`}
+                className={`flex items-center gap-1.5 font-mono text-lg font-semibold leading-6 tabular-nums ${clock.tone}`}
+                aria-label={
+                  clock.seconds === null ? clock.value : `${clock.label}: ${clock.seconds} seconds`
+                }
               >
                 <Clock3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-                {formatRemaining(remaining)}
+                {clock.value}
               </span>
-            )}
-            <AccessibilityDropdown
-              settings={accessibilitySettings}
-              updateSettings={updateAccessibilitySettings}
-              resetSettings={resetAccessibilitySettings}
-              description="Adjust the assessment display and reading preferences."
-            />
-            <span className="sr-only" aria-live="polite" aria-atomic="true">
-              {timerAnnouncement}
-            </span>
-          </div>
-        </div>
-        <div className="border-t border-border bg-background">
-          <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-            <p className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">
-              Step {Math.min(stageIndex + 1, visibleStageCount)} of {visibleStageCount}
-            </p>
-            <div
-              className="h-1.5 flex-1 overflow-hidden bg-muted"
-              role="progressbar"
-              aria-label="Assessment progress"
-              aria-valuemin={1}
-              aria-valuemax={visibleStageCount}
-              aria-valuenow={Math.min(stageIndex + 1, visibleStageCount)}
-            >
-              <div className="h-full bg-primary transition-[width] duration-200 motion-reduce:transition-none" style={{ width: `${stageProgress}%` }} />
             </div>
-            <p className="hidden shrink-0 text-xs text-muted-foreground md:block">
-              Release {launch.module.releaseVersion} · Attempt {launch.attemptId.slice(0, 8)}
-            </p>
-          </div>
+          ) : null}
+          <AccessibilityDropdown
+            settings={accessibilitySettings}
+            updateSettings={updateAccessibilitySettings}
+            resetSettings={resetAccessibilitySettings}
+            description="Adjust the assessment display and reading preferences."
+          />
+          <span className="sr-only" aria-live="polite" aria-atomic="true">
+            {timerAnnouncement}
+          </span>
+        </div>
+        <div
+          className="h-0.5 bg-muted"
+          role="progressbar"
+          aria-label="Assessment progress"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(stageProgress)}
+          aria-valuetext={progressLabel ?? currentNode?.title}
+        >
+          <div
+            className="h-full bg-primary transition-[width] duration-200 motion-reduce:transition-none"
+            style={{ width: `${stageProgress}%` }}
+          />
         </div>
       </header>
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-7">
-        <div className="mx-auto max-w-6xl">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pt-6 sm:px-6 sm:pt-8">
+        <div className="flex flex-1 flex-col">
             {error ? (
               <div
                 role="alert"
@@ -830,42 +878,43 @@ export function TrackedAssessmentShell<TContent, TState>(
               </section>
             ) : (
               <>
-                {renderStage({ stageIndex, state, setState, advance: next, isSaving: saving }, launch.content)}
-                <div className="sticky bottom-0 z-20 mt-6 flex min-h-16 items-center justify-between gap-4 border border-border bg-card px-4 py-3">
-                  <p className="hidden text-xs text-muted-foreground sm:block">
-                    Progress is saved before the next step opens.
-                  </p>
+                <div className="pb-8">
+                  <StageTimerContext.Provider value={setStageTimer}>
+                    {renderStage({ stageIndex, state, setState, advance: next, isSaving: saving }, launch.content)}
+                  </StageTimerContext.Provider>
+                </div>
+                <div className="sticky bottom-0 z-20 -mx-4 mt-auto flex min-h-16 items-center justify-end gap-4 border-t border-border bg-background px-4 py-3 sm:-mx-6 sm:px-6">
                   {stageIndex < reviewIndex && canManuallyAdvance(stageIndex) ? (
                     <Button
-                      className="ml-auto min-h-11 rounded-sm px-6"
+                      className="min-h-11 rounded-sm px-6"
                       onClick={() => void next()}
-                      disabled={saving || locked || timeExpired}
+                      disabled={saving || locked || timeExpired || advanceHeld}
                     >
                       {saving ? (
-                        <Loader2
-                          className="h-4 w-4 animate-spin"
-                          aria-hidden="true"
-                        />
-                      ) : null}{" "}
-                      {continueLabel(stageIndex)}
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                      ) : null}
+                      {advanceHeld && stageTimer
+                        ? `Continue in ${formatClock(stageTimer.seconds)}`
+                        : continueLabel(stageIndex)}
                     </Button>
                   ) : stageIndex === reviewIndex ? (
                     <Button
-                      className="ml-auto min-h-12 rounded-sm px-7"
+                      className="min-h-12 rounded-sm px-7"
                       onClick={() => void submit()}
                       disabled={submitting || locked || timeExpired}
                     >
                       {submitting ? (
-                        <Loader2
-                          className="h-4 w-4 animate-spin"
-                          aria-hidden="true"
-                        />
+                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                       ) : (
                         <FileCheck2 className="h-4 w-4" aria-hidden="true" />
-                      )}{" "}
+                      )}
                       Submit assessment
                     </Button>
-                  ) : <span className="ml-auto text-xs text-muted-foreground">This step advances automatically.</span>}
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      This step moves on automatically.
+                    </span>
+                  )}
                 </div>
               </>
             )}

@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { Check, Headphones, Play, Radio } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { MediaReference } from "../types";
+import { useStageTimer } from "../shared/stage-timer";
 
 export type CallField = {
   id: string;
@@ -118,6 +119,12 @@ export function IncidentWorkspace({
         Math.max(0, reviewSeconds - Math.max(0, (now - reviewStartedAt) / 1_000))
       : null;
   const locked = frozen || reviewRemaining === 0;
+  // The review minute shows in the shell header, like every other clock.
+  useStageTimer(
+    reviewRemaining !== null && !locked
+      ? { seconds: Math.ceil(reviewRemaining), label: "Review time" }
+      : null,
+  );
 
   useEffect(() => {
     if (reviewSeconds === undefined || !reviewStartedAt || frozen) return;
@@ -177,9 +184,9 @@ export function IncidentWorkspace({
 
   return (
     <section className="grid min-h-[560px] border border-border bg-card lg:grid-cols-[320px_minmax(0,1fr)]" aria-labelledby={`${scenario.id}-title`}>
-      <aside className="border-b border-border bg-muted/20 p-5 lg:sticky lg:top-[113px] lg:h-[calc(100vh-145px)] lg:self-start lg:border-b-0 lg:border-r">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{practice ? "Unscored practice" : "Live call"}</p>
-        <h1 id={`${scenario.id}-title`} className="mt-2 text-xl font-semibold">{scenario.title}</h1>
+      <aside className="border-b border-border bg-muted/20 p-5 lg:sticky lg:top-[67px] lg:max-h-[calc(100dvh-67px)] lg:overflow-y-auto lg:self-start lg:border-b-0 lg:border-r">
+        <p className="text-sm text-muted-foreground">{practice ? "Unscored practice" : "Recorded call"}</p>
+        <h1 id={`${scenario.id}-title`} className="mt-1 text-xl font-semibold">{scenario.title}</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">{scenario.context}</p>
 
         <div className="mt-5 border border-border bg-card p-4">
@@ -195,15 +202,30 @@ export function IncidentWorkspace({
                 <source src={mediaItem.url} />
                 Your browser does not support the audio element.
               </audio>
-              <button
-                type="button"
-                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-sm border border-border bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
-                disabled={playback !== "idle"}
-                onClick={() => void startCall()}
-              >
-                {playback === "idle" ? <Play className="h-4 w-4" aria-hidden="true" /> : <Radio className="h-4 w-4" aria-hidden="true" />}
-                {playback === "idle" ? "Start caller audio" : playback === "live" ? "Call in progress" : "Call audio complete"}
-              </button>
+              {playback === "idle" ? (
+                <button
+                  type="button"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-sm bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => void startCall()}
+                >
+                  <Play className="h-4 w-4" aria-hidden="true" /> Start the call
+                </button>
+              ) : (
+                <p
+                  className={`flex min-h-11 items-center gap-2 rounded-sm border px-4 text-sm font-medium ${
+                    playback === "live"
+                      ? "border-destructive/50 bg-destructive/10 text-foreground"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {playback === "live" ? (
+                    <span className="h-2 w-2 rounded-full bg-destructive motion-safe:animate-pulse" aria-hidden="true" />
+                  ) : (
+                    <Radio className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  {playback === "live" ? "Call in progress" : "Call ended"}
+                </p>
+              )}
             </div>
           ) : (
             <p role="alert" className="mt-3 text-sm text-destructive">Audio could not be loaded.</p>
@@ -211,13 +233,12 @@ export function IncidentWorkspace({
           <p className="mt-3 text-xs leading-5 text-muted-foreground">
             {practice
               ? "Use the controls freely while learning the workspace."
-              : "The assessed call plays once without pause or replay. Field timing is recorded against the live playback position."}
+              : "The call plays once, with no pause or replay. Fields open when it starts, and the time of each entry is recorded."}
           </p>
           {reviewRemaining !== null ? (
             <div className="mt-3 border-t border-border pt-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Review time</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">
-                {formatClock(locked ? 0 : Math.ceil(reviewRemaining))}
+              <p className="text-sm font-medium">
+                {locked ? "Record closed" : `Review time ${formatClock(Math.ceil(reviewRemaining))}`}
               </p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 {locked
@@ -286,7 +307,7 @@ export function IncidentWorkspace({
                         </select>
                       ) : field.control === "textarea" ? (
                         <textarea
-                          className="mt-2 min-h-28 w-full rounded-sm border border-border bg-background p-3 font-normal leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="mt-2 min-h-40 w-full rounded-sm border border-border bg-background p-3 font-normal leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                           value={value.fields[field.id] ?? ""}
                           disabled={fieldDisabled}
                           maxLength={2_000}

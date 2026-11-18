@@ -72,59 +72,101 @@ function BestWorstWorkspace({
   return (
     <section className="border border-border bg-card" aria-labelledby={`${scenario.id}-title`}>
       <div className="border-b border-border px-5 py-5 sm:px-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          {practice
-            ? "Unscored practice"
-            : `Scenario ${"number" in scenario ? scenario.number : ""} of ${scenarioTotal ?? ""}`}
+        {practice ? <p className="text-sm text-muted-foreground">Unscored practice</p> : null}
+        <h1 id={`${scenario.id}-title`} className="text-xl font-semibold">{scenario.title}</h1>
+        <p className="mt-3 max-w-[70ch] text-base leading-7 text-foreground">{scenario.stem}</p>
+        <p className="mt-4 flex items-start gap-2 text-sm leading-6 text-muted-foreground">
+          <CircleHelp className="mt-1 h-4 w-4 shrink-0" aria-hidden="true" />
+          Pick the most effective and the least effective response. One response can't be both.
         </p>
-        <h1 id={`${scenario.id}-title`} className="mt-1 text-xl font-semibold">{scenario.title}</h1>
-        <p className="mt-3 max-w-4xl text-sm leading-7 text-foreground">{scenario.stem}</p>
       </div>
 
       <fieldset>
         <legend className="sr-only">Choose the most and least effective responses</legend>
-        <div className="grid grid-cols-[minmax(0,1fr)_72px_72px] border-b border-border bg-muted/30 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:grid-cols-[minmax(0,1fr)_120px_120px] sm:px-6">
-          <span>Response</span>
-          <span className="text-center">Most</span>
-          <span className="text-center">Least</span>
-        </div>
-        <div className="divide-y divide-border">
+        <ul className="divide-y divide-border">
           {scenario.options.map((option) => {
             const best = response.bestOptionId === option.id;
             const worst = response.worstOptionId === option.id;
             return (
-              <div key={option.id} className={`grid grid-cols-[minmax(0,1fr)_72px_72px] items-center px-4 py-4 sm:grid-cols-[minmax(0,1fr)_120px_120px] sm:px-6 ${best || worst ? "bg-primary/5" : ""}`}>
-                <p className="pr-3 text-sm leading-6"><span className="mr-2 font-semibold">{option.id}.</span>{option.label}</p>
-                <label className="grid min-h-11 place-items-center" aria-label={`${option.label}: most effective`}>
-                  <input
-                    type="radio"
+              <li
+                key={option.id}
+                className={`grid gap-3 border-l-2 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6 ${
+                  best ? "border-l-success bg-success/5" : worst ? "border-l-destructive bg-destructive/5" : "border-l-transparent"
+                }`}
+              >
+                <p className="text-sm leading-6">
+                  <span className="mr-2 font-semibold">{option.id}.</span>
+                  {option.label}
+                </p>
+                <div className="grid grid-cols-2 gap-2 sm:w-[19rem]">
+                  <ChoiceButton
                     name={`${scenario.id}-best`}
                     value={option.id}
                     checked={best}
-                    onChange={() => choose("bestOptionId", option.id)}
-                    className="h-5 w-5 accent-primary"
+                    tone="success"
+                    label="Most effective"
+                    accessibleLabel={`${option.id}: most effective`}
+                    onSelect={() => choose("bestOptionId", option.id)}
                   />
-                </label>
-                <label className="grid min-h-11 place-items-center" aria-label={`${option.label}: least effective`}>
-                  <input
-                    type="radio"
+                  <ChoiceButton
                     name={`${scenario.id}-worst`}
                     value={option.id}
                     checked={worst}
-                    onChange={() => choose("worstOptionId", option.id)}
-                    className="h-5 w-5 accent-primary"
+                    tone="destructive"
+                    label="Least effective"
+                    accessibleLabel={`${option.id}: least effective`}
+                    onSelect={() => choose("worstOptionId", option.id)}
                   />
-                </label>
-              </div>
+                </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </fieldset>
-      <div className="flex items-start gap-2 border-t border-border bg-muted/20 px-5 py-3 text-xs leading-5 text-muted-foreground">
-        <CircleHelp className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-        Choose one response in each column. The same response cannot be both most and least effective.
-      </div>
     </section>
+  );
+}
+
+/** A radio input drawn as a full-size button, so the target is the whole label. */
+function ChoiceButton({
+  name,
+  value,
+  checked,
+  tone,
+  label,
+  accessibleLabel,
+  onSelect,
+}: {
+  name: string;
+  value: string;
+  checked: boolean;
+  tone: "success" | "destructive";
+  label: string;
+  accessibleLabel: string;
+  onSelect: () => void;
+}) {
+  const selected =
+    tone === "success"
+      ? "border-success bg-success/15 text-foreground"
+      : "border-destructive bg-destructive/15 text-foreground";
+  return (
+    <label
+      className={`flex min-h-11 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-sm border px-3 text-sm font-medium transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${
+        checked ? selected : "border-border text-muted-foreground hover:border-foreground/40 hover:text-foreground"
+      }`}
+    >
+      <input
+        type="radio"
+        name={name}
+        value={value}
+        checked={checked}
+        onChange={onSelect}
+        aria-label={accessibleLabel}
+        className="sr-only"
+      />
+      {checked ? <Check className="h-4 w-4" aria-hidden="true" /> : null}
+      {label}
+    </label>
   );
 }
 
@@ -165,7 +207,7 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
         stage === 0
           ? "Start scenario 1"
           : stage < scenarioCount
-            ? "Save and open next scenario"
+            ? "Next scenario"
             : "Review responses"
       }
       renderStage={({ stageIndex, state, setState }, content) => {

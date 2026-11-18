@@ -69,9 +69,14 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
         }),
       })}
       continueLabel={(stage) => {
-        if (stage === 0) return "Open Call 1 record";
-        if (stage < captureCount) return `Open Call ${stage + 1} record`;
-        if (stage === captureCount) return "Review call records";
+        // Call titles carry their own catalogue numbers ("Call 2 — …"), so
+        // the buttons count calls in this attempt without echoing a number.
+        if (captureCount === 1) {
+          if (stage === 0) return "Open the call";
+          if (stage === 1) return "Review your record";
+        }
+        if (stage < captureCount) return `Open call ${stage + 1} of ${captureCount}`;
+        if (stage === captureCount) return "Review your records";
         return "Continue";
       }}
       renderStage={({ stageIndex, state, setState, advance }) => {

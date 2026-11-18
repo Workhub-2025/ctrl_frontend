@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { OperationalReadinessPage } from "../shared/operational-readiness-page";
 import { TrackedAssessmentShell } from "../shared/tracked-assessment-shell";
 import type { LaunchEnvelope } from "../types";
+import { useStageTimer } from "../shared/stage-timer";
 
 type Option = { id: string; label: string };
 type Exercise = {
@@ -70,27 +71,33 @@ function Briefing({
     }, 1_000);
     return () => window.clearInterval(timer);
   }, [availableUntil, onRemainingChange]);
+  // Assessed briefings hold the continue button until the clock runs out.
+  useStageTimer(
+    onRemainingChange ? { seconds: remaining, label: "Briefing open", holdsAdvance: true } : null,
+  );
   return (
-    <section className="border border-border bg-card p-7  ">
+    <section className="border border-border bg-card p-6 sm:p-7">
       <div className="flex items-center justify-between gap-4 border-b border-border pb-4 ">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground">
+          <p className="text-sm text-muted-foreground">
             One-time briefing
           </p>
-          <h1 className="mt-2 text-2xl font-semibold">
+          <h1 className="mt-1 text-2xl font-semibold">
             {exercise.briefing.heading}
           </h1>
         </div>
-        <div className="border border-border px-3 py-2 font-mono text-sm">
-          {remaining}s
-        </div>
+        {onRemainingChange ? null : (
+          <div className="border border-border px-3 py-2 font-mono text-sm">
+            {remaining}s
+          </div>
+        )}
       </div>
       <div className="mt-6 space-y-4 text-base leading-8 text-foreground ">
         {exercise.briefing.paragraphs.map((paragraph) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
       </div>
-      <p className="mt-6 border-l-4 border-border bg-muted p-4 text-sm ">
+      <p className="mt-6 border-l-2 border-border pl-4 text-sm text-muted-foreground">
         The briefing is removed when you continue. Notes and clipboard actions
         are not available.
       </p>
@@ -145,11 +152,11 @@ function Interruption({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-border bg-card p-7  ">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+    <section className="border border-border bg-card p-6 sm:p-7">
+      <p className="text-sm text-muted-foreground">
         Interruption task
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">
+      <h1 className="mt-1 text-2xl font-semibold">
         Complete the control checks
       </h1>
       <div className="mt-6 space-y-6">
@@ -160,10 +167,10 @@ function Interruption({
               {task.options.map((option) => (
                 <label
                   key={option.id}
-                  className={`cursor-pointer border px-4 py-3 text-sm ${state.interruptionAnswers[task.id] === option.id ? "border-primary bg-primary/10  " : "border-border "}`}
+                  className={`flex min-h-11 cursor-pointer items-center rounded-sm border px-4 text-sm transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring ${state.interruptionAnswers[task.id] === option.id ? "border-primary bg-primary/10" : "border-border hover:border-foreground/40"}`}
                 >
                   <input
-                    className="mr-2"
+                    className="mr-2 accent-primary"
                     type="radio"
                     name={task.id}
                     checked={state.interruptionAnswers[task.id] === option.id}
@@ -198,11 +205,11 @@ function Recall({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-border bg-card p-7  ">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+    <section className="border border-border bg-card p-6 sm:p-7">
+      <p className="text-sm text-muted-foreground">
         Delayed recall
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">
+      <h1 className="mt-1 text-2xl font-semibold">
         Reconstruct the key operational facts
       </h1>
       <p className="mt-3 text-sm text-muted-foreground ">
@@ -213,7 +220,7 @@ function Recall({
           <label key={field.id} className="text-sm font-semibold">
             {field.label}
             <input
-              className="mt-2 h-11 w-full border border-border bg-card px-3 font-normal "
+              className="mt-2 h-11 w-full rounded-sm border border-border bg-background px-3 font-normal outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
               value={state.recall[field.id] ?? ""}
               onChange={(event) =>
                 setState({
@@ -239,11 +246,11 @@ function Sequence({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-border bg-card p-7  ">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+    <section className="border border-border bg-card p-6 sm:p-7">
+      <p className="text-sm text-muted-foreground">
         Event sequence
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">
+      <h1 className="mt-1 text-2xl font-semibold">
         Put the events in briefing order
       </h1>
       <div className="mt-6 space-y-3">
@@ -256,7 +263,7 @@ function Sequence({
               {index + 1}
             </span>
             <select
-              className="h-11 w-full border border-border bg-card px-3 font-normal "
+              className="h-11 w-full rounded-sm border border-border bg-background px-3 font-normal outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
               value={selected}
               onChange={(event) =>
                 setState({
@@ -291,28 +298,28 @@ function Corrections({
   setState: (state: State) => void;
 }) {
   return (
-    <section className="border border-border bg-card p-7  ">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+    <section className="border border-border bg-card p-6 sm:p-7">
+      <p className="text-sm text-muted-foreground">
         Record correction
       </p>
-      <h1 className="mt-2 text-2xl font-semibold">
+      <h1 className="mt-1 text-2xl font-semibold">
         Correct the flawed operational record
       </h1>
       <div className="mt-6 divide-y divide-border border-y border-border  ">
         {exercise.flawedRecord.map((field) => (
           <div key={field.id} className="grid gap-3 py-4 sm:grid-cols-2">
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 {field.label}
               </p>
-              <p className="mt-1 font-medium line-through decoration-red-700">
+              <p className="mt-1 font-medium line-through decoration-destructive">
                 {field.value}
               </p>
             </div>
             <label className="text-sm font-semibold">
               Correct value
               <input
-                className="mt-2 h-11 w-full border border-border bg-card px-3 font-normal "
+                className="mt-2 h-11 w-full rounded-sm border border-border bg-background px-3 font-normal outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
                 value={state.corrections[field.id] ?? ""}
                 onChange={(event) =>
                   setState({
@@ -415,11 +422,11 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
             />
           );
         return (
-          <section className="border border-border bg-card p-7  ">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <section className="border border-border bg-card p-6 sm:p-7">
+            <p className="text-sm text-muted-foreground">
               Final review
             </p>
-            <h1 className="mt-2 text-2xl font-semibold">
+            <h1 className="mt-1 text-2xl font-semibold">
               Submit the reconstructed record
             </h1>
             <p className="mt-4 leading-7 text-foreground ">

@@ -69,20 +69,16 @@ function RankingWorkspace({
 
   return (
     <section className="border border-border bg-card" aria-labelledby={`${question.id}-title`}>
-      <div className="flex flex-col gap-2 border-b border-border px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-1 border-b border-border px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            {practice
-              ? "Practice question"
-              : `Question ${question.number} of ${questionTotal ?? question.number}`}
-          </p>
-          <h1 id={`${question.id}-title`} className="mt-1 text-xl font-semibold">
+          {practice ? (
+            <p className="text-sm text-muted-foreground">Practice question</p>
+          ) : null}
+          <h1 id={`${question.id}-title`} className="text-xl font-semibold">
             Rank the six incidents
           </h1>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-muted-foreground">1 = highest priority · 6 = lowest priority</p>
-        </div>
+        <p className="text-sm text-muted-foreground">1 = highest priority, 6 = lowest</p>
       </div>
 
       <ol className="divide-y divide-border" aria-label="Incident ranking">
@@ -135,27 +131,33 @@ function RankingWorkspace({
         })}
       </ol>
 
-      <div className="flex flex-col gap-3 border-t border-border bg-muted/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-5 text-muted-foreground">
-          Check the full order before confirming. Scoring rationale is not shown during the assessment.
+      {practice ? (
+        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs leading-5 text-muted-foreground">
+            Check the full order, then confirm it.
+          </p>
+          <Button
+            type="button"
+            variant={response.confirmed ? "outline" : "default"}
+            className="min-h-11 shrink-0 rounded-sm"
+            onClick={() =>
+              onChange({
+                ...response,
+                confirmed: true,
+                timeTakenSeconds: elapsedSeconds(),
+                timerStartedAt: startedAt,
+              })
+            }
+          >
+            <Check className="h-4 w-4" aria-hidden="true" />
+            {response.confirmed ? "Order confirmed" : "Confirm this order"}
+          </Button>
+        </div>
+      ) : (
+        <p className="border-t border-border px-5 py-3 text-xs leading-5 text-muted-foreground">
+          Your order is confirmed when you continue. Check it first: you can't come back to this question.
         </p>
-        <Button
-          type="button"
-          variant={response.confirmed ? "outline" : "default"}
-          className="min-h-11 shrink-0 rounded-sm"
-          onClick={() =>
-            onChange({
-              ...response,
-              confirmed: true,
-              timeTakenSeconds: elapsedSeconds(),
-              timerStartedAt: startedAt,
-            })
-          }
-        >
-          <Check className="h-4 w-4" aria-hidden="true" />
-          {response.confirmed ? "Order confirmed" : "Confirm this order"}
-        </Button>
-      </div>
+      )}
     </section>
   );
 }
@@ -254,6 +256,26 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
       title="Prioritisation Judgement Assessment"
       restartNoun="question order"
       initialState={(content) => createState(content.questions)}
+      // Continuing is the confirmation, so the order is stamped here rather
+      // than with a second button inside the question.
+      beforeAdvance={(stage, state) => {
+        if (stage < 1 || stage > questionCount) return state;
+        const question = launch.content.questions[stage - 1];
+        const response = state.responses[question.id];
+        if (!response || response.confirmed) return state;
+        const startedAt = response.timerStartedAt ?? Date.now();
+        return {
+          ...state,
+          responses: {
+            ...state.responses,
+            [question.id]: {
+              ...response,
+              confirmed: true,
+              timeTakenSeconds: Math.max(1, Math.floor((Date.now() - startedAt) / 1_000)),
+            },
+          },
+        };
+      }}
       validateStage={(stage, state) => {
         if (stage >= 1 && stage <= questionCount) {
           const question = launch.content.questions[stage - 1];
@@ -272,8 +294,8 @@ function Assessed({ launch }: { launch: LaunchEnvelope<Content> }) {
         stage === 0
           ? "Start question 1"
           : stage < questionCount
-            ? "Save and open next question"
-            : "Review responses"
+            ? "Confirm order and continue"
+            : "Confirm order and review"
       }
       renderStage={({ stageIndex, state, setState }, content) => (
         <PrioritisationStages
